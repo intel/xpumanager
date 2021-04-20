@@ -1,0 +1,3 @@
+Flask==1.1.2
+prettytable==2.1.0
+requests==2.22.0

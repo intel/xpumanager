@@ -1,0 +1,11 @@
+#pragma once
+
+enum ErrorCode {
+  OK = 0,
+
+  UNKNOWN =  0x00000001,
+
+  ILEGAL_PARAM = 0x00000002,
+  
+  CORE_NOT_INITIALIZED = 0x00000003
+};

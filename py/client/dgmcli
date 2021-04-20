@@ -1,0 +1,109 @@
+#!/usr/bin/python3
+import argparse
+
+import json
+
+import pprint
+import requests
+
+# from texttable import Texttable
+from prettytable import PrettyTable
+
+host = "http://localhost:5000"
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-l', '--list', action='store_true',
+                    help='list all device')
+parser.add_argument('-i', '--immed', action='store_true',
+                    help='get realtime measuring data')
+parser.add_argument('-d', '--device', help='specify a device by `device_id`')
+parser.add_argument('-f', '--freq', action='store_true',
+                    help='get latest frequency of gpu')
+parser.add_argument('-p', '--power', action='store_true',
+                    help='get latest power of gpu')
+
+
+def arg():
+    parsed = parser.parse_args()
+    # print(parsed)
+    if parsed.list:
+        get_devices()
+        return
+    if parsed.freq:
+        if parsed.device:
+            get_frequency(parsed.device, parsed.immed)
+        else:
+            print("Param error: device_id need be specified")
+        return
+    if parsed.power:
+        if parsed.device:
+            get_power(parsed.device, parsed.immed)
+        else:
+            print("Param error: device_id need be specified")
+        return
+    parser.print_help()
+
+
+def get_devices():
+    res = requests.get(host+"/dgm/v1/devices")
+
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+
+    data = res.json()
+
+    for gpu in data:
+        print("GPU", gpu['device_id'])
+        x = PrettyTable()
+
+        x.field_names = ["Properties", "Value"]
+        for p in gpu['properties']:
+            for k, v in p.items():
+                x.add_row([k,v])
+        
+        x.align="l"
+        print(x)
+
+
+
+def get_power(deviceId, realtime=False):
+    data = get_measurement(deviceId, "power", realtime)
+
+    x = PrettyTable()
+
+    x.field_names = ["Power", "Value(W)"]
+    for k,v in data['power'].items():
+        x.add_row([k,v])
+    
+    x.align="l"
+    print(x)
+
+
+def get_frequency(deviceId, realtime=False):
+    data = get_measurement(deviceId, "frequency", realtime)
+
+    x = PrettyTable()
+
+    x.field_names = ["Frequency", "Value(Hz)"]
+    for k,v in data['frequency'].items():
+        x.add_row([k,v])
+    
+    x.align="l"
+    print(x)
+
+
+def get_measurement(deviceId, measurementType, realtime=False):
+    url = "/dgm/v1/devices/{}/measurements".format(deviceId)
+    params = {"type": measurementType}
+    if realtime:
+        params['realtime'] = True
+    res = requests.get(host + url, params=params)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    return res.json()
+
+
+if __name__ == "__main__":
+    arg()
