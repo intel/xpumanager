@@ -38,6 +38,8 @@ private:
 
   static std::string to_string(ze_device_uuid_t val);
 
+  static std::string to_hex_string(uint32_t val);
+
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;
   

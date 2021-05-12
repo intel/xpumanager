@@ -60,32 +60,33 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
       props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
       zesDeviceGetProperties(zes_Device, &props);
       if (props.core.type == ZE_DEVICE_TYPE_GPU) {
-        auto p_GPU = std::make_shared<GPUDevice>(std::to_string(props.core.deviceId), capabilities);
-        p_GPU->addProperty(Property(DeviceProperty::TYPE,std::string("GPU")));
-        p_GPU->addProperty(Property(DeviceProperty::DEVICE_ID,std::to_string(props.core.deviceId)));
-        p_GPU->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
-        p_GPU->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
-        p_GPU->addProperty(Property(DeviceProperty::DRIVER_VERSION,std::to_string(driver_prop.driverVersion)));
-        p_GPU->addProperty(Property(DeviceProperty::NUM_SUB_DEVICES,std::to_string(props.numSubdevices)));
-        p_GPU->addProperty(Property(DeviceProperty::SERIAL_NUMBER,std::string(props.serialNumber)));
-        p_GPU->addProperty(Property(DeviceProperty::VENDOR_NAME,std::string(props.vendorName)));
-        p_GPU->addProperty(Property(DeviceProperty::CORE_CLOCK_RATE,std::to_string(props.core.coreClockRate)));
-        p_GPU->addProperty(Property(DeviceProperty::MAX_MEM_ALLOC_SIZE,std::to_string(props.core.maxMemAllocSize)));
-        p_GPU->addProperty(Property(DeviceProperty::MAX_HARDWARE_CONTEXTS,std::to_string(props.core.maxHardwareContexts)));
-        p_GPU->addProperty(Property(DeviceProperty::MAX_COMMAND_QUEUE_PRIORITY,std::to_string(props.core.maxCommandQueuePriority)));
-        p_GPU->addProperty(Property(DeviceProperty::DEVICE_NAME,std::string(props.core.name)));
-        p_GPU->addProperty(Property(DeviceProperty::NUM_EUS_PER_SUB_SLICE,std::to_string(props.core.numEUsPerSubslice)));
-        p_GPU->addProperty(Property(DeviceProperty::NUM_SLICES,std::to_string(props.core.numSlices)));
-        p_GPU->addProperty(Property(DeviceProperty::NUM_THREADS_PER_EU,std::to_string(props.core.numThreadsPerEU)));
-        p_GPU->addProperty(Property(DeviceProperty::PYSICAL_EU_SIMD_WIDTH,std::to_string(props.core.physicalEUSimdWidth)));
-        p_GPU->addProperty(Property(DeviceProperty::SUB_DEVICE_ID,std::to_string(props.core.subdeviceId)));
-        p_GPU->addProperty(Property(DeviceProperty::TIMER_RESOLUTION,std::to_string(props.core.timerResolution)));
-        p_GPU->addProperty(Property(DeviceProperty::TIMESTAMP_VALID_BITS,std::to_string(props.core.timestampValidBits)));
-        p_GPU->addProperty(Property(DeviceProperty::UUID,to_string(props.core.uuid)));
-        p_GPU->addProperty(Property(DeviceProperty::VENDOR_ID,std::to_string(props.core.vendorId)));
-        p_GPU->addProperty(Property(DeviceProperty::KERNEL_TIMESTAMP_VALID_BITS,std::to_string(props.core.kernelTimestampValidBits)));
-        p_GPU->addProperty(Property(DeviceProperty::FLAGS,std::to_string(props.core.flags)));
-        p_devices->push_back(p_GPU);
+        auto p_gpu = std::make_shared<GPUDevice>(to_string(props.core.uuid), capabilities);
+        p_gpu->addProperty(Property(DeviceProperty::TYPE,std::string("GPU")));
+        p_gpu->addProperty(Property(DeviceProperty::DEVICE_ID,to_hex_string(props.core.deviceId)));
+        p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
+        p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
+        p_gpu->addProperty(Property(DeviceProperty::DRIVER_VERSION,std::to_string(driver_prop.driverVersion)));
+        p_gpu->addProperty(Property(DeviceProperty::NUM_SUB_DEVICES,std::to_string(props.numSubdevices)));
+        p_gpu->addProperty(Property(DeviceProperty::SERIAL_NUMBER,std::string(props.serialNumber)));
+        p_gpu->addProperty(Property(DeviceProperty::VENDOR_NAME,std::string(props.vendorName)));
+        p_gpu->addProperty(Property(DeviceProperty::CORE_CLOCK_RATE,std::to_string(props.core.coreClockRate)));
+        p_gpu->addProperty(Property(DeviceProperty::MAX_MEM_ALLOC_SIZE,std::to_string(props.core.maxMemAllocSize)));
+        p_gpu->addProperty(Property(DeviceProperty::MAX_HARDWARE_CONTEXTS,std::to_string(props.core.maxHardwareContexts)));
+        p_gpu->addProperty(Property(DeviceProperty::MAX_COMMAND_QUEUE_PRIORITY,std::to_string(props.core.maxCommandQueuePriority)));
+        p_gpu->addProperty(Property(DeviceProperty::DEVICE_NAME,std::string(props.core.name)));
+        p_gpu->addProperty(Property(DeviceProperty::NUM_EUS_PER_SUB_SLICE,std::to_string(props.core.numEUsPerSubslice)));
+        p_gpu->addProperty(Property(DeviceProperty::NUM_SUB_SLICES_PER_SLICE,std::to_string(props.core.numSubslicesPerSlice)));
+        p_gpu->addProperty(Property(DeviceProperty::NUM_SLICES,std::to_string(props.core.numSlices)));
+        p_gpu->addProperty(Property(DeviceProperty::NUM_THREADS_PER_EU,std::to_string(props.core.numThreadsPerEU)));
+        p_gpu->addProperty(Property(DeviceProperty::PYSICAL_EU_SIMD_WIDTH,std::to_string(props.core.physicalEUSimdWidth)));
+        p_gpu->addProperty(Property(DeviceProperty::SUB_DEVICE_ID,to_hex_string(props.core.subdeviceId)));
+        p_gpu->addProperty(Property(DeviceProperty::TIMER_RESOLUTION,std::to_string(props.core.timerResolution)));
+        p_gpu->addProperty(Property(DeviceProperty::TIMESTAMP_VALID_BITS,std::to_string(props.core.timestampValidBits)));
+        p_gpu->addProperty(Property(DeviceProperty::UUID,to_string(props.core.uuid)));
+        p_gpu->addProperty(Property(DeviceProperty::VENDOR_ID,to_hex_string(props.core.vendorId)));
+        p_gpu->addProperty(Property(DeviceProperty::KERNEL_TIMESTAMP_VALID_BITS,std::to_string(props.core.kernelTimestampValidBits)));
+        p_gpu->addProperty(Property(DeviceProperty::FLAGS,std::to_string(props.core.flags)));
+        p_devices->push_back(p_gpu);
         instance().zes_devices.push_back(zes_Device);
       }
     }
@@ -103,6 +104,12 @@ std::string GPUDeviceStub::to_string(ze_device_uuid_t val) {
     iter++;
   }
   return os.str();
+}
+
+std::string GPUDeviceStub::to_hex_string(uint32_t val) {
+  std::stringstream s;
+  s << std::hex << val << std::dec;
+  return s.str();
 }
 
 void GPUDeviceStub::getPower(const std::string& device_id, Callback_t callback) noexcept{

@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from flask import Flask, jsonify
 from flask import render_template
 from flask import request

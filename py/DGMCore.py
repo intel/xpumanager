@@ -26,7 +26,7 @@ field_translation = {
     "TIMER_RESOLUTION": dict(name="Timer Resolution"),
     "TIMESTAMP_VALID_BITS": dict(name="Timestamp Valid Bits"),
     "UUID": dict(name="UUID"),
-    "VENDOR_ID": dict(name="Vendor Id",format=hex_format),
+    "VENDOR_ID": dict(name="Vendor Id"),
     "KERNEL_TIMESTAMP_VALID_BITS": dict(name="Kernel Timestamp Valid Bits"),
     "FLAGS": dict(name="Flags")
 }
@@ -94,7 +94,8 @@ class DGMCore:
         result = APIResult()
         def getDeviceCallback(device) :
             obj = {}
-            obj["device_id"] = bytes.decode(device.contents.device_id)
+            # print(device.contents.device_id)
+            # obj["device_id"] = bytes.decode(device.contents.device_id)
             obj["properties"] = []
             count = device.contents.property_len
             if count > 0 :
@@ -112,6 +113,8 @@ class DGMCore:
                             prop_value+=" {}".format(d['unit'])
                     sub[prop_name] = prop_value
                     obj["properties"].append(sub)
+                    if prop_name == "UUID":
+                        obj["device_id"] = prop_value
                     count = count - 1
                     if count == 0 : 
                         break
