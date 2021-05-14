@@ -3,8 +3,9 @@ cmake_minimum_required (VERSION 3.2.0)
 project (DGMCore)
 
 # Set compilation options
-set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -std=c++11 -O0 -Wall -g -ggdb -pthread")
-set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -std=c++11 -O3 -Wall")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread")
+set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
+set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -50,41 +51,42 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/monitor MONITOR_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/policy POLICY_SRC)
 
 
-# Include source code and header files for test
-if(BUILD_TEST)
+if (BUILD_TEST)
+
+  # Include source code and header files for test 
+
   include_directories(${CMAKE_CURRENT_LIST_DIR}/test)
+
   aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/test TEST_SRC)
+
+  add_executable(DGMCore ${TEST_SRC})
+
+  install(TARGETS DGMCore DESTINATION ${CMAKE_CURRENT_LIST_DIR})
+
+else()
+
+  add_library (DGMCore SHARED)
+
+  install(TARGETS DGMCore LIBRARY DESTINATION ${CMAKE_CURRENT_LIST_DIR})
+
 endif()
 
-if (BUILD_TEST)
-  add_executable(DGMCore 
-    ${API_SRC}
-    ${CONTROL_SRC}
-    ${CORE_SRC}
-    ${DATA_LOGIC_SRC}
-    ${DEVICE_SRC}
-    ${GPU_SRC}
-    ${EVENT_SRC}
-    ${INFRAS_SRC}
-    ${EXCEPTION_SRC}
-    ${MONITOR_SRC}
-    ${POLICY_SRC}
-    ${TEST_SRC}
-    )
-else()
-  add_library (DGMCore SHARED 
-    ${API_SRC}
-    ${CONTROL_SRC}
-    ${CORE_SRC}
-    ${DATA_LOGIC_SRC}
-    ${DEVICE_SRC}
-    ${GPU_SRC}
-    ${EVENT_SRC}
-    ${INFRAS_SRC}
-    ${EXCEPTION_SRC}
-    ${MONITOR_SRC}
-    ${POLICY_SRC}
-    )
-endif()
+target_sources(
+  DGMCore
+  PUBLIC
+  ${API_SRC}
+  ${CONTROL_SRC}
+  ${CORE_SRC}
+  ${DATA_LOGIC_SRC}
+  ${DEVICE_SRC}
+  ${GPU_SRC}
+  ${EVENT_SRC}
+  ${INFRAS_SRC}
+  ${EXCEPTION_SRC}
+  ${MONITOR_SRC}
+  ${POLICY_SRC}
+)
+
 target_link_libraries(DGMCore ze_loader)
+
 unset(BUILD_TEST CACHE) 

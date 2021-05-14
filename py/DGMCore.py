@@ -83,8 +83,9 @@ GetRealtimeMeasurementCallbackType = CFUNCTYPE(None, POINTER(MeasurementData))
 
 class DGMCore:
     def __init__(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        lib_path = os.path.join(dir_path,"libDGMCore.so")
+        py_dir_path = os.path.dirname(os.path.realpath(__file__))
+        project_dir_path = os.path.dirname(py_dir_path)
+        lib_path = os.path.join(project_dir_path,"core","libDGMCore.so")
         # self.lib = cdll.LoadLibrary("./libDGMCore.so") 
         self.lib = cdll.LoadLibrary(lib_path) 
         self.lib.init()
