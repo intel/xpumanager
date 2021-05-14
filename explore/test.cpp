@@ -80,7 +80,7 @@ void get_gpu_power(ze_device_handle_t device)
     for(auto &power:powers){
         zes_power_energy_counter_t  counter0, counter1;
         zesPowerGetEnergyCounter(power,&counter0);
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         zesPowerGetEnergyCounter(power,&counter1);
         auto energy_delta = counter1.energy-counter0.energy;
         auto time_delta = counter1.timestamp-counter0.timestamp;
@@ -242,10 +242,10 @@ int main()
             if (props.core.type == ZE_DEVICE_TYPE_GPU)
             {
                 // print_gpu_props(props, driver_prop);
-                // get_gpu_power(device);
+                get_gpu_power(device);
                 // get_gpu_temp(device);
                 // get_gpu_engine(device);
-                get_gpu_firmware(device);
+                // get_gpu_firmware(device);
             }
         }
     }
