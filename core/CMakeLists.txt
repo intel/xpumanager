@@ -13,6 +13,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Build test or not
 option(BUILD_TEST "build application instead of lib for test" OFF)
 
+option(BUILD_TEST_API "build application for api test" OFF)
+
+# set(BUILD_TEST_API OFF BOOL "build application for api test")
+
 # Set debug file name postfix
 #set(CMAKE_DEBUG_POSTFIX "_d")
 
@@ -55,11 +59,17 @@ if (BUILD_TEST)
 
   # Include source code and header files for test 
 
-  include_directories(${CMAKE_CURRENT_LIST_DIR}/test)
+  # include_directories(${CMAKE_CURRENT_LIST_DIR}/test)
 
-  aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/test TEST_SRC)
+  # aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/test TEST_SRC)
 
-  add_executable(DGMCore ${TEST_SRC})
+  # add_executable(DGMCore ${TEST_SRC})
+
+  if (BUILD_TEST_API)
+    add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_api.cpp)
+  else()
+    add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_main.cpp)
+  endif()
 
   install(TARGETS DGMCore DESTINATION ${CMAKE_CURRENT_LIST_DIR})
 

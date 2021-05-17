@@ -148,6 +148,8 @@ class DGMCore:
         return data
 
     def getRealtimeMeasurementData(self, deviceId, measurementType):
+        print(len(deviceId))
+        print(measurementType)
         result = APIResult()
         data = {}
 
