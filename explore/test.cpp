@@ -63,13 +63,13 @@ void get_gpu_power(ze_device_handle_t device)
 {
     using namespace std;
     uint32_t power_count;
-    
+
     if (ZE_RESULT_SUCCESS != zesDeviceEnumPowerDomains(device, &power_count, nullptr))
     {
         std::cout << "fail to get power data" << std::endl;
         return;
     }
-    cout<<power_count<<endl;
+    cout << power_count << endl;
     vector<zes_pwr_handle_t> powers(power_count);
     if (ZE_RESULT_SUCCESS != zesDeviceEnumPowerDomains(device, &power_count, powers.data()))
     {
@@ -77,14 +77,15 @@ void get_gpu_power(ze_device_handle_t device)
         return;
     }
 
-    for(auto &power:powers){
-        zes_power_energy_counter_t  counter0, counter1;
-        zesPowerGetEnergyCounter(power,&counter0);
+    for (auto &power : powers)
+    {
+        zes_power_energy_counter_t counter0, counter1;
+        zesPowerGetEnergyCounter(power, &counter0);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        zesPowerGetEnergyCounter(power,&counter1);
-        auto energy_delta = counter1.energy-counter0.energy;
-        auto time_delta = counter1.timestamp-counter0.timestamp;
-        cout<<energy_delta/time_delta<<"W"<<endl;
+        zesPowerGetEnergyCounter(power, &counter1);
+        auto energy_delta = counter1.energy - counter0.energy;
+        auto time_delta = counter1.timestamp - counter0.timestamp;
+        cout << energy_delta / time_delta << "W" << endl;
     }
 }
 
@@ -92,50 +93,51 @@ void get_gpu_temp(ze_device_handle_t device)
 {
     using namespace std;
     uint32_t sensor_count;
-    
+
     if (ZE_RESULT_SUCCESS != zesDeviceEnumTemperatureSensors(device, &sensor_count, nullptr))
     {
         std::cout << "fail to get temperature sensors" << std::endl;
         return;
     }
-    cout<<"sensor_count:"<<sensor_count<<endl;
-    vector<zes_temp_handle_t > sensors(sensor_count);
+    cout << "sensor_count:" << sensor_count << endl;
+    vector<zes_temp_handle_t> sensors(sensor_count);
     if (ZE_RESULT_SUCCESS != zesDeviceEnumTemperatureSensors(device, &sensor_count, sensors.data()))
     {
         std::cout << "fail to get temperature sensors" << std::endl;
         return;
     }
-    for(auto &sensor:sensors){
+    for (auto &sensor : sensors)
+    {
         zes_temp_properties_t sensor_props;
         zesTemperatureGetProperties(sensor, &sensor_props);
-        switch(sensor_props.type){
-            case ZES_TEMP_SENSORS_GLOBAL:
-                cout<<"ZES_TEMP_SENSORS_GLOBAL, max ";
-                break;
-            case ZES_TEMP_SENSORS_GPU:
-                cout<<"ZES_TEMP_SENSORS_GPU, max ";
-                break;
-            case ZES_TEMP_SENSORS_MEMORY:
-                cout<<"ZES_TEMP_SENSORS_MEMORY, max ";
-                break;
-            case ZES_TEMP_SENSORS_GLOBAL_MIN:
-                cout<<"ZES_TEMP_SENSORS_GLOBAL_MIN, max ";
-                break;
-            case ZES_TEMP_SENSORS_GPU_MIN:
-                cout<<"ZES_TEMP_SENSORS_GPU_MIN, max ";
-                break;
-            case ZES_TEMP_SENSORS_MEMORY_MIN:
-                cout<<"ZES_TEMP_SENSORS_MEMORY_MIN, max ";
-                break;
-            case ZES_TEMP_SENSORS_FORCE_UINT32:
-                cout<<"ZES_TEMP_SENSORS_FORCE_UINT32, max ";
-                break;
-            
+        switch (sensor_props.type)
+        {
+        case ZES_TEMP_SENSORS_GLOBAL:
+            cout << "ZES_TEMP_SENSORS_GLOBAL, max ";
+            break;
+        case ZES_TEMP_SENSORS_GPU:
+            cout << "ZES_TEMP_SENSORS_GPU, max ";
+            break;
+        case ZES_TEMP_SENSORS_MEMORY:
+            cout << "ZES_TEMP_SENSORS_MEMORY, max ";
+            break;
+        case ZES_TEMP_SENSORS_GLOBAL_MIN:
+            cout << "ZES_TEMP_SENSORS_GLOBAL_MIN, max ";
+            break;
+        case ZES_TEMP_SENSORS_GPU_MIN:
+            cout << "ZES_TEMP_SENSORS_GPU_MIN, max ";
+            break;
+        case ZES_TEMP_SENSORS_MEMORY_MIN:
+            cout << "ZES_TEMP_SENSORS_MEMORY_MIN, max ";
+            break;
+        case ZES_TEMP_SENSORS_FORCE_UINT32:
+            cout << "ZES_TEMP_SENSORS_FORCE_UINT32, max ";
+            break;
         }
-        cout<<sensor_props.maxTemperature<<endl;
+        cout << sensor_props.maxTemperature << endl;
         double temp;
-        zesTemperatureGetState(sensor,&temp);
-        cout<<"current temp: "<<temp<<endl;
+        zesTemperatureGetState(sensor, &temp);
+        cout << "current temp: " << temp << endl;
         // cout<<sensor_props.type<<endl;
         // cout<<sensor_props.pNext<<endl;
         // cout<<sensor_props.onSubdevice<<endl;
@@ -161,21 +163,23 @@ void get_gpu_engine(ze_device_handle_t device)
         std::cout << "fail to get temperature sensors" << std::endl;
         return;
     }
-    for(auto &group:engine_groups){
+    for (auto &group : engine_groups)
+    {
         zes_engine_properties_t props;
-        zesEngineGetProperties(group,&props);
-        cout<<props.type<<": ";
+        zesEngineGetProperties(group, &props);
+        cout << props.type << ": ";
         zes_engine_stats_t stats0, stats1;
-        zesEngineGetActivity(group,&stats0);
+        zesEngineGetActivity(group, &stats0);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        zesEngineGetActivity(group,&stats1);
-        auto activeDelta = stats1.activeTime-stats0.activeTime;
-        auto timeDelta = stats1.timestamp-stats0.timestamp;
-        cout<<activeDelta/timeDelta<<endl;
+        zesEngineGetActivity(group, &stats1);
+        auto activeDelta = stats1.activeTime - stats0.activeTime;
+        auto timeDelta = stats1.timestamp - stats0.timestamp;
+        cout << activeDelta / timeDelta << endl;
     }
 }
 
-void get_gpu_firmware(ze_device_handle_t device){
+void get_gpu_firmware(ze_device_handle_t device)
+{
     using namespace std;
     uint32_t firmware_count;
 
@@ -185,17 +189,68 @@ void get_gpu_firmware(ze_device_handle_t device){
         return;
     }
     cout << "firmware_count:" << firmware_count << endl;
-    vector<zes_firmware_handle_t > firmwares(firmware_count);
+    vector<zes_firmware_handle_t> firmwares(firmware_count);
     if (ZE_RESULT_SUCCESS != zesDeviceEnumFirmwares(device, &firmware_count, firmwares.data()))
     {
         std::cout << "fail to get temperature sensors" << std::endl;
         return;
     }
-    for(auto &firmware:firmwares){
+    for (auto &firmware : firmwares)
+    {
         zes_firmware_properties_t props;
-        zesFirmwareGetProperties(firmware,&props);
-        cout<<props.name<<endl;
-        cout<<props.version<<endl;
+        zesFirmwareGetProperties(firmware, &props);
+        cout << props.name << endl;
+        cout << props.version << endl;
+    }
+}
+
+void get_gpu_process(ze_device_handle_t device)
+{
+    using namespace std;
+    uint32_t process_count;
+
+    if (ZE_RESULT_SUCCESS != zesDeviceProcessesGetState(device, &process_count, nullptr))
+    {
+        std::cout << "fail to get temperature sensors" << std::endl;
+        return;
+    }
+    cout << "process_count:" << process_count << endl;
+    vector<zes_process_state_t> processes(process_count);
+    if (ZE_RESULT_SUCCESS != zesDeviceProcessesGetState(device, &process_count, processes.data()))
+    {
+        std::cout << "fail to get temperature sensors" << std::endl;
+        return;
+    }
+
+    for (auto &process : processes)
+    {
+        cout << "Process Id: " << process.processId << endl;
+        cout << "Mem: " << process.memSize << " Bytes" << endl;
+        cout << "Shared: " << process.sharedSize << endl;
+        // cout << process.engines << endl;
+        cout << "engines:" << endl;
+        auto engines = process.engines;
+        if (engines & ZES_ENGINE_TYPE_FLAG_COMPUTE)
+        {
+            cout << "ZES_ENGINE_TYPE_FLAG_COMPUTE" << endl;
+        }
+        if (engines & ZES_ENGINE_TYPE_FLAG_3D)
+        {
+            cout << "ZES_ENGINE_TYPE_FLAG_3D" << endl;
+        }
+        if (engines & ZES_ENGINE_TYPE_FLAG_MEDIA)
+        {
+            cout << "ZES_ENGINE_TYPE_FLAG_MEDIA" << endl;
+        }
+        if (engines & ZES_ENGINE_TYPE_FLAG_DMA)
+        {
+            cout << "ZES_ENGINE_TYPE_FLAG_DMA" << endl;
+        }
+        if (engines & ZES_ENGINE_TYPE_FLAG_RENDER)
+        {
+            cout << "ZES_ENGINE_TYPE_FLAG_RENDER" << endl;
+        }
+        cout << endl;
     }
 }
 
@@ -242,10 +297,11 @@ int main()
             if (props.core.type == ZE_DEVICE_TYPE_GPU)
             {
                 // print_gpu_props(props, driver_prop);
-                get_gpu_power(device);
+                // get_gpu_power(device);
                 // get_gpu_temp(device);
                 // get_gpu_engine(device);
                 // get_gpu_firmware(device);
+                get_gpu_process(device);
             }
         }
     }
