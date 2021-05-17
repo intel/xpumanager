@@ -39,9 +39,12 @@ void GPUDeviceStub::discoverDevices(Callback_t callback) {
 std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover() {
   std::vector<DeviceCapability> capabilities;
   auto p_devices = std::make_shared<std::vector<std::shared_ptr<Device>>>();
+  capabilities.push_back(DeviceCapability::POWER);
   capabilities.push_back(DeviceCapability::FREQUENCY);
+  capabilities.push_back(DeviceCapability::TEMPERATURE);
   
   uint32_t driver_count = 0;
+  ze_result_t res;
   zeDriverGet(&driver_count, nullptr);
   std::vector<ze_driver_handle_t> drivers(driver_count);
   zeDriverGet(&driver_count, drivers.data());
@@ -86,12 +89,56 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
         p_gpu->addProperty(Property(DeviceProperty::VENDOR_ID,to_hex_string(props.core.vendorId)));
         p_gpu->addProperty(Property(DeviceProperty::KERNEL_TIMESTAMP_VALID_BITS,std::to_string(props.core.kernelTimestampValidBits)));
         p_gpu->addProperty(Property(DeviceProperty::FLAGS,std::to_string(props.core.flags)));
+
+        uint32_t mem_module_count = 0;
+        res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+        std::vector<zes_mem_handle_t> mems(mem_module_count);
+        res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+        if (res == ZE_RESULT_SUCCESS) {
+          for (auto& mem:mems) {
+            zes_mem_properties_t props;
+            props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+            res = zesMemoryGetProperties(mem, &props);
+            if (res == ZE_RESULT_SUCCESS) {
+              p_gpu->addProperty(Property(DeviceProperty::MEMORY_PHYSICAL_SIZE,std::to_string(props.physicalSize)));
+            }
+            zes_mem_state_t sysman_memory_state = {};
+            sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+            res = zesMemoryGetState(mem,&sysman_memory_state);
+            if (res == ZE_RESULT_SUCCESS) {
+              if (props.physicalSize == 0) {
+                p_gpu->addProperty(Property(DeviceProperty::MEMORY_PHYSICAL_SIZE,std::to_string(sysman_memory_state.size)));
+              }
+              p_gpu->addProperty(Property(DeviceProperty::MEMORY_FREE_SIZE,std::to_string(sysman_memory_state.free)));
+              p_gpu->addProperty(Property(DeviceProperty::MEMORY_ALLOCATABLE_SIZE,std::to_string(sysman_memory_state.size)));
+              p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(sysman_memory_state.health)));
+            }
+          }
+        }
+
         p_devices->push_back(p_gpu);
         instance().zes_devices.push_back(zes_Device);
       }
     }
   }
   return p_devices;
+}
+
+std::string GPUDeviceStub::get_health_state_string(zes_mem_health_t val) {
+  switch (val) {
+  case zes_mem_health_t::ZES_MEM_HEALTH_UNKNOWN:
+    return std::string("The memory health cannot be determined.");
+  case zes_mem_health_t::ZES_MEM_HEALTH_OK:
+    return std::string("All memory channels are healthy.");
+  case zes_mem_health_t::ZES_MEM_HEALTH_DEGRADED:
+    return std::string("Excessive correctable errors have been detected on one or more channels. Device should be reset.");
+  case zes_mem_health_t::ZES_MEM_HEALTH_CRITICAL:
+    return std::string("Operating with reduced memory to cover banks with too many uncorrectable errors.");   
+  case zes_mem_health_t::ZES_MEM_HEALTH_REPLACE:
+    return std::string("Device should be replaced due to excessive uncorrectable errors.");     
+  default:
+    return std::string("The memory health cannot be determined.");
+  }
 }
 
 std::string GPUDeviceStub::to_string(ze_device_uuid_t val) {
@@ -117,7 +164,26 @@ void GPUDeviceStub::getPower(const std::string& device_id, Callback_t callback) 
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const std::string& device_id) {
-  return std::make_shared<MeasurementData>(0);  
+  for (auto& device : instance().zes_devices) {
+    uint32_t power_domain_count = 0;
+    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+    std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+    if (res == ZE_RESULT_SUCCESS) {
+      for (auto& power:power_handles) {
+        zes_power_energy_counter_t snap1,snap2;
+        res = zesPowerGetEnergyCounter(power, &snap1);
+        if (res == ZE_RESULT_SUCCESS) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
+          res = zesPowerGetEnergyCounter(power, &snap2);
+          if (res == ZE_RESULT_SUCCESS) {
+            return std::make_shared<MeasurementData>((snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp));
+          }
+        } 
+      }
+    }
+  }
+  throw BaseException("toGetPower error");
 }
 
 void GPUDeviceStub::getActuralFrequency(const std::string& device_id, Callback_t callback) noexcept{
@@ -125,7 +191,6 @@ void GPUDeviceStub::getActuralFrequency(const std::string& device_id, Callback_t
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const std::string& device_id) {
-  
   for (auto& device : instance().zes_devices) {
     uint32_t freq_count = 0;
     ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
@@ -142,4 +207,32 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const std:
     }
   }
   throw BaseException("toGetActuralFrequency error");
+}
+
+void GPUDeviceStub::getTemperature(const std::string& device_id, Callback_t callback) noexcept{
+  p_thread_pool->addTask(callback, toGetTemperature, device_id);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const std::string& device_id) {
+  for (auto& device : instance().zes_devices) {
+    uint32_t temp_sensor_count = 0;
+    ze_result_t res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr);
+    std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
+    if (res == ZE_RESULT_SUCCESS) {
+      res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data());
+      for (auto& temp:temp_sensors) {
+        zes_temp_properties_t props;
+        res = zesTemperatureGetProperties(temp,&props);
+        if (res != ZE_RESULT_SUCCESS || props.type != ZES_TEMP_SENSORS_GPU) {
+          continue;
+        }
+        double temp_val = 0;
+        res = zesTemperatureGetState(temp,&temp_val);
+        if (res == ZE_RESULT_SUCCESS) {
+          return std::make_shared<MeasurementData>(temp_val);
+        }
+      }
+    }
+  }
+  throw BaseException("toGetTemperature error");
 }

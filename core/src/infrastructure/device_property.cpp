@@ -26,3 +26,7 @@ const std::string DeviceProperty::DRIVER_VERSION = "DRIVER_VERSION";
 const std::string DeviceProperty::NUM_SUB_DEVICES = "NUM_SUB_DEVICES";
 const std::string DeviceProperty::SERIAL_NUMBER = "SERIAL_NUMBER";
 const std::string DeviceProperty::FLAGS = "FLAGS";
+const std::string DeviceProperty::MEMORY_PHYSICAL_SIZE = "MEMORY_PHYSICAL_SIZE";
+const std::string DeviceProperty::MEMORY_FREE_SIZE = "MEMORY_FREE_SIZE";
+const std::string DeviceProperty::MEMORY_ALLOCATABLE_SIZE = "MEMORY_ALLOCATABLE_SIZE";
+const std::string DeviceProperty::MEMORY_HEALTH = "MEMORY_HEALTH";

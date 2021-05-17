@@ -36,5 +36,7 @@ void MonitorManager::createMonitorTasks() {
     Configuration::POWER_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
   tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::FREQUENCY, 
     Configuration::POWER_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::TEMPERATURE, 
+    Configuration::POWER_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
 }
 

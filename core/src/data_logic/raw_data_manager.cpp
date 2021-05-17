@@ -18,6 +18,9 @@ void RawDataManager::init() {
   data_handlers[MeasurementType::FREQUENCY] = 
     std::make_shared<DataHandler>(MeasurementType::FREQUENCY, p_persistency);    
   data_handlers[MeasurementType::FREQUENCY]->init();
+  data_handlers[MeasurementType::TEMPERATURE] = 
+    std::make_shared<DataHandler>(MeasurementType::TEMPERATURE, p_persistency);    
+  data_handlers[MeasurementType::TEMPERATURE]->init();
 }
 
 void RawDataManager::close() {

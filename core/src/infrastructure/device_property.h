@@ -56,4 +56,12 @@ class DeviceProperty {
     
     static const std::string FLAGS;
 
+    static const std::string MEMORY_PHYSICAL_SIZE;
+
+    static const std::string MEMORY_FREE_SIZE;
+
+    static const std::string MEMORY_ALLOCATABLE_SIZE;
+
+    static const std::string MEMORY_HEALTH;
+
 };

@@ -2,5 +2,6 @@
 
 enum class DeviceCapability : int {
     POWER,
-    FREQUENCY
+    FREQUENCY,
+    TEMPERATURE
 };

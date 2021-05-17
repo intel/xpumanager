@@ -24,6 +24,8 @@ class Device {
   
   virtual void getActuralFrequency(Callback_t callback) noexcept = 0;
 
+  virtual void getTemperature(Callback_t callback) noexcept = 0;
+
   void addCapability(DeviceCapability& capability);
 
   void removeCapability(DeviceCapability& capability); 

@@ -32,3 +32,10 @@ void GPUDevice::getActuralFrequency(Callback_t callback) noexcept {
     callback(ret, e);
   });    
 }
+
+void GPUDevice::getTemperature(Callback_t callback) noexcept {
+  GPUDeviceStub::instance().getTemperature(id.c_str(), 
+    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+    callback(ret, e);
+  });    
+}

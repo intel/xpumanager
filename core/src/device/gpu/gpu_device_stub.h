@@ -19,6 +19,8 @@ class GPUDeviceStub {
 
   void getActuralFrequency(const std::string& device_id, Callback_t callback) noexcept;
 
+  void getTemperature(const std::string& device_id, Callback_t callback) noexcept;
+
 private:
   GPUDeviceStub();
 
@@ -36,9 +38,13 @@ private:
 
   static std::shared_ptr<MeasurementData> toGetActuralFrequency(const std::string& device_id);
 
+  static std::shared_ptr<MeasurementData> toGetTemperature(const std::string& device_id);
+
   static std::string to_string(ze_device_uuid_t val);
 
   static std::string to_hex_string(uint32_t val);
+
+  static std::string get_health_state_string(zes_mem_health_t val);
 
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;
