@@ -9,6 +9,10 @@ import requests
 # from texttable import Texttable
 from prettytable import PrettyTable
 
+import os
+
+os.environ['NO_PROXY'] = 'localhost'
+
 host = "http://localhost:5000"
 
 parser = argparse.ArgumentParser()
