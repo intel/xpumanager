@@ -32,7 +32,10 @@ field_translation = {
     "MEMORY_PHYSICAL_SIZE": dict(name="Memory Physical Size", unit="Bytes"),
     "MEMORY_FREE_SIZE": dict(name="Memory Free Size", unit="Bytes"),
     "MEMORY_ALLOCATABLE_SIZE": dict(name="Memory Allocatable Size", unit="Bytes", ignore=True),
-    "MEMORY_HEALTH": dict(name="Memory Health")
+    "MEMORY_HEALTH": dict(name="Memory Health"),
+    "FIRMWARE_NAME": dict(name="Firmware Name"),
+    "FIRMWARE_VERSION": dict(name="Firmware Version"),
+    "NUM_SUB_SLICES_PER_SLICE": dict(name="Number of Sub Slices Per Sub Slice")
 }
 
 class APIResult(Structure):
