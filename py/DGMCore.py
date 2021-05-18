@@ -31,7 +31,7 @@ field_translation = {
     "FLAGS": dict(name="Flags"),
     "MEMORY_PHYSICAL_SIZE": dict(name="Memory Physical Size", unit="Bytes"),
     "MEMORY_FREE_SIZE": dict(name="Memory Free Size", unit="Bytes"),
-    "MEMORY_ALLOCATABLE_SIZE": dict(name="Memory Allocatable Size", unit="Bytes"),
+    "MEMORY_ALLOCATABLE_SIZE": dict(name="Memory Allocatable Size", unit="Bytes", ignore=True),
     "MEMORY_HEALTH": dict(name="Memory Health")
 }
 
@@ -110,14 +110,18 @@ class DGMCore:
                     prop_value = bytes.decode(prop.value)
                     if prop_name in field_translation:
                         d = field_translation[prop_name]
-                        if 'name' in d:
-                            prop_name = d['name']
-                        if 'format' in d:
-                            prop_value = d['format'](prop_value)
-                        if 'unit' in d:
-                            prop_value+=" {}".format(d['unit'])
-                    sub[prop_name] = prop_value
-                    obj["properties"].append(sub)
+                        if 'ignore' not in d:
+                            if 'name' in d:
+                                prop_name = d['name']
+                            if 'format' in d:
+                                prop_value = d['format'](prop_value)
+                            if 'unit' in d:
+                                prop_value+=" {}".format(d['unit'])
+                            sub[prop_name] = prop_value
+                            obj["properties"].append(sub)
+                    else:
+                        sub[prop_name] = prop_value
+                        obj["properties"].append(sub)
                     if prop_name == "UUID":
                         obj["device_id"] = prop_value
                     count = count - 1
