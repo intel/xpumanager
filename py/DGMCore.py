@@ -5,8 +5,8 @@ def hex_format(v):
     return hex(int(v))
 
 field_translation = {
-    "TYPE": dict(name="Type"),
-    "DEVICE_ID": dict(name="Device Id"),
+    "TYPE": dict(name="Device Type"),
+    "DEVICE_ID": dict(name="PCI Device Id"),
     "BOARD_NUMBER": dict(name="Board Number"),
     "BRAND_NAME": dict(name="Brand Name"),
     "DRIVER_VERSION": dict(name="Driver Version"),
@@ -26,9 +26,13 @@ field_translation = {
     "TIMER_RESOLUTION": dict(name="Timer Resolution"),
     "TIMESTAMP_VALID_BITS": dict(name="Timestamp Valid Bits"),
     "UUID": dict(name="UUID"),
-    "VENDOR_ID": dict(name="Vendor Id"),
+    "VENDOR_ID": dict(name="PCI Vendor Id"),
     "KERNEL_TIMESTAMP_VALID_BITS": dict(name="Kernel Timestamp Valid Bits"),
-    "FLAGS": dict(name="Flags")
+    "FLAGS": dict(name="Flags"),
+    "MEMORY_PHYSICAL_SIZE": dict(name="Memory Physical Size", unit="Bytes"),
+    "MEMORY_FREE_SIZE": dict(name="Memory Free Size", unit="Bytes"),
+    "MEMORY_ALLOCATABLE_SIZE": dict(name="Memory Allocatable Size", unit="Bytes", ignore=True),
+    "MEMORY_HEALTH": dict(name="Memory Health")
 }
 
 class APIResult(Structure):
@@ -106,14 +110,18 @@ class DGMCore:
                     prop_value = bytes.decode(prop.value)
                     if prop_name in field_translation:
                         d = field_translation[prop_name]
-                        if 'name' in d:
-                            prop_name = d['name']
-                        if 'format' in d:
-                            prop_value = d['format'](prop_value)
-                        if 'unit' in d:
-                            prop_value+=" {}".format(d['unit'])
-                    sub[prop_name] = prop_value
-                    obj["properties"].append(sub)
+                        if 'ignore' not in d:
+                            if 'name' in d:
+                                prop_name = d['name']
+                            if 'format' in d:
+                                prop_value = d['format'](prop_value)
+                            if 'unit' in d:
+                                prop_value+=" {}".format(d['unit'])
+                            sub[prop_name] = prop_value
+                            obj["properties"].append(sub)
+                    else:
+                        sub[prop_name] = prop_value
+                        obj["properties"].append(sub)
                     if prop_name == "UUID":
                         obj["device_id"] = prop_value
                     count = count - 1
@@ -148,6 +156,8 @@ class DGMCore:
         return data
 
     def getRealtimeMeasurementData(self, deviceId, measurementType):
+        print(len(deviceId))
+        print(measurementType)
         result = APIResult()
         data = {}
 

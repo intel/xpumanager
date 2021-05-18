@@ -22,7 +22,14 @@ def get_devices():
 def get_measurement(deviceId):
     measurementType = request.args.get("type", "")
     realtime = request.args.get("realtime", False)
-    measurementTypeInt = 0 if measurementType == "power" else 1
+
+    if measurementType == "power":
+        measurementTypeInt = 0
+    elif measurementType == "frequency":
+        measurementTypeInt = 1
+    else:
+        measurementTypeInt = 2
+        
     if realtime:
         data = core.getRealtimeMeasurementData(deviceId, measurementTypeInt)
     else:

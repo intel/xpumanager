@@ -25,6 +25,8 @@ parser.add_argument('-f', '--freq', action='store_true',
                     help='get latest frequency of gpu')
 parser.add_argument('-p', '--power', action='store_true',
                     help='get latest power of gpu')
+parser.add_argument('-t', '--temp', action='store_true',
+                    help='get latest temperature of gpu')
 
 
 def arg():
@@ -45,6 +47,13 @@ def arg():
         else:
             print("Param error: device_id need be specified")
         return
+    if parsed.temp:
+        if parsed.device:
+            get_temp(parsed.device, parsed.immed)
+        else:
+            print("Param error: device_id need be specified")
+        return
+    
     parser.print_help()
 
 
@@ -70,6 +79,17 @@ def get_devices():
         print(x)
 
 
+def get_temp(deviceId, realtime=False):
+    data = get_measurement(deviceId, "temp", realtime)
+
+    x = PrettyTable()
+
+    x.field_names = ["Temp", "Value(°C)"]
+    for k,v in data['temp'].items():
+        x.add_row([k,v])
+    
+    x.align="l"
+    print(x)
 
 def get_power(deviceId, realtime=False):
     data = get_measurement(deviceId, "power", realtime)
@@ -89,7 +109,7 @@ def get_frequency(deviceId, realtime=False):
 
     x = PrettyTable()
 
-    x.field_names = ["Frequency", "Value(Hz)"]
+    x.field_names = ["Frequency", "Value(MHz)"]
     for k,v in data['frequency'].items():
         x.add_row([k,v])
     
