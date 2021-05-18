@@ -5,8 +5,8 @@ def hex_format(v):
     return hex(int(v))
 
 field_translation = {
-    "TYPE": dict(name="Type"),
-    "DEVICE_ID": dict(name="Device Id"),
+    "TYPE": dict(name="Device Type"),
+    "DEVICE_ID": dict(name="PCI Device Id"),
     "BOARD_NUMBER": dict(name="Board Number"),
     "BRAND_NAME": dict(name="Brand Name"),
     "DRIVER_VERSION": dict(name="Driver Version"),
@@ -26,9 +26,13 @@ field_translation = {
     "TIMER_RESOLUTION": dict(name="Timer Resolution"),
     "TIMESTAMP_VALID_BITS": dict(name="Timestamp Valid Bits"),
     "UUID": dict(name="UUID"),
-    "VENDOR_ID": dict(name="Vendor Id"),
+    "VENDOR_ID": dict(name="PCI Vendor Id"),
     "KERNEL_TIMESTAMP_VALID_BITS": dict(name="Kernel Timestamp Valid Bits"),
-    "FLAGS": dict(name="Flags")
+    "FLAGS": dict(name="Flags"),
+    "MEMORY_PHYSICAL_SIZE": dict(name="Memory Physical Size", unit="Bytes"),
+    "MEMORY_FREE_SIZE": dict(name="Memory Free Size", unit="Bytes"),
+    "MEMORY_ALLOCATABLE_SIZE": dict(name="Memory Allocatable Size", unit="Bytes"),
+    "MEMORY_HEALTH": dict(name="Memory Health")
 }
 
 class APIResult(Structure):

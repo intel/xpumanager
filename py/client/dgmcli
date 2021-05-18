@@ -109,7 +109,7 @@ def get_frequency(deviceId, realtime=False):
 
     x = PrettyTable()
 
-    x.field_names = ["Frequency", "Value(Hz)"]
+    x.field_names = ["Frequency", "Value(MHz)"]
     for k,v in data['frequency'].items():
         x.add_row([k,v])
     
