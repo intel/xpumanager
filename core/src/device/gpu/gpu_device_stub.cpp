@@ -110,10 +110,23 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(DeviceProperty::MEMORY_PHYSICAL_SIZE,std::to_string(sysman_memory_state.size)));
               }
               p_gpu->addProperty(Property(DeviceProperty::MEMORY_FREE_SIZE,std::to_string(sysman_memory_state.free)));
-              p_gpu->addProperty(Property(DeviceProperty::MEMORY_ALLOCATABLE_SIZE,std::to_string(sysman_memory_state.size)));
+              /*p_gpu->addProperty(Property(DeviceProperty::MEMORY_ALLOCATABLE_SIZE,std::to_string(sysman_memory_state.size)));*/
               p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(sysman_memory_state.health)));
             }
           }
+        }
+
+        uint32_t firmware_count = 0;
+        zesDeviceEnumFirmwares(device,&firmware_count,nullptr);
+        std::vector<zes_firmware_handle_t> firmwares(firmware_count);
+        res = zesDeviceEnumFirmwares(device,&firmware_count,firmwares.data());
+        if (res == ZE_RESULT_SUCCESS) {
+           for (auto firmware:firmwares) {
+             zes_firmware_properties_t prop;
+             res = zesFirmwareGetProperties(firmware,&prop);
+             p_gpu->addProperty(Property(DeviceProperty::FIRMWARE_NAME,std::string(prop.name)));
+             p_gpu->addProperty(Property(DeviceProperty::FIRMWARE_VERSION,std::string(prop.version)));
+           }
         }
 
         p_devices->push_back(p_gpu);

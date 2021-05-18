@@ -64,4 +64,8 @@ class DeviceProperty {
 
     static const std::string MEMORY_HEALTH;
 
+    static const std::string FIRMWARE_NAME;
+
+    static const std::string FIRMWARE_VERSION;
+
 };

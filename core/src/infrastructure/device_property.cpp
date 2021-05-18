@@ -30,3 +30,5 @@ const std::string DeviceProperty::MEMORY_PHYSICAL_SIZE = "MEMORY_PHYSICAL_SIZE";
 const std::string DeviceProperty::MEMORY_FREE_SIZE = "MEMORY_FREE_SIZE";
 const std::string DeviceProperty::MEMORY_ALLOCATABLE_SIZE = "MEMORY_ALLOCATABLE_SIZE";
 const std::string DeviceProperty::MEMORY_HEALTH = "MEMORY_HEALTH";
+const std::string DeviceProperty::FIRMWARE_NAME = "FIRMWARE_NAME";
+const std::string DeviceProperty::FIRMWARE_VERSION = "FIRMWARE_VERSION";
