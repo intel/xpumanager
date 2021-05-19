@@ -60,7 +60,8 @@ void getDeviceList(void (*callback)(Device_t*), Api_result_t* api_result) {
   Core::instance().getDeviceManager()->getDeviceList(devices);
   for (auto& p_device : devices) {
     Device_t des;
-    des.device_id = p_device->getId().c_str();
+    std::string tmpId = p_device->getId();
+    des.device_id = tmpId.c_str();
     des.property_len = 0;
 
     std::vector<Property> properties;
