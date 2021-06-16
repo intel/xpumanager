@@ -5,6 +5,9 @@ import uuid
 def hex_format(v):
     return hex(int(v))
 
+def bytes2MiB(v):
+    return str(int(v)/(1024*1024))
+
 field_translation = {
     "TYPE": dict(name="Device Type"),
     "DEVICE_ID": dict(name="PCI Device Id"),
@@ -23,14 +26,14 @@ field_translation = {
     "NUM_SLICES": dict(name="Number of Slices"),
     "NUM_THREADS_PER_EU": dict(name="Number of Threads Per EU"),
     "PYSICAL_EU_SIMD_WIDTH": dict(name="Pysical EU SIMD Width"),
-    "SUB_DEVICE_ID": dict(name="Sub Device Id",format=hex_format),
+    "SUB_DEVICE_ID": dict(name="Sub Device Id"),
     "TIMER_RESOLUTION": dict(name="Timer Resolution"),
     "TIMESTAMP_VALID_BITS": dict(name="Timestamp Valid Bits"),
     "UUID": dict(name="UUID"),
     "VENDOR_ID": dict(name="PCI Vendor Id"),
     "KERNEL_TIMESTAMP_VALID_BITS": dict(name="Kernel Timestamp Valid Bits"),
     "FLAGS": dict(name="Flags"),
-    "MEMORY_PHYSICAL_SIZE": dict(name="Memory Physical Size", unit="Bytes"),
+    "MEMORY_PHYSICAL_SIZE": dict(name="Memory Physical Size",format=bytes2MiB, unit="MiB"),
     "MEMORY_FREE_SIZE": dict(name="Memory Free Size", unit="Bytes"),
     "MEMORY_ALLOCATABLE_SIZE": dict(name="Memory Allocatable Size", unit="Bytes", ignore=True),
     "MEMORY_HEALTH": dict(name="Memory Health"),
