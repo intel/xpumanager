@@ -1,5 +1,6 @@
 from ctypes import *
 import os
+import uuid
 
 def hex_format(v):
     return hex(int(v))
@@ -13,7 +14,7 @@ field_translation = {
     "NUM_SUB_DEVICES": dict(name="Number of Sub Devices"),
     "SERIAL_NUMBER": dict(name="Serial Number"),
     "VENDOR_NAME": dict(name="Vendor Name"),
-    "CORE_CLOCK_RATE": dict(name="Core Clock Rate"),
+    "CORE_CLOCK_RATE": dict(name="Core Clock Rate",unit="MHz"),
     "MAX_MEM_ALLOC_SIZE": dict(name="Max Mem Alloc Size",unit="Bytes"),
     "MAX_HARDWARE_CONTEXTS": dict(name="Max Hardware Contexts"),
     "MAX_COMMAND_QUEUE_PRIORITY": dict(name="Max Command Queue Priority"),
@@ -103,7 +104,7 @@ class DGMCore:
         def getDeviceCallback(device) :
             obj = {}
             # print(device.contents.device_id)
-            # obj["device_id"] = bytes.decode(device.contents.device_id)
+            obj["device_id"] = bytes.decode(device.contents.device_id)
             obj["properties"] = []
             count = device.contents.property_len
             if count > 0 :
@@ -120,13 +121,13 @@ class DGMCore:
                                 prop_value = d['format'](prop_value)
                             if 'unit' in d:
                                 prop_value+=" {}".format(d['unit'])
+                            if prop_name == "UUID":
+                                prop_value=str(uuid.UUID(prop_value))
                             sub[prop_name] = prop_value
                             obj["properties"].append(sub)
                     else:
                         sub[prop_name] = prop_value
                         obj["properties"].append(sub)
-                    if prop_name == "UUID":
-                        obj["device_id"] = prop_value
                     count = count - 1
                     if count == 0 : 
                         break

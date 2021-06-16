@@ -20,7 +20,7 @@ parser.add_argument('-l', '--list', action='store_true',
                     help='list all device')
 parser.add_argument('-i', '--immed', action='store_true',
                     help='get realtime measuring data')
-parser.add_argument('-d', '--device', help='specify a device by `UUID`')
+parser.add_argument('-d', '--device', help='specify a device by `GPU ID`')
 parser.add_argument('-f', '--freq', action='store_true',
                     help='get latest frequency of gpu')
 parser.add_argument('-p', '--power', action='store_true',
@@ -57,6 +57,22 @@ def arg():
     parser.print_help()
 
 
+def device_info_to_str(props):
+    info_list = []
+    order_list = [
+        "Device Type","Device Name","Brand Name","Serial Number","Vendor Name","UUID","PCI BDF address",None,
+        "Driver Version", "Firmware Name","Firmware Version",None,
+        "Memory Physical Size",None,
+        "Core Clock Rate", "available frequency", None,
+        "Number of Slices","Number of Sub Slices Per Sub Slice","Number of EUs Per Sub Slice"
+    ]
+    for k in order_list:
+        if k is None:
+            info_list.append("")
+        elif k in props.keys():
+            info_list.append(k+": "+props[k])
+    return "\n".join(info_list)
+
 def get_devices():
     res = requests.get(host+"/dgm/v1/devices")
 
@@ -67,14 +83,18 @@ def get_devices():
     data = res.json()
 
     for gpu in data:
-        print("GPU", gpu['device_id'])
+        # print("GPU", gpu['device_id'])
         x = PrettyTable()
 
-        x.field_names = ["Properties", "Value"]
+        props = dict()
+
         for p in gpu['properties']:
             for k, v in p.items():
-                x.add_row([k,v])
+                props[k]=v
         
+        x.field_names = ["GPU ID", "Device Information"]
+        x.add_row([gpu['device_id'],device_info_to_str(props)])
+
         x.align="l"
         print(x)
 

@@ -63,7 +63,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
       props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
       zesDeviceGetProperties(zes_Device, &props);
       if (props.core.type == ZE_DEVICE_TYPE_GPU) {
-        auto p_gpu = std::make_shared<GPUDevice>(to_string(props.core.uuid), capabilities);
+        // auto p_gpu = std::make_shared<GPUDevice>(to_string(props.core.uuid), capabilities);
+        auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), capabilities);
         p_gpu->addProperty(Property(DeviceProperty::TYPE,std::string("GPU")));
         p_gpu->addProperty(Property(DeviceProperty::DEVICE_ID,to_hex_string(props.core.deviceId)));
         p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
