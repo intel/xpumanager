@@ -1,5 +1,8 @@
 #include "shared_data.h"
 #include "raw_data_manager.h"
+#include "frequency_data_handler.h"
+#include "power_data_handler.h"
+#include "temperature_data_handler.h"
 
 RawDataManager::RawDataManager(std::shared_ptr<Persistency>& persistency) 
   : p_persistency(persistency) {
@@ -13,13 +16,13 @@ RawDataManager::~RawDataManager() {
 void RawDataManager::init() {
   std::unique_lock<std::mutex> lock(mutex);
   data_handlers[MeasurementType::POWER] = 
-    std::make_shared<DataHandler>(MeasurementType::POWER, p_persistency);    
+    std::make_shared<PowerDataHandler>(MeasurementType::POWER, p_persistency);    
   data_handlers[MeasurementType::POWER]->init();
   data_handlers[MeasurementType::FREQUENCY] = 
-    std::make_shared<DataHandler>(MeasurementType::FREQUENCY, p_persistency);    
+    std::make_shared<FrequencyDataHandler>(MeasurementType::FREQUENCY, p_persistency);    
   data_handlers[MeasurementType::FREQUENCY]->init();
   data_handlers[MeasurementType::TEMPERATURE] = 
-    std::make_shared<DataHandler>(MeasurementType::TEMPERATURE, p_persistency);    
+    std::make_shared<TemperatureDataHandler>(MeasurementType::TEMPERATURE, p_persistency);    
   data_handlers[MeasurementType::TEMPERATURE]->init();
 }
 

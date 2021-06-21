@@ -46,6 +46,8 @@ private:
 
   static std::string get_health_state_string(zes_mem_health_t val);
 
+  static std::string to_string(zes_pci_address_t address);
+
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;
   

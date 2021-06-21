@@ -68,4 +68,6 @@ class DeviceProperty {
 
     static const std::string FIRMWARE_VERSION;
 
+    static const std::string BDF_ADDRESS;
+
 };

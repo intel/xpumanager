@@ -6,9 +6,9 @@
 DataHandler::DataHandler(MeasurementType type,
                          std::shared_ptr<Persistency>& p_persistency)
     : type(type),
-      stop(false),
-      p_latestData(nullptr),
       p_persistency(p_persistency) {
+  stop = false;
+  p_latestData = nullptr;
 }
 
 DataHandler::~DataHandler() {

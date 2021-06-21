@@ -10,32 +10,32 @@
 #include "measurement_type.h"
 
 class DataHandler : public std::enable_shared_from_this<DataHandler> {
- public:
-  DataHandler(MeasurementType type, std::shared_ptr<Persistency>& p_persistency);
+public:
+  DataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 
   virtual ~DataHandler();
 
   void init();
 
-  void close(); 
+  void close();
 
-  void handleData(std::shared_ptr<SharedData>& p_data) noexcept;
-  
-  MeasurementData getLatestData(std::string& device_id) noexcept;
+  virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
 
-  void getLatestData(std::map<std::string, MeasurementData>& datas) noexcept;
+  virtual MeasurementData getLatestData(std::string &device_id) noexcept;
 
- private:
-  MeasurementType type;
+  virtual void getLatestData(std::map<std::string, MeasurementData> &datas) noexcept;
+
+protected:
+  std::mutex mutex;
+
+  std::shared_ptr<SharedData> p_latestData;
 
   SharedQueue<std::shared_ptr<SharedData>> q;
 
+private:
+  MeasurementType type;
+
   std::atomic<bool> stop;
 
-  std::shared_ptr<SharedData> p_latestData; 
-
   std::shared_ptr<Persistency> p_persistency;
-
-  std::mutex  mutex;
-  
 };

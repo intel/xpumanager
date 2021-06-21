@@ -7,6 +7,7 @@ class Configuration {
   static int DEVICE_THREAD_POOL_SIZE;
   static int FREQUENCY_MONITOR_FREQUENCE;
   static int TEMPERATURE_MONITOR_FREQUENCE;
+  static int DATA_HANDLER_CACHE_TIME_LIMIT;
 
  public:
   static void init() {    

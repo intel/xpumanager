@@ -32,3 +32,4 @@ const std::string DeviceProperty::MEMORY_ALLOCATABLE_SIZE = "MEMORY_ALLOCATABLE_
 const std::string DeviceProperty::MEMORY_HEALTH = "MEMORY_HEALTH";
 const std::string DeviceProperty::FIRMWARE_NAME = "FIRMWARE_NAME";
 const std::string DeviceProperty::FIRMWARE_VERSION = "FIRMWARE_VERSION";
+const std::string DeviceProperty::BDF_ADDRESS = "BDF ADDRESS";

@@ -91,6 +91,13 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
         p_gpu->addProperty(Property(DeviceProperty::KERNEL_TIMESTAMP_VALID_BITS,std::to_string(props.core.kernelTimestampValidBits)));
         p_gpu->addProperty(Property(DeviceProperty::FLAGS,std::to_string(props.core.flags)));
 
+        zes_pci_properties_t pci_props;
+        res = zesDevicePciGetProperties(device, &pci_props);
+        if (res == ZE_RESULT_SUCCESS) {
+          p_gpu->addProperty(Property(DeviceProperty::BDF_ADDRESS,to_string(pci_props.address)));
+        }
+
+
         uint32_t mem_module_count = 0;
         res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
         std::vector<zes_mem_handle_t> mems(mem_module_count);
@@ -167,9 +174,20 @@ std::string GPUDeviceStub::to_string(ze_device_uuid_t val) {
   return os.str();
 }
 
+std::string GPUDeviceStub::to_string(zes_pci_address_t address) {
+  std::ostringstream os;
+  os << std::setfill('0') << std::setw(4) << std::hex
+     << address.domain << std::string(":")
+     << std::setw(2)
+     << address.bus << std::string(":")
+     << address.device << std::string(".")
+     << address.function;
+  return os.str();
+}
+
 std::string GPUDeviceStub::to_hex_string(uint32_t val) {
   std::stringstream s;
-  s << std::hex << val << std::dec;
+  s << std::string("0x") << std::hex << val << std::dec;
   return s.str();
 }
 
