@@ -6,8 +6,7 @@ import json
 import pprint
 import requests
 
-# from texttable import Texttable
-from prettytable import PrettyTable
+from texttable import Texttable
 
 import os
 
@@ -29,9 +28,22 @@ parser.add_argument('-t', '--temp', action='store_true',
                     help='get latest temperature of gpu')
 
 
+class PrintTable:
+    _t = Texttable()
+
+    def __init__(self, headers):
+        self.headers = headers
+        self._t.add_row(headers)
+
+    def add_row(self, row):
+        self._t.add_row(row)
+
+    def print(self):
+        print(self._t.draw())
+
+
 def arg():
     parsed = parser.parse_args()
-    # print(parsed)
     if parsed.list:
         get_devices()
         return
@@ -53,18 +65,18 @@ def arg():
         else:
             print("Param error: device_id need be specified")
         return
-    
+
     parser.print_help()
 
 
 def device_info_to_str(props):
     info_list = []
     order_list = [
-        "Device Type","Device Name","Brand Name","Serial Number","Vendor Name","UUID","PCI BDF address",None,
-        "Driver Version", "Firmware Name","Firmware Version",None,
-        "Memory Physical Size",None,
+        "Device Type", "Device Name", "Brand Name", "Serial Number", "Vendor Name", "UUID", "BDF Address", None,
+        "Driver Version", "Firmware Name", "Firmware Version", None,
+        "Memory Physical Size", None,
         "Core Clock Rate", "available frequency", None,
-        "Number of Slices","Number of Sub Slices Per Sub Slice","Number of EUs Per Sub Slice"
+        "Number of Slices", "Number of Sub Slices Per Sub Slice", "Number of EUs Per Sub Slice"
     ]
     for k in order_list:
         if k is None:
@@ -72,6 +84,7 @@ def device_info_to_str(props):
         elif k in props.keys():
             info_list.append(k+": "+props[k])
     return "\n".join(info_list)
+
 
 def get_devices():
     res = requests.get(host+"/dgm/v1/devices")
@@ -82,59 +95,67 @@ def get_devices():
 
     data = res.json()
 
+    t = PrintTable(["GPU ID", "Device Information"])
+
     for gpu in data:
-        # print("GPU", gpu['device_id'])
-        x = PrettyTable()
 
         props = dict()
 
         for p in gpu['properties']:
             for k, v in p.items():
-                props[k]=v
-        
-        x.field_names = ["GPU ID", "Device Information"]
-        x.add_row([gpu['device_id'],device_info_to_str(props)])
+                props[k] = v
 
-        x.align="l"
-        print(x)
+        t.add_row([gpu['device_id'], device_info_to_str(props)])
+
+    t.print()
 
 
 def get_temp(deviceId, realtime=False):
     data = get_measurement(deviceId, "temp", realtime)
+    temp_dict = data['temp']
 
-    x = PrettyTable()
+    t = PrintTable(["Temp", "Value(°C)"])
 
-    x.field_names = ["Temp", "Value(°C)"]
-    for k,v in data['temp'].items():
-        x.add_row([k,v])
-    
-    x.align="l"
-    print(x)
+    if realtime:
+        t.add_row(["current",temp_dict["current"]])
+    else:
+        ks = temp_dict.keys()
+        vs = [str(i) for i in temp_dict.values()]
+        t.add_row(["\n".join(ks), "\n".join(vs)])
+
+    t.print()
+
 
 def get_power(deviceId, realtime=False):
     data = get_measurement(deviceId, "power", realtime)
+    power_dict = data['power']
 
-    x = PrettyTable()
+    t = PrintTable(["Power", "Value(W)"])
 
-    x.field_names = ["Power", "Value(W)"]
-    for k,v in data['power'].items():
-        x.add_row([k,v])
-    
-    x.align="l"
-    print(x)
+    if realtime:
+        t.add_row(["current",power_dict["current"]])
+    else:
+        ks = power_dict.keys()
+        vs = [str(i) for i in power_dict.values()]
+        t.add_row(["\n".join(ks), "\n".join(vs)])
+
+    t.print()
 
 
 def get_frequency(deviceId, realtime=False):
     data = get_measurement(deviceId, "frequency", realtime)
-
-    x = PrettyTable()
-
-    x.field_names = ["Frequency", "Value(MHz)"]
-    for k,v in data['frequency'].items():
-        x.add_row([k,v])
+    freq_dict = data['frequency']
     
-    x.align="l"
-    print(x)
+    t = PrintTable(["Frequency", "Value(MHz)"])
+
+    if realtime:
+        t.add_row(["current",freq_dict["current"]])
+    else:
+        ks = freq_dict.keys()
+        vs = [str(i) for i in freq_dict.values()]
+        t.add_row(["\n".join(ks), "\n".join(vs)])
+
+    t.print()
 
 
 def get_measurement(deviceId, measurementType, realtime=False):

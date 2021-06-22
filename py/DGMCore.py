@@ -39,7 +39,8 @@ field_translation = {
     "MEMORY_HEALTH": dict(name="Memory Health"),
     "FIRMWARE_NAME": dict(name="Firmware Name"),
     "FIRMWARE_VERSION": dict(name="Firmware Version"),
-    "NUM_SUB_SLICES_PER_SLICE": dict(name="Number of Sub Slices Per Sub Slice")
+    "NUM_SUB_SLICES_PER_SLICE": dict(name="Number of Sub Slices Per Sub Slice"),
+    "BDF ADDRESS": dict(name="BDF Address")
 }
 
 class APIResult(Structure):
