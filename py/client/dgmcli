@@ -72,7 +72,7 @@ def arg():
 def device_info_to_str(props):
     info_list = []
     order_list = [
-        "Device Type", "Device Name", "Brand Name", "Serial Number", "Vendor Name", "UUID", "BDF Address", None,
+        "Device Type", "Device Name", "Brand Name", "Serial Number", "Vendor Name", "UUID", "PCI BDF Address", None,
         "Driver Version", "Firmware Name", "Firmware Version", None,
         "Memory Physical Size", None,
         "Core Clock Rate", "available frequency", None,

@@ -40,7 +40,7 @@ field_translation = {
     "FIRMWARE_NAME": dict(name="Firmware Name"),
     "FIRMWARE_VERSION": dict(name="Firmware Version"),
     "NUM_SUB_SLICES_PER_SLICE": dict(name="Number of Sub Slices Per Sub Slice"),
-    "BDF ADDRESS": dict(name="BDF Address")
+    "BDF ADDRESS": dict(name="PCI BDF Address")
 }
 
 class APIResult(Structure):
