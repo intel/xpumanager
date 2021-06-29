@@ -26,6 +26,8 @@ class Device {
 
   virtual void getTemperature(Callback_t callback) noexcept = 0;
 
+  virtual void getMemory(Callback_t callback) noexcept = 0;
+
   void addCapability(DeviceCapability& capability);
 
   void removeCapability(DeviceCapability& capability); 

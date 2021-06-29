@@ -3,5 +3,6 @@
 enum MeasurementType {
     POWER = 0,
     FREQUENCY,
-    TEMPERATURE
+    TEMPERATURE,
+    MEMORY
 };

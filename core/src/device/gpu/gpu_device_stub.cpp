@@ -42,6 +42,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
   capabilities.push_back(DeviceCapability::POWER);
   capabilities.push_back(DeviceCapability::FREQUENCY);
   capabilities.push_back(DeviceCapability::TEMPERATURE);
+  capabilities.push_back(DeviceCapability::MEMORY);
   
   uint32_t driver_count = 0;
   ze_result_t res;
@@ -97,31 +98,40 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
           p_gpu->addProperty(Property(DeviceProperty::BDF_ADDRESS,to_string(pci_props.address)));
         }
 
-
+        uint64_t physical_size = 0;
+        uint64_t free_size = 0;
         uint32_t mem_module_count = 0;
+        zes_mem_health_t memory_health = ZES_MEM_HEALTH_OK;
         res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
         std::vector<zes_mem_handle_t> mems(mem_module_count);
         res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
         if (res == ZE_RESULT_SUCCESS) {
           for (auto& mem:mems) {
+            uint64_t mem_module_physical_size = 0;
             zes_mem_properties_t props;
             props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
             res = zesMemoryGetProperties(mem, &props);
             if (res == ZE_RESULT_SUCCESS) {
-              p_gpu->addProperty(Property(DeviceProperty::MEMORY_PHYSICAL_SIZE,std::to_string(props.physicalSize)));
+              mem_module_physical_size = props.physicalSize;
             }
+            
             zes_mem_state_t sysman_memory_state = {};
             sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
             res = zesMemoryGetState(mem,&sysman_memory_state);
             if (res == ZE_RESULT_SUCCESS) {
               if (props.physicalSize == 0) {
-                p_gpu->addProperty(Property(DeviceProperty::MEMORY_PHYSICAL_SIZE,std::to_string(sysman_memory_state.size)));
+                mem_module_physical_size = sysman_memory_state.size;
               }
-              p_gpu->addProperty(Property(DeviceProperty::MEMORY_FREE_SIZE,std::to_string(sysman_memory_state.free)));
-              /*p_gpu->addProperty(Property(DeviceProperty::MEMORY_ALLOCATABLE_SIZE,std::to_string(sysman_memory_state.size)));*/
-              p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(sysman_memory_state.health)));
+              physical_size += mem_module_physical_size;
+              free_size += sysman_memory_state.free;
+              if (sysman_memory_state.health != zes_mem_health_t::ZES_MEM_HEALTH_OK) {
+                memory_health = sysman_memory_state.health;
+              }
             }
           }
+          p_gpu->addProperty(Property(DeviceProperty::MEMORY_PHYSICAL_SIZE,std::to_string(physical_size)));
+          p_gpu->addProperty(Property(DeviceProperty::MEMORY_FREE_SIZE,std::to_string(free_size)));
+          p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(memory_health)));
         }
 
         uint32_t firmware_count = 0;
@@ -275,6 +285,46 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const std::stri
     }
   }
   throw BaseException("toGetTemperature error");
+}
+
+void GPUDeviceStub::getMemory(const std::string& device_id, Callback_t callback) noexcept{
+  p_thread_pool->addTask(callback, toGetMemory, device_id);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const std::string& device_id) {
+  auto device = getDeviceById(device_id);
+  uint64_t physical_size = 0;
+  uint64_t free_size = 0;
+  uint32_t mem_module_count = 0;
+  ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_mem_handle_t> mems(mem_module_count);
+    res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+    if (res == ZE_RESULT_SUCCESS) {
+      for (auto& mem:mems) {
+        uint64_t mem_module_physical_size = 0;
+        zes_mem_properties_t props;
+        props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+        res = zesMemoryGetProperties(mem, &props);
+        if (res == ZE_RESULT_SUCCESS) {
+          mem_module_physical_size = props.physicalSize;
+        }
+        
+        zes_mem_state_t sysman_memory_state = {};
+        sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+        res = zesMemoryGetState(mem,&sysman_memory_state);
+        if (res == ZE_RESULT_SUCCESS) {
+          if (props.physicalSize == 0) {
+            mem_module_physical_size = sysman_memory_state.size;
+          }
+          physical_size += mem_module_physical_size;
+          free_size += sysman_memory_state.free;
+        }
+      }
+      return std::make_shared<MeasurementData>(physical_size - free_size);
+    }
+  }
+  throw BaseException("toGetMemory error");
 }
 
 zes_device_handle_t GPUDeviceStub::getDeviceById(std::string id) {

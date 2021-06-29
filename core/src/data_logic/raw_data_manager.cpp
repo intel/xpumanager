@@ -3,6 +3,7 @@
 #include "frequency_data_handler.h"
 #include "power_data_handler.h"
 #include "temperature_data_handler.h"
+#include "memory_data_handler.h"
 
 RawDataManager::RawDataManager(std::shared_ptr<Persistency>& persistency) 
   : p_persistency(persistency) {
@@ -24,6 +25,9 @@ void RawDataManager::init() {
   data_handlers[MeasurementType::TEMPERATURE] = 
     std::make_shared<TemperatureDataHandler>(MeasurementType::TEMPERATURE, p_persistency);    
   data_handlers[MeasurementType::TEMPERATURE]->init();
+  data_handlers[MeasurementType::MEMORY] = 
+    std::make_shared<MemoryDataHandler>(MeasurementType::MEMORY, p_persistency);    
+  data_handlers[MeasurementType::MEMORY]->init();
 }
 
 void RawDataManager::close() {
