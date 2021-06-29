@@ -48,6 +48,8 @@ private:
 
   static std::string to_string(zes_pci_address_t address);
 
+  static zes_device_handle_t getDeviceById(std::string Id);
+
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;
   

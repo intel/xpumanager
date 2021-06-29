@@ -196,22 +196,25 @@ void GPUDeviceStub::getPower(const std::string& device_id, Callback_t callback) 
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const std::string& device_id) {
-  for (auto& device : instance().zes_devices) {
-    uint32_t power_domain_count = 0;
-    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
-    std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
-    if (res == ZE_RESULT_SUCCESS) {
-      for (auto& power:power_handles) {
-        zes_power_energy_counter_t snap1,snap2;
-        res = zesPowerGetEnergyCounter(power, &snap1);
-        if (res == ZE_RESULT_SUCCESS) {
-          std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
-          res = zesPowerGetEnergyCounter(power, &snap2);
-          if (res == ZE_RESULT_SUCCESS) {
-            return std::make_shared<MeasurementData>((snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp));
-          }
-        } 
+  auto device = getDeviceById(device_id);
+  uint32_t power_domain_count = 0;
+  ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+  std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+  res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+  if (res == ZE_RESULT_SUCCESS)
+  {
+    for (auto &power : power_handles)
+    {
+      zes_power_energy_counter_t snap1, snap2;
+      res = zesPowerGetEnergyCounter(power, &snap1);
+      if (res == ZE_RESULT_SUCCESS)
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
+        res = zesPowerGetEnergyCounter(power, &snap2);
+        if (res == ZE_RESULT_SUCCESS)
+        {
+          return std::make_shared<MeasurementData>((snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp));
+        }
       }
     }
   }
@@ -223,18 +226,20 @@ void GPUDeviceStub::getActuralFrequency(const std::string& device_id, Callback_t
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const std::string& device_id) {
-  for (auto& device : instance().zes_devices) {
-    uint32_t freq_count = 0;
-    ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
-    std::vector<zes_freq_handle_t> freq_handles(freq_count);
-    if (res == ZE_RESULT_SUCCESS) {
-      res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
-      for (auto& ph_freq:freq_handles) {
-        zes_freq_state_t freq_state;
-        res = zesFrequencyGetState(ph_freq,&freq_state);
-        if (res == ZE_RESULT_SUCCESS) {
-          return std::make_shared<MeasurementData>(freq_state.actual);
-        }
+  auto device = getDeviceById(device_id);
+  uint32_t freq_count = 0;
+  ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+  std::vector<zes_freq_handle_t> freq_handles(freq_count);
+  if (res == ZE_RESULT_SUCCESS)
+  {
+    res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+    for (auto &ph_freq : freq_handles)
+    {
+      zes_freq_state_t freq_state;
+      res = zesFrequencyGetState(ph_freq, &freq_state);
+      if (res == ZE_RESULT_SUCCESS)
+      {
+        return std::make_shared<MeasurementData>(freq_state.actual);
       }
     }
   }
@@ -246,25 +251,49 @@ void GPUDeviceStub::getTemperature(const std::string& device_id, Callback_t call
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const std::string& device_id) {
-  for (auto& device : instance().zes_devices) {
-    uint32_t temp_sensor_count = 0;
-    ze_result_t res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr);
-    std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
-    if (res == ZE_RESULT_SUCCESS) {
-      res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data());
-      for (auto& temp:temp_sensors) {
-        zes_temp_properties_t props;
-        res = zesTemperatureGetProperties(temp,&props);
-        if (res != ZE_RESULT_SUCCESS || props.type != ZES_TEMP_SENSORS_GPU) {
-          continue;
-        }
-        double temp_val = 0;
-        res = zesTemperatureGetState(temp,&temp_val);
-        if (res == ZE_RESULT_SUCCESS) {
-          return std::make_shared<MeasurementData>(temp_val);
-        }
+  auto device = getDeviceById(device_id);
+  uint32_t temp_sensor_count = 0;
+  ze_result_t res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr);
+  std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
+  if (res == ZE_RESULT_SUCCESS)
+  {
+    res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data());
+    for (auto &temp : temp_sensors)
+    {
+      zes_temp_properties_t props;
+      res = zesTemperatureGetProperties(temp, &props);
+      if (res != ZE_RESULT_SUCCESS || props.type != ZES_TEMP_SENSORS_GPU)
+      {
+        continue;
+      }
+      double temp_val = 0;
+      res = zesTemperatureGetState(temp, &temp_val);
+      if (res == ZE_RESULT_SUCCESS)
+      {
+        return std::make_shared<MeasurementData>(temp_val);
       }
     }
   }
   throw BaseException("toGetTemperature error");
+}
+
+zes_device_handle_t GPUDeviceStub::getDeviceById(std::string id) {
+  int int_id = -1;
+  try {
+    int_id = std::stoi(id);
+  } catch (const std::invalid_argument &ia) {
+    return nullptr;
+  }
+
+  int index = 0;
+  for (auto &device : instance().zes_devices)
+  {
+    if (int_id == index)
+    {
+      return device;
+    }
+    index++;
+  }
+
+  return nullptr;
 }
