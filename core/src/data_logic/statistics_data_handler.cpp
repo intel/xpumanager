@@ -17,15 +17,17 @@ void StatisticsDataHandler::getCacheMinMaxAvg(std::string& device_id, int& min, 
   int count = 0;
   std::deque<std::shared_ptr<SharedData>>::const_iterator iter = cache.begin();
   while (iter != cache.end()) {
-    int data = (*iter)->getData()[device_id].getCurrent();
-    if (data > temp_max) {
-      temp_max = data;
+    if ((*iter)->getData().find(device_id) != (*iter)->getData().end()) {
+      int data = (*iter)->getData()[device_id].getCurrent();
+      if (data > temp_max) {
+        temp_max = data;
+      }
+      if (data < temp_min) {
+        temp_min = data;
+      }
+      accumated += data;
+      count++;
     }
-    if (data < temp_min) {
-      temp_min = data;
-    }
-    accumated += data;
-    count++;
     iter++;
   }
   if (temp_max != std::numeric_limits<int>::min()) {

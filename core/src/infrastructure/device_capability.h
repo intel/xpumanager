@@ -4,5 +4,6 @@ enum class DeviceCapability : int {
     POWER,
     FREQUENCY,
     TEMPERATURE,
-    MEMORY
+    MEMORY,
+    ENGINE_UTILIZATION
 };

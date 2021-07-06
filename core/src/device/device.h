@@ -28,6 +28,8 @@ class Device {
 
   virtual void getMemory(Callback_t callback) noexcept = 0;
 
+  virtual void getEngineUtilization(Callback_t callback) noexcept = 0;
+
   void addCapability(DeviceCapability& capability);
 
   void removeCapability(DeviceCapability& capability); 

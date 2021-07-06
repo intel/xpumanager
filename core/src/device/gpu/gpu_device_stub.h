@@ -23,6 +23,8 @@ class GPUDeviceStub {
 
   void getMemory(const std::string& device_id, Callback_t callback) noexcept;
 
+  void getEngineUtilization(const std::string& device_id, Callback_t callback) noexcept;
+
 private:
   GPUDeviceStub();
 
@@ -43,6 +45,8 @@ private:
   static std::shared_ptr<MeasurementData> toGetTemperature(const std::string& device_id);
 
   static std::shared_ptr<MeasurementData> toGetMemory(const std::string& device_id);
+
+  static std::shared_ptr<MeasurementData> toGetEngineUtilization(const std::string& device_id);
 
   static std::string to_string(ze_device_uuid_t val);
 

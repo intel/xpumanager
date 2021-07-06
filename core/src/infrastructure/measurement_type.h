@@ -4,5 +4,6 @@ enum MeasurementType {
     POWER = 0,
     FREQUENCY,
     TEMPERATURE,
-    MEMORY
+    MEMORY,
+    ENGINE_UTILIZATION
 };

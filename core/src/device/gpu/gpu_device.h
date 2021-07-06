@@ -14,5 +14,6 @@ class GPUDevice : public Device {
   void getActuralFrequency(Callback_t callback) noexcept override;
   void getTemperature(Callback_t callback) noexcept override;
   void getMemory(Callback_t callback) noexcept override;
+  void getEngineUtilization(Callback_t callback) noexcept override;
 
 };

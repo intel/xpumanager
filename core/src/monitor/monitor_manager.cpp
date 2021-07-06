@@ -40,5 +40,7 @@ void MonitorManager::createMonitorTasks() {
     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
   tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::MEMORY, 
     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::ENGINE_UTILIZATION, 
+    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
 }
 

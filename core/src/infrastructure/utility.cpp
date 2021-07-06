@@ -39,6 +39,8 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
     return  MeasurementType::TEMPERATURE;
   case DeviceCapability::MEMORY:
     return  MeasurementType::MEMORY;
+  case DeviceCapability::ENGINE_UTILIZATION:
+    return  MeasurementType::ENGINE_UTILIZATION;
   default:
     return MeasurementType::POWER;
   }
@@ -54,6 +56,8 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
     return  DeviceCapability::TEMPERATURE;
   case MeasurementType::MEMORY:
     return  DeviceCapability::MEMORY;
+  case MeasurementType::ENGINE_UTILIZATION:
+    return  DeviceCapability::ENGINE_UTILIZATION;
   default:
     return DeviceCapability::POWER;
   }
@@ -65,6 +69,7 @@ std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capab
     case DeviceCapability::FREQUENCY: return [p_device](Callback_t callback){ p_device->getActuralFrequency(callback); };
     case DeviceCapability::TEMPERATURE: return [p_device](Callback_t callback){ p_device->getTemperature(callback); };
     case DeviceCapability::MEMORY: return [p_device](Callback_t callback){ p_device->getMemory(callback); };
+    case DeviceCapability::ENGINE_UTILIZATION: return [p_device](Callback_t callback){ p_device->getEngineUtilization(callback); };
     default:
       break;
     }

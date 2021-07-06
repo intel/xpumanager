@@ -7,6 +7,7 @@
 #include "device_type.h"
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
 
 GPUDeviceStub::GPUDeviceStub() : p_thread_pool(nullptr), initialized(false) {
   Logger::instance().info("GPUDeviceStub()");
@@ -43,6 +44,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
   capabilities.push_back(DeviceCapability::FREQUENCY);
   capabilities.push_back(DeviceCapability::TEMPERATURE);
   capabilities.push_back(DeviceCapability::MEMORY);
+  capabilities.push_back(DeviceCapability::ENGINE_UTILIZATION);
   
   uint32_t driver_count = 0;
   ze_result_t res;
@@ -325,6 +327,41 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const std::string& d
     }
   }
   throw BaseException("toGetMemory error");
+}
+
+void GPUDeviceStub::getEngineUtilization(const std::string& device_id, Callback_t callback) noexcept{
+  p_thread_pool->addTask(callback, toGetEngineUtilization, device_id);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const std::string& device_id) {
+  auto device = getDeviceById(device_id);
+  uint32_t engineCount = 0;
+  ze_result_t res = zesDeviceEnumEngineGroups(device, &engineCount, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_engine_handle_t> engines(engineCount);
+    std::vector<uint64_t> utilizations(engineCount);
+    res = zesDeviceEnumEngineGroups(device, &engineCount, engines.data());
+    if (res == ZE_RESULT_SUCCESS) {
+      for (auto &engine : engines) {
+        zes_engine_stats_t snap1 = {};
+        zes_engine_stats_t snap2 = {};
+        res = zesEngineGetActivity(engine, &snap1);
+        if (res == ZE_RESULT_SUCCESS) {
+          std::this_thread::sleep_for(std::chrono::microseconds(Configuration::ENGINE_STATE_MONITOR_INTERNAL_PERIOD));
+          res = zesEngineGetActivity(engine, &snap2);
+          if (res == ZE_RESULT_SUCCESS) {
+            uint64_t val = 100 * (snap2.activeTime  - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
+            if (val > 100) {
+              val = 100;
+            }
+            utilizations.push_back(val);
+          }
+        }
+      }
+      return std::make_shared<MeasurementData>(*std::max_element(utilizations.begin(), utilizations.end()));
+    }
+  }
+  throw BaseException("toGetEngineUtilization error");
 }
 
 zes_device_handle_t GPUDeviceStub::getDeviceById(std::string id) {

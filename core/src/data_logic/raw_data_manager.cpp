@@ -4,6 +4,7 @@
 #include "power_data_handler.h"
 #include "temperature_data_handler.h"
 #include "memory_data_handler.h"
+#include "engine_utilization_data_handler.h"
 
 RawDataManager::RawDataManager(std::shared_ptr<Persistency>& persistency) 
   : p_persistency(persistency) {
@@ -19,15 +20,22 @@ void RawDataManager::init() {
   data_handlers[MeasurementType::POWER] = 
     std::make_shared<PowerDataHandler>(MeasurementType::POWER, p_persistency);    
   data_handlers[MeasurementType::POWER]->init();
+
   data_handlers[MeasurementType::FREQUENCY] = 
     std::make_shared<FrequencyDataHandler>(MeasurementType::FREQUENCY, p_persistency);    
   data_handlers[MeasurementType::FREQUENCY]->init();
+
   data_handlers[MeasurementType::TEMPERATURE] = 
     std::make_shared<TemperatureDataHandler>(MeasurementType::TEMPERATURE, p_persistency);    
   data_handlers[MeasurementType::TEMPERATURE]->init();
+
   data_handlers[MeasurementType::MEMORY] = 
     std::make_shared<MemoryDataHandler>(MeasurementType::MEMORY, p_persistency);    
   data_handlers[MeasurementType::MEMORY]->init();
+  
+  data_handlers[MeasurementType::ENGINE_UTILIZATION] = 
+    std::make_shared<EngineUtilizationDataHandler>(MeasurementType::ENGINE_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::ENGINE_UTILIZATION]->init();
 }
 
 void RawDataManager::close() {
