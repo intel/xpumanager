@@ -20,15 +20,17 @@ def get_devices():
 
 @app.route('/dgm/v1/devices/<string:deviceId>/measurements', methods=['GET'])
 def get_measurement(deviceId):
-    measurementType = request.args.get("type", "")
+    measurementType = request.args.get("type", 0)
     realtime = request.args.get("realtime", False)
 
-    if measurementType == "power":
-        measurementTypeInt = 0
-    elif measurementType == "frequency":
-        measurementTypeInt = 1
+    if isinstance(measurementType, int):
+        measurementTypeInt = measurementType
+    elif isinstance(measurementType, str):
+        measurementTypeInt = int(measurementType)
     else:
-        measurementTypeInt = 2
+        measurementTypeInt = 0
+
+    measurementTypeStr = ["power","frequency","temp","memory","engine"]
         
     if realtime:
         data = core.getRealtimeMeasurementData(deviceId, measurementTypeInt)
@@ -37,7 +39,7 @@ def get_measurement(deviceId):
 
     measurement = {
         "id": deviceId,
-        measurementType: data
+       measurementTypeStr[measurementTypeInt]: data
     }
     return jsonify(measurement)
 
