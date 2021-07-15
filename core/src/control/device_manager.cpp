@@ -134,3 +134,28 @@ std::shared_ptr<Device> DeviceManager::getDevice(const std::string& id) {
 
   return nullptr;    
 }
+
+void DeviceManager::getDeviceSchedulers(const std::string &id, std::vector<Scheduler>& schedulers) {
+  GPUDeviceStub::instance().getSchedulers(id,schedulers);
+}
+
+void DeviceManager::getDeviceStandbys(const std::string& id, std::vector<Standby>& standbys) {
+  GPUDeviceStub::instance().getStandbys(id,standbys);
+}
+
+void DeviceManager::getDevicePowerProps(const std::string& id, std::vector<Power>& powers) {
+  GPUDeviceStub::instance().getPowerProps(id,powers);
+}
+
+void DeviceManager::getDevicePowerLimits(const std::string& id,
+                                         Power_sustained_limit_t& sustained_limit,
+                                         Power_burst_limit_t& burst_limit,
+                                         Power_peak_limit_t& peak_limit) {
+  GPUDeviceStub::instance().getPowerLimits(id, sustained_limit, burst_limit, peak_limit);
+}
+
+void DeviceManager::getDeviceFrequencyRange(const std::string& id,
+                                            double& min,
+                                            double& max) {
+  GPUDeviceStub::instance().getFrequencyRange(id, min, max);
+}

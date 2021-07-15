@@ -37,6 +37,29 @@ void convertMeasurementData(MeasurementData&src, Measurement_data_t& des) {
   des.scale = src.getScale();
 } 
 
+void convertScheduleData(Scheduler& src, Scheduler_data_t& des) {
+  des.engine_types = (Engine_type_flags_t)src.getEngineTypes();
+  des.supported_modes = (Scheduler_mode_t)src.getSupportedModes();
+  des.mode = (Scheduler_mode_t)src.getCurrentMode();
+} 
+
+void convertStandbyData(Standby& src, Standby_data_t& des) {
+  des.type = (Standby_type_t)src.getType();
+  des.mode = (Standby_mode_t)src.getMode();
+  des.on_subdevice = src.onSubdevice();
+  des.subdevice_Id = src.getSubdeviceId();
+}
+
+void convertPowerPropData(Power& src, Power_prop_data_t& des) {
+  des.can_control = src.canControl();
+  des.on_subdevice = src.onSubdevice();
+  des.subdevice_Id = src.getSubdeviceId();
+  des.is_energy_threshold_supported = src.isEnergyThresholdSupported();
+  des.default_limit = src.getDefaultLimit();
+  des.min_limit = src.getMinLimit();
+  des.max_limit = src.getMaxLimit();
+}
+
 bool init() {
   try {
     Core::instance().init();
@@ -110,6 +133,93 @@ void getRealtimeMeasurementData(const char* device_id, MeasurementType type,
   Measurement_data_t ret_data;
   convertMeasurementData(data, ret_data);
   callback(&ret_data);
+
+  setResultOK(api_result);
+}
+
+void getDeviceSchedulers(const char* device_id,
+                         void (*callback)(Scheduler_data_t*),
+                         Api_result_t* api_result) {
+  if (!validPrerequisite((void*)callback, api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  std::vector<Scheduler> schedulers;
+  Core::instance().getDeviceManager()->getDeviceSchedulers(device_id_str, schedulers);
+  for (auto& sche : schedulers) {
+    Scheduler_data_t ret_data;
+    convertScheduleData(sche,ret_data);
+    callback(&ret_data);
+  }
+
+  setResultOK(api_result);
+}
+
+void getDeviceStandbys(const char* device_id,
+                       void (*callback)(Standby_data_t*),
+                       Api_result_t* api_result) {
+  if (!validPrerequisite((void*)callback, api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  std::vector<Standby> standbys;
+  Core::instance().getDeviceManager()->getDeviceStandbys(device_id_str, standbys);
+  for (auto& standby : standbys) {
+    Standby_data_t ret_data;
+    convertStandbyData(standby,ret_data);
+    callback(&ret_data);
+  }
+
+  setResultOK(api_result);
+}
+
+void getDevicePowerProps(const char* device_id,
+                         void (*callback)(Power_prop_data_t*),
+                         Api_result_t* api_result) {
+  if (!validPrerequisite((void*)callback, api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  std::vector<Power> powers;
+  Core::instance().getDeviceManager()->getDevicePowerProps(device_id_str, powers);
+  for (auto& power : powers) {
+    Power_prop_data_t ret_data;
+    convertPowerPropData(power,ret_data);
+    callback(&ret_data);
+  }
+
+  setResultOK(api_result);
+}
+
+void getDevicePowerLimits(const char* device_id,
+                          void (*callback)(Power_limits_t*),
+                          Api_result_t* api_result) {
+  if (!validPrerequisite((void*)callback, api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  Power_limits_t limits;
+  Core::instance().getDeviceManager()->getDevicePowerLimits(device_id_str, limits.sustained_limit, limits.burst_limit, limits.peak_limit);
+  callback(&limits);
+
+  setResultOK(api_result);
+}
+
+void getDeviceFrequencyRange(const char* device_id,
+                             void (*callback)(Frequency_range_t*),
+                             Api_result_t* api_result) {
+  if (!validPrerequisite((void*)callback, api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  Frequency_range_t range;
+  Core::instance().getDeviceManager()->getDeviceFrequencyRange(device_id_str, range.min, range.max);
+  callback(&range);
 
   setResultOK(api_result);
 }

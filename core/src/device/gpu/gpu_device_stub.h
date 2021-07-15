@@ -7,6 +7,9 @@
 #include "thread_pool.h"
 #include "ze_api.h"
 #include "zes_api.h"
+#include "scheduler.h"
+#include "standby.h"
+#include "power.h"
 
 class GPUDeviceStub {
  public:
@@ -25,6 +28,20 @@ class GPUDeviceStub {
 
   void getEngineUtilization(const std::string& device_id, Callback_t callback) noexcept;
 
+  static void getSchedulers(std::string device_id, std::vector<Scheduler>& schedulers);
+
+  static void getStandbys(std::string device_id, std::vector<Standby>& standbys);
+
+  static void getPowerProps(std::string device_id, std::vector<Power>& powers);
+
+  static void getPowerLimits(std::string device_id, 
+                             Power_sustained_limit_t& sustained_limit,
+                             Power_burst_limit_t& burst_limit,
+                             Power_peak_limit_t& peak_limit);
+
+  static void getFrequencyRange(const std::string& id,
+                                double& min,
+                                double& max);
 private:
   GPUDeviceStub();
 

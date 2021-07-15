@@ -4,6 +4,7 @@
 
 #include "data_logic_interface.h"
 #include "device_manager_interface.h"
+#include "scheduler.h"
 
 class DeviceManager : public DeviceManagerInterface,
                       public std::enable_shared_from_this<DeviceManager> {
@@ -23,6 +24,22 @@ class DeviceManager : public DeviceManagerInterface,
 
   MeasurementData getRealtimeMeasurementData(MeasurementType type,
                                              std::string& device_id) override;
+  
+  void getDeviceSchedulers(const std::string& id, std::vector<Scheduler>& schedulers) override;
+
+  void getDeviceStandbys(const std::string& id, std::vector<Standby>& standbys) override;
+
+  void getDevicePowerProps(const std::string& id,
+                           std::vector<Power>& powers);
+
+  void getDevicePowerLimits(const std::string& id,
+                            Power_sustained_limit_t& sustained_limit,
+                            Power_burst_limit_t& burst_limit,
+                            Power_peak_limit_t& peak_limit);
+  
+  void getDeviceFrequencyRange(const std::string& id,
+                               double& min,
+                               double& max);
 
  private:
   DeviceManager() = default;
