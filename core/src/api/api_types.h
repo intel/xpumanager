@@ -18,10 +18,10 @@ struct Api_result_t {
 };
 
 enum Scheduler_mode_t {
-  TIMEOUT             = 1 << 0,
-  TIMESLICE           = 1 << 1,
-  EXCLUSIVE           = 1 << 2,
-  COMPUTE_UNIT_DEBUG  = 1 << 3,
+  TIMEOUT             = 0,
+  TIMESLICE           = 1,
+  EXCLUSIVE           = 2,
+  COMPUTE_UNIT_DEBUG  = 3,
   MODE_FORCE_UINT32   = 0x7fffffff
 };
 

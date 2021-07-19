@@ -1,6 +1,7 @@
 #pragma once
 #include <mutex>
 #include <vector>
+#include <map>
 
 #include "data_logic_interface.h"
 #include "device_manager_interface.h"
@@ -49,6 +50,8 @@ class DeviceManager : public DeviceManagerInterface,
   DeviceManager(const DeviceManager& other) = delete;
 
   std::shared_ptr<Device> getDevice(const std::string& id);
+
+  zes_device_handle_t getDeviceHandle(const std::string& Id);
 
  private:
   std::shared_ptr<DataLogicInterface> p_data_logic;

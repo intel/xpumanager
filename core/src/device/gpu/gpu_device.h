@@ -5,7 +5,7 @@
 class GPUDevice : public Device {
  public:
   GPUDevice();
-  GPUDevice(const std::string& id, std::vector<DeviceCapability>& capabilities);
+  GPUDevice(const std::string& id, const zes_device_handle_t& zes_device, std::vector<DeviceCapability>& capabilities);
 
   virtual ~GPUDevice();
 

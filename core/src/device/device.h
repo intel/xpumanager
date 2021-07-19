@@ -7,6 +7,8 @@
 #include "const.h"
 #include "property.h"
 #include "device_capability.h"
+#include "ze_api.h"
+#include "zes_api.h"
 
 class Device {
  public:
@@ -37,12 +39,16 @@ class Device {
   void addProperty(Property prop);
 
   void removeProperty(const std::string& name);
+
+  zes_device_handle_t getDeviceHandle();
   
  public:
   virtual ~Device() {}
 
  protected:
   std::string id;
+
+  zes_device_handle_t zes_device_handle;
 
   std::mutex mutex;
 

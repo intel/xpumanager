@@ -136,26 +136,41 @@ std::shared_ptr<Device> DeviceManager::getDevice(const std::string& id) {
 }
 
 void DeviceManager::getDeviceSchedulers(const std::string &id, std::vector<Scheduler>& schedulers) {
-  GPUDeviceStub::instance().getSchedulers(id,schedulers);
+  std::unique_lock<std::mutex> lock(this->mutex);
+  zes_device_handle_t device = getDeviceHandle(id);
+  GPUDeviceStub::instance().getSchedulers(device,schedulers);
 }
 
 void DeviceManager::getDeviceStandbys(const std::string& id, std::vector<Standby>& standbys) {
-  GPUDeviceStub::instance().getStandbys(id,standbys);
+  std::unique_lock<std::mutex> lock(this->mutex);
+  GPUDeviceStub::instance().getStandbys(getDeviceHandle(id),standbys);
 }
 
 void DeviceManager::getDevicePowerProps(const std::string& id, std::vector<Power>& powers) {
-  GPUDeviceStub::instance().getPowerProps(id,powers);
+  std::unique_lock<std::mutex> lock(this->mutex);
+  GPUDeviceStub::instance().getPowerProps(getDeviceHandle(id),powers);
 }
 
 void DeviceManager::getDevicePowerLimits(const std::string& id,
                                          Power_sustained_limit_t& sustained_limit,
                                          Power_burst_limit_t& burst_limit,
                                          Power_peak_limit_t& peak_limit) {
-  GPUDeviceStub::instance().getPowerLimits(id, sustained_limit, burst_limit, peak_limit);
+  std::unique_lock<std::mutex> lock(this->mutex);
+  GPUDeviceStub::instance().getPowerLimits(getDeviceHandle(id), sustained_limit, burst_limit, peak_limit);
 }
 
 void DeviceManager::getDeviceFrequencyRange(const std::string& id,
                                             double& min,
                                             double& max) {
-  GPUDeviceStub::instance().getFrequencyRange(id, min, max);
+  std::unique_lock<std::mutex> lock(this->mutex);
+  GPUDeviceStub::instance().getFrequencyRange(getDeviceHandle(id), min, max);
+}
+
+zes_device_handle_t DeviceManager::getDeviceHandle(const std::string& id) {
+  for (auto& p_device : this->devices) {      
+    if (p_device->getId() == id) {
+      return p_device->getDeviceHandle();
+    }
+  }
+  return nullptr;    
 }

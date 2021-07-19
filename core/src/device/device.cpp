@@ -86,3 +86,8 @@ void Device::removeProperty(const std::string& name) {
     }
   }
 }
+
+zes_device_handle_t Device::getDeviceHandle() {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return zes_device_handle;
+}

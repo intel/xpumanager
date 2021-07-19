@@ -18,28 +18,28 @@ class GPUDeviceStub {
  public:  
   void discoverDevices(Callback_t callback);
   
-  void getPower(const std::string& device_id, Callback_t callback) noexcept;
+  void getPower(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-  void getActuralFrequency(const std::string& device_id, Callback_t callback) noexcept;
+  void getActuralFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-  void getTemperature(const std::string& device_id, Callback_t callback) noexcept;
+  void getTemperature(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-  void getMemory(const std::string& device_id, Callback_t callback) noexcept;
+  void getMemory(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-  void getEngineUtilization(const std::string& device_id, Callback_t callback) noexcept;
+  void getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-  static void getSchedulers(std::string device_id, std::vector<Scheduler>& schedulers);
+  static void getSchedulers(const zes_device_handle_t& device, std::vector<Scheduler>& schedulers);
 
-  static void getStandbys(std::string device_id, std::vector<Standby>& standbys);
+  static void getStandbys(const zes_device_handle_t& device, std::vector<Standby>& standbys);
 
-  static void getPowerProps(std::string device_id, std::vector<Power>& powers);
+  static void getPowerProps(const zes_device_handle_t& device, std::vector<Power>& powers);
 
-  static void getPowerLimits(std::string device_id, 
+  static void getPowerLimits(const zes_device_handle_t& device, 
                              Power_sustained_limit_t& sustained_limit,
                              Power_burst_limit_t& burst_limit,
                              Power_peak_limit_t& peak_limit);
 
-  static void getFrequencyRange(const std::string& id,
+  static void getFrequencyRange(const zes_device_handle_t& device,
                                 double& min,
                                 double& max);
 private:
@@ -55,15 +55,15 @@ private:
 
   static std::shared_ptr<std::vector<std::shared_ptr<Device>>> toDiscover();
 
-  static std::shared_ptr<MeasurementData> toGetPower(const std::string& device_id);
+  static std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device);
 
-  static std::shared_ptr<MeasurementData> toGetActuralFrequency(const std::string& device_id);
+  static std::shared_ptr<MeasurementData> toGetActuralFrequency(const zes_device_handle_t& device);
 
-  static std::shared_ptr<MeasurementData> toGetTemperature(const std::string& device_id);
+  static std::shared_ptr<MeasurementData> toGetTemperature(const zes_device_handle_t& device);
 
-  static std::shared_ptr<MeasurementData> toGetMemory(const std::string& device_id);
+  static std::shared_ptr<MeasurementData> toGetMemory(const zes_device_handle_t& device);
 
-  static std::shared_ptr<MeasurementData> toGetEngineUtilization(const std::string& device_id);
+  static std::shared_ptr<MeasurementData> toGetEngineUtilization(const zes_device_handle_t& device);
 
   static std::string to_string(ze_device_uuid_t val);
 
@@ -73,14 +73,10 @@ private:
 
   static std::string to_string(zes_pci_address_t address);
 
-  static zes_device_handle_t getDeviceById(std::string Id);
-
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;
   
   bool initialized;
-
-  std::vector<zes_device_handle_t> zes_devices;
   
   std::mutex  mutex;
     

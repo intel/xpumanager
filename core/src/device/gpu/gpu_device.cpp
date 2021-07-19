@@ -8,8 +8,10 @@ GPUDevice::GPUDevice() {
 }
 
 GPUDevice::GPUDevice(const std::string& id,
+                     const zes_device_handle_t& zes_device,
                      std::vector<DeviceCapability>& capabilities) {
-  this->id = id;                       
+  this->id = id;
+  this->zes_device_handle = zes_device;                       
   for (DeviceCapability& cap : capabilities) {
     this->capabilities.push_back(cap);
   }
@@ -20,35 +22,35 @@ GPUDevice::~GPUDevice() {
 }
 
 void GPUDevice::getPower(Callback_t callback) noexcept {
-  GPUDeviceStub::instance().getPower(id.c_str(), 
+  GPUDeviceStub::instance().getPower(zes_device_handle, 
     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
     callback(ret, e);
   });    
 }
 
 void GPUDevice::getActuralFrequency(Callback_t callback) noexcept {
-  GPUDeviceStub::instance().getActuralFrequency(id.c_str(), 
+  GPUDeviceStub::instance().getActuralFrequency(zes_device_handle, 
     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
     callback(ret, e);
   });    
 }
 
 void GPUDevice::getTemperature(Callback_t callback) noexcept {
-  GPUDeviceStub::instance().getTemperature(id.c_str(), 
+  GPUDeviceStub::instance().getTemperature(zes_device_handle, 
     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
     callback(ret, e);
   });    
 }
 
 void GPUDevice::getMemory(Callback_t callback) noexcept {
-  GPUDeviceStub::instance().getMemory(id.c_str(), 
+  GPUDeviceStub::instance().getMemory(zes_device_handle, 
     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
     callback(ret, e);
   });    
 }
 
 void GPUDevice::getEngineUtilization(Callback_t callback) noexcept {
-  GPUDeviceStub::instance().getEngineUtilization(id.c_str(), 
+  GPUDeviceStub::instance().getEngineUtilization(zes_device_handle, 
     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
     callback(ret, e);
   });    
