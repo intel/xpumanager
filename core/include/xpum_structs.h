@@ -1,0 +1,364 @@
+#ifndef _XPUM_STRUCTS_H
+#define _XPUM_STRUCTS_H
+
+#if defined(__cplusplus)
+#pragma once
+#endif
+
+#include <stdint.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+/**
+ * Max string length
+ */
+#define XPUM_MAX_STR_LENGTH 256
+
+/**
+ * Max version string length
+ */
+#define XPUM_MAX_VERSION_STR_LENGTH 32
+
+/**
+ * Max number of devices supported by XPUM
+ */
+#define XPUM_MAX_NUM_DEVICES 32
+
+/**
+ * Max limit on the number of properties of a device supported by XPUM
+ */
+#define XPUM_MAX_NUM_PROPERTIES 100
+
+/**
+ * Max limit on the number of groups supported by XPUM
+ */
+#define XPUM_MAX_NUM_GROUPS 64
+
+/**
+ * Max uuid bytes
+ */
+#define XPUM_MAX_DEVICE_UUID_SIZE  16
+
+/**
+ * The max number of cached metrics collecting task
+ */
+#define XPUM_MAX_CACHED_METRICS_TASK_NUM  16
+
+
+/**************************************************************************/
+/**
+ * Basic Definitions
+ */
+/**************************************************************************/
+
+typedef int32_t xpum_device_id_t;
+
+typedef int32_t xpum_group_id_t;
+
+typedef int32_t xpum_event_id_t;
+
+typedef enum xpum_result_enum {
+    XPUM_OK = 0,
+    XPUM_GENERIC_ERROR,
+    XPUM_BUFFER_TOO_SMALL,
+} xpum_result_t;
+
+typedef enum xpum_device_type_enum {
+    GPU = 0
+} xpum_device_type_t;
+
+const char *errorString(xpum_result_t result);
+
+struct xpum_device_basic_info
+{
+    xpum_device_id_t deviceId;
+    xpum_device_type_t type;
+    uint8_t uuid[XPUM_MAX_DEVICE_UUID_SIZE];
+};
+
+
+struct xpum_device_property_t {
+    char name[XPUM_MAX_STR_LENGTH];
+    char value[XPUM_MAX_STR_LENGTH];
+};
+
+struct xpum_device_properties_t{
+    xpum_device_id_t deviceId;
+    xpum_device_property_t properties[XPUM_MAX_NUM_PROPERTIES];
+    int propertyLen;
+};
+
+
+/**************************************************************************/
+/**
+ * Definitions for group management
+ */
+/**************************************************************************/
+
+struct xpum_group_info_t {
+    unsigned int count;
+    xpum_device_type_t deviceType;                                        
+    char groupName[XPUM_MAX_STR_LENGTH];                       
+    unsigned int deviceList[XPUM_MAX_NUM_DEVICES]; 
+};
+
+/**************************************************************************/
+/**
+ * Definitions for telemetry
+ */
+/**************************************************************************/
+
+typedef enum xpum_telemetry_type_enum {
+    XPUM_TELEMETRY_POWER = 0,
+    XPUM_TELEMETRY_FREQUENCY,
+    XPUM_TELEMETRY_THERMAL,
+    XPUM_TELEMETRY_MEMORY_USED,
+    XPUM_TELEMETRY_ENGINE_UTIL,
+    XPUM_TELEMETRY_FABRIC_PORT_SPEED,
+    XPUM_TELEMETRY_END,
+} xpum_telemetry_type_t;
+
+struct xpumTelemetryData_t {
+    xpum_device_id_t deviceId;
+    xpum_telemetry_type_t type;
+    bool realtime;
+    float min;
+    float avg;
+    float max;
+    float current;
+};
+
+
+/**************************************************************************/
+/**
+ * Definitions for health
+ */
+/**************************************************************************/
+
+typedef enum xpum_value_type_enum {
+    STRING = 0,
+    CHAR,
+    FLOAT,
+    INT,
+    BOOLEAN
+} xpum_value_type_t;
+
+typedef enum xpum_health_config_type_enum {
+    XPUM_HEALTH_THEARMAL_CORE_THRES = 0,
+    XPUM_HEALTH_THEARMAL_MEM_THRES,
+    XPUM_HEALTH_THEARMAL_THRES_ON,
+} xpum_health_config_type_t;
+
+typedef enum xpum_health_type_enum {
+    XPUM_HEALTH_THERMAL=0,
+    XPUM_HEALTH_MEMORY,
+    XPUM_HEALTH_FABRIC_PORT,
+} xpum_health_type_t;
+
+typedef enum xpum_health_status_enum {
+    XPUM_HEALTH_STATUS_OK = 0,
+    XPUM_HEALTH_STATUS_WARNING,
+    XPUM_HEALTH_STATUS_CRITICAL,
+} xpum_health_status_t;
+
+struct xpum_health_data_t {
+    xpum_device_id_t deviceId;
+    xpum_health_type_t type;
+    xpum_health_status_t status;
+    char description[XPUM_MAX_STR_LENGTH];
+};
+
+/**************************************************************************/
+/**
+ * Definitions for events
+ */
+/**************************************************************************/
+
+typedef enum xpum_event_severity_enum {
+    XPUM_EVENT_SEVERITY_NORMAL=0,
+    XPUM_EVENT_SEVERITY_WARNING,
+    XPUM_EVENT_SEVERITY_CRITICAL
+} xpum_event_severity_t;
+
+typedef enum xpum_event_type_enum {
+    XPUM_EVENT_TYPE_THERMAL_OVER_THLD = 0,
+    XPUM_EVENT_TYPE_OFF_THE_BUS
+} xpum_event_type_t;
+
+typedef enum xpum_event_component_enum {
+    XPUM_EVENT_COMPONENT_SYSTEM = 0,
+    XPUM_EVENT_COMPONENT_THERMAL,
+} xpum_event_component_t;
+
+struct xpumEventEntry_t {
+    xpum_event_id_t eventId;
+    xpum_event_severity_t severity;
+    xpum_event_type_t eventType;
+    xpum_event_component_t component;
+    xpum_device_id_t deviceId;
+    uint64_t timestamp;
+    char message[XPUM_MAX_STR_LENGTH];
+};
+
+/**************************************************************************/
+/**
+ * Definitions for configuration
+ */
+/**************************************************************************/
+
+typedef enum xpum_device_config_type_enum {
+    XPUM_DEVICE_CONFIG_POWER_LIMIT = 0,
+    XPUM_DEVICE_CONFIG_PERFORMANCE_FACTOR
+} xpum_device_config_type_t;
+
+/**
+ * @brief Register value type for specific key
+ * 
+ * @param key 
+ * @param type 
+ */
+void xpumGetDeviceConfigValueType(xpum_device_config_type_t key, xpum_value_type_t type);
+
+
+/**************************************************************************/
+/**
+ * Definitions for firmware update
+ */
+/**************************************************************************/
+
+typedef enum xpum_firmware_type_enum {
+    XPUM_DEVICE_FIRMWARE_GSC = 0,
+} xpum_firmware_type_t;
+
+typedef enum xpum_firmware_flash_result_enum {
+    XPUM_DEVICE_FIRMWARE_FLASH_OK = 0,
+} xpum_firmware_flash_result_t;
+
+struct xpum_firmware_flash_job {
+    xpum_firmware_type_t type;
+    char *filePath;
+};
+
+struct xpum_firmware_flash_task_result_t {
+    xpum_device_id_t deviceId;
+    xpum_firmware_type_t type;
+    bool finished;
+    xpum_firmware_flash_result_t result;
+    char description[XPUM_MAX_STR_LENGTH];
+    char version[XPUM_MAX_STR_LENGTH];
+};
+
+struct xpum_firmware_properties {
+    xpum_firmware_type_t type;
+    char version[XPUM_MAX_STR_LENGTH];
+    bool updateRunning;
+};
+
+
+/**************************************************************************/
+/**
+ * Definitions for diagnosis
+ */
+/**************************************************************************/
+
+typedef enum xpum_diag_task_type_enum {
+    XPUM_DIAG_DEPLOYMENT = 0,
+    XPUM_DIAG_HARDWARE,
+    XPUM_DIAG_PCIE,
+    XPUM_DIAG_PERFORMANCE,
+    XPUM_DIAG_MEMORY,
+    XPUM_DIAG_MAX
+} xpum_diag_task_type_t;
+
+typedef enum xpum_diag_task_result_enum {
+    XPUM_DIAG_RESULT_NO_ERRORS = 0,
+    XPUM_DIAG_RESULT_ABORT,
+} xpum_diag_task_result_t;
+
+typedef enum xpum_diag_level_enum {
+    XPUM_DIAG_LEVEL_1 = 1,
+    XPUM_DIAG_LEVEL_2,
+    XPUM_DIAG_LEVEL_3
+} xpum_diag_level_t;
+
+struct xpum_diag_component_info_t {
+    xpum_diag_task_type_t type;
+    bool finished;
+    xpum_diag_task_result_t result;
+    char message[XPUM_MAX_STR_LENGTH];
+};
+
+struct xpum_diag_task_result_t {
+    xpum_device_id_t deviceId;
+    xpum_diag_level_t level;
+    xpum_diag_component_info_t componentList[XPUM_DIAG_MAX];
+    int count;
+};
+
+
+/**************************************************************************/
+/**
+ * Definitions for agent setting
+ */
+/**************************************************************************/
+
+typedef enum xpum_agent_config_enum {
+    XPUM_AGENT_CONFIG_EVENT_LIMIT = 0,
+} xpum_agent_config_t;
+
+
+/**************************************************************************/
+/**
+ * Definitions for metrics collection
+ */
+/**************************************************************************/
+
+typedef uint32_t xpum_metrics_task_id_t;
+
+typedef enum xpum_metrics_type_enum {
+    XPUM_METRICS_GPU_COMPUTATION = 0,
+    XPUM_METRICS_OCCUPATION,
+    XPUM_METRICS_ISSUE_EFFICIENCY,
+    XPUM_METRICS_EXECUTION_EFFICIENCY,
+    XPUM_METRICS_NON_OCCUPATION,
+    XPUM_METRICS_PARALLELISM,
+    XPUM_METRICS_DISPATCHING,
+    XPUM_METRICS_POWER,
+    XPUM_METRICS_GPU_FREQUENCY,
+    XPUM_METRICS_GPU_TEMEPERATURE,
+    XPUM_METRICS_MEMORY_USED,
+    XPUM_METRICS_GPU_UTILIZATION,
+    XPUM_METRICS_FABRIC_SPEED,
+    XPUM_METRICS_MAX
+} xpum_metrics_type_t;
+
+struct xpum_metrics_raw_data_t {
+    xpum_metrics_type_t metricsType;
+    uint64_t timestamp;
+    xpum_device_id_t deviceId;
+    int32_t value;
+};
+
+struct xpum_metrics_device_t {
+    xpum_device_id_t deviceId;
+    uint64_t energy;
+};
+
+struct xpum_metrics_task_info_t {
+    xpum_metrics_task_id_t taskId;
+    bool finished;
+    uint64_t begin;
+    uint64_t end;
+    xpum_metrics_type_t metricsToCollect[XPUM_METRICS_MAX];
+    int metricsCount;
+    xpum_metrics_device_t metricsDeviceList[XPUM_MAX_NUM_DEVICES];
+    int deviceCount;
+};
+
+#if defined(__cplusplus)
+} // extern "C"
+#endif
+
+#endif // _XPUM_STRUCTS_H
