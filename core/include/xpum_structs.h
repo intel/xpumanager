@@ -290,7 +290,7 @@ struct xpum_diag_component_info_t {
     char message[XPUM_MAX_STR_LENGTH];
 };
 
-struct xpum_diag_task_result_t {
+struct xpum_diag_task_info_t {
     xpum_device_id_t deviceId;
     xpum_diag_level_t level;
     xpum_diag_component_info_t componentList[XPUM_DIAG_MAX];

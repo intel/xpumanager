@@ -532,7 +532,7 @@ xpum_result_t xpumRunDiagnositicsByGroup(xpum_group_id_t groupId, xpum_diag_leve
  * @param result           OUT: The status of diagnostics task run on device with \a deviceId
  * @return xpum_result_t 
  */
-xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_result_t *result);
+xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result);
 
 /**
  * @brief Get diagnostics result by group
@@ -548,7 +548,7 @@ xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
  */
 xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
-                                              xpum_diag_task_result_t resultList[],
+                                              xpum_diag_task_info_t resultList[],
                                               int *count);
 
 /** @} */ // Closing for DIAGNOSTICS_API
