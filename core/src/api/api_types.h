@@ -75,7 +75,15 @@ struct Power_limits_t {
   Power_peak_limit_t      peak_limit;
 };
 
+enum Frequency_type_t {
+  GPU_FREQUENCY     = 0,
+  MEMORY_FREQUENCY  = 1,
+  FORCE_UINT32      = 0x7fffffff
+};
+
 struct Frequency_range_t {
+  Frequency_type_t type;
+  uint32_t subdevice_Id;
   double min;
   double max;
 };

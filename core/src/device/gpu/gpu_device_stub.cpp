@@ -7,6 +7,7 @@
 #include "device_type.h"
 #include "scheduler.h"
 #include "standby.h"
+#include "frequency.h"
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
@@ -477,7 +478,77 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
   }
 }
 
-void GPUDeviceStub::getFrequencyRange(const zes_device_handle_t& device, double& min, double& max) {
+bool GPUDeviceStub::setPowerSustainedLimits(const zes_device_handle_t& device,
+                                            const Power_sustained_limit_t& sustained_limit) {
+  if (device == nullptr) {
+    return false;
+  }
+  uint32_t power_domain_count = 0;
+  ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+  std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+  res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+  if (res == ZE_RESULT_SUCCESS) {
+    for (auto &power : power_handles) {
+      zes_power_sustained_limit_t sustained;
+      sustained.enabled = sustained_limit.enabled;
+      sustained.power = sustained_limit.power;
+      sustained.interval = sustained_limit.interval;
+      res = zesPowerSetLimits(power, &sustained, nullptr, nullptr);
+      if (res == ZE_RESULT_SUCCESS) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool GPUDeviceStub::setPowerBurstLimits(const zes_device_handle_t& device, 
+                                        const Power_burst_limit_t& burst_limit) {
+  if (device == nullptr) {
+    return false;
+  }
+  uint32_t power_domain_count = 0;
+  ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+  std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+  res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+  if (res == ZE_RESULT_SUCCESS) {
+    for (auto &power : power_handles) {
+      zes_power_burst_limit_t burst;
+      burst.enabled = burst_limit.enabled;
+      burst.power = burst_limit.power;
+      res = zesPowerSetLimits(power, nullptr, &burst, nullptr);
+      if (res == ZE_RESULT_SUCCESS) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool GPUDeviceStub::setPowerPeakLimits(const zes_device_handle_t& device,
+                                       const Power_peak_limit_t& peak_limit) {
+  if (device == nullptr) {
+    return false;
+  }
+  uint32_t power_domain_count = 0;
+  ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+  std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+  res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+  if (res == ZE_RESULT_SUCCESS) {
+    for (auto &power : power_handles) {
+      zes_power_peak_limit_t peak;
+      peak.powerAC = peak_limit.power_AC;
+      peak.powerDC = peak_limit.power_DC;
+      res = zesPowerSetLimits(power, nullptr, nullptr, &peak);
+      if (res == ZE_RESULT_SUCCESS) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void GPUDeviceStub::getFrequencyRanges(const zes_device_handle_t& device, std::vector<Frequency>& frequencies) {
   if (device == nullptr) {
     return;
   }
@@ -487,12 +558,54 @@ void GPUDeviceStub::getFrequencyRange(const zes_device_handle_t& device, double&
   if (res == ZE_RESULT_SUCCESS) {
     res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
     for (auto &ph_freq : freq_handles) {
-      zes_freq_range_t range;
-      res = zesFrequencyGetRange(ph_freq,&range);
-      if (res == ZE_RESULT_SUCCESS) {
-        min = range.min;
-        max = range.max;
+      zes_freq_properties_t prop = {};
+      prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+      if (zesFrequencyGetProperties(ph_freq, &prop) == ZE_RESULT_SUCCESS) {
+        if (prop.type != ZES_FREQ_DOMAIN_GPU) {
+          continue;
+        }
+        zes_freq_range_t range;
+        res = zesFrequencyGetRange(ph_freq,&range);
+        if (res == ZE_RESULT_SUCCESS) {
+          frequencies.push_back(*(new Frequency(prop.type,
+                                                prop.onSubdevice,
+                                                prop.subdeviceId,
+                                                prop.canControl,
+                                                prop.isThrottleEventSupported,
+                                                range.min,
+                                                range.max)));
+        }
       }
     }
   }
+}
+
+bool GPUDeviceStub::setFrequencyRange(const zes_device_handle_t& device, const Frequency& freq) {
+  if (device == nullptr) {
+    return false;
+  }
+  uint32_t freq_count = 0;
+  ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+  std::vector<zes_freq_handle_t> freq_handles(freq_count);
+  if (res == ZE_RESULT_SUCCESS) {
+    res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+    for (auto &ph_freq : freq_handles) {
+      zes_freq_properties_t prop = {};
+      prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+      Frequency f = freq;
+      if (zesFrequencyGetProperties(ph_freq, &prop) == ZE_RESULT_SUCCESS) {
+        if (prop.type != f.getType() || prop.subdeviceId != f.getSubdeviceId()) {
+          continue;
+        }
+        zes_freq_range_t range;
+        range.min = f.getMin();
+        range.max = f.getMax();
+        res = zesFrequencySetRange(ph_freq,&range);
+        if (res == ZE_RESULT_SUCCESS) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }

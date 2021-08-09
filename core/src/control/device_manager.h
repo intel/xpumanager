@@ -38,9 +38,20 @@ class DeviceManager : public DeviceManagerInterface,
                             Power_burst_limit_t& burst_limit,
                             Power_peak_limit_t& peak_limit);
   
-  void getDeviceFrequencyRange(const std::string& id,
-                               double& min,
-                               double& max);
+  bool setDevicePowerSustainedLimits(const std::string& id,
+                                     const Power_sustained_limit_t& sustained_limit);
+
+  bool setDevicePowerBurstLimits(const std::string& id,
+                                 const Power_burst_limit_t& burst_limit);
+
+  bool setDevicePowerPeakLimits(const std::string& id,
+                                const Power_peak_limit_t& peak_limit);
+  
+  void getDeviceFrequencyRanges(const std::string& id,
+                                std::vector<Frequency>& frequencies);
+  
+  bool setDeviceFrequencyRange(const std::string& id,
+                               const Frequency& freq);
 
  private:
   DeviceManager() = default;

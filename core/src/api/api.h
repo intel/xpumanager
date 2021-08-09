@@ -34,7 +34,23 @@ API_EXPORT void getDevicePowerLimits(const char* device_id,
                                      void (*callback)(Power_limits_t*),
                                      Api_result_t* api_result);
 
-API_EXPORT void getDeviceFrequencyRange(const char* device_id,
-                                        void (*callback)(Frequency_range_t*),
+API_EXPORT void getDeviceFrequencyRanges(const char* device_id,
+                                         void (*callback)(Frequency_range_t*),
+                                         Api_result_t* api_result);
+
+API_EXPORT void setDeviceFrequencyRange(const char* device_id,
+                                        const Frequency_range_t t,
                                         Api_result_t* api_result);
+
+API_EXPORT void setDevicePowerSustainedLimits(const std::string& device_id,
+                                              const Power_sustained_limit_t& sustained_limit,
+                                              Api_result_t* api_result);
+
+API_EXPORT void setDevicePowerBurstLimits(const std::string& device_id,
+                                          const Power_burst_limit_t& burst_limit,
+                                          Api_result_t* api_result);
+
+API_EXPORT void setDevicePowerPeakLimits(const std::string& device_id,
+                                         const Power_peak_limit_t& peak_limit,
+                                         Api_result_t* api_result);
 }

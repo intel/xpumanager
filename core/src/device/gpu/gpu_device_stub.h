@@ -10,6 +10,7 @@
 #include "scheduler.h"
 #include "standby.h"
 #include "power.h"
+#include "frequency.h"
 
 class GPUDeviceStub {
  public:
@@ -39,9 +40,21 @@ class GPUDeviceStub {
                              Power_burst_limit_t& burst_limit,
                              Power_peak_limit_t& peak_limit);
 
-  static void getFrequencyRange(const zes_device_handle_t& device,
-                                double& min,
-                                double& max);
+  static bool setPowerSustainedLimits(const zes_device_handle_t& device, 
+                                      const Power_sustained_limit_t& sustained_limit);
+
+  static bool setPowerBurstLimits(const zes_device_handle_t& device, 
+                                  const Power_burst_limit_t& burst_limit);
+
+  static bool setPowerPeakLimits(const zes_device_handle_t& device, 
+                                 const Power_peak_limit_t& peak_limit);
+
+  static void getFrequencyRanges(const zes_device_handle_t& device,
+                                 std::vector<Frequency>& frequencies);
+  
+  static bool setFrequencyRange(const zes_device_handle_t& device,
+                                const Frequency& freq);
+  
 private:
   GPUDeviceStub();
 

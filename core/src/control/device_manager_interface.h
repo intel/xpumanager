@@ -11,6 +11,7 @@
 #include "scheduler.h"
 #include "standby.h"
 #include "power.h"
+#include "frequency.h"
 
 class DeviceManagerInterface : public InitCloseInterface {
  public:
@@ -37,7 +38,19 @@ class DeviceManagerInterface : public InitCloseInterface {
                                     Power_sustained_limit_t& sustained_limit,
                                     Power_burst_limit_t& burst_limit,
                                     Power_peak_limit_t& peak_limit) = 0;
-  virtual void getDeviceFrequencyRange(const std::string& id,
-                                       double& min,
-                                       double& max) = 0;
+
+  virtual bool setDevicePowerSustainedLimits(const std::string& id,
+                                             const Power_sustained_limit_t& sustained_limit) = 0;
+
+  virtual bool setDevicePowerBurstLimits(const std::string& id,
+                                         const Power_burst_limit_t& burst_limit) = 0;
+
+  virtual bool setDevicePowerPeakLimits(const std::string& id,
+                                        const Power_peak_limit_t& peak_limit) = 0;
+
+  virtual void getDeviceFrequencyRanges(const std::string& id,
+                                        std::vector<Frequency>& frequencies) = 0;
+
+  virtual bool setDeviceFrequencyRange(const std::string& id,
+                                       const Frequency& freq) = 0;
 };

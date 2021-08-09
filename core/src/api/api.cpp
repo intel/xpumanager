@@ -24,9 +24,28 @@ bool validPrerequisite(void* callback, Api_result_t* api_result) {
   return true;
 }
 
+bool validPrerequisite(Api_result_t* api_result) {
+  if (api_result == nullptr) {
+    return false;
+  }
+
+  if (!Core::instance().isInitialized()) {
+    api_result->error_code = ErrorCode::CORE_NOT_INITIALIZED;
+    api_result->msg = "Core is not initialized";
+    return false;
+  }
+
+  return true;
+}
+
 void setResultOK(Api_result_t* api_result) {
   api_result->error_code = ErrorCode::OK;
   api_result->msg = nullptr;
+}
+
+void setResultError(Api_result_t* api_result, ErrorCode error_code, std::string& msg) {
+  api_result->error_code = error_code;
+  api_result->msg = msg.c_str();
 }
 
 void convertMeasurementData(MeasurementData&src, Measurement_data_t& des) {
@@ -58,6 +77,13 @@ void convertPowerPropData(Power& src, Power_prop_data_t& des) {
   des.default_limit = src.getDefaultLimit();
   des.min_limit = src.getMinLimit();
   des.max_limit = src.getMaxLimit();
+}
+
+void convertFrequencyData(Frequency& freq, Frequency_range_t& des) {
+  des.type = (Frequency_type_t)freq.getType();
+  des.subdevice_Id = freq.getSubdeviceId();
+  des.min = freq.getMin();
+  des.max = freq.getMax();
 }
 
 bool init() {
@@ -209,17 +235,90 @@ void getDevicePowerLimits(const char* device_id,
   setResultOK(api_result);
 }
 
-void getDeviceFrequencyRange(const char* device_id,
-                             void (*callback)(Frequency_range_t*),
-                             Api_result_t* api_result) {
+void getDeviceFrequencyRanges(const char* device_id,
+                              void (*callback)(Frequency_range_t*),
+                              Api_result_t* api_result) {
   if (!validPrerequisite((void*)callback, api_result)) {
     return ;
   }
 
   std::string device_id_str = device_id;
-  Frequency_range_t range;
-  Core::instance().getDeviceManager()->getDeviceFrequencyRange(device_id_str, range.min, range.max);
-  callback(&range);
+  std::vector<Frequency> frequencies;
+  Core::instance().getDeviceManager()->getDeviceFrequencyRanges(device_id_str, frequencies);
+  for (auto& freq : frequencies) {
+    Frequency_range_t ret_data;
+    convertFrequencyData(freq,ret_data);
+    callback(&ret_data);
+  }
 
   setResultOK(api_result);
+}
+
+void setDeviceFrequencyRange(const char* device_id,
+                             const Frequency_range_t t,
+                             Api_result_t* api_result) {
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  Frequency freq((zes_freq_domain_t)t.type,t.subdevice_Id,t.min,t.max);
+  if (Core::instance().getDeviceManager()->setDeviceFrequencyRange(device_id_str, freq)) {
+    setResultOK(api_result);
+    return;
+  }
+  std::string msg("");
+  setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  return;
+}
+
+void setDevicePowerSustainedLimits(const std::string& device_id,
+                                   const Power_sustained_limit_t& sustained_limit,
+                                   Api_result_t* api_result) {
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  if (Core::instance().getDeviceManager()->setDevicePowerSustainedLimits(device_id, sustained_limit)) {
+    setResultOK(api_result);
+    return;
+  }
+  std::string msg("");
+  setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  return;
+}
+
+void setDevicePowerBurstLimits(const std::string& device_id,
+                               const Power_burst_limit_t& burst_limit,
+                               Api_result_t* api_result) {
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  if (Core::instance().getDeviceManager()->setDevicePowerBurstLimits(device_id, burst_limit)) {
+    setResultOK(api_result);
+    return;
+  }
+  std::string msg("");
+  setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  return;
+}
+
+void setDevicePowerPeakLimits(const std::string& device_id,
+                              const Power_peak_limit_t& peak_limit,
+                              Api_result_t* api_result) {
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  if (Core::instance().getDeviceManager()->setDevicePowerPeakLimits(device_id, peak_limit)) {
+    setResultOK(api_result);
+    return;
+  }
+  std::string msg("");
+  setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  return;
 }

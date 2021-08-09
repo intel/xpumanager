@@ -159,11 +159,28 @@ void DeviceManager::getDevicePowerLimits(const std::string& id,
   GPUDeviceStub::instance().getPowerLimits(getDeviceHandle(id), sustained_limit, burst_limit, peak_limit);
 }
 
-void DeviceManager::getDeviceFrequencyRange(const std::string& id,
-                                            double& min,
-                                            double& max) {
+bool DeviceManager::setDevicePowerSustainedLimits(const std::string& id,
+                                                  const Power_sustained_limit_t& sustained_limit) {
   std::unique_lock<std::mutex> lock(this->mutex);
-  GPUDeviceStub::instance().getFrequencyRange(getDeviceHandle(id), min, max);
+  return GPUDeviceStub::instance().setPowerSustainedLimits(getDeviceHandle(id), sustained_limit);
+}
+
+bool DeviceManager::setDevicePowerBurstLimits(const std::string& id,
+                                              const Power_burst_limit_t& burst_limit) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return GPUDeviceStub::instance().setPowerBurstLimits(getDeviceHandle(id), burst_limit);
+}
+
+bool DeviceManager::setDevicePowerPeakLimits(const std::string& id,
+                                             const Power_peak_limit_t& peak_limit) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return GPUDeviceStub::instance().setPowerPeakLimits(getDeviceHandle(id), peak_limit);
+}
+
+void DeviceManager::getDeviceFrequencyRanges(const std::string& id,
+                                             std::vector<Frequency>& frequencies) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  GPUDeviceStub::instance().getFrequencyRanges(getDeviceHandle(id), frequencies);
 }
 
 zes_device_handle_t DeviceManager::getDeviceHandle(const std::string& id) {
@@ -173,4 +190,10 @@ zes_device_handle_t DeviceManager::getDeviceHandle(const std::string& id) {
     }
   }
   return nullptr;    
+}
+
+bool DeviceManager::setDeviceFrequencyRange(const std::string& id,
+                                            const Frequency& freq) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return GPUDeviceStub::instance().setFrequencyRange(getDeviceHandle(id), freq);
 }
