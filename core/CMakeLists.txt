@@ -28,6 +28,7 @@ option(BUILD_TEST_API "build application for api test" OFF)
 # Specifiy header file location
 link_directories(/usr/local/lib)
 include_directories(/usr/local/include/level_zero/)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/api)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/control)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/core)
@@ -39,7 +40,7 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/exception)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/monitor)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/policy)
-
+include_directories(${CMAKE_CURRENT_LIST_DIR}/src/group)
 
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/api API_SRC)
@@ -53,7 +54,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure INFRAS_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/exception EXCEPTION_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/monitor MONITOR_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/policy POLICY_SRC)
-
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/group GROUP_SRC)
 
 if (BUILD_TEST)
 
@@ -95,6 +96,7 @@ target_sources(
   ${EXCEPTION_SRC}
   ${MONITOR_SRC}
   ${POLICY_SRC}
+  ${GROUP_SRC}
 )
 
 target_link_libraries(DGMCore ze_loader)
