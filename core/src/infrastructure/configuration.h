@@ -9,6 +9,8 @@ class Configuration {
   static int FREQUENCY_MONITOR_FREQUENCE;
   static int TEMPERATURE_MONITOR_FREQUENCE;
   static int DATA_HANDLER_CACHE_TIME_LIMIT;
+  static int TEMPERATURE_HEALTH_LIMIT;
+  static int POWER_HEALTH_LIMIT;
 
  public:
   static void init() {    

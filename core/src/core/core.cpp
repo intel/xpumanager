@@ -4,6 +4,7 @@
 #include "data_logic.h"
 #include "device_manager.h"
 #include "monitor_manager.h"
+#include "health_manager.h"
 #include "core.h"
 
 Core::Core()
@@ -39,6 +40,11 @@ std::shared_ptr<MonitorManagerInterface> Core::getMonitorManager() {
   return p_monitor_manager;
 }
 
+std::shared_ptr<HealthManagerInterface> Core::getHealthManager() {
+  std::unique_lock<std::mutex> lock(mutex);
+  return p_health_manager;
+}
+
 void Core::init() {
   std::unique_lock<std::mutex> lock(mutex);
   if (initialized)  {
@@ -60,6 +66,10 @@ void Core::init() {
   p_monitor_manager = std::make_shared<MonitorManager>(p_device_manager, p_data_logic);
   p_monitor_manager->init();
 
+  Logger::instance().info("initialize health manager");
+  p_health_manager = std::make_shared<HealthManager>(p_device_manager, p_data_logic);
+  p_health_manager->init();
+
   initialized = true;  
 }
 
@@ -69,6 +79,8 @@ void Core::close() {
     return ;
   }  
 
+  close(std::dynamic_pointer_cast<InitCloseInterface>(p_health_manager), 
+    "Failed to close health manager");
   close(std::dynamic_pointer_cast<InitCloseInterface>(p_monitor_manager),
     "Failed to close monitor manager");
   close(std::dynamic_pointer_cast<InitCloseInterface>(p_device_manager),
