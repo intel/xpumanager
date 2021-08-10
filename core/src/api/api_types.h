@@ -36,9 +36,27 @@ enum Engine_type_flags_t {
 };
 
 struct Scheduler_data_t {
+  bool                on_subdevice;
+  uint32_t            subdevice_Id;
+  bool                can_control;
   Scheduler_mode_t    mode;
   Engine_type_flags_t engine_types;
   Scheduler_mode_t    supported_modes;
+};
+
+struct Scheduler_timeout_t {
+  uint32_t subdevice_Id;
+  uint64_t watchdog_timeout;
+};
+
+struct Scheduler_timeslice_t {
+  uint32_t subdevice_Id;
+  uint64_t interval;
+  uint64_t yield_timeout;
+};
+
+struct Scheduler_exclusive_t {
+  uint32_t subdevice_Id;
 };
 
 enum Standby_type_t {

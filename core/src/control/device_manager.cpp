@@ -197,3 +197,26 @@ bool DeviceManager::setDeviceFrequencyRange(const std::string& id,
   std::unique_lock<std::mutex> lock(this->mutex);
   return GPUDeviceStub::instance().setFrequencyRange(getDeviceHandle(id), freq);
 }
+
+bool DeviceManager::setDeviceStandby(const std::string& id,
+                                     const Standby& standby) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return GPUDeviceStub::instance().setStandby(getDeviceHandle(id), standby);
+}
+
+bool DeviceManager::setDeviceSchedulerTimeoutMode(const std::string& id, 
+                                                  const SchedulerTimeoutMode& mode) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return GPUDeviceStub::instance().setSchedulerTimeoutMode(getDeviceHandle(id), mode);
+}
+
+bool DeviceManager::setDeviceSchedulerTimesliceMode(const std::string& id, 
+                                                    const SchedulerTimesliceMode& mode) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return GPUDeviceStub::instance().setSchedulerTimesliceMode(getDeviceHandle(id), mode);
+}
+
+bool DeviceManager::setDeviceSchedulerExclusiveMode(const std::string& id, const SchedulerExclusiveMode& mode) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return GPUDeviceStub::instance().setSchedulerExclusiveMode(getDeviceHandle(id), mode);
+}

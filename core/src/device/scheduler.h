@@ -6,11 +6,23 @@
 #include "ze_api.h"
 #include "zes_api.h"
 
+struct SchedulerTimeoutMode {
+  uint32_t subdevice_Id;
+  zes_sched_timeout_properties_t mode_setting;
+};
+
+struct SchedulerTimesliceMode {
+  uint32_t subdevice_Id;
+  zes_sched_timeslice_properties_t mode_setting;
+};
+
+struct SchedulerExclusiveMode {
+  uint32_t subdevice_Id;
+};
+
 class Scheduler {
-public:
-  Scheduler(zes_engine_type_flags_t engines, uint32_t supportedModes);
-  
-  Scheduler(zes_engine_type_flags_t engines, uint32_t supportedModes, zes_sched_mode_t mode);
+public:  
+  Scheduler(bool on_subdevice, uint32_t subdevice_id, bool can_control, zes_engine_type_flags_t engines, uint32_t supportedModes, zes_sched_mode_t mode);
   
   virtual ~Scheduler();
 
@@ -20,7 +32,11 @@ public:
 
   zes_sched_mode_t getCurrentMode();
 
-  void setCurrentMode(zes_sched_mode_t mode);
+  bool onSubdevice() const;
+
+  uint32_t getSubdeviceId() const;
+
+  bool canControl() const;
 
 private:
   zes_engine_type_flags_t engine_types;
@@ -28,4 +44,11 @@ private:
   uint32_t supported_modes;
 
   zes_sched_mode_t mode;
+
+  bool on_subdevice;
+
+  uint32_t subdevice_id;
+
+  bool can_control;
+
 };

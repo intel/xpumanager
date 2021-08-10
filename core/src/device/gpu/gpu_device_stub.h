@@ -54,7 +54,19 @@ class GPUDeviceStub {
   
   static bool setFrequencyRange(const zes_device_handle_t& device,
                                 const Frequency& freq);
+
+  static bool setStandby(const zes_device_handle_t& device, 
+                         const Standby& standby); 
   
+  static bool setSchedulerTimeoutMode(const zes_device_handle_t& device, 
+                                      const SchedulerTimeoutMode& mode);
+
+  static bool setSchedulerTimesliceMode(const zes_device_handle_t& device,
+                                        const SchedulerTimesliceMode& mode);
+
+  static bool setSchedulerExclusiveMode(const zes_device_handle_t& device,
+                                        const SchedulerExclusiveMode& mode);
+
 private:
   GPUDeviceStub();
 

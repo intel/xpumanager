@@ -60,6 +60,9 @@ void convertScheduleData(Scheduler& src, Scheduler_data_t& des) {
   des.engine_types = (Engine_type_flags_t)src.getEngineTypes();
   des.supported_modes = (Scheduler_mode_t)src.getSupportedModes();
   des.mode = (Scheduler_mode_t)src.getCurrentMode();
+  des.can_control = src.canControl();
+  des.on_subdevice = src.onSubdevice();
+  des.subdevice_Id = src.getSubdeviceId();
 } 
 
 void convertStandbyData(Standby& src, Standby_data_t& des) {
@@ -315,6 +318,84 @@ void setDevicePowerPeakLimits(const std::string& device_id,
 
   std::string device_id_str = device_id;
   if (Core::instance().getDeviceManager()->setDevicePowerPeakLimits(device_id, peak_limit)) {
+    setResultOK(api_result);
+    return;
+  }
+  std::string msg("");
+  setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  return;
+}
+
+void setDeviceStandby(const char* device_id,
+                      const Standby_data_t& standby,
+                      Api_result_t* api_result) {
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  Standby s((zes_standby_type_t )standby.type, standby.on_subdevice, standby.subdevice_Id, (zes_standby_promo_mode_t) standby.mode);
+  if (Core::instance().getDeviceManager()->setDeviceStandby(device_id_str,s)) {
+    setResultOK(api_result);
+    return;
+  }
+  std::string msg("");
+  setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  return;
+}
+
+void setDeviceSchedulerTimeoutMode(const char* device_id,
+                                   const Scheduler_timeout_t& sched_timeout,
+                                   Api_result_t* api_result) {
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  SchedulerTimeoutMode mode;
+  mode.subdevice_Id = sched_timeout.subdevice_Id;
+  mode.mode_setting.watchdogTimeout = sched_timeout.watchdog_timeout;
+  if (Core::instance().getDeviceManager()->setDeviceSchedulerTimeoutMode(device_id_str,mode)) {
+    setResultOK(api_result);
+    return;
+  }
+  std::string msg("");
+  setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  return;
+}
+
+void setDeviceSchedulerTimesliceMode(const char* device_id,
+                                     const Scheduler_timeslice_t& sched_timeslice,
+                                     Api_result_t* api_result) {
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  SchedulerTimesliceMode mode;
+  mode.subdevice_Id = sched_timeslice.subdevice_Id;
+  mode.mode_setting.interval = sched_timeslice.interval;
+  mode.mode_setting.yieldTimeout = sched_timeslice.yield_timeout;
+  if (Core::instance().getDeviceManager()->setDeviceSchedulerTimesliceMode(device_id_str,mode)) {
+    setResultOK(api_result);
+    return;
+  }
+  std::string msg("");
+  setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  return;
+}
+
+void setDeviceSchedulerExclusiveMode(const char* device_id,
+                                     const Scheduler_exclusive_t& sched_exclusive,
+                                     Api_result_t* api_result) {
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  std::string device_id_str = device_id;
+  SchedulerExclusiveMode mode;
+  mode.subdevice_Id = sched_exclusive.subdevice_Id;
+  if (Core::instance().getDeviceManager()->setDeviceSchedulerExclusiveMode(device_id_str,mode)) {
     setResultOK(api_result);
     return;
   }

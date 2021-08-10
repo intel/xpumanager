@@ -53,4 +53,21 @@ API_EXPORT void setDevicePowerBurstLimits(const std::string& device_id,
 API_EXPORT void setDevicePowerPeakLimits(const std::string& device_id,
                                          const Power_peak_limit_t& peak_limit,
                                          Api_result_t* api_result);
+
+API_EXPORT void setDeviceStandby(const char* device_id,
+                                 const Standby_data_t& standby,
+                                 Api_result_t* api_result);
+
+API_EXPORT void setDeviceSchedulerTimeoutMode(const char* device_id,
+                                              const Scheduler_timeout_t& sched_timeout,
+                                              Api_result_t* api_result);
+
+API_EXPORT void setDeviceSchedulerTimesliceMode(const char* device_id,
+                                                const Scheduler_timeslice_t& sched_timeslice,
+                                                Api_result_t* api_result);
+
+API_EXPORT void setDeviceSchedulerExclusiveMode(const char* device_id,
+                                                const Scheduler_exclusive_t& sched_exclusive,
+                                                Api_result_t* api_result);
+
 }

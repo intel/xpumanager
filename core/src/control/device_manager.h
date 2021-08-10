@@ -53,6 +53,18 @@ class DeviceManager : public DeviceManagerInterface,
   bool setDeviceFrequencyRange(const std::string& id,
                                const Frequency& freq);
 
+  bool setDeviceStandby(const std::string& id, 
+                        const Standby& standby);
+  
+  bool setDeviceSchedulerTimeoutMode(const std::string& id, 
+                                     const SchedulerTimeoutMode& mode);
+                                  
+  bool setDeviceSchedulerTimesliceMode(const std::string& id, 
+                                       const SchedulerTimesliceMode& mode);
+  
+  bool setDeviceSchedulerExclusiveMode(const std::string& id,
+                                       const SchedulerExclusiveMode& mode);
+
  private:
   DeviceManager() = default;
 
