@@ -742,7 +742,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, HealthTyp
 
   if (type == HealthType::HEALTH_MEMORY) {
     status = HealthStatus::HEALTH_UNKNOWN;
-    description = "The memory health cannot be determined.";
+    description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_UNKNOWN);
     uint32_t mem_module_count = 0;
     ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
     if (res == ZE_RESULT_SUCCESS) {
@@ -756,19 +756,19 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, HealthTyp
           if (res == ZE_RESULT_SUCCESS) {
             if (memory_state.health == ZES_MEM_HEALTH_OK && (int)status < ZES_MEM_HEALTH_OK) {
               status = HealthStatus::HEALTH_OK;
-              description = "All memory channels are healthy.";
+              description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_OK);
             }            
             if (memory_state.health == ZES_MEM_HEALTH_DEGRADED && (int)status < ZES_MEM_HEALTH_DEGRADED) {
               status = HealthStatus::HEALTH_WARNING;
-              description = "Excessive correctable errors have been detected on one or more channels. Device should be reset.";
+              description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_DEGRADED);
             }
             if (memory_state.health == ZES_MEM_HEALTH_CRITICAL && (int)status < ZES_MEM_HEALTH_CRITICAL) {
               status = HealthStatus::HEALTH_CRITICAL;
-              description = "Operating with reduced memory to cover banks with too many uncorrectable errors.";
+              description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_CRITICAL);
             }
             if (memory_state.health == ZES_MEM_HEALTH_REPLACE  && (int)status < ZES_MEM_HEALTH_REPLACE) {
               status = HealthStatus::HEALTH_CRITICAL;
-              description = "Device should be replaced due to excessive uncorrectable errors.";
+              description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_REPLACE);
             }
           }
         }
