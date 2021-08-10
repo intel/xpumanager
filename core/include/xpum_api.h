@@ -33,24 +33,43 @@ xpum_result_t xpumInit(void);
 xpum_result_t xpumShutdown(void);
 
 /**
- * @brief This method is used to return XPUM version
+ * @brief This method is used to get XPUM version
  * 
- * @param versionStr        OUT: version info
- * @return \ref xpum_result_t 
+ * @param versionInfoList       IN/OUT: First pass NULL to query version info count.    
+ *                                      Then pass array with desired length to            
+ *                                      store version info data.               
+ * @param count                 IN/OUT: When \a versionInfoList is NULL, \a count will be filled with the number of                     
+ *                                      available version info, and return.      
+ *                                      When \a versionInfoList is not NULL, \a count denotes the length of \a versionInfoList,  
+ *                                      \a count should be equal to or larger than the number of available version info,            
+ *                                      when return, the \a count will store real number of entries returned by             
+ *                                      \a versionInfoList         
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
  */
-xpum_result_t xpumVersionInfo(char versionStr[XPUM_MAX_VERSION_STR_LENGTH]);
+xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count);
+
+/** @} */ // Closing for BASIC_API
+
+/**************************************************************************/
+/** @brief DEVICE_API
+ * These APIs are for device
+ * @{
+ */
+/**************************************************************************/
 
 /**
  * @brief Get all device basic info
  * @details This method is used to get identifiers corresponding to all the devices on the system.
- * The identifier represents DCGM GPU Id corresponding to each GPU on the system and is immutable 
+ * The identifier represents device id corresponding to each device on the system and is immutable 
  * during the lifespan of the engine. The list should be queried again if the engine is restarted.
  * 
  * @param deviceIdList      OUT: The array to store device infos
  * @param count             OUT: The count of device
  * @return \ref xpum_result_t 
  */
-xpum_result_t xpumGetDeviceIdList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_DEVICES], int *count);
+xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_DEVICES], int *count);
 
 /**
  * @brief Get device properties corresponding to the \a deviceId.
@@ -61,7 +80,7 @@ xpum_result_t xpumGetDeviceIdList(xpum_device_basic_info deviceList[XPUM_MAX_NUM
  */
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties);
 
-/** @} */ // Closing for BASIC_API
+/** @} */ // Closing for DEVICE_API
 
 /**************************************************************************/
 /** @brief GROUP_MANAGEMENT_API

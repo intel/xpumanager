@@ -71,6 +71,28 @@ typedef enum xpum_device_type_enum {
 
 const char *errorString(xpum_result_t result);
 
+/**************************************************************************/
+/**
+ * Definitions for version info
+ */
+/**************************************************************************/
+
+typedef enum xpum_version_enum {
+    XPUM_VERSION = 0,
+    XPUM_VERSION_LEVEL_ZERO
+} xpum_version_t;
+
+struct xpum_version_info {
+    xpum_version_t version;
+    char versionString[XPUM_MAX_VERSION_STR_LENGTH];
+};
+
+/**************************************************************************/
+/**
+ * Definitions for device
+ */
+/**************************************************************************/
+
 struct xpum_device_basic_info
 {
     xpum_device_id_t deviceId;
