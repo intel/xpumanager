@@ -394,7 +394,12 @@ void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector
       if (res == ZE_RESULT_SUCCESS) {
         zes_sched_mode_t mode;
         res = zesSchedulerGetCurrentMode(sched,&mode);
-        schedulers.push_back(*(new Scheduler(props.engines,props.supportedModes,mode)));
+        schedulers.push_back(*(new Scheduler(props.onSubdevice, 
+                                             props.subdeviceId, 
+                                             props.canControl, 
+                                             props.engines, 
+                                             props.supportedModes, 
+                                             mode)));
       }
     }
   }
@@ -592,14 +597,13 @@ bool GPUDeviceStub::setFrequencyRange(const zes_device_handle_t& device, const F
     for (auto &ph_freq : freq_handles) {
       zes_freq_properties_t prop = {};
       prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
-      Frequency f = freq;
       if (zesFrequencyGetProperties(ph_freq, &prop) == ZE_RESULT_SUCCESS) {
-        if (prop.type != f.getType() || prop.subdeviceId != f.getSubdeviceId()) {
+        if (prop.type != freq.getType() || prop.subdeviceId != freq.getSubdeviceId()) {
           continue;
         }
         zes_freq_range_t range;
-        range.min = f.getMin();
-        range.max = f.getMax();
+        range.min = freq.getMin();
+        range.max = freq.getMax();
         res = zesFrequencySetRange(ph_freq,&range);
         if (res == ZE_RESULT_SUCCESS) {
           return true;
@@ -608,4 +612,125 @@ bool GPUDeviceStub::setFrequencyRange(const zes_device_handle_t& device, const F
     }
   }
   return false;
+}
+
+bool GPUDeviceStub::setStandby(const zes_device_handle_t& device, const Standby& standby) {
+  if (device == nullptr) {
+    return false;
+  }
+  uint32_t standby_count = 0;
+  ze_result_t res = zesDeviceEnumStandbyDomains(device, &standby_count, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_standby_handle_t> stans(standby_count);
+    res = zesDeviceEnumStandbyDomains(device, &standby_count, stans.data());
+    for (auto& stan:stans) {
+      zes_standby_properties_t props;
+      res = zesStandbyGetProperties(stan,&props);
+      if (res == ZE_RESULT_SUCCESS) {
+        if (props.subdeviceId != standby.getSubdeviceId()) {
+          continue;
+        }
+        res = zesStandbySetMode(stan,standby.getMode());
+        if (res == ZE_RESULT_SUCCESS) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool GPUDeviceStub::setSchedulerTimeoutMode(const zes_device_handle_t& device, 
+                                            const SchedulerTimeoutMode& mode) {
+  bool ret = false;
+  if (device == nullptr) {
+    return ret;
+  }
+  uint32_t scheduler_count = 0;
+  ze_result_t res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_sched_handle_t> scheds(scheduler_count);
+    res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data());
+    for (auto& sched:scheds) {
+      zes_sched_properties_t props;
+      res = zesSchedulerGetProperties(sched,&props);
+      if (res == ZE_RESULT_SUCCESS) {
+        if (props.subdeviceId != mode.subdevice_Id) {
+          continue;
+        }
+        ze_bool_t needReload;
+        zes_sched_timeout_properties_t prop;
+        prop.stype = ZES_STRUCTURE_TYPE_SCHED_TIMEOUT_PROPERTIES;
+        prop.pNext = nullptr;
+        prop.watchdogTimeout = mode.mode_setting.watchdogTimeout;
+        res = zesSchedulerSetTimeoutMode(sched, &prop, &needReload);
+        if (res == ZE_RESULT_SUCCESS) {
+          ret = ret || true;
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+bool GPUDeviceStub::setSchedulerTimesliceMode(const zes_device_handle_t& device, 
+                                              const SchedulerTimesliceMode& mode) {
+  bool ret = false;
+  if (device == nullptr) {
+    return ret;
+  }
+  uint32_t scheduler_count = 0;
+  ze_result_t res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_sched_handle_t> scheds(scheduler_count);
+    res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data());
+    for (auto& sched:scheds) {
+      zes_sched_properties_t props;
+      res = zesSchedulerGetProperties(sched,&props);
+      if (res == ZE_RESULT_SUCCESS) {
+        if (props.subdeviceId != mode.subdevice_Id) {
+          continue;
+        }
+        ze_bool_t needReload;
+        zes_sched_timeslice_properties_t prop;
+        prop.stype = ZES_STRUCTURE_TYPE_SCHED_TIMESLICE_PROPERTIES;
+        prop.pNext = nullptr;
+        prop.interval = mode.mode_setting.interval;
+        prop.yieldTimeout = mode.mode_setting.yieldTimeout;
+        res = zesSchedulerSetTimesliceMode(sched, &prop, &needReload);
+        if (res == ZE_RESULT_SUCCESS) {
+          ret = ret || true;
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device, const SchedulerExclusiveMode& mode) {
+  bool ret = false;
+  if (device == nullptr) {
+    return ret;
+  }
+  uint32_t scheduler_count = 0;
+  ze_result_t res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_sched_handle_t> scheds(scheduler_count);
+    res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data());
+    for (auto& sched:scheds) {
+      zes_sched_properties_t props;
+      res = zesSchedulerGetProperties(sched,&props);
+      if (res == ZE_RESULT_SUCCESS) {
+        if (props.subdeviceId != mode.subdevice_Id) {
+          continue;
+        }
+        ze_bool_t needReload;
+        res = zesSchedulerSetExclusiveMode(sched, &needReload);
+        if (res == ZE_RESULT_SUCCESS) {
+          ret = ret || true;
+        }
+      }
+    }
+  }
+  return ret;
 }

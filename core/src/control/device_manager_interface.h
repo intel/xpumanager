@@ -53,4 +53,17 @@ class DeviceManagerInterface : public InitCloseInterface {
 
   virtual bool setDeviceFrequencyRange(const std::string& id,
                                        const Frequency& freq) = 0;
+
+  virtual bool setDeviceStandby(const std::string& id, 
+                                const Standby& standby) = 0;
+
+  virtual bool setDeviceSchedulerTimeoutMode(const std::string& id, 
+                                             const SchedulerTimeoutMode& mode) = 0;
+
+  virtual bool setDeviceSchedulerTimesliceMode(const std::string& id, 
+                                               const SchedulerTimesliceMode& mode) = 0;
+
+  virtual bool setDeviceSchedulerExclusiveMode(const std::string& id,
+                                               const SchedulerExclusiveMode& mode) = 0;
+
 };

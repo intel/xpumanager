@@ -14,19 +14,19 @@ public:
   
   virtual ~Frequency();
 
-  zes_freq_domain_t getType();
+  zes_freq_domain_t getType() const;
 
-  bool onSubdevice();
+  bool onSubdevice() const;
 
-  uint32_t getSubdeviceId();
+  uint32_t getSubdeviceId() const;
 
-  bool canControl();
+  bool canControl() const;
 
-  bool isThrottleEventSupported();
+  bool isThrottleEventSupported() const;
 
-  double getMin();
+  double getMin() const;
 
-  double getMax();
+  double getMax() const;
 
 private:
   zes_freq_domain_t type;

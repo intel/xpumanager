@@ -28,31 +28,31 @@ Frequency::~Frequency() {
 
 }
 
-zes_freq_domain_t Frequency::getType() {
+zes_freq_domain_t Frequency::getType() const {
   return type;
 }
 
-bool Frequency::onSubdevice() {
+bool Frequency::onSubdevice() const {
   return on_subdevice;
 }
 
-uint32_t Frequency::getSubdeviceId() {
+uint32_t Frequency::getSubdeviceId() const {
   return subdevice_id;
 }
 
-bool Frequency::canControl() {
+bool Frequency::canControl() const {
   return can_control;
 }
 
-bool Frequency::isThrottleEventSupported() {
+bool Frequency::isThrottleEventSupported() const {
   return is_throttle_event_supported;
 }
 
-double Frequency::getMin() {
+double Frequency::getMin() const {
   return min;
 }
 
-double Frequency::getMax() {
+double Frequency::getMax() const {
   return max;
 }
 

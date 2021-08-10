@@ -12,13 +12,13 @@ public:
   
   virtual ~Standby();
 
-  zes_standby_type_t getType();
+  zes_standby_type_t getType() const;
 
-  bool onSubdevice();
+  bool onSubdevice() const;
 
-  uint32_t getSubdeviceId();
+  uint32_t getSubdeviceId() const;
 
-  zes_standby_promo_mode_t getMode();
+  zes_standby_promo_mode_t getMode() const;
 
 private:
   zes_standby_type_t type;
