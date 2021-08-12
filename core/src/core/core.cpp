@@ -77,7 +77,7 @@ void Core::init() {
   p_health_manager->init();
 
   Logger::instance().info("initialize group manager");
-  p_group_manager = std::make_shared<GroupManager>(p_device_manager, p_data_logic);
+  p_group_manager = std::make_shared<GroupManager>(p_group_manager, p_data_logic);
   p_group_manager->init();
 
   initialized = true;  
@@ -89,6 +89,8 @@ void Core::close() {
     return ;
   }  
 
+  close(std::dynamic_pointer_cast<InitCloseInterface>(p_group_manager), 
+    "Failed to close group manager");
   close(std::dynamic_pointer_cast<InitCloseInterface>(p_health_manager), 
     "Failed to close health manager");
   close(std::dynamic_pointer_cast<InitCloseInterface>(p_monitor_manager),

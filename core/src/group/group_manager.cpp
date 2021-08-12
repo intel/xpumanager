@@ -8,8 +8,9 @@ GroupManager::GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_man
     Logger::instance().info("GroupManager");
 }
 
-GroupManager::~GroupManager() {
+GroupManager::~GroupManager() {    
     Logger::instance().info("~GroupManager");
+    groupMap.clear();
 }
 
 xpum_result_t GroupManager::createGroup(const char *pGroupName, xpum_group_id_t *pGroupId)
