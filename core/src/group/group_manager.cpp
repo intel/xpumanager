@@ -1,9 +1,10 @@
 #include "logger.h"
 #include "group_manager.h"
 
-#define varName(x) #x  
 
-GroupManager::GroupManager() {
+GroupManager::GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
+                            std::shared_ptr<DataLogicInterface>& p_data_logic) 
+    : p_devicemanager(p_device_manager), p_datalogic(p_data_logic)  {
     Logger::instance().info("GroupManager");
 }
 
@@ -11,14 +12,9 @@ GroupManager::~GroupManager() {
     Logger::instance().info("~GroupManager");
 }
 
-GroupManager& GroupManager::instance() {
-    static GroupManager instance;
-    return instance;
-}
-
 xpum_result_t GroupManager::createGroup(char *pGroupName, xpum_group_id_t *pGroupId)
 {
-    GroupLock lock(&mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     xpum_result_t ret = XPUM_GENERIC_ERROR;
     xpum_group_id_t groupId;
     GroupInfo* pGroupInfo;    
@@ -54,7 +50,7 @@ xpum_result_t GroupManager::createGroup(char *pGroupName, xpum_group_id_t *pGrou
 }
 
 xpum_result_t GroupManager::destroyGroup(xpum_group_id_t groupId){
-    GroupLock lock(&mutex);
+    std::unique_lock<std::mutex> lock(this->mutex);
     xpum_result_t ret = XPUM_GENERIC_ERROR;
     GroupInfo* pGroupInfo;
 
@@ -83,30 +79,70 @@ xpum_result_t GroupManager::destroyGroup(xpum_group_id_t groupId){
 
 xpum_result_t GroupManager::addDeviceToGroup(xpum_group_id_t groupId, xpum_device_id_t deviceId)
 {
+    std::unique_lock<std::mutex> lock(this->mutex);
     xpum_result_t ret = XPUM_GENERIC_ERROR;
 
-    return ret;
+    GroupInfo * pGroupInfo = getGroupById(groupId);
+    if(pGroupInfo == nullptr) {
+        Logger::instance().error(std::string("GroupManager::addDeviceToGroup-invalid group ") + std::string(varName(groupId)));
+        return ret;
+    }
+
+    return pGroupInfo->addDevice(p_devicemanager, groupId, deviceId);
 }
 
 xpum_result_t GroupManager::removeDeviceFromGroup(xpum_group_id_t groupId, xpum_device_id_t deviceId)
 {
-    xpum_result_t ret = XPUM_OK;
+    std::unique_lock<std::mutex> lock(this->mutex);
+    xpum_result_t ret = XPUM_GENERIC_ERROR;
 
-    return ret;
+    GroupInfo * pGroupInfo = getGroupById(groupId);
+    if(pGroupInfo == nullptr) {
+        Logger::instance().error(std::string("GroupManager::removeDeviceFromGroup-invalid group ") + std::string(varName(groupId)));
+        return ret;
+    }
+
+    return pGroupInfo->removeDevice(p_devicemanager, groupId, deviceId);
 }
 
 xpum_result_t GroupManager::getGroupInfo(xpum_group_id_t groupId, xpum_group_info_t *pGroupInfo)
 {
-    xpum_result_t ret = XPUM_OK;
+    std::unique_lock<std::mutex> lock(this->mutex);
+    xpum_result_t ret = XPUM_GENERIC_ERROR;
 
-    return ret;
+    GroupInfo * p_GroupInfo = getGroupById(groupId);
+    if(p_GroupInfo == nullptr) {
+        Logger::instance().error(std::string("GroupManager::removeDeviceFromGroup-invalid group ") + std::string(varName(groupId)));
+        return ret;
+    }
+
+    pGroupInfo->count = p_GroupInfo->getDeviceCount();
+    pGroupInfo->deviceType = p_GroupInfo->getDeviceType();
+    p_GroupInfo->getName(pGroupInfo->groupName);
+    p_GroupInfo->getDeviceList(pGroupInfo->deviceList);
+    return XPUM_OK;
 }
 
-xpum_result_t GroupManager::getAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count)
+xpum_result_t GroupManager::getAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int* count)
 {
-    xpum_result_t ret = XPUM_OK;
+    std::unique_lock<std::mutex> lock(this->mutex);
+    xpum_result_t ret = XPUM_GENERIC_ERROR;
 
-    return ret;
+    int index = 0;
+
+    GroupMap::iterator iterator;
+    for(iterator=groupMap.begin(); iterator!=groupMap.end(); iterator++){
+        GroupInfo * pGroupInfo = iterator->second;
+        if(pGroupInfo == nullptr) {
+            Logger::instance().error(std::string("GroupManager::getAllGroupIds- fatal error, nullptr @ group ") 
+                + std::string(varName(iterator->first)));
+            return ret;
+        }
+        groupIds[index++] = pGroupInfo->getId();
+    }
+    *count = index;
+
+    return XPUM_OK;
 }
 
 xpum_result_t GroupManager::getTelemetriesByGroup(xpum_group_id_t groupId, 
@@ -219,16 +255,18 @@ xpum_result_t GroupManager::createMetricsCollectTaskByGroup(xpum_group_id_t grou
 
 GroupInfo * GroupManager::getGroupById(xpum_group_id_t groupId)
 {
-    return nullptr;
-}
-//-------------------------------------------------------------------------------------
-GroupLock::GroupLock(std::mutex* mutex)
-{
-    lock = mutex;
-    lock->lock();
-}
+    GroupInfo * pGroupInfo;
+    GroupMap::iterator groupIterator = groupMap.find(groupId);
+    if(groupIterator == groupMap.end()) {
+        Logger::instance().error(std::string("GroupManager::getGroupById-not able to find group ") + std::string(varName(groupId)));
+        return nullptr;
+    }else{
+        pGroupInfo = groupIterator->second;
+        if(pGroupInfo == nullptr) {
+            Logger::instance().error(std::string("GroupManager::getGroupById-not able to find group ") + std::string(varName(groupId)));
+            return nullptr;
+        }
+    }
 
-GroupLock::~GroupLock()
-{
-    lock->unlock();
+    return pGroupInfo;
 }
