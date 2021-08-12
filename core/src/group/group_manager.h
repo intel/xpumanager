@@ -76,8 +76,6 @@ class GroupManager : public GroupManagerInterface,
                                               xpum_diag_task_result_t resultList[],
                                               int *count) override;
         
-        xpum_result_t createMetricsCollectTaskByGroup(xpum_group_id_t groupId, xpum_metrics_task_id_t *taskId) override;
-
         ~GroupManager();
 
         void init() override;

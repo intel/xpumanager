@@ -244,15 +244,6 @@ xpum_result_t GroupManager::getDiagnosticsResultByGroup(xpum_group_id_t groupId,
     return ret;
 }
 
-xpum_result_t GroupManager::createMetricsCollectTaskByGroup(xpum_group_id_t groupId, 
-    xpum_metrics_task_id_t *taskId)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-
 GroupInfo * GroupManager::getGroupById(xpum_group_id_t groupId)
 {
     GroupInfo * pGroupInfo;

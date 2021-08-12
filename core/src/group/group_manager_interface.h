@@ -65,5 +65,4 @@ class GroupManagerInterface : public InitCloseInterface {
                                               xpum_diag_task_result_t resultList[],
                                               int *count) = 0;
         
-        virtual xpum_result_t createMetricsCollectTaskByGroup(xpum_group_id_t groupId, xpum_metrics_task_id_t *taskId) = 0;
 };
