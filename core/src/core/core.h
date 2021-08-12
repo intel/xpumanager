@@ -5,6 +5,7 @@
 #include "data_logic_interface.h"
 #include "device_manager_interface.h"
 #include "monitor_manager_interface.h"
+#include "health_manager_interface.h"
 
 class Core : public InitCloseInterface {
  public:
@@ -21,6 +22,8 @@ class Core : public InitCloseInterface {
   std::shared_ptr<DataLogicInterface> getDataLogic();
 
   std::shared_ptr<MonitorManagerInterface> getMonitorManager();
+
+  std::shared_ptr<HealthManagerInterface> getHealthManager();
 
  private:
   Core();
@@ -39,6 +42,8 @@ class Core : public InitCloseInterface {
   std::shared_ptr<DataLogicInterface> p_data_logic;
 
   std::shared_ptr<MonitorManagerInterface> p_monitor_manager;
+
+  std::shared_ptr<HealthManagerInterface> p_health_manager;
 
   bool initialized;
 

@@ -734,3 +734,106 @@ bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device,
   }
   return ret;
 }
+
+void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, HealthType& type, HealthStatus& status, std::string& description) {
+  if (device == nullptr) {
+    return;
+  }
+
+  if (type == HealthType::HEALTH_MEMORY) {
+    status = HealthStatus::HEALTH_UNKNOWN;
+    description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_UNKNOWN);
+    uint32_t mem_module_count = 0;
+    ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+    if (res == ZE_RESULT_SUCCESS) {
+      std::vector<zes_mem_handle_t> mems(mem_module_count);
+      res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+      if (res == ZE_RESULT_SUCCESS) {
+        for (auto& mem:mems) {
+          zes_mem_state_t memory_state = {};
+          memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+          res = zesMemoryGetState(mem, &memory_state);
+          if (res == ZE_RESULT_SUCCESS) {
+            if (memory_state.health == ZES_MEM_HEALTH_OK && (int)status < ZES_MEM_HEALTH_OK) {
+              status = HealthStatus::HEALTH_OK;
+              description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_OK);
+            }            
+            if (memory_state.health == ZES_MEM_HEALTH_DEGRADED && (int)status < ZES_MEM_HEALTH_DEGRADED) {
+              status = HealthStatus::HEALTH_WARNING;
+              description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_DEGRADED);
+            }
+            if (memory_state.health == ZES_MEM_HEALTH_CRITICAL && (int)status < ZES_MEM_HEALTH_CRITICAL) {
+              status = HealthStatus::HEALTH_CRITICAL;
+              description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_CRITICAL);
+            }
+            if (memory_state.health == ZES_MEM_HEALTH_REPLACE  && (int)status < ZES_MEM_HEALTH_REPLACE) {
+              status = HealthStatus::HEALTH_CRITICAL;
+              description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_REPLACE);
+            }
+          }
+        }
+      }
+    }
+  } else if (type == HealthType::HEALTH_POWER) {
+
+  } else if (type == HealthType::HEALTH_TEMPERATURE) {
+    status = HealthStatus::HEALTH_UNKNOWN;
+    description = "The temperature health cannot be determined.";
+    uint32_t temp_sensor_count = 0;
+    ze_result_t res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr);
+    std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
+    if (res == ZE_RESULT_SUCCESS) {
+      res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data());
+      for (auto &temp : temp_sensors) {
+        zes_temp_properties_t props;
+        res = zesTemperatureGetProperties(temp, &props);
+        if (res != ZE_RESULT_SUCCESS || props.type != ZES_TEMP_SENSORS_GPU) {
+          continue;
+        }
+        double temp_val = 0;
+        res = zesTemperatureGetState(temp, &temp_val);
+        if (res == ZE_RESULT_SUCCESS) {
+          if (temp_val < Configuration::TEMPERATURE_HEALTH_LIMIT && status < HealthStatus::HEALTH_OK) {
+              status = HealthStatus::HEALTH_OK;
+              description = "All temperature sensors are healthy.";
+          }
+          if (temp_val >= Configuration::TEMPERATURE_HEALTH_LIMIT && status < HealthStatus::HEALTH_WARNING) {
+              status = HealthStatus::HEALTH_WARNING;
+              description = "Some temperature sensors are unhealthy.";              
+          }
+        }
+      }
+    }
+  } else if (type == HealthType::HEALTH_FABRIC_PORT) {
+    status = HealthStatus::HEALTH_UNKNOWN;
+    description = "All port statuses cannot be determined.";
+    uint32_t fabric_ports_count = 0;
+    ze_result_t res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, nullptr);
+    std::vector<zes_fabric_port_handle_t> fabric_ports(fabric_ports_count);
+    if (res == ZE_RESULT_SUCCESS) {
+      res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, fabric_ports.data());
+      for (auto &fabric_port : fabric_ports) {
+        zes_fabric_port_state_t fabric_port_state;
+        res = zesFabricPortGetState(fabric_port, &fabric_port_state);
+        if (res == ZE_RESULT_SUCCESS) {
+          if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_HEALTHY  && (int)status < ZES_FABRIC_PORT_STATUS_HEALTHY) {
+            status = HealthStatus::HEALTH_OK;
+            description = "All ports are up and operating as expected.";
+          }            
+          if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_DEGRADED && (int)status < ZES_FABRIC_PORT_STATUS_DEGRADED) {
+            status = HealthStatus::HEALTH_WARNING;
+            description = "The port " + std::to_string(fabric_port_state.remotePortId.fabricId) + " is up but has quality and/or speed degradation.";
+          }
+          if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_FAILED && (int)status < ZES_FABRIC_PORT_STATUS_FAILED) {
+            status = HealthStatus::HEALTH_CRITICAL;
+            description = "The port " + std::to_string(fabric_port_state.remotePortId.fabricId) + " connection instabilities are preventing workloads making forward progress.";
+          }
+          if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_FAILED && (int)status < ZES_FABRIC_PORT_STATUS_FAILED) {
+            status = HealthStatus::HEALTH_WARNING;
+            description = "The port " + std::to_string(fabric_port_state.remotePortId.fabricId) + " is configured down.";
+          }
+        }
+      }
+    }
+  }
+}

@@ -11,6 +11,7 @@
 #include "standby.h"
 #include "power.h"
 #include "frequency.h"
+#include "health_data_type.h"
 
 class GPUDeviceStub {
  public:
@@ -66,6 +67,8 @@ class GPUDeviceStub {
 
   static bool setSchedulerExclusiveMode(const zes_device_handle_t& device,
                                         const SchedulerExclusiveMode& mode);
+
+  static void getHealthStatus(const zes_device_handle_t& device, HealthType& type, HealthStatus& status, std::string& description);
 
 private:
   GPUDeviceStub();

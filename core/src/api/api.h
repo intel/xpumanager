@@ -70,4 +70,7 @@ API_EXPORT void setDeviceSchedulerExclusiveMode(const char* device_id,
                                                 const Scheduler_exclusive_t& sched_exclusive,
                                                 Api_result_t* api_result);
 
+API_EXPORT void getDeviceHealthStatus(const char* device_id, HealthType type,
+                                        void (*callback)(Health_data_t*),
+                                        Api_result_t* api_result);
 }

@@ -65,14 +65,14 @@ class DeviceManager : public DeviceManagerInterface,
   bool setDeviceSchedulerExclusiveMode(const std::string& id,
                                        const SchedulerExclusiveMode& mode);
 
+  std::shared_ptr<Device> getDevice(const std::string& id);
+
  private:
   DeviceManager() = default;
 
   DeviceManager& operator=(const DeviceManager&) = delete;
 
   DeviceManager(const DeviceManager& other) = delete;
-
-  std::shared_ptr<Device> getDevice(const std::string& id);
 
   zes_device_handle_t getDeviceHandle(const std::string& Id);
 

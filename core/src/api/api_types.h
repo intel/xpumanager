@@ -1,6 +1,7 @@
 #pragma once
 
 #include "measurement_type.h"
+#include "health_data_type.h"
 
 extern "C" {
 
@@ -126,5 +127,11 @@ struct Device_t {
   int property_len;
 };
 
+struct Health_data_t {
+  const char* device_id;
+  HealthType type;
+  HealthStatus status;
+  const char* description;
+};
 
 }

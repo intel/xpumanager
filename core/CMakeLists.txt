@@ -41,6 +41,8 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/exception)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/monitor)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/policy)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/group)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/src/health)
+
 
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/api API_SRC)
@@ -55,6 +57,8 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/exception EXCE
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/monitor MONITOR_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/policy POLICY_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/group GROUP_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
+
 
 if (BUILD_TEST)
 
@@ -97,6 +101,7 @@ target_sources(
   ${MONITOR_SRC}
   ${POLICY_SRC}
   ${GROUP_SRC}
+  ${HEALTH_SRC}
 )
 
 target_link_libraries(DGMCore ze_loader)
