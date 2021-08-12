@@ -328,6 +328,7 @@ struct xpum_diag_task_info_t {
 
 typedef enum xpum_agent_config_enum {
     XPUM_AGENT_CONFIG_EVENT_LIMIT = 0,
+    XPUM_AGENT_CONFIG_SAMPLE_INTERVAL
 } xpum_agent_config_t;
 
 
@@ -337,46 +338,37 @@ typedef enum xpum_agent_config_enum {
  */
 /**************************************************************************/
 
-typedef uint32_t xpum_metrics_task_id_t;
+typedef enum xpum_stats_type_enum {
+    XPUM_STATS_GPU_COMPUTATION = 0,
+    XPUM_STATS_OCCUPATION,
+    XPUM_STATS_ISSUE_EFFICIENCY,
+    XPUM_STATS_EXECUTION_EFFICIENCY,
+    XPUM_STATS_NON_OCCUPATION,
+    XPUM_STATS_POWER,
+    XPUM_STATS_ENERGY,
+    XPUM_STATS_GPU_FREQUENCY,
+    XPUM_STATS_GPU_TEMEPERATURE,
+    XPUM_STATS_MEMORY_USED,
+    XPUM_STATS_MEMORY_WRITE,
+    XPUM_STATS_PCIRX,
+    XPUM_STATS_PCITX,
+    XPUM_STATS_MAX
+} xpum_stats_type_t;
 
-typedef enum xpum_metrics_type_enum {
-    XPUM_METRICS_GPU_COMPUTATION = 0,
-    XPUM_METRICS_OCCUPATION,
-    XPUM_METRICS_ISSUE_EFFICIENCY,
-    XPUM_METRICS_EXECUTION_EFFICIENCY,
-    XPUM_METRICS_NON_OCCUPATION,
-    XPUM_METRICS_PARALLELISM,
-    XPUM_METRICS_DISPATCHING,
-    XPUM_METRICS_POWER,
-    XPUM_METRICS_GPU_FREQUENCY,
-    XPUM_METRICS_GPU_TEMEPERATURE,
-    XPUM_METRICS_MEMORY_USED,
-    XPUM_METRICS_GPU_UTILIZATION,
-    XPUM_METRICS_FABRIC_SPEED,
-    XPUM_METRICS_MAX
-} xpum_metrics_type_t;
-
-struct xpum_metrics_raw_data_t {
-    xpum_metrics_type_t metricsType;
-    uint64_t timestamp;
-    xpum_device_id_t deviceId;
+struct xpum_stats_data_t {
+    xpum_stats_type_t metricsType;
+    bool isCounter;
     int32_t value;
+    int32_t min;
+    int32_t avg;
+    int32_t max;
 };
 
-struct xpum_metrics_device_t {
+struct xpum_device_stats_t {
     xpum_device_id_t deviceId;
-    uint64_t energy;
-};
-
-struct xpum_metrics_task_info_t {
-    xpum_metrics_task_id_t taskId;
-    bool finished;
     uint64_t begin;
     uint64_t end;
-    xpum_metrics_type_t metricsToCollect[XPUM_METRICS_MAX];
-    int metricsCount;
-    xpum_metrics_device_t metricsDeviceList[XPUM_MAX_NUM_DEVICES];
-    int deviceCount;
+    xpum_stats_data_t dataList[XPUM_STATS_MAX];
 };
 
 #if defined(__cplusplus)

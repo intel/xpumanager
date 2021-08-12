@@ -602,79 +602,37 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
 /** @} */ // Closing for AGENT_SETTING_API
 
 /**************************************************************************/
-/** @defgroup METRICS_COLLECTING_API
- * These APIs are for metrics collecting
+/** @defgroup STATISTICS_API
+ * These APIs are for statistics
  * @{
  */
 /**************************************************************************/
 
 /**
- * @brief Create metrics collect task
+ * @brief Get statistics data by device
  * 
- * @param deviceId      IN: Device id to perform metrics collecting
- * @param taskId       OUT: Id for task created to collect metrics
+ * @param deviceId      IN: Device id
+ * @param data         OUT: The statistics data for device \a deviceId
  * @return xpum_result_t 
  */
-xpum_result_t xpumCreateMetricsCollectTask(xpum_device_id_t deviceId, xpum_metrics_task_id_t *taskId);
+xpum_result_t xpumGetStats(xpum_device_id_t deviceId, xpum_device_stats_t *data);
 
 /**
- * @brief Create metrics collect task by group
+ * @brief Get statistics data by group
  * 
- * @param groupId       IN: Group id to perform metrics collecting
- * @param taskId       OUT: Id for task created to collect metrics
+ * @param groupId       IN: Group id
+ * @param dataList     OUT: The statistics data for group \a groupId
+ * @param count     IN/OUT: The number of entries that \a dataList array can store, 
+ *                          count should equal to or larger than device count of the group ( \a groupid );       
+ *                          when return, the \a count will store real number of entries returned by       
+ *                          \a dataList    
  * @return xpum_result_t 
- */
-xpum_result_t xpumCreateMetricsCollectTaskByGroup(xpum_group_id_t groupId, xpum_metrics_task_id_t *taskId);
-
-/**
- * @brief Stop collect metrics
- * 
- * @param taskId        IN: The task to stop
- * @return xpum_result_t 
- */
-xpum_result_t xpumStopMetricsCollectTask(xpum_metrics_task_id_t taskId);
-
-/**
- * @brief Get all metrics collecting task ids
- * XPUM caches latest tasks, max to \ref XPUM_MAX_CACHED_METRICS_TASK_NUM entries
- * 
- * @param taskIdList    OUT: Task ids
- * @param count         OUT: The count of task ids stored in \a taskIdList
- * @return xpum_result_t 
- */
-xpum_result_t xpumGetAllMetricsCollectTask(xpum_metrics_task_id_t taskIdList[XPUM_MAX_CACHED_METRICS_TASK_NUM], int *count);
-
-/**
- * @brief Get detailed information of a metrics collecting task
- * 
- * @param taskId        IN: Task id
- * @param info         OUT: The detailed information for the task
- * @return xpum_result_t 
- */
-xpum_result_t xpumGetMetricsCollectTaskInfo(xpum_metrics_task_id_t taskId, xpum_metrics_task_info_t *info);
-
-/**
- * @brief Get raw datas for a metrics collect task
- * 
- * @param taskId                  IN: Task id
- * @param rawDataList         IN/OUT: First pass NULL to query raw data count. 
- *                                    Then pass array with desired length to 
- *                                    store events data.             
- * @param count               IN/OUT: When \a rawDataList is NULL, \a count will be filled with the number of
- *                                    available raw datas, and return.
- *                                    When \a rawDataList is not NULL, \a count denotes the length of \a rawDataList,
- *                                    \a count should be equal to or larger than the number of available raw datas,
- *                                    when return, the \a count will store real number of entries returned by
- *                                    \a rawDataList
- * @return
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events 
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
  */
-xpum_result_t xpumGetMetricsCollectTaskRawData(xpum_metrics_task_id_t taskId, 
-                                               xpum_metrics_raw_data_t rawDataList[], 
-                                               int *count);
+xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, xpum_device_stats_t dataList[], int *count);
 
-/** @} */ // Closing for METRICS_COLLECTING_API
+/** @} */ // Closing for STATISTICS_API
 
 #if defined(__cplusplus)
 } // extern "C"
