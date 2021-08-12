@@ -18,7 +18,7 @@ class GroupManager : public GroupManagerInterface,
         GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                  std::shared_ptr<DataLogicInterface>& p_data_logic);
 
-        xpum_result_t createGroup(char *pGroupName, xpum_group_id_t *pGroupId) override;
+        xpum_result_t createGroup(const char *pGroupName, xpum_group_id_t *pGroupId) override;
 
         xpum_result_t destroyGroup(xpum_group_id_t groupId) override;
 

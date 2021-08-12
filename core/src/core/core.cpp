@@ -6,6 +6,7 @@
 #include "monitor_manager.h"
 #include "health_manager.h"
 #include "core.h"
+#include "group_manager.h"
 
 Core::Core()
     : p_device_manager(nullptr),
@@ -45,6 +46,11 @@ std::shared_ptr<HealthManagerInterface> Core::getHealthManager() {
   return p_health_manager;
 }
 
+std::shared_ptr<GroupManagerInterface> Core::getGroupManager(){
+  std::unique_lock<std::mutex> lock(mutex);
+  return p_group_manager;  
+}
+
 void Core::init() {
   std::unique_lock<std::mutex> lock(mutex);
   if (initialized)  {
@@ -69,6 +75,10 @@ void Core::init() {
   Logger::instance().info("initialize health manager");
   p_health_manager = std::make_shared<HealthManager>(p_device_manager, p_data_logic);
   p_health_manager->init();
+
+  Logger::instance().info("initialize group manager");
+  p_group_manager = std::make_shared<GroupManager>(p_device_manager, p_data_logic);
+  p_group_manager->init();
 
   initialized = true;  
 }

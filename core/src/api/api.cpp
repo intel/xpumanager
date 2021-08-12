@@ -448,3 +448,148 @@ void getDeviceHealthStatus(const char* device_id, HealthType type,
   setResultOK(api_result);
   return;
 }
+
+void createGroup(const char *groupName, void (*callback)(int*), Api_result_t* api_result)
+{
+  if (!validPrerequisite((void*)callback, api_result)) {
+    return ;
+  }
+
+  int groupId;
+  xpum_result_t result = Core::instance().getGroupManager()->createGroup(groupName, &groupId);
+  if(result == XPUM_OK) {
+    callback(&groupId);
+    setResultOK(api_result);
+  }else{
+    std::string msg("");
+    setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  }
+
+  return;
+}
+
+void destroyGroup(const char* groupId, Api_result_t* api_result)
+{
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  int id = std::stoi(groupId);
+  xpum_result_t result = Core::instance().getGroupManager()->destroyGroup(id);
+
+  if(result == XPUM_OK) {
+    setResultOK(api_result);
+  }else{
+    std::string msg("");
+    setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  }
+
+  return;
+}
+
+void addDeviceToGroup(const char* groupId, const char* deviceId, Api_result_t* api_result)
+{
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  int gId = std::stoi(groupId);
+  int dId = std::stoi(deviceId);
+
+  xpum_result_t result = Core::instance().getGroupManager()->addDeviceToGroup(gId, dId);
+
+  if(result == XPUM_OK) {
+    setResultOK(api_result);
+  }else{
+    std::string msg("");
+    setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  }
+
+  return;
+}
+
+void removeDeviceFromGroup(const char*  groupId, const char*  deviceId, Api_result_t* api_result)
+{
+  if (!validPrerequisite(api_result)) {
+    return ;
+  }
+
+  int gId = std::stoi(groupId);
+  int dId = std::stoi(deviceId);
+
+  xpum_result_t result = Core::instance().getGroupManager()->removeDeviceFromGroup(gId, dId);
+
+  if(result == XPUM_OK) {
+    setResultOK(api_result);
+  }else{
+    std::string msg("");
+    setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  }
+
+  return;
+}
+
+void getGroupLatestMeasurementData(const char* groupId,
+                                         MeasurementType type,
+                                         void (*callback)(Measurement_data_t*),
+                                         Api_result_t* api_result)
+{
+  if (!validPrerequisite((void*)callback, api_result)) {
+    return ;
+  }
+
+  int gId = std::stoi(groupId);
+  std::string group_id_str = groupId;
+
+  xpum_group_info_t group_info;
+  xpum_result_t result = Core::instance().getGroupManager()->getGroupInfo(gId, &group_info);
+  if(result == XPUM_OK) {
+    for(unsigned int idx=0; idx<group_info.count; idx++){
+      std::string device_id_str = std::to_string(group_info.deviceList[idx]);
+      MeasurementData data =
+        Core::instance().getDataLogic()->getLatestData(type, device_id_str);
+      Measurement_data_t ret_data;
+      convertMeasurementData(data, ret_data);
+      callback(&ret_data);
+    }
+
+    setResultOK(api_result);
+  }else{
+    std::string msg("");
+    setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  }
+
+  return;
+}
+
+void getGroupRealtimeMeasurementData(
+    const char* groupId, MeasurementType type,
+    void (*callback)(Measurement_data_t*), Api_result_t* api_result)
+{
+  if (!validPrerequisite((void*)callback, api_result)) {
+    return ;
+  }
+
+  int gId = std::stoi(groupId);
+  std::string group_id_str = groupId;
+
+  xpum_group_info_t group_info;
+  xpum_result_t result = Core::instance().getGroupManager()->getGroupInfo(gId, &group_info);
+  if(result == XPUM_OK) {
+    for(unsigned int idx=0; idx<group_info.count; idx++){
+      std::string device_id_str = std::to_string(group_info.deviceList[idx]);
+      MeasurementData data =
+        Core::instance().getDeviceManager()->getRealtimeMeasurementData(type, device_id_str);
+      Measurement_data_t ret_data;
+      convertMeasurementData(data, ret_data);
+      callback(&ret_data);
+    }
+
+    setResultOK(api_result);
+  }else{
+    std::string msg("");
+    setResultError(api_result,ErrorCode::OPERATION_FAILED,msg);
+  }
+
+  return;
+}

@@ -1,7 +1,7 @@
 #include "logger.h"
 #include "group_info.h"
 
-GroupInfo::GroupInfo(char * name, xpum_group_id_t groupId)
+GroupInfo::GroupInfo(const char * name, xpum_group_id_t groupId)
 {
     Logger::instance().info("GroupInfo");
     name = name;
@@ -44,15 +44,15 @@ xpum_result_t GroupInfo::addDevice(const std::shared_ptr<DeviceManagerInterface>
 {
     Logger::instance().info("GroupInfo::addDevice");
     xpum_result_t ret = XPUM_GENERIC_ERROR;
-    const zes_device_handle_t& device = p_devicemanager->getDevice(varName(deviceId))->getDeviceHandle();
+    const zes_device_handle_t& device = p_devicemanager->getDevice(i_to_s(deviceId))->getDeviceHandle();
     if(device == nullptr) {
-        Logger::instance().error(std::string("GroupInfo::addDevice-invalid device id ") + std::string(varName(deviceId)));
+        Logger::instance().error(std::string("GroupInfo::addDevice-invalid device id ") + std::string(i_to_s(deviceId)));
         return ret;
     }
 
     for(unsigned int i=0; i < deviceList.size(); i++)   {
         if(deviceList[i] == deviceId) {
-            Logger::instance().error(std::string("GroupInfo::addDevice- device id ") + std::string(varName(deviceId))
+            Logger::instance().error(std::string("GroupInfo::addDevice- device id ") + std::string(i_to_s(deviceId))
                 + std::string(" was already in the group.") );
             return ret;
         }
@@ -77,7 +77,7 @@ xpum_result_t GroupInfo::removeDevice(const std::shared_ptr<DeviceManagerInterfa
         }
     }
 
-    Logger::instance().error(std::string("GroupInfo::removeDevice- device id ") + std::string(varName(deviceId))
+    Logger::instance().error(std::string("GroupInfo::removeDevice- device id ") + std::string(i_to_s(deviceId))
                 + std::string(" not in the group.") );
     
     return ret;

@@ -73,4 +73,23 @@ API_EXPORT void setDeviceSchedulerExclusiveMode(const char* device_id,
 API_EXPORT void getDeviceHealthStatus(const char* device_id, HealthType type,
                                         void (*callback)(Health_data_t*),
                                         Api_result_t* api_result);
+
+API_EXPORT void createGroup(const char *groupName, 
+                            void (*callback)(int*),
+                            Api_result_t* api_result);
+
+API_EXPORT void destroyGroup(const char* groupId, Api_result_t* api_result);
+
+API_EXPORT void addDeviceToGroup(const char* groupId, const char* deviceId, Api_result_t* api_result);
+
+API_EXPORT void removeDeviceFromGroup(const char*  groupId, const char*  deviceId, Api_result_t* api_result);
+
+API_EXPORT void getGroupLatestMeasurementData(const char* groupId,
+                                         MeasurementType type,
+                                         void (*callback)(Measurement_data_t*),
+                                         Api_result_t* api_result);
+
+API_EXPORT void getGroupRealtimeMeasurementData(
+    const char* groupId, MeasurementType type,
+    void (*callback)(Measurement_data_t*), Api_result_t* api_result);                                      
 }

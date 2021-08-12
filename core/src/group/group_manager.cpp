@@ -12,7 +12,7 @@ GroupManager::~GroupManager() {
     Logger::instance().info("~GroupManager");
 }
 
-xpum_result_t GroupManager::createGroup(char *pGroupName, xpum_group_id_t *pGroupId)
+xpum_result_t GroupManager::createGroup(const char *pGroupName, xpum_group_id_t *pGroupId)
 {
     std::unique_lock<std::mutex> lock(this->mutex);
     xpum_result_t ret = XPUM_GENERIC_ERROR;
@@ -58,20 +58,20 @@ xpum_result_t GroupManager::destroyGroup(xpum_group_id_t groupId){
 
     GroupMap::iterator groupIterator = groupMap.find(groupId);
     if(groupIterator == groupMap.end()) {
-        Logger::instance().error(std::string("GroupManager::destroyGroup-not able to find the group ") + std::string(varName(groupId)));
+        Logger::instance().error(std::string("GroupManager::destroyGroup-not able to find the group ") + std::string(i_to_s(groupId)));
         return ret;
     } else {
         pGroupInfo = groupIterator->second;
 
         if(pGroupInfo == nullptr) {
-            Logger::instance().error(std::string("GroupManager::destroyGroup-invalid group ") + std::string(varName(groupId)));
+            Logger::instance().error(std::string("GroupManager::destroyGroup-invalid group ") + std::string(i_to_s(groupId)));
             return ret;
         }
 
         delete pGroupInfo;
         pGroupInfo = nullptr;
         groupMap.erase(groupIterator);
-        Logger::instance().info(std::string("GroupManager::destroyGroup-group ") + std::string(varName(groupId)));
+        Logger::instance().info(std::string("GroupManager::destroyGroup-group ") + std::string(i_to_s(groupId)));
     }
 
     return XPUM_OK;
@@ -84,7 +84,7 @@ xpum_result_t GroupManager::addDeviceToGroup(xpum_group_id_t groupId, xpum_devic
 
     GroupInfo * pGroupInfo = getGroupById(groupId);
     if(pGroupInfo == nullptr) {
-        Logger::instance().error(std::string("GroupManager::addDeviceToGroup-invalid group ") + std::string(varName(groupId)));
+        Logger::instance().error(std::string("GroupManager::addDeviceToGroup-invalid group ") + std::string(i_to_s(groupId)));
         return ret;
     }
 
@@ -98,7 +98,7 @@ xpum_result_t GroupManager::removeDeviceFromGroup(xpum_group_id_t groupId, xpum_
 
     GroupInfo * pGroupInfo = getGroupById(groupId);
     if(pGroupInfo == nullptr) {
-        Logger::instance().error(std::string("GroupManager::removeDeviceFromGroup-invalid group ") + std::string(varName(groupId)));
+        Logger::instance().error(std::string("GroupManager::removeDeviceFromGroup-invalid group ") + std::string(i_to_s(groupId)));
         return ret;
     }
 
@@ -112,7 +112,7 @@ xpum_result_t GroupManager::getGroupInfo(xpum_group_id_t groupId, xpum_group_inf
 
     GroupInfo * p_GroupInfo = getGroupById(groupId);
     if(p_GroupInfo == nullptr) {
-        Logger::instance().error(std::string("GroupManager::removeDeviceFromGroup-invalid group ") + std::string(varName(groupId)));
+        Logger::instance().error(std::string("GroupManager::removeDeviceFromGroup-invalid group ") + std::string(i_to_s(groupId)));
         return ret;
     }
 
@@ -135,7 +135,7 @@ xpum_result_t GroupManager::getAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM
         GroupInfo * pGroupInfo = iterator->second;
         if(pGroupInfo == nullptr) {
             Logger::instance().error(std::string("GroupManager::getAllGroupIds- fatal error, nullptr @ group ") 
-                + std::string(varName(iterator->first)));
+                + std::string(i_to_s(iterator->first)));
             return ret;
         }
         groupIds[index++] = pGroupInfo->getId();
@@ -249,12 +249,12 @@ GroupInfo * GroupManager::getGroupById(xpum_group_id_t groupId)
     GroupInfo * pGroupInfo;
     GroupMap::iterator groupIterator = groupMap.find(groupId);
     if(groupIterator == groupMap.end()) {
-        Logger::instance().error(std::string("GroupManager::getGroupById-not able to find group ") + std::string(varName(groupId)));
+        Logger::instance().error(std::string("GroupManager::getGroupById-not able to find group ") + std::string(i_to_s(groupId)));
         return nullptr;
     }else{
         pGroupInfo = groupIterator->second;
         if(pGroupInfo == nullptr) {
-            Logger::instance().error(std::string("GroupManager::getGroupById-not able to find group ") + std::string(varName(groupId)));
+            Logger::instance().error(std::string("GroupManager::getGroupById-not able to find group ") + std::string(i_to_s(groupId)));
             return nullptr;
         }
     }

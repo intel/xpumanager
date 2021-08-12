@@ -5,12 +5,12 @@
 #include "xpum_structs.h"
 #include "device_manager_interface.h"
 
-#define varName(x) #x  
+#define i_to_s(x) #x  
 
 class GroupInfo
 {
     public:
-        GroupInfo(char * name, xpum_group_id_t groupId);
+        GroupInfo(const char * name, xpum_group_id_t groupId);
         ~GroupInfo();
 
         xpum_group_id_t getId();
