@@ -5,8 +5,6 @@
 #include "xpum_structs.h"
 #include "device_manager_interface.h"
 
-#define i_to_s(x) #x  
-
 class GroupInfo
 {
     public:
