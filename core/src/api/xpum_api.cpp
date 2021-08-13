@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include "xpum_api.h"
+#include "power.h"
 #include "api.h"
 
 using namespace std;
@@ -35,7 +36,7 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
         {
             auto &prop = device->properties[i];
             
-            cout<<prop.name<<":\t"<<prop.value<<endl;
+            // cout<<prop.name<<":\t"<<prop.value<<endl;
         }
 
         deviceInfoList.push_back(info);
@@ -45,7 +46,7 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 
     *count = deviceInfoList.size();
     
-    for(int i=0;i<deviceInfoList.size();i++){
+    for(int i=0;i<deviceInfoList.size();i++) {
         deviceList[i] = deviceInfoList[i];
     }
 

@@ -1,3 +1,5 @@
 .project
 __pycache__
 build/
+libDGMCore.so
+DGMCore
