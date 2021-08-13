@@ -53,3 +53,34 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
     return XPUM_OK;
 
 }
+
+#include "core.h"
+xpum_result_t xpumGroupCreate(char *groupName, xpum_group_id_t *pGroupId)
+{
+    return Core::instance().getGroupManager()->createGroup(groupName, pGroupId);    
+}
+
+xpum_result_t xpumGroupDestroy(xpum_group_id_t groupId)
+{
+    return Core::instance().getGroupManager()->destroyGroup(groupId);
+}
+
+xpum_result_t xpumGroupAddDevice(xpum_group_id_t groupId, xpum_device_id_t deviceId)
+{
+    return Core::instance().getGroupManager()->addDeviceToGroup(groupId, deviceId);
+}
+
+xpum_result_t xpumGroupRemoveDevice(xpum_group_id_t groupId, xpum_device_id_t deviceId)
+{
+    return Core::instance().getGroupManager()->removeDeviceFromGroup(groupId, deviceId);
+}
+
+xpum_result_t xpumGroupGetInfo(xpum_group_id_t groupId, xpum_group_info_t *pGroupInfo)
+{
+    return Core::instance().getGroupManager()->getGroupInfo(groupId, pGroupInfo);
+}
+
+xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count)
+{
+    return Core::instance().getGroupManager()->getAllGroupIds(groupIds, count);
+}
