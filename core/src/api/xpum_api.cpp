@@ -1,5 +1,8 @@
 #include <vector>
 #include <iostream>
+#include <cstdint>
+#include <cstring>
+
 #include "xpum_api.h"
 #include "power.h"
 #include "api.h"
@@ -35,8 +38,13 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
         for (int i = 0; i < device->property_len; i++)
         {
             auto &prop = device->properties[i];
+
+            string uuid("UUID");
+            if(uuid.compare(prop.name)==0){
+                cout<<prop.name<<":\t"<<prop.value<<endl;
+                // memcpy(prop.value,info.uuid,sizeof(info.uuid));
+            }
             
-            // cout<<prop.name<<":\t"<<prop.value<<endl;
         }
 
         deviceInfoList.push_back(info);

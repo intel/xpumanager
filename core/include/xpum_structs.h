@@ -39,7 +39,7 @@ extern "C" {
 /**
  * Max uuid bytes
  */
-#define XPUM_MAX_DEVICE_UUID_SIZE  16
+#define XPUM_MAX_DEVICE_UUID_SIZE  32
 
 /**
  * The max number of cached metrics collecting task
