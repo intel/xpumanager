@@ -77,13 +77,9 @@ if (BUILD_TEST)
     add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_main.cpp)
   endif()
 
-  install(TARGETS DGMCore DESTINATION ${CMAKE_CURRENT_LIST_DIR})
-
 else()
 
   add_library (DGMCore SHARED)
-
-  install(TARGETS DGMCore LIBRARY DESTINATION ${CMAKE_CURRENT_LIST_DIR})
 
 endif()
 
