@@ -1,6 +1,5 @@
 #include <vector>
 #include <iostream>
-#include <cstdint>
 #include <cstring>
 
 #include "xpum_api.h"
@@ -11,6 +10,10 @@ using namespace std;
 
 vector<xpum_device_basic_info> deviceInfoList;
 
+xpum_device_id_t deviceIdToGetProps;
+
+xpum_device_properties_t *propsBuff;
+
 xpum_result_t xpumInit() {
     bool res = init();
     if(res) return XPUM_OK;
@@ -18,6 +21,34 @@ xpum_result_t xpumInit() {
 }
 
 xpum_result_t xpumShutdown() {
+    return XPUM_OK;
+}
+
+xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count)
+{
+    if (!versionInfoList)
+    {
+        *count = 2;
+        return XPUM_OK;
+    }
+
+    if (*count < 2)
+    {
+        *count = 2;
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    string xpumVersion("1.0.0");
+    string levelZeroVersion("1.2.13");
+
+    versionInfoList[0].version = XPUM_VERSION;
+    xpumVersion.copy(versionInfoList[0].versionString, xpumVersion.size());
+    versionInfoList[0].versionString[xpumVersion.size()]='\0';
+
+    versionInfoList[1].version = XPUM_VERSION_LEVEL_ZERO;
+    levelZeroVersion.copy(versionInfoList[1].versionString, levelZeroVersion.size());
+    versionInfoList[1].versionString[levelZeroVersion.size()]='\0';
+
     return XPUM_OK;
 }
 
@@ -40,11 +71,11 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
             auto &prop = device->properties[i];
 
             string uuid("UUID");
-            if(uuid.compare(prop.name)==0){
-                cout<<prop.name<<":\t"<<prop.value<<endl;
-                // memcpy(prop.value,info.uuid,sizeof(info.uuid));
+            if (uuid.compare(prop.name) == 0)
+            {
+                string value(prop.value);
+                value.copy((char*)info.uuid,sizeof(info.uuid));
             }
-            
         }
 
         deviceInfoList.push_back(info);
@@ -60,6 +91,46 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 
     return XPUM_OK;
 
+}
+
+xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties) {
+    
+    Api_result_t result;
+
+    deviceIdToGetProps = deviceId;
+
+    propsBuff = pXpumProperties;
+    
+    auto callback = [](Device_t *device)
+    {
+        xpum_device_basic_info info;
+
+        xpum_device_id_t deviceId = stoi(device->device_id);
+
+        if(deviceId == deviceIdToGetProps) {
+
+            propsBuff->deviceId = deviceId;
+
+            propsBuff->propertyLen = device->property_len;
+
+            for (int i = 0; i < device->property_len; i++)
+            {
+                auto &prop = device->properties[i];
+                auto &propCopy = propsBuff->properties[i];
+                string name(prop.name);
+                string value(prop.value);
+                name.copy(propCopy.name,name.size());
+                propCopy.name[name.size()+1]=0;
+                value.copy(propCopy.value,value.size());
+                propCopy.value[value.size()+1]=0;
+            }
+        }
+
+    };
+
+    getDeviceList(callback, &result);
+
+    return XPUM_OK;
 }
 
 #include "core.h"

@@ -11,6 +11,11 @@ app = Flask(__name__)
 
 core = DGMCore()
 
+@app.route('/dgm/v1/version', methods=['GET'])
+def get_version():
+    count = core.getXpumVersion()
+    return jsonify(count)
+    
 
 @app.route('/dgm/v1/devices', methods=['GET'])
 def get_devices():

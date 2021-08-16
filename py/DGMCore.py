@@ -93,6 +93,12 @@ GetLatestMeasurementCallbackType = CFUNCTYPE(None, POINTER(MeasurementData))
 
 GetRealtimeMeasurementCallbackType = CFUNCTYPE(None, POINTER(MeasurementData))
 
+class XpumVersionInfo(Structure):
+    _fields_ = [
+        ("version", c_int),
+        ("versionString", c_char_p)
+    ]
+
 class DGMCore:
     def __init__(self):
         py_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -100,7 +106,14 @@ class DGMCore:
         lib_path = os.path.join(project_dir_path,"core","libDGMCore.so")
         # self.lib = cdll.LoadLibrary("./libDGMCore.so") 
         self.lib = cdll.LoadLibrary(lib_path) 
-        self.lib.init()
+        # self.lib.init()
+        self.lib.xpumInit()
+
+    def getXpumVersion(self):
+        count = c_int(0)
+        self.lib.xpumVersionInfo(None,byref(count))
+        print(count.value)
+        return count.value
 
     def getDeviceList(self):	
         devices = []
