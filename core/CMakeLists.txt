@@ -77,13 +77,9 @@ if (BUILD_TEST)
     add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_main.cpp)
   endif()
 
-  install(TARGETS DGMCore DESTINATION ${CMAKE_CURRENT_LIST_DIR})
-
 else()
 
   add_library (DGMCore SHARED)
-
-  install(TARGETS DGMCore LIBRARY DESTINATION ${CMAKE_CURRENT_LIST_DIR})
 
 endif()
 
@@ -108,3 +104,8 @@ target_sources(
 target_link_libraries(DGMCore ze_loader)
 
 unset(BUILD_TEST CACHE) 
+
+install(TARGETS DGMCore
+  RUNTIME DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}
+  LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}
+  ARCHIVE DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
