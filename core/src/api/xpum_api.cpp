@@ -5,6 +5,7 @@
 #include "xpum_api.h"
 #include "power.h"
 #include "api.h"
+#include "version.h"
 
 using namespace std;
 
@@ -38,7 +39,7 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count)
         return XPUM_BUFFER_TOO_SMALL;
     }
 
-    string xpumVersion("1.0.0");
+    string xpumVersion = Version::getVersion();
     string levelZeroVersion("1.2.13");
 
     versionInfoList[0].version = XPUM_VERSION;

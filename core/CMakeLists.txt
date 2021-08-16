@@ -15,6 +15,8 @@ option(BUILD_TEST "build application instead of lib for test" OFF)
 
 option(BUILD_TEST_API "build application for api test" OFF)
 
+configure_file(${CMAKE_CURRENT_LIST_DIR}/src/api/version.cpp.in ${CMAKE_CURRENT_LIST_DIR}/src/api/version.cpp @ONLY)
+
 # set(BUILD_TEST_API OFF BOOL "build application for api test")
 
 # Set debug file name postfix
