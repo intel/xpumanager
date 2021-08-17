@@ -15,7 +15,7 @@ option(BUILD_TEST "build application instead of lib for test" OFF)
 
 option(BUILD_TEST_API "build application for api test" OFF)
 
-if (NOT DEFINED PROJECT_VERSION_BUILD)
+if (NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
 
