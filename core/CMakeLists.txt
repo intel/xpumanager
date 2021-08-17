@@ -15,6 +15,10 @@ option(BUILD_TEST "build application instead of lib for test" OFF)
 
 option(BUILD_TEST_API "build application for api test" OFF)
 
+if (NOT DEFINED PROJECT_VERSION_BUILD)
+  set(XPUM_VERSION_STRING 0.1.0)
+endif()
+
 configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/version.cpp.in ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/version.cpp @ONLY)
 
 # set(BUILD_TEST_API OFF BOOL "build application for api test")
