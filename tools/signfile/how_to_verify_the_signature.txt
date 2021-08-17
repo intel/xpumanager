@@ -1,0 +1,10 @@
+SignFile executable is signed with a detached signature. The signature is stored in SignFile.sig file.
+
+To verify the signature with OpenSSL, perform these steps:
+	1. Extract the certificates to certs.pem file:
+	$ openssl pkcs7 -print_certs -inform der -in SignFile.sig > certs.pem
+
+	2. Verify the signature:
+	$ openssl smime -verify -in SignFile.sig -inform der -content SignFile -noverify certs.pem > /dev/null
+	Expected output:
+	Verification successful
