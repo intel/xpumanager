@@ -10,7 +10,6 @@ install(
 
 install(
     FILES 
-		client/DGMClient.py
-		client/dgmcli
+		client/xpumcli
     DESTINATION "${XPUM_INSTALL_DIR}/py/client"
 )
