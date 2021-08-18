@@ -182,29 +182,23 @@ http://localhost:5000/rest/v1/devices
 [
     {
         "DeviceId": 0,
-        "Properties": [
-            {
-                "DeviceType": "GPU"
-            },
-            {
-                "UUID": "00000000-0000-0000-0000-020a00008086"
-            },
-            {
-                "DeviceName": "Intel(R) Graphics [0x020a]"
-            },
-            {
-                "PCIDeviceId": "0x20a"
-            },
-            {
-                "SubDeviceId": "0x0"
-            },
-            {
-                "PCIBDFAddress": "0000:4d:0.0"
-            },
-            {
-                "VendorName": "Intel(R) Corporation"
-            }
-        ]
+        "DeviceName": "Intel(R) Iris(R) Xe MAX Graphics [0x4905]",
+        "DeviceType": 0,
+        "PCIBDFAddress": "0000:1a:0.0",
+        "PCIDeviceId": "0x4905",
+        "SubDeviceId": "0x0",
+        "UUID": "00000000-0000-0000-0000-490500008086",
+        "VendorName": "Intel(R) Corporation"
+    },
+    {
+        "DeviceId": 1,
+        "DeviceName": "Intel(R) Iris(R) Xe MAX Graphics [0x4905]",
+        "DeviceType": 0,
+        "PCIBDFAddress": "0000:b1:0.0",
+        "PCIDeviceId": "0x4905",
+        "SubDeviceId": "0x0",
+        "UUID": "00000000-0000-0001-0000-490500008086",
+        "VendorName": "Intel(R) Corporation"
     }
 ]
 ```
@@ -266,98 +260,36 @@ http://localhost:5000/rest/v1/devices/0
 #### Response example
 ```json
 {
+    "BoardNumber": "unknown",
+    "BrandName": "Intel(R) Corporation",
+    "CoreClockRate": "1650 MHz",
     "DeviceId": 0,
+    "DeviceName": "Intel(R) Iris(R) Xe MAX Graphics [0x4905]",
     "DeviceType": "GPU",
-    "UUID": "00000000-0000-0000-0000-020a00008086",
-    "Properties": [
-        {
-            "PCIDeviceId": "0x20a"
-        },
-        {
-            "BoardNumber": "Unknown"
-        },
-        {
-            "BrandName": "Intel(R) Corporation"
-        },
-        {
-            "DriverVersion": "16796698"
-        },
-        {
-            "NumberofSubDevices": "2"
-        },
-        {
-            "SerialNumber": "Unknown"
-        },
-        {
-            "VendorName": "Intel(R) Corporation"
-        },
-        {
-            "CoreClockRate": "1300 MHz"
-        },
-        {
-            "MaxMemAllocSize": "4095 MiB"
-        },
-        {
-            "MaxHardwareContexts": "65536"
-        },
-        {
-            "MaxCommandQueuePriority": "0"
-        },
-        {
-            "DeviceName": "Intel(R) Graphics [0x020a]"
-        },
-        {
-            "NumberofEUsPerSubSlice": "16"
-        },
-        {
-            "NumberofSubSlicesPerSubSlice": "30"
-        },
-        {
-            "NumberofSlices": "2"
-        },
-        {
-            "NumberofThreadsPerEU": "8"
-        },
-        {
-            "PysicalEUSIMDWidth": "8"
-        },
-        {
-            "SubDeviceId": "0x0"
-        },
-        {
-            "TimerResolution": "80"
-        },
-        {
-            "TimestampValidBits": "36"
-        },
-        {
-            "PCIVendorId": "0x8086"
-        },
-        {
-            "KernelTimestampValidBits": "32"
-        },
-        {
-            "Flags": "0"
-        },
-        {
-            "PCIBDFAddress": "0000:4d:0.0"
-        },
-        {
-            "MemoryPhysicalSize": "32608.0 MiB"
-        },
-        {
-            "MemoryFreeSize": "32575 MiB"
-        },
-        {
-            "MemoryHealth": "All memory channels are healthy."
-        },
-        {
-            "FirmwareName": "GSC"
-        },
-        {
-            "FirmwareVersion": "ATS1_0.7178"
-        }
-    ]
+    "DriverVersion": "16863095",
+    "Flags": "0",
+    "KernelTimestampValidBits": "32",
+    "MaxCommandQueuePriority": "0",
+    "MaxHardwareContexts": "65536",
+    "MaxMemAllocSize": "1609.60 MiB",
+    "MemoryFreeSize": "4005.75 MiB",
+    "MemoryHealth": "All memory channels are healthy.",
+    "MemoryPhysicalSize": "4024.00 MiB",
+    "NumberOfEusPerSubSlice": "16",
+    "NumberOfSlices": "1",
+    "NumberOfSubDevices": "0",
+    "NumberOfSubSlicesPerSubSlice": "6",
+    "NumberOfThreadsPerEu": "7",
+    "PCIBdfAddress": "0000:1a:0.0",
+    "PCIDeviceId": "0x4905",
+    "PCIVendorId": "0x8086",
+    "PysicalEuSimdWidth": "8",
+    "SerialNumber": "unknown",
+    "SubDeviceId": "0x0",
+    "TimerResolution": "52",
+    "TimestampValidBits": "36",
+    "UUID": "00000000-0000-0000-0000-490500008086",
+    "VendorName": "Intel(R) Corporation"
 }
 ```
 
