@@ -1,0 +1,9 @@
+
+#include "version.h"
+
+const char* version = "@XPUM_VERSION_STRING@";
+
+std::string Version::getVersion()
+{
+    return std::string(version);
+}
