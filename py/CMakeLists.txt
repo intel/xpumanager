@@ -5,11 +5,13 @@ install(
 		DGMCore.py
         README.md
         requirements.txt
-    DESTINATION "${XPUM_INSTALL_DIR}/py"
+    DESTINATION 
+      py
 )
 
 install(
     FILES 
 		client/xpumcli
-    DESTINATION "${XPUM_INSTALL_DIR}/py/client"
+    DESTINATION 
+      py/client
 )

@@ -29,10 +29,10 @@ set(XPUM_VERSION_STRING ${PROJECT_VERSION})
 
 project (XPUManager VERSION ${PROJECT_VERSION})
 
-
-if (NOT DEFINED XPUM_INSTALL_DIR)
-	set(XPUM_INSTALL_DIR "/usr/local/xpum")
-endif()
+set(CPACK_SET_DESTDIR OFF)
+set(CPACK_RPM_PACKAGE_RELOCATABLE ON)
+#set(CPACK_INSTALL_PREFIX "/usr/local/xpum")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local/xpum")
 
 set(CMAKE_PROJECT_VERSION "${PROJECT_VERSION}")
 add_definitions(-DLOADER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR})
@@ -108,15 +108,9 @@ endif()
 INCLUDE(CPack)
 
 install(
-	TARGETS 
-		DGMCore 
-	LIBRARY DESTINATION "${XPUM_INSTALL_DIR}"
-)
-
-install(
     FILES 
 		core/include/xpum_structs.h
 		core/include/xpum_api.h
-    DESTINATION "${XPUM_INSTALL_DIR}/include"
-    COMPONENT XPUM
+    DESTINATION 
+		include
 )
