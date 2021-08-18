@@ -18,10 +18,6 @@ xpum_group_id_t GroupInfo::getId(){
     return id;
 }
 
-xpum_device_type_t GroupInfo::getDeviceType(){
-    return deviceType;
-}
-
 unsigned int GroupInfo::getDeviceCount()
 {
     return deviceList.size();

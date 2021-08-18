@@ -26,6 +26,5 @@ class GroupInfo
     private:
         xpum_group_id_t id;
         std::string name;
-        xpum_device_type_t deviceType;
         std::vector<xpum_device_id_t> deviceList;
 };

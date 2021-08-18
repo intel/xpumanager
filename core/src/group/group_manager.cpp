@@ -119,7 +119,6 @@ xpum_result_t GroupManager::getGroupInfo(xpum_group_id_t groupId, xpum_group_inf
     }
 
     pGroupInfo->count = p_GroupInfo->getDeviceCount();
-    pGroupInfo->deviceType = p_GroupInfo->getDeviceType();
     p_GroupInfo->getName(pGroupInfo->groupName);
     p_GroupInfo->getDeviceList(pGroupInfo->deviceList);
     return XPUM_OK;
