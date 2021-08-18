@@ -71,7 +71,6 @@ if (BUILD_TEST)
   # add_executable(DGMCore ${TEST_SRC})
 
   if (BUILD_TEST_API)
-    # add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_api.cpp)
     add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
   else()
     add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_main.cpp)

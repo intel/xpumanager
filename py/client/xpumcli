@@ -1,0 +1,199 @@
+#!/usr/bin/python3
+import argparse
+
+import json
+
+import pprint
+import requests
+
+from texttable import Texttable
+
+import os
+
+os.environ['NO_PROXY'] = 'localhost'
+
+# host = "http://localhost:5000"
+host = "http://localhost:30000"
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-v', '--version', action='store_true',
+                    help='Display version information and exit')
+
+subparsers = parser.add_subparsers(
+    title="Subcommand options", dest="subcommand")
+
+# discovery subcommand parser
+discovery_parser = subparsers.add_parser(
+    "discovery", help="Discover devices on the system")
+
+discovery_parser.add_argument('-l', '--list', action='store_true',
+                              help='List all devices discovered on the host')
+
+discovery_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId",
+                              help='The device id to query, will show more detailed info')
+
+# group subcommand parser
+group_parser = subparsers.add_parser("group", help="Group management")
+
+group_parser.add_argument('-c', '--create', metavar="<groupName>", dest="groupName",
+                          help='List all devices discovered on the host')
+
+# agentset subcommand parser
+agentset_parser = subparsers.add_parser("agentset", help="XPUM agent settings")
+
+# statistics subcommand parser
+stats_parser = subparsers.add_parser("stats", help="Display device statistics")
+
+
+class PrintTable:
+    _t = Texttable()
+
+    def __init__(self, headers):
+        self.headers = headers
+        self._t.add_row(headers)
+
+    def add_row(self, row):
+        self._t.add_row(row)
+
+    def print(self):
+        print(self._t.draw())
+
+
+def arg():
+    parsed = parser.parse_args()
+    # print(parsed)
+    if not parsed.subcommand:
+        if parsed.version:
+            display_version()
+            return
+    elif parsed.subcommand == "discovery":
+        if parsed.list:
+            if parsed.deviceId:
+                display_device_detail(parsed.deviceId)
+                return
+            display_devices()
+            return
+    elif parsed.subcommand == "group":
+        pass
+    elif parsed.subcommand == "agentset":
+        pass
+    elif parsed.subcommand == "stats":
+        pass
+    parser.print_help()
+
+
+def display_version():
+    res = requests.get(host+"/rest/v1/version")
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    data = res.json()
+    template = '''CLI:
+    Version: {cli_version}
+    Build Id: 10
+
+Service:
+    Version: {service_version}
+    Build Id: 10
+    Level Zero Version: {level_zero_version}
+    '''
+    cli_version = service_version = data['Version']
+    level_zero_version = data['LevelZeroVersion']
+    output = template.format(
+        cli_version=cli_version,
+        service_version=service_version,
+        level_zero_version=level_zero_version
+    )
+    print(output)
+
+
+def device_info_to_str(props):
+    rows = []
+    rows.append("Device Type: {}".format(props["DeviceType"]))
+    rows.append("Device Name: {}".format(props["DeviceName"]))
+    rows.append("")
+    rows.append("Vendor Name: {}".format(props["VendorName"]))
+    rows.append("UUID: {}".format(props["UUID"]))
+    rows.append("PCI BDF Address: {}".format(props["PCIBdfAddress"]))
+    rows.append("")
+    rows.append("Driver Version: {}".format(props["DriverVersion"]))
+    if "FirmwareName" in props:
+        rows.append("Firmware Name: {}".format(props["FirmwareName"]))
+    if "FirmwareVersion" in props:
+        rows.append("Firmware Version: {}".format(props["FirmwareVersion"]))
+    rows.append("")
+    rows.append("Number of Sub Devices: {}".format(
+        props["NumberOfSubDevices"]))
+    rows.append("Serial Number: {}".format(props["SerialNumber"]))
+    rows.append("Core Clock Rate: {}".format(props["CoreClockRate"]))
+    rows.append("Max Mem Alloc Size: {}".format(props["MaxMemAllocSize"]))
+    rows.append("Max Hardware Contexts: {}".format(
+        props["MaxHardwareContexts"]))
+    rows.append("Max Command Queue Priority: {}".format(
+        props["MaxCommandQueuePriority"]))
+    rows.append("")
+    rows.append("Number of Slices: {}".format(props["NumberOfSlices"]))
+    rows.append("Number of Sub Slices Per Slice: {}".format(
+        props["NumberOfSubSlicesPerSubSlice"]))
+    rows.append("Number of EUs Per Sub Slice: {}".format(
+        props["NumberOfEusPerSubSlice"]))
+    rows.append("Number of Threads Per EU: {}".format(
+        props["NumberOfThreadsPerEu"]))
+    rows.append("Pysical EU SIMD Width: {}".format(
+        props["PysicalEuSimdWidth"]))
+    rows.append("Timer Resolution: {}".format(props["TimerResolution"]))
+    rows.append("Timestamp Valid Bits: {}".format(props["TimestampValidBits"]))
+    rows.append("PCI Vendor Id: {}".format(props["PCIVendorId"]))
+    rows.append("Kernel Timestamp Valid Bits: {}".format(
+        props["KernelTimestampValidBits"]))
+    rows.append("Flags: {}".format(props["Flags"]))
+    rows.append("Memory Physical Size: {}".format(props["MemoryPhysicalSize"]))
+    rows.append("Memory Free Size: {}".format(props["MemoryFreeSize"]))
+
+    return "\n".join(rows)
+
+
+def display_devices():
+    res = requests.get(host+"/rest/v1/devices")
+
+    if res.status_code != 200:
+        # print("Error occurs:"+res.content.decode())
+        print("Fail to query data")
+        return
+
+    data = res.json()
+
+    gpus = [d for d in data if d['DeviceType'] == 0]
+
+    if gpus:
+        print("Device Type: GPU")
+        t = PrintTable(["Device ID", "Device Information"])
+        for gpu in gpus:
+            rows = []
+            rows.append("Device Name: {}".format(gpu["DeviceName"]))
+            rows.append("Vendor Name: {}".format(gpu["VendorName"]))
+            rows.append("UUID: {}".format(gpu["UUID"]))
+            rows.append("PCI BDF Address: {}".format(gpu["PCIBDFAddress"]))
+            "\n".join(rows)
+            t.add_row([gpu['DeviceId'], "\n".join(rows)])
+        t.print()
+
+
+def display_device_detail(deviceId):
+    res = requests.get(host+"/rest/v1/devices/{}".format(deviceId))
+
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+
+    data = res.json()
+
+    t = PrintTable(["Device ID", "Device Information"])
+
+    t.add_row([data['DeviceId'], device_info_to_str(data)])
+
+    t.print()
+
+
+if __name__ == "__main__":
+    arg()

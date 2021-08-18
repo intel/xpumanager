@@ -97,7 +97,12 @@ struct xpum_device_basic_info
 {
     xpum_device_id_t deviceId;
     xpum_device_type_t type;
-    uint8_t uuid[XPUM_MAX_DEVICE_UUID_SIZE];
+    char uuid[XPUM_MAX_DEVICE_UUID_SIZE];
+    char deviceName[XPUM_MAX_STR_LENGTH];
+    char PCIDeviceId[XPUM_MAX_STR_LENGTH];
+    char SubDeviceId[XPUM_MAX_STR_LENGTH];
+    char PCIBDFAddress[XPUM_MAX_STR_LENGTH];
+    char VendorName[XPUM_MAX_STR_LENGTH];
 };
 
 
@@ -158,14 +163,6 @@ struct xpumTelemetryData_t {
  * Definitions for health
  */
 /**************************************************************************/
-
-typedef enum xpum_value_type_enum {
-    STRING = 0,
-    CHAR,
-    FLOAT,
-    INT,
-    BOOLEAN
-} xpum_value_type_t;
 
 typedef enum xpum_health_config_type_enum {
     XPUM_HEALTH_THEARMAL_CORE_THRES = 0,
@@ -230,19 +227,20 @@ struct xpumEventEntry_t {
  */
 /**************************************************************************/
 
+typedef enum xpum_device_mode_enum {
+    XPUM_GPU_SCHEDULE_MODE = 0,
+    XPUM_GPU_STANDBY_MODE
+} xpum_device_mode_t;
+
 typedef enum xpum_device_config_type_enum {
-    XPUM_DEVICE_CONFIG_POWER_LIMIT = 0,
-    XPUM_DEVICE_CONFIG_PERFORMANCE_FACTOR
+    XPUM_DEVICE_CONFIG_DEVICE_MODE = 0,
+    XPUM_DEVICE_CONFIG_POWER_LIMIT_ENABLED,
+    XPUM_DEVICE_CONFIG_POWER_LIMIT_VALUE,
+    XPUM_DEVICE_CONFIG_POWER_LIMIT_AVG_WINDOW,
+    XPUM_DEVICE_CONFIG_CORE_FREQ_MIN,
+    XPUM_DEVICE_CONFIG_CORE_FREQ_MAX,
+    XPUM_DEVICE_CONFIG_RESET,
 } xpum_device_config_type_t;
-
-/**
- * @brief Register value type for specific key
- * 
- * @param key 
- * @param type 
- */
-void xpumGetDeviceConfigValueType(xpum_device_config_type_t key, xpum_value_type_t type);
-
 
 /**************************************************************************/
 /**

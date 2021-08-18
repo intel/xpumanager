@@ -181,7 +181,7 @@ http://localhost:5000/rest/v1/devices
 ```json
 [
     {
-        "Device Id": "0",
+        "DeviceId": 0,
         "Properties": [
             {
                 "DeviceType": "GPU"

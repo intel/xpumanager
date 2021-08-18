@@ -70,11 +70,48 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
         {
             auto &prop = device->properties[i];
 
-            string uuid("UUID");
-            if (uuid.compare(prop.name) == 0)
+            string uuidKey("UUID");
+            if (uuidKey.compare(prop.name) == 0)
             {
                 string value(prop.value);
-                value.copy((char*)info.uuid,sizeof(info.uuid));
+                value.copy(info.uuid,value.size());
+                // info.uuid[value.size()] = 0;
+                continue;
+            }
+            string deviceNameKey("DEVICE_NAME");
+            if(deviceNameKey.compare(prop.name)==0){
+                string value(prop.value);
+                value.copy(info.deviceName,value.size());
+                info.deviceName[value.size()] = 0;
+                continue;
+            }
+            string PCIDeviceIdKey("DEVICE_ID");
+            if(PCIDeviceIdKey.compare(prop.name)==0){
+                string value(prop.value);
+                value.copy(info.PCIDeviceId,value.size());
+                info.PCIDeviceId[value.size()] = 0;
+                continue;
+            }
+            string subDeviceIdKey("SUB_DEVICE_ID");
+            if(subDeviceIdKey.compare(prop.name)==0){
+                string value(prop.value);
+                value.copy(info.SubDeviceId,value.size());
+                info.SubDeviceId[value.size()] = 0;
+                continue;
+            }
+            string bdfAddressKey("BDF ADDRESS");
+            if(bdfAddressKey.compare(prop.name)==0){
+                string value(prop.value);
+                value.copy(info.PCIBDFAddress,value.size());
+                info.PCIBDFAddress[value.size()] = 0;
+                continue;
+            }
+            string venderNameKey("VENDOR_NAME");
+            if(venderNameKey.compare(prop.name)==0){
+                string value(prop.value);
+                value.copy(info.VendorName,value.size());
+                info.VendorName[value.size()] = 0;
+                continue;
             }
         }
 
@@ -120,9 +157,9 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 string name(prop.name);
                 string value(prop.value);
                 name.copy(propCopy.name,name.size());
-                propCopy.name[name.size()+1]=0;
+                propCopy.name[name.size()]=0;
                 value.copy(propCopy.value,value.size());
-                propCopy.value[value.size()+1]=0;
+                propCopy.value[value.size()]=0;
             }
         }
 
