@@ -4,3 +4,5 @@ build/
 libDGMCore.so
 DGMCore
 core/src/infrastructure/version.cpp
+build-rpm/
+build-deb/
