@@ -137,3 +137,27 @@ class DGMCore:
             else:
                 res[key]=value
         return res
+
+    def createGroup(self, groupName):
+        groupId = c_int(-1)
+        self.lib.xpumGroupCreate(groupName.encode("utf-8"),byref(groupId))
+        res = dict()
+        res["GroupName"] = groupName
+        res["GroupId"] = groupId
+        res["DeviceIds"] = []
+        return res
+
+    def destroyGroup(self, groupId):
+        pass
+
+    def addDeviceToGroup(self, groupId, deviceId):
+        pass
+
+    def removeDeviceFromGroup(self, groupId, deviceId):
+        pass
+
+    def getGroupInfo(self, groupId):
+        pass
+
+    def getAllGroupIds(self):
+        pass
