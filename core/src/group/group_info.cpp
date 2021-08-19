@@ -1,10 +1,10 @@
 #include "logger.h"
 #include "group_info.h"
 
-GroupInfo::GroupInfo(const char * name, xpum_group_id_t groupId)
+GroupInfo::GroupInfo(const char * groupname, xpum_group_id_t groupId)
 {
     Logger::instance().info("GroupInfo");
-    name = name;
+    name = groupname;
     id = groupId;
 }
 

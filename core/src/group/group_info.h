@@ -8,7 +8,7 @@
 class GroupInfo
 {
     public:
-        GroupInfo(const char * name, xpum_group_id_t groupId);
+        GroupInfo(const char * groupname, xpum_group_id_t groupId);
         ~GroupInfo();
 
         xpum_group_id_t getId();
