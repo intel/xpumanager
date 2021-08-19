@@ -110,7 +110,3 @@ target_link_libraries(DGMCore ze_loader)
 
 unset(BUILD_TEST CACHE) 
 
-install(TARGETS DGMCore
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION .)

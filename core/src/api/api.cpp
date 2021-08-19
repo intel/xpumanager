@@ -544,7 +544,7 @@ void getGroupLatestMeasurementData(const char* groupId,
   xpum_group_info_t group_info;
   xpum_result_t result = Core::instance().getGroupManager()->getGroupInfo(gId, &group_info);
   if(result == XPUM_OK) {
-    for(unsigned int idx=0; idx<group_info.count; idx++){
+    for(int idx=0; idx<group_info.count; idx++){
       std::string device_id_str = std::to_string(group_info.deviceList[idx]);
       MeasurementData data =
         Core::instance().getDataLogic()->getLatestData(type, device_id_str);
@@ -576,7 +576,7 @@ void getGroupRealtimeMeasurementData(
   xpum_group_info_t group_info;
   xpum_result_t result = Core::instance().getGroupManager()->getGroupInfo(gId, &group_info);
   if(result == XPUM_OK) {
-    for(unsigned int idx=0; idx<group_info.count; idx++){
+    for(int idx=0; idx<group_info.count; idx++){
       std::string device_id_str = std::to_string(group_info.deviceList[idx]);
       MeasurementData data =
         Core::instance().getDeviceManager()->getRealtimeMeasurementData(type, device_id_str);

@@ -114,3 +114,8 @@ install(
     DESTINATION 
 		include
 )
+
+install(TARGETS DGMCore
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION .)

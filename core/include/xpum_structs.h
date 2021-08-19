@@ -125,9 +125,9 @@ struct xpum_device_properties_t{
 /**************************************************************************/
 
 struct xpum_group_info_t {
-    unsigned int count;
+    int count;
     char groupName[XPUM_MAX_STR_LENGTH];                       
-    unsigned int deviceList[XPUM_MAX_NUM_DEVICES]; 
+    xpum_device_id_t deviceList[XPUM_MAX_NUM_DEVICES]; 
 };
 
 /**************************************************************************/

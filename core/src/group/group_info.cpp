@@ -28,7 +28,7 @@ void GroupInfo::getName(char groupname[XPUM_MAX_STR_LENGTH])
     name.copy(groupname, XPUM_MAX_STR_LENGTH);
 }
 
-void GroupInfo::getDeviceList(unsigned int device_List[XPUM_MAX_NUM_DEVICES])
+void GroupInfo::getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES])
 {
     for(unsigned int idx=0; idx<deviceList.size(); idx++){
         device_List[idx] = deviceList[idx];

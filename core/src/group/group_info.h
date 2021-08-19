@@ -15,7 +15,7 @@ class GroupInfo
         xpum_device_type_t getDeviceType();
         unsigned int getDeviceCount();
         void getName(char groupname[XPUM_MAX_STR_LENGTH]);
-        void getDeviceList(unsigned int device_List[XPUM_MAX_NUM_DEVICES]);
+        void getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES]);
 
         xpum_result_t addDevice(const std::shared_ptr<DeviceManagerInterface>& p_devicemanager,
             xpum_group_id_t groupId, xpum_device_id_t deviceId);
