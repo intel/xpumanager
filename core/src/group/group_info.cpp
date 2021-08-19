@@ -25,7 +25,8 @@ unsigned int GroupInfo::getDeviceCount()
 
 void GroupInfo::getName(char groupname[XPUM_MAX_STR_LENGTH])
 {
-    name.copy(groupname, XPUM_MAX_STR_LENGTH);
+    std::size_t length = name.copy(groupname, XPUM_MAX_STR_LENGTH);
+    groupname[length] = '\0';
 }
 
 void GroupInfo::getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES])
