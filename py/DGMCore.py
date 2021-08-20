@@ -1,6 +1,7 @@
 from ctypes import *
 import os
 import uuid
+import string
 
 def hex_format(v):
     return hex(int(v))
@@ -137,6 +138,7 @@ class DGMCore:
         for kv in props.properties[:props.propertyLen]:
             key = bytes.decode(kv.name)
             value = bytes.decode(kv.value)
+            value = "".join(filter(lambda x: x in string.printable, value))
             if key in field_translation:
                 d = field_translation[key]
                 if 'ignore' not in d:
