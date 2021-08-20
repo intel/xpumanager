@@ -90,7 +90,12 @@ xpum_result_t GroupManager::addDeviceToGroup(xpum_group_id_t groupId, xpum_devic
         return ret;
     }
 
-    return pGroupInfo->addDevice(p_devicemanager, groupId, deviceId);
+    if(p_devicemanager->getDevice(std::to_string(deviceId)) == nullptr) {
+        Logger::instance().error(std::string("GroupInfo::addDevice-invalid device id ") + std::string(std::to_string(deviceId)));
+        return ret;
+    }
+
+    return pGroupInfo->addDevice(groupId, deviceId);
 }
 
 xpum_result_t GroupManager::removeDeviceFromGroup(xpum_group_id_t groupId, xpum_device_id_t deviceId)
