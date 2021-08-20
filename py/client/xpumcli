@@ -35,8 +35,18 @@ discovery_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="devi
 # group subcommand parser
 group_parser = subparsers.add_parser("group", help="Group management")
 
-group_parser.add_argument('-c', '--create', metavar="<groupName>", dest="groupName",
-                          help='List all devices discovered on the host')
+group_parser.add_argument('-c', '--create', metavar="<groupName>", dest="groupNameToCreate",
+                          help='Create a group')
+group_parser.add_argument('-r', '--remove', dest="remove", action='store_true',
+                          help='Remove a group')
+group_parser.add_argument('-l', '--list', dest="list", action='store_true',
+                          help='Display info for a group or all groups')
+group_parser.add_argument('-g', '--group', metavar="<groupId>", dest="groupId",
+                          help='The id of the group to manipulate')
+group_parser.add_argument('-a', '--add', metavar="<deviceIds>", dest="deviceIdToAdd", nargs='+', type=int,
+                          help='Add device to a group')
+group_parser.add_argument('-d', '--delete', metavar="<deviceIds>", dest="deviceIdToDelete", nargs='+', type=int,
+                          help='Delete device from a group')
 
 # agentset subcommand parser
 agentset_parser = subparsers.add_parser("agentset", help="XPUM agent settings")
@@ -54,6 +64,10 @@ class PrintTable:
 
     def add_row(self, row):
         self._t.add_row(row)
+
+    def add_rows(self, rows):
+        for row in rows:
+            self._t.add_row(row)
 
     def print(self):
         print(self._t.draw())
@@ -74,13 +88,149 @@ def arg():
             display_devices()
             return
     elif parsed.subcommand == "group":
-        pass
+        if parsed.groupNameToCreate:
+            groupName = parsed.groupNameToCreate
+            create_group(groupName)
+            return
+        if parsed.remove:
+            if not parsed.groupId:
+                print("Wrong argument: <groupId> should be specified by -g option")
+                return
+            groupId = parsed.groupId
+            remove_group(groupId)
+            return
+        if parsed.list:
+            if parsed.groupId:
+                groupId = parsed.groupId
+                list_single_group_info(groupId)
+                return
+            list_all_group_info()
+            return
+        if parsed.deviceIdToAdd:
+            if not parsed.groupId:
+                print("Wrong argument: <groupId> should be specified by -g option")
+                return
+            deviceIds = parsed.deviceIdToAdd
+            groupId = parsed.groupId
+            add_device_to_group(deviceIds, groupId)
+            return
+        if parsed.deviceIdToDelete:
+            if not parsed.groupId:
+                print("Wrong argument: <groupId> should be specified by -g option")
+                return
+            deviceIds = parsed.deviceIdToDelete
+            groupId = parsed.groupId
+            remove_device_from_group(deviceIds, groupId)
+            return
     elif parsed.subcommand == "agentset":
         pass
     elif parsed.subcommand == "stats":
         pass
     parser.print_help()
 
+
+def remove_device_from_group(deviceIds, groupId):
+    # print("remove device{} from group {}".format(deviceId,groupId))
+    reqData = {
+        "DeviceIdToRemove": deviceIds
+    }
+    res = requests.post(host+"/rest/v1/groups/{}".format(groupId),json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    print("Successfully remove device {} from group {}".format(deviceIds, groupId))
+    data = res.json()
+    t = PrintTable(["Group Id", "Group Properties"])
+    value = "Group Name: \"{}\"\nDevice Ids: {}".format(
+        data['GroupName'],
+        data['DeviceIds']
+    )
+    t.add_row([data['GroupId'], value])
+    t.print()
+
+def add_device_to_group(deviceIds, groupId):
+    # print("add device{} to group {}".format(deviceId,groupId))
+    reqData = {
+        "DeviceIdToAdd": deviceIds
+    }
+    res = requests.post(host+"/rest/v1/groups/{}".format(groupId),json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    print("Successfully add device {} to group {}".format(deviceIds, groupId))
+    data = res.json()
+    t = PrintTable(["Group Id", "Group Properties"])
+    value = "Group Name: \"{}\"\nDevice Ids: {}".format(
+        data['GroupName'],
+        data['DeviceIds']
+    )
+    t.add_row([data['GroupId'], value])
+    t.print()
+
+
+def list_all_group_info():
+    # print("Display info for all groups")
+    res = requests.get(host+"/rest/v1/groups")
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    groupIds = res.json()
+    rows = []
+    for groupId in groupIds:
+        res = requests.get(host+"/rest/v1/groups/{}".format(groupId))
+        data = res.json()
+        value = "Group Name: \"{}\"\nDevice Ids: {}".format(
+            data['GroupName'],
+            data['DeviceIds']
+        )
+        rows.append([data['GroupId'], value])
+    t = PrintTable(["Group Id", "Group Properties"])
+    t.add_rows(rows)
+    t.print()
+        
+
+def list_single_group_info(groupId):
+    # print("Display info for group "+groupId)
+    res = requests.get(host+"/rest/v1/groups/{}".format(groupId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    data = res.json()
+    # print(data)
+    t = PrintTable(["Group Id", "Group Properties"])
+    value = "Group Name: \"{}\"\nDevice Ids: {}".format(
+        data['GroupName'],
+        data['DeviceIds']
+    )
+    t.add_row([data['GroupId'], value])
+    t.print()
+
+def remove_group(groupId):
+    # print("Remove group "+groupId)
+    res = requests.delete(host+"/rest/v1/groups/{}".format(groupId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    print("Destroy Group Successfully!")
+
+def create_group(groupName):
+    # print("Create group "+groupName)
+    reqData = {
+        "GroupName":groupName
+    }
+    res = requests.post(host+"/rest/v1/groups", json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    data = res.json()
+    # print(data)
+    t = PrintTable(["Group Id", "Group Properties"])
+    value = "Group Name: \"{}\"\nDevice Ids: {}".format(
+        data['GroupName'],
+        data['DeviceIds']
+    )
+    t.add_row([data['GroupId'], value])
+    t.print()
 
 def display_version():
     res = requests.get(host+"/rest/v1/version")
@@ -193,6 +343,7 @@ def display_device_detail(deviceId):
     t.add_row([data['DeviceId'], device_info_to_str(data)])
 
     t.print()
+
 
 
 if __name__ == "__main__":

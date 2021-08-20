@@ -9,6 +9,8 @@
 
 using namespace std;
 
+bool deviceFound;
+
 vector<xpum_device_basic_info> deviceInfoList;
 
 xpum_device_id_t deviceIdToGetProps;
@@ -147,6 +149,8 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
 
         if(deviceId == deviceIdToGetProps) {
 
+            deviceFound=true;
+
             propsBuff->deviceId = deviceId;
 
             propsBuff->propertyLen = device->property_len;
@@ -166,9 +170,14 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
 
     };
 
+    deviceFound=false;
+
     getDeviceList(callback, &result);
 
-    return XPUM_OK;
+    if(deviceFound)
+        return XPUM_OK;
+    else
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
 }
 
 #include "core.h"
