@@ -127,7 +127,7 @@ Optional arguments:
                             The id of the group to manipulate
     -a <deviceIds>, --add <deviceIds>    
                             Add devices to a group
-    -d <deviceIds>, --device <deviceIds> 
+    -d <deviceIds>, --delete <deviceIds> 
                             Delete devices from a group
 ```
 
@@ -144,7 +144,7 @@ $ xpumcli group -c "All Gpus"
 
 ## Add a device to a group
 ```
-$ xpumcli group -g 0 -a 0,1
+$ xpumcli group -g 0 -a 0 1
 +----------+------------------------+
 | Group Id | Group Properties       |
 +----------+------------------------+

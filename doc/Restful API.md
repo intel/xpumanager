@@ -348,14 +348,15 @@ POST
 #### Request field description
 | Field    | Type   | R/O      | Description                                        |
 | -------- | ------ | -------- | -------------------------------------------------- |
-| DeviceId | Number | Required | Device id for the device to be added to this group |
+| DeviceIdToAdd | Number | Optional | Device id for the device to be added to this group |
+| DeviceIdToRemove | Number | Optional | Device id for the device to be removed from this group |
 
 #### Request example
 http://localhost:5000/rest/v1/groups/0
 
 ```json
 {
-    "DeviceId": 0
+    "DeviceIdToAdd": 0
 }
 ```
 
@@ -374,46 +375,6 @@ http://localhost:5000/rest/v1/groups/0
     "DeviceIds": [
         0
     ]
-}
-```
-
-### Remove a device from a group
-
-Remove a device from a group
-
-#### Request URL
-/rest/v1/groups/{groupId}
-
-#### HTTP request method
-POST
-
-#### Request field description
-| Field    | Type   | R/O      | Description                                        |
-| -------- | ------ | -------- | -------------------------------------------------- |
-| DeviceId | Number | Required | Device id for the device to be added to this group |
-
-#### Request example
-http://localhost:5000/rest/v1/groups/0
-
-```json
-{
-    "DeviceId": 0
-}
-```
-
-#### Response field description
-| Field     | Type   | Description                           |
-| --------- | ------ | ------------------------------------- |
-| GroupName | String | Group name                            |
-| GroupId   | Number | Group id                              |
-| DeviceIds | List   | Device ids that belongs to this group |
-
-#### Response example
-```json
-{
-    "GroupName": "All Gpus",
-    "GroupId": 0,
-    "DeviceIds": []
 }
 ```
 

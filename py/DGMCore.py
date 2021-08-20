@@ -74,33 +74,46 @@ class XpumDeviceProperties(Structure):
         ("propertyLen", c_int)
     ]
 
+class XpumGroupInfo(Structure):
+    _fields_ = [
+        ("count", c_int),
+        ("groupName", c_char * 256),
+        ("deviceList", c_int * 32)
+    ]
+
 class DGMCore:
     def __init__(self):
         py_dir_path = os.path.dirname(os.path.realpath(__file__))
         project_dir_path = os.path.dirname(py_dir_path)
-        lib_path = os.path.join(project_dir_path,"core","libDGMCore.so")
+        lib_path = os.path.join(project_dir_path,"lib","libDGMCore.so")
         self.lib = cdll.LoadLibrary(lib_path)
         self.lib.xpumInit()
 
     def getVersion(self):
         count = c_int(0)
-        self.lib.xpumVersionInfo(None,byref(count))
+        res = self.lib.xpumVersionInfo(None,byref(count))
+        if res != 0:
+            return res, "Fail to get version info", None
         versionArray = (XpumVersionInfo * count.value)()
-        self.lib.xpumVersionInfo(versionArray,byref(count))
-        res=dict()
+        res = self.lib.xpumVersionInfo(versionArray,byref(count))
+        if res != 0:
+            return False, "Fail to get version info", None
+        data=dict()
         versionList = [(v.version,bytes.decode(v.versionString)) for v in versionArray]
         for versionType,versionStr in versionList[:count.value]:
             if versionType==0:
-                res['Version']=versionStr
+                data['Version']=versionStr
             elif versionType==1:
-                res['LevelZeroVersion']=versionStr
-        return res
+                data['LevelZeroVersion']=versionStr
+        return res, "OK", data
 
     def getDeviceList(self):
         count = c_int(0)
         deviceInfoArray = (XpumDeviceBasicInfo * 32)()
-        self.lib.xpumGetDeviceList(deviceInfoArray, byref(count))
-        res = []
+        res = self.lib.xpumGetDeviceList(deviceInfoArray, byref(count))
+        if res != 0:
+            return res, "Fail to get device list", None
+        data = []
         for d in deviceInfoArray[:count.value]:
             device = dict()
             device['DeviceId'] = d.deviceId
@@ -111,14 +124,16 @@ class DGMCore:
             device['SubDeviceId'] = bytes.decode(d.SubDeviceId)
             device['PCIBDFAddress'] = bytes.decode(d.PCIBDFAddress)
             device['VendorName'] = bytes.decode(d.VendorName)
-            res.append(device)
-        return res
+            data.append(device)
+        return 0, "OK", data
 
     def getDeviceProperties(self, deviceId):
         props = XpumDeviceProperties()
-        self.lib.xpumGetDeviceProperties(c_int(deviceId),byref(props))
-        res = dict()
-        res["DeviceId"] = deviceId
+        res = self.lib.xpumGetDeviceProperties(c_int(deviceId),byref(props))
+        if res != 0:
+            return res, "Fail to get device properties", None
+        data = dict()
+        data["DeviceId"] = deviceId
         for kv in props.properties[:props.propertyLen]:
             key = bytes.decode(kv.name)
             value = bytes.decode(kv.value)
@@ -133,31 +148,76 @@ class DGMCore:
                         value+=" {}".format(d['unit'])
                     if key == "UUID":
                         value=str(uuid.UUID(value))
-                    res[key]=value
+                    data[key]=value
             else:
-                res[key]=value
-        return res
+                data[key]=value
+        return 0, "OK", data
 
     def createGroup(self, groupName):
         groupId = c_int(-1)
-        self.lib.xpumGroupCreate(groupName.encode("utf-8"),byref(groupId))
-        res = dict()
-        res["GroupName"] = groupName
-        res["GroupId"] = groupId
-        res["DeviceIds"] = []
-        return res
-
-    def destroyGroup(self, groupId):
-        pass
-
-    def addDeviceToGroup(self, groupId, deviceId):
-        pass
-
-    def removeDeviceFromGroup(self, groupId, deviceId):
-        pass
-
-    def getGroupInfo(self, groupId):
-        pass
+        res = self.lib.xpumGroupCreate(groupName.encode("utf-8"),byref(groupId))
+        if res != 0:
+            return res, "Fail to create group", None
+        data = dict()
+        data["GroupName"] = groupName
+        data["GroupId"] = groupId.value
+        data["DeviceIds"] = []
+        return 0, "OK", data
 
     def getAllGroupIds(self):
-        pass
+        count = c_int()
+        groupIdArray = (c_int * 64)()
+        res = self.lib.xpumGetAllGroupIds(groupIdArray, byref(count))
+        if res != 0:
+            return res, "Fail to get all group ids", None
+        data = [groupId for groupId in groupIdArray[:count.value]]
+        return 0, "OK", data
+
+    def destroyGroup(self, groupId):
+        res = self.lib.xpumGroupDestroy(c_int(groupId))
+        if res != 0:
+            return res, "Fail to destroy a group", None
+        return 0, "OK", None
+
+    def addDeviceToGroup(self, groupId, deviceIds):
+        for deviceId in deviceIds:
+            res = self.lib.xpumGroupAddDevice(c_int32(groupId), c_int32(deviceId))
+            if res != 0:
+                return res, "Fail to add device to group", None
+        groupInfo = XpumGroupInfo()
+        res = self.lib.xpumGroupGetInfo(c_int32(groupId),byref(groupInfo))
+        if res != 0:
+            raise Exception("Fail to get group info, error code: {}".format(res))
+        data = dict()
+        data["GroupName"] = bytes.decode(groupInfo.groupName)
+        data["GroupId"] = groupId
+        data["DeviceIds"] = [i for i in groupInfo.deviceList[:groupInfo.count]]
+        return 0, "OK", data
+
+    def removeDeviceFromGroup(self, groupId, deviceIds):
+        for deviceId in deviceIds:
+            res = self.lib.xpumGroupRemoveDevice(c_int32(groupId), c_int32(deviceId))
+            if res != 0:
+                return res, "Fail to remove device from group", None
+        groupInfo = XpumGroupInfo()
+        res = self.lib.xpumGroupGetInfo(c_int32(groupId),byref(groupInfo))
+        if res != 0:
+            raise Exception("Fail to get group info, error code: {}".format(res))
+        data = dict()
+        data["GroupName"] = bytes.decode(groupInfo.groupName)
+        data["GroupId"] = groupId
+        data["DeviceIds"] = [i for i in groupInfo.deviceList[:groupInfo.count]]
+        return 0, "OK", data
+
+    def getGroupInfo(self, groupId):
+        groupInfo = XpumGroupInfo()
+        res = self.lib.xpumGroupGetInfo(c_int(groupId),byref(groupInfo))
+        if res != 0:
+            return res, "Fail to get group info", None
+        data = dict()
+        data["GroupName"] = bytes.decode(groupInfo.groupName)
+        data["GroupId"] = groupId
+        data["DeviceIds"] = [i for i in groupInfo.deviceList[:groupInfo.count]]
+        return 0, "OK", data
+
+    
