@@ -109,7 +109,3 @@ target_sources(
 target_link_libraries(DGMCore ze_loader)
 
 unset(BUILD_TEST CACHE) 
-
-install(TARGETS DGMCore
-  LIBRARY DESTINATION ${CMAKE_CURRENT_LIST_DIR}/../lib
-)
