@@ -16,19 +16,19 @@ class MeasurementData {
     max(-1), current(-1), scale(1) {
   }
 
-  MeasurementData(int value): avg(value), 
+  MeasurementData(uint64_t value): avg(value), 
     min(value), max(value), current(value), scale(1) {
   }  
 
-  MeasurementData(int value, int scale): avg(value), 
+  MeasurementData(uint64_t value, uint64_t scale): avg(value), 
     min(value), max(value), current(value), scale(scale) {
   }
 
-  MeasurementData(int avg, int min, int max): avg(avg), 
+  MeasurementData(uint64_t avg, uint64_t min, uint64_t max): avg(avg), 
     min(min), max(max), current(-1), scale(1) {
   }
 
-  MeasurementData(int avg, int min, int max, int current, int scale): 
+  MeasurementData(uint64_t avg, uint64_t min, uint64_t max, uint64_t current, uint64_t scale): 
     avg(avg), min(min), max(max), current(current), scale(scale) {
   }
 
@@ -38,46 +38,58 @@ class MeasurementData {
     max = other.max;
     current = other.current;
     scale = other.scale;
+    start_time = other.start_time;
+    latest_time = other.latest_time;
   }
 
  public:  
-  void setAvg(int avg) { this->avg = avg; }
+  void setAvg(uint64_t avg) { this->avg = avg; }
 
-  void setMax(int max) { this->max = max; }
+  void setMax(uint64_t max) { this->max = max; }
 
-  void setMin(int min) { this->min = min; }
+  void setMin(uint64_t min) { this->min = min; }
 
-  void setCurrent(int current) { this->current = current; }
+  void setCurrent(uint64_t current) { this->current = current; }
 
-  void setScale(int scale) { this->scale = scale; }
+  void setScale(uint64_t scale) { this->scale = scale; }
 
   void setDeviceId(const std::string& device_id) { this->device_id = scale; }
 
-  int getAvg() { return this->avg; }
+  void setStartTime(long long time) { this->start_time = time; }
 
-  int getMax() { return this->max; }
+  void setLatestTime(long long time) { this->latest_time = time; }
 
-  int getMin() { return this->min; }
+  uint64_t getAvg() { return this->avg; }
 
-  int getCurrent() { return this->current; }
+  uint64_t getMax() { return this->max; }
 
-  int getScale() { return this->scale; }
+  uint64_t getMin() { return this->min; }
+
+  uint64_t getCurrent() { return this->current; }
+
+  uint64_t getScale() { return this->scale; }
 
   std::string getDeviceId() { return this->device_id; }
+
+  long long getStartTime() {return start_time;}
+
+  long long getLatestTime() {return latest_time;}
 
  protected:
   std::string device_id;  
 
-  Timestamp_t time;
+  Timestamp_t start_time;
 
-  int avg;
+  Timestamp_t latest_time;
 
-  int min;
+  uint64_t avg;
 
-  int max;
+  uint64_t min;
 
-  int current;
+  uint64_t max;
 
-  int scale; 
+  uint64_t current;
+
+  uint64_t scale; 
 
 };

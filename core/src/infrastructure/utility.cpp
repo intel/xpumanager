@@ -2,6 +2,8 @@
 
 #include "device.h"
 #include "utility.h"
+#include "xpum_structs.h"
+#include <algorithm>
 
 long long Utility::getCurrentMillisecond() {
   return std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -41,6 +43,22 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
     return  MeasurementType::MEMORY;
   case DeviceCapability::ENGINE_UTILIZATION:
     return  MeasurementType::ENGINE_UTILIZATION;
+  case DeviceCapability::METRIC_TEMPERATURE:
+    return MeasurementType::METRIC_TEMPERATURE;
+  case DeviceCapability::METRIC_FREQUENCY:
+    return MeasurementType::METRIC_FREQUENCY;
+  case DeviceCapability::METRIC_POWER:
+    return MeasurementType::METRIC_POWER;
+  case DeviceCapability::METRIC_ENERGY:
+    return MeasurementType::METRIC_ENERGY;
+  case DeviceCapability::METRIC_MEMORY_USED:
+    return MeasurementType::METRIC_MEMORY_USED;
+  case DeviceCapability::METRIC_MEMORY_READ:
+    return MeasurementType::METRIC_MEMORY_READ;
+  case DeviceCapability::METRIC_MEMORY_WRITE:
+    return MeasurementType::METRIC_MEMORY_WRITE;
+  case DeviceCapability::METRIC_COMPUTATION:
+    return MeasurementType::METRIC_COMPUTATION;
   default:
     return MeasurementType::POWER;
   }
@@ -58,6 +76,22 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
     return  DeviceCapability::MEMORY;
   case MeasurementType::ENGINE_UTILIZATION:
     return  DeviceCapability::ENGINE_UTILIZATION;
+  case MeasurementType::METRIC_TEMPERATURE:
+    return DeviceCapability::METRIC_TEMPERATURE;
+  case MeasurementType::METRIC_FREQUENCY:
+    return DeviceCapability::METRIC_FREQUENCY;
+  case MeasurementType::METRIC_POWER:
+    return DeviceCapability::METRIC_POWER;
+  case MeasurementType::METRIC_MEMORY_USED:
+    return DeviceCapability::METRIC_MEMORY_USED;
+  case MeasurementType::METRIC_MEMORY_READ:
+    return DeviceCapability::METRIC_MEMORY_READ;
+  case MeasurementType::METRIC_MEMORY_WRITE:
+    return DeviceCapability::METRIC_MEMORY_WRITE;
+  case MeasurementType::METRIC_COMPUTATION:
+    return DeviceCapability::METRIC_COMPUTATION;
+  case MeasurementType::METRIC_ENERGY:
+    return DeviceCapability::METRIC_ENERGY;
   default:
     return DeviceCapability::POWER;
   }
@@ -65,15 +99,70 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
 
 std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capability, Device* p_device) {
   switch (capability) {
-    case DeviceCapability::POWER: return [p_device](Callback_t callback){ p_device->getPower(callback); };
-    case DeviceCapability::FREQUENCY: return [p_device](Callback_t callback){ p_device->getActuralFrequency(callback); };
-    case DeviceCapability::TEMPERATURE: return [p_device](Callback_t callback){ p_device->getTemperature(callback); };
-    case DeviceCapability::MEMORY: return [p_device](Callback_t callback){ p_device->getMemory(callback); };
-    case DeviceCapability::ENGINE_UTILIZATION: return [p_device](Callback_t callback){ p_device->getEngineUtilization(callback); };
+    case DeviceCapability::POWER:
+    case DeviceCapability::METRIC_POWER:
+      return [p_device](Callback_t callback){ p_device->getPower(callback); };
+    case DeviceCapability::FREQUENCY:
+    case DeviceCapability::METRIC_FREQUENCY:
+      return [p_device](Callback_t callback){ p_device->getActuralFrequency(callback); };
+    case DeviceCapability::TEMPERATURE:
+    case DeviceCapability::METRIC_TEMPERATURE:
+      return [p_device](Callback_t callback){ p_device->getTemperature(callback); };
+    case DeviceCapability::MEMORY:
+    case DeviceCapability::METRIC_MEMORY_USED:
+      return [p_device](Callback_t callback){ p_device->getMemory(callback); };
+    case DeviceCapability::ENGINE_UTILIZATION:
+    case DeviceCapability::METRIC_COMPUTATION:
+      return [p_device](Callback_t callback){ p_device->getEngineUtilization(callback); };
+    case DeviceCapability::METRIC_MEMORY_READ:
+      return [p_device](Callback_t callback){ p_device->getMemoryRead(callback); };
+    case DeviceCapability::METRIC_MEMORY_WRITE:
+      return [p_device](Callback_t callback){ p_device->getMemoryWrite(callback); };
+    case DeviceCapability::METRIC_ENERGY:
+      return [p_device](Callback_t callback){ p_device->getEnergy(callback); };
     default:
       break;
     }
     return nullptr;
 }
 
+bool Utility::isMetric(MeasurementType type) {
+  std::vector<MeasurementType> metric_types;
+  Utility::getMetricsTypes(metric_types);
+  return std::find(metric_types.begin(), metric_types.end(), type) != metric_types.end();
+}
+
+void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
+  metric_types.push_back(MeasurementType::METRIC_FREQUENCY);
+  metric_types.push_back(MeasurementType::METRIC_POWER);
+  metric_types.push_back(MeasurementType::METRIC_ENERGY);
+  metric_types.push_back(MeasurementType::METRIC_TEMPERATURE);
+  metric_types.push_back(MeasurementType::METRIC_MEMORY_USED);
+  metric_types.push_back(MeasurementType::METRIC_MEMORY_READ);
+  metric_types.push_back(MeasurementType::METRIC_MEMORY_WRITE);
+  metric_types.push_back(MeasurementType::METRIC_COMPUTATION);
+}
+
+xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& measurementType) {
+  switch (measurementType) {
+  case MeasurementType::METRIC_TEMPERATURE:
+    return xpum_stats_type_enum::XPUM_STATS_GPU_TEMEPERATURE;
+  case MeasurementType::METRIC_FREQUENCY:
+    return xpum_stats_type_enum::XPUM_STATS_GPU_FREQUENCY;
+  case MeasurementType::METRIC_POWER:
+    return xpum_stats_type_enum::XPUM_STATS_POWER;
+  case MeasurementType::METRIC_MEMORY_USED:
+    return xpum_stats_type_enum::XPUM_STATS_MEMORY_USED;
+  case MeasurementType::METRIC_MEMORY_READ:
+    return xpum_stats_type_enum::XPUM_STATS_MEMORY_READ;
+  case MeasurementType::METRIC_MEMORY_WRITE:
+    return xpum_stats_type_enum::XPUM_STATS_MEMORY_WRITE;
+  case MeasurementType::METRIC_COMPUTATION:
+    return xpum_stats_type_enum::XPUM_STATS_GPU_COMPUTATION;
+  case MeasurementType::METRIC_ENERGY:
+    return xpum_stats_type_enum::XPUM_STATS_ENERGY;
+  default:
+    return xpum_stats_type_enum::XPUM_STATS_POWER;
+  }
+}
 

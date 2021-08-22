@@ -2,6 +2,8 @@
 #include "ilegal_state_exception.h"
 #include "db_persistency.h"
 #include "data_logic.h"
+#include "utility.h"
+#include <iostream>
 
 DataLogic::DataLogic() : p_raw_data_manager(nullptr), 
   p_persistency(nullptr) {
@@ -46,5 +48,30 @@ void DataLogic::getLatestData(MeasurementType type,
     throw IlegalStateException("initialization is not done!");
   }                     
   return p_raw_data_manager->getLatestData(type, datas);
+}
+
+void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId, xpum_device_stats_t *data) {
+  if (data == nullptr) {
+    return;
+  }
+  std::vector<MeasurementType> metric_types;
+  Utility::getMetricsTypes(metric_types);
+  std::vector<MeasurementType>::iterator iter = metric_types.begin();
+  std::string device_id = std::to_string(deviceId);
+  data->deviceId = deviceId;
+  data->begin = Utility::getCurrentMillisecond();
+  data->end = 0;
+  while (iter != metric_types.end()) {
+    MeasurementData m_data = getLatestData(*iter, device_id);
+    data->begin = (uint64_t)m_data.getStartTime() < data->begin ? m_data.getStartTime():data->begin;
+    data->end = (uint64_t)m_data.getLatestTime() > data->end ? m_data.getLatestTime():data->end;
+    xpum_stats_type_t stats_type = Utility::xpumStatsTypeFromMeasurementType(*iter);
+    data->dataList[stats_type].avg = m_data.getAvg();
+    data->dataList[stats_type].min = m_data.getMin();
+    data->dataList[stats_type].max = m_data.getMax();
+    data->dataList[stats_type].value = m_data.getCurrent();
+    data->dataList[stats_type].metricsType = stats_type;
+    ++iter;
+  }
 }
 

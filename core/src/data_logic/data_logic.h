@@ -4,6 +4,7 @@
 #include "persistency.h"
 #include "raw_data_manager.h"
 #include "data_logic_interface.h"
+#include "xpum_structs.h"
 
 class DataLogic : public DataLogicInterface {
  public:
@@ -30,6 +31,8 @@ class DataLogic : public DataLogicInterface {
     MeasurementType type,
     std::map<std::string, MeasurementData>& datas
   ) override;
+
+  void getMetricsStatistics(xpum_device_id_t deviceId, xpum_device_stats_t *data);
 
  private:
   std::unique_ptr<RawDataManager> p_raw_data_manager;

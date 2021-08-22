@@ -17,6 +17,12 @@ class MonitorManager : public MonitorManagerInterface {
 
   void close() override;
 
+  void addMetricTask(MeasurementType type, int freq);
+
+  void removeMetricTask(MeasurementType type);
+
+  void resetMetricTasksFrequency(int freq);
+
  private:
   void createMonitorTasks();
 

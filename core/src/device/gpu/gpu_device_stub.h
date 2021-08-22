@@ -28,7 +28,13 @@ class GPUDeviceStub {
 
   void getMemory(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
+  void getMemoryRead(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
+  void getMemoryWrite(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
   void getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
+  void getEnergy(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
   static void getSchedulers(const zes_device_handle_t& device, std::vector<Scheduler>& schedulers);
 
@@ -91,7 +97,13 @@ private:
 
   static std::shared_ptr<MeasurementData> toGetMemory(const zes_device_handle_t& device);
 
+  static std::shared_ptr<MeasurementData> toGetMemoryRead(const zes_device_handle_t& device);
+
+  static std::shared_ptr<MeasurementData> toGetMemoryWrite(const zes_device_handle_t& device);
+
   static std::shared_ptr<MeasurementData> toGetEngineUtilization(const zes_device_handle_t& device);
+
+  static std::shared_ptr<MeasurementData> toGetEnergy(const zes_device_handle_t& device);
 
   static std::string to_string(ze_device_uuid_t val);
 

@@ -49,6 +49,27 @@ void GPUDevice::getMemory(Callback_t callback) noexcept {
   });    
 }
 
+void GPUDevice::getMemoryRead(Callback_t callback) noexcept {
+  GPUDeviceStub::instance().getMemoryRead(zes_device_handle, 
+    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+    callback(ret, e);
+  });    
+}
+
+void GPUDevice::getMemoryWrite(Callback_t callback) noexcept {
+  GPUDeviceStub::instance().getMemoryWrite(zes_device_handle, 
+    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+    callback(ret, e);
+  });    
+}
+
+void GPUDevice::getEnergy(Callback_t callback) noexcept {
+  GPUDeviceStub::instance().getEnergy(zes_device_handle, 
+    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+    callback(ret, e);
+  });    
+}
+
 void GPUDevice::getEngineUtilization(Callback_t callback) noexcept {
   GPUDeviceStub::instance().getEngineUtilization(zes_device_handle, 
     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {

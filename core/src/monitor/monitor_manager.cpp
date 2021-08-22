@@ -3,6 +3,8 @@
 #include "monitor_task.h"
 #include "logger.h"
 #include "monitor_manager.h"
+#include <algorithm>
+#include "utility.h"
 
 MonitorManager::MonitorManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)
@@ -32,6 +34,7 @@ void MonitorManager::close() {
 }
 
 void MonitorManager::createMonitorTasks() {
+  /*
   tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::POWER, 
     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
   tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::FREQUENCY, 
@@ -42,5 +45,62 @@ void MonitorManager::createMonitorTasks() {
     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
   tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::ENGINE_UTILIZATION, 
     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
+    */
+
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_TEMPERATURE, 
+    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_FREQUENCY, 
+    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_POWER, 
+    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_ENERGY, 
+    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_COMPUTATION, 
+    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_MEMORY_USED, 
+    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_MEMORY_READ, 
+    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
+  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_MEMORY_WRITE, 
+    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
 }
 
+void MonitorManager::addMetricTask(MeasurementType type, int freq) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  if (Utility::isMetric(type)) {
+    for (auto& p_task : tasks) {
+      if (p_task->getCapability() == Utility::capabilityFromMeasurementType(type)) {
+        return;
+      }
+    }
+    auto task = std::make_shared<MonitorTask>(Utility::capabilityFromMeasurementType(type),
+    freq, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS);
+    tasks.emplace_back(task);
+    task->start();
+  }
+}
+
+void MonitorManager::removeMetricTask(MeasurementType type) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  DeviceCapability capability = Utility::capabilityFromMeasurementType(type);
+  for (auto& p_task : tasks) {
+    if (p_task->getType() == MonitorTaskType::GPU_METRICS && p_task->getCapability() == capability) {
+      p_task->stop();
+    }
+  }
+  tasks.erase(std::remove_if(tasks.begin(), tasks.end(), [capability](std::shared_ptr<MonitorTask> t){return (t->getType() == MonitorTaskType::GPU_METRICS && t->getCapability() == capability);}), tasks.end());
+}
+
+void MonitorManager::resetMetricTasksFrequency(int freq) {
+  std::vector<MeasurementType> metric_types;
+  Utility::getMetricsTypes(metric_types);
+  std::vector<MeasurementType>::iterator iter = metric_types.begin();
+  while (iter != metric_types.end()) {
+    removeMetricTask(*iter++);
+  }
+  Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = freq;
+  iter = metric_types.begin();
+  while (iter != metric_types.end()) {
+    addMetricTask(*iter++, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE);
+  }
+}
