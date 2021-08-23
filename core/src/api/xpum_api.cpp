@@ -220,6 +220,28 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId, xpum_device_stats_t *data)
     return xpum_result_t::XPUM_OK;
 }
 
+
+xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, xpum_device_stats_t dataList[], int *count)
+{
+    xpum_result_t result = XPUM_GENERIC_ERROR;
+    xpum_group_info_t groupInfo;
+    if(Core::instance().getGroupManager()->getGroupInfo(groupId, &groupInfo) != XPUM_OK)
+    {
+        return result;
+    }
+
+    if( *count < groupInfo.count ) {
+        result = XPUM_BUFFER_TOO_SMALL;
+    } else {
+        for(int i=0; i<groupInfo.count; i++){
+            Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], &dataList[i]);
+        }
+        result = XPUM_OK;
+    }
+    *count = groupInfo.count;
+    return result;
+}
+
 xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
     switch (key)
     {
