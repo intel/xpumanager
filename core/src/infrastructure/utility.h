@@ -28,5 +28,7 @@ class Utility {
 
   static bool isMetric(MeasurementType type);
 
+  static bool isCounterMetric(MeasurementType type);
+
   static void getMetricsTypes(std::vector<MeasurementType>& metrics);
 };

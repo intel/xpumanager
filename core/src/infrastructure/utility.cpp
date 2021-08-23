@@ -132,6 +132,12 @@ bool Utility::isMetric(MeasurementType type) {
   return std::find(metric_types.begin(), metric_types.end(), type) != metric_types.end();
 }
 
+bool Utility::isCounterMetric(MeasurementType type) {
+  return type == MeasurementType::METRIC_ENERGY || 
+         type == MeasurementType::METRIC_MEMORY_READ ||
+         type == MeasurementType::METRIC_MEMORY_WRITE;
+}
+
 void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
   metric_types.push_back(MeasurementType::METRIC_FREQUENCY);
   metric_types.push_back(MeasurementType::METRIC_POWER);
