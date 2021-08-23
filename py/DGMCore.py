@@ -86,8 +86,8 @@ class XpumGroupInfo(Structure):
     ]
 
 agentConfig = {
-    "XPUM_AGENT_CONFIG_EVENT_LIMIT": (0, int, c_int32),
-    "XPUM_AGENT_CONFIG_SAMPLE_INTERVAL": (1, int, c_int32)
+    "XPUM_AGENT_CONFIG_EVENT_LIMIT": (0, int, c_int32, None),
+    "XPUM_AGENT_CONFIG_SAMPLE_INTERVAL": (1, int, c_int32, [100,200,500,1000])
 }
 
 XpumStatsType = Enum("xpum_stats_type_t", (
@@ -269,7 +269,9 @@ class DGMCore:
     def setAgentConfig(self, key, value):
         if key not in agentConfig:
             return 1, "Fail to set agent configuration", None
-        k, f, t = agentConfig[key]
+        k, f, t, options = agentConfig[key]
+        if f(value) not in options:
+            return 1, "Illegal value", None
         value = t(f(value))
         res = self.lib.xpumSetAgentConfig(c_int(k), byref(value))
         if res != 0:
@@ -278,15 +280,15 @@ class DGMCore:
 
     def getAllAgentConfig(self):
         data = dict()
-        for e in agentConfig:
-            key = e.name
-            k, f, t = agentConfig[key]
+        settings = ["XPUM_AGENT_CONFIG_SAMPLE_INTERVAL"]
+        for key in settings:
+            k, f, t, options = agentConfig[key]
             value = t()
             res = self.lib.xpumGetAgentConfig(c_int(k), byref(value))
             if res != 0:
                 return res, "Fail to get agent configuration", None
-            data[key] = str(value)
-        return 0, "OK", None 
+            data[key] = str(value.value)
+        return 0, "OK", data 
     
     def getStatistics(self, deviceId):
         deviceStats = XpumDeviceStats()

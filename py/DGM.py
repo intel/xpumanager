@@ -103,9 +103,22 @@ def group_detail(groupId):
 @app.route('/rest/v1/globalSettings', methods=['GET','POST'])
 def agent_setting():
     if request.method == 'GET':
-        pass
+        code, message, data = core.getAllAgentConfig()
+        if code != 0:
+            error = dict(Status=code, Message=message)
+            return jsonify(error), 400
+        return jsonify(data), 200
     elif request.method == 'POST':
-        pass
+        req = request.get_json()
+        if "XPUM_AGENT_CONFIG_SAMPLE_INTERVAL" in req:
+            value = req["XPUM_AGENT_CONFIG_SAMPLE_INTERVAL"]
+            code, message, data = core.setAgentConfig("XPUM_AGENT_CONFIG_SAMPLE_INTERVAL", value)
+            if code != 0:
+                error = dict(Status=code, Message=message)
+                return jsonify(error), 400
+            return "", 200
+        else:
+            return dict(Status=1,Message="Illegal key"), 400
 
 @app.route('/rest/v1/devices/<int:deviceId>/stats', methods=['GET'])
 def get_statistics(deviceId):

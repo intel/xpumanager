@@ -9,6 +9,7 @@
 #include "version.h"
 
 #include "core.h"
+#include "configuration.h"
 
 using namespace std;
 
@@ -247,8 +248,21 @@ xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
     {
     case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
         Core::instance().getMonitorManager()->resetMetricTasksFrequency(*(int *)value);
-        break;
+        return XPUM_OK;
     default:
         break;
     }
+    return XPUM_GENERIC_ERROR;
+}
+
+xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value) {
+    switch (key)
+    {
+    case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
+        *(int *)value = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+        return XPUM_OK;
+    default:
+        break;
+    }
+    return XPUM_GENERIC_ERROR;
 }
