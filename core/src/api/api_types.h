@@ -108,11 +108,13 @@ struct Frequency_range_t {
 };
 
 struct Measurement_data_t {
-  int avg;
-  int min;
-  int max;
-  int current;
-  int scale;
+  uint64_t avg;
+  uint64_t min;
+  uint64_t max;
+  uint64_t current;
+  uint64_t scale;
+  long long start_time;
+  long long end_time;
 };
 
 struct Property_t {

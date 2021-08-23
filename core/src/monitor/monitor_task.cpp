@@ -14,7 +14,21 @@ MonitorTask::MonitorTask(
     : capability(capability),
       freq(freq),
       p_device_manager(p_device_manager),
-      p_data_logic(p_data_logic) {
+      p_data_logic(p_data_logic),
+      type(MonitorTaskType::DEFAULT_TELEMETRY) {
+  Logger::instance().info("MonitorTask()");
+}
+
+MonitorTask::MonitorTask(
+    DeviceCapability capability, int freq,
+    std::shared_ptr<DeviceManagerInterface>& p_device_manager,
+    std::shared_ptr<DataLogicInterface>& p_data_logic,
+    MonitorTaskType type)
+    : capability(capability),
+      freq(freq),
+      p_device_manager(p_device_manager),
+      p_data_logic(p_data_logic),
+      type(type) {
   Logger::instance().info("MonitorTask()");
 }
 
@@ -82,5 +96,13 @@ void MonitorTask::start() {
 
 void MonitorTask::stop() {
   timer.cancel();
+}
+
+DeviceCapability MonitorTask::getCapability() {
+  return capability;
+}
+
+MonitorTaskType MonitorTask::getType() {
+  return type;
 }
 

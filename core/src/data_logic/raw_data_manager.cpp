@@ -5,6 +5,7 @@
 #include "temperature_data_handler.h"
 #include "memory_data_handler.h"
 #include "engine_utilization_data_handler.h"
+#include "metric_statistics_data_handler.h"
 
 RawDataManager::RawDataManager(std::shared_ptr<Persistency>& persistency) 
   : p_persistency(persistency) {
@@ -36,6 +37,38 @@ void RawDataManager::init() {
   data_handlers[MeasurementType::ENGINE_UTILIZATION] = 
     std::make_shared<EngineUtilizationDataHandler>(MeasurementType::ENGINE_UTILIZATION, p_persistency);    
   data_handlers[MeasurementType::ENGINE_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_TEMPERATURE] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_TEMPERATURE, p_persistency);    
+  data_handlers[MeasurementType::METRIC_TEMPERATURE]->init();
+
+  data_handlers[MeasurementType::METRIC_FREQUENCY] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_FREQUENCY, p_persistency);    
+  data_handlers[MeasurementType::METRIC_FREQUENCY]->init();
+
+  data_handlers[MeasurementType::METRIC_POWER] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_POWER, p_persistency);    
+  data_handlers[MeasurementType::METRIC_POWER]->init();
+
+  data_handlers[MeasurementType::METRIC_ENERGY] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENERGY, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENERGY]->init();
+
+  data_handlers[MeasurementType::METRIC_MEMORY_USED] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_USED, p_persistency);    
+  data_handlers[MeasurementType::METRIC_MEMORY_USED]->init();
+
+  data_handlers[MeasurementType::METRIC_MEMORY_READ] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_READ, p_persistency);    
+  data_handlers[MeasurementType::METRIC_MEMORY_READ]->init();
+
+  data_handlers[MeasurementType::METRIC_MEMORY_WRITE] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_WRITE, p_persistency);    
+  data_handlers[MeasurementType::METRIC_MEMORY_WRITE]->init();
+
+  data_handlers[MeasurementType::METRIC_COMPUTATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_COMPUTATION]->init();
 }
 
 void RawDataManager::close() {

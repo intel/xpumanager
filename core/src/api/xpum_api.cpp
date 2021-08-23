@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "xpum_api.h"
+#include "core.h"
 #include "power.h"
 #include "api.h"
 #include "version.h"
@@ -211,4 +212,21 @@ xpum_result_t xpumGroupGetInfo(xpum_group_id_t groupId, xpum_group_info_t *pGrou
 xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count)
 {
     return Core::instance().getGroupManager()->getAllGroupIds(groupIds, count);
+}
+
+xpum_result_t xpumGetStats(xpum_device_id_t deviceId, xpum_device_stats_t *data)
+{
+    Core::instance().getDataLogic()->getMetricsStatistics(deviceId,data);
+    return xpum_result_t::XPUM_OK;
+}
+
+xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
+    switch (key)
+    {
+    case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
+        Core::instance().getMonitorManager()->resetMetricTasksFrequency(*(int *)value);
+        break;
+    default:
+        break;
+    }
 }

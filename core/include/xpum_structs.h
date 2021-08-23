@@ -347,6 +347,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_GPU_FREQUENCY,
     XPUM_STATS_GPU_TEMEPERATURE,
     XPUM_STATS_MEMORY_USED,
+    XPUM_STATS_MEMORY_READ,
     XPUM_STATS_MEMORY_WRITE,
     XPUM_STATS_PCIRX,
     XPUM_STATS_PCITX,
@@ -356,10 +357,10 @@ typedef enum xpum_stats_type_enum {
 struct xpum_stats_data_t {
     xpum_stats_type_t metricsType;
     bool isCounter;
-    int32_t value;
-    int32_t min;
-    int32_t avg;
-    int32_t max;
+    uint64_t value;
+    uint64_t min;
+    uint64_t avg;
+    uint64_t max;
 };
 
 struct xpum_device_stats_t {
