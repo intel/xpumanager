@@ -3,6 +3,7 @@ import os
 import uuid
 import string
 from enum import Enum, unique
+import datetime
 
 def hex_format(v):
     return hex(int(v))
@@ -89,7 +90,7 @@ agentConfig = {
     "XPUM_AGENT_CONFIG_SAMPLE_INTERVAL": (1, int, c_int32)
 }
 
-XpumStatsType = Enum("xpum_stats_type_t",(
+XpumStatsType = Enum("xpum_stats_type_t", (
     "XPUM_STATS_GPU_COMPUTATION",
     "XPUM_STATS_OCCUPATION",
     "XPUM_STATS_ISSUE_EFFICIENCY",
@@ -105,15 +106,15 @@ XpumStatsType = Enum("xpum_stats_type_t",(
     "XPUM_STATS_PCIRX",
     "XPUM_STATS_PCITX",
     "XPUM_STATS_MAX"
-))
+), start=0)
 
 class XpumStatsData(Structure):
     _fields_ = [
         ("metricsType", c_int),
         ("isCounter", c_bool),
-        ("value", c_int64)
-        ("min", c_int64)
-        ("avg", c_int64)
+        ("value", c_int64),
+        ("min", c_int64),
+        ("avg", c_int64),
         ("max", c_int64)
     ]
 
@@ -283,13 +284,68 @@ class DGMCore:
             value = t()
             res = self.lib.xpumGetAgentConfig(c_int(k), byref(value))
             if res != 0:
-                return res, "Fail to set agent configuration", None
+                return res, "Fail to get agent configuration", None
             data[key] = str(value)
         return 0, "OK", None 
     
     def getStatistics(self, deviceId):
         deviceStats = XpumDeviceStats()
-        pass
+        res = self.lib.xpumGetStats(c_int32(deviceId), byref(deviceStats))
+        if res != 0:
+            return res, "Fail to get statistics", None
+        data = dict()
+        data['DeviceId'] = deviceStats.deviceId
+        beginTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.begin/1e3))
+        endTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.end/1e3))
+        data['Begin'] = str(beginTimestamp)
+        data['End'] = str(endTimestamp)
+        dataList = []
+        i = -1
+        for d in deviceStats.dataList:
+            tmp = dict()
+            i += 1
+            if i != d.metricsType:
+                continue
+            metricsType = XpumStatsType(d.metricsType).name
+            tmp["metricsType"] = metricsType
+            tmp["value"] = d.value
+            if not d.isCounter:
+                tmp["min"] = d.min
+                tmp["avg"] = d.avg
+                tmp["max"] = d.max
+            dataList.append(tmp)
+        data["dataList"] = dataList
+        return 0, "OK", data
 
-    def getStatistics(self, groupId):
-        pass
+    def getStatisticsByGroup(self, groupId):
+        groupDeviceStats = (XpumDeviceStats * 32)()
+        count = c_int(32)
+        res = self.lib.xpumGetStatsByGroup(c_int32(groupId),groupDeviceStats, byref(count))
+        if res != 0:
+            return res, "Fail to get statistics", None
+        datas=[]
+        for deviceStats in groupDeviceStats[:count.value]:
+            data=dict()
+            data['DeviceId'] = deviceStats.deviceId
+            beginTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.begin/1e3))
+            endTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.end/1e3))
+            data['Begin'] = str(beginTimestamp)
+            data['End'] = str(endTimestamp)
+            dataList = []
+            i = -1
+            for d in deviceStats.dataList:
+                tmp = dict()
+                i += 1
+                if i != d.metricsType:
+                    continue
+                metricsType = XpumStatsType(d.metricsType).name
+                tmp["metricsType"] = metricsType
+                tmp["value"] = d.value
+                if not d.isCounter:
+                    tmp["min"] = d.min
+                    tmp["avg"] = d.avg
+                    tmp["max"] = d.max
+                dataList.append(tmp)
+            data["dataList"] = dataList
+            datas.append(data)
+        return 0, "OK", dict(GroupId=groupId,Datas=datas)

@@ -100,6 +100,29 @@ def group_detail(groupId):
                 return jsonify(error), 400
         return jsonify(data), 200
 
+@app.route('/rest/v1/globalSettings', methods=['GET','POST'])
+def agent_setting():
+    if request.method == 'GET':
+        pass
+    elif request.method == 'POST':
+        pass
+
+@app.route('/rest/v1/devices/<int:deviceId>/stats', methods=['GET'])
+def get_statistics(deviceId):
+    code, message, data = core.getStatistics(deviceId)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/groups/<int:groupId>/stats', methods=['GET'])
+def get_group_statistics(groupId):
+    code, message, data = core.getStatisticsByGroup(groupId)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
 if __name__ == '__main__':
   app.debug = True
 #   app.run()

@@ -53,14 +53,19 @@ agentset_parser = subparsers.add_parser("agentset", help="XPUM agent settings")
 
 # statistics subcommand parser
 stats_parser = subparsers.add_parser("stats", help="Display device statistics")
+stats_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+                          help='The device id to query')
+stats_parser.add_argument('-g', '--group', metavar="<groupId>", dest="groupId", type=int,
+                          help='The group id to query')
 
 
 class PrintTable:
     _t = Texttable()
 
-    def __init__(self, headers):
-        self.headers = headers
-        self._t.add_row(headers)
+    def __init__(self, *args):
+        if len(args)>=1:
+            self.headers = args[0]
+            self._t.add_row(args[0])
 
     def add_row(self, row):
         self._t.add_row(row)
@@ -125,9 +130,131 @@ def arg():
     elif parsed.subcommand == "agentset":
         pass
     elif parsed.subcommand == "stats":
-        pass
+        if parsed.deviceId is not None:
+            display_device_stats(parsed.deviceId)
+            return
+        elif parsed.groupId is not None:
+            display_group_stats(parsed.groupId)
+            return
+        else:
+            display_all_device_stats()
+            return
     parser.print_help()
 
+
+def display_all_device_stats():
+    res = requests.get(host+"/rest/v1/devices")
+
+    if res.status_code != 200:
+        # print("Error occurs:"+res.content.decode())
+        print("Fail to query data")
+        return
+
+    data = res.json()
+
+    gpus = [d for d in data if d['DeviceType'] == 0]
+
+    if not gpus:
+        return
+    print("Device Type: GPU")
+    t = PrintTable()
+    for d in gpus:
+        res = requests.get(host+"/rest/v1/devices/{}/stats".format(d["DeviceId"]))
+        if res.status_code != 200:
+            print("Error occurs:"+res.content.decode())
+            return
+        data = res.json()
+        rows = get_stats_rows(data)
+        t.add_rows(rows)
+    t.print()
+        
+
+def display_device_stats(deviceId):
+    # print("stats for device {}".format(deviceId))
+    res = requests.get(host+"/rest/v1/devices/{}/stats".format(deviceId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    data = res.json()
+    print("Device Type: GPU")
+    # print(data)
+    rows = get_stats_rows(data)
+    t = PrintTable()
+    t.add_rows(rows)
+    t.print()
+
+def get_stats_rows(data):
+    header_row = ["Device Id", data['DeviceId']]
+    rows = []
+    counter_row_keys = ["Start Time","End Time"]
+    counter_row_values = [data['Begin'],data['End']]
+    for stats in data['dataList']:
+        if stats['metricsType'] == "XPUM_STATS_GPU_COMPUTATION":
+            v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
+                stats["value"],
+                stats["avg"],
+                stats["min"],
+                stats["max"]
+            )
+            rows.append(["GPU Computation (%)",v])
+        elif stats['metricsType'] == "XPUM_STATS_POWER":
+            v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
+                stats["value"],
+                stats["avg"],
+                stats["min"],
+                stats["max"]
+            )
+            rows.append(["GPU Power (w)",v])
+        elif stats['metricsType'] == "XPUM_STATS_ENERGY":
+            counter_row_keys.append("Energy Consumed (J)")
+            counter_row_values.append(str(stats['value']))
+        elif stats['metricsType'] == "XPUM_STATS_GPU_FREQUENCY":
+            v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
+                stats["value"],
+                stats["avg"],
+                stats["min"],
+                stats["max"]
+            )
+            rows.append(["GPU Frequency (MHz)",v])
+        elif stats['metricsType'] == "XPUM_STATS_GPU_TEMEPERATURE":
+            v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
+                stats["value"],
+                stats["avg"],
+                stats["min"],
+                stats["max"]
+            )
+            rows.append(["GPU Temperature (°C)",v])
+        elif stats['metricsType'] == "XPUM_STATS_MEMORY_USED":
+            v = "current: {:.2f}\navg: {:.2f}\nmin: {:.2f}\nmax: {:.2f}".format(
+                stats["value"]/(2**20),
+                stats["avg"]/(2**20),
+                stats["min"]/(2**20),
+                stats["max"]/(2**20)
+            )
+            rows.append(["Memory Userd (MiB)",v])
+        elif stats['metricsType'] == "XPUM_STATS_MEMORY_READ":
+            counter_row_keys.append("Memory Read (Bytes)")
+            counter_row_values.append(str(stats['value']))
+        elif stats['metricsType'] == "XPUM_STATS_MEMORY_WRITE":
+            counter_row_keys.append("Memory Write (Bytes)")
+            counter_row_values.append(str(stats['value']))
+        
+    counter_row = ["\n".join(counter_row_keys),"\n".join(counter_row_values)]
+    return [header_row,counter_row,*rows]
+
+def display_group_stats(groupId):
+    # print("stats for group {}".format(groupId))
+    res = requests.get(host+"/rest/v1/groups/{}/stats".format(groupId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    data = res.json()
+    print("Device Type: GPU")
+    t = PrintTable()
+    for d in data["Datas"]:
+        rows = get_stats_rows(d)
+        t.add_rows(rows)
+    t.print()
 
 def remove_device_from_group(deviceIds, groupId):
     # print("remove device{} from group {}".format(deviceId,groupId))
