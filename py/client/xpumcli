@@ -265,6 +265,7 @@ def device_info_to_str(props):
     rows.append("Vendor Name: {}".format(props["VendorName"]))
     rows.append("UUID: {}".format(props["UUID"]))
     rows.append("PCI BDF Address: {}".format(props["PCIBdfAddress"]))
+    rows.append("PCI Slot: {}".format(props["PCISlot"]))
     rows.append("")
     rows.append("Driver Version: {}".format(props["DriverVersion"]))
     if "FirmwareName" in props:

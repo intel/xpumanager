@@ -41,7 +41,8 @@ field_translation = {
     "FIRMWARE_NAME": dict(name="FirmwareName"),
     "FIRMWARE_VERSION": dict(name="FirmwareVersion"),
     "NUM_SUB_SLICES_PER_SLICE": dict(name="NumberOfSubSlicesPerSubSlice"),
-    "BDF ADDRESS": dict(name="PCIBdfAddress")
+    "BDF ADDRESS": dict(name="PCIBdfAddress"),
+    "PCI SLOT": dict(name="PCISlot")
 }
 
 class XpumVersionInfo(Structure):
