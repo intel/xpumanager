@@ -1,90 +1,88 @@
 from ctypes import *
 import os
 import uuid
+import string
+from enum import Enum, unique
+import datetime
 
 def hex_format(v):
     return hex(int(v))
 
 def bytes2MiB(v):
-    return str(int(v)/(1024*1024))
+    return format(int(v)/(1024*1024),".2f")
 
 field_translation = {
-    "TYPE": dict(name="Device Type"),
-    "DEVICE_ID": dict(name="PCI Device Id"),
-    "BOARD_NUMBER": dict(name="Board Number"),
-    "BRAND_NAME": dict(name="Brand Name"),
-    "DRIVER_VERSION": dict(name="Driver Version"),
-    "NUM_SUB_DEVICES": dict(name="Number of Sub Devices"),
-    "SERIAL_NUMBER": dict(name="Serial Number"),
-    "VENDOR_NAME": dict(name="Vendor Name"),
-    "CORE_CLOCK_RATE": dict(name="Core Clock Rate",unit="MHz"),
-    "MAX_MEM_ALLOC_SIZE": dict(name="Max Mem Alloc Size",unit="Bytes"),
-    "MAX_HARDWARE_CONTEXTS": dict(name="Max Hardware Contexts"),
-    "MAX_COMMAND_QUEUE_PRIORITY": dict(name="Max Command Queue Priority"),
-    "DEVICE_NAME": dict(name="Device Name"),
-    "NUM_EUS_PER_SUB_SLICE": dict(name="Number of EUs Per Sub Slice"),
-    "NUM_SLICES": dict(name="Number of Slices"),
-    "NUM_THREADS_PER_EU": dict(name="Number of Threads Per EU"),
-    "PYSICAL_EU_SIMD_WIDTH": dict(name="Pysical EU SIMD Width"),
-    "SUB_DEVICE_ID": dict(name="Sub Device Id"),
-    "TIMER_RESOLUTION": dict(name="Timer Resolution"),
-    "TIMESTAMP_VALID_BITS": dict(name="Timestamp Valid Bits"),
+    "TYPE": dict(name="DeviceType"),
+    "DEVICE_ID": dict(name="PCIDeviceId"),
+    "BOARD_NUMBER": dict(name="BoardNumber"),
+    "BRAND_NAME": dict(name="BrandName"),
+    "DRIVER_VERSION": dict(name="DriverVersion"),
+    "NUM_SUB_DEVICES": dict(name="NumberOfSubDevices"),
+    "SERIAL_NUMBER": dict(name="SerialNumber"),
+    "VENDOR_NAME": dict(name="VendorName"),
+    "CORE_CLOCK_RATE": dict(name="CoreClockRate",unit="MHz"),
+    "MAX_MEM_ALLOC_SIZE": dict(name="MaxMemAllocSize",format=bytes2MiB, unit="MiB"),
+    "MAX_HARDWARE_CONTEXTS": dict(name="MaxHardwareContexts"),
+    "MAX_COMMAND_QUEUE_PRIORITY": dict(name="MaxCommandQueuePriority"),
+    "DEVICE_NAME": dict(name="DeviceName"),
+    "NUM_EUS_PER_SUB_SLICE": dict(name="NumberOfEusPerSubSlice"),
+    "NUM_SLICES": dict(name="NumberOfSlices"),
+    "NUM_THREADS_PER_EU": dict(name="NumberOfThreadsPerEu"),
+    "PYSICAL_EU_SIMD_WIDTH": dict(name="PysicalEuSimdWidth"),
+    "SUB_DEVICE_ID": dict(name="SubDeviceId"),
+    "TIMER_RESOLUTION": dict(name="TimerResolution"),
+    "TIMESTAMP_VALID_BITS": dict(name="TimestampValidBits"),
     "UUID": dict(name="UUID"),
-    "VENDOR_ID": dict(name="PCI Vendor Id"),
-    "KERNEL_TIMESTAMP_VALID_BITS": dict(name="Kernel Timestamp Valid Bits"),
+    "VENDOR_ID": dict(name="PCIVendorId"),
+    "KERNEL_TIMESTAMP_VALID_BITS": dict(name="KernelTimestampValidBits"),
     "FLAGS": dict(name="Flags"),
-    "MEMORY_PHYSICAL_SIZE": dict(name="Memory Physical Size",format=bytes2MiB, unit="MiB"),
-    "MEMORY_FREE_SIZE": dict(name="Memory Free Size", unit="Bytes"),
-    "MEMORY_ALLOCATABLE_SIZE": dict(name="Memory Allocatable Size", unit="Bytes", ignore=True),
-    "MEMORY_HEALTH": dict(name="Memory Health"),
-    "FIRMWARE_NAME": dict(name="Firmware Name"),
-    "FIRMWARE_VERSION": dict(name="Firmware Version"),
-    "NUM_SUB_SLICES_PER_SLICE": dict(name="Number of Sub Slices Per Sub Slice"),
-    "BDF ADDRESS": dict(name="PCI BDF Address")
+    "MEMORY_PHYSICAL_SIZE": dict(name="MemoryPhysicalSize",format=bytes2MiB, unit="MiB"),
+    "MEMORY_FREE_SIZE": dict(name="MemoryFreeSize",format=bytes2MiB, unit="MiB"),
+    "MEMORY_ALLOCATABLE_SIZE": dict(name="MemoryAllocatableSize", format=bytes2MiB, unit="MiB", ignore=True),
+    "MEMORY_HEALTH": dict(name="MemoryHealth"),
+    "FIRMWARE_NAME": dict(name="FirmwareName"),
+    "FIRMWARE_VERSION": dict(name="FirmwareVersion"),
+    "NUM_SUB_SLICES_PER_SLICE": dict(name="NumberOfSubSlicesPerSubSlice"),
+    "BDF ADDRESS": dict(name="PCIBdfAddress"),
+    "PCI SLOT": dict(name="PCISlot")
 }
 
-class APIResult(Structure):
-
+class XpumVersionInfo(Structure):
     _fields_ = [
-
-        ("error_code",c_int),
-
-        ("msg",c_char_p)
-
+        ("version", c_int),
+        ("versionString", c_char * 32)
     ]
 
-class DeviceProperty(Structure):
-
+class XpumDeviceBasicInfo(Structure):
     _fields_ = [
-
-        ("name",c_char_p),
-
-        ("value",c_char_p)
-
+        ("deviceId", c_int),
+        ("type", c_int),
+        ("uuid", c_char * 32),
+        ("deviceName", c_char * 256),
+        ("PCIDeviceId", c_char * 256),
+        ("SubDeviceId", c_char * 256),
+        ("PCIBDFAddress", c_char * 256),
+        ("VendorName", c_char * 256)
     ]
 
-
-class Device(Structure):
-
+class XpumDeviceProperty(Structure):
     _fields_ = [
-
-        ("device_id",c_char_p),
-
-        ("properties",DeviceProperty*100),
-        ("property_len",c_int)
-
+        ("name", c_char * 256),
+        ("value", c_char * 256),
     ]
 
-class MeasurementData(Structure):
-
+class XpumDeviceProperties(Structure):
     _fields_ = [
+        ("deviceId", c_int),
+        ("properties", XpumDeviceProperty * 100),
+        ("propertyLen", c_int)
+    ]
 
-        ("avg",c_int),
-        ("min",c_int),
-        ("max",c_int),
-        ("current",c_int),
-        ("scale",c_int)
-
+class XpumGroupInfo(Structure):
+    _fields_ = [
+        ("count", c_int),
+        ("groupName", c_char * 256),
+        ("deviceList", c_int * 32)
     ]
 
 class FirmwareFlashJob( Structure ):
@@ -104,9 +102,41 @@ class FirmwareFlashTaskResult( Structure ):
 
 GetDeviceListCallbackType = CFUNCTYPE(None, POINTER(Device))
 
-GetLatestMeasurementCallbackType = CFUNCTYPE(None, POINTER(MeasurementData))
+XpumStatsType = Enum("xpum_stats_type_t", (
+    "XPUM_STATS_GPU_COMPUTATION",
+    "XPUM_STATS_OCCUPATION",
+    "XPUM_STATS_ISSUE_EFFICIENCY",
+    "XPUM_STATS_EXECUTION_EFFICIENCY",
+    "XPUM_STATS_NON_OCCUPATION",
+    "XPUM_STATS_POWER",
+    "XPUM_STATS_ENERGY",
+    "XPUM_STATS_GPU_FREQUENCY",
+    "XPUM_STATS_GPU_TEMEPERATURE",
+    "XPUM_STATS_MEMORY_USED",
+    "XPUM_STATS_MEMORY_READ",
+    "XPUM_STATS_MEMORY_WRITE",
+    "XPUM_STATS_PCIRX",
+    "XPUM_STATS_PCITX",
+    "XPUM_STATS_MAX"
+), start=0)
 
-GetRealtimeMeasurementCallbackType = CFUNCTYPE(None, POINTER(MeasurementData))
+class XpumStatsData(Structure):
+    _fields_ = [
+        ("metricsType", c_int),
+        ("isCounter", c_bool),
+        ("value", c_int64),
+        ("min", c_int64),
+        ("avg", c_int64),
+        ("max", c_int64)
+    ]
+
+class XpumDeviceStats(Structure):
+    _fields_ = [
+        ("deviceId", c_int32),
+        ("begin", c_int64),
+        ("end", c_int64),
+        ("dataList", XpumStatsData * XpumStatsType.XPUM_STATS_MAX.value),
+    ]
 
 class DGMCore:
     def __init__(self):

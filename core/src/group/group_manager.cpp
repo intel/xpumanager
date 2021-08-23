@@ -90,7 +90,12 @@ xpum_result_t GroupManager::addDeviceToGroup(xpum_group_id_t groupId, xpum_devic
         return ret;
     }
 
-    return pGroupInfo->addDevice(p_devicemanager, groupId, deviceId);
+    if(p_devicemanager->getDevice(std::to_string(deviceId)) == nullptr) {
+        Logger::instance().error(std::string("GroupInfo::addDevice-invalid device id ") + std::string(std::to_string(deviceId)));
+        return ret;
+    }
+
+    return pGroupInfo->addDevice(groupId, deviceId);
 }
 
 xpum_result_t GroupManager::removeDeviceFromGroup(xpum_group_id_t groupId, xpum_device_id_t deviceId)
@@ -119,7 +124,6 @@ xpum_result_t GroupManager::getGroupInfo(xpum_group_id_t groupId, xpum_group_inf
     }
 
     pGroupInfo->count = p_GroupInfo->getDeviceCount();
-    pGroupInfo->deviceType = p_GroupInfo->getDeviceType();
     p_GroupInfo->getName(pGroupInfo->groupName);
     p_GroupInfo->getDeviceList(pGroupInfo->deviceList);
     return XPUM_OK;
@@ -146,106 +150,6 @@ xpum_result_t GroupManager::getAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM
 
     return XPUM_OK;
 }
-/*
-xpum_result_t GroupManager::getTelemetriesByGroup(xpum_group_id_t groupId, 
-    xpum_telemetry_type_t type, xpumTelemetryData_t dataList[], int *count)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::setHealthConfigByGroup(xpum_group_id_t groupId, xpum_health_config_type_t key, void *value)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::getHealthConfigByGroup(xpum_group_id_t groupId, 
-    xpum_health_config_type_t key, xpum_device_id_t deviceIdList[], 
-    void *valueList[], int *count)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::getHealthByGroup(xpum_group_id_t groupId, 
-    xpum_health_type_t type, xpum_health_data_t dataList[], int *count)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::getEventByGroup(xpum_group_id_t groupId,
-    xpumEventEntry_t eventList[], int *count)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::setDeviceConfigByGroup(xpum_group_id_t groupId, 
-    xpum_device_config_type_t key, void *value)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::getDeviceConfigByGroup(xpum_group_id_t groupId, 
-    xpum_device_config_type_t key, xpum_device_id_t deviceIdList[], 
-    void *valueList[], int *count)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::getFirmwarePropertiesByGroup(xpum_group_id_t groupId, 
-    xpum_firmware_type_t type, xpum_firmware_properties propsList[], int *count)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::runFirmwareFlashByGroup(xpum_group_id_t groupId, 
-    xpum_firmware_flash_job *job)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::getFirmwareFlashResultByGroup(xpum_group_id_t groupId, 
-                                                xpum_firmware_type_t firmwareType,
-                                                xpum_firmware_flash_task_result_t resultList[], 
-                                                int *count)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::runDiagnositicsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-
-xpum_result_t GroupManager::getDiagnosticsResultByGroup(xpum_group_id_t groupId,
-                                              xpum_diag_task_result_t resultList[],
-                                              int *count)
-{
-    xpum_result_t ret = XPUM_OK;
-
-    return ret;
-}
-*/
 
 GroupInfo * GroupManager::getGroupById(xpum_group_id_t groupId)
 {

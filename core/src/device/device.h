@@ -31,7 +31,13 @@ class Device {
 
   virtual void getMemory(Callback_t callback) noexcept = 0;
 
+  virtual void getMemoryRead(Callback_t callback) noexcept = 0;
+
+  virtual void getMemoryWrite(Callback_t callback) noexcept = 0;
+
   virtual void getEngineUtilization(Callback_t callback) noexcept = 0;
+
+  virtual void getEnergy(Callback_t callback) noexcept = 0;
 
   void addCapability(DeviceCapability& capability);
 

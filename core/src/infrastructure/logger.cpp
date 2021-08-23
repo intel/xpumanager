@@ -6,24 +6,26 @@
 #include "utility.h"
 #include "logger.h"
 
+#include "spdlog/spdlog.h"
+
 Logger& Logger::instance() {
   static Logger instance;
   return instance;
 }
 
 void Logger::error(const std::string& msg){
-  std::cout << Utility::getCurrentTimeString() << " " << msg << std::endl;
+  spdlog::error(msg);
 }
 
 void Logger::warn(const std::string& msg){
-  std::cout << Utility::getCurrentTimeString() << " " << msg << std::endl;
+  spdlog::warn(msg);
 }
 
 void Logger::info(const std::string& msg){
-  std::cout << Utility::getCurrentTimeString() << " " << msg << std::endl;
+  spdlog::info(msg);
 }
 
 void Logger::debug(const std::string& msg){
-  std::cout << Utility::getCurrentTimeString() << " " << msg << std::endl;
+  spdlog::debug(msg);
 }
 

@@ -55,56 +55,57 @@ Optional arguments:
 ## List GPUs
 ```
 $ xpumcli discovery -l
-+-------------+-----------+--------------------------------------------------------+
-| Device Type | Device Id | Firmware Info                                          |
-+-------------+-----------+--------------------------------------------------------+
-| GPU         | 0         | Device Name: Intel(R) Iris(R) Xe MAX Graphics [0x4905] |
-|             |           | Vendor Name: Intel(R) Corporation                      |
-|             |           | UUID: 00000000-0000-0000-0000-490500008086             |
-|             |           | PCI BDF Address: 0000:b1:0.0                           |
-|             +-----------+--------------------------------------------------------+
-|             | 1         | Device Name: Intel(R) Iris(R) Xe MAX Graphics [0x4905] |
-|             |           | Vendor Name: Intel(R) Corporation                      |
-|             |           | UUID: 00000000-0000-0001-0000-490500008086             |
-|             |           | PCI BDF Address: 0000:1a:0.0                           |
-+-------------+-----------+--------------------------------------------------------+
+Device Type: GPU
++-----------+--------------------------------------------------------+
+| Device Id | Device Information                                     |
++-----------+--------------------------------------------------------+
+| 0         | Device Name: Intel(R) Iris(R) Xe MAX Graphics [0x4905] |
+|           | Vendor Name: Intel(R) Corporation                      |
+|           | UUID: 00000000-0000-0000-0000-490500008086             |
+|           | PCI BDF Address: 0000:b1:0.0                           |
++-----------+--------------------------------------------------------+
+| 1         | Device Name: Intel(R) Iris(R) Xe MAX Graphics [0x4905] |
+|           | Vendor Name: Intel(R) Corporation                      |
+|           | UUID: 00000000-0000-0001-0000-490500008086             |
+|           | PCI BDF Address: 0000:1a:0.0                           |
++-----------+--------------------------------------------------------+
 ```
 ```
 $ xpumcli discovery -l -d 0
-+-------------+-----------+--------------------------------------------------------+
-| Device Type | Device Id | Firmware Info                                          |
-+-------------+-----------+--------------------------------------------------------+
-| GPU         | 0         | Device Name: Intel(R) Iris(R) Xe MAX Graphics [0x4905] |
-|             |           |                                                        |
-|             |           | Vendor Name: Intel(R) Corporation                      |
-|             |           | UUID: 00000000-0000-0000-0000-490500008086             |
-|             |           | PCI BDF Address: 0000:b1:0.0                           |
-|             |           |                                                        |
-|             |           | Driver Version: 16796698                               |
-|             |           | Firmware Name: GSC                                     |
-|             |           | Firmware Version: ATS1_0.7178                          |
-|             |           |                                                        |
-|             |           | Number of Sub Devices: 2                               |
-|             |           | Serial Number: Unknown                                 |
-|             |           | Core Clock Rate: 1300 MHz                              |
-|             |           | Max Mem Alloc Size: 4095 MiB                           |
-|             |           | Max Hardware Contexts: 65536                           |
-|             |           | Max Command Queue Priority: 0                          |
-|             |           | Device Name: Intel(R) Graphics [0x020a]                |
-|             |           |                                                        |
-|             |           | Number of Slices: 2                                    |
-|             |           | Number of Sub Slices Per Slice: 30                     |
-|             |           | Number of EUs Per Sub Slice: 16                        |
-|             |           | Number of Threads Per EU: 8                            |
-|             |           | Pysical EU SIMD Width: 8                               |
-|             |           | Timer Resolution: 80                                   |
-|             |           | Timestamp Valid Bits: 36                               |
-|             |           | PCI Vendor Id: 0x8086                                  |
-|             |           | Kernel Timestamp Valid Bits: 32                        |
-|             |           | Flags: 0                                               |
-|             |           | Memory Physical Size: 32608.0 MiB                      |
-|             |           | Memory Free Size: 32575 MiB                            |
-+-------------+-----------+--------------------------------------------------------+
++-----------+--------------------------------------------------------+
+| Device Id | Device Information                                     |
++-----------+--------------------------------------------------------+
+| 0         | Device Type: GPU                                       |
+|           | Device Name: Intel(R) Iris(R) Xe MAX Graphics [0x4905] |
+|           |                                                        |
+|           | Vendor Name: Intel(R) Corporation                      |
+|           | UUID: 00000000-0000-0000-0000-490500008086             |
+|           | PCI BDF Address: 0000:b1:0.0                           |
+|           |                                                        |
+|           | Driver Version: 16796698                               |
+|           | Firmware Name: GSC                                     |
+|           | Firmware Version: ATS1_0.7178                          |
+|           |                                                        |
+|           | Number of Sub Devices: 2                               |
+|           | Serial Number: Unknown                                 |
+|           | Core Clock Rate: 1300 MHz                              |
+|           | Max Mem Alloc Size: 4095 MiB                           |
+|           | Max Hardware Contexts: 65536                           |
+|           | Max Command Queue Priority: 0                          |
+|           |                                                        |
+|           | Number of Slices: 2                                    |
+|           | Number of Sub Slices Per Slice: 30                     |
+|           | Number of EUs Per Sub Slice: 16                        |
+|           | Number of Threads Per EU: 8                            |
+|           | Pysical EU SIMD Width: 8                               |
+|           | Timer Resolution: 80                                   |
+|           | Timestamp Valid Bits: 36                               |
+|           | PCI Vendor Id: 0x8086                                  |
+|           | Kernel Timestamp Valid Bits: 32                        |
+|           | Flags: 0                                               |
+|           | Memory Physical Size: 32608.0 MiB                      |
+|           | Memory Free Size: 32575 MiB                            |
++-----------+--------------------------------------------------------+
 ```
 
 # Group subcommand
@@ -126,7 +127,7 @@ Optional arguments:
                             The id of the group to manipulate
     -a <deviceIds>, --add <deviceIds>    
                             Add devices to a group
-    -d <deviceIds>, --device <deviceIds> 
+    -d <deviceIds>, --delete <deviceIds> 
                             Delete devices from a group
 ```
 
@@ -143,7 +144,7 @@ $ xpumcli group -c "All Gpus"
 
 ## Add a device to a group
 ```
-$ xpumcli group -g 0 -a 0,1
+$ xpumcli group -g 0 -a 0 1
 +----------+------------------------+
 | Group Id | Group Properties       |
 +----------+------------------------+
@@ -767,7 +768,7 @@ $ xpumcli agentset -l
 ```
 $ xpumcli stats --help
 
-stats -- used to display detailed device statistics data from last query to now
+stats -- Used to display detailed device statistics data from last query to now
 
 Usage: xpumcli stats [-h] [-g] [-d]
 
@@ -777,10 +778,14 @@ Optional arguments:
                             The device id to query
     -g <groupId>, --group <groupId>     
                             The group id to query
+    --tile <tileId>
 ```
 ## List stats
 ```
 $ xpumcli stats
+Device Type: GPU
+Device Id: 0
+Tile: 0
 +--------------------------------+-----------------------------------------+
 | Device Type                    | GPU                                     |
 +--------------------------------+-----------------------------------------+
@@ -820,15 +825,4 @@ $ xpumcli stats
 |                                |min: 300                                 |
 |                                |max: 700                                 |
 +--------------------------------+-----------------------------------------+
-```
-
-## Export stats
-```
-$ xpumcli stats -o
-Timestamp,DeviceId,GPU_Computation(%),Occupation(%),GPU_Frequency(MHz) 
-2021-07-09 16:03:36,0,71,70,30
-2021-07-09 16:03:37,0,71,70,30
-2021-07-09 16:03:38,0,71,70,30 
-2021-07-09 16:03:39,0,71,70,30 
-2021-07-09 16:03:40,0,71,70,30
 ```

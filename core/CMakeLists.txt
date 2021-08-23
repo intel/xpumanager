@@ -15,6 +15,12 @@ option(BUILD_TEST "build application instead of lib for test" OFF)
 
 option(BUILD_TEST_API "build application for api test" OFF)
 
+if (NOT DEFINED XPUM_VERSION_STRING)
+  set(XPUM_VERSION_STRING 0.1.0)
+endif()
+
+configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/version.cpp.in ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/version.cpp @ONLY)
+
 # set(BUILD_TEST_API OFF BOOL "build application for api test")
 
 # Set debug file name postfix
@@ -71,19 +77,14 @@ if (BUILD_TEST)
   # add_executable(DGMCore ${TEST_SRC})
 
   if (BUILD_TEST_API)
-    # add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_api.cpp)
     add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
   else()
     add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_main.cpp)
   endif()
 
-  install(TARGETS DGMCore DESTINATION ${CMAKE_CURRENT_LIST_DIR})
-
 else()
 
   add_library (DGMCore SHARED)
-
-  install(TARGETS DGMCore LIBRARY DESTINATION ${CMAKE_CURRENT_LIST_DIR})
 
 endif()
 

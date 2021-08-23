@@ -39,7 +39,7 @@ extern "C" {
 /**
  * Max uuid bytes
  */
-#define XPUM_MAX_DEVICE_UUID_SIZE  16
+#define XPUM_MAX_DEVICE_UUID_SIZE  32
 
 /**
  * The max number of cached metrics collecting task
@@ -63,6 +63,7 @@ typedef enum xpum_result_enum {
     XPUM_OK = 0,
     XPUM_GENERIC_ERROR,
     XPUM_BUFFER_TOO_SMALL,
+    XPUM_RESULT_DEVICE_NOT_FOUND
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -97,7 +98,12 @@ struct xpum_device_basic_info
 {
     xpum_device_id_t deviceId;
     xpum_device_type_t type;
-    uint8_t uuid[XPUM_MAX_DEVICE_UUID_SIZE];
+    char uuid[XPUM_MAX_DEVICE_UUID_SIZE];
+    char deviceName[XPUM_MAX_STR_LENGTH];
+    char PCIDeviceId[XPUM_MAX_STR_LENGTH];
+    char SubDeviceId[XPUM_MAX_STR_LENGTH];
+    char PCIBDFAddress[XPUM_MAX_STR_LENGTH];
+    char VendorName[XPUM_MAX_STR_LENGTH];
 };
 
 
@@ -120,10 +126,9 @@ struct xpum_device_properties_t{
 /**************************************************************************/
 
 struct xpum_group_info_t {
-    unsigned int count;
-    xpum_device_type_t deviceType;                                        
+    int count;
     char groupName[XPUM_MAX_STR_LENGTH];                       
-    unsigned int deviceList[XPUM_MAX_NUM_DEVICES]; 
+    xpum_device_id_t deviceList[XPUM_MAX_NUM_DEVICES]; 
 };
 
 /**************************************************************************/
@@ -158,14 +163,6 @@ struct xpumTelemetryData_t {
  * Definitions for health
  */
 /**************************************************************************/
-
-typedef enum xpum_value_type_enum {
-    STRING = 0,
-    CHAR,
-    FLOAT,
-    INT,
-    BOOLEAN
-} xpum_value_type_t;
 
 typedef enum xpum_health_config_type_enum {
     XPUM_HEALTH_THEARMAL_CORE_THRES = 0,
@@ -230,19 +227,20 @@ struct xpumEventEntry_t {
  */
 /**************************************************************************/
 
+typedef enum xpum_device_mode_enum {
+    XPUM_GPU_SCHEDULE_MODE = 0,
+    XPUM_GPU_STANDBY_MODE
+} xpum_device_mode_t;
+
 typedef enum xpum_device_config_type_enum {
-    XPUM_DEVICE_CONFIG_POWER_LIMIT = 0,
-    XPUM_DEVICE_CONFIG_PERFORMANCE_FACTOR
+    XPUM_DEVICE_CONFIG_DEVICE_MODE = 0,
+    XPUM_DEVICE_CONFIG_POWER_LIMIT_ENABLED,
+    XPUM_DEVICE_CONFIG_POWER_LIMIT_VALUE,
+    XPUM_DEVICE_CONFIG_POWER_LIMIT_AVG_WINDOW,
+    XPUM_DEVICE_CONFIG_CORE_FREQ_MIN,
+    XPUM_DEVICE_CONFIG_CORE_FREQ_MAX,
+    XPUM_DEVICE_CONFIG_RESET,
 } xpum_device_config_type_t;
-
-/**
- * @brief Register value type for specific key
- * 
- * @param key 
- * @param type 
- */
-void xpumGetDeviceConfigValueType(xpum_device_config_type_t key, xpum_value_type_t type);
-
 
 /**************************************************************************/
 /**
@@ -350,6 +348,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_GPU_FREQUENCY,
     XPUM_STATS_GPU_TEMEPERATURE,
     XPUM_STATS_MEMORY_USED,
+    XPUM_STATS_MEMORY_READ,
     XPUM_STATS_MEMORY_WRITE,
     XPUM_STATS_PCIRX,
     XPUM_STATS_PCITX,
@@ -359,10 +358,10 @@ typedef enum xpum_stats_type_enum {
 struct xpum_stats_data_t {
     xpum_stats_type_t metricsType;
     bool isCounter;
-    int32_t value;
-    int32_t min;
-    int32_t avg;
-    int32_t max;
+    uint64_t value;
+    uint64_t min;
+    uint64_t avg;
+    uint64_t max;
 };
 
 struct xpum_device_stats_t {

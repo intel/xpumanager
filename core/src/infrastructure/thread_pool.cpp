@@ -5,10 +5,12 @@
 #include "thread_pool.h"
 
 ThreadPool::ThreadPool(unsigned int size) : stop(false), size(size) {
+  Logger::instance().info("ThreadPool()");
   init();
 }
 
 ThreadPool::~ThreadPool() {
+  Logger::instance().info("~ThreadPool()");
   close();
 }
 
