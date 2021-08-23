@@ -7,6 +7,8 @@
 #include "api.h"
 #include "version.h"
 
+#include "core.h"
+
 using namespace std;
 
 bool deviceFound;
@@ -24,6 +26,7 @@ xpum_result_t xpumInit() {
 }
 
 xpum_result_t xpumShutdown() {
+    Core::instance().close();
     return XPUM_OK;
 }
 
@@ -180,7 +183,6 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
         return XPUM_RESULT_DEVICE_NOT_FOUND;
 }
 
-#include "core.h"
 xpum_result_t xpumGroupCreate(char *groupName, xpum_group_id_t *pGroupId)
 {
     return Core::instance().getGroupManager()->createGroup(groupName, pGroupId);    
