@@ -9,6 +9,7 @@
 #include "device_capability.h"
 #include "ze_api.h"
 #include "zes_api.h"
+#include "xpum_structs.h"
 
 class Device {
  public:
@@ -41,6 +42,9 @@ class Device {
   void removeProperty(const std::string& name);
 
   zes_device_handle_t getDeviceHandle();
+
+  virtual bool runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept;
+  virtual xpum_firmware_flash_result_t getFirmwareFlashResult() noexcept;
   
  public:
   virtual ~Device() {}

@@ -87,6 +87,21 @@ class MeasurementData(Structure):
 
     ]
 
+class FirmwareFlashJob( Structure ):
+    _fields_ = [
+        ("firmwareType", c_int),
+        ("filePath", c_char_p )
+    ]
+    
+class FirmwareFlashTaskResult( Structure ):
+    _fields_ = [
+        ('deviceId', c_int ),
+        ('firmwareType', c_int ),
+        ('taskResult', c_int ),
+        ('description', c_char * 256 ),
+        ('version', c_char * 256 )
+    ]
+
 GetDeviceListCallbackType = CFUNCTYPE(None, POINTER(Device))
 
 GetLatestMeasurementCallbackType = CFUNCTYPE(None, POINTER(MeasurementData))
@@ -187,3 +202,30 @@ class DGMCore:
         )
 
         return data
+
+    def runFirmwareFlash(self, deviceId, firmwareType, filePath ):
+        rawFile = c_char_p( filePath.encode() )
+        rc = self.lib.xpumRunFirmwareFlash( deviceId,byref( FirmwareFlashJob( firmwareType, rawFile ) ) )
+        
+        if rc == 0: 
+            return "OK"
+        else:
+            return "ERROR"
+
+    def getFirmwareFlashResult(self, deviceId, firmwareType ):
+        stru = FirmwareFlashTaskResult()
+        rc = self.lib.xpumGetFirmwareFlashResult( deviceId, firmwareType, byref( stru ) )
+        if rc != 0:
+            return "ERROR"
+
+        if stru.taskResult == 0:
+            return "OK"
+        elif stru.taskResult == 1:
+            return "ERROR"
+        else:
+            return "ONGOING"
+        
+        
+        
+        
+        

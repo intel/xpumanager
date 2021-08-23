@@ -43,6 +43,23 @@ def get_measurement(deviceId):
     }
     return jsonify(measurement)
 
+@app.route('/dgm/v1/devices/<int:deviceId>/firmwareUpgrade', methods=['POST'])
+def run_firmware_flash( deviceId ):
+    firmwareType = request.form.get( 'type', type = int , default = 0 )
+    filePath = request.form.get( 'file', type = str, default = '' )
+    rc = core.runFirmwareFlash( deviceId, firmwareType, filePath )
+
+    return jsonify( { 'result' : rc } )
+
+@app.route('/dgm/v1/devices/<int:deviceId>/firmware', methods=['GET'])
+def get_firmware_flash_result( deviceId ):
+    firmwareType = request.args.get( 'type', type = int, default = 0 )
+
+    rc = core.getFirmwareFlashResult( deviceId, firmwareType )
+    
+    return jsonify( { 'result' : rc } )
+
 if __name__ == '__main__':
-  app.debug = True
-  app.run()
+    print( 'start' )
+    app.debug = True
+    app.run()

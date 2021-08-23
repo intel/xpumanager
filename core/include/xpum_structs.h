@@ -256,6 +256,8 @@ typedef enum xpum_firmware_type_enum {
 
 typedef enum xpum_firmware_flash_result_enum {
     XPUM_DEVICE_FIRMWARE_FLASH_OK = 0,
+    XPUM_DEVICE_FIRMWARE_FLASH_ERROR,
+    XPUM_DEVICE_FIRMWARE_FLASH_ONGOING,
 } xpum_firmware_flash_result_t;
 
 struct xpum_firmware_flash_job {
@@ -266,7 +268,6 @@ struct xpum_firmware_flash_job {
 struct xpum_firmware_flash_task_result_t {
     xpum_device_id_t deviceId;
     xpum_firmware_type_t type;
-    bool finished;
     xpum_firmware_flash_result_t result;
     char description[XPUM_MAX_STR_LENGTH];
     char version[XPUM_MAX_STR_LENGTH];
