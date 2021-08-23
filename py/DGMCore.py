@@ -2,6 +2,7 @@ from ctypes import *
 import os
 import uuid
 import string
+from enum import Enum, unique
 
 def hex_format(v):
     return hex(int(v))
@@ -81,6 +82,47 @@ class XpumGroupInfo(Structure):
         ("count", c_int),
         ("groupName", c_char * 256),
         ("deviceList", c_int * 32)
+    ]
+
+agentConfig = {
+    "XPUM_AGENT_CONFIG_EVENT_LIMIT": (0, int, c_int32),
+    "XPUM_AGENT_CONFIG_SAMPLE_INTERVAL": (1, int, c_int32)
+}
+
+XpumStatsType = Enum("xpum_stats_type_t",(
+    "XPUM_STATS_GPU_COMPUTATION",
+    "XPUM_STATS_OCCUPATION",
+    "XPUM_STATS_ISSUE_EFFICIENCY",
+    "XPUM_STATS_EXECUTION_EFFICIENCY",
+    "XPUM_STATS_NON_OCCUPATION",
+    "XPUM_STATS_POWER",
+    "XPUM_STATS_ENERGY",
+    "XPUM_STATS_GPU_FREQUENCY",
+    "XPUM_STATS_GPU_TEMEPERATURE",
+    "XPUM_STATS_MEMORY_USED",
+    "XPUM_STATS_MEMORY_READ",
+    "XPUM_STATS_MEMORY_WRITE",
+    "XPUM_STATS_PCIRX",
+    "XPUM_STATS_PCITX",
+    "XPUM_STATS_MAX"
+))
+
+class XpumStatsData(Structure):
+    _fields_ = [
+        ("metricsType", c_int),
+        ("isCounter", c_bool),
+        ("value", c_int64)
+        ("min", c_int64)
+        ("avg", c_int64)
+        ("max", c_int64)
+    ]
+
+class XpumDeviceStats(Structure):
+    _fields_ = [
+        ("deviceId", c_int32),
+        ("begin", c_int64),
+        ("end", c_int64),
+        ("dataList", XpumStatsData * XpumStatsType.XPUM_STATS_MAX.value),
     ]
 
 class DGMCore:
@@ -223,4 +265,31 @@ class DGMCore:
         data["DeviceIds"] = [i for i in groupInfo.deviceList[:groupInfo.count]]
         return 0, "OK", data
 
+    def setAgentConfig(self, key, value):
+        if key not in agentConfig:
+            return 1, "Fail to set agent configuration", None
+        k, f, t = agentConfig[key]
+        value = t(f(value))
+        res = self.lib.xpumSetAgentConfig(c_int(k), byref(value))
+        if res != 0:
+            return res, "Fail to set agent configuration", None
+        return 0, "OK", None
+
+    def getAllAgentConfig(self):
+        data = dict()
+        for e in agentConfig:
+            key = e.name
+            k, f, t = agentConfig[key]
+            value = t()
+            res = self.lib.xpumGetAgentConfig(c_int(k), byref(value))
+            if res != 0:
+                return res, "Fail to set agent configuration", None
+            data[key] = str(value)
+        return 0, "OK", None 
     
+    def getStatistics(self, deviceId):
+        deviceStats = XpumDeviceStats()
+        pass
+
+    def getStatistics(self, groupId):
+        pass
