@@ -127,17 +127,17 @@ class XpumStatsData(Structure):
     _fields_ = [
         ("metricsType", c_int),
         ("isCounter", c_bool),
-        ("value", c_int64),
-        ("min", c_int64),
-        ("avg", c_int64),
-        ("max", c_int64)
+        ("value", c_uint64),
+        ("min", c_uint64),
+        ("avg", c_uint64),
+        ("max", c_uint64)
     ]
 
 class XpumDeviceStats(Structure):
     _fields_ = [
         ("deviceId", c_int32),
-        ("begin", c_int64),
-        ("end", c_int64),
+        ("begin", c_uint64),
+        ("end", c_uint64),
         ("dataList", XpumStatsData * XpumStatsType.XPUM_STATS_MAX.value),
     ]
 

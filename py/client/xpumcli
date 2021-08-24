@@ -248,7 +248,7 @@ def get_stats_rows(data):
             rows.append(["GPU Power (w)",v])
         elif stats['metricsType'] == "XPUM_STATS_ENERGY":
             counter_row_keys.append("Energy Consumed (J)")
-            counter_row_values.append(str(stats['value']))
+            counter_row_values.append(str(stats['value']/1e3))
         elif stats['metricsType'] == "XPUM_STATS_GPU_FREQUENCY":
             v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
                 stats["value"],
