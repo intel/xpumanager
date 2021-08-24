@@ -136,7 +136,7 @@ def get_group_statistics(groupId):
         return jsonify(error), 500
     return jsonify(data)
 
-@app.route('/dgm/v1/devices/<int:deviceId>/firmwareUpgrade', methods=['POST'])
+@app.route('/rest/v1/devices/<int:deviceId>/firmwareUpgrade', methods=['POST'])
 def run_firmware_flash( deviceId ):
     firmwareType = request.form.get( 'type', type = int , default = 0 )
     filePath = request.form.get( 'file', type = str, default = '' )
@@ -144,7 +144,7 @@ def run_firmware_flash( deviceId ):
 
     return jsonify( { 'result' : rc } )
 
-@app.route('/dgm/v1/devices/<int:deviceId>/firmware', methods=['GET'])
+@app.route('/rest/v1/devices/<int:deviceId>/firmware', methods=['GET'])
 def get_firmware_flash_result( deviceId ):
     firmwareType = request.args.get( 'type', type = int, default = 0 )
 
