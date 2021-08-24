@@ -68,13 +68,15 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId, xpum_device_stat
     xpum_stats_type_t stats_type = Utility::xpumStatsTypeFromMeasurementType(*iter);
     if (Utility::isCounterMetric(*iter)) {
       data->dataList[stats_type].isCounter = true;
+      data->dataList[stats_type].value = m_data.getCurrent() - m_data.getMin();
     } else {
+      data->dataList[stats_type].isCounter = false;
       data->dataList[stats_type].avg = m_data.getAvg();
       data->dataList[stats_type].min = m_data.getMin();
       data->dataList[stats_type].max = m_data.getMax();
-      data->dataList[stats_type].isCounter = false;
+      data->dataList[stats_type].value = m_data.getCurrent();
     }
-    data->dataList[stats_type].value = m_data.getCurrent();
+    
     data->dataList[stats_type].metricsType = stats_type;
     ++iter;
   }
