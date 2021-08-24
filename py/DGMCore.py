@@ -312,10 +312,10 @@ class DGMCore:
             return res, "Fail to get statistics", None
         data = dict()
         data['DeviceId'] = deviceStats.deviceId
-        beginTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.begin/1e3))
-        endTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.end/1e3))
-        data['Begin'] = str(beginTimestamp)
-        data['End'] = str(endTimestamp)
+        beginTimestamp = datetime.datetime.fromtimestamp(deviceStats.begin/1e3)
+        endTimestamp = datetime.datetime.fromtimestamp(deviceStats.end/1e3)
+        data['Begin'] = beginTimestamp.isoformat(sep=' ', timespec='milliseconds')
+        data['End'] = endTimestamp.isoformat(sep=' ', timespec='milliseconds')
         dataList = []
         i = -1
         for d in deviceStats.dataList:

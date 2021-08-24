@@ -248,7 +248,7 @@ def get_stats_rows(data):
             rows.append(["GPU Power (w)",v])
         elif stats['metricsType'] == "XPUM_STATS_ENERGY":
             counter_row_keys.append("Energy Consumed (J)")
-            counter_row_values.append(str(stats['value']/1e3))
+            counter_row_values.append("{:.3f}".format(stats['value']/1e3))
         elif stats['metricsType'] == "XPUM_STATS_GPU_FREQUENCY":
             v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
                 stats["value"],
@@ -274,11 +274,11 @@ def get_stats_rows(data):
             )
             rows.append(["Memory Userd (MiB)",v])
         elif stats['metricsType'] == "XPUM_STATS_MEMORY_READ":
-            counter_row_keys.append("Memory Read (Bytes)")
-            counter_row_values.append(str(stats['value']))
+            counter_row_keys.append("Memory Read (KB)")
+            counter_row_values.append("{:.2f}".format(stats['value']/1e3))
         elif stats['metricsType'] == "XPUM_STATS_MEMORY_WRITE":
-            counter_row_keys.append("Memory Write (Bytes)")
-            counter_row_values.append(str(stats['value']))
+            counter_row_keys.append("Memory Write (KB)")
+            counter_row_values.append("{:.2f}".format(stats['value']/1e3))
         
     counter_row = ["\n".join(counter_row_keys),"\n".join(counter_row_values)]
     return [header_row,counter_row,*rows]
