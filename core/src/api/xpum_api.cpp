@@ -1,25 +1,20 @@
 #include <vector>
 #include <iostream>
 #include <cstring>
+#include <memory>
 
 #include "xpum_api.h"
 #include "core.h"
 #include "power.h"
 #include "api.h"
 #include "version.h"
+#include "device.h"
 
 #include "core.h"
 #include "configuration.h"
 
 using namespace std;
 
-bool deviceFound;
-
-vector<xpum_device_basic_info> deviceInfoList;
-
-xpum_device_id_t deviceIdToGetProps;
-
-xpum_device_properties_t *propsBuff;
 
 xpum_result_t xpumInit() {
     bool res = init();
@@ -61,128 +56,109 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count)
 }
 
 xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_DEVICES], int *count) {
-    
-    Api_result_t result;
 
-    deviceInfoList.clear();
-    
-    auto callback = [](Device_t *device)
-    {
-        xpum_device_basic_info info;
+    vector<shared_ptr<Device>> devices;
 
-        info.deviceId = stoi(device->device_id);
+    Core::instance().getDeviceManager()->getDeviceList(devices);
+
+    // vector<xpum_device_basic_info> deviceInfoList(devices.size());
+
+    for(int i=0;i<devices.size();i++) {
+
+        auto& p_device = devices[i];
+
+        auto& info = deviceList[i];
+
+        info.deviceId = stoi(p_device->getId());
 
         info.type = GPU;
 
-        for (int i = 0; i < device->property_len; i++)
-        {
-            auto &prop = device->properties[i];
+        std::vector<Property> properties;
 
-            string uuidKey("UUID");
-            if (uuidKey.compare(prop.name) == 0)
-            {
-                string value(prop.value);
+        p_device->getProperties(properties);
+
+        for (Property& prop : properties) {
+
+            string name = prop.getName();
+            string value = prop.getValue();
+
+            if(name.compare("UUID")==0){
                 value.copy(info.uuid,value.size());
-                // info.uuid[value.size()] = 0;
                 continue;
             }
-            string deviceNameKey("DEVICE_NAME");
-            if(deviceNameKey.compare(prop.name)==0){
-                string value(prop.value);
+
+            if(name.compare("DEVICE_NAME")==0){
                 value.copy(info.deviceName,value.size());
                 info.deviceName[value.size()] = 0;
                 continue;
             }
-            string PCIDeviceIdKey("DEVICE_ID");
-            if(PCIDeviceIdKey.compare(prop.name)==0){
-                string value(prop.value);
+
+            if(name.compare("DEVICE_ID")==0){
                 value.copy(info.PCIDeviceId,value.size());
                 info.PCIDeviceId[value.size()] = 0;
                 continue;
             }
-            string subDeviceIdKey("SUB_DEVICE_ID");
-            if(subDeviceIdKey.compare(prop.name)==0){
-                string value(prop.value);
+
+            if(name.compare("SUB_DEVICE_ID")==0){
                 value.copy(info.SubDeviceId,value.size());
                 info.SubDeviceId[value.size()] = 0;
                 continue;
             }
-            string bdfAddressKey("BDF ADDRESS");
-            if(bdfAddressKey.compare(prop.name)==0){
-                string value(prop.value);
+
+            if(name.compare("BDF ADDRESS")==0){
                 value.copy(info.PCIBDFAddress,value.size());
                 info.PCIBDFAddress[value.size()] = 0;
                 continue;
             }
-            string venderNameKey("VENDOR_NAME");
-            if(venderNameKey.compare(prop.name)==0){
-                string value(prop.value);
+
+            if(name.compare("VENDOR_NAME")==0){
                 value.copy(info.VendorName,value.size());
                 info.VendorName[value.size()] = 0;
                 continue;
             }
+
         }
-
-        deviceInfoList.push_back(info);
-    };
-
-    getDeviceList(callback, &result);
-
-    *count = deviceInfoList.size();
-    
-    for(int i=0;i<deviceInfoList.size();i++) {
-        deviceList[i] = deviceInfoList[i];
     }
 
+    *count = devices.size();
+    
     return XPUM_OK;
 
 }
 
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties) {
-    
-    Api_result_t result;
 
-    deviceIdToGetProps = deviceId;
+    vector<shared_ptr<Device>> devices;
 
-    propsBuff = pXpumProperties;
-    
-    auto callback = [](Device_t *device)
-    {
-        xpum_device_basic_info info;
+    Core::instance().getDeviceManager()->getDeviceList(devices);
 
-        xpum_device_id_t deviceId = stoi(device->device_id);
+    for(auto& p_device : devices) {
+        if(deviceId == stoi(p_device->getId())){
+            pXpumProperties->deviceId = deviceId;
 
-        if(deviceId == deviceIdToGetProps) {
+            std::vector<Property> properties;
 
-            deviceFound=true;
+            p_device->getProperties(properties);
 
-            propsBuff->deviceId = deviceId;
+            pXpumProperties->propertyLen = properties.size();
 
-            propsBuff->propertyLen = device->property_len;
-
-            for (int i = 0; i < device->property_len; i++)
-            {
-                auto &prop = device->properties[i];
-                auto &propCopy = propsBuff->properties[i];
-                string name(prop.name);
-                string value(prop.value);
-                name.copy(propCopy.name,name.size());
-                propCopy.name[name.size()]=0;
-                value.copy(propCopy.value,value.size());
-                propCopy.value[value.size()]=0;
+            for(int i=0;i<properties.size();i++){
+                auto& prop = properties[i];
+                string name = prop.getName();
+                string value = prop.getValue();
+                auto& copy = pXpumProperties->properties[i];
+                name.copy(copy.name,name.size());
+                copy.name[name.size()]=0;
+                value.copy(copy.value,value.size());
+                copy.value[value.size()]=0;
             }
+
+            return XPUM_OK;
         }
+    }
 
-    };
-
-    deviceFound=false;
-
-    getDeviceList(callback, &result);
-
-    if(deviceFound)
-        return XPUM_OK;
-    else
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    return XPUM_RESULT_DEVICE_NOT_FOUND;
+    
 }
 
 xpum_result_t xpumGroupCreate(char *groupName, xpum_group_id_t *pGroupId)
