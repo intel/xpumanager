@@ -2,6 +2,9 @@
 
 #include "device.h"
 
+#include "stdio.h"
+#include <mutex>
+
 class GPUDevice : public Device {
  public:
   GPUDevice();
@@ -19,4 +22,17 @@ class GPUDevice : public Device {
   void getEngineUtilization(Callback_t callback) noexcept override;
   void getEnergy(Callback_t callback) noexcept override;
 
+  virtual bool runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept override;
+  virtual xpum_firmware_flash_result_t getFirmwareFlashResult() noexcept override;
+
+ private:
+  void dumpFirmwareFlashLog() noexcept;
+
+ private:
+  FILE* commandExec;
+  std::mutex mtx;
+  std::string log;
+
+  static const unsigned int BUFFERSIZE = 64 * 1024;
+  static const std::string logFilePath;
 };

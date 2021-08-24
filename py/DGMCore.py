@@ -85,10 +85,22 @@ class XpumGroupInfo(Structure):
         ("deviceList", c_int * 32)
     ]
 
-agentConfig = {
-    "XPUM_AGENT_CONFIG_EVENT_LIMIT": (0, int, c_int32, None),
-    "XPUM_AGENT_CONFIG_SAMPLE_INTERVAL": (1, int, c_int32, [100,200,500,1000])
-}
+class FirmwareFlashJob( Structure ):
+    _fields_ = [
+        ("firmwareType", c_int),
+        ("filePath", c_char_p )
+    ]
+    
+class FirmwareFlashTaskResult( Structure ):
+    _fields_ = [
+        ('deviceId', c_int ),
+        ('firmwareType', c_int ),
+        ('taskResult', c_int ),
+        ('description', c_char * 256 ),
+        ('version', c_char * 256 )
+    ]
+
+GetDeviceListCallbackType = CFUNCTYPE(None, POINTER(Device))
 
 XpumStatsType = Enum("xpum_stats_type_t", (
     "XPUM_STATS_GPU_COMPUTATION",
@@ -130,224 +142,120 @@ class DGMCore:
     def __init__(self):
         py_dir_path = os.path.dirname(os.path.realpath(__file__))
         project_dir_path = os.path.dirname(py_dir_path)
-        lib_path = os.path.join(project_dir_path,"lib","libDGMCore.so")
-        self.lib = cdll.LoadLibrary(lib_path)
-        self.lib.xpumInit()
+        lib_path = os.path.join(project_dir_path,"core","libDGMCore.so")
+        # self.lib = cdll.LoadLibrary("./libDGMCore.so") 
+        self.lib = cdll.LoadLibrary(lib_path) 
+        self.lib.init()
 
-    def getVersion(self):
-        count = c_int(0)
-        res = self.lib.xpumVersionInfo(None,byref(count))
-        if res != 0:
-            return res, "Fail to get version info", None
-        versionArray = (XpumVersionInfo * count.value)()
-        res = self.lib.xpumVersionInfo(versionArray,byref(count))
-        if res != 0:
-            return False, "Fail to get version info", None
-        data=dict()
-        versionList = [(v.version,bytes.decode(v.versionString)) for v in versionArray]
-        for versionType,versionStr in versionList[:count.value]:
-            if versionType==0:
-                data['Version']=versionStr
-            elif versionType==1:
-                data['LevelZeroVersion']=versionStr
-        return res, "OK", data
+    def getDeviceList(self):	
+        devices = []
+        result = APIResult()
+        def getDeviceCallback(device) :
+            obj = {}
+            # print(device.contents.device_id)
+            obj["device_id"] = bytes.decode(device.contents.device_id)
+            obj["properties"] = []
+            count = device.contents.property_len
+            if count > 0 :
+                for prop in device.contents.properties : 
+                    sub = {}
+                    prop_name = bytes.decode(prop.name)
+                    prop_value = bytes.decode(prop.value)
+                    if prop_name in field_translation:
+                        d = field_translation[prop_name]
+                        if 'ignore' not in d:
+                            if 'name' in d:
+                                prop_name = d['name']
+                            if 'format' in d:
+                                prop_value = d['format'](prop_value)
+                            if 'unit' in d:
+                                prop_value+=" {}".format(d['unit'])
+                            if prop_name == "UUID":
+                                prop_value=str(uuid.UUID(prop_value))
+                            sub[prop_name] = prop_value
+                            obj["properties"].append(sub)
+                    else:
+                        sub[prop_name] = prop_value
+                        obj["properties"].append(sub)
+                    count = count - 1
+                    if count == 0 : 
+                        break
+            devices.append(obj)            
+        callback = GetDeviceListCallbackType(getDeviceCallback)
+        self.lib.getDeviceList(callback, byref(result))
+        return devices
 
-    def getDeviceList(self):
-        count = c_int(0)
-        deviceInfoArray = (XpumDeviceBasicInfo * 32)()
-        res = self.lib.xpumGetDeviceList(deviceInfoArray, byref(count))
-        if res != 0:
-            return res, "Fail to get device list", None
-        data = []
-        for d in deviceInfoArray[:count.value]:
-            device = dict()
-            device['DeviceId'] = d.deviceId
-            device['DeviceType'] = d.type
-            device['UUID'] = str(uuid.UUID(bytes.decode(d.uuid)))
-            device['DeviceName'] = bytes.decode(d.deviceName)
-            device['PCIDeviceId'] = bytes.decode(d.PCIDeviceId)
-            device['SubDeviceId'] = bytes.decode(d.SubDeviceId)
-            device['PCIBDFAddress'] = bytes.decode(d.PCIBDFAddress)
-            device['VendorName'] = bytes.decode(d.VendorName)
-            data.append(device)
-        return 0, "OK", data
+    def getLatestMeasurementData(self, deviceId, measurementType):
+        result = APIResult()
+        data = {}
 
-    def getDeviceProperties(self, deviceId):
-        props = XpumDeviceProperties()
-        res = self.lib.xpumGetDeviceProperties(c_int(deviceId),byref(props))
-        if res != 0:
-            return res, "Fail to get device properties", None
-        data = dict()
-        data["DeviceId"] = deviceId
-        for kv in props.properties[:props.propertyLen]:
-            key = bytes.decode(kv.name)
-            value = bytes.decode(kv.value)
-            value = "".join(filter(lambda x: x in string.printable, value))
-            if key in field_translation:
-                d = field_translation[key]
-                if 'ignore' not in d:
-                    if 'name' in d:
-                        key = d['name']
-                    if 'format' in d:
-                        value = d['format'](value)
-                    if 'unit' in d:
-                        value+=" {}".format(d['unit'])
-                    if key == "UUID":
-                        value=str(uuid.UUID(value))
-                    data[key]=value
-            else:
-                data[key]=value
-        return 0, "OK", data
+        def getLatestMeasurementCallback(measurementData):
+            scale = measurementData.contents.scale
+            data['avg'] = measurementData.contents.avg*scale
+            data['min'] = measurementData.contents.min*scale
+            data['max'] = measurementData.contents.max*scale
+            data['current'] = measurementData.contents.current*scale
 
-    def createGroup(self, groupName):
-        groupId = c_int(-1)
-        res = self.lib.xpumGroupCreate(groupName.encode("utf-8"),byref(groupId))
-        if res != 0:
-            return res, "Fail to create group", None
-        data = dict()
-        data["GroupName"] = groupName
-        data["GroupId"] = groupId.value
-        data["DeviceIds"] = []
-        return 0, "OK", data
+        callback = GetLatestMeasurementCallbackType(
+            getLatestMeasurementCallback)
 
-    def getAllGroupIds(self):
-        count = c_int()
-        groupIdArray = (c_int * 64)()
-        res = self.lib.xpumGetAllGroupIds(groupIdArray, byref(count))
-        if res != 0:
-            return res, "Fail to get all group ids", None
-        data = [groupId for groupId in groupIdArray[:count.value]]
-        return 0, "OK", data
+        self.lib.getLatestMeasurementData(
+            c_char_p(deviceId.encode()),
+            c_int(int(measurementType)),
+            callback,
+            byref(result)
+        )
 
-    def destroyGroup(self, groupId):
-        res = self.lib.xpumGroupDestroy(c_int(groupId))
-        if res != 0:
-            return res, "Fail to destroy a group", None
-        return 0, "OK", None
+        return data
 
-    def addDeviceToGroup(self, groupId, deviceIds):
-        for deviceId in deviceIds:
-            res = self.lib.xpumGroupAddDevice(c_int32(groupId), c_int32(deviceId))
-            if res != 0:
-                return res, "Fail to add device to group", None
-        groupInfo = XpumGroupInfo()
-        res = self.lib.xpumGroupGetInfo(c_int32(groupId),byref(groupInfo))
-        if res != 0:
-            raise Exception("Fail to get group info, error code: {}".format(res))
-        data = dict()
-        data["GroupName"] = bytes.decode(groupInfo.groupName)
-        data["GroupId"] = groupId
-        data["DeviceIds"] = [i for i in groupInfo.deviceList[:groupInfo.count]]
-        return 0, "OK", data
+    def getRealtimeMeasurementData(self, deviceId, measurementType):
+        print(len(deviceId))
+        print(measurementType)
+        result = APIResult()
+        data = {}
 
-    def removeDeviceFromGroup(self, groupId, deviceIds):
-        for deviceId in deviceIds:
-            res = self.lib.xpumGroupRemoveDevice(c_int32(groupId), c_int32(deviceId))
-            if res != 0:
-                return res, "Fail to remove device from group", None
-        groupInfo = XpumGroupInfo()
-        res = self.lib.xpumGroupGetInfo(c_int32(groupId),byref(groupInfo))
-        if res != 0:
-            raise Exception("Fail to get group info, error code: {}".format(res))
-        data = dict()
-        data["GroupName"] = bytes.decode(groupInfo.groupName)
-        data["GroupId"] = groupId
-        data["DeviceIds"] = [i for i in groupInfo.deviceList[:groupInfo.count]]
-        return 0, "OK", data
+        def getRealtimeMeasurementCallback(measurementData):
+            scale = measurementData.contents.scale
+            data['avg'] = measurementData.contents.avg*scale
+            data['min'] = measurementData.contents.min*scale
+            data['max'] = measurementData.contents.max*scale
+            data['current'] = measurementData.contents.current*scale
 
-    def getGroupInfo(self, groupId):
-        groupInfo = XpumGroupInfo()
-        res = self.lib.xpumGroupGetInfo(c_int(groupId),byref(groupInfo))
-        if res != 0:
-            return res, "Fail to get group info", None
-        data = dict()
-        data["GroupName"] = bytes.decode(groupInfo.groupName)
-        data["GroupId"] = groupId
-        data["DeviceIds"] = [i for i in groupInfo.deviceList[:groupInfo.count]]
-        return 0, "OK", data
+        callback = GetRealtimeMeasurementCallbackType(
+            getRealtimeMeasurementCallback)
 
-    def setAgentConfig(self, key, value):
-        if key not in agentConfig:
-            return 1, "Fail to set agent configuration", None
-        k, f, t, options = agentConfig[key]
-        if f(value) not in options:
-            return 1, "Illegal value", None
-        value = t(f(value))
-        res = self.lib.xpumSetAgentConfig(c_int(k), byref(value))
-        if res != 0:
-            return res, "Fail to set agent configuration", None
-        return 0, "OK", None
+        self.lib.getRealtimeMeasurementData(
+            c_char_p(deviceId.encode()),
+            c_int(int(measurementType)),
+            callback,
+            byref(result)
+        )
 
-    def getAllAgentConfig(self):
-        data = dict()
-        settings = ["XPUM_AGENT_CONFIG_SAMPLE_INTERVAL"]
-        for key in settings:
-            k, f, t, options = agentConfig[key]
-            value = t()
-            res = self.lib.xpumGetAgentConfig(c_int(k), byref(value))
-            if res != 0:
-                return res, "Fail to get agent configuration", None
-            data[key] = str(value.value)
-        return 0, "OK", data 
-    
-    def getStatistics(self, deviceId):
-        deviceStats = XpumDeviceStats()
-        res = self.lib.xpumGetStats(c_int32(deviceId), byref(deviceStats))
-        if res != 0:
-            return res, "Fail to get statistics", None
-        data = dict()
-        data['DeviceId'] = deviceStats.deviceId
-        beginTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.begin/1e3))
-        endTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.end/1e3))
-        data['Begin'] = str(beginTimestamp)
-        data['End'] = str(endTimestamp)
-        dataList = []
-        i = -1
-        for d in deviceStats.dataList:
-            tmp = dict()
-            i += 1
-            if i != d.metricsType:
-                continue
-            metricsType = XpumStatsType(d.metricsType).name
-            tmp["metricsType"] = metricsType
-            tmp["value"] = d.value
-            if not d.isCounter:
-                tmp["min"] = d.min
-                tmp["avg"] = d.avg
-                tmp["max"] = d.max
-            dataList.append(tmp)
-        data["dataList"] = dataList
-        return 0, "OK", data
+        return data
 
-    def getStatisticsByGroup(self, groupId):
-        groupDeviceStats = (XpumDeviceStats * 32)()
-        count = c_int(32)
-        res = self.lib.xpumGetStatsByGroup(c_int32(groupId),groupDeviceStats, byref(count))
-        if res != 0:
-            return res, "Fail to get statistics", None
-        datas=[]
-        for deviceStats in groupDeviceStats[:count.value]:
-            data=dict()
-            data['DeviceId'] = deviceStats.deviceId
-            beginTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.begin/1e3))
-            endTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.end/1e3))
-            data['Begin'] = str(beginTimestamp)
-            data['End'] = str(endTimestamp)
-            dataList = []
-            i = -1
-            for d in deviceStats.dataList:
-                tmp = dict()
-                i += 1
-                if i != d.metricsType:
-                    continue
-                metricsType = XpumStatsType(d.metricsType).name
-                tmp["metricsType"] = metricsType
-                tmp["value"] = d.value
-                if not d.isCounter:
-                    tmp["min"] = d.min
-                    tmp["avg"] = d.avg
-                    tmp["max"] = d.max
-                dataList.append(tmp)
-            data["dataList"] = dataList
-            datas.append(data)
-        return 0, "OK", dict(GroupId=groupId,Datas=datas)
+    def runFirmwareFlash(self, deviceId, firmwareType, filePath ):
+        rawFile = c_char_p( filePath.encode() )
+        rc = self.lib.xpumRunFirmwareFlash( deviceId,byref( FirmwareFlashJob( firmwareType, rawFile ) ) )
+        
+        if rc == 0: 
+            return "OK"
+        else:
+            return "ERROR"
+
+    def getFirmwareFlashResult(self, deviceId, firmwareType ):
+        stru = FirmwareFlashTaskResult()
+        rc = self.lib.xpumGetFirmwareFlashResult( deviceId, firmwareType, byref( stru ) )
+        if rc != 0:
+            return "ERROR"
+
+        if stru.taskResult == 0:
+            return "OK"
+        elif stru.taskResult == 1:
+            return "ERROR"
+        else:
+            return "ONGOING"
+        
+        
+        
+        
+        

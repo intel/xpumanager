@@ -91,3 +91,11 @@ zes_device_handle_t Device::getDeviceHandle() {
   std::unique_lock<std::mutex> lock(this->mutex);
   return zes_device_handle;
 }
+
+bool Device::runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept  {
+  return false;
+}
+
+xpum_firmware_flash_result_t Device::getFirmwareFlashResult() noexcept {
+  return XPUM_DEVICE_FIRMWARE_FLASH_OK;
+}
