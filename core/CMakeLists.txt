@@ -107,6 +107,7 @@ target_sources(
   ${DIAGNOSTIC_SRC}
 )
 
-target_link_libraries(DGMCore ze_loader dl)
+add_subdirectory( ./libs/spdlog )
+target_link_libraries(DGMCore ze_loader dl spdlog)
 
 unset(BUILD_TEST CACHE) 
