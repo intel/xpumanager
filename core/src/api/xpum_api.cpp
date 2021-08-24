@@ -288,3 +288,135 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value) {
     }
     return XPUM_GENERIC_ERROR;
 }
+
+xpum_result_t xpumSetHealthConfig(xpum_device_id_t deviceId, xpum_health_config_type_t key, void *value) {
+    return Core::instance().getHealthManager()->setHealthConfig(deviceId, key, value);
+}
+
+xpum_result_t xpumSetHealthConfigByGroup(xpum_group_id_t groupId, xpum_health_config_type_t key, void *value) {
+    xpum_result_t ret;
+
+    xpum_group_info_t xpum_group_info;
+    ret = xpumGroupGetInfo(groupId, &xpum_group_info);
+    if (ret != XPUM_OK)
+        return ret;
+    
+    for (xpum_device_id_t deviceId: xpum_group_info.deviceList) {
+        ret = Core::instance().getHealthManager()->setHealthConfig(deviceId, key, value);
+        if (ret != XPUM_OK)
+            return ret;
+    }
+    return ret;
+}
+
+xpum_result_t xpumGetHealthConfig(xpum_device_id_t deviceId, xpum_health_config_type_t key, void *value) {
+    return Core::instance().getHealthManager()->getHealthConfig(deviceId, key, value);
+}
+
+xpum_result_t xpumGetHealthConfigByGroup(xpum_group_id_t groupId, 
+                                        xpum_health_config_type_t key,
+                                        xpum_device_id_t deviceIdList[], 
+                                        void *valueList[],
+                                        int *count) {
+    xpum_result_t ret;
+
+    xpum_group_info_t xpum_group_info;
+    ret = xpumGroupGetInfo(groupId, &xpum_group_info);
+    if (ret != XPUM_OK)
+        return ret;
+
+    if (xpum_group_info.count > (*count)) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    int index = 0;
+    for (xpum_device_id_t deviceId: xpum_group_info.deviceList) {
+        deviceIdList[index] = deviceId;
+        ret = Core::instance().getHealthManager()->getHealthConfig(deviceId, key, valueList[index]);
+        index++;
+        if (ret != XPUM_OK)
+            return ret;
+    }
+
+    return ret;
+}
+
+xpum_result_t xpumGetHealth(xpum_device_id_t deviceId, xpum_health_type_t type, xpum_health_data_t *data) {
+    return Core::instance().getHealthManager()->getHealth(deviceId, type, data);
+}
+
+xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId, 
+                                  xpum_health_type_t type, 
+                                  xpum_health_data_t dataList[],
+                                  int *count) {
+    xpum_result_t ret;
+
+    xpum_group_info_t xpum_group_info;
+    ret = xpumGroupGetInfo(groupId, &xpum_group_info);
+    if (ret != XPUM_OK)
+        return ret;
+
+    if (xpum_group_info.count > (*count)) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    int index = 0;
+    for (xpum_device_id_t deviceId: xpum_group_info.deviceList) {
+        ret = Core::instance().getHealthManager()->getHealth(deviceId, type, &dataList[index]);
+        index++;
+        if (ret != XPUM_OK)
+            return ret;
+    }
+
+    return ret;
+}
+
+xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) {
+    return Core::instance().getDiagnosticManager()->runDiagnostics(deviceId, level);
+}
+
+xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level) {
+    xpum_result_t ret;
+
+    xpum_group_info_t xpum_group_info;
+    ret = xpumGroupGetInfo(groupId, &xpum_group_info);
+    if (ret != XPUM_OK)
+        return ret;
+
+    for (xpum_device_id_t deviceId: xpum_group_info.deviceList) {
+        ret = Core::instance().getDiagnosticManager()->runDiagnostics(deviceId, level);
+        if (ret != XPUM_OK)
+            return ret;
+    }
+
+    return ret;
+}
+
+xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result) {
+    return Core::instance().getDiagnosticManager()->getDiagnosticsResult(deviceId, result);
+}
+
+xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
+                                              xpum_diag_task_info_t resultList[],
+                                              int *count) {
+    xpum_result_t ret;
+
+    xpum_group_info_t xpum_group_info;
+    ret = xpumGroupGetInfo(groupId, &xpum_group_info);
+    if (ret != XPUM_OK)
+        return ret;
+
+    if (xpum_group_info.count > (*count)) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    int index = 0;
+    for (xpum_device_id_t deviceId: xpum_group_info.deviceList) {
+        ret = Core::instance().getDiagnosticManager()->getDiagnosticsResult(deviceId, &resultList[index]);
+        index++;
+        if (ret != XPUM_OK)
+            return ret;
+    }
+
+    return ret;
+}

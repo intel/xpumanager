@@ -7,6 +7,7 @@
 #include "monitor_manager_interface.h"
 #include "health_manager_interface.h"
 #include "group_manager_interface.h"
+#include "diagnostic_manager_interface.h"
 
 class Core : public InitCloseInterface {
  public:
@@ -27,6 +28,8 @@ class Core : public InitCloseInterface {
   std::shared_ptr<HealthManagerInterface> getHealthManager();
 
   std::shared_ptr<GroupManagerInterface> getGroupManager();
+
+  std::shared_ptr<DiagnosticManagerInterface> getDiagnosticManager();
 
  private:
   Core();
@@ -49,6 +52,8 @@ class Core : public InitCloseInterface {
   std::shared_ptr<HealthManagerInterface> p_health_manager;
 
   std::shared_ptr<GroupManagerInterface> p_group_manager;
+  
+  std::shared_ptr<DiagnosticManagerInterface> p_diagnostic_manager;
 
   bool initialized;
 

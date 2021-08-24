@@ -530,7 +530,7 @@ xpum_result_t xpumGetFirmwareFlashResultByGroup(xpum_group_id_t groupId,
  * @param level             IN: The diagnostics level to run
  * @return xpum_result_t 
  */
-xpum_result_t xpumRunDiagnositics(xpum_device_id_t deviceId, xpum_diag_level_t level);
+xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level);
 
 /**
  * @brief Run diagnostics on a group of devices
@@ -540,7 +540,7 @@ xpum_result_t xpumRunDiagnositics(xpum_device_id_t deviceId, xpum_diag_level_t l
  * @param level             IN: The diagnostics level to run
  * @return xpum_result_t 
  */
-xpum_result_t xpumRunDiagnositicsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level);
+xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level);
 
 /**
  * @brief Get diagnostics result

@@ -5,6 +5,7 @@
 #include "device_manager.h"
 #include "monitor_manager.h"
 #include "health_manager.h"
+#include "diagnostic_manager.h"
 #include "core.h"
 #include "group_manager.h"
 
@@ -12,6 +13,8 @@ Core::Core()
     : p_device_manager(nullptr),
       p_data_logic(nullptr),
       p_monitor_manager(nullptr),
+      p_health_manager(nullptr),
+      p_diagnostic_manager(nullptr),
       initialized(false) {
   Logger::instance().info("core()");
 }
@@ -51,6 +54,11 @@ std::shared_ptr<GroupManagerInterface> Core::getGroupManager(){
   return p_group_manager;  
 }
 
+std::shared_ptr<DiagnosticManagerInterface> Core::getDiagnosticManager() {
+  std::unique_lock<std::mutex> lock(mutex);
+  return p_diagnostic_manager;
+}
+
 void Core::init() {
   std::unique_lock<std::mutex> lock(mutex);
   if (initialized)  {
@@ -80,6 +88,10 @@ void Core::init() {
   p_group_manager = std::make_shared<GroupManager>(p_device_manager, p_data_logic);
   p_group_manager->init();
 
+  Logger::instance().info("initialize diagnostic manager");
+  p_diagnostic_manager = std::make_shared<DiagnosticManager>(p_device_manager, p_data_logic);
+  p_diagnostic_manager->init();
+
   initialized = true;  
 }
 
@@ -89,6 +101,8 @@ void Core::close() {
     return ;
   }  
 
+  close(std::dynamic_pointer_cast<InitCloseInterface>(p_diagnostic_manager), 
+    "Failed to close diagnostic manager");
   close(std::dynamic_pointer_cast<InitCloseInterface>(p_group_manager), 
     "Failed to close group manager");
   close(std::dynamic_pointer_cast<InitCloseInterface>(p_health_manager), 

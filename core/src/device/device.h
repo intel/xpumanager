@@ -52,6 +52,10 @@ class Device {
   virtual bool runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept;
   virtual xpum_firmware_flash_result_t getFirmwareFlashResult() noexcept;
   
+  ze_device_handle_t getDeviceZeHandle();
+
+  ze_driver_handle_t getDriverHandle();
+  
  public:
   virtual ~Device() {}
 
@@ -59,6 +63,10 @@ class Device {
   std::string id;
 
   zes_device_handle_t zes_device_handle;
+
+  ze_device_handle_t ze_device_handle;
+
+  ze_driver_handle_t ze_driver_handle;
 
   std::mutex mutex;
 

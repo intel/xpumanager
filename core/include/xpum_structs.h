@@ -165,19 +165,20 @@ struct xpumTelemetryData_t {
 /**************************************************************************/
 
 typedef enum xpum_health_config_type_enum {
-    XPUM_HEALTH_THEARMAL_CORE_THRES = 0,
-    XPUM_HEALTH_THEARMAL_MEM_THRES,
-    XPUM_HEALTH_THEARMAL_THRES_ON,
+    XPUM_HEALTH_THEARMAL_LIMIT = 0,
+    XPUM_HEALTH_POWER_LIMIT
 } xpum_health_config_type_t;
 
 typedef enum xpum_health_type_enum {
     XPUM_HEALTH_THERMAL=0,
+    XPUM_HEALTH_POWER,
     XPUM_HEALTH_MEMORY,
     XPUM_HEALTH_FABRIC_PORT,
 } xpum_health_type_t;
 
 typedef enum xpum_health_status_enum {
-    XPUM_HEALTH_STATUS_OK = 0,
+    XPUM_HEALTH_STATUS_UNKNOWN=0,
+    XPUM_HEALTH_STATUS_OK,
     XPUM_HEALTH_STATUS_WARNING,
     XPUM_HEALTH_STATUS_CRITICAL,
 } xpum_health_status_t;
@@ -285,17 +286,28 @@ struct xpum_firmware_properties {
 /**************************************************************************/
 
 typedef enum xpum_diag_task_type_enum {
-    XPUM_DIAG_DEPLOYMENT = 0,
-    XPUM_DIAG_HARDWARE,
-    XPUM_DIAG_PCIE,
-    XPUM_DIAG_PERFORMANCE,
-    XPUM_DIAG_MEMORY,
+    // level 1
+    XPUM_DIAG_SOFTWARE_ENV_VARIABLES=0,
+    XPUM_DIAG_SOFTWARE_LIBRARY,
+    XPUM_DIAG_SOFTWARE_PERMISSION,
+    XPUM_DIAG_SOFTWARE_EXCLUSIVE,
+    // level 2
+    XPUM_DIAG_HARDWARE_SYSMAN,
+    XPUM_DIAG_INTEGRATION_PCIE,
+    XPUM_DIAG_MEDIA_CODEC,
+    // level 3
+    XPUM_DIAG_PERFORMANCE_COMPUTE,
+    XPUM_DIAG_PERFORMANCE_POWER,
+    XPUM_DIAG_PERFORMANCE_MEMORY,
+
     XPUM_DIAG_MAX
 } xpum_diag_task_type_t;
 
 typedef enum xpum_diag_task_result_enum {
-    XPUM_DIAG_RESULT_NO_ERRORS = 0,
-    XPUM_DIAG_RESULT_ABORT,
+    XPUM_DIAG_RESULT_UNKNOWN = 0,
+    XPUM_DIAG_RESULT_PASS,
+    XPUM_DIAG_RESULT_WARNING,
+    XPUM_DIAG_RESULT_CRITICAL
 } xpum_diag_task_result_t;
 
 typedef enum xpum_diag_level_enum {
@@ -314,7 +326,9 @@ struct xpum_diag_component_info_t {
 struct xpum_diag_task_info_t {
     xpum_device_id_t deviceId;
     xpum_diag_level_t level;
+    bool finished;
     xpum_diag_component_info_t componentList[XPUM_DIAG_MAX];
+    char message[XPUM_MAX_STR_LENGTH];
     int count;
 };
 

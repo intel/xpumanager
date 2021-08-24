@@ -22,6 +22,20 @@ GPUDevice::GPUDevice(const std::string& id,
   }
 }
 
+GPUDevice::GPUDevice(const std::string& id,
+                     const zes_device_handle_t& zes_device,
+                     const ze_device_handle_t& ze_device,
+                     const zes_driver_handle_t& ze_driver,
+                     std::vector<DeviceCapability>& capabilities) {
+  this->id = id;
+  this->zes_device_handle = zes_device;
+  this->ze_device_handle = ze_device;
+  this->ze_driver_handle = ze_driver;                       
+  for (DeviceCapability& cap : capabilities) {
+    this->capabilities.push_back(cap);
+  }
+}
+
 GPUDevice::~GPUDevice() {
   Logger::instance().info("~GPUDevice()");
 }

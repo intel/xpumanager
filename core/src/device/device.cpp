@@ -99,3 +99,13 @@ bool Device::runFirmwareFlash( const char* filePath, const std::string& toolPath
 xpum_firmware_flash_result_t Device::getFirmwareFlashResult() noexcept {
   return XPUM_DEVICE_FIRMWARE_FLASH_OK;
 }
+
+ze_device_handle_t Device::getDeviceZeHandle() {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return ze_device_handle;
+}
+
+ze_driver_handle_t Device::getDriverHandle() {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return ze_driver_handle;
+}

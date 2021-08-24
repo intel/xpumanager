@@ -48,7 +48,7 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/src/monitor)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/policy)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/group)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/health)
-
+include_directories(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic)
 
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/api API_SRC)
@@ -64,7 +64,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/monitor MONITOR_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/policy POLICY_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/group GROUP_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
-
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 
 if (BUILD_TEST)
 
@@ -104,8 +104,9 @@ target_sources(
   ${POLICY_SRC}
   ${GROUP_SRC}
   ${HEALTH_SRC}
+  ${DIAGNOSTIC_SRC}
 )
 
-target_link_libraries(DGMCore ze_loader)
+target_link_libraries(DGMCore ze_loader dl)
 
 unset(BUILD_TEST CACHE) 

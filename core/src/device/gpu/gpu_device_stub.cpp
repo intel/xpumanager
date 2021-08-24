@@ -247,7 +247,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
       props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
       zesDeviceGetProperties(zes_device, &props);
       if (props.core.type == ZE_DEVICE_TYPE_GPU) {
-        auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, capabilities);
+        auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
         p_gpu->addProperty(Property(DeviceProperty::TYPE,std::string("GPU")));
         p_gpu->addProperty(Property(DeviceProperty::DEVICE_ID,to_hex_string(props.core.deviceId)));
         p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
@@ -1035,13 +1035,16 @@ bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device,
   return ret;
 }
 
-void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, HealthType& type, HealthStatus& status, std::string& description) {
+void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t *data,
+                                    int thermal_threshold, int power_threshold) {
   if (device == nullptr) {
     return;
   }
 
-  if (type == HealthType::HEALTH_MEMORY) {
-    status = HealthStatus::HEALTH_UNKNOWN;
+  xpum_health_status_t status = xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN;
+  std::string description;
+
+  if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY) {
     description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_UNKNOWN);
     uint32_t mem_module_count = 0;
     ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
@@ -1055,29 +1058,65 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, HealthTyp
           res = zesMemoryGetState(mem, &memory_state);
           if (res == ZE_RESULT_SUCCESS) {
             if (memory_state.health == ZES_MEM_HEALTH_OK && (int)status < ZES_MEM_HEALTH_OK) {
-              status = HealthStatus::HEALTH_OK;
+              status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
               description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_OK);
             }            
             if (memory_state.health == ZES_MEM_HEALTH_DEGRADED && (int)status < ZES_MEM_HEALTH_DEGRADED) {
-              status = HealthStatus::HEALTH_WARNING;
+              status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
               description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_DEGRADED);
             }
             if (memory_state.health == ZES_MEM_HEALTH_CRITICAL && (int)status < ZES_MEM_HEALTH_CRITICAL) {
-              status = HealthStatus::HEALTH_CRITICAL;
+              status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
               description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_CRITICAL);
             }
             if (memory_state.health == ZES_MEM_HEALTH_REPLACE  && (int)status < ZES_MEM_HEALTH_REPLACE) {
-              status = HealthStatus::HEALTH_CRITICAL;
+              status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
               description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_REPLACE);
             }
           }
         }
       }
     }
-  } else if (type == HealthType::HEALTH_POWER) {
+  } else if (type == xpum_health_type_t::XPUM_HEALTH_POWER) {
+    if (power_threshold <= 0) {
+      description = "Power health threshold is not set";
+      return;
+    }
 
-  } else if (type == HealthType::HEALTH_TEMPERATURE) {
-    status = HealthStatus::HEALTH_UNKNOWN;
+    description = "The power health cannot be determined.";
+    uint32_t power_domain_count = 0;
+    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+    std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+    if (res == ZE_RESULT_SUCCESS) {
+      for (auto &power : power_handles) {
+        zes_power_energy_counter_t snap1, snap2;
+        res = zesPowerGetEnergyCounter(power, &snap1);
+        if (res == ZE_RESULT_SUCCESS) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
+          int power_val = 0;
+          res = zesPowerGetEnergyCounter(power, &snap2);
+          if (res == ZE_RESULT_SUCCESS) {
+            power_val = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+            if (power_val < power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
+                description = "All power domains are healthy.";
+            }
+            if (power_val >= power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
+                description = "Find an unhealthy power domains. Its power is " + std::to_string(power_val) 
+                              + " and exceeds the threshold " + std::to_string(power_threshold) + ".";              
+            }            
+          }
+        }
+      }
+    }
+  } else if (type == xpum_health_type_t::XPUM_HEALTH_THERMAL) {
+    if (thermal_threshold <= 0) {
+      description = "Temperature health threshold is not set";
+      return;
+    }
+
     description = "The temperature health cannot be determined.";
     uint32_t temp_sensor_count = 0;
     ze_result_t res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr);
@@ -1093,19 +1132,19 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, HealthTyp
         double temp_val = 0;
         res = zesTemperatureGetState(temp, &temp_val);
         if (res == ZE_RESULT_SUCCESS) {
-          if (temp_val < Configuration::TEMPERATURE_HEALTH_LIMIT && status < HealthStatus::HEALTH_OK) {
-              status = HealthStatus::HEALTH_OK;
+          if (temp_val < thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
+              status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
               description = "All temperature sensors are healthy.";
           }
-          if (temp_val >= Configuration::TEMPERATURE_HEALTH_LIMIT && status < HealthStatus::HEALTH_WARNING) {
-              status = HealthStatus::HEALTH_WARNING;
-              description = "Some temperature sensors are unhealthy.";              
+          if (temp_val >= thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
+              status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
+              description = "Find an unhealthy temperature sensor. Its temperature is " + std::to_string(temp_val) 
+              + " and exceeds the threshold " + std::to_string(thermal_threshold) + ".";           
           }
         }
       }
     }
-  } else if (type == HealthType::HEALTH_FABRIC_PORT) {
-    status = HealthStatus::HEALTH_UNKNOWN;
+  } else if (type == xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT) {
     description = "All port statuses cannot be determined.";
     uint32_t fabric_ports_count = 0;
     ze_result_t res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, nullptr);
@@ -1117,23 +1156,31 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, HealthTyp
         res = zesFabricPortGetState(fabric_port, &fabric_port_state);
         if (res == ZE_RESULT_SUCCESS) {
           if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_HEALTHY  && (int)status < ZES_FABRIC_PORT_STATUS_HEALTHY) {
-            status = HealthStatus::HEALTH_OK;
+            status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
             description = "All ports are up and operating as expected.";
           }            
           if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_DEGRADED && (int)status < ZES_FABRIC_PORT_STATUS_DEGRADED) {
-            status = HealthStatus::HEALTH_WARNING;
+            status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
             description = "The port " + std::to_string(fabric_port_state.remotePortId.fabricId) + " is up but has quality and/or speed degradation.";
           }
           if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_FAILED && (int)status < ZES_FABRIC_PORT_STATUS_FAILED) {
-            status = HealthStatus::HEALTH_CRITICAL;
+            status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
             description = "The port " + std::to_string(fabric_port_state.remotePortId.fabricId) + " connection instabilities are preventing workloads making forward progress.";
           }
-          if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_FAILED && (int)status < ZES_FABRIC_PORT_STATUS_FAILED) {
-            status = HealthStatus::HEALTH_WARNING;
+          if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_DISABLED && (int)status < ZES_FABRIC_PORT_STATUS_FAILED) {
+            status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
             description = "The port " + std::to_string(fabric_port_state.remotePortId.fabricId) + " is configured down.";
           }
         }
       }
     }
   }
+
+  data->status = status;
+  int index = 0;
+  while(index < (int)description.size()) {
+    data->description[index] = description[index];
+    index++;
+  }
+  data->description[index] = 0;
 }

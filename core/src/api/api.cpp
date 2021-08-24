@@ -404,51 +404,6 @@ void setDeviceSchedulerExclusiveMode(const char* device_id,
   return;
 }
 
-void getDeviceHealthStatus(const char* device_id, HealthType type,
-                             void (*callback)(Health_data_t*),
-                             Api_result_t* api_result) {
-  if (!validPrerequisite((void*)callback, api_result)) {
-    return ;
-  }
-
-  std::string device_id_str = device_id;
-  if (type != HealthType::HEALTH_ALL) {
-    Health_data_t health_data;
-    health_data.device_id = device_id;
-    health_data.type = type;
-    health_data.status = HealthStatus::HEALTH_UNKNOWN;
-    std::string description = "";
-    Core::instance().getHealthManager()->getDeviceHealthStatus(device_id_str, health_data.type, health_data.status, description);
-    health_data.description = description.c_str();
-    callback(&health_data);
-  } else {
-    Health_data_t health_data_all;
-    health_data_all.device_id = device_id;
-    health_data_all.type = HealthType::HEALTH_ALL;
-    health_data_all.status = HealthStatus::HEALTH_UNKNOWN;
-    health_data_all.description = "";
-
-    for (int tpos = HEALTH_MEMORY; tpos <= HEALTH_FABRIC_PORT; tpos++) {
-      Health_data_t health_data;
-      health_data.device_id = device_id;
-      health_data.type = static_cast<HealthType>(tpos);
-      health_data.status = HealthStatus::HEALTH_UNKNOWN;
-      std::string description = "";
-      Core::instance().getHealthManager()->getDeviceHealthStatus(device_id_str, health_data.type, health_data.status, description);
-      health_data.description = description.c_str();
-
-      if (health_data_all.status < health_data.status) {
-        health_data.status = health_data.status;
-      }
-      callback(&health_data);
-    }
-    callback(&health_data_all);
-  }
-
-  setResultOK(api_result);
-  return;
-}
-
 void createGroup(const char *groupName, void (*callback)(int*), Api_result_t* api_result)
 {
   if (!validPrerequisite((void*)callback, api_result)) {
