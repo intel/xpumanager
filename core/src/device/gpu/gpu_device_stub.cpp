@@ -454,6 +454,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_han
         energy += counter.energy;
       }
     }
+    energy = energy * 1000; // Unit millijoules
     return std::make_shared<MeasurementData>(energy);
   }
   throw BaseException("toGetEnergy error");
