@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.2.0)
 project (DGMCore)
 
 # Set compilation options
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
 set(CMAKE_CXX_STANDARD 11)
@@ -34,6 +34,7 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/version.cpp.in ${CMA
 # Specifiy header file location
 link_directories(/usr/local/lib)
 include_directories(/usr/local/include/level_zero/)
+include_directories(/usr/include/level_zero/)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/api)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/control)
