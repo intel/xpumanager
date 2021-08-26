@@ -152,6 +152,106 @@ def get_firmware_flash_result( deviceId ):
     
     return jsonify( { 'result' : rc } )
 
+@app.route('/rest/v1/devices/<int:deviceId>/health', methods=['GET'])
+def get_health_all(deviceId):
+    code, message, data = core.getHealth(deviceId, "All")
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/groups/<int:groupId>/health', methods=['GET'])
+def get_group_health_all(groupId):
+    code, message, data = core.getHealthByGroup(groupId, "All")
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/devices/<int:deviceId>/health/<healthType>', methods=['GET'])
+def get_health(deviceId, healthType):
+    if healthType not in ["temperature", "power", "memory", "fabricPort"]:
+        return
+    
+    code, message, data = core.getHealth(deviceId, healthType)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/groups/<int:groupId>/health/<healthType>', methods=['GET'])
+def get_group_health(groupId, healthType):
+    if healthType not in ["temperature", "power", "memory", "fabricPort"]:
+        return
+    
+    code, message, data = core.getHealthByGroup(groupId, healthType)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/devices/<int:deviceId>/health/<healthType>', methods=['PUT'])
+def set_health_config(deviceId, healthType):
+    if healthType not in ["temperature", "power"]:
+        return
+    
+    req = request.get_json()
+    threshold = req["Threshold"]
+    code, message, data = core.setHealthConfig(deviceId, healthType, threshold)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/groups/<int:groupId>/health/<healthType>', methods=['PUT'])
+def set_group_health_config(groupId, healthType):
+    if healthType not in ["temperature", "power"]:
+        return
+
+    req = request.get_json()
+    threshold = req["Threshold"]    
+    code, message, data = core.setHealthConfigByGroup(groupId, healthType, threshold)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/devices/<int:deviceId>/diagnostics', methods=['POST'])
+def run_diagnostics(deviceId):
+    req = request.get_json()
+    level = req["DiagnosticsLevel"]
+    code, message, data = core.runDiagnostics(deviceId, level)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/groups/<int:groupId>/diagnostics', methods=['POST'])
+def run_group_diagnostics(groupId):
+    req = request.get_json()
+    level = req["DiagnosticsLevel"]
+    code, message, data = core.runDiagnosticsByGroup(groupId, level)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/devices/<int:deviceId>/diagnostics', methods=['GET'])
+def get_diagnostics_result(deviceId):
+    code, message, data = core.getDiagnosticsResult(deviceId)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/groups/<int:groupId>/diagnostics', methods=['GET'])
+def get_group_diagnostics_result(groupId):
+    code, message, data = core.getDiagnosticsResultByGroup(groupId)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
 if __name__ == '__main__':
   app.debug = True
 #   app.run()

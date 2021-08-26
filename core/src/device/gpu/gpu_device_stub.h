@@ -75,7 +75,7 @@ class GPUDeviceStub {
                                         const SchedulerExclusiveMode& mode);
 
   static void getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t *data, 
-                              int thermal_threshold, int power_threshold);
+                              int thermal_threshold, int power_threshold, bool global_default_limit);
 
 private:
   GPUDeviceStub();

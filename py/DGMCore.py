@@ -141,6 +141,67 @@ class XpumDeviceStats(Structure):
         ("dataList", XpumStatsData * XpumStatsType.XPUM_STATS_MAX.value),
     ]
 
+XpumHealthType = Enum("xpum_health_type_t", (
+    "XPUM_HEALTH_THERMAL",
+    "XPUM_HEALTH_POWER",
+    "XPUM_HEALTH_MEMORY",
+    "XPUM_HEALTH_FABRIC_PORT"
+), start=0)
+
+XpumHealthStatus = Enum("xpum_health_status_t", (
+    "XPUM_HEALTH_STATUS_UNKNOWN",
+    "XPUM_HEALTH_STATUS_OK",
+    "XPUM_HEALTH_STATUS_WARNING",
+    "XPUM_HEALTH_STATUS_CRITICAL"
+), start=0)
+
+class XpumDeviceHealth(Structure):
+    _fields_ = [
+        ("deviceId", c_int32),
+        ("healthType", c_int),
+        ("status", c_int),
+        ("description", c_char * 256)
+    ]
+
+XpumDiagResult = Enum("xpum_diag_task_result_t", (
+    "XPUM_DIAG_RESULT_UNKNOWN",
+    "XPUM_DIAG_RESULT_PASS",
+    "XPUM_DIAG_RESULT_WARNING",
+    "XPUM_DIAG_RESULT_CRITICAL"
+), start=0)
+
+XpumDiagType = Enum("xpum_diag_task_type_t", (
+    "XPUM_DIAG_SOFTWARE_ENV_VARIABLES",
+    "XPUM_DIAG_SOFTWARE_LIBRARY",
+    "XPUM_DIAG_SOFTWARE_PERMISSION",
+    "XPUM_DIAG_SOFTWARE_EXCLUSIVE",
+    "XPUM_DIAG_HARDWARE_SYSMAN",
+    "XPUM_DIAG_INTEGRATION_PCIE",
+    "XPUM_DIAG_MEDIA_CODEC",
+    "XPUM_DIAG_PERFORMANCE_COMPUTE",
+    "XPUM_DIAG_PERFORMANCE_POWER",
+    "XPUM_DIAG_PERFORMANCE_MEMORY",
+    "XPUM_DIAG_MAX"
+), start = 0)
+
+class XpumDiagComponentInfo(Structure):
+    _fields_ = [
+        ("type", c_int),
+        ("finished", c_bool),
+        ("result", c_int),
+        ("message", c_char * 256)
+    ]
+
+class XpumDiagTaskInfo(Structure):
+    _fields_ = [
+        ("deviceId", c_int32),
+        ("level", c_int),
+        ("finished", c_bool),
+        ("componentList", XpumDiagComponentInfo * XpumDiagType.XPUM_DIAG_MAX.value),
+        ("message", c_char * 256),
+        ("count", c_int32),
+    ]
+
 class DGMCore:
     def __init__(self):
         py_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -389,7 +450,165 @@ class DGMCore:
         else:
             return "ONGOING"
         
+    def getHealth(self, deviceId, healthType):
+        types = []
+        healthTypes = ["temperature", "power", "memory", "fabricPort"]
+        if healthType == "All":
+            types = [0, 1, 2, 3]
+        else:
+            types.append(healthTypes.index(healthType))
+        data = dict()
+        data['DeviceId'] = deviceId
         
+        for t in types:
+            health = XpumDeviceHealth()
+            res = self.lib.xpumGetHealth(c_int32(deviceId), c_int(t), byref(health))
+            if res != 0:
+                return res, "Fail to get health", None
+            key = healthTypes[t].capitalize()
+            data[key] = dict()
+            data[key]['Status'] = XpumHealthStatus(health.status).name.split("_")[-1].capitalize()
+            data[key]['Description'] = bytes.decode(health.description)
+            if t == 0 or t == 1:
+                threshold = c_int32(-1)
+                res = self.lib.xpumGetHealthConfig(c_int32(deviceId), c_int(t), byref(threshold))
+                if res != 0:
+                    return res, "Fail to get health config", None
+                data[key]['Threshold'] = threshold.value
         
+        return 0, "OK", data
+    
+    def getHealthByGroup(self, groupId, healthType):
+        types = []
+        healthTypes = ["temperature", "power", "memory", "fabricPort"]
+        if healthType == "All":
+            types = [0, 1, 2, 3]
+        else:
+            types.append(healthTypes.index(healthType))
         
+        datas=[]
+        deviceIds = []
+        for t in types:
+            groupHealth = (XpumDeviceHealth * 32)()
+            count = c_int(32)
+            res = self.lib.xpumGetHealthByGroup(c_int32(groupId), c_int(t), groupHealth, byref(count))
+            if res != 0:
+                return res, "Fail to get group health", None
+
+            for health in groupHealth[:count.value]:
+                if health.deviceId not in deviceIds:
+                    datas.append(dict(DeviceId=health.deviceId))
+                
+                for data in datas:
+                    if data['DeviceId'] == health.deviceId:
+                        key = healthTypes[t].capitalize()
+                        data[key] = dict()
+                        data[key]['Status'] = XpumHealthStatus(health.status).name.split("_")[-1].capitalize()
+                        data[key]['Description'] = bytes.decode(health.description)
+                        if t == 0 or t == 1:
+                            threshold = c_int32(-1)
+                            res = self.lib.xpumGetHealthConfig(c_int32(health.deviceId), c_int(t), byref(threshold))
+                            if res != 0:
+                                return res, "Fail to get health config", None
+                            data[key]['Threshold'] = threshold.value
+                        
+                deviceIds.append(health.deviceId);                
+
+        return 0, "OK", dict(GroupId=groupId, Health=datas)
+
+    def setHealthConfig(self, deviceId, healthType, threshold):
+        healthTypes = ["temperature", "power"]
+        t = healthTypes.index(healthType)
+        new_threshold = c_int32(threshold)
+        res = self.lib.xpumSetHealthConfig(c_int32(deviceId), c_int(t), byref(new_threshold))
+        if res != 0:
+            return res, "Fail to set health config", None
+        return 0, "OK", {"result": "OK"}
+    
+    def setHealthConfigByGroup(self, groupId, healthType, threshold):
+        healthTypes = ["temperature", "power"]
+        t = healthTypes.index(healthType)
+        new_threshold = c_int32(threshold)
+        res = self.lib.xpumSetHealthConfigByGroup(c_int32(groupId), c_int(t), byref(new_threshold))
+        if res != 0:
+            return res, "Fail to set group health config", None
+        return 0, "OK", {"result": "OK"}
+
+    def runDiagnostics(self, deviceId, level):
+        res = self.lib.xpumRunDiagnostics(c_int32(deviceId), c_int(level))
+        if res != 0:
+            return res, "Fail to run diagnostics", None
+        return 0, "OK", {"result": "OK"}
+    
+    def runDiagnosticsByGroup(self, groupId, level):
+        res = self.lib.xpumRunDiagnosticsByGroup(c_int32(groupId), c_int(level))
+        if res != 0:
+            return res, "Fail to run group diagnostics", None
+        return 0, "OK", {"result": "OK"}
+
+    def getDiagnosticsResult(self, deviceId):
+        diagTaskInfo = XpumDiagTaskInfo()
+        res = self.lib.xpumGetDiagnosticsResult(c_int32(deviceId), byref(diagTaskInfo))
+        if res != 0:
+            return res, "Fail to get diagnostics result", None
         
+        data = dict()
+        data['DeviceId'] = deviceId
+        data['Level'] = diagTaskInfo.level
+        data['Finished'] = diagTaskInfo.finished
+        data['Message'] = bytes.decode(diagTaskInfo.message)
+        data['Count'] = diagTaskInfo.count
+        
+        componentList = []
+        i = 0
+        for component in diagTaskInfo.componentList:
+            if i >= diagTaskInfo.count:
+                break
+            i = i + 1
+            new_component = dict()
+            typeStr = XpumDiagType(component.type).name.replace("XPUM_DIAG_", "")
+            typeStr = " ".join([t.capitalize() for t in typeStr.split("_")])
+            new_component['Type'] = typeStr
+            new_component['Finished'] = component.finished
+            new_component['Result'] = XpumDiagResult(component.result).name.split("_")[-1].capitalize()
+            new_component['Message'] = bytes.decode(component.message)
+            componentList.append(new_component)
+        data['ComponentList'] = componentList
+
+        return 0, "OK", data
+    
+    def getDiagnosticsResultByGroup(self, groupId):
+        groupDiagTaskInfo = (XpumDiagTaskInfo * 32)()
+        count = c_int(32)
+        res = self.lib.xpumGetDiagnosticsResultByGroup(c_int32(groupId), groupDiagTaskInfo, byref(count))
+        if res != 0:
+            return res, "Fail to get group diagnostics result", None
+        
+        datas = []
+        for diagTaskInfo in groupDiagTaskInfo[:count.value]:
+            data = dict()
+            data['DeviceId'] = diagTaskInfo.deviceId
+            data['Level'] = diagTaskInfo.level
+            data['Finished'] = diagTaskInfo.finished
+            data['Message'] = bytes.decode(diagTaskInfo.message)
+            data['Count'] = diagTaskInfo.count
+            
+            componentList = []
+            i = 0
+            for component in  diagTaskInfo.componentList:
+                if i >= diagTaskInfo.count:
+                    break
+                i = i + 1
+                new_component = dict()
+                typeStr = XpumDiagType(component.type).name.replace("XPUM_DIAG_", "")
+                typeStr = " ".join([t.capitalize() for t in typeStr.split("_")])
+                new_component['Type'] = typeStr
+                new_component['Finished'] = component.finished
+                new_component['Result'] = XpumDiagResult(component.result).name.split("_")[-1].capitalize()
+                new_component['Message'] = bytes.decode(component.message)
+                componentList.append(new_component)
+            
+            data['ComponentList'] = componentList
+            datas.append(data)
+
+        return 0, "OK", dict(GroupId=groupId, Diagnostics=datas)

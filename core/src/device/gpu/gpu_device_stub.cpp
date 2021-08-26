@@ -1036,7 +1036,7 @@ bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device,
 }
 
 void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t *data,
-                                    int thermal_threshold, int power_threshold) {
+                                    int thermal_threshold, int power_threshold, bool global_default_limit) {
   if (device == nullptr) {
     return;
   }
@@ -1105,7 +1105,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             if (power_val >= power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
                 status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
                 description = "Find an unhealthy power domains. Its power is " + std::to_string(power_val) 
-                              + " and exceeds the threshold " + std::to_string(power_threshold) + ".";              
+                              + " and exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(power_threshold) + ".";              
             }            
           }
         }
@@ -1138,8 +1138,10 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
           }
           if (temp_val >= thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
               status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
-              description = "Find an unhealthy temperature sensor. Its temperature is " + std::to_string(temp_val) 
-              + " and exceeds the threshold " + std::to_string(thermal_threshold) + ".";           
+              std::stringstream temp_buffer;
+              temp_buffer << std::fixed << std::setprecision(2) << temp_val;
+              description = "Find an unhealthy temperature sensor. Its temperature is " + temp_buffer.str()
+                            + " and exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(thermal_threshold) + ".";           
           }
         }
       }

@@ -5,6 +5,7 @@ import json
 
 import pprint
 import requests
+import time
 
 from texttable import Texttable
 
@@ -62,6 +63,27 @@ stats_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId
 stats_parser.add_argument('-g', '--group', metavar="<groupId>", dest="groupId", type=int,
                           help='The group id to query')
 
+# health subcommand parser
+health_parser = subparsers.add_parser("health", help="Display health status of GPUs")
+health_parser.add_argument('-l', '--list', action='store_true',
+                              help='Display health info for all devices')
+health_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+                          help='The device id to query')
+health_parser.add_argument('-g', '--group', metavar="<groupId>", dest="groupId", type=int,
+                          help='The group id to query')
+health_parser.add_argument('-t', '--thermal', metavar="<thermalThreshold>", dest="thermalThreshold", type=int,
+                          help='Set temperature threshold for device')
+health_parser.add_argument('-p', '--power', metavar="<powerThreshold>", dest="powerThreshold", type=int,
+                          help='Set power threshold for device')
+
+# diagnostics subcommand parser
+diag_parser = subparsers.add_parser("diag", help="System validation/diagnostic")
+diag_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+                          help='The device id to query')
+diag_parser.add_argument('-g', '--group', metavar="<groupId>", dest="groupId", type=int,
+                          help='The group id to query')
+diag_parser.add_argument('-l', '--level', metavar="<level>", dest="level", type=int,
+                          help='The diagnostics level to run')
 
 class PrintTable:
     _t = Texttable()
@@ -151,6 +173,41 @@ def arg():
         else:
             display_all_device_stats()
             return
+    elif parsed.subcommand == "health":
+        if parsed.deviceId is not None:
+            if parsed.thermalThreshold is not None:
+                set_device_health_config(parsed.deviceId, "temperature", parsed.thermalThreshold)
+                return
+            elif parsed.powerThreshold is not None:
+                set_device_health_config(parsed.deviceId, "power", parsed.powerThreshold)
+                return
+            else:
+                display_device_health(parsed.deviceId)
+                return
+        elif parsed.groupId is not None:
+            if parsed.thermalThreshold is not None:
+                set_group_health_config(parsed.groupId, "temperature", parsed.thermalThreshold)
+                return
+            elif parsed.powerThreshold is not None:
+                set_group_health_config(parsed.groupId, "power", parsed.powerThreshold)
+                return
+            else:
+                display_group_health(parsed.groupId)
+                return
+        else:
+            health_parser.print_help()
+            return
+    elif parsed.subcommand == "diag":
+        if parsed.deviceId is not None and parsed.level is not None:
+            run_device_diagnostics(parsed.deviceId, parsed.level)
+            return
+        elif parsed.groupId is not None and parsed.level is not None:
+            run_group_diagnostics(parsed.groupId, parsed.level)
+            return
+        else:
+            diag_parser.print_help()
+            return
+
     parser.print_help()
 
 def set_agent_settings(**kwargs):
@@ -513,6 +570,150 @@ def display_device_detail(deviceId):
 
     t.print()
 
+def get_diag_rows(data):
+    header_row = ["Device Id", data['DeviceId']]
+    base_row_keys = ["Level", "Finished", "Count", "Message"]
+    base_row_values = [str(data['Level']), str(data['Finished']), str(data['Count']), data['Message']]
+    base_row = ["\n".join(base_row_keys),"\n".join(base_row_values)]
+    rows = []
+    for component in data['ComponentList']:
+        v = "Finished: {}\nResult: {}\nMessage: {}".format(
+                component["Finished"],
+                component["Result"],
+                component["Message"]
+        )
+        rows.append([component["Type"],v])
+    return [header_row, base_row, *rows]
+
+def run_device_diagnostics(deviceId, level):
+    reqData = {
+        "DiagnosticsLevel":level
+    }
+    res = requests.post(host+"/rest/v1/devices/{}/diagnostics".format(deviceId), json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    while True:
+        res = requests.get(host+"/rest/v1/devices/{}/diagnostics".format(deviceId))
+        if res.status_code != 200:
+            print("Error occurs:"+res.content.decode())
+            return
+        data = res.json()
+        if data["Finished"] == True:
+            break
+        time.sleep(3)
+    print("Device Type: GPU")
+    rows = get_diag_rows(data)
+    t = PrintTable()
+    t.add_rows(rows)
+    t.print()
+
+def run_group_diagnostics(groupId, level):
+    reqData = {
+        "DiagnosticsLevel":level
+    }
+    res = requests.post(host+"/rest/v1/groups/{}/diagnostics".format(groupId), json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    while True:
+        res = requests.get(host+"/rest/v1/groups/{}/diagnostics".format(groupId))
+        if res.status_code != 200:
+            print("Error occurs:"+res.content.decode())
+            return
+        data = res.json()
+        allFinished = True
+        for devices in data["Diagnostics"]:
+            if devices["Finished"] == False:
+                allFinished = False
+                break
+        if allFinished == True:
+            break
+        time.sleep(3)
+    print("Device Type: GPU")
+    t = PrintTable()
+    for d in data["Diagnostics"]:
+        rows = get_diag_rows(d)
+        t.add_rows(rows)
+    t.print()
+
+def get_health_rows(data):
+    header_row = ["Device Id", data['DeviceId']]
+    rows = []
+    if "Temperature" in data.keys():
+        v = "Status: {}\nDescription: {}\nThreshold: {}".format(
+                data["Temperature"]["Status"],
+                data["Temperature"]["Description"],
+                data["Temperature"]["Threshold"]
+        )
+        rows.append(["Temperature",v])
+    if "Power" in data.keys():
+        v = "Status: {}\nDescription: {}\nThreshold: {}".format(
+                data["Power"]["Status"],
+                data["Power"]["Description"],
+                data["Power"]["Threshold"]
+        )
+        rows.append(["Power",v])
+    if "Memory" in data.keys():
+        v = "Status: {}\nDescription: {}".format(
+                data["Memory"]["Status"],
+                data["Memory"]["Description"]
+        )
+        rows.append(["Memory",v])
+    if "Fabricport" in data.keys():
+        v = "Status: {}\nDescription: {}".format(
+                data["Fabricport"]["Status"],
+                data["Fabricport"]["Description"]
+        )
+        rows.append(["Fabricport",v])
+    return [header_row, *rows]
+
+def display_device_health(deviceId):
+    # print("health for device {}".format(deviceId))
+    res = requests.get(host+"/rest/v1/devices/{}/health".format(deviceId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    data = res.json()
+    print("Device Type: GPU")
+    rows = get_health_rows(data)
+    t = PrintTable()
+    t.add_rows(rows)
+    t.print()
+
+def display_group_health(groupId):
+    # print("health for group {}".format(groupId))
+    res = requests.get(host+"/rest/v1/groups/{}/health".format(groupId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    data = res.json()
+    print("Device Type: GPU")
+    t = PrintTable()
+    for d in data["Health"]:
+        rows = get_health_rows(d)
+        t.add_rows(rows)
+    t.print()
+
+def set_device_health_config(deviceId, healthType, threshold):
+    reqData = {
+        "Threshold":threshold
+    }
+    res = requests.put(host+"/rest/v1/devices/{}/health/{}".format(deviceId, healthType), json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    display_device_health(deviceId)
+    
+def set_group_health_config(groupId, healthType, threshold):
+    reqData = {
+        "Threshold":threshold
+    }
+    res = requests.put(host+"/rest/v1/groups/{}/health/{}".format(groupId, healthType), json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    display_group_health(groupId)
 
 
 if __name__ == "__main__":

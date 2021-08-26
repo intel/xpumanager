@@ -59,6 +59,9 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
 
 xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result) {
   std::unique_lock<std::mutex> lock(this->mutex);
+  if (diagnostic_task_infos.find(deviceId) == diagnostic_task_infos.end()) {
+    return XPUM_GENERIC_ERROR;
+  }
 
   result->deviceId = deviceId;
   result->level = diagnostic_task_infos.at(deviceId)->level;
@@ -120,7 +123,7 @@ void DiagnosticManager::doDeviceDiagnosticSoftware(const zes_device_handle_t& de
   // DIAGNOSTIC_SOFTWARE_ENV
   xpum_diag_component_info_t& component1 = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES];
   p_task_info->count += 1;
-  updateMessage(component1.message, std::string("Ready"));
+  updateMessage(component1.message, std::string("Running"));
   std::vector<std::string> checkEnvVaribles;
   checkEnvVaribles.push_back(std::string("ZES_ENABLE_SYSMAN"));
   checkEnvVaribles.push_back(std::string("ZES_ENABLE_SYSMAN_LOW_POWER"));
@@ -148,7 +151,7 @@ void DiagnosticManager::doDeviceDiagnosticSoftware(const zes_device_handle_t& de
   // DIAGNOSTIC_SOFTWARE_LIBRARY
   xpum_diag_component_info_t& component2 = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_LIBRARY];
   p_task_info->count += 1;
-  updateMessage(component2.message, std::string("Ready"));
+  updateMessage(component2.message, std::string("Running"));
   std::vector<std::string> libs;
   libs.push_back("libze_loader.so");
   libs.push_back("libze_intel_gpu.so.1");
@@ -180,7 +183,7 @@ void DiagnosticManager::doDeviceDiagnosticSoftware(const zes_device_handle_t& de
   // DIAGNOSTIC_SOFTWARE_PERMISSION
   xpum_diag_component_info_t& component3 = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_PERMISSION];
   p_task_info->count += 1;
-  updateMessage(component3.message, std::string("Ready"));
+  updateMessage(component3.message, std::string("Running"));
   int deviceCount = 0;
   DIR *dir;
   struct dirent *ent;
@@ -226,7 +229,7 @@ void DiagnosticManager::doDeviceDiagnosticSoftware(const zes_device_handle_t& de
   // DIAGNOSTIC_SOFTWARE_EXCLUSIVE
   xpum_diag_component_info_t& component4 = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE];
   p_task_info->count += 1;
-  updateMessage(component4.message, std::string("Ready"));
+  updateMessage(component4.message, std::string("Running"));
   uint32_t process_count = 0;
   zesDeviceProcessesGetState(device, &process_count, nullptr);
   if (process_count > 1) {
@@ -257,7 +260,7 @@ void DiagnosticManager::doDeviceDiagnosticHardware(const zes_device_handle_t& ze
                                     std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
   xpum_diag_component_info_t& component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_HARDWARE_SYSMAN];
   p_task_info->count += 1;
-  updateMessage(component.message, std::string("Ready"));
+  updateMessage(component.message, std::string("Running"));
   component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
   uint32_t test_suite_count = 0;
   ze_result_t res = zesDeviceEnumDiagnosticTestSuites(zes_device, &test_suite_count, nullptr);
@@ -283,7 +286,7 @@ void DiagnosticManager::doDeviceDiagnosticHardware(const zes_device_handle_t& ze
       updateMessage(component.message, std::string("Sysman hardware check failed"));
     }
   } else {
-    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
     updateMessage(component.message, std::string("Sysman hardware not supported"));
   }
   component.finished = true;
@@ -292,7 +295,7 @@ void DiagnosticManager::doDeviceDiagnosticHardware(const zes_device_handle_t& ze
 void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t& device, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
   xpum_diag_component_info_t& component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC];
   p_task_info->count += 1;
-  updateMessage(component.message, std::string("Ready"));
+  updateMessage(component.message, std::string("Running"));
   component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
   zes_pci_properties_t pci_props;
@@ -378,7 +381,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t& 
                                     std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
   xpum_diag_component_info_t& component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_INTEGRATION_PCIE];
   p_task_info->count += 1;
-  updateMessage(component.message, std::string("Ready"));
+  updateMessage(component.message, std::string("Running"));
   component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
   ze_context_handle_t context;
@@ -482,7 +485,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
                                         std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
   xpum_diag_component_info_t& component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_MEMORY];
   p_task_info->count += 1;
-  updateMessage(component.message, std::string("Ready"));
+  updateMessage(component.message, std::string("Running"));
   component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
   uint64_t one_MB = 1024UL * 1024UL;
@@ -749,12 +752,12 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
 void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_device_handle_t& ze_device, const ze_driver_handle_t& ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
   xpum_diag_component_info_t& compute_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTE];
   p_task_info->count += 1;
-  updateMessage(compute_component.message, std::string("Ready"));
+  updateMessage(compute_component.message, std::string("Running"));
   compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
   xpum_diag_component_info_t& power_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_POWER];
   p_task_info->count += 1;
-  updateMessage(power_component.message, std::string("Ready"));
+  updateMessage(power_component.message, std::string("Running"));
   power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
   long double gflops, timed;
