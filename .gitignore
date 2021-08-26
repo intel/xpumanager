@@ -1,6 +1,6 @@
 .project
 __pycache__
-build/
+*/build/
 libDGMCore.so
 DGMCore
 core/src/infrastructure/version.cpp
