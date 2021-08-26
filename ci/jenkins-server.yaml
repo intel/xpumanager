@@ -1,3 +1,4 @@
+#!!!!!!! Must uncomment Secret and use real PASSWORD for "PLACEHOLDER"!!!!!!!
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -83,12 +84,12 @@ spec:
     port: 50000
   selector:
     app: jenkins
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sign-secret
-type: kubernetes.io/basic-auth
-stringData:
-  username: sys_dcm
-  password: PLACEHOLDER
+# ---
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: sign-secret
+# type: kubernetes.io/basic-auth
+# stringData:
+#   username: sys_dcm
+#   password: PLACEHOLDER
