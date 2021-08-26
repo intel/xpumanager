@@ -237,7 +237,7 @@ def get_stats_rows(data):
                 stats["min"],
                 stats["max"]
             )
-            rows.append(["GPU Computation (%)",v])
+            rows.append(["GPU Utilization (%)",v])
         elif stats['metricsType'] == "XPUM_STATS_POWER":
             v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
                 stats["value"],
