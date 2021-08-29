@@ -2,10 +2,10 @@
 
 #include "logger.h"
 #include "utility.h"
+#include "spdlog/spdlog.h"
 
 void DBPersistency::storeMeasurementData(
     MeasurementType type, Timestamp_t time,
     std::map<std::string, MeasurementData>& datas) {
-  Logger::instance().info(std::string("Receieved monitor data at:") +
-                         Utility::getTimeString(time));
+  spdlog::debug(std::string("Receieved monitor data"));
 }
