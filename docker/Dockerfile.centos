@@ -1,6 +1,9 @@
 FROM intel/oneapi-runtime:centos8
 COPY rpms /rpms
 RUN dnf install -y /rpms/*.rpm python3
+
 COPY build-rpm /build-rpm
 RUN dnf install -y /build-rpm/*.rpm && \
 pip3 install -r /usr/local/xpum/py/requirements.txt 
+
+ENTRYPOINT ["/usr/bin/python3", "/usr/local/xpum/py/DGM.py"]
