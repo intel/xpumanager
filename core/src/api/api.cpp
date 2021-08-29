@@ -93,10 +93,10 @@ bool init() {
   try {
     Core::instance().init();
   } catch (BaseException &e) {
-    Logger::instance().error(std::string("Failed to init DCM Core: ") + e.what());
+    LOG_ERROR("Failed to init DCM Core: {}", e.what());
     return false;
   } catch (std::exception& e) {
-    Logger::instance().error(std::string("Failed to init DCM Core: ") + e.what());
+    LOG_ERROR("Failed to init DCM Core: {}", e.what());
     return false;
   }
 
@@ -122,7 +122,7 @@ void getDeviceList(void (*callback)(Device_t*), Api_result_t* api_result) {
       des.properties[des.property_len].name = prop.getName().c_str();
       des.properties[des.property_len].value = prop.getValue().c_str();
       if (++des.property_len >= MAX_PROPERTY) {
-        Logger::instance().warn("property limitation is reached");    
+        LOG_WARN("property limitation is reached");    
         break;
       }
     }

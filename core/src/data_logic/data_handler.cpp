@@ -36,10 +36,10 @@ void DataHandler::init() {
         } catch (std::exception& e) {
           std::string error = "Failed to persist measurement data";
           error += e.what();
-          Logger::instance().error(error);
+          LOG_ERROR(error);
         } catch (...) {
           std::string error = "Failed to persist measurement data: unexpected exception";
-          Logger::instance().error(error);
+          LOG_ERROR(error);
         }   
       }
     }

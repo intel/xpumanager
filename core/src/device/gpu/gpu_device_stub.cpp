@@ -14,11 +14,11 @@
 #include <iostream>
 
 GPUDeviceStub::GPUDeviceStub() : p_thread_pool(nullptr), initialized(false) {
-  Logger::instance().info("GPUDeviceStub()");
+  LOG_INFO("GPUDeviceStub()");
 }
 
 GPUDeviceStub::~GPUDeviceStub() {
-  Logger::instance().info("~GPUDeviceStub()");
+  LOG_INFO("~GPUDeviceStub()");
 }
 
 GPUDeviceStub& GPUDeviceStub::instance() {

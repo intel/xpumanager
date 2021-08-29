@@ -7,11 +7,11 @@
 
 DataLogic::DataLogic() : p_raw_data_manager(nullptr), 
   p_persistency(nullptr) {
-  Logger::instance().info("DataLogic()");    
+  LOG_INFO("DataLogic()");    
 }
 
 DataLogic::~DataLogic() {
-  Logger::instance().info("~DataLogic()");
+  LOG_INFO("~DataLogic()");
 }
 
 void DataLogic::init() {  

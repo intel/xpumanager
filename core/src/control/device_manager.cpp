@@ -10,12 +10,12 @@
 
 DeviceManager::DeviceManager(std::shared_ptr<DataLogicInterface>& p_data_logic) 
   : p_data_logic(p_data_logic) {
-  Logger::instance().info("DeviceManager()");
+  LOG_INFO("DeviceManager()");
 }
 
 DeviceManager::~DeviceManager() {
   close();
-  Logger::instance().info("~DeviceManager()");
+  LOG_INFO("~DeviceManager()");
 }
 
 void DeviceManager::init() {
@@ -32,7 +32,7 @@ void DeviceManager::init() {
     }
 
     if (e != nullptr) {
-      Logger::instance().error(std::string("Failed to init device list:") + e->what());
+      LOG_ERROR("Failed to init device list: {}", e->what());
       ready = true;
       cv.notify_all();
       return ;

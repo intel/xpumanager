@@ -9,11 +9,11 @@
 MonitorManager::MonitorManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {    
-  Logger::instance().info("MonitorManager()");
+  LOG_INFO("MonitorManager()");
 }
 
 MonitorManager::~MonitorManager() {
-  Logger::instance().info("~MonitorManager()");
+  LOG_INFO("~MonitorManager()");
 }
 
 void MonitorManager::init() {

@@ -5,12 +5,12 @@
 #include "thread_pool.h"
 
 ThreadPool::ThreadPool(unsigned int size) : stop(false), size(size) {
-  Logger::instance().info("ThreadPool()");
+  LOG_INFO("ThreadPool()");
   init();
 }
 
 ThreadPool::~ThreadPool() {
-  Logger::instance().info("~ThreadPool()");
+  LOG_INFO("~ThreadPool()");
   close();
 }
 
@@ -32,10 +32,10 @@ void ThreadPool::init() {
         } catch (std::exception& e) {
           std::string error = "Failed to execute task in thread pool: ";
           error += e.what();
-          Logger::instance().error(error);          
+          LOG_ERROR(error);          
         } catch (...) {
           std::string error = "Failed to execute task in thread pool: unexpected exception";
-          Logger::instance().error(error);
+          LOG_ERROR(error);
         }
 
       }

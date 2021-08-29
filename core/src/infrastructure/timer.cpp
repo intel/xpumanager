@@ -20,12 +20,12 @@ Timer::~Timer() {
 void Timer::scheduleAtFixedRate(long delay, int interval, 
   std::function<void()> task) {
   if (delay < 0 || interval <= 0) {
-    Logger::instance().warn("invalid parameter in scheduleAtFixedRate");
+    LOG_WARN("invalid parameter in scheduleAtFixedRate");
     throw IlegalParameterException("invalid parameter when schedule a timer");    
   }
 
   if (this->canceled == false) {
-    Logger::instance().warn("invalid timer status");
+    LOG_WARN("invalid timer status");
     throw IlegalStateException("the timer has been started");
   }
 
@@ -42,7 +42,7 @@ void Timer::scheduleAtFixedRate(long delay, int interval,
       if (interval >= spent) {
         wait = interval - spent;
       } else {
-        Logger::instance().warn("The timer interval will not be accurate");
+        LOG_WARN("The timer interval will not be accurate");
         wait = 0;
       }
     }

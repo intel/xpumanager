@@ -3,14 +3,14 @@
 
 GroupInfo::GroupInfo(const char * groupname, xpum_group_id_t groupId)
 {
-    Logger::instance().info("GroupInfo");
+    LOG_INFO("GroupInfo");
     name = groupname;
     id = groupId;
 }
 
 GroupInfo::~GroupInfo()
 {
-    Logger::instance().info("~GroupInfo");
+    LOG_INFO("~GroupInfo");
     deviceList.clear();
 }
 
@@ -38,12 +38,12 @@ void GroupInfo::getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES]
 
 xpum_result_t GroupInfo::addDevice(xpum_group_id_t groupId, xpum_device_id_t deviceId)
 {
-    Logger::instance().info("GroupInfo::addDevice");
+    LOG_INFO("GroupInfo::addDevice");
     xpum_result_t ret = XPUM_GENERIC_ERROR;    
 
     for(unsigned int i=0; i < deviceList.size(); i++)   {
         if(deviceList[i] == deviceId) {
-            Logger::instance().error(std::string("GroupInfo::addDevice- device id ") + std::string(std::to_string(deviceId))
+            LOG_ERROR(std::string("GroupInfo::addDevice- device id ") + std::string(std::to_string(deviceId))
                 + std::string(" was already in the group.") );
             return ret;
         }
@@ -58,7 +58,7 @@ xpum_result_t GroupInfo::addDevice(xpum_group_id_t groupId, xpum_device_id_t dev
 xpum_result_t GroupInfo::removeDevice(const std::shared_ptr<DeviceManagerInterface>& p_devicemanager,
             xpum_group_id_t groupId, xpum_device_id_t deviceId)
 {
-    Logger::instance().info("GroupInfo::removeDevice");
+    LOG_INFO("GroupInfo::removeDevice");
     xpum_result_t ret = XPUM_GENERIC_ERROR;
     
     for(unsigned int i=0; i < deviceList.size(); i++)   {
@@ -68,7 +68,7 @@ xpum_result_t GroupInfo::removeDevice(const std::shared_ptr<DeviceManagerInterfa
         }
     }
 
-    Logger::instance().error(std::string("GroupInfo::removeDevice- device id ") + std::to_string(deviceId)
+    LOG_ERROR(std::string("GroupInfo::removeDevice- device id ") + std::to_string(deviceId)
                 + std::string(" not in the group.") );
     
     return ret;

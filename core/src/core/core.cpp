@@ -16,12 +16,13 @@ Core::Core()
       p_health_manager(nullptr),
       p_diagnostic_manager(nullptr),
       initialized(false) {
-  Logger::instance().info("core()");
+    Logger::init();
+    LOG_INFO("core()");
 }
 
 Core::~Core() {
-  Logger::instance().info("~core()");
-  close();
+    LOG_INFO("~core()");
+    close();
 }
 
 Core& Core::instance() {
@@ -65,30 +66,30 @@ void Core::init() {
     return ;
   }
 
-  Logger::instance().info("initialize configuration");
+  LOG_INFO("initialize configuration");
   Configuration::init();
 
-  Logger::instance().info("initialize datalogic");
+  LOG_INFO("initialize datalogic");
   p_data_logic = std::make_shared<DataLogic>();
   p_data_logic->init();
 
-  Logger::instance().info("initialize device manager");
+  LOG_INFO("initialize device manager");
   p_device_manager = std::make_shared<DeviceManager>(p_data_logic);
   p_device_manager->init();
 
-  Logger::instance().info("initialize monitor manager");
+  LOG_INFO("initialize monitor manager");
   p_monitor_manager = std::make_shared<MonitorManager>(p_device_manager, p_data_logic);
   p_monitor_manager->init();
 
-  Logger::instance().info("initialize health manager");
+  LOG_INFO("initialize health manager");
   p_health_manager = std::make_shared<HealthManager>(p_device_manager, p_data_logic);
   p_health_manager->init();
 
-  Logger::instance().info("initialize group manager");
+  LOG_INFO("initialize group manager");
   p_group_manager = std::make_shared<GroupManager>(p_device_manager, p_data_logic);
   p_group_manager->init();
 
-  Logger::instance().info("initialize diagnostic manager");
+  LOG_INFO("initialize diagnostic manager");
   p_diagnostic_manager = std::make_shared<DiagnosticManager>(p_device_manager, p_data_logic);
   p_diagnostic_manager->init();
 
@@ -124,14 +125,9 @@ void Core::close(const std::shared_ptr<InitCloseInterface>& p_init_close_interfa
   try {
     p_init_close_interface->close();
   } catch (std::exception& e) {  
-    std::string error_msg = p_msgPrix;
-    error_msg += ": ";
-    error_msg += e.what();
-    Logger::instance().warn(error_msg);    
+    LOG_WARN("{}: {}", p_msgPrix, e.what());    
   } catch (...) {
-    std::string error_msg = p_msgPrix;
-    error_msg += ": unexpected exception";
-    Logger::instance().warn(error_msg);
+    LOG_WARN("{}: unexpected exception", p_msgPrix);    
   }
 }
 

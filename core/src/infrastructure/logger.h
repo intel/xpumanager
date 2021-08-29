@@ -1,27 +1,17 @@
 #pragma once
 
-#include <string>
+#include "spdlog/spdlog.h"
+#include "spdlog/cfg/env.h"
+
+#define LOG_INFO(...) spdlog::info(__VA_ARGS__)
+#define LOG_WARN(...) spdlog::warn(__VA_ARGS__)
+#define LOG_ERROR(...) spdlog::error(__VA_ARGS__)
+#define LOG_DEBUG(...) spdlog::debug(__VA_ARGS__)
+#define LOG_TRACE(...) spdlog::trace(__VA_ARGS__)
 
 class Logger {
- public:
-  static Logger& instance();
-
- public:
-  void error(const std::string& msg);
-
-  void warn(const std::string& msg);
-
-  void info(const std::string& msg);
-
-  void debug(const std::string& msg);
-  
- private:
-  std::string getCurrentSystemTime();
-
-  Logger() = default;
-
-  Logger& operator=(const Logger &) = delete;
-
-  Logger(const Logger &other) = delete;
-  
+  public:
+   static void init() {
+     spdlog::cfg::load_env_levels();
+   }
 };

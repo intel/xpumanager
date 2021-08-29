@@ -16,7 +16,7 @@ MonitorTask::MonitorTask(
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(MonitorTaskType::DEFAULT_TELEMETRY) {
-  Logger::instance().info("MonitorTask()");
+  LOG_INFO("MonitorTask()");
 }
 
 MonitorTask::MonitorTask(
@@ -29,11 +29,11 @@ MonitorTask::MonitorTask(
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(type) {
-  Logger::instance().info("MonitorTask()");
+  LOG_INFO("MonitorTask()");
 }
 
 MonitorTask::~MonitorTask() {
-  Logger::instance().info("~MonitorTask()");
+  LOG_INFO("~MonitorTask()");
 }
 
 void MonitorTask::start() {
@@ -83,7 +83,7 @@ void MonitorTask::start() {
         std::cv_status::timeout) {
         if (count > 0) {
           std::string error = std::string("Monitor:") + std::to_string((int)(p_this->capability)) + " is expired!";
-          Logger::instance().warn(error);
+          LOG_WARN(error);
         }
         break;
       } 
