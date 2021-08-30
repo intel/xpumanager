@@ -302,7 +302,7 @@ def get_stats_rows(data):
                 stats["min"],
                 stats["max"]
             )
-            rows.append(["GPU Power (w)",v])
+            rows.append(["GPU Power (W)",v])
         elif stats['metricsType'] == "XPUM_STATS_ENERGY":
             counter_row_keys.append("Energy Consumed (J)")
             counter_row_values.append("{:.3f}".format(stats['value']/1e3))
