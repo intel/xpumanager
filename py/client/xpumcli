@@ -498,10 +498,12 @@ def device_info_to_str(props):
     if "FirmwareVersion" in props:
         rows.append("Firmware Version: {}".format(props["FirmwareVersion"]))
     rows.append("")
-    rows.append("Number of Sub Devices: {}".format(
-        props["NumberOfSubDevices"]))
+    # rows.append("Number of Sub Devices: {}".format(
+    #     props["NumberOfSubDevices"]))
     rows.append("Serial Number: {}".format(props["SerialNumber"]))
     rows.append("Core Clock Rate: {}".format(props["CoreClockRate"]))
+    rows.append("Memory Physical Size: {}".format(props["MemoryPhysicalSize"]))
+    rows.append("Memory Free Size: {}".format(props["MemoryFreeSize"]))
     rows.append("Max Mem Alloc Size: {}".format(props["MaxMemAllocSize"]))
     rows.append("Max Hardware Contexts: {}".format(
         props["MaxHardwareContexts"]))
@@ -515,16 +517,15 @@ def device_info_to_str(props):
         props["NumberOfEusPerSubSlice"]))
     rows.append("Number of Threads Per EU: {}".format(
         props["NumberOfThreadsPerEu"]))
-    rows.append("Pysical EU SIMD Width: {}".format(
-        props["PysicalEuSimdWidth"]))
-    rows.append("Timer Resolution: {}".format(props["TimerResolution"]))
-    rows.append("Timestamp Valid Bits: {}".format(props["TimestampValidBits"]))
-    rows.append("PCI Vendor Id: {}".format(props["PCIVendorId"]))
-    rows.append("Kernel Timestamp Valid Bits: {}".format(
-        props["KernelTimestampValidBits"]))
-    rows.append("Flags: {}".format(props["Flags"]))
-    rows.append("Memory Physical Size: {}".format(props["MemoryPhysicalSize"]))
-    rows.append("Memory Free Size: {}".format(props["MemoryFreeSize"]))
+    rows.append("Physical EU SIMD Width: {}".format(
+        props["PhysicalEuSimdWidth"]))
+    # rows.append("Timer Resolution: {}".format(props["TimerResolution"]))
+    # rows.append("Timestamp Valid Bits: {}".format(props["TimestampValidBits"]))
+    # rows.append("PCI Vendor Id: {}".format(props["PCIVendorId"]))
+    # rows.append("Kernel Timestamp Valid Bits: {}".format(
+    #     props["KernelTimestampValidBits"]))
+    # rows.append("Flags: {}".format(props["Flags"]))
+    
 
     return "\n".join(rows)
 
