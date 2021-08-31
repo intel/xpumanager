@@ -136,6 +136,8 @@ class XpumStatsData(Structure):
 class XpumDeviceStats(Structure):
     _fields_ = [
         ("deviceId", c_int32),
+        ("isTileData", c_bool),
+        ("tileId", c_int32),
         ("begin", c_uint64),
         ("end", c_uint64),
         ("dataList", XpumStatsData * XpumStatsType.XPUM_STATS_MAX.value),

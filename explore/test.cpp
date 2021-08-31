@@ -296,12 +296,12 @@ int main()
             zesDeviceGetProperties(zes_Device, &props);
             if (props.core.type == ZE_DEVICE_TYPE_GPU)
             {
-                // print_gpu_props(props, driver_prop);
+                print_gpu_props(props, driver_prop);
                 // get_gpu_power(device);
                 // get_gpu_temp(device);
                 // get_gpu_engine(device);
                 // get_gpu_firmware(device);
-                get_gpu_process(device);
+                // get_gpu_process(device);
             }
         }
     }
