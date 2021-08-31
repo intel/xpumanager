@@ -59,6 +59,8 @@ typedef int32_t xpum_group_id_t;
 
 typedef int32_t xpum_event_id_t;
 
+typedef int32_t xpum_dump_task_id_t;
+
 typedef enum xpum_result_enum {
     XPUM_OK = 0,
     XPUM_GENERIC_ERROR,
@@ -380,9 +382,20 @@ struct xpum_stats_data_t {
 
 struct xpum_device_stats_t {
     xpum_device_id_t deviceId;
+    bool isTileData;
+    int32_t tileId;
     uint64_t begin;
     uint64_t end;
     xpum_stats_data_t dataList[XPUM_STATS_MAX];
+};
+
+struct xpum_metrics_raw_data_t {
+    xpum_device_id_t deviceId;
+    bool isTileData;
+    int32_t tileId;
+    uint64_t timestamp;
+    xpum_stats_type_t metricsType;
+    uint64_t value;
 };
 
 #if defined(__cplusplus)
