@@ -3,6 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: jenkins-pvc
+  namespace: jenkins
 spec:
   accessModes:
     - ReadWriteOnce
@@ -26,6 +27,11 @@ spec:
       labels:
         app: jenkins
     spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
       containers:
       - name: jenkins
         image: jenkins/jenkins:lts-jdk11
@@ -78,18 +84,31 @@ spec:
     protocol: TCP
     targetPort: 8080
     port: 8080
+    nodePort: 30346
   - name: jnlp
     protocol: TCP
     targetPort: 50000
     port: 50000
+    nodePort: 32757
   selector:
     app: jenkins
-# ---
-# apiVersion: v1
+---
+apiVersion: v1
 # kind: Secret
-# metadata:
-#   name: sign-secret
-# type: kubernetes.io/basic-auth
-# stringData:
-#   username: sys_dcm
-#   password: PLACEHOLDER
+metadata:
+  name: sign-secret
+  namespace: jenkins
+type: kubernetes.io/basic-auth
+stringData:
+  username: sys_dcm
+  password: PLACEHOLDER
+---
+apiVersion: v1
+# kind: Secret
+metadata:
+ name: docker-config-secret
+ namespace: jenkins
+data:
+  ## cat ~/.docker/config.json | base64
+ .dockerconfigjson: "PLACEHOLDER"
+type: kubernetes.io/dockerconfigjson

@@ -75,6 +75,8 @@ spec:
         - mountPath: "/var/run/docker.sock"
           name: "volume-0"
           readOnly: false
+        - name: docker-config
+          mountPath: /root/.docker/
         - mountPath: "/xpum-docker"
           name: "volume-1"
           readOnly: false
@@ -123,6 +125,12 @@ spec:
         items:
           - key: password
             path: password.sys_dcm
+    - name: docker-config
+      secret:
+        secretName: docker-config-secret
+        items:
+          - key: .dockerconfigjson
+            path: config.json
     - emptyDir:
         medium: ""
       name: "workspace-volume"
