@@ -12,7 +12,6 @@ Usage:
 Subcommand options:
     discovery               Discover GPUs on the system
     group                   Group management
-    telemetry               Display telemetry data of GPUs
     health                  Display health status of GPUs
     events                  GPU events management
     config                  GPU configuration management
@@ -20,6 +19,7 @@ Subcommand options:
     diag                    System validation/diagnostic
     agentset                XPUM agent settings
     stats                   Display device statistics
+    telemetry               Collect and dump metrics raw data
 
 ```
 
@@ -192,134 +192,6 @@ $ xpumcli group -l
 ## Remove a group
 ```
 $ xpumcli group -r -g 0
-```
-
-# Telemetry subcommmand
-## Help info
-```
-$ xpumcli telemetry --help
-
-telemetry -- used to display device telemetry data
-
-Usage: xpumcli telemetry [-h] [-i] [-d] [-g]
-
-Optional arguments:
-    -h, --help              Show this help message and exit
-    -l, --list              Display telemetry info for all devices
-    -i, --immed             Get realtime data
-    -d <deviceId>, --device <deviceId>  
-                            The device id to query
-    -g <groupId>, --group <groupId>     
-                            The group id to query
-    -o, --output            Export telemetried raw data of one aggregate 
-                                period, which can be set by "agentset" 
-                                subcommand. Raw data means not aggregated. 
-                                Output will be written to standard output
-                                in csv format.
-```
-
-## Display telemetry
-```
-$ xpumcli telemetry -d 0
-+-------------+-----------------------------------------+
-| Device Type | GPU                                     |
-+-------------+------------------------+----------------+
-| Device Id   | Category               | Telemetry      |
-+-------------+------------------------+----------------+
-| 0           | Power(W)               | current: 71    |
-|             |                        | avg: 71        |
-|             |                        | max: 71        |
-|             |                        | min: 71        |
-|             +------------------------+----------------+
-|             | GPU Frequency(MHz)     | current: 300   |
-|             |                        | avg: 300       |
-|             |                        | max: 300       |
-|             |                        | min: 300       |
-|             +------------------------+----------------+
-|             | GPU Temperature(°C)    | current: 35    |
-|             |                        | avg: 36        |
-|             |                        | max: 36        |
-|             |                        | min: 35        |
-|             +------------------------+----------------+
-|             | Memory Used(MiB)       | current: 32.80 |
-|             |                        | avg: 32.80     |
-|             |                        | max: 32.81     |
-|             |                        | min: 32.80     |
-|             +------------------------+----------------+
-|             | GPU Utilization(%)     | current: 0     |
-|             |                        | avg: 0         |
-|             |                        | max: 0         |
-|             |                        | min: 0         |
-|             +------------------------+----------------+
-|             | Fabric Port Speed(bps) | current: 0     |
-|             |                        | avg: 0         |
-|             |                        | max: 0         |
-|             |                        | min: 0         |
-+-------------+------------------------+----------------+
-```
-
-```
-$ xpumcli telemetry -i -d 0
-+-------------+-----------------------------------------+
-| Device Type | GPU                                     |
-+-------------+------------------------+----------------+
-| Device Id   | Category               | Telemetry      |
-+-------------+------------------------+----------------+
-| 0           | Power(W)               | current: 71    |
-|             +------------------------+----------------+
-|             | GPU Frequency(MHz)     | current: 300   |
-|             +------------------------+----------------+
-|             | GPU Temperature(°C)    | current: 35    |
-|             +------------------------+----------------+
-|             | Memory Used(MiB)       | current: 32.80 |
-|             +------------------------+----------------+
-|             | GPU Utilization(%)     | current: 0     |
-|             +------------------------+----------------+
-|             | Fabric Port Speed(bps) | current: 0     |
-+-------------+------------------------+----------------+
-```
-
-```
-$ xpumcli telemetry -i -g 0
-+-------------+-----------------------------------------+
-| Device Type | GPU                                     |
-+-------------+------------------------+----------------+
-| Device Id   | Category               | Telemetry      |
-+-------------+------------------------+----------------+
-| 0           | Power(W)               | current: 71    |
-|             +------------------------+----------------+
-|             | GPU Frequency(MHz)     | current: 300   |
-|             +------------------------+----------------+
-|             | GPU Temperature(°C)    | current: 35    |
-|             +------------------------+----------------+
-|             | Memory Used(MiB)       | current: 32.80 |
-|             +------------------------+----------------+
-|             | GPU Utilization(%)     | current: 0     |
-|             +------------------------+----------------+
-|             | Fabric Port Speed(bps) | current: 0     |
-+-------------+------------------------+----------------+
-| 1           | Power(W)               | current: 71    |
-|             +------------------------+----------------+
-|             | GPU Frequency(MHz)     | current: 300   |
-|             +------------------------+----------------+
-|             | GPU Temperature(°C)    | current: 35    |
-|             +------------------------+----------------+
-|             | Memory Used(MiB)       | current: 32.80 |
-|             +------------------------+----------------+
-|             | GPU Utilization(%)     | current: 0     |
-|             +------------------------+----------------+
-|             | Fabric Port Speed(bps) | current: 0     |
-+-------------+------------------------+----------------+
-```
-
-```
-$ xpumcli telemetry -d 0 -i -o
-Timestamp,DeviceId,Power(W),GPU Frequency(MHz),GPU Temperature(°C),Memory Used(MiB),GPU Utilization(%),Fabric Port Speed(bps)
-2021-07-09 16:03:36,0,71,300,35,32.8,0,0
-2021-07-09 16:03:37,0,71,300,35,32.8,0,0
-2021-07-09 16:03:38,0,71,300,35,32.8,0,0
-2021-07-09 16:03:39,0,71,300,35,32.8,0,0
-2021-07-09 16:03:40,0,71,300,35,32.8,0,0
 ```
 
 # Health subcommmand
@@ -770,7 +642,7 @@ $ xpumcli stats --help
 
 stats -- Used to display detailed device statistics data from last query to now
 
-Usage: xpumcli stats [-h] [-g] [-d]
+Usage: xpumcli stats [-h] [-g] [-d] [-t]
 
 Optional arguments:
     -h, --help              Show this help message and exit
@@ -778,51 +650,157 @@ Optional arguments:
                             The device id to query
     -g <groupId>, --group <groupId>     
                             The group id to query
-    --tile <tileId>
+    -t, --tile              Show per tile data or not
 ```
 ## List stats
 ```
 $ xpumcli stats
++---------------------+---------------------+
+| Device Id           | 0                   |
++---------------------+---------------------+
+| Start Time          | 2021-07-09 16:03:36 |
+| End Time            | 2021-07-09 19:03:36 |
+| Energy Consumed (J) | 2000                |
++---------------------+---------------------+
+| GPU_Computation (%) | avg: 70             |
+|                     | min: 70             |
+|                     | max: 70             |
++---------------------+---------------------+
+| Occupation (%)      | avg: 70             |
+|                     | min: 70             |
+|                     | max: 70             |
++---------------------+---------------------+
+| GPU_Frequency (MHz) | avg: 500            |
+|                     | min: 300            |
+|                     | max: 700            |
++---------------------+---------------------+
+| Device Id           | 1                   |
++---------------------+---------------------+
+| Start Time          | 2021-07-09 16:03:36 |
+| End Time            | 2021-07-09 19:03:36 |
+| Energy Consumed (J) | 2000                |
++---------------------+---------------------+
+| GPU_Computation (%) | avg: 70             |
+|                     | min: 70             |
+|                     | max: 70             |
++---------------------+---------------------+
+| Occupation (%)      | avg: 70             |
+|                     | min: 70             |
+|                     | max: 70             |
++---------------------+---------------------+
+| GPU_Frequency (MHz) | avg: 500            |
+|                     | min: 300            |
+|                     | max: 700            |
++---------------------+---------------------+
+
+$ xpumcli stats -d 0 -t
 Device Type: GPU
-Device Id: 0
-Tile: 0
-+--------------------------------+-----------------------------------------+
-| Device Type                    | GPU                                     |
-+--------------------------------+-----------------------------------------+
-| Device Id                      | 0                                       |
-+--------------------------------+-----------------------------------------+
-| Start Time                     |2021-07-09 16:03:36                      |
-| End Time                       |2021-07-09 19:03:36                      |
-| Energy Consumed (J)            |2000                                     |
-+--------------------------------+-----------------------------------------+
-| GPU_Computation (%)            |avg: 70                                  |
-|                                |min: 70                                  |
-|                                |max: 70                                  |
-+--------------------------------+-----------------------------------------+
-| Occupation (%)                 |avg: 70                                  |
-|                                |min: 70                                  |
-|                                |max: 70                                  |
-+--------------------------------+-----------------------------------------+
-| GPU_Frequency (MHz)            |avg: 500                                 |
-|                                |min: 300                                 |
-|                                |max: 700                                 |
-+--------------------------------+-----------------------------------------+
-| Device Id                      | 1                                       |
-+--------------------------------+-----------------------------------------+
-| Start Time                     |2021-07-09 16:03:36                      |
-| End Time                       |2021-07-09 19:03:36                      |
-| Energy Consumed (J)            |2000                                     |
-+--------------------------------+-----------------------------------------+
-| GPU_Computation (%)            |avg: 70                                  |
-|                                |min: 70                                  |
-|                                |max: 70                                  |
-+--------------------------------+-----------------------------------------+
-| Occupation (%)                 |avg: 70                                  |
-|                                |min: 70                                  |
-|                                |max: 70                                  |
-+--------------------------------+-----------------------------------------+
-| GPU_Frequency (MHz)            |avg: 500                                 |
-|                                |min: 300                                 |
-|                                |max: 700                                 |
-+--------------------------------+-----------------------------------------+
++---------------------+---------------------+
+| Device Id           | 0                   |
+| Tile                | 0                   |
++---------------------+---------------------+
+| Start Time          | 2021-07-09 16:03:36 |
+| End Time            | 2021-07-09 19:03:36 |
+| Energy Consumed (J) | 2000                |
++---------------------+---------------------+
+| GPU_Computation (%) | avg: 70             |
+|                     | min: 70             |
+|                     | max: 70             |
++---------------------+---------------------+
+| Occupation (%)      | avg: 70             |
+|                     | min: 70             |
+|                     | max: 70             |
++---------------------+---------------------+
+| GPU_Frequency (MHz) | avg: 500            |
+|                     | min: 300            |
+|                     | max: 700            |
++---------------------+---------------------+
+| Device Id           | 0                   |
+| Tile                | 1                   |
++---------------------+---------------------+
+| Start Time          | 2021-07-09 16:03:36 |
+| End Time            | 2021-07-09 19:03:36 |
+| Energy Consumed (J) | 2000                |
++---------------------+---------------------+
+| GPU_Computation (%) | avg: 70             |
+|                     | min: 70             |
+|                     | max: 70             |
++---------------------+---------------------+
+| Occupation (%)      | avg: 70             |
+|                     | min: 70             |
+|                     | max: 70             |
++---------------------+---------------------+
+| GPU_Frequency (MHz) | avg: 500            |
+|                     | min: 300            |
+|                     | max: 700            |
++---------------------+---------------------+
+```
+
+# Telemetry subcommmand
+## Help info
+```
+$ xpumcli telemetry --help
+
+telemetry -- used to collect and dump metrics raw data
+
+Usage: xpumcli telemetry [-h] [start] [-d] [-g] [-t] [-m] [stop] [dump]
+
+Optional arguments:
+    -h, --help              Show this help message and exit
+    start                   Start metrics raw data collect task, will return a task id
+                                Notice XPU Manager supports at most 16 tasks coexist.
+                                When limit reached, start a new task will cause the oldest task 
+                                automatically terminated and data removed. 
+    -t, --tile              Collect metrics data at tile level
+    -m <metricsIds>, --metrics <metricsIds>           
+                            Metrics type to collect raw data, options:
+                                0. GPU Utilization
+                                1. Occupation
+                                2. Issue Efficiency
+                                3. Execution Efficiency
+                                4. Non Occupation
+                                5. Power
+                                6. Energy
+                                7. Gpu Frequency
+                                8. Gpu Temperature
+                                9. Memory Used
+                                10. Fabric Speed
+                                11. GtiReadThroughput
+                                12. GtiWriteThroughput
+    -d <deviceId>, --device <deviceId>  
+                            The device id to query
+    -g <groupId>, --group <groupId>     
+                            The group id to query
+    stop <taskId>           Stop corresponding collect task. 
+                                Notice a task collect 5000 time frames at most.
+                                When limit reached, the task will be terminated automatically.
+    dump <taskId>           Dump raw datas that collected in <taskId>, in csv format
+```
+
+## Start telemetry task
+```
+$ xpumcli telemetry start -m 0 5 7 8 9 -d 0 --tile
+Start telemetry successfully!
+Task id: 0
+
+$ xpumcli telemetry start -m 1 2 3 -g 0
+Start telemetry successfully!
+Task id: 1
+```
+
+## Stop telemetry task
+```
+$ xpumcli telemetry stop 0
+Stop telemetry successfully!
+```
+
+## Dump telemetry data
+```
+$ xpumcli telemetry dump 0
+Timestamp,DeviceId,TileId,Power(W),GPU Frequency(MHz),GPU Temperature(°C),Memory Used(MiB),GPU Utilization(%)
+2021-07-09 16:03:36,0,0,71,300,35,32.8,0
+2021-07-09 16:03:37,0,0,71,300,35,32.8,0
+2021-07-09 16:03:38,0,0,71,300,35,32.8,0
+2021-07-09 16:03:39,0,0,71,300,35,32.8,0
+2021-07-09 16:03:40,0,0,71,300,35,32.8,0
 ```

@@ -1,6 +1,6 @@
 FROM intel/oneapi-runtime:centos8
 COPY rpms /rpms
-RUN dnf install -y /rpms/*.rpm python3
+RUN dnf install -y /rpms/*.rpm python3 python3-devel
 
 COPY build-rpm /build-rpm
 RUN dnf install -y /build-rpm/*.rpm && \

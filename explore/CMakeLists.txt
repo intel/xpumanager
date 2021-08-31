@@ -17,6 +17,7 @@ link_directories(/usr/local/lib)
 include_directories(/usr/local/include/level_zero/)
 # Scan source code files
 
-#add_executable(test ${CMAKE_CURRENT_LIST_DIR}/test.cpp)
-add_executable(try1 ${CMAKE_CURRENT_LIST_DIR}/try1.cpp)
-target_link_libraries(try1 ze_loader hwloc)
+add_executable(test ${CMAKE_CURRENT_LIST_DIR}/test.cpp)
+target_link_libraries(test ze_loader)
+# add_executable(try1 ${CMAKE_CURRENT_LIST_DIR}/try1.cpp)
+# target_link_libraries(try1 ze_loader hwloc)
