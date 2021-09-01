@@ -3,8 +3,11 @@ install(
     FILES 
 		DGM.py
 		DGMCore.py
-        README.md
-        requirements.txt
+    api_pb2_grpc.py
+    api_pb2.py
+    README.md
+    requirements.txt
+        
     DESTINATION 
       py
 )
