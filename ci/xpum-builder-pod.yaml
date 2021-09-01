@@ -5,6 +5,9 @@ metadata:
     worker: xpum-builder
   namespace: jenkins
 spec:
+  tolerations:
+  - key: node-role.kubernetes.io/master
+    effect: NoSchedule
   containers:
     - args:
         - "99d"
@@ -111,6 +114,7 @@ spec:
   hostNetwork: false
   nodeSelector:
     kubernetes.io/os: "linux"
+    node-role.kubernetes.io/master: ""
   restartPolicy: "Never"
   volumes:
     - hostPath:
