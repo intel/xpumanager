@@ -4,3 +4,4 @@ requests==2.22.0
 texttable==1.6.3
 prometheus-client==0.11.0
 grpcio==1.39.0
+protobuf==3.17.3
