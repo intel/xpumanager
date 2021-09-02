@@ -1,56 +1,20 @@
 #!/usr/bin/python3
 
-import random
-import traceback
-
 from flask import Flask, json, jsonify
 from flask import render_template
 from flask import request, Response
 
 from DGMCore import DGMCore
+from kube_pod_resource import get_pod_resources
+from prometheus_exporter import get_metrics
 
 app = Flask(__name__)
 
 core = DGMCore()
 
 @app.route('/metrics', methods=['GET'])
-def prometheus_exporter():
-    try:
-        from prometheus_client import CollectorRegistry, Gauge, generate_latest
-        registry = CollectorRegistry()
-        labels = ['uuid', 'dev_name', 'pci_dev_id',
-                  'sub_dev_id', 'vendor', 'pci_bdf_addr']
-
-        code, _, data = core.getDeviceList()
-        metrics = {}
-        if code == 0:
-            for dev in data:
-                stat_code, _, stat_data = core.getStatistics(dev.get('DeviceId'))
-                if stat_code == 0 and 'dataList' in stat_data:
-                    label_values = [
-                        dev.get('UUID', ''),
-                        dev.get('DeviceName', ''),
-                        dev.get('PCIDeviceId', ''),
-                        dev.get('SubDeviceId', ''),
-                        dev.get('VendorName', ''),
-                        dev.get('PCIBDFAddress', '')
-                    ]
-                    for stat in stat_data['dataList']:
-                        metrics_type = stat.get('metricsType')
-                        value = stat.get('value')
-                        avg = stat.get('avg')
-                        export_value = avg if avg is not None else value
-                        if export_value is not None:
-                            if metrics_type not in metrics:
-                                metrics[metrics_type] = Gauge(metrics_type, f'{metrics_type}_DESCRIPTION',
-                                        labelnames=labels, registry=registry)
-                            gauge = metrics[metrics_type]
-                            gauge.labels(*label_values).set(export_value)
-
-        return generate_latest(registry)
-    except Exception as err:
-        traceback.print_exc()
-
+def export_metrics():
+    return get_metrics(core, get_pod_resources())
 
 @app.route('/rest/v1/version', methods=['GET'])
 def get_version():
