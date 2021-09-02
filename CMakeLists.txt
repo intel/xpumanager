@@ -115,6 +115,14 @@ install(
 		include
 )
 
+install(
+    FILES 
+		core/config/pci.ids
+		core/config/pci.switch
+    DESTINATION 
+		config
+)
+
 install(TARGETS DGMCore
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib

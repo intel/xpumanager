@@ -19,7 +19,7 @@ if (NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
 
-configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/version.cpp.in ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/version.cpp @ONLY)
+configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h @ONLY)
 
 # set(BUILD_TEST_API OFF BOOL "build application for api test")
 

@@ -1,0 +1,6 @@
+#
+# Syntax:
+# vendor_id  device_id 0|1 
+# (0:not a Switch) (1: a Switch)
+#
+0010  8139 0

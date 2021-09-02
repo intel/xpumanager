@@ -3,6 +3,15 @@
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 
+rm -rf pci.ids.upgrade
+curl -o pci.ids.upgrade "https://pci-ids.ucw.cz/v2.2/pci.ids" -S
+if [ $? -eq 0 ]; then    
+    cp -r pci.ids.upgrade ./core/config/pci.ids
+else
+    echo "upgrade pci.ids failed."
+    exit 1
+fi
+
 if [ -f "/etc/debian_version" ]; then
     rm -rf build-deb
     mkdir build-deb
