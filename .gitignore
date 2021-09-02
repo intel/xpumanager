@@ -4,5 +4,6 @@ __pycache__
 **/build-*/
 *.so
 DGMCore
-core/src/infrastructure/version.cpp
+core/src/infrastructure/xpum_config.h
 lib/
+core/config/pci.ids
