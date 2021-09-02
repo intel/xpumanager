@@ -54,31 +54,31 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId, xpum_device_stat
   if (data == nullptr) {
     return;
   }
-  std::vector<MeasurementType> metric_types;
-  Utility::getMetricsTypes(metric_types);
-  std::vector<MeasurementType>::iterator iter = metric_types.begin();
-  std::string device_id = std::to_string(deviceId);
-  data->deviceId = deviceId;
-  data->begin = Utility::getCurrentMillisecond();
-  data->end = 0;
-  while (iter != metric_types.end()) {
-    MeasurementData m_data = getLatestData(*iter, device_id);
-    data->begin = (uint64_t)m_data.getStartTime() < data->begin ? m_data.getStartTime():data->begin;
-    data->end = (uint64_t)m_data.getLatestTime() > data->end ? m_data.getLatestTime():data->end;
-    xpum_stats_type_t stats_type = Utility::xpumStatsTypeFromMeasurementType(*iter);
-    if (Utility::isCounterMetric(*iter)) {
-      data->dataList[stats_type].isCounter = true;
-      data->dataList[stats_type].value = m_data.getCurrent() - m_data.getMin();
-    } else {
-      data->dataList[stats_type].isCounter = false;
-      data->dataList[stats_type].avg = m_data.getAvg();
-      data->dataList[stats_type].min = m_data.getMin();
-      data->dataList[stats_type].max = m_data.getMax();
-      data->dataList[stats_type].value = m_data.getCurrent();
-    }
+  // std::vector<MeasurementType> metric_types;
+  // Utility::getMetricsTypes(metric_types);
+  // std::vector<MeasurementType>::iterator iter = metric_types.begin();
+  // std::string device_id = std::to_string(deviceId);
+  // data->deviceId = deviceId;
+  // data->begin = Utility::getCurrentMillisecond();
+  // data->end = 0;
+  // while (iter != metric_types.end()) {
+  //   MeasurementData m_data = getLatestData(*iter, device_id);
+  //   data->begin = (uint64_t)m_data.getStartTime() < data->begin ? m_data.getStartTime():data->begin;
+  //   data->end = (uint64_t)m_data.getLatestTime() > data->end ? m_data.getLatestTime():data->end;
+  //   xpum_stats_type_t stats_type = Utility::xpumStatsTypeFromMeasurementType(*iter);
+  //   if (Utility::isCounterMetric(*iter)) {
+  //     data->dataList[stats_type].isCounter = true;
+  //     data->dataList[stats_type].value = m_data.getCurrent() - m_data.getMin();
+  //   } else {
+  //     data->dataList[stats_type].isCounter = false;
+  //     data->dataList[stats_type].avg = m_data.getAvg();
+  //     data->dataList[stats_type].min = m_data.getMin();
+  //     data->dataList[stats_type].max = m_data.getMax();
+  //     data->dataList[stats_type].value = m_data.getCurrent();
+  //   }
     
-    data->dataList[stats_type].metricsType = stats_type;
-    ++iter;
-  }
+  //   data->dataList[stats_type].metricsType = stats_type;
+  //   ++iter;
+  // }
 }
 
