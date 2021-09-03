@@ -9,11 +9,11 @@
 #include <unistd.h>
 
 PciDatabase::PciDatabase() {
-    Logger::instance().info("PciDatabase()");
+    LOG_INFO("PciDatabase()");
 }
 
 PciDatabase::~PciDatabase() {
-    Logger::instance().info("~PciDatabase()");
+    LOG_INFO("~PciDatabase()");
     switch_config.clear();
     switch_device.clear();
 }
@@ -43,12 +43,18 @@ bool PciDatabase::init() {
         fileName = folder + "/../" + std::string(PCI_IDS_DIR) + std::string(PCI_IDS_CONFIG);
         infile.open(fileName.data());
 
+<<<<<<< HEAD
         if (infile.is_open()) {
             parse_switch_config(infile);
             infile.close();
             
         } else {
             Logger::instance().error("PciDatabase::init()- open file[" + fileName + "] error.");
+=======
+        if (!infile.is_open()) {
+            LOG_ERROR("PciDatabase::init()- open file[{}] error.", fileName);
+            return true;
+>>>>>>> bb8b231b416c0876872e05eee64f9b2502a7d767
         }
         
     }
@@ -62,6 +68,7 @@ bool PciDatabase::init() {
     infile.open(fileName.data());
 
     if (!infile.is_open()) {
+<<<<<<< HEAD
         Logger::instance().error("PciDatabase::init()- open file[" + fileName + "] error.");
         fileName = std::string(PCI_IDS_DIR_BAK) + std::string(PCI_IDS_FILE);
 
@@ -71,10 +78,14 @@ bool PciDatabase::init() {
             Logger::instance().error("PciDatabase::init()- open file[" + fileName + "] error.");
             return false;
         }
+=======
+        LOG_ERROR("PciDatabase::init()- open file[{}] error.", fileName);
+        return false;
+>>>>>>> bb8b231b416c0876872e05eee64f9b2502a7d767
     }
 
     if (!parse_pci_device(infile)) {
-        Logger::instance().error("PciDatabase::init()- parse_pci_device error.");
+        LOG_ERROR("PciDatabase::init()- parse_pci_device error.");
     }
 
     infile.close();
@@ -304,7 +315,7 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
                     switch_config[std::make_pair(vendor_id, device_id)] = true;
                 } else {
                     assert(0);
-                    Logger::instance().error("PciDatabase::parse_switch_config() error- unknow value.");
+                    LOG_ERROR("PciDatabase::parse_switch_config() error- unknow value.");
                 }
             }
         }
