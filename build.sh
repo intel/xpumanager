@@ -2,6 +2,7 @@
 
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
+HWLOC=hwloc-2.4.1
 
 rm -rf pci.ids.upgrade
 curl --proxy http://child-prc.intel.com:912 -o pci.ids.upgrade "https://pci-ids.ucw.cz/v2.2/pci.ids" -S
@@ -13,7 +14,9 @@ else
 fi
 
 echo "build hwloc"
-cd core/libs/hwloc
+cd core/libs
+tar -zxvf ${HWLOC}.tar.gz
+cd ${HWLOC}
 ./configure --enable-static --disable-shared LDFLAGS="--static"
 make
 
