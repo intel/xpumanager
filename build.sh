@@ -14,6 +14,7 @@ fi
 
 echo "build hwloc"
 cd core/libs/hwloc
+./autogen.sh
 ./configure --enable-static --disable-shared LDFLAGS="--static"
 make -j
 
