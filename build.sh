@@ -12,6 +12,14 @@ else
     exit 1
 fi
 
+echo "build hwloc"
+cd core/libs/hwloc
+./configure --enable-static --disable-shared LDFLAGS="--static"
+make
+
+cp "hwloc/.libs/libhwloc.a" ${WORK_DIR}/core/libs/
+
+cd ${WORK_DIR}
 if [ -f "/etc/debian_version" ]; then
     rm -rf build-deb
     mkdir build-deb
