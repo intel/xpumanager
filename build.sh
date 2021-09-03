@@ -19,22 +19,14 @@ make -j
 
 cp "hwloc/.libs/libhwloc.a" ${WORK_DIR}/core/libs/
 
+echo "build distribution package"
 cd ${WORK_DIR}
-if [ -f "/etc/debian_version" ]; then
-    rm -rf build-deb
-    mkdir build-deb
-    cd build-deb
-    cmake ..  $@
-    make -j
-    cpack    
-elif [ -f "/etc/redhat-release" ] || [ -f "/etc/SUSE-release" ]; then
-    rm -rf build-rpm
-    mkdir build-rpm
-    cd build-rpm
-    cmake ..  $@
-    make -j
-    cpack
-fi
+rm -rf build
+mkdir build
+cd build
+cmake ..  $@
+make -j
+cpack    
 
 if [ -f ~/password.sys_dcm ]; then
     PackageName=$(cat package_file_name)
