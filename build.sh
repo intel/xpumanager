@@ -18,7 +18,7 @@ cd core/libs
 tar -zxvf ${HWLOC}.tar.gz
 cd ${HWLOC}
 ./configure --enable-static --disable-shared LDFLAGS="--static"
-make
+make -j
 
 cp "hwloc/.libs/libhwloc.a" ${WORK_DIR}/core/libs/
 
