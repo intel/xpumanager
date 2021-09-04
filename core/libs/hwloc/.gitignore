@@ -9,6 +9,7 @@ test-suite.log
 *.o
 *.log
 *.trs
+configure.orig
 
 /auto.out
 /config.out

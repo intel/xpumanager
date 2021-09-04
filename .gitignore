@@ -3,6 +3,7 @@ __pycache__
 **/build/
 **/build-*/
 *.so
+*.a
 DGMCore
 core/src/infrastructure/xpum_config.h
 lib/
