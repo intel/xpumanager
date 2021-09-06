@@ -9,4 +9,6 @@ RUN pip3 install -r /requirements.txt
 COPY build-rpm /build-rpm
 RUN dnf install -y /build-rpm/*.rpm
 
+RUN dnf update -y
+
 ENTRYPOINT ["/usr/bin/python3", "/usr/local/xpum/py/DGM.py"]
