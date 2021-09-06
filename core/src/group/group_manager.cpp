@@ -6,11 +6,11 @@ GroupManager::GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_man
                             std::shared_ptr<DataLogicInterface>& p_data_logic) 
     : p_devicemanager(p_device_manager), p_datalogic(p_data_logic),
     groupSequence(0)  {
-    LOG_INFO("GroupManager");
+    LOG_INFO("GroupManager()");
 }
 
 GroupManager::~GroupManager() {    
-    LOG_INFO("~GroupManager");
+    LOG_INFO("~GroupManager()");
     groupMap.clear();
 }
 
