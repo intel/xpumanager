@@ -12,13 +12,14 @@ else
     exit 1
 fi
 
-echo "build hwloc"
-cd core/libs/hwloc
-./autogen.sh
-./configure --enable-static --disable-shared LDFLAGS="--static"
-make -j
-
-cp "hwloc/.libs/libhwloc.a" ${WORK_DIR}/core/libs/
+if [ ! -f /usr/local/hwloc/lib/libhwloc.a ]; then
+    echo "build hwloc"
+    cd core/libs/hwloc
+    ./autogen.sh --with-pic
+    ./configure  --prefix=/usr/local/hwloc --enable-static --disable-shared LDFLAGS="--static" CFLAGS="-fPIC"
+    make -j
+    make install
+fi
 
 echo "build distribution package"
 cd ${WORK_DIR}

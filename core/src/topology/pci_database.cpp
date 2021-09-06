@@ -254,6 +254,8 @@ bool PciDatabase::parse_level_2(const std::string &info, int len, id_type *type,
     } break;
     case ID_VENDOR: {
         assert(0);
+        LOG_ERROR("PciDatabase::parse_level_2() error- unknow device.");
+        bResult = true;
     } break;
     }
 
@@ -347,6 +349,7 @@ void PciDatabase::add_switch_device(int32_t vendor_id, int32_t device_id, std::s
         }
     } else {
         assert(0);
+        LOG_ERROR("PciDatabase::add_switch_device() error- unknow device[%s].", device.tostring());
     }    
 }
 

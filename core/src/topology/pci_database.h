@@ -19,7 +19,7 @@ struct PciDevice {
               + std::string("\rsub_device_id:") + std::to_string(sub_d_id)
               + std::string("\rverdor:") + verdor_name
               + std::string("\rdevice:") + device_name
-              + std::string("sub name:") + sub_s_name;;            
+              + std::string("sub name:") + sub_s_name;           
     }
 };
 

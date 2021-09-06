@@ -31,10 +31,14 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in ${C
 #else()
 #endif()
 
-# Specifiy header file location
+# Specifiy link file location
 link_directories(/usr/local/lib)
+link_directories(/usr/local/hwloc/lib)
+
+# Specifiy header file location
 include_directories(/usr/local/include/level_zero/)
 include_directories(/usr/include/level_zero/)
+include_directories(/usr/local/hwloc/include/)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/api)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/control)
@@ -50,6 +54,7 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/src/policy)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/group)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/health)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/src/topology)
 
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/api API_SRC)
@@ -66,6 +71,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/policy POLICY_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/group GROUP_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
 
 if (BUILD_TEST)
 
@@ -106,9 +112,10 @@ target_sources(
   ${GROUP_SRC}
   ${HEALTH_SRC}
   ${DIAGNOSTIC_SRC}
+  ${TOPOLOGY_SRC}
 )
 
 add_subdirectory( ./libs/spdlog )
-target_link_libraries(DGMCore ze_loader dl spdlog)
+target_link_libraries(DGMCore ze_loader dl spdlog hwloc)
 
 unset(BUILD_TEST CACHE) 
