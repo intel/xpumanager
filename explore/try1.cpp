@@ -15,8 +15,8 @@
 #include <chrono>
 #include <thread>
 
-#include "zes_api.h"
-#include "ze_api.h"
+//#include "zes_api.h"
+//#include "ze_api.h"
 
 #define MAX_PATH_LEN 256
 
@@ -100,7 +100,7 @@ int get_hwloc_topo(uint32_t domain, uint32_t bus, uint32_t device, uint32_t func
  
     return 0;
 }
-
+/*
 int test_level_zero() {
 
 	ze_result_t ze_result;
@@ -159,41 +159,93 @@ int test_level_zero() {
         }
     }
     return 0;
+}*/
+
+
+static void print_self(hwloc_obj_t obj)
+{
+    if(obj->type == HWLOC_OBJ_BRIDGE) {
+        /* only host->pci and pci->pci bridge supported so far */
+        if (obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_HOST) {
+        assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
+        printf(" Found (count:%d:) host->PCI bridge for domain %x bus %x-%x\n",
+            obj->io_arity, 
+          //  obj->attr->bridge.upstream.pci.vendor_id,
+          //  obj->attr->bridge.upstream.pci.device_id,
+            obj->attr->bridge.downstream.pci.domain,
+            obj->attr->bridge.downstream.pci.secondary_bus,
+            obj->attr->bridge.downstream.pci.subordinate_bus);
+        } else {
+        assert(obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI);
+        assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
+        printf("- Found (count:%d:) PCI->PCI bridge [%x:%x] for domain %x bus %x-%x\n",
+            obj->io_arity,
+            obj->attr->bridge.upstream.pci.vendor_id,
+            obj->attr->bridge.upstream.pci.device_id,
+            obj->attr->bridge.downstream.pci.domain,
+            obj->attr->bridge.downstream.pci.secondary_bus,
+            obj->attr->bridge.downstream.pci.subordinate_bus);
+        }
+    } else {
+        printf("unknow type >>>>> %d\n", obj->type);
+    }
 }
 
+static void print_obj(hwloc_obj_t obj)
+{
+    if(obj->type == HWLOC_OBJ_PCI_DEVICE){
+        printf(" Found PCI (%04x %02x:%02x.%x) PCI device class %x  [%x:%x]\n",
+            obj->attr->pcidev.domain, obj->attr->pcidev.bus,obj->attr->pcidev.dev,obj->attr->pcidev.func,
+	        obj->attr->pcidev.class_id, obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
+    } else {
+        printf("unknow type <<<<<<< %d\n", obj->type);
+    }
+}
+
+static void walk_children(hwloc_topology_t topology, hwloc_obj_t obj)
+{
+    char type[32];
+    hwloc_obj_type_snprintf(type, sizeof(type), obj, 0);
+    printf("%*s%s", 2, "", type);
+    printf("->");
+    print_self(obj);
+
+    printf("\n");
+
+    hwloc_obj_t objChild = obj->io_first_child;
+
+    if(objChild == NULL) {
+        return;
+    }
+    printf("begin ::::::::::::::::::::::::::::::::::::::\n");
+    while(objChild != NULL) {
+        print_obj(objChild);
+        objChild = objChild->next_sibling;
+    }
+    printf("end ::::::::::::::::::::::::::::::::::::::\n");
+}
+ 
 void test_topo() {
     hwloc_topology_t topology;
-  hwloc_obj_t obj;
+ 
 
   hwloc_topology_init(&topology);
   hwloc_topology_set_io_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL);
   hwloc_topology_load(topology);
 
+ // printf("*** **********************************************\n");
+ //   walk_children(topology, hwloc_get_root_obj(topology));
+//printf("*** **********************************************e\n");
+
+
+ hwloc_obj_t obj;
   printf("Found %d bridges\n", hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_BRIDGE));
   obj = nullptr;
   while ((obj = hwloc_get_next_bridge(topology, obj)) != NULL) {
-    assert(obj->type == HWLOC_OBJ_BRIDGE);
-    /* only host->pci and pci->pci bridge supported so far */
-    if (obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_HOST) {
-      assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
-      printf(" Found (%s) host->PCI bridge for domain %x bus %x-%x\n",
-         obj->name,
-	     obj->attr->bridge.downstream.pci.domain,
-	     obj->attr->bridge.downstream.pci.secondary_bus,
-	     obj->attr->bridge.downstream.pci.subordinate_bus);
-    } else {
-      assert(obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI);
-      assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
-      printf(" Found (%s) PCI->PCI bridge [%x:%x] for domain %x bus %x-%x\n",
-         obj->name,
-	     obj->attr->bridge.upstream.pci.vendor_id,
-	     obj->attr->bridge.upstream.pci.device_id,
-	     obj->attr->bridge.downstream.pci.domain,
-	     obj->attr->bridge.downstream.pci.secondary_bus,
-	     obj->attr->bridge.downstream.pci.subordinate_bus);
-    }
+    
+    walk_children(topology, obj);
   }
-
+/*
   printf("Found %d PCI devices\n", hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PCI_DEVICE));
   obj = nullptr;
   while ((obj = hwloc_get_next_pcidev(topology, obj)) != nullptr) {
@@ -209,7 +261,7 @@ void test_topo() {
     assert(obj->type == HWLOC_OBJ_OS_DEVICE);
     printf(" Found OS device %s subtype %d\n", obj->name, obj->attr->osdev.type);
   }
-
+*/
   assert(HWLOC_TYPE_DEPTH_BRIDGE == hwloc_get_type_depth(topology, HWLOC_OBJ_BRIDGE));
   assert(HWLOC_TYPE_DEPTH_PCI_DEVICE == hwloc_get_type_depth(topology, HWLOC_OBJ_PCI_DEVICE));
   assert(HWLOC_TYPE_DEPTH_OS_DEVICE == hwloc_get_type_depth(topology, HWLOC_OBJ_OS_DEVICE));
