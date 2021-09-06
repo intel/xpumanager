@@ -10,6 +10,6 @@ COPY build-rpm /build-rpm
 RUN dnf install -y /build-rpm/*.rpm
 
 RUN dnf update -y && \
-dnf remove -y kernel-devel kernel-headers
+dnf remove -y kernel-devel kernel-headers sqlite-libs
 
 ENTRYPOINT ["/usr/bin/python3", "/usr/local/xpum/py/DGM.py"]
