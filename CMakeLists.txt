@@ -50,6 +50,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(core)
 add_subdirectory(py)
+add_subdirectory(cli)
 
 if(NOT DEFINED CPACK_GENERATOR)
 	if(EXISTS "/etc/debian_version")

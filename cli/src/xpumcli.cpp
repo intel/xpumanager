@@ -1,11 +1,19 @@
+#include "cli_wrapper.h"
+#include "comlet_version.h"
 #include <CLI/CLI.hpp>
 
-#include "comlet_version.h"
+int main(int argc, char **argv) {
 
-int main() {
-    std::shared_ptr<ComletVersion> comlet = std::make_shared<ComletVersion>();
-    auto map = std::map<std::string, std::string>();
-    comlet->setupCommand(map);
-    comlet->runCommand(ComletVersionOption());
-    comlet->baseProcess();
+    CLI::App app{"Intel XPU Manager Command Line Interface"};
+
+    CLIWrapper wrapper(app);
+
+    ComletVersion comletVersion;
+    wrapper.addComlet(comletVersion);
+
+    app.require_subcommand();
+
+    CLI11_PARSE(app, argc, argv);
+
+    return 0;
 }

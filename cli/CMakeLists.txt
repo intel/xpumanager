@@ -12,13 +12,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Specifiy header file location
 link_directories(/usr/local/lib)
-include_directories(${CMAKE_SOURCE_DIR}/src)
-include_directories(${CMAKE_SOURCE_DIR}/libs/CLI11/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/CLI11/include)
 
 # Scan source code files
-aux_source_directory(${CMAKE_SOURCE_DIR}/src XPUM_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_SRC)
 
-add_executable(xpumcli ${CMAKE_SOURCE_DIR}/src/xpumcli.cpp)
+add_executable(xpumcli ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
 target_sources(
   xpumcli

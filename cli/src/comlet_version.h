@@ -1,18 +1,24 @@
 #pragma once
 
-#include <comlet_base.h>
+#include "comlet_base.h"
+
 #include <string>
 
-struct ComletVersionOption {
-    std::string arg1;
-    void debug();
+struct ComletVersionOptions {
+    bool verbose;
+    std::string argA;
+    std::string argB;
+    int times;
 };
 
-class ComletVersion : public ComletBase<ComletVersionOption> {
+class ComletVersion : public ComletBase {
 
   public:
     ComletVersion() : ComletBase("version") {}
 
-    void setupCommand(std::map<std::string, std::string> &opt) override;
-    void runCommand(ComletVersionOption const &opt) override;
+    virtual void setupOptions() override;
+    virtual void run() override;
+
+  private:
+    std::shared_ptr<ComletVersionOptions> opts;
 };
