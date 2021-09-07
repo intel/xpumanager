@@ -10,6 +10,15 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if (NOT DEFINED XPUM_VERSION_STRING)
+  set(XPUM_VERSION_STRING 0.1.0)
+endif()
+
+configure_file(
+  ${CMAKE_CURRENT_LIST_DIR}/src/config.h.in 
+  ${CMAKE_CURRENT_LIST_DIR}/src/config.h 
+  @ONLY)
+
 # Specifiy header file location
 link_directories(/usr/local/lib)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
@@ -24,5 +33,4 @@ target_sources(
   xpumcli
   PUBLIC
   ${XPUM_SRC}
-
 )

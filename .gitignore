@@ -6,6 +6,7 @@ __pycache__
 *.a
 DGMCore
 core/src/infrastructure/xpum_config.h
+cli/src/config.h
 lib/
 core/config/pci.ids
 pci.ids.upgrade

@@ -124,7 +124,7 @@ install(
 		config
 )
 
-install(TARGETS DGMCore
+install(TARGETS DGMCore xpumcli
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION .)
