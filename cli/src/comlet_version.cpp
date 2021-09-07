@@ -1,4 +1,5 @@
 #include "comlet_version.h"
+#include "config.h"
 
 #include <iostream>
 
@@ -11,6 +12,7 @@ void ComletVersion::setupOptions() {
 }
 
 void ComletVersion::run() {
+    std::cout << "CLI Version: " << XPUM_VERSION << std::endl;
     std::cout << "verbose:" << this->opts->verbose << std::endl;
     std::cout << "argA:" << this->opts->argA << std::endl;
     std::cout << "argB:" << this->opts->argB << std::endl;

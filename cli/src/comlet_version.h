@@ -1,6 +1,7 @@
 #pragma once
 
 #include "comlet_base.h"
+#include "config.h"
 
 #include <string>
 
