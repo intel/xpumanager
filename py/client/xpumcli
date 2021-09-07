@@ -85,6 +85,64 @@ diag_parser.add_argument('-g', '--group', metavar="<groupId>", dest="groupId", t
 diag_parser.add_argument('-l', '--level', metavar="<level>", dest="level", type=int,
                           help='The diagnostics level to run')
 
+# standby subcommand parser
+diag_parser = subparsers.add_parser("standby", help="Get/set standby mode")
+diag_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+                          help='The device id to query')
+diag_parser.add_argument('-s', '--subdeviceid', metavar="<subDeviceId>", dest="subDeviceId", type=int,
+                          help='The sub device id to query')
+diag_parser.add_argument('-t', '--type', metavar="<standbyType>", dest="standbyType", type=int,
+                          help='Set standby type for device')
+diag_parser.add_argument('-m', '--mode', metavar="<mode>", dest="mode", type=int,
+                          help='The mode for device')
+
+# powerlimit subcommand parser
+diag_parser = subparsers.add_parser("powerlimit", help="Get/set powerlimit")
+diag_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+                          help='The device id to query')
+diag_parser.add_argument('-s', '--subdeviceid', metavar="<subDeviceId>", dest="subDeviceId", type=int,
+                          help='The sub device id to query')
+diag_parser.add_argument('-t', '--type', metavar="<limitType>", dest="limitType", type=int,
+                          help='Set power limit type for device')
+diag_parser.add_argument('-e', '--enabled', metavar="<enabled>", dest="enabled", type=int,
+                          help='Set enabled value for device')
+diag_parser.add_argument('-p', '--power', metavar="<power>", dest="power", type=int,
+                          help='Set power value for device')
+diag_parser.add_argument('-i', '--interval', metavar="<interval>", dest="interval", type=int,
+                          help='Set interval value for device')
+diag_parser.add_argument('-a', '--powerAC', metavar="<powerAC>", dest="powerAC", type=int,
+                          help='Set powerAC value for device')
+diag_parser.add_argument('-d', '--powerDC', metavar="<powerDC>", dest="powerDC", type=int,
+                          help='Set powerDC value for device')
+
+# frequencyRange subcommand parser
+diag_parser = subparsers.add_parser("frequencyRange", help="Get/set frequency ranges")
+diag_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+                          help='The device id to query')
+diag_parser.add_argument('-s', '--subdeviceid', metavar="<subDeviceId>", dest="subDeviceId", type=int,
+                          help='The sub device id to query')
+diag_parser.add_argument('-t', '--type', metavar="<type>", dest="type", type=int,
+                          help='Set frequency ranges type for device')
+diag_parser.add_argument('-i', '--min', metavar="<min>", dest="min", type=int,
+                          help='Set min value for device')
+diag_parser.add_argument('-a', '--max', metavar="<max>", dest="max", type=int,
+                          help='Set max value for device')
+
+# scheduler subcommand parser
+diag_parser = subparsers.add_parser("scheduler", help="Get/set scheduler")
+diag_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+                          help='The device id to query')
+diag_parser.add_argument('-s', '--subdeviceid', metavar="<subDeviceId>", dest="subDeviceId", type=int,
+                          help='The sub device id to query')
+diag_parser.add_argument('-t', '--type', metavar="<schedulerType>", dest="schedulerType", type=int,
+                          help='Set scheduler type for device')
+diag_parser.add_argument('-w', '--watchdogTimeout', metavar="<watchdogTimeout>", dest="watchdogTimeout", type=int,
+                          help='Set watchdogTimeout value for device')
+diag_parser.add_argument('-i', '--interval', metavar="<interval>", dest="interval", type=int,
+                          help='Set interval value for device')
+diag_parser.add_argument('-y', '--yieldTimeout', metavar="<yieldTimeout>", dest="yieldTimeout", type=int,
+                          help='Set yieldTimeout value for device')
+
 class PrintTable:
     _t = Texttable()
 
@@ -207,6 +265,47 @@ def arg():
         else:
             diag_parser.print_help()
             return
+    elif parsed.subcommand == "standby":
+        if parsed.deviceId is not None:
+            get_device_standbys(parsed.deviceId)
+            return
+        elif parsed.standbyType is not None and parsed.mode is not None:
+            set_device_standby(parsed.deviceId, parsed.subDeviceId, parsed.standbyType, parsed.mode)
+            return
+        else:
+            diag_parser.print_help()
+            return
+    elif parsed.subcommand == "powerlimit":
+        if parsed.deviceId is not None and parsed.subDeviceId is not None:
+            get_device_powerlimits(parsed.deviceId, parsed.subDeviceId)
+            return
+        elif parsed.limitType is not None:
+            set_device_powerlimit(parsed.deviceId, parsed.subDeviceId, parsed.limitType, parsed.enabled, parsed.power, parsed.interval, parsed.powerAC, parsed.powerDC)
+            return
+        else:
+            diag_parser.print_help()
+            return
+    elif parsed.subcommand == "frequencyRange":
+        if parsed.deviceId is not None:
+            get_device_frequencyRanges(parsed.deviceId)
+            return
+        elif parsed.type is not None:
+            set_device_frequencyRange(parsed.deviceId, parsed.subDeviceId, parsed.type, parsed.min, parsed.max)
+            return
+        else:
+            diag_parser.print_help()
+            return
+    elif parsed.subcommand == "scheduler":
+        if parsed.deviceId is not None:
+            get_device_schedulers(parsed.deviceId)
+            return
+        elif parsed.schedulerType is not None:
+            set_device_scheduler(parsed.deviceId, parsed.subDeviceId, parsed.schedulerType, parsed.watchdogTimeout, parsed.interval, parsed.yieldTimeout)
+            return
+        else:
+            diag_parser.print_help()
+            return
+
 
     parser.print_help()
 
@@ -716,6 +815,27 @@ def set_group_health_config(groupId, healthType, threshold):
         return
     display_group_health(groupId)
 
+def get_device_standbys(deviceId):
+    return
+
+def set_device_standby(deviceId, subDeviceId, standbyType, mode):
+    return
+
+def get_device_powerlimits(deviceId, subDeviceId):
+    return
+
+def set_device_powerlimit(deviceId, subDeviceId, limitType, enabled, power, interval, powerAC, powerDC):
+    return
+
+def get_device_frequencyRanges(deviceId):
+    return
+
+def set_device_frequencyRange(deviceId, subDeviceId, type, min, max):
+    return
+def get_device_schedulers(deviceId):
+    return
+def set_device_scheduler(deviceId, subDeviceId, schedulerType, watchdogTimeout, interval, yieldTimeout):
+    return
 
 if __name__ == "__main__":
     arg()

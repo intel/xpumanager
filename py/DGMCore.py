@@ -204,6 +204,111 @@ class XpumDiagTaskInfo(Structure):
         ("count", c_int32),
     ]
 
+XpumStandbyType = Enum("xpum_standby_type_t", (
+    "XPUM_GLOBAL" (1<<0),
+    "XPUM_STANDBY_TYPE_FORCE_UINT32" (0x7fffffff)
+), )
+
+XpumStandbyMode = Enum("xpum_standby_mode_t", (
+    "XPUM_DEFAULT" (1<<0),
+    "XPUM_NEVER" (1<<1),
+    "XPUM_STANDBY_MODE_FORCE_UINT32" (0x7fffffff)
+), )
+
+class XpumStandbyData(Structure):
+    _fields_ = [
+        ("standbyType", XpumStandbyType),
+        ("onSubdevice", c_bool),
+        ("subdeviceId", c_uint32),
+        ("mode", XpumStandbyMode),
+    ]
+
+class XpumPowerSustainedLimit(Structure):
+    _fields_ = [
+        ("enabled", c_bool),
+        ("power", c_int32),
+        ("interval", c_int32),
+    ]
+
+class XpumPowerBurstLimit(Structure):
+    _fields_ = [
+        ("enabled", c_bool),
+        ("power", c_int32),
+    ]
+
+class XpumPowerPeakLimit(Structure):
+    _fields_ = [
+        ("powerAC", c_int32),
+        ("powerDC", c_int32),
+    ]
+
+class XpumPowerLimits(Structure):
+    _fields_ = [
+        ("sustainedLimit", XpumPowerSustainedLimit),
+        ("burstLimit", XpumPowerBurstLimit),
+        ("peakLimit", XpumPowerPeakLimit),
+    ]
+
+XpumFrequency_type = Enum("xpum_frequency_type_t", (
+    "XPUM_GPU_FREQUENCY" (0),
+    "XPUM_MEMORY_FREQUENCY" (1),
+    "XPUM_FORCE_UINT32" (0x7fffffff)
+), )
+
+class XpumFrequencyRange(Structure):
+     _fields_ = [
+        ("type", XpumFrequency_type),
+        ("subdeviceId", c_int32),
+        ("min", c_double),
+        ("max", c_double),
+    ]
+
+XpumSchedulerMode = Enum("xpum_scheduler_mode_t", (
+    "XPUM_TIMEOUT" (0),
+    "XPUM_TIMESLICE" (1),
+    "XPUM_EXCLUSIVE" (2),
+    "XPUM_COMPUTE_UNIT_DEBUG" (3),
+    "XPUM_MODE_FORCE_UINT32" (0x7fffffff)
+), )
+
+XpumEngineTypeFlags = Enum("xpum_engine_type_flags_t", (
+  "XPUM_UNDEFINED" (1 << 0),
+  "XPUM_COMPUTE" (1 << 1),
+  "XPUM_THREE_D" (1 << 2),
+  "XPUM_MEDIA" (1 << 3),
+  "XPUM_COPY" (1 << 4),
+  "XPUM_RENDER" (1 << 5),
+  "XPUM_TYPE_FLAGS_FORCE_UINT32" (0x7fffffff)
+),)
+
+class XpumSchedulerData(Structure):
+     _fields_ = [
+        ("onSubdevice", c_bool),
+        ("subdeviceId", c_int32),
+        ("canControl", c_bool),
+        ("mode", XpumSchedulerMode),
+        ("engineType", XpumEngineTypeFlags),
+        ("supportedMode", XpumSchedulerMode),
+    ]
+
+class XpumSchedulerTimeout(Structure):
+     _fields_ = [
+        ("subdeviceId", c_int32),
+        ("watchdogTimeout", c_uint64),
+    ]
+
+class XpumSchedulerTimeslice(Structure):
+     _fields_ = [
+        ("subdeviceId", c_int32),
+        ("interval", c_uint64),
+        ("yieldTimeout", c_uint64),
+    ]
+
+class XpumSchedulerExclusive(Structure):
+     _fields_ = [
+        ("subdeviceId", c_int32),
+    ]
+
 class DGMCore:
     def __init__(self):
         py_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -614,3 +719,163 @@ class DGMCore:
             datas.append(data)
 
         return 0, "OK", dict(GroupId=groupId, Diagnostics=datas)
+    
+    def getDeviceStandbys(self, deviceId):
+        devicedStandbyArray = (XpumStandbyData * 32)()
+        count = c_int(32)
+        res = self.lib.xpumGetDeviceStandbys(c_int32(deviceId), byref(devicedStandbyArray), byref(count))
+        if res != 0:
+            return res, "Fail to get device standby result", None
+        
+        dataArray = []
+        for standbyInfo in devicedStandbyArray[:count.value]:
+            data = dict()
+            data['standbyType'] = standbyInfo.standbyType
+            data['onSubdevice'] = standbyInfo.onSubdevice
+            data['subdeviceId'] = standbyInfo.subdeviceId
+            data['mode'] = standbyInfo.mode
+            dataArray.append(data)
+        return 0, "OK", dict(DeviceId=deviceId, Standbys=dataArray)
+
+    def setDeviceStandby(self, deviceId, standbyType, subDeviceId, mode):
+        standby = XpumStandbyData()
+        standby.standbyType = c_int(standbyType)
+        if(subDeviceId != -1):
+            standby.onSubdevice = c_bool(True)
+            standby.subdeviceId = c_int(subDeviceId)
+        else:
+            standby.onSubdevice = c_bool(False)
+            standby.subdeviceId = c_int(subDeviceId)
+        standby.mode = c_int(mode)
+
+        res = self.lib.xpumSetDeviceStandby(c_int32(deviceId), byref(standby))
+        if res != 0:
+            return res, "Fail to set device standby", None
+        return 0, "OK", {"result": "OK"}
+    
+    def getDevicePowerLimits(self, deviceId, subDeviceId):
+        sustainedLimit = XpumPowerSustainedLimit()
+        burstLimit = XpumPowerBurstLimit()
+        peakLimit = XpumPowerPeakLimit()
+        powerLimit = XpumPowerLimits()
+        powerLimit.sustainedLimit = sustainedLimit
+        powerLimit.burstLimit = burstLimit
+        powerLimit.peakLimit = peakLimit
+
+        res = self.lib.xpumGetDevicePowerLimits(c_int32(deviceId), c_int32(subDeviceId), byref(powerLimit))
+        if res != 0:
+            return res, "Fail to get device power limits", None
+        limits = dict()
+        limits['sustainedLimit'] = powerLimit.sustainedLimit
+        limits['burstLimit'] = powerLimit.burstLimit
+        limits['peakLimit'] = powerLimit.peakLimit
+        return 0, "OK", dict(DeviceId=deviceId, subDevice=dict(subDeviceId=subDeviceId, limits=limits))
+
+    def setDevicePowerSustainedLimits(self, deviceId, subDeviceId, enabled, power, interval):
+        sustainedLimit = XpumPowerSustainedLimit()
+        sustainedLimit.enabled = c_bool(enabled)
+        sustainedLimit.power = c_int32(power)
+        sustainedLimit.interval = c_int32(interval)
+        res = self.lib.xpumSetDevicePowerSustainedLimits(c_int32(deviceId), c_int32(subDeviceId), byref(sustainedLimit))
+        if res != 0:
+            return res, "Fail to set device power limit", None
+        return 0, "OK", {"result": "OK"}
+    
+    def setDevicePowerBurstLimits(self, deviceId, subDeviceId, enabled, power):
+        BurstLimit = XpumPowerBurstLimit()
+        BurstLimit.enabled = c_bool(enabled)
+        BurstLimit.power = c_int32(power)
+
+        res = self.lib.xpumSetDevicePowerBurstLimits(c_int32(deviceId), c_int32(subDeviceId), byref(BurstLimit))
+        if res != 0:
+            return res, "Fail to set device power limit", None
+        return 0, "OK", {"result": "OK"}
+    
+    def setDevicePowerPeakLimits(self, deviceId, subDeviceId, powerAC, powerDC):
+        PeakLimit = XpumPowerPeakLimit()
+        PeakLimit.powerAC = c_int32(powerAC)
+        PeakLimit.powerDC = c_int32(powerDC)
+
+        res = self.lib.xpumSetDevicePowerPeakLimits(c_int32(deviceId), c_int32(subDeviceId), byref(PeakLimit))
+        if res != 0:
+            return res, "Fail to set device power limit", None
+        return 0, "OK", {"result": "OK"}
+    
+    def getDeviceFrequencyRanges(self, deviceId):
+        deviceFreqArray = (XpumFrequencyRange *32) ()
+        count = c_int(32)
+        res = self.lib.xpumGetDeviceFrequencyRanges(c_int32(deviceId), byref(deviceFreqArray), byref(count))
+        if res != 0:
+            return res, "Fail to get device frequency ranges result", None
+        
+        dataArray = []
+        for deviceFreq in deviceFreqArray[:count.value]:
+            data = dict()
+            data['type'] = deviceFreq.type
+            data['subdeviceId'] = deviceFreq.subdeviceId
+            data['min'] = deviceFreq.min
+            data['max'] = deviceFreq.max
+            dataArray.append(data)
+        return 0, "OK", dict(DeviceId=deviceId, FrequencyRange=dataArray)
+    
+    def setDeviceFrequencyRanges(self, deviceId, type, subDeviceId, min, max):
+        deviceFreq = XpumFrequencyRange()
+        deviceFreq.type = XpumFrequency_type(type)
+        deviceFreq.subdeviceId = c_int32(subDeviceId)
+        deviceFreq.min = c_int(min)
+        deviceFreq.max = c_int(max)
+
+        res = self.lib.xpumSetDeviceFrequencyRange(c_int32(deviceId), byref(deviceFreq))
+        if res != 0:
+            return res, "Fail to set device frequency range limit", None
+        return 0, "OK", {"result": "OK"}
+    
+    def getDeviceSchedulers(self, deviceId):
+        deviceSchedulerArray = (XpumSchedulerData *32) ()
+        count = c_int(32)
+        res = self.lib.xpumGetDeviceSchedulers(c_int32(deviceId), byref(deviceSchedulerArray), byref(count))
+        if res != 0:
+            return res, "Fail to get device schedulers result", None
+        
+        dataArray = []
+        for scheduler in deviceSchedulerArray[:count.value]:
+            data = dict()
+            data['onSubdevice'] = scheduler.onSubdevice
+            data['subdeviceId'] = scheduler.subdeviceId
+            data['canControl'] = scheduler.canControl
+            data['mode'] = scheduler.mode
+            data['engineType'] = scheduler.engineType
+            data['supportedMode'] = scheduler.supportedMode
+            dataArray.append(data)
+        return 0, "OK", dict(DeviceId=deviceId, schedulers=dataArray)
+    
+    def setDeviceSchedulerTimeoutMode(self, deviceId, subDeviceId, watchdogTimeout):
+        schedulerTimeout = XpumSchedulerTimeout()
+        schedulerTimeout.subdeviceId = c_int32(subDeviceId)
+        schedulerTimeout.watchdogTimeout = c_int64(watchdogTimeout)
+
+        res = self.lib.xpumSetDeviceSchedulerTimeoutMode(c_int32(deviceId), byref(schedulerTimeout))
+        if res != 0:
+            return res, "Fail to set device scheduler timeout", None
+        return 0, "OK", {"result": "OK"}
+    
+    def setDeviceSchedulerTimesliceMode(self, deviceId, subDeviceId, interval, yieldTimeout):
+        schedulerTimeslice = XpumSchedulerTimeslice()
+        schedulerTimeslice.subdeviceId = c_int32(subDeviceId)
+        schedulerTimeslice.interval = c_int32(interval)
+        schedulerTimeslice.yieldTimeout = c_int64(yieldTimeout)
+
+        res = self.lib.xpumSetDeviceSchedulerTimesliceMode(c_int32(deviceId), byref(schedulerTimeslice))
+        if res != 0:
+            return res, "Fail to set device scheduler timeslice", None
+        return 0, "OK", {"result": "OK"}
+    
+    def setDeviceSchedulerExclusiveMode(self, deviceId, subDeviceId):
+        schedulerExc = XpumSchedulerExclusive()
+        schedulerExc.subdeviceId = c_int32(subDeviceId)
+
+        res = self.lib.xpumSetDeviceSchedulerTimesliceMode(c_int32(deviceId), byref(schedulerExc))
+        if res != 0:
+            return res, "Fail to set device scheduler Exclusive Mode", None
+        return 0, "OK", {"result": "OK"}
+    
