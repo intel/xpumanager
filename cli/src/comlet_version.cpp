@@ -1,7 +1,6 @@
 #include "comlet_version.h"
-#include "config.h"
 
-#include <iostream>
+#include "config.h"
 
 void ComletVersion::setupOptions() {
     this->opts = std::make_shared<ComletVersionOptions>();
@@ -11,10 +10,16 @@ void ComletVersion::setupOptions() {
     addOption("-n, --times", this->opts->times, "integer arg", false);
 }
 
-void ComletVersion::run() {
-    std::cout << "CLI Version: " << XPUM_VERSION << std::endl;
-    std::cout << "verbose:" << this->opts->verbose << std::endl;
-    std::cout << "argA:" << this->opts->argA << std::endl;
-    std::cout << "argB:" << this->opts->argB << std::endl;
-    std::cout << "times:" << this->opts->times << std::endl;
+std::unique_ptr<nlohmann::json> ComletVersion::run() {
+
+    std::unique_ptr<nlohmann::json> json(new nlohmann::json);
+
+    *json = {
+        {"CLIVersion", XPUM_VERSION},
+        {"Verbose", this->opts->verbose},
+        {"argA", this->opts->argA},
+        {"argB", this->opts->argB},
+        {"times", this->opts->times}};
+
+    return json;
 }

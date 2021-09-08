@@ -2,6 +2,7 @@
 
 #include "cli_wrapper.h"
 #include <CLI/CLI.hpp>
+#include <nlohmann/json.hpp>
 
 #include <cassert>
 #include <string>
@@ -15,7 +16,7 @@ class ComletBase {
     virtual ~ComletBase() {}
 
     virtual void setupOptions() = 0;
-    virtual void run() = 0;
+    virtual std::unique_ptr<nlohmann::json> run() = 0;
 
   protected:
     template <typename T>
