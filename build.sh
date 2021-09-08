@@ -3,13 +3,21 @@
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 
-rm -rf pci.ids.upgrade
-curl --proxy http://child-prc.intel.com:912 -o pci.ids.upgrade "https://pci-ids.ucw.cz/v2.2/pci.ids" -S
-if [ $? -eq 0 ]; then    
-    cp -r pci.ids.upgrade ./core/config/pci.ids
+if [[ $(id -u) != "0" ]]; then
+    echo 'root user or sudo is needed  ... '
+fi
+
+if [ $(date -r ./core/config/pci.ids +"%Y-%m-%d") == $(date +"%Y-%m-%d") ]; then
+    echo "pci.ids is up to date."
 else
-    echo "upgrade pci.ids failed."
-    exit 1
+    rm -rf pci.ids.upgrade
+    curl --proxy http://child-prc.intel.com:912 -o pci.ids.upgrade "https://pci-ids.ucw.cz/v2.2/pci.ids" -S
+    if [ $? -eq 0 ]; then    
+        cp -r pci.ids.upgrade ./core/config/pci.ids
+    else
+        echo "upgrade pci.ids failed."
+        exit 1
+    fi
 fi
 
 if [ ! -f /usr/local/hwloc/lib/libhwloc.a ]; then
