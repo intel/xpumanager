@@ -277,6 +277,93 @@ def get_group_diagnostics_result(groupId):
         return jsonify(error), 500
     return jsonify(data)
 
+@app.route('/rest/v1/devices/<int:deviceId>/standbys', methods=['GET','POST'])
+def operate_device_standbys_result(deviceId):
+    if request.method == 'GET':
+        code, message, data = core.getDeviceStandbys(deviceId)
+    else:
+        if request.method == 'POST':
+            req = request.get_json()
+            subDeviceId = req["subDeviceId"]
+            standbyType = req["standbyType"]
+            mode = req["mode"]
+            code, message, data = core.setDeviceStandby(deviceId, standbyType, subDeviceId, mode)
+    
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/devices/<int:deviceId>/powerLimits', methods=['GET','POST'])
+def operate_device_powerlimits_result(deviceId):
+    req = request.get_json()
+    subDeviceId = req["subDeviceId"]
+
+    if request.method == 'GET':
+        code, message, data = core.getDevicePowerLimits(deviceId, subDeviceId)
+    else:
+        if request.method == 'POST':
+            limitType = req["LimitType"]
+            if limitType == '0': # Sustained limit
+                enabled = req["enabled"]
+                power = req["power"]
+                interval = req["interval"]
+                code, message, data = core.setDevicePowerSustainedLimits(deviceId, subDeviceId, enabled, power, interval)
+            elif limitType == '1': # Burst limit
+                enabled = req["enabled"]
+                power = req["power"]
+                code, message, data = core.setDevicePowerSustainedLimits(deviceId, subDeviceId, enabled, power)
+            elif limitType == '2': # Peak limit
+                powerAC = req["powerAC"]
+                powerDC = req["powerDC"]
+                code, message, data = core.setDevicePowerSustainedLimits(deviceId, subDeviceId, powerAC, powerDC)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/devices/<int:deviceId>/frequencyRanges', methods=['GET','POST'])
+def operate_device_frequencyranges_result(deviceId):
+    if request.method == 'GET':
+        code, message, data = core.getDeviceFrequencyRanges(deviceId)
+    else:
+        if request.method == 'POST':
+            req = request.get_json()
+            subDeviceId = req["subDeviceId"]
+            type = req["type"]
+            min = req["min"]
+            max = req["max"]
+            code, message, data = core.setDeviceFrequencyRanges(deviceId, subDeviceId, type, min, max)
+    
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+@app.route('/rest/v1/devices/<int:deviceId>/schedulers', methods=['GET','POST'])
+def operate_device_schedulers_result(deviceId):
+    req = request.get_json()
+    subDeviceId = req["subDeviceId"]
+
+    if request.method == 'GET':
+        code, message, data = core.getDeviceSchedulers(deviceId)
+    else:
+        if request.method == 'POST':
+            schedulerType = req["SchedulerType"]
+            if schedulerType == '0': # Timeout mode
+                watchdogTimeout = req["watchdogTimeout"]
+                code, message, data = core.setDeviceSchedulerTimeoutMode(deviceId, subDeviceId, watchdogTimeout)
+            elif schedulerType == '1': # Timeslice mode
+                interval = req["interval"]
+                yieldTimeout = req["yieldTimeout"]
+                code, message, data = core.setDevicePowerSustainedLimits(deviceId, subDeviceId, interval, yieldTimeout)
+            elif schedulerType == '2': # Exclusive mode
+                code, message, data = core.setDeviceSchedulerExclusiveMode(deviceId, subDeviceId)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
 
 if __name__ == '__main__':
     app.debug = True

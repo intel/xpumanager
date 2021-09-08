@@ -733,6 +733,47 @@ xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId);
  */
 xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count);
 
+
+xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
+                                    xpum_standby_data_t* dataArray, int* count);
+
+xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
+                                 const xpum_standby_data_t& standby);
+
+xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
+                                       int32_t subDeviceId,
+                                       xpum_power_limits_t* dataArray); 
+
+xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
+                                                int32_t subDeviceId,
+                                                const xpum_power_sustained_limit_t& sustained_limit);
+
+xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
+                                            int32_t subDeviceId,
+                                            const xpum_power_burst_limit_t& burst_limit);
+
+xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
+                                           int32_t subDeviceId,
+                                           const xpum_power_peak_limit_t& peak_limit);
+
+xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
+                                           xpum_frequency_range_t* dataArray, int* count );
+
+xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
+                                        const xpum_frequency_range_t t);
+
+xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
+                                      xpum_scheduler_data_t* dataArray, int* count );
+
+xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
+                                              const xpum_scheduler_timeout_t& sched_timeout);
+
+xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
+                                                const xpum_scheduler_timeslice_t& sched_timeslice);
+
+xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
+                                                const xpum_scheduler_exclusive_t& sched_exclusive);
+
 /** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
 
 #if defined(__cplusplus)

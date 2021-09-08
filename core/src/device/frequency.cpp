@@ -32,6 +32,10 @@ zes_freq_domain_t Frequency::getType() const {
   return type;
 }
 
+int32_t Frequency::getTypeValue() const {
+  return static_cast<int32_t>(type);
+}
+
 bool Frequency::onSubdevice() const {
   return on_subdevice;
 }

@@ -16,6 +16,8 @@ public:
 
   zes_freq_domain_t getType() const;
 
+  int32_t getTypeValue() const;
+
   bool onSubdevice() const;
 
   uint32_t getSubdeviceId() const;

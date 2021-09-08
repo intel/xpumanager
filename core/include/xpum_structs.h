@@ -392,6 +392,103 @@ struct xpum_metrics_raw_data_t {
     uint64_t value;
 };
 
+enum xpum_engine_type_flags_t {
+  XPUM_UNDEFINED               = 1 << 0,
+  XPUM_COMPUTE                 = 1 << 1,
+  XPUM_THREE_D                 = 1 << 2,
+  XPUM_MEDIA                   = 1 << 3,
+  XPUM_COPY                    = 1 << 4,
+  XPUM_RENDER                  = 1 << 5,
+  XPUM_TYPE_FLAGS_FORCE_UINT32 = 0x7fffffff
+};
+
+enum xpum_standby_type_t {
+  XPUM_GLOBAL                    = 1 << 0,
+  XPUM_STANDBY_TYPE_FORCE_UINT32 = 0x7fffffff
+};
+
+enum xpum_standby_mode_t {
+  XPUM_DEFAULT                   = 1 << 0,
+  XPUM_NEVER                     = 1 << 1,
+  XPUM_STANDBY_MODE_FORCE_UINT32 = 0x7fffffff
+};
+
+struct xpum_power_sustained_limit_t {
+  bool enabled;
+
+  int32_t power;
+
+  int32_t interval;
+};
+struct xpum_power_burst_limit_t {
+  bool enabled;
+
+  int32_t power;
+};
+
+struct xpum_power_peak_limit_t {
+  int32_t power_AC;
+
+  int32_t power_DC;
+};
+
+struct xpum_standby_data_t {
+  xpum_standby_type_t  type;
+  bool            on_subdevice;
+  uint32_t        subdevice_Id;
+  xpum_standby_mode_t  mode;
+};
+
+struct xpum_power_limits_t {
+  xpum_power_sustained_limit_t sustained_limit;
+  xpum_power_burst_limit_t     burst_limit;
+  xpum_power_peak_limit_t      peak_limit;
+};
+
+enum xpum_frequency_type_t {
+  XPUM_GPU_FREQUENCY     = 0,
+  XPUM_MEMORY_FREQUENCY  = 1,
+  XPUM_FORCE_UINT32      = 0x7fffffff
+};
+
+enum xpum_scheduler_mode_t {
+  XPUM_TIMEOUT             = 0,
+  XPUM_TIMESLICE           = 1,
+  XPUM_EXCLUSIVE           = 2,
+  XPUM_COMPUTE_UNIT_DEBUG  = 3,
+  XPUM_MODE_FORCE_UINT32   = 0x7fffffff
+};
+
+struct xpum_frequency_range_t {
+  xpum_frequency_type_t type;
+  uint32_t subdevice_Id;
+  double min;
+  double max;
+};
+
+struct xpum_scheduler_data_t {
+  bool                on_subdevice;
+  uint32_t            subdevice_Id;
+  bool                can_control;
+  xpum_scheduler_mode_t    mode;
+  xpum_engine_type_flags_t engine_types;
+  xpum_scheduler_mode_t    supported_modes;
+};
+struct xpum_scheduler_timeout_t {
+  uint32_t subdevice_Id;
+  uint64_t watchdog_timeout;
+};
+
+struct xpum_scheduler_timeslice_t {
+  uint32_t subdevice_Id;
+  uint64_t interval;
+  uint64_t yield_timeout;
+};
+
+struct xpum_scheduler_exclusive_t {
+  uint32_t subdevice_Id;
+};
+
 #if defined(__cplusplus)
 } // extern "C"
 #endif
