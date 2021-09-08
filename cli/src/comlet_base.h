@@ -16,7 +16,7 @@ class ComletBase {
     virtual ~ComletBase() {}
 
     virtual void setupOptions() = 0;
-    virtual std::unique_ptr<nlohmann::json> run() = 0;
+    virtual std::shared_ptr<nlohmann::json> run() = 0;
 
   protected:
     template <typename T>

@@ -10,9 +10,9 @@ void ComletVersion::setupOptions() {
     addOption("-n, --times", this->opts->times, "integer arg", false);
 }
 
-std::unique_ptr<nlohmann::json> ComletVersion::run() {
+std::shared_ptr<nlohmann::json> ComletVersion::run() {
 
-    std::unique_ptr<nlohmann::json> json(new nlohmann::json);
+    auto json = std::make_shared<nlohmann::json>();
 
     *json = {
         {"CLIVersion", XPUM_VERSION},

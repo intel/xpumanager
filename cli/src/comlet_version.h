@@ -18,7 +18,7 @@ class ComletVersion : public ComletBase {
     ComletVersion() : ComletBase("version") {}
 
     virtual void setupOptions() override;
-    virtual std::unique_ptr<nlohmann::json> run() override;
+    virtual std::shared_ptr<nlohmann::json> run() override;
 
   private:
     std::shared_ptr<ComletVersionOptions> opts;
