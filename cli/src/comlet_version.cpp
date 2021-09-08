@@ -3,16 +3,16 @@
 #include "config.h"
 
 void ComletVersion::setupOptions() {
-    this->opts = std::make_shared<ComletVersionOptions>();
-    addFlag("-v,--verbose", this->opts->verbose, "flag for verbose output");
+    this->opts = std::unique_ptr<ComletVersionOptions>(new ComletVersionOptions());
+    addFlag("--verbose", this->opts->verbose, "flag for verbose output");
     addOption("-a, --argA", this->opts->argA, "one string arg", true);
     addOption("-b, --argB", this->opts->argB, "one more string arg", false);
     addOption("-n, --times", this->opts->times, "integer arg", false);
 }
 
-std::shared_ptr<nlohmann::json> ComletVersion::run() {
+std::unique_ptr<nlohmann::json> ComletVersion::run() {
 
-    auto json = std::make_shared<nlohmann::json>();
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
     *json = {
         {"CLIVersion", XPUM_VERSION},

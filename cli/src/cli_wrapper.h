@@ -19,5 +19,5 @@ class CLIWrapper {
 
   private:
     CLI::App &cliApp;
-    std::shared_ptr<CLIWrapperOptions> opts;
+    std::unique_ptr<CLIWrapperOptions> opts;
 };
