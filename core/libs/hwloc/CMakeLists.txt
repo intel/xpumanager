@@ -7,32 +7,12 @@ if(EXISTS "/usr/local/hwloc/lib/libhwloc.a")
 else()
 	message("build hwloc library")
 	execute_process(
-		COMMAND ${CMAKE_CURRENT_LIST_DIR}/autogen.sh --with-pic
+		COMMAND ${CMAKE_CURRENT_LIST_DIR}/build.sh
 		WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 		RESULT_VARIABLE rv
+		OUTPUT_FILE CMD_OUTPUT		
 	)	
 	message("autogen='${rv}'")
-
-	execute_process(
-		COMMAND ${CMAKE_CURRENT_LIST_DIR}/configure  --prefix=/usr/local/hwloc --enable-static --disable-shared LDFLAGS="--static" CFLAGS="-fPIC"
-		WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-		RESULT_VARIABLE rv
-	)	
-	message("configure='${rv}'")
-
-	execute_process(
-		COMMAND make -j
-		WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-		RESULT_VARIABLE rv
-	)
-	message("make='${rv}'")
-
-	execute_process(
-		COMMAND make install
-		WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-		RESULT_VARIABLE rv
-	)
-	message("install='${rv}'")
 endif()
 	
 
