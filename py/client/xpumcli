@@ -85,6 +85,14 @@ diag_parser.add_argument('-g', '--group', metavar="<groupId>", dest="groupId", t
 diag_parser.add_argument('-l', '--level', metavar="<level>", dest="level", type=int,
                           help='The diagnostics level to run')
 
+# fwflash subcommand parser
+fwflash_parser = subparsers.add_parser("fwflash", help="Flash device firmware")
+fwflash_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int, required=True,
+                          help='The device id to query')
+fwflash_parser.add_argument('-t', '--type', metavar="<firmwareName>", dest="firmwareName", type=int, required=True,
+                          help='Firmware name to flash')
+fwflash_parser.add_argument('-f', '--file', metavar="<imagePath>", dest="imagePath", type=int, required=True,
+                          help='The file path in the server, used to flash firmware, should be located in /usr/bin')
 # standby subcommand parser
 diag_parser = subparsers.add_parser("standby", help="Get/set standby mode")
 diag_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
@@ -265,6 +273,12 @@ def arg():
         else:
             diag_parser.print_help()
             return
+    elif parsed.subcommand == "fwflash":
+        deviceId = parsed.deviceId
+        firmwareName = parsed.firmwareName
+        imagePath = parsed.imagePath
+        flash_firmware(deviceId, firmwareName, imagePath)
+        return
     elif parsed.subcommand == "standby":
         if parsed.deviceId is not None:
             get_device_standbys(parsed.deviceId)
@@ -814,6 +828,33 @@ def set_group_health_config(groupId, healthType, threshold):
         print("Error occurs:"+res.content.decode())
         return
     display_group_health(groupId)
+
+def flash_firmware(deviceId, firmwareName, imagePath):
+    firmwareNameMap = {
+        "GSC":0
+    }
+    firmwareType = firmwareNameMap[firmwareName]
+    reqData = {
+        "type": firmwareType,
+        "file": imagePath
+    }
+    print("Start flashing firmware:")
+    print("Firmware name: {}".format(firmwareName))
+    print("Image path: {}".format(imagePath))
+    res = requests.post(host+"/rest/v1/devices/{}/firmwareUpgrade".format(deviceId), json=reqData)
+    if res.status_code != 200 or res.json()["result"]!="OK":
+        print("Error occurs: fail to flash firmware")
+    while True:
+        time.sleep(5)
+        res = requests.get(host+"/rest/v1/devices/0/firmware",params={"type":firmwareType})
+        data = res.json()
+        result = data["result"]
+        if result == "OK":
+            print("Firmware successfully flashed!")
+            return
+        elif result=="ERROR":
+            print("Error occurs: fail to flash firmware")
+        print(".",sep=" ")
 
 def get_device_standbys(deviceId):
     res = requests.get(host+"/rest/v1/devices/{}/standbys".format(deviceId))

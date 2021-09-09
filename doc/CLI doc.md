@@ -15,7 +15,7 @@ Subcommand options:
     health                  Display health status of GPUs
     events                  GPU events management
     config                  GPU configuration management
-    firmwareupdate          Update GPU firmware
+    fwflash                 Flash GPU firmware
     diag                    System validation/diagnostic
     agentset                XPUM agent settings
     stats                   Display device statistics
@@ -441,118 +441,41 @@ $ xpumcli config -- "Power Limit"=400 -g 0
 +-------------+-----------+------------------------------+
 ```
 
-# FirmwareUpdate subcommand
+# Firmware flash subcommand
 ## Help info
 ```
-$ xpumcli firmwareUpdate --help
+$ xpumcli fwflash --help
 
-firmwareUpdate -- used to update firmware for devices.
+fwflash -- used to update firmware for devices.
 
-Usage: xpumcli firmwareUpdate [-h] [-d] [-g] [-l] [-u]
+Usage: xpumcli fwflash [-h] [-d] [-g] [-l] [-u]
 
 Optional arguments:
     -h, --help              Show this help message and exit
     -d <deviceId>, --device <deviceId>      
-                            The device id to query
-    -g <groupId>, --group <groupId>         
-                            The group id to query
-    -l, --list              List firmware info
-    -u, --update            Update firmware
-        -T <firmware name>, --Type <firmware name>      
-            Firmware name to update
-        -L <image path>, --local <image path>           
-            Local image path, used when firmware iamge is located in server 
-                local path.
-        -I <image uri>, --Image <image uri>             
-            URI referencing a software image to be retrieved
-        -U <username>, --Username <username>            
-            Username to access <image uri>
-        -P <password>, --Password <passowrd>            
-            Password to access <image uri>
-        -R, --Restart                                   
-            Restart server when update finish
-```
-## Display update status
-
-$ xpumcli firmwareupdate -d 0 -l
-```
-// no update task running
-+-------------+-----------+--------------------------+
-| Device Type | Device Id | Firmware Info            |
-+-------------+-----------+--------------------------+
-| GPU         | 0         | Firmware Name: GSC       |
-|             |           | Version: ATS1_0.7178     |
-|             |           +--------------------------+
-|             |           | Firmware Name: Firmware2 |
-|             |           | Version: 1.00            |
-+-------------+-----------+--------------------------+
-
-// during updating
-+-------------+-----------+-------------------------------------------+
-| Device Type | Device Id | Firmware Info                             |
-+-------------+-----------+-------------------------------------------+
-| GPU         | 0         | Firmware Name: GSC                        |
-|             |           | Version: ATS1_0.7178                      |
-|             |           |                                           |
-|             |           | Update Running:                           |
-|             |           | File Name: image.0                        |
-|             |           | Image URI: http://localhost/image/image.0 |
-|             |           | Restart Server When Finished: true,       |
-|             |           | Task Start Time: 2021-07-09 16:03:36      |
-|             |           +-------------------------------------------+
-|             |           | Firmware Name: Firmware2                  |
-|             |           | Version: 1.00                             |
-+-------------+-----------+-------------------------------------------+
+                            The device id to flash firmware
+    -t <firmwareName>, --type <firmwareName>
+                            Firmware name to flash
+    -f <imagePath>, --file <imagePath>           
+                            The file path in the server, used to flash firmware, 
+                            should be located in /usr/bin
 ```
 
-## Update firmware
+## Flash firmware
 
 ```
-$ xpumcli firmwareupdate -d 0 -u -T GSC  -I "http://localhost/image/image.0" -R
-+-------------+-----------+-------------------------------------------+
-| Device Type | Device Id | Firmware Info                             |
-+-------------+-----------+-------------------------------------------+
-| GPU         | 0         | Firmware Name: GSC                        |
-|             |           | Version: ATS1_0.7178                      |
-|             |           |                                           |
-|             |           | Update Running:                           |
-|             |           | File Name: image.0                        |
-|             |           | Image URI: http://localhost/image/image.0 |
-|             |           | Restart Server When Finished: true,       |
-|             |           | Task Start Time: 2021-07-09 16:03:36      |
-|             |           +-------------------------------------------+
-|             |           | Firmware Name: Firmware2                  |
-|             |           | Version: 1.00                             |
-+-------------+-----------+-------------------------------------------+
-
-$ xpumcli firmwareupdate -d 0 -u -T Firmware2  -L "/tmp/firmware.1"
-+-------------+-----------+-------------------------------------------+
-| Device Type | Device Id | Firmware Info                             |
-+-------------+-----------+-------------------------------------------+
-| GPU         | 0         | Firmware Name: GSC                        |
-|             |           | Version: ATS1_0.7178                      |
-|             |           |                                           |
-|             |           | Update Running:                           |
-|             |           | File Name: image.0                        |
-|             |           | Image URI: http://localhost/image/image.0 |
-|             |           | Restart Server When Finished: true,       |
-|             |           | Task Start Time: 2021-07-09 16:03:36      |
-|             |           +-------------------------------------------+
-|             |           | Firmware Name: Firmware2                  |
-|             |           | Version: 1.00                             |
-|             |           |                                           |
-|             |           | Update Running:                           |
-|             |           | File Name: firmware.1                     |
-|             |           | Image Path: /tmp/firmware.1               |
-|             |           | Restart Server When Finished: false,      |
-|             |           | Task Start Time: 2021-07-09 16:03:36      |
-+-------------+-----------+-------------------------------------------+
+$ xpumcli fwflash -d 0 t "GSC" -f "/tmp/firmware.1"
+Start flashing firmware:
+Firmware name: GSC
+Image path: /tmp/firmware.1
+...
+Firmware successfully flashed!
 ```
 
 ```
 // Mean while run another firmware update task
 
-$ xpumcli firmwareupdate -d 0 -u -T GSC -I "http://localhost/image/image.0" -R
+$ xpumcli fwflash -d 0 t "GSC" -f "/tmp/firmware.1"
 Error: firmware update is already running!
 ```
 
