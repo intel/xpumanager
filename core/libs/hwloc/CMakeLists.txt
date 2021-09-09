@@ -6,9 +6,10 @@ if(EXISTS "/usr/local/hwloc/lib/libhwloc.a")
 	message("found hwloc library")
 else()
 	message("build hwloc library")
+	message("exec: ${CMAKE_CURRENT_LIST_DIR}/build.sh")
 	execute_process(
 		COMMAND ${CMAKE_CURRENT_LIST_DIR}/build.sh
-		WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+		
 		RESULT_VARIABLE rv
 		OUTPUT_FILE CMD_OUTPUT		
 	)	

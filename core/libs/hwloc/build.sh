@@ -3,10 +3,12 @@
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 
-
+echo "WORK_DIR=${WORK_DIR}"
 if [ ! -f $WORK_DIR/install/lib/libhwloc.a ]; then
     echo "build hwloc"
+    cd ${WORK_DIR}
     ./autogen.sh --with-pic
+    cd ${WORK_DIR}
     ./configure  --prefix=$WORK_DIR/install --enable-static --disable-shared LDFLAGS="--static" CFLAGS="-fPIC"
     make -j
     make install
