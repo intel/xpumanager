@@ -15,7 +15,7 @@ class CLIWrapper {
 
   public:
     CLIWrapper(CLI::App &cliApp);
-    void addComlet(ComletBase &comlet);
+    CLIWrapper& addComlet(const std::shared_ptr<ComletBase> &comlet);
 
   private:
     CLI::App &cliApp;

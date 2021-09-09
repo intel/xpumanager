@@ -8,16 +8,18 @@ CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     cliApp.fallthrough(true);
 }
 
-void CLIWrapper::addComlet(ComletBase &comlet) {
-    comlet.subCLIApp = this->cliApp.add_subcommand(comlet.command);
-    comlet.setupOptions();
+CLIWrapper& CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
+    comlet->subCLIApp = this->cliApp.add_subcommand(comlet->command);
+    comlet->setupOptions();
 
-    comlet.subCLIApp->callback([&comlet, this] {
-        auto json = comlet.run();
+    comlet->subCLIApp->callback([comlet, this] {
+        auto json = comlet->run();
         if (this->opts->pretty) {
             std::cout << json->dump(4) << std::endl;
         } else {
             std::cout << json->dump() << std::endl;
         }
     });
+
+    return *this;
 }
