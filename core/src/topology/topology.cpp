@@ -25,6 +25,7 @@ xpum_result_t Topology::getTopologyInfo(xpum_device_id_t deviceId, xpum_topoloty
     std::size_t start = 0, pos = 0;
     std::string addr;
 
+    topology->deviceId = deviceId;
     if (p_devicemanager->getDevice(std::to_string(deviceId)) == nullptr) {
         LOG_ERROR("Topology::getTopologyInfo-invalid device id {%d}", deviceId);
         return ret;
@@ -124,9 +125,6 @@ bool Topology::getSwitchTopology(int32_t domain, int32_t bus, int32_t device,
         }
     }
 
-    /* Destroy topology object. */
-    hwloc_topology_destroy(hwtopology);
-
     if (found) {
         topology->bswitch = getSwitchInfo(obj, topology);
         topology->Switch.switchVendorId = obj->attr->bridge.upstream.pci.vendor_id;
@@ -148,6 +146,9 @@ bool Topology::getSwitchTopology(int32_t domain, int32_t bus, int32_t device,
             topology->Switch.switchDownStreamSubordinateBus = obj->attr->bridge.downstream.pci.subordinate_bus;
         }
     }
+
+    /* Destroy topology object. */
+    hwloc_topology_destroy(hwtopology);
 
     return true;
 }
