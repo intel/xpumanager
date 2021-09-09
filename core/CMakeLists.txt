@@ -73,26 +73,18 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
 
-if (BUILD_TEST)
-
-  # Include source code and header files for test 
-
-  # include_directories(${CMAKE_CURRENT_LIST_DIR}/test)
-
-  # aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/test TEST_SRC)
-
-  # add_executable(DGMCore ${TEST_SRC})
+if (BUILD_TEST) 
 
   if (BUILD_TEST_API)
     add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
+    
   else()
     add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_main.cpp)
   endif()
 
-else()
-
+else()  
   add_library (DGMCore SHARED)
-
+  
 endif()
 
 target_sources(
@@ -116,6 +108,8 @@ target_sources(
 )
 
 add_subdirectory( ./libs/spdlog )
+add_subdirectory( ./libs/hwloc )
+
 target_link_libraries(DGMCore ze_loader dl spdlog hwloc)
 
 unset(BUILD_TEST CACHE) 
