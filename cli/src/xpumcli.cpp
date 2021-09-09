@@ -1,6 +1,9 @@
 #include "cli_wrapper.h"
+#include "comlet_discovery.h"
 #include "comlet_version.h"
 #include <CLI/CLI.hpp>
+
+#define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<ComletBase>(std::make_shared<comlet_type>()))
 
 int main(int argc, char **argv) {
 
@@ -8,8 +11,9 @@ int main(int argc, char **argv) {
 
     CLIWrapper wrapper(app);
 
-    ComletVersion comletVersion;
-    wrapper.addComlet(comletVersion);
+    wrapper
+        .addComlet(MAKE_COMLET_PTR(ComletVersion))
+        .addComlet(MAKE_COMLET_PTR(ComletDiscovery));
 
     app.require_subcommand();
 
