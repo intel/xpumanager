@@ -1,5 +1,5 @@
 #include "pci_database.h"
-
+#include "xpum_structs.h"
 #include "logger.h"
 #include "xpum_config.h"
 
@@ -137,7 +137,7 @@ bool PciDatabase::parse_pci_device(std::ifstream &fstream) {
                 add_switch_device(vendor_id, device_id, verdor_name, device_name,
                                   sub_vendor_id, sub_device_id, sub_s_name);
             }
-            device_name.erase();
+            //device_name.erase();
         } else if (level == 2) {
             sub_vendor_id = sub_device_id = -1;
             bResult = parse_level_2(info, len, &idtype, &sub_vendor_id, &sub_device_id, &idx);
@@ -147,7 +147,7 @@ bool PciDatabase::parse_pci_device(std::ifstream &fstream) {
                 add_switch_device(vendor_id, device_id, verdor_name, device_name,
                                   sub_vendor_id, sub_device_id, sub_s_name);
             }
-            sub_s_name.erase();
+            //sub_s_name.erase();
         } else {
             assert(0);
             // level 3 if not defined, the code should not be here, just ignore this line
@@ -353,12 +353,29 @@ void PciDatabase::add_switch_device(int32_t vendor_id, int32_t device_id, std::s
     }    
 }
 
-bool PciDatabase::isSwitchDevice(int32_t vendor_id, int32_t device_id) {
+bool PciDatabase::isSwitchDevice(int32_t vendor_id, int32_t device_id)
+{
     std::unique_lock<std::mutex> lock(mutex);
 
     pci_device_map::iterator it = switch_device.find(std::make_pair(vendor_id, device_id));
 
     if(it != switch_device.end()) {
+        return true;
+    }
+    
+    return false;
+}
+
+bool PciDatabase::getSwitchInfo(int32_t vendor_id, int32_t device_id, char switchVendorName[], char switchName[]) {
+    std::unique_lock<std::mutex> lock(mutex);
+
+    pci_device_map::iterator it = switch_device.find(std::make_pair(vendor_id, device_id));
+
+    if(it != switch_device.end()) {
+        std::size_t length = it->second.verdor_name.copy(switchVendorName, XPUM_VENDOR_NAME_LEN);
+        switchVendorName[length] = '\0';
+        length = it->second.device_name.copy(switchName, XPUM_VENDOR_NAME_LEN);
+        switchName[length] = '\0';
         return true;
     }
     
