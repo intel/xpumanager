@@ -2,7 +2,7 @@ from ctypes import *
 import os
 import uuid
 import string
-from enum import Enum, unique
+from enum import Enum, IntEnum, unique
 import datetime
 
 def hex_format(v):
@@ -204,24 +204,29 @@ class XpumDiagTaskInfo(Structure):
         ("count", c_int32),
     ]
 
-XpumStandbyType = Enum("xpum_standby_type_t", (
-    "XPUM_GLOBAL" (1<<0),
-    "XPUM_STANDBY_TYPE_FORCE_UINT32" (0x7fffffff)
-), )
+class XpumStandbyType(IntEnum):
+    XPUM_GLOBAL = 1<<0
+    XPUM_STANDBY_TYPE_FORCE_UINT32 = 0x7fffffff
+    @classmethod
+    def from_param(cls, obj):
+        return c_int32(obj.value)
 
-XpumStandbyMode = Enum("xpum_standby_mode_t", (
-    "XPUM_DEFAULT" (1<<0),
-    "XPUM_NEVER" (1<<1),
-    "XPUM_STANDBY_MODE_FORCE_UINT32" (0x7fffffff)
-), )
+class XpumStandbyMode(IntEnum):
+    XPUM_DEFAULT = (1<<0)
+    XPUM_NEVER = (1<<1)
+    XPUM_STANDBY_MODE_FORCE_UINT32 = 0x7fffffff
+    @classmethod
+    def from_param(cls, obj):
+        return c_int32(obj.value)
 
 class XpumStandbyData(Structure):
     _fields_ = [
-        ("standbyType", XpumStandbyType),
+        ("standbyType", c_int32),#XpumStandbyType
         ("onSubdevice", c_bool),
-        ("subdeviceId", c_uint32),
-        ("mode", XpumStandbyMode),
+        ("subdeviceId", c_int32),
+        ("mode", c_int32),#XpumStandbyMode
     ]
+
 
 class XpumPowerSustainedLimit(Structure):
     _fields_ = [
@@ -249,46 +254,43 @@ class XpumPowerLimits(Structure):
         ("peakLimit", XpumPowerPeakLimit),
     ]
 
-XpumFrequency_type = Enum("xpum_frequency_type_t", (
-    "XPUM_GPU_FREQUENCY" (0),
-    "XPUM_MEMORY_FREQUENCY" (1),
-    "XPUM_FORCE_UINT32" (0x7fffffff)
-), )
+class XpumFrequencyType(IntEnum):
+    XPUM_GPU_FREQUENCY = (0)
+    XPUM_MEMORY_FREQUENCY = (1)
+    XPUM_FORCE_UINT32 = (0x7fffffff)
 
 class XpumFrequencyRange(Structure):
      _fields_ = [
-        ("type", XpumFrequency_type),
+        ("type", c_int32),#XpumFrequencyType
         ("subdeviceId", c_int32),
         ("min", c_double),
         ("max", c_double),
     ]
 
-XpumSchedulerMode = Enum("xpum_scheduler_mode_t", (
-    "XPUM_TIMEOUT" (0),
-    "XPUM_TIMESLICE" (1),
-    "XPUM_EXCLUSIVE" (2),
-    "XPUM_COMPUTE_UNIT_DEBUG" (3),
-    "XPUM_MODE_FORCE_UINT32" (0x7fffffff)
-), )
+class XpumSchedulerMode(IntEnum):
+    XPUM_TIMEOUT = (0)
+    XPUM_TIMESLICE = (1)
+    XPUM_EXCLUSIVE = (2)
+    XPUM_COMPUTE_UNIT_DEBUG = (3)
+    XPUM_MODE_FORCE_UINT32 = (0x7fffffff)
 
-XpumEngineTypeFlags = Enum("xpum_engine_type_flags_t", (
-  "XPUM_UNDEFINED" (1 << 0),
-  "XPUM_COMPUTE" (1 << 1),
-  "XPUM_THREE_D" (1 << 2),
-  "XPUM_MEDIA" (1 << 3),
-  "XPUM_COPY" (1 << 4),
-  "XPUM_RENDER" (1 << 5),
-  "XPUM_TYPE_FLAGS_FORCE_UINT32" (0x7fffffff)
-),)
+class XpumEngineTypeFlags(IntEnum):
+    XPUM_UNDEFINED = (1 << 0)
+    XPUM_COMPUTE = (1 << 1)
+    XPUM_THREE_D = (1 << 2)
+    XPUM_MEDIA = (1 << 3)
+    XPUM_COPY = (1 << 4)
+    XPUM_RENDER = (1 << 5)
+    XPUM_TYPE_FLAGS_FORCE_UINT32 = (0x7fffffff)
 
 class XpumSchedulerData(Structure):
      _fields_ = [
         ("onSubdevice", c_bool),
         ("subdeviceId", c_int32),
         ("canControl", c_bool),
-        ("mode", XpumSchedulerMode),
-        ("engineType", XpumEngineTypeFlags),
-        ("supportedMode", XpumSchedulerMode),
+        ("mode", c_int32),#XpumSchedulerMode
+        ("engineType", c_int32),#XpumEngineTypeFlags
+        ("supportedMode", c_int32),#XpumSchedulerMode
     ]
 
 class XpumSchedulerTimeout(Structure):
@@ -820,7 +822,7 @@ class DGMCore:
     
     def setDeviceFrequencyRanges(self, deviceId, type, subDeviceId, min, max):
         deviceFreq = XpumFrequencyRange()
-        deviceFreq.type = XpumFrequency_type(type)
+        deviceFreq.type = c_int32(type)
         deviceFreq.subdeviceId = c_int32(subDeviceId)
         deviceFreq.min = c_int(min)
         deviceFreq.max = c_int(max)
