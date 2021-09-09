@@ -14,7 +14,7 @@ struct ComletVersionOptions {
 class ComletVersion : public ComletBase {
 
   public:
-    ComletVersion() : ComletBase("version") {}
+    ComletVersion() : ComletBase("version", "Print version information") {}
     virtual ~ComletVersion() {}
 
     virtual void setupOptions() override;

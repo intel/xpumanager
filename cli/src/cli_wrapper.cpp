@@ -9,7 +9,7 @@ CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
 }
 
 CLIWrapper& CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
-    comlet->subCLIApp = this->cliApp.add_subcommand(comlet->command);
+    comlet->subCLIApp = this->cliApp.add_subcommand(comlet->command, comlet->description);
     comlet->setupOptions();
 
     comlet->subCLIApp->callback([comlet, this] {

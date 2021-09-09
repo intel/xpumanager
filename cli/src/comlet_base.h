@@ -12,7 +12,7 @@ class ComletBase {
     friend class CLIWrapper;
 
   public:
-    ComletBase(std::string command) : command(command) {}
+    ComletBase(std::string command, std::string description) : command(command), description(description) {}
     virtual ~ComletBase() {}
 
     virtual void setupOptions() = 0;
@@ -36,5 +36,6 @@ class ComletBase {
 
   private:
     const std::string command;
+    const std::string description;
     CLI::App *subCLIApp;
 };

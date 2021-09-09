@@ -10,7 +10,7 @@ struct ComletDiscoveryOptions {
 class ComletDiscovery : public ComletBase {
 
   public:
-    ComletDiscovery() : ComletBase("discovery") {}
+    ComletDiscovery() : ComletBase("discovery", "Discover devices on the system") {}
     virtual ~ComletDiscovery() {}
 
     virtual void setupOptions() override;
