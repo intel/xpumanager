@@ -118,9 +118,9 @@ diag_parser.add_argument('-p', '--power', metavar="<power>", dest="power", type=
                           help='Set power value for device')
 diag_parser.add_argument('-i', '--interval', metavar="<interval>", dest="interval", type=int,
                           help='Set interval value for device')
-diag_parser.add_argument('-a', '--powerAC', metavar="<powerAC>", dest="powerAC", type=int,
+diag_parser.add_argument('-ac', '--powerAC', metavar="<powerAC>", dest="powerAC", type=int,
                           help='Set powerAC value for device')
-diag_parser.add_argument('-d', '--powerDC', metavar="<powerDC>", dest="powerDC", type=int,
+diag_parser.add_argument('-dc', '--powerDC', metavar="<powerDC>", dest="powerDC", type=int,
                           help='Set powerDC value for device')
 
 # frequencyRange subcommand parser
@@ -857,7 +857,21 @@ def flash_firmware(deviceId, firmwareName, imagePath):
         print(".",sep=" ")
 
 def get_device_standbys(deviceId):
-    return
+    res = requests.get(host+"/rest/v1/devices/{}/standbys".format(deviceId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    
+    data = res.json()
+    print(res.json())
+    '''
+
+    t = PrintTable(["Device ID", "Device Information"])
+
+    t.add_row([data['DeviceId'], device_info_to_str(data)])
+
+    t.print()
+    '''
 
 def set_device_standby(deviceId, subDeviceId, standbyType, mode):
     return
@@ -876,6 +890,7 @@ def set_device_frequencyRange(deviceId, subDeviceId, type, min, max):
 def get_device_schedulers(deviceId):
     return
 def set_device_scheduler(deviceId, subDeviceId, schedulerType, watchdogTimeout, interval, yieldTimeout):
+
     return
 
 if __name__ == "__main__":
