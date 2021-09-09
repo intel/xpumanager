@@ -3,7 +3,13 @@
 #include "comlet_base.h"
 #include <CLI/CLI.hpp>
 
+#include <iostream>
+
 class ComletBase;
+
+struct CLIWrapperOptions {
+    bool pretty;
+};
 
 class CLIWrapper {
 
@@ -13,4 +19,5 @@ class CLIWrapper {
 
   private:
     CLI::App &cliApp;
+    std::unique_ptr<CLIWrapperOptions> opts;
 };

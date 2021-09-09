@@ -23,6 +23,7 @@ configure_file(
 link_directories(/usr/local/lib)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/CLI11/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/json/include)
 
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_SRC)
