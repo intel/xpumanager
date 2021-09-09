@@ -11,3 +11,4 @@ lib/
 core/config/pci.ids
 pci.ids.upgrade
 core/libs/hwloc/install/
+.vscode/
