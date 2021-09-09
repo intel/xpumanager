@@ -7,14 +7,22 @@ echo "WORK_DIR=${WORK_DIR}"
 if [ ! -f $WORK_DIR/install/lib/libhwloc.a ]; then
     echo "build hwloc"
     cd ${WORK_DIR}
-    echo "------------------------hwloc autogen---------------------------" > hwloc.log  2>&1
-    ./autogen.sh --with-pic >> hwloc.log  2>&1
+    echo "------------------------hwloc autogen---------------------------" 
+    ./autogen.sh --with-pic
     cd ${WORK_DIR}
-    echo "------------------------hwloc configure---------------------------" >> hwloc.log  2>&1
-    ./configure  --prefix=$WORK_DIR/install --enable-static --disable-shared LDFLAGS="--static" CFLAGS="-fPIC" >> hwloc.log  2>&1
-    echo "------------------------hwloc make---------------------------" >> hwloc.log  2>&1
-    make -j >> hwloc.log  2>&1
-    echo "------------------------hwloc install---------------------------" >> hwloc.log  2>&1
-    make install >> hwloc.log  2>&1
-    echo "------------------------hwloc end---------------------------" >> hwloc.log  2>&1
+    echo "------------------------hwloc configure---------------------------"
+    ./configure  --prefix=$WORK_DIR/install --enable-static --disable-shared LDFLAGS="--static" CFLAGS="-fPIC"
+    echo "------------------------hwloc make---------------------------"
+    make -j 
+    echo "------------------------hwloc install---------------------------" 
+    make install 
+    echo "------------------------hwloc end---------------------------"
 fi
+
+ echo "------------------------hwloc ------------------------------"
+if [ ! -f $WORK_DIR/install/lib/libhwloc.a ]; then
+    echo "build hwloc failed! can not find file $WORK_DIR/install/lib/libhwloc.a"
+else  
+    echo "build hwloc, done!"
+fi
+ echo "------------------------hwloc ------------------------------"
