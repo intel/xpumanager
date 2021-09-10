@@ -14,6 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Specifiy header file location
 link_directories(/usr/local/lib)
+include_directories(/usr/include/level_zero/)
 include_directories(/usr/local/include/level_zero/)
 # Scan source code files
 
