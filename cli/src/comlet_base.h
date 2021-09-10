@@ -21,7 +21,7 @@ class ComletBase {
   protected:
     template <typename T>
     void addOption(std::string optName, T &variable, std::string optDescription = "", bool required = false) {
-        assert(subCLIApp);
+        assert(subCLIApp != nullptr);
         auto opt = this->subCLIApp->add_option(optName, variable, optDescription);
         if (required) {
             opt->required();
@@ -30,7 +30,7 @@ class ComletBase {
 
     template <typename T>
     void addFlag(std::string optName, T &variable, std::string optDescription = "") {
-        assert(subCLIApp);
+        assert(subCLIApp != nullptr);
         this->subCLIApp->add_flag(optName, variable, optDescription);
     };
 
