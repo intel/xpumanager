@@ -371,16 +371,21 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
-struct xpum_device_stats_t {
-    xpum_device_id_t deviceId;
-    bool isTileData;
-    int32_t tileId;
+struct xpum_device_stats_data_t {
     xpum_stats_type_t metricsType;
     bool isCounter;
     uint64_t value;
     uint64_t min;
     uint64_t avg;
     uint64_t max;
+};
+
+struct xpum_device_stats_t {
+    xpum_device_id_t deviceId;
+    bool isTileData;
+    int32_t tileId;
+    int32_t count;
+    xpum_device_stats_data_t dataList[XPUM_STATS_MAX];
 };
 
 struct xpum_metrics_raw_data_t {
