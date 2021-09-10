@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+/* General Message */
+message GeneralEnum {
+    uint32 value = 1;
+}
+
+message DeviceId {
+    uint32 id = 1;
+}
+
+/* Specific Message */
+message XpumVersionInfoArray {
+    message XpumVersionInfo {
+        GeneralEnum version = 1;
+        string versionString = 2;
+    }
+    repeated XpumVersionInfo versions = 1;
+    string errorMsg = 2;
+}
+
+message XpumDeviceBasicInfoArray {
+    message XpumDeviceBasicInfo {
+        DeviceId id = 1;
+        GeneralEnum type = 2;
+        string uuid = 3;
+        string deviceName = 4;
+        string pcieDeviceId = 5;
+        string subDeviceId = 6;
+        string pciBdfAddress = 7;
+        string vendorName = 8;
+    }
+    repeated XpumDeviceBasicInfo info = 1;
+    string errorMsg = 2;
+}
+
+/* services */
+service XpumCoreService {
+    rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
+    rpc getDeviceList( google.protobuf.Empty ) returns ( XpumDeviceBasicInfoArray );
+}

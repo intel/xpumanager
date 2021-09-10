@@ -1,0 +1,3 @@
+#pragma once
+
+#define XPUM_VERSION "@XPUM_VERSION_STRING@-@GIT_COMMIT@"
