@@ -371,16 +371,21 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
-struct xpum_device_stats_t {
-    xpum_device_id_t deviceId;
-    bool isTileData;
-    int32_t tileId;
+struct xpum_device_stats_data_t {
     xpum_stats_type_t metricsType;
     bool isCounter;
     uint64_t value;
     uint64_t min;
     uint64_t avg;
     uint64_t max;
+};
+
+struct xpum_device_stats_t {
+    xpum_device_id_t deviceId;
+    bool isTileData;
+    int32_t tileId;
+    int32_t count;
+    xpum_device_stats_data_t dataList[XPUM_STATS_MAX];
 };
 
 struct xpum_metrics_raw_data_t {
@@ -487,6 +492,29 @@ struct xpum_scheduler_timeslice_t {
 
 struct xpum_scheduler_exclusive_t {
   uint32_t subdevice_Id;
+};
+
+ 
+#define XPUM_MAX_CPU_AFFINITY_SIZE  256
+#define XPUM_VENDOR_NAME_LEN        64
+#define XPUM_DEVICE_NAME_LEN        128
+struct xpum_topoloty_t {
+    xpum_device_id_t deviceId;
+    char affinity[XPUM_MAX_CPU_AFFINITY_SIZE];
+    bool bswitch;
+    struct{
+        int32_t  switchVendorId;
+        int32_t  switchDeviceId;        
+        uint32_t switchUpStreamDomain;
+        uint32_t switchUpStreamBus;
+        uint32_t switchUpStreamDev;
+        uint32_t switchUpStreamFunc;
+        uint32_t switchDownStreamDomain;
+        uint32_t switchDownStreamSecondaryBus;
+        uint32_t switchDownStreamSubordinateBus;
+        char switchVendorName[XPUM_VENDOR_NAME_LEN];
+        char switchName[XPUM_DEVICE_NAME_LEN];
+    }Switch;
 };
 
 #if defined(__cplusplus)

@@ -32,7 +32,11 @@ class DataLogic : public DataLogicInterface {
     std::map<std::string, MeasurementData>& datas
   ) override;
 
-  void getMetricsStatistics(xpum_device_id_t deviceId, xpum_device_stats_t *data);
+  void getMetricsStatistics(xpum_device_id_t deviceId, 
+                            xpum_device_stats_t dataList[], 
+                            int *count,
+                            uint64_t *begin,
+                            uint64_t *end);
 
  private:
   std::unique_ptr<RawDataManager> p_raw_data_manager;

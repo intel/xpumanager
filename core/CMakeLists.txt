@@ -33,12 +33,12 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in ${C
 
 # Specifiy link file location
 link_directories(/usr/local/lib)
-link_directories(/usr/local/hwloc/lib)
+link_directories(${CMAKE_CURRENT_LIST_DIR}/libs/hwloc/install/lib)
 
 # Specifiy header file location
 include_directories(/usr/local/include/level_zero/)
 include_directories(/usr/include/level_zero/)
-include_directories(/usr/local/hwloc/include/)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/hwloc/install/include/)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/api)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src/control)

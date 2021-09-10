@@ -3,11 +3,6 @@
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 
-if [[ $(id -u) != "0" ]]; then
-    echo 'root user or sudo is needed  ... '
-    exit 1
-fi
-
 if [ $(date -r ./core/config/pci.ids +"%Y-%m-%d") == $(date +"%Y-%m-%d") ]; then
     echo "pci.ids is up to date."
 else

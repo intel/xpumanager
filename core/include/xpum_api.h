@@ -612,8 +612,9 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
  * @brief Get statistics data by device
  * 
  * @param deviceId      IN: Device id
- * @param dataList     OUT: The arry to store statistics data for device \a deviceId. First pass NULL to query statistics data count. Then pass array with desired length to store statistics data.
- * @param count     IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList
+ * @param dataList     OUT: The arry to store statistics data for device \a deviceId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats_size of this device. A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
  * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
  * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
  * @return xpum_result_t
@@ -630,8 +631,9 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
  * @brief Get statistics data by group
  * 
  * @param groupId       IN: Group id
- * @param dataList     OUT: The arry to store statistics data for devices in group \a groupId. First pass NULL to query statistics data count. Then pass array with desired length to store statistics data.
- * @param count     IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList  
+ * @param dataList     OUT: The arry to store statistics data for devices in group \a groupId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than the total sum of stats_size of devices in group ( \a groupId ). A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
  * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
  * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
  * @return xpum_result_t 
@@ -643,6 +645,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   int *count,
                                   uint64_t *begin,
                                   uint64_t *end);
+
 
 /**
  * @brief Get per tile statistics data by group

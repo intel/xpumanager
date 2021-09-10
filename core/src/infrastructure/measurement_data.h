@@ -3,33 +3,42 @@
 #include <string>
 #include <chrono>
 #include <ctime>
-
+#include <map>
 #include "const.h"
 #include "logger.h"
+#include "utility.h"
+
+struct SubdeviceData {
+  uint64_t avg;
+  uint64_t min;
+  uint64_t max;
+  uint64_t current;
+};
 
 class MeasurementData {
  public:
   ~MeasurementData() {
+    subdevice_datas.clear();
   }
 
   MeasurementData(): avg(-1), min(-1), 
-    max(-1), current(-1), scale(1) {
+    max(-1), current(-1), scale(1), bHasDataOnDevice(false) {
   }
 
   MeasurementData(uint64_t value): avg(value), 
-    min(value), max(value), current(value), scale(1) {
+    min(value), max(value), current(value), scale(1), bHasDataOnDevice(true) {
   }  
 
   MeasurementData(uint64_t value, uint64_t scale): avg(value), 
-    min(value), max(value), current(value), scale(scale) {
+    min(value), max(value), current(value), scale(scale), bHasDataOnDevice(true) {
   }
 
   MeasurementData(uint64_t avg, uint64_t min, uint64_t max): avg(avg), 
-    min(min), max(max), current(-1), scale(1) {
+    min(min), max(max), current(-1), scale(1), bHasDataOnDevice(true) {
   }
 
   MeasurementData(uint64_t avg, uint64_t min, uint64_t max, uint64_t current, uint64_t scale): 
-    avg(avg), min(min), max(max), current(current), scale(scale) {
+    avg(avg), min(min), max(max), current(current), scale(scale), bHasDataOnDevice(true) {
   }
 
   MeasurementData(const MeasurementData& other) {
@@ -40,6 +49,8 @@ class MeasurementData {
     scale = other.scale;
     start_time = other.start_time;
     latest_time = other.latest_time;
+    bHasDataOnDevice = other.bHasDataOnDevice;
+    subdevice_datas = other.subdevice_datas;
   }
 
  public:  
@@ -49,7 +60,7 @@ class MeasurementData {
 
   void setMin(uint64_t min) { this->min = min; }
 
-  void setCurrent(uint64_t current) { this->current = current; }
+  void setCurrent(uint64_t current) { bHasDataOnDevice = true; this->current = current; }
 
   void setScale(uint64_t scale) { this->scale = scale; }
 
@@ -75,6 +86,32 @@ class MeasurementData {
 
   long long getLatestTime() {return latest_time;}
 
+  uint64_t getSubdeviceDataCurrent(uint32_t subdevice_id);
+
+  uint64_t getSubdeviceDataMin(uint32_t subdevice_id);
+
+  uint64_t getSubdeviceDataMax(uint32_t subdevice_id);
+
+  uint64_t getSubdeviceDataAvg(uint32_t subdevice_id);
+
+  void setSubdeviceDataCurrent(uint32_t subdevice_id, uint64_t data);
+
+  void setSubdeviceDataMin(uint32_t subdevice_id, uint64_t data);
+
+  void setSubdeviceDataMax(uint32_t subdevice_id, uint64_t data);
+
+  void setSubdeviceDataAvg(uint32_t subdevice_id, uint64_t data);
+
+  const std::map<uint32_t, SubdeviceData>& getSubdeviceDatas();
+
+  uint32_t getSubdeviceDataSize();
+
+  bool hasSubdeviceData();
+
+  uint32_t subdeviceNum() { return subdevice_datas.size(); }
+
+  bool hasDataOnDevice() { return bHasDataOnDevice; }
+
  protected:
   std::string device_id;  
 
@@ -90,6 +127,9 @@ class MeasurementData {
 
   uint64_t current;
 
-  uint64_t scale; 
+  int scale;
 
+  bool bHasDataOnDevice;
+
+  std::map<uint32_t, SubdeviceData> subdevice_datas;
 };
