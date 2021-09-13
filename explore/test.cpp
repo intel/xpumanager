@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <chrono>
 #include <thread>
+#include <cassert>
 #include "zes_api.h"
 #include "ze_api.h"
 
@@ -59,6 +60,59 @@ void print_gpu_props(zes_device_properties_t &props, ze_driver_properties_t &dri
               << std::endl;
 }
 
+void show_power_limit(zes_pwr_handle_t power){
+    using namespace std;
+    zes_power_sustained_limit_t sustained;
+    zes_power_burst_limit_t burst;
+    zes_power_peak_limit_t peak;
+    auto res = zesPowerGetLimits(power,&sustained,&burst,&peak);
+    assert(res==ZE_RESULT_SUCCESS);
+    // cout<<"sustained"<<endl;
+    if(sustained.enabled){
+        cout<<"sustained enabled"<<endl;
+        cout<<sustained.power<<endl;
+        cout<<sustained.interval<<endl;
+    }
+
+    if(burst.enabled){
+        cout<<"burst enabled"<<endl;
+        cout<<burst.power<<endl;
+    }
+
+    cout<<"peak info"<<endl;
+    cout<<peak.powerAC<<endl;
+    cout<<peak.powerDC<<endl;
+}
+
+void set_power_limit(zes_pwr_handle_t power) {
+    using namespace std;
+    zes_power_sustained_limit_t sustained;
+    sustained.enabled=false;
+    auto res=zesPowerSetLimits(power,&sustained,nullptr,nullptr);
+    cout<<hex<<res<<endl;
+}
+
+void show_power(zes_pwr_handle_t power){
+    using namespace std;
+    // get energy counter
+    zes_power_energy_counter_t counter0, counter1;
+    zesPowerGetEnergyCounter(power, &counter0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    zesPowerGetEnergyCounter(power, &counter1);
+    auto energy_delta = counter1.energy - counter0.energy;
+    auto time_delta = counter1.timestamp - counter0.timestamp;
+    cout << energy_delta / time_delta << "W" << endl;
+}
+
+void show_energy_threshold(zes_pwr_handle_t power){
+    using namespace std;
+    zes_energy_threshold_t threshold;
+    auto res = zesPowerGetEnergyThreshold(power,&threshold);
+    cout<<hex<<res<<endl;
+    assert(res==ZE_RESULT_SUCCESS);
+    if(threshold.enable) cout<<"threshold enabled"<<endl;
+}
+
 void get_gpu_power(ze_device_handle_t device)
 {
     using namespace std;
@@ -69,7 +123,7 @@ void get_gpu_power(ze_device_handle_t device)
         std::cout << "fail to get power data" << std::endl;
         return;
     }
-    cout << power_count << endl;
+    // cout << power_count << endl;
     vector<zes_pwr_handle_t> powers(power_count);
     if (ZE_RESULT_SUCCESS != zesDeviceEnumPowerDomains(device, &power_count, powers.data()))
     {
@@ -79,13 +133,14 @@ void get_gpu_power(ze_device_handle_t device)
 
     for (auto &power : powers)
     {
-        zes_power_energy_counter_t counter0, counter1;
-        zesPowerGetEnergyCounter(power, &counter0);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        zesPowerGetEnergyCounter(power, &counter1);
-        auto energy_delta = counter1.energy - counter0.energy;
-        auto time_delta = counter1.timestamp - counter0.timestamp;
-        cout << energy_delta / time_delta << "W" << endl;
+        // show_power(power);
+
+        show_power_limit(power);
+
+        set_power_limit(power);
+
+        // show_energy_threshold(power);
+        
     }
 }
 
@@ -254,6 +309,30 @@ void get_gpu_process(ze_device_handle_t device)
     }
 }
 
+void test_freq(ze_device_handle_t device) {
+    using namespace std;
+    uint32_t count;
+    auto res = zesDeviceEnumFrequencyDomains(device, &count, nullptr);
+    assert(res==ZE_RESULT_SUCCESS);
+    vector<zes_freq_handle_t> handles(count);
+    res = zesDeviceEnumFrequencyDomains(device, &count, handles.data());
+    assert(res==ZE_RESULT_SUCCESS);
+    for(auto& handle:handles){
+        zes_freq_range_t data;
+        res = zesFrequencyGetRange(handle,&data);
+        assert(res==ZE_RESULT_SUCCESS);
+        cout<<data.min<<" to "<<data.max<<endl;
+
+        zes_freq_state_t stateData;
+        zesFrequencyGetState(handle, &stateData);
+        assert(res==ZE_RESULT_SUCCESS);
+        cout<<"actual "<<stateData.actual<<endl;
+        cout<<"tdp "<<stateData.tdp<<endl;
+        cout<<"request "<<stateData.request<<endl;
+    }
+    // zes_freq_handle_t handle;
+}
+
 int main()
 {
     putenv(const_cast<char *>("ZES_ENABLE_SYSMAN=1"));
@@ -296,12 +375,13 @@ int main()
             zesDeviceGetProperties(zes_Device, &props);
             if (props.core.type == ZE_DEVICE_TYPE_GPU)
             {
-                print_gpu_props(props, driver_prop);
-                // get_gpu_power(device);
+                // print_gpu_props(props, driver_prop);
+                get_gpu_power(device);
                 // get_gpu_temp(device);
                 // get_gpu_engine(device);
                 // get_gpu_firmware(device);
                 // get_gpu_process(device);
+                // test_freq(device);
             }
         }
     }

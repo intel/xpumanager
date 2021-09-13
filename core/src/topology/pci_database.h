@@ -36,6 +36,7 @@ class PciDatabase {
     static PciDatabase &instance();
 
     bool isSwitchDevice(int32_t vendor_id, int32_t device_id);
+    bool getSwitchInfo(int32_t vendor_id, int32_t device_id, char switchVendorName[], char switchName[]);
 
   private:
     PciDatabase();

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "comlet_base.h"
-#include <CLI/CLI.hpp>
 
-#include <iostream>
+#include <nlohmann/json.hpp>
+#include <CLI/CLI.hpp>
 
 class ComletBase;
 
@@ -15,9 +15,11 @@ class CLIWrapper {
 
   public:
     CLIWrapper(CLI::App &cliApp);
-    void addComlet(ComletBase &comlet);
+    CLIWrapper& addComlet(const std::shared_ptr<ComletBase> &comlet);
+    std::string getResult();
 
   private:
     CLI::App &cliApp;
     std::unique_ptr<CLIWrapperOptions> opts;
+    std::unique_ptr<nlohmann::json> jsonResult;
 };

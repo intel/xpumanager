@@ -237,9 +237,13 @@ xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], 
     return Core::instance().getGroupManager()->getAllGroupIds(groupIds, count);
 }
 
-xpum_result_t xpumGetStats(xpum_device_id_t deviceId, xpum_device_stats_t *data)
+xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
+                           xpum_device_stats_t dataList[],
+                           int *count,
+                           uint64_t *begin,
+                           uint64_t *end)
 {
-    Core::instance().getDataLogic()->getMetricsStatistics(deviceId,data);
+    Core::instance().getDataLogic()->getMetricsStatistics(deviceId,dataList,count,begin,end);
     return xpum_result_t::XPUM_OK;
 }
 
@@ -257,7 +261,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, xpum_device_stats_t d
         result = XPUM_BUFFER_TOO_SMALL;
     } else {
         for(int i=0; i<groupInfo.count; i++){
-            Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], &dataList[i]);
+            //Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], &dataList[i]);
         }
         result = XPUM_OK;
     }

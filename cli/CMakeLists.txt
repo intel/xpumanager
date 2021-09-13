@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.2.0)
+cmake_minimum_required (VERSION 3.10.0)
 
 project (XPUMCLI)
 
@@ -26,12 +26,46 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/CLI11/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/json/include)
 
 # Scan source code files
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_SRC)
 
 add_executable(xpumcli ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
 target_sources(
   xpumcli
   PUBLIC
-  ${XPUM_SRC}
+  ${XPUM_CLI_SRC}
 )
+
+## Test using googletest
+add_subdirectory(libs/googletest)
+
+enable_testing()
+
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TESTING_SRC)
+list(REMOVE_ITEM XPUM_CLI_TESTING_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
+
+file( GLOB testing_sources testing/*_unittest.cpp )
+
+foreach( testsourcefile ${testing_sources} )
+
+  get_filename_component(testname ${testsourcefile} NAME_WE)
+
+  add_executable( ${testname} ${testsourcefile} )
+
+  target_link_libraries( ${testname})
+
+  target_sources(
+    ${testname}
+    PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}/testing/testing_common_util.cpp
+    ${XPUM_CLI_TESTING_SRC}
+    )
+
+  target_link_libraries(
+    ${testname}
+    gtest_main)
+
+  include(GoogleTest)
+  gtest_discover_tests(${testname})
+
+endforeach( testsourcefile ${testing_sources} )

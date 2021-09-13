@@ -14,5 +14,9 @@ class DataLogicQueryInterface {
   virtual void getLatestData(MeasurementType type,
                              std::map<std::string, MeasurementData>& datas) = 0;
 
-  virtual void getMetricsStatistics(xpum_device_id_t deviceId, xpum_device_stats_t *data) = 0;
+  virtual void getMetricsStatistics(xpum_device_id_t deviceId, 
+                                    xpum_device_stats_t dataList[], 
+                                    int *count,
+                                    uint64_t *begin,
+                                    uint64_t *end) = 0;
 };
