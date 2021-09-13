@@ -2,10 +2,12 @@
 
 #include "cli_wrapper.h"
 #include <CLI/CLI.hpp>
-#include <nlohmann/json.hpp>
 
 #include <cassert>
+#include <nlohmann/json.hpp>
 #include <string>
+
+class CoreStub;
 
 class ComletBase {
 
@@ -33,6 +35,8 @@ class ComletBase {
         assert(subCLIApp != nullptr);
         this->subCLIApp->add_flag(optName, variable, optDescription);
     };
+
+    std::shared_ptr<CoreStub> coreStub;
 
   private:
     const std::string command;

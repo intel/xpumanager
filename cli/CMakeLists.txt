@@ -24,9 +24,15 @@ link_directories(/usr/local/lib)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/CLI11/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/json/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../daemon)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
 
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_SRC)
+set(GRPC_SRC 
+  ${CMAKE_CURRENT_LIST_DIR}/../daemon/core.grpc.pb.cc
+  ${CMAKE_CURRENT_LIST_DIR}/../daemon/core.pb.cc
+)
 
 add_executable(xpumcli ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
@@ -34,7 +40,11 @@ target_sources(
   xpumcli
   PUBLIC
   ${XPUM_CLI_SRC}
+  ${GRPC_SRC}
 )
+
+target_link_libraries(xpumcli protobuf)
+target_link_libraries(xpumcli grpc++)
 
 ## Test using googletest
 add_subdirectory(libs/googletest)
@@ -52,18 +62,18 @@ foreach( testsourcefile ${testing_sources} )
 
   add_executable( ${testname} ${testsourcefile} )
 
-  target_link_libraries( ${testname})
-
   target_sources(
     ${testname}
     PUBLIC
-    ${CMAKE_CURRENT_LIST_DIR}/testing/testing_common_util.cpp
     ${XPUM_CLI_TESTING_SRC}
-    )
+    ${GRPC_SRC})
 
   target_link_libraries(
     ${testname}
-    gtest_main)
+    protobuf
+    grpc++
+    gtest_main
+    gmock_main)
 
   include(GoogleTest)
   gtest_discover_tests(${testname})

@@ -4,6 +4,8 @@ CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
     cliApp.add_flag("--pretty", this->opts->pretty, "Enable pretty-printing");
     cliApp.fallthrough(true);
+
+    this->coreStub = std::make_shared<CoreStub>();
 }
 
 CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
@@ -14,6 +16,10 @@ CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
         auto json = comlet->run();
         this->jsonResult = std::move(json);
     });
+
+    if (comlet->coreStub == nullptr) {
+        comlet->coreStub = this->coreStub;
+    }
 
     return *this;
 }
