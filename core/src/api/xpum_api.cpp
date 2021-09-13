@@ -678,3 +678,13 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
     }
     return XPUM_GENERIC_ERROR;  
 }
+
+xpum_result_t xpumGetTooplogy(xpum_device_id_t deviceId, xpum_topoloty_t * topology)
+{
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice( std::to_string( deviceId ) );
+    if ( device == nullptr ) {
+    	return XPUM_GENERIC_ERROR;
+    }
+
+     return XPUM_GENERIC_ERROR; 
+}

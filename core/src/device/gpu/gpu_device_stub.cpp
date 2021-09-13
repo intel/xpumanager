@@ -8,6 +8,7 @@
 #include "scheduler.h"
 #include "standby.h"
 #include "frequency.h"
+#include "topology.h"
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
@@ -281,6 +282,11 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 		  
           std::string bdf_regex = to_regex_string(pci_props.address);
           p_gpu->addProperty(Property(DeviceProperty::PCI_SLOT,getPciSlot(bdf_regex)));
+
+          xpum_switch pSwitch;
+          if(Topology::getParentSwitch(pci_props.address, &pSwitch)){
+            p_gpu->addProperty(Property(DeviceProperty::PARENT_SWITCH,to_string(pSwitch)));
+          }
 				}
 
 
@@ -397,6 +403,15 @@ std::string GPUDeviceStub::to_hex_string(uint32_t val) {
   std::stringstream s;
   s << std::string("0x") << std::hex << val << std::dec;
   return s.str();
+}
+
+std::string GPUDeviceStub::to_string(xpum_switch pSwitch) {
+  std::ostringstream os;
+  os << std::setfill('0') << std::setw(4) << std::hex
+     << pSwitch.vendorId
+     << std::setw(4) << std::hex
+     << pSwitch.deviceId;
+  return os.str();
 }
 
 void GPUDeviceStub::getPower(const zes_device_handle_t& device, Callback_t callback) noexcept{

@@ -71,4 +71,7 @@ class DeviceProperty {
     static const std::string BDF_ADDRESS;
 
     static const std::string PCI_SLOT;
+
+    static const std::string PARENT_SWITCH;
+
 };

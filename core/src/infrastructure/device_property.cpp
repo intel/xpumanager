@@ -34,3 +34,4 @@ const std::string DeviceProperty::FIRMWARE_NAME = "FIRMWARE_NAME";
 const std::string DeviceProperty::FIRMWARE_VERSION = "FIRMWARE_VERSION";
 const std::string DeviceProperty::BDF_ADDRESS = "BDF ADDRESS";
 const std::string DeviceProperty::PCI_SLOT = "PCI SLOT";
+const std::string DeviceProperty::PARENT_SWITCH = "PARENT_SWITCH";

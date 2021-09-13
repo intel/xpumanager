@@ -118,6 +118,8 @@ private:
 
   static std::string to_regex_string(zes_pci_address_t address);
 
+  static std::string to_string(xpum_switch pSwitch);
+
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;
   

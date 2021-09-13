@@ -494,28 +494,32 @@ struct xpum_scheduler_exclusive_t {
   uint32_t subdevice_Id;
 };
 
- 
-#define XPUM_MAX_CPU_AFFINITY_SIZE  256
+
+#define XPUM_MAX_CPU_LIST_LEN       32 
+#define XPUM_MAX_CPU_S_LEN          128
 #define XPUM_VENDOR_NAME_LEN        64
 #define XPUM_DEVICE_NAME_LEN        128
+#define XPUM_PCI_SLOT_LEN           32    
+
+struct  xpum_cpu_affinity{
+    char local_cpulist[XPUM_MAX_CPU_LIST_LEN];
+    char local_cpus[XPUM_MAX_CPU_S_LEN];
+};
+
+struct xpum_switch{
+  int32_t  vendorId;
+  int32_t  deviceId;      
+};
 struct xpum_topoloty_t {
     xpum_device_id_t deviceId;
-    char affinity[XPUM_MAX_CPU_AFFINITY_SIZE];
-    bool bswitch;
-    struct{
-        int32_t  switchVendorId;
-        int32_t  switchDeviceId;        
-        uint32_t switchUpStreamDomain;
-        uint32_t switchUpStreamBus;
-        uint32_t switchUpStreamDev;
-        uint32_t switchUpStreamFunc;
-        uint32_t switchDownStreamDomain;
-        uint32_t switchDownStreamSecondaryBus;
-        uint32_t switchDownStreamSubordinateBus;
-        char switchVendorName[XPUM_VENDOR_NAME_LEN];
-        char switchName[XPUM_DEVICE_NAME_LEN];
-    }Switch;
+    xpum_cpu_affinity cpuaffinity;
+    bool bSwitch;
+    xpum_switch xSwitch;
+    char vendorName[XPUM_VENDOR_NAME_LEN];
+    char name[XPUM_DEVICE_NAME_LEN];
+    char pciSlot[XPUM_PCI_SLOT_LEN];
 };
+
 
 #if defined(__cplusplus)
 } // extern "C"
