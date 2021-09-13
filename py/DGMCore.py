@@ -5,6 +5,9 @@ import string
 from enum import Enum, IntEnum, unique
 import datetime
 
+import grpc
+import core_pb2_grpc
+
 def hex_format(v):
     return hex(int(v))
 
@@ -318,6 +321,14 @@ class DGMCore:
         lib_path = os.path.join(project_dir_path,"lib","libDGMCore.so")
         self.lib = cdll.LoadLibrary(lib_path)
         self.lib.xpumInit()
+        
+# unix web socket begin
+        '''
+        unixSockName = '/tmp/xpum.sock'
+        channel = grpc.insecure_channel( 'unix://' + unixSockName )
+        self.stub = core_pb2_grpc.XpumCoreServiceStub( channel ) 
+        '''
+# unix web socket end
     
     def getVersion(self):
         count = c_int(0)
@@ -328,6 +339,19 @@ class DGMCore:
         res = self.lib.xpumVersionInfo(versionArray,byref(count))
         if res != 0:
             return False, "Fail to get version info", None
+        '''
+        resp = self.stub.getVersion( core_pb2_grpc.google_dot_protobuf_dot_empty__pb2.Empty() )
+        if len( resp.errorMsg ) == 0:
+            print( "good" )
+            for version in resp.versions:
+                print( version.versionString )
+        else:
+            print( "error msg " + resp.errorMsg );
+            return 1, "Fail to get version info", None
+
+        return 0, "OK", "NICE"
+
+        '''
         data=dict()
         versionList = [(v.version,bytes.decode(v.versionString)) for v in versionArray]
         for versionType,versionStr in versionList[:count.value]:
