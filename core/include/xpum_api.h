@@ -781,7 +781,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
 
 /** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
 
-xpum_result_t xpumGetTooplogy(xpum_device_id_t deviceId, xpum_topoloty_t * topology);
+xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topoloty_t * topology);
 
 #if defined(__cplusplus)
 } // extern "C"

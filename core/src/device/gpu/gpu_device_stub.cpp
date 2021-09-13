@@ -8,7 +8,7 @@
 #include "scheduler.h"
 #include "standby.h"
 #include "frequency.h"
-#include "topology.h"
+
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
@@ -408,9 +408,10 @@ std::string GPUDeviceStub::to_hex_string(uint32_t val) {
 std::string GPUDeviceStub::to_string(xpum_switch pSwitch) {
   std::ostringstream os;
   os << std::setfill('0') << std::setw(4) << std::hex
-     << pSwitch.vendorId
+     << pSwitch.vendorId << std::string(":")
      << std::setw(4) << std::hex
-     << pSwitch.deviceId;
+     << pSwitch.deviceId << std::string("@")
+     << pSwitch.pciSlot;
   return os.str();
 }
 

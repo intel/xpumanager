@@ -89,9 +89,9 @@ diag_parser.add_argument('-l', '--level', metavar="<level>", dest="level", type=
 fwflash_parser = subparsers.add_parser("fwflash", help="Flash device firmware")
 fwflash_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int, required=True,
                           help='The device id to query')
-fwflash_parser.add_argument('-t', '--type', metavar="<firmwareName>", dest="firmwareName", type=int, required=True,
+fwflash_parser.add_argument('-t', '--type', metavar="<firmwareName>", dest="firmwareName", required=True,
                           help='Firmware name to flash')
-fwflash_parser.add_argument('-f', '--file', metavar="<imagePath>", dest="imagePath", type=int, required=True,
+fwflash_parser.add_argument('-f', '--file', metavar="<imagePath>", dest="imagePath", required=True,
                           help='The file path in the server, used to flash firmware, should be located in /usr/bin')
 # standby subcommand parser
 standby_parser = subparsers.add_parser("standby", help="Get/set standby mode")
@@ -857,20 +857,19 @@ def flash_firmware(deviceId, firmwareName, imagePath):
     print("Start flashing firmware:")
     print("Firmware name: {}".format(firmwareName))
     print("Image path: {}".format(imagePath))
-    res = requests.post(host+"/rest/v1/devices/{}/firmwareUpgrade".format(deviceId), json=reqData)
+    res = requests.post(host+"/rest/v1/devices/{}/firmwareUpgrade".format(deviceId), data=reqData)
     if res.status_code != 200 or res.json()["result"]!="OK":
         print("Error occurs: fail to flash firmware")
     while True:
-        time.sleep(5)
+        time.sleep(0.5)
         res = requests.get(host+"/rest/v1/devices/0/firmware",params={"type":firmwareType})
         data = res.json()
         result = data["result"]
         if result == "OK":
-            print("Firmware successfully flashed!")
+            print("Firmware flashed successfully!")
             return
         elif result=="ERROR":
             print("Error occurs: fail to flash firmware")
-        print(".",sep=" ")
 
 def search_standbys_enum_mode(num):
     return {

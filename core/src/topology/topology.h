@@ -3,12 +3,21 @@
 #include "hwloc.h"
 #include <string>
 #include "xpum_structs.h"
+
+
+struct xpum_switch{
+  int32_t  vendorId;
+  int32_t  deviceId;   
+  char pciSlot[XPUM_PCI_SLOT_LEN];   
+};
+
 class Topology {
   private:    
     Topology();
     virtual ~Topology();
   public:
     static bool getParentSwitch(zes_pci_address_t address, xpum_switch *pswitch);
+    static bool getSwitchTopo(std::string switchstr, xpum_topoloty_t * topology);
     static std::string getLocalCpus(std::string address);
     static std::string getLocalCpusList(std::string address);  
   private:
