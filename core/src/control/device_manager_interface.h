@@ -65,6 +65,9 @@ class DeviceManagerInterface : public InitCloseInterface {
 
   virtual bool setDeviceSchedulerExclusiveMode(const std::string& id,
                                                const SchedulerExclusiveMode& mode) = 0;
+
+  virtual bool resetDevice(const std::string& id, bool force) = 0;
+                                               
   
   virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
 };

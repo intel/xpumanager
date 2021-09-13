@@ -774,6 +774,8 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
 xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                                                 const xpum_scheduler_exclusive_t& sched_exclusive);
 
+xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
+
 /** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
 
 #if defined(__cplusplus)

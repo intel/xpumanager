@@ -3,6 +3,7 @@
 from flask import Flask, json, jsonify
 from flask import render_template
 from flask import request, Response
+from requests import NullHandler
 
 from DGMCore import DGMCore
 from kube_pod_resource import get_pod_resources
@@ -298,25 +299,28 @@ def operate_device_standbys_result(deviceId):
 def operate_device_powerlimits_result(deviceId):
     req = request.get_json()
     subDeviceId = req["subDeviceId"]
-
+    if subDeviceId is None:
+        return jsonify("Need subDeviceId"), 500
     if request.method == 'GET':
         code, message, data = core.getDevicePowerLimits(deviceId, subDeviceId)
     else:
         if request.method == 'POST':
-            limitType = req["LimitType"]
-            if limitType == '0': # Sustained limit
+            limitType = req["limitType"]
+            if limitType == 0: # Sustained limit
                 enabled = req["enabled"]
                 power = req["power"]
                 interval = req["interval"]
                 code, message, data = core.setDevicePowerSustainedLimits(deviceId, subDeviceId, enabled, power, interval)
-            elif limitType == '1': # Burst limit
+            elif limitType == 1: # Burst limit
                 enabled = req["enabled"]
                 power = req["power"]
-                code, message, data = core.setDevicePowerSustainedLimits(deviceId, subDeviceId, enabled, power)
-            elif limitType == '2': # Peak limit
+                code, message, data = core.setDevicePowerBurstLimits(deviceId, subDeviceId, enabled, power)
+            elif limitType == 2: # Peak limit
                 powerAC = req["powerAC"]
                 powerDC = req["powerDC"]
-                code, message, data = core.setDevicePowerSustainedLimits(deviceId, subDeviceId, powerAC, powerDC)
+                code, message, data = core.setDevicePowerPeakLimits(deviceId, subDeviceId, powerAC, powerDC)
+            else:
+                code, message, data = 500, "invalid limitType",
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
@@ -342,28 +346,43 @@ def operate_device_frequencyranges_result(deviceId):
 
 @app.route('/rest/v1/devices/<int:deviceId>/schedulers', methods=['GET','POST'])
 def operate_device_schedulers_result(deviceId):
-    req = request.get_json()
-    subDeviceId = req["subDeviceId"]
-
     if request.method == 'GET':
         code, message, data = core.getDeviceSchedulers(deviceId)
     else:
         if request.method == 'POST':
+            req = request.get_json()
+            subDeviceId = req["subDeviceId"]
             schedulerType = req["SchedulerType"]
-            if schedulerType == '0': # Timeout mode
+            if schedulerType == 0: # Timeout mode
                 watchdogTimeout = req["watchdogTimeout"]
                 code, message, data = core.setDeviceSchedulerTimeoutMode(deviceId, subDeviceId, watchdogTimeout)
-            elif schedulerType == '1': # Timeslice mode
+            elif schedulerType == 1: # Timeslice mode
                 interval = req["interval"]
                 yieldTimeout = req["yieldTimeout"]
-                code, message, data = core.setDevicePowerSustainedLimits(deviceId, subDeviceId, interval, yieldTimeout)
-            elif schedulerType == '2': # Exclusive mode
+                code, message, data = core.setDeviceSchedulerTimesliceMode(deviceId, subDeviceId, interval, yieldTimeout)
+            elif schedulerType == 2: # Exclusive mode
                 code, message, data = core.setDeviceSchedulerExclusiveMode(deviceId, subDeviceId)
+            else:
+                code, message, data = 500, "invalid scheduler Type",
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
 
+@app.route('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'])
+def operate_device_reset(deviceId):
+    req = request.get_json()
+    force = req["force"]
+    if force is None:
+        force = False
+    if request.method == 'POST':
+        code, message, data = core.resetDevice(deviceId, force)
+    else:
+        code, message, data = 500, "invalid reset request",
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
 
 if __name__ == '__main__':
     app.debug = True

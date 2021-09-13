@@ -65,6 +65,9 @@ class DeviceManager : public DeviceManagerInterface,
   bool setDeviceSchedulerExclusiveMode(const std::string& id,
                                        const SchedulerExclusiveMode& mode);
 
+  bool resetDevice(const std::string& id, bool force);
+                                       
+
   std::shared_ptr<Device> getDevice(const std::string& id);
 
  private:

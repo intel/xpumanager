@@ -205,15 +205,15 @@ class XpumDiagTaskInfo(Structure):
     ]
 
 class XpumStandbyType(IntEnum):
-    XPUM_GLOBAL = 1<<0
+    XPUM_GLOBAL = 0
     XPUM_STANDBY_TYPE_FORCE_UINT32 = 0x7fffffff
     @classmethod
     def from_param(cls, obj):
         return c_int32(obj.value)
 
 class XpumStandbyMode(IntEnum):
-    XPUM_DEFAULT = (1<<0)
-    XPUM_NEVER = (1<<1)
+    XPUM_DEFAULT = 0
+    XPUM_NEVER = 1
     XPUM_STANDBY_MODE_FORCE_UINT32 = 0x7fffffff
     @classmethod
     def from_param(cls, obj):
@@ -749,7 +749,6 @@ class DGMCore:
             standby.onSubdevice = c_bool(False)
             standby.subdeviceId = c_int(subDeviceId)
         standby.mode = c_int(mode)
-
         res = self.lib.xpumSetDeviceStandby(c_int32(deviceId), byref(standby))
         if res != 0:
             return res, "Fail to set device standby", None
@@ -763,15 +762,26 @@ class DGMCore:
         powerLimit.sustainedLimit = sustainedLimit
         powerLimit.burstLimit = burstLimit
         powerLimit.peakLimit = peakLimit
-
+        if byref(powerLimit) is None:
+            print("para is none")
+        
+        #LimitArray = []
         res = self.lib.xpumGetDevicePowerLimits(c_int32(deviceId), c_int32(subDeviceId), byref(powerLimit))
         if res != 0:
             return res, "Fail to get device power limits", None
-        limits = dict()
-        limits['sustainedLimit'] = powerLimit.sustainedLimit
-        limits['burstLimit'] = powerLimit.burstLimit
-        limits['peakLimit'] = powerLimit.peakLimit
-        return 0, "OK", dict(DeviceId=deviceId, subDevice=dict(subDeviceId=subDeviceId, limits=limits))
+        limit = {}
+        limit['sustainedLimit'] = {}
+        limit['sustainedLimit'] ['enabled'] = powerLimit.sustainedLimit.enabled
+        limit['sustainedLimit'] ['power'] = powerLimit.sustainedLimit.power
+        limit['sustainedLimit'] ['interval'] = powerLimit.sustainedLimit.interval
+        limit['burstLimit'] = {}
+        limit['burstLimit'] ['enabled'] = powerLimit.burstLimit.enabled
+        limit['burstLimit'] ['power'] = powerLimit.burstLimit.power
+        limit['peakLimit'] = {}
+        limit['peakLimit'] ['powerAC'] = powerLimit.peakLimit.powerAC
+        limit['peakLimit'] ['powerDC'] = powerLimit.peakLimit.powerDC
+        #LimitArray.append(limit)
+        return 0, "OK", dict(DeviceId=deviceId, SubDeviceId=subDeviceId, limits=limit)
 
     def setDevicePowerSustainedLimits(self, deviceId, subDeviceId, enabled, power, interval):
         sustainedLimit = XpumPowerSustainedLimit()
@@ -787,7 +797,6 @@ class DGMCore:
         BurstLimit = XpumPowerBurstLimit()
         BurstLimit.enabled = c_bool(enabled)
         BurstLimit.power = c_int32(power)
-
         res = self.lib.xpumSetDevicePowerBurstLimits(c_int32(deviceId), c_int32(subDeviceId), byref(BurstLimit))
         if res != 0:
             return res, "Fail to set device power limit", None
@@ -797,7 +806,6 @@ class DGMCore:
         PeakLimit = XpumPowerPeakLimit()
         PeakLimit.powerAC = c_int32(powerAC)
         PeakLimit.powerDC = c_int32(powerDC)
-
         res = self.lib.xpumSetDevicePowerPeakLimits(c_int32(deviceId), c_int32(subDeviceId), byref(PeakLimit))
         if res != 0:
             return res, "Fail to set device power limit", None
@@ -809,7 +817,6 @@ class DGMCore:
         res = self.lib.xpumGetDeviceFrequencyRanges(c_int32(deviceId), byref(deviceFreqArray), byref(count))
         if res != 0:
             return res, "Fail to get device frequency ranges result", None
-        
         dataArray = []
         for deviceFreq in deviceFreqArray[:count.value]:
             data = dict()
@@ -824,9 +831,8 @@ class DGMCore:
         deviceFreq = XpumFrequencyRange()
         deviceFreq.type = c_int32(type)
         deviceFreq.subdeviceId = c_int32(subDeviceId)
-        deviceFreq.min = c_int(min)
-        deviceFreq.max = c_int(max)
-
+        deviceFreq.min = c_double(min)
+        deviceFreq.max = c_double(max)
         res = self.lib.xpumSetDeviceFrequencyRange(c_int32(deviceId), byref(deviceFreq))
         if res != 0:
             return res, "Fail to set device frequency range limit", None
@@ -838,7 +844,6 @@ class DGMCore:
         res = self.lib.xpumGetDeviceSchedulers(c_int32(deviceId), byref(deviceSchedulerArray), byref(count))
         if res != 0:
             return res, "Fail to get device schedulers result", None
-        
         dataArray = []
         for scheduler in deviceSchedulerArray[:count.value]:
             data = dict()
@@ -854,8 +859,7 @@ class DGMCore:
     def setDeviceSchedulerTimeoutMode(self, deviceId, subDeviceId, watchdogTimeout):
         schedulerTimeout = XpumSchedulerTimeout()
         schedulerTimeout.subdeviceId = c_int32(subDeviceId)
-        schedulerTimeout.watchdogTimeout = c_int64(watchdogTimeout)
-
+        schedulerTimeout.watchdogTimeout = c_uint64(watchdogTimeout)
         res = self.lib.xpumSetDeviceSchedulerTimeoutMode(c_int32(deviceId), byref(schedulerTimeout))
         if res != 0:
             return res, "Fail to set device scheduler timeout", None
@@ -864,9 +868,8 @@ class DGMCore:
     def setDeviceSchedulerTimesliceMode(self, deviceId, subDeviceId, interval, yieldTimeout):
         schedulerTimeslice = XpumSchedulerTimeslice()
         schedulerTimeslice.subdeviceId = c_int32(subDeviceId)
-        schedulerTimeslice.interval = c_int32(interval)
-        schedulerTimeslice.yieldTimeout = c_int64(yieldTimeout)
-
+        schedulerTimeslice.interval = c_uint64(interval)
+        schedulerTimeslice.yieldTimeout = c_uint64(yieldTimeout)
         res = self.lib.xpumSetDeviceSchedulerTimesliceMode(c_int32(deviceId), byref(schedulerTimeslice))
         if res != 0:
             return res, "Fail to set device scheduler timeslice", None
@@ -875,9 +878,14 @@ class DGMCore:
     def setDeviceSchedulerExclusiveMode(self, deviceId, subDeviceId):
         schedulerExc = XpumSchedulerExclusive()
         schedulerExc.subdeviceId = c_int32(subDeviceId)
-
-        res = self.lib.xpumSetDeviceSchedulerTimesliceMode(c_int32(deviceId), byref(schedulerExc))
+        res = self.lib.xpumSetDeviceSchedulerExclusiveMode(c_int32(deviceId), byref(schedulerExc))
         if res != 0:
             return res, "Fail to set device scheduler Exclusive Mode", None
+        return 0, "OK", {"result": "OK"}
+    
+    def resetDevice(self, deviceId, force):
+        res = self.lib.xpumResetDevice(c_int32(deviceId), c_bool(force))
+        if res != 0:
+            return res, "Fail to reset device", None
         return 0, "OK", {"result": "OK"}
     

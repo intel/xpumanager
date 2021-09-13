@@ -705,6 +705,18 @@ void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector
   }
 }
 
+bool GPUDeviceStub::resetDevice(const zes_device_handle_t& device, ze_bool_t force) {
+  if (device == nullptr) {
+    return false;
+  }
+  ze_result_t res = zesDeviceReset(device, force);
+  if (res == ZE_RESULT_SUCCESS) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void GPUDeviceStub::getStandbys(const zes_device_handle_t& device, std::vector<Standby>& standbys) {
   if (device == nullptr) {
     return;

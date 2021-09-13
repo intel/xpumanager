@@ -76,6 +76,8 @@ class GPUDeviceStub {
 
   static void getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t *data, 
                               int thermal_threshold, int power_threshold, bool global_default_limit);
+  
+  static bool resetDevice(const zes_device_handle_t& device, ze_bool_t force);
 
 private:
   GPUDeviceStub();

@@ -403,13 +403,13 @@ enum xpum_engine_type_flags_t {
 };
 
 enum xpum_standby_type_t {
-  XPUM_GLOBAL                    = 1 << 0,
+  XPUM_GLOBAL                    = 0,
   XPUM_STANDBY_TYPE_FORCE_UINT32 = 0x7fffffff
 };
 
 enum xpum_standby_mode_t {
-  XPUM_DEFAULT                   = 1 << 0,
-  XPUM_NEVER                     = 1 << 1,
+  XPUM_DEFAULT                   = 0,
+  XPUM_NEVER                     = 1,
   XPUM_STANDBY_MODE_FORCE_UINT32 = 0x7fffffff
 };
 

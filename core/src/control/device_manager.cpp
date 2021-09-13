@@ -220,3 +220,8 @@ bool DeviceManager::setDeviceSchedulerExclusiveMode(const std::string& id, const
   std::unique_lock<std::mutex> lock(this->mutex);
   return GPUDeviceStub::instance().setSchedulerExclusiveMode(getDeviceHandle(id), mode);
 }
+
+bool DeviceManager::resetDevice(const std::string& id, bool force) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  return GPUDeviceStub::instance().resetDevice(getDeviceHandle(id),(ze_bool_t)force);
+}
