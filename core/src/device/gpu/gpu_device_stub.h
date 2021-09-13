@@ -12,6 +12,7 @@
 #include "power.h"
 #include "frequency.h"
 #include "health_data_type.h"
+#include "topology.h"
 
 class GPUDeviceStub {
  public:

@@ -1,17 +1,15 @@
-#include "topology.h"
-
-#include "device_property.h"
-#include "logger.h"
-#include "pci_database.h"
-#include "hwinfo.h"
-
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
 #include <iostream>
-
 #include <assert.h>
 #include <fstream>
+
+#include "topology.h"
+#include "device_property.h"
+#include "logger.h"
+#include "pci_database.h"
+#include "hwinfo.h"
 
 Topology::Topology()    {
     LOG_INFO("Topology()");
@@ -54,6 +52,7 @@ bool Topology::getParentSwitch(zes_pci_address_t address, xpum_switch *pswitch) 
     hwloc_topology_t hwtopology;
     hwloc_obj_t obj = nullptr;
     bool found = false;
+
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
     hwloc_topology_load(hwtopology);
@@ -87,6 +86,31 @@ bool Topology::getParentSwitch(zes_pci_address_t address, xpum_switch *pswitch) 
     return found;
 }
 
+bool Topology::getSwitchTopo(std::string switchstr, xpum_topoloty_t * topology)
+{
+    std::size_t start = 0, pos = 0;
+
+    if(switchstr.length() < 9) {
+        return false;
+    }
+    int32_t vendor_id = std::stoi(switchstr.substr(start), &pos, 16);
+    start += pos + 1;
+    int32_t device_id = std::stoi(switchstr.substr(start), &pos, 16);
+    start += pos + 1;
+    std::string pciSlot = switchstr.substr(start);
+    if(pciSlot.length() > 0){
+        std::size_t len = pciSlot.copy(topology->parent_switch.pciSlot, XPUM_PCI_SLOT_LEN);
+        topology->parent_switch.pciSlot[len] = '\0';
+    }
+    if(!PciDatabase::instance().getSwitchInfo(vendor_id, device_id, 
+                        topology->parent_switch.vendorName, topology->parent_switch.name)){
+        return false;
+    }
+
+    return true;
+}
+
+
 bool Topology::hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, int32_t device, int32_t function) {
     hwloc_obj_t objChild = obj->io_first_child;
 
@@ -114,10 +138,15 @@ bool Topology::isSwitchDevice(hwloc_obj_t obj)
 }
 
 bool Topology::getSwitchInfo(hwloc_obj_t obj, xpum_switch *pswitch) {
-    int verdor_id = obj->attr->bridge.upstream.pci.vendor_id;
-    int device_id = obj->attr->bridge.upstream.pci.device_id;
+    pswitch->vendorId = obj->attr->bridge.upstream.pci.vendor_id;
+    pswitch->deviceId = obj->attr->bridge.upstream.pci.device_id;
+
+    std::string pciAddress = pci2RegxString(obj);
+    std::string pciSlog = HWInfo::getPciSlot(pciAddress);
+    std::size_t len = pciSlog.copy(pswitch->pciSlot, XPUM_PCI_SLOT_LEN);
+    pswitch->pciSlot[len] = '\0';
+    
     return true;
-    //PciDatabase::instance().getSwitchInfo(verdor_id, device_id, pswitch->vendorName, pswitch->name);
 }
 
 std::string Topology::pci2RegxString(hwloc_obj_t obj)

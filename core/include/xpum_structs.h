@@ -501,23 +501,20 @@ struct xpum_scheduler_exclusive_t {
 #define XPUM_DEVICE_NAME_LEN        128
 #define XPUM_PCI_SLOT_LEN           32    
 
-struct  xpum_cpu_affinity{
-    char local_cpulist[XPUM_MAX_CPU_LIST_LEN];
-    char local_cpus[XPUM_MAX_CPU_S_LEN];
-};
 
-struct xpum_switch{
-  int32_t  vendorId;
-  int32_t  deviceId;      
-};
+
 struct xpum_topoloty_t {
     xpum_device_id_t deviceId;
-    xpum_cpu_affinity cpuaffinity;
+    struct{
+        char local_cpulist[XPUM_MAX_CPU_LIST_LEN];
+        char local_cpus[XPUM_MAX_CPU_S_LEN];
+    }cpu_affinity;
     bool bSwitch;
-    xpum_switch xSwitch;
-    char vendorName[XPUM_VENDOR_NAME_LEN];
-    char name[XPUM_DEVICE_NAME_LEN];
-    char pciSlot[XPUM_PCI_SLOT_LEN];
+    struct{
+        char vendorName[XPUM_VENDOR_NAME_LEN];
+        char name[XPUM_DEVICE_NAME_LEN];
+        char pciSlot[XPUM_PCI_SLOT_LEN];
+    }parent_switch;   
 };
 
 
