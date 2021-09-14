@@ -368,6 +368,13 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_MEMORY_WRITE,
     XPUM_STATS_PCIRX,
     XPUM_STATS_PCITX,
+    XPUM_STATS_RAS_ERROR_CAT_RESET,
+    XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
+    XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS,
+    XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
+    XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
+    XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
+    XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -515,6 +522,74 @@ struct xpum_topoloty_t {
         char name[XPUM_DEVICE_NAME_LEN];
         char pciSlot[XPUM_PCI_SLOT_LEN];
     }parent_switch;   
+};
+
+
+typedef enum xpum_ras_type_enum {
+    XPUM_RAS_ERROR_CAT_RESET = 0,
+    XPUM_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
+    XPUM_RAS_ERROR_CAT_DRIVER_ERRORS,
+    XPUM_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
+    XPUM_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
+    XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
+    XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
+    XPUM_RAS_ERROR_MAX
+} xpum_ras_type_t;
+
+typedef enum xpum_policy_type_enum {  
+    XPUM_POLICY_TYPE_GPU_TEMPERATURE,
+    XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE,
+    XPUM_POLICY_TYPE_GPU_POWER,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
+    XPUM_POLICY_TYPE_MAX
+} xpum_policy_type_t;
+
+typedef enum xpum_policy_conditon_type_enum {  
+    XPUM_POLICY_CONDITION_TYPE_GREATER,
+    XPUM_POLICY_CONDITION_TYPE_LESS,
+    XPUM_POLICY_CONDITION_TYPE_WHEN_INCREASE
+} xpum_policy_conditon_type_t;
+
+struct xpum_policy_condition_t {
+    xpum_policy_conditon_type_t type;
+    uint64_t threshold;
+};
+
+typedef enum xpum_policy_action_type_enum {  
+    XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE,
+    XPUM_POLICY_ACTION_TYPE_RESET_DEVICE,
+    XPUM_POLICY_ACTION_TYPE_NULL
+} xpum_policy_action_type_t;
+
+struct xpum_policy_action_t {
+    xpum_policy_action_type_t type;
+    double throttle_device_frequency_min;
+    double throttle_device_frequency_max;
+};
+
+struct xpum_policy_notify_callback_para_t {
+    xpum_policy_type_t type;
+    xpum_policy_condition_t condition;
+    xpum_policy_action_t    action;
+    xpum_device_id_t deviceId;               
+    uint64_t timestamp;
+    uint64_t curValue;
+};
+
+typedef void (*xpum_notify_callback_ptr_t)(xpum_policy_notify_callback_para_t *); //return value for policy condtion trigger and action
+struct xpum_policy_t {
+    xpum_policy_type_t type;
+    xpum_policy_condition_t condition;
+    xpum_policy_action_t    action;
+    xpum_notify_callback_ptr_t notifyCallBack;
+    xpum_device_id_t deviceId;               // Only for get policy api, ignored by set policy api.
+    bool isDeletePolicy;                     // Only for set policy api, ignored by get policy api. If true, then delete this policy in set policy api.
 };
 
 

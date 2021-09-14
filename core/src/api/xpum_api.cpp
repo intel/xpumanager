@@ -253,25 +253,34 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
 }
 
 
-xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, xpum_device_stats_t dataList[], int *count)
+xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, 
+                                  xpum_device_stats_t dataList[], 
+                                  int *count,
+                                  uint64_t *begin,
+                                  uint64_t *end)
 {
-    xpum_result_t result = XPUM_GENERIC_ERROR;
     xpum_group_info_t groupInfo;
+    int currentCount = 0, totalCount = 0;
+    xpum_device_stats_t * pStatus = dataList;
+
     if(Core::instance().getGroupManager()->getGroupInfo(groupId, &groupInfo) != XPUM_OK)
     {
-        return result;
+        return XPUM_GENERIC_ERROR;
     }
 
-    if( *count < groupInfo.count ) {
-        result = XPUM_BUFFER_TOO_SMALL;
-    } else {
-        for(int i=0; i<groupInfo.count; i++){
-            //Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], &dataList[i]);
-        }
-        result = XPUM_OK;
+    for(int i=0; i<groupInfo.count; i++){
+        currentCount = *count - totalCount;
+        Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], pStatus,
+                                                             &currentCount, begin, end);
+        totalCount += currentCount;   
+        pStatus += currentCount;
+        if(*count < totalCount){
+            return XPUM_BUFFER_TOO_SMALL;
+        }        
     }
-    *count = groupInfo.count;
-    return result;
+    
+    *count = totalCount;
+    return XPUM_OK;
 }
 
 xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
