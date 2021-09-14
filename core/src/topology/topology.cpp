@@ -71,6 +71,7 @@ bool Topology::getParentSwitch(zes_pci_address_t address, xpum_switch *pswitch) 
 
         if (hasChildPciDevice(objChild, address.domain, address.bus, address.device, address.function)) {
             found = true;
+            
             break;
         }
     }
@@ -79,6 +80,7 @@ bool Topology::getParentSwitch(zes_pci_address_t address, xpum_switch *pswitch) 
         assert(obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI);
         assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);   
         found = getSwitchInfo(obj, pswitch);
+        LOG_INFO("Topology::getParentSwitch() found parent switch- {}.{}.", pswitch->vendorId, pswitch->deviceId);
     }
 
     hwloc_topology_destroy(hwtopology);
@@ -104,6 +106,7 @@ bool Topology::getSwitchTopo(std::string switchstr, xpum_topoloty_t * topology)
     }
     if(!PciDatabase::instance().getSwitchInfo(vendor_id, device_id, 
                         topology->parent_switch.vendorName, topology->parent_switch.name)){
+        LOG_ERROR("Topology::getSwitchTopo() error- {}.{}.", vendor_id, device_id);
         return false;
     }
 

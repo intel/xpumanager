@@ -14,12 +14,12 @@ struct PciDevice {
     std::string sub_s_name;
     std::string tostring() {
       return std::string("verdor_id:") + std::to_string(vendor_id)
-              + std::string("\rdevice_id:") + std::to_string(device_id)
-              + std::string("\rsub_vendor_id:") + std::to_string(sub_v_id)
-              + std::string("\rsub_device_id:") + std::to_string(sub_d_id)
-              + std::string("\rverdor:") + verdor_name
-              + std::string("\rdevice:") + device_name
-              + std::string("sub name:") + sub_s_name;           
+              + std::string(" device_id:") + std::to_string(device_id)
+              + std::string(" sub_vendor_id:") + std::to_string(sub_v_id)
+              + std::string(" sub_device_id:") + std::to_string(sub_d_id)
+              + std::string(" verdor:") + verdor_name
+              + std::string(" device:") + device_name
+              + std::string(" sub name:") + sub_s_name;           
     }
 };
 

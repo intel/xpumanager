@@ -48,7 +48,7 @@ bool PciDatabase::init() {
             infile.close();
             
         } else {
-            LOG_ERROR("PciDatabase::init()- open file[%s] error.", fileName);
+            LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
         }
         
     }
@@ -62,13 +62,13 @@ bool PciDatabase::init() {
     infile.open(fileName.data());
 
     if (!infile.is_open()) {
-        LOG_ERROR("PciDatabase::init()- open file[%s] error.", fileName);
+        LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
         fileName = std::string(PCI_IDS_DIR_BAK) + std::string(PCI_IDS_FILE);
 
         infile.open(fileName.data());
 
         if (!infile.is_open()) {
-            LOG_ERROR("PciDatabase::init()- open file[%s] error.", fileName);
+            LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
             return false;
         }
     }
@@ -332,24 +332,24 @@ void PciDatabase::add_switch_device(int32_t vendor_id, int32_t device_id, std::s
             {vendor_id, device_id, verdor_name, device_name, sub_v_id, sub_d_id, sub_s_name};
     
     if(bAdd) {
-        LOG_INFO(device.tostring());
+        LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
         switch_device[std::make_pair(vendor_id, device_id)] = device;
         return;
     }
 
     if(sub_v_id>=0 && sub_d_id>=0 && !sub_s_name.empty()){
         if (sub_s_name.find(switch_string) != std::string::npos) {
-            LOG_INFO(device.tostring());
+            LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
             switch_device[std::make_pair(vendor_id, device_id)] = device;
         }
     } else if(vendor_id>=0 && device_id>=0 && !device_name.empty()) {
         if (device_name.find(switch_string) != std::string::npos) {
-            LOG_INFO(device.tostring());
+            LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
             switch_device[std::make_pair(vendor_id, device_id)] = device;
         }
     } else {
         assert(0);
-        LOG_ERROR("PciDatabase::add_switch_device() error- unknow device[%s].", device.tostring());
+        LOG_ERROR("PciDatabase::add_switch_device() error- unknow device {}.", device.tostring());
     }    
 }
 
