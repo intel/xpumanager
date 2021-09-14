@@ -6,7 +6,7 @@ from enum import Enum, IntEnum, unique
 import datetime
 
 import grpc
-import core_pb2_grpc
+# import core_pb2_grpc
 
 def hex_format(v):
     return hex(int(v))
@@ -141,8 +141,7 @@ class XpumDeviceStats(Structure):
         ("deviceId", c_int32),
         ("isTileData", c_bool),
         ("tileId", c_int32),
-        ("begin", c_uint64),
-        ("end", c_uint64),
+        ("count", c_int32),
         ("dataList", XpumStatsData * XpumStatsType.XPUM_STATS_MAX.value),
     ]
 
@@ -500,46 +499,58 @@ class DGMCore:
         return 0, "OK", data 
     
     def getStatistics(self, deviceId):
-        deviceStats = XpumDeviceStats()
-        res = self.lib.xpumGetStats(c_int32(deviceId), byref(deviceStats))
+        count = c_int(5)
+        deviceStats = (XpumDeviceStats * count.value)()
+        begin = c_uint64()
+        end = c_uint64()
+        res = self.lib.xpumGetStats(c_int32(deviceId), byref(deviceStats), byref(count),byref(begin),byref(end))
         if res != 0:
             return res, "Fail to get statistics", None
         data = dict()
-        data['DeviceId'] = deviceStats.deviceId
-        beginTimestamp = datetime.datetime.fromtimestamp(deviceStats.begin/1e3)
-        endTimestamp = datetime.datetime.fromtimestamp(deviceStats.end/1e3)
+        data['DeviceId'] = deviceId
+        beginTimestamp = datetime.datetime.fromtimestamp(begin.value/1e3)
+        endTimestamp = datetime.datetime.fromtimestamp(end.value/1e3)
         data['Begin'] = beginTimestamp.isoformat(sep=' ', timespec='milliseconds')
         data['End'] = endTimestamp.isoformat(sep=' ', timespec='milliseconds')
-        dataList = []
-        i = -1
-        for d in deviceStats.dataList:
-            tmp = dict()
-            i += 1
-            if i != d.metricsType:
-                continue
-            metricsType = XpumStatsType(d.metricsType).name
-            tmp["metricsType"] = metricsType
-            tmp["value"] = d.value
-            if not d.isCounter:
-                tmp["min"] = d.min
-                tmp["avg"] = d.avg
-                tmp["max"] = d.max
-            dataList.append(tmp)
-        data["dataList"] = dataList
+        deviceLevelStatsDataList = []
+        tileLevelStatsDataList = []
+        for device in deviceStats[:count.value]:
+            dataList=[]
+            for d in device.dataList[:device.count]:
+                tmp = dict()
+                metricsType = XpumStatsType(d.metricsType).name
+                tmp["metricsType"] = metricsType
+                tmp["value"] = d.value
+                if not d.isCounter:
+                    tmp["min"] = d.min
+                    tmp["avg"] = d.avg
+                    tmp["max"] = d.max
+                dataList.append(tmp)
+            # data["dataList"] = dataList
+            if device.isTileData:
+                tmp = dict(tileId=device.tileId,dataList=dataList)
+                tileLevelStatsDataList.append(tmp)
+            else:
+                deviceLevelStatsDataList=dataList
+        data["DeviceLevel"] = deviceLevelStatsDataList
+        if tileLevelStatsDataList:
+            data["TileLevel"] = tileLevelStatsDataList
         return 0, "OK", data
 
     def getStatisticsByGroup(self, groupId):
-        groupDeviceStats = (XpumDeviceStats * 32)()
-        count = c_int(32)
-        res = self.lib.xpumGetStatsByGroup(c_int32(groupId),groupDeviceStats, byref(count))
+        count = c_int(32*5)
+        groupDeviceStats = (XpumDeviceStats * count.value)()
+        begin = c_uint64()
+        end = c_uint64()
+        res = self.lib.xpumGetStatsByGroup(c_int32(groupId),groupDeviceStats, byref(count),byref(begin),byref(end))
         if res != 0:
             return res, "Fail to get statistics", None
         datas=[]
+        beginTimestamp = datetime.datetime.fromtimestamp(int(begin/1e3))
+        endTimestamp = datetime.datetime.fromtimestamp(int(end/1e3))
         for deviceStats in groupDeviceStats[:count.value]:
             data=dict()
             data['DeviceId'] = deviceStats.deviceId
-            beginTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.begin/1e3))
-            endTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.end/1e3))
             data['Begin'] = str(beginTimestamp)
             data['End'] = str(endTimestamp)
             dataList = []

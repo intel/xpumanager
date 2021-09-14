@@ -647,21 +647,6 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   uint64_t *end);
 
 
-/**
- * @brief Get per tile statistics data by group
- * 
- * @param groupId                IN: Device id
- * @param dataList              OUT: The statistics data for group \a groupId
- * @param count              IN/OUT: The number of entries that \a dataList array can store,            
- *                                   count should equal to or larger than the count of tiles of all devices 
- *                                   that belong to the group ( \a groupid ); when return, the \a count will 
- *                                   store real number of entries returned by \a dataList                   
- * @return xpum_result_t 
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- */
-xpum_result_t xpumGetPerTileStatsByGroup(xpum_group_id_t groupId, xpum_device_stats_t dataList[], int *count);
-
 /** @} */ // Closing for STATISTICS_API
 
 /**************************************************************************/
