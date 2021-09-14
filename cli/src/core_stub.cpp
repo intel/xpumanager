@@ -29,6 +29,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
                 case XPUM_VERSION:
                     (*json)["xpum_version"] = response.versions(i).versionstring();
                     break;
+                case XPUM_VERSION_GIT:
+                    (*json)["xpum_version_git"] = response.versions(i).versionstring();
+                    break;
                 case XPUM_VERSION_LEVEL_ZERO:
                     (*json)["level_zero_version"] = response.versions(i).versionstring();
                     break;

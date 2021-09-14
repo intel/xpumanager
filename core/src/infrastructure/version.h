@@ -5,5 +5,6 @@
 class Version
 {
     public:
-        static std::string getVersion();    
+        static std::string getVersion();
+        static std::string getVersionGit();    
 };

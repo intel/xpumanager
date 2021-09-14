@@ -82,6 +82,7 @@ const char *errorString(xpum_result_t result);
 
 typedef enum xpum_version_enum {
     XPUM_VERSION = 0,
+    XPUM_VERSION_GIT,
     XPUM_VERSION_LEVEL_ZERO
 } xpum_version_t;
 

@@ -36,26 +36,31 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count)
 {
     if (!versionInfoList)
     {
-        *count = 2;
+        *count = 3;
         return XPUM_OK;
     }
 
-    if (*count < 2)
+    if (*count < 3)
     {
-        *count = 2;
+        *count = 3;
         return XPUM_BUFFER_TOO_SMALL;
     }
 
     string xpumVersion = Version::getVersion();
+    string xpumVersionGit = Version::getVersionGit();
     string levelZeroVersion("1.2.13");
 
     versionInfoList[0].version = XPUM_VERSION;
     xpumVersion.copy(versionInfoList[0].versionString, xpumVersion.size());
     versionInfoList[0].versionString[xpumVersion.size()]='\0';
 
-    versionInfoList[1].version = XPUM_VERSION_LEVEL_ZERO;
-    levelZeroVersion.copy(versionInfoList[1].versionString, levelZeroVersion.size());
-    versionInfoList[1].versionString[levelZeroVersion.size()]='\0';
+    versionInfoList[1].version = XPUM_VERSION_GIT;
+    xpumVersionGit.copy(versionInfoList[1].versionString, xpumVersionGit.size());
+    versionInfoList[1].versionString[xpumVersionGit.size()]='\0';
+
+    versionInfoList[2].version = XPUM_VERSION_LEVEL_ZERO;
+    levelZeroVersion.copy(versionInfoList[2].versionString, levelZeroVersion.size());
+    versionInfoList[2].versionString[levelZeroVersion.size()]='\0';
 
     return XPUM_OK;
 }
