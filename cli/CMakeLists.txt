@@ -22,19 +22,27 @@ configure_file(
 
 # Find gRPC installation
 # Looks for gRPCConfig.cmake file installed by gRPC's cmake installation.
-find_package(gRPC CONFIG REQUIRED)
-message(STATUS "Using gRPC ${gRPC_VERSION}")
-
-set(_GRPC_GRPCPP gRPC::grpc++)
+find_package(gRPC CONFIG)
+if (${gRPC_FOUND})
+  message(STATUS "Using gRPC.cmake ${gRPC_VERSION}")
+  set(_GRPC_GRPCPP gRPC::grpc++)
+else()
+  message(STATUS "gRPC.cmake not found, use system provided lib")
+  set(_GRPC_GRPCPP grpc++)
+endif()
 
 # Find Protobuf installation
 # Looks for protobuf-config.cmake file installed by Protobuf's cmake installation.
 set(protobuf_MODULE_COMPATIBLE TRUE)
-find_package(Protobuf CONFIG REQUIRED)
-message(STATUS "Using protobuf ${Protobuf_VERSION}")
+find_package(Protobuf CONFIG)
+if (${Protobuf_FOUND})
+  message(STATUS "Using protobuf.cmake ${Protobuf_VERSION}")
+  set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
+else()
+  message(STATUS "protobuf.cmake not found, use system provided lib")
+  set(_PROTOBUF_LIBPROTOBUF protobuf)
+endif()
 
-set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
-set(_REFLECTION gRPC::grpc++_reflection)
 find_program(_PROTOBUF_PROTOC protoc)
 
 # GRPC and Protoc tools
@@ -94,7 +102,6 @@ target_sources(
 
 target_link_libraries(
   xpumcli
-  ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
@@ -122,7 +129,6 @@ foreach( testsourcefile ${testing_sources} )
 
   target_link_libraries(
     ${testname}
-    ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF}
     gtest_main
