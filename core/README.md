@@ -21,13 +21,7 @@ sudo ln -s /usr/lib/x86_64-linux-gnu/libze_loader.so.1 \
     /usr/local/lib/libze_loader.so
 ```
 
-## build & copy file 
+## build
 
-```
-$ mkdir build # if build folder exists
-$ cd build
-$ cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TEST=OFF
-$ make 
-$ make install # copy built binary to destination
-```
+Call build_*.sh files, to build corresponding artifacts
 

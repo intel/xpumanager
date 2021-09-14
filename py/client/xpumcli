@@ -410,61 +410,133 @@ def display_device_stats(deviceId):
     t.add_rows(rows)
     t.print()
 
+def get_stats_data_by_metrics_type(metricsType, dataList):
+    for stats in dataList:
+        if stats['metricsType'] == metricsType:
+            return stats
+    return None
+
+
+def stats_counter_formater(
+        metricsType,
+        counter_row_keys,
+        counter_row_values,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        keyName,
+        factor=1):
+    stats = get_stats_data_by_metrics_type(metricsType, deviceLevelDataList)
+    counter_row_keys.append(keyName)
+    value = "{:.3f}".format(stats['value'] * factor) if stats else ""
+    counter_row_values.append(value)
+    if tileLevelDataLists:
+        for tile in tileLevelDataLists:
+            tileId = tile["tileId"]
+            tileStatsDataList = tile["dataList"]
+            stats = get_stats_data_by_metrics_type(
+                metricsType, tileStatsDataList)
+            if stats:
+                counter_row_keys.append("\n")
+                counter_row_values.append(
+                    "Tile {}: {}".format(tileId, stats["value"]*factor))
+
+
+def stats_non_counter_formater(
+        metricsType,
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        keyName,
+        factor=1,
+        precision=3):
+    stats = get_stats_data_by_metrics_type(metricsType, deviceLevelDataList)
+    values = []
+    if stats:
+        v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
+            round(stats["value"]*factor, precision),
+            round(stats["avg"]*factor, precision),
+            round(stats["min"]*factor, precision),
+            round(stats["max"]*factor, precision)
+        )
+        values.append(v)
+    if tileLevelDataLists:
+        for tile in tileLevelDataLists:
+            tileId = tile["tileId"]
+            tileStatsDataList = tile["dataList"]
+            stats = get_stats_data_by_metrics_type(
+                metricsType, tileStatsDataList)
+            if stats:
+                v = "Tile {}:\n\tcurrent: {}\n\tavg: {}\n\tmin: {}\n\tmax: {}".format(
+                    tileId,
+                    round(stats["value"]*factor, precision),
+                    round(stats["avg"]*factor, precision),
+                    round(stats["min"]*factor, precision),
+                    round(stats["max"]*factor, precision)
+                )
+                # values.append("")
+                values.append(v)
+    rows.append([keyName, "\n\n".join(values)])
+
 def get_stats_rows(data):
     header_row = ["Device Id", data['DeviceId']]
     rows = []
     counter_row_keys = ["Start Time","End Time"]
     counter_row_values = [data['Begin'],data['End']]
-    for stats in data['dataList']:
-        if stats['metricsType'] == "XPUM_STATS_GPU_COMPUTATION":
-            v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
-                stats["value"],
-                stats["avg"],
-                stats["min"],
-                stats["max"]
-            )
-            rows.append(["GPU Utilization (%)",v])
-        elif stats['metricsType'] == "XPUM_STATS_POWER":
-            v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
-                stats["value"],
-                stats["avg"],
-                stats["min"],
-                stats["max"]
-            )
-            rows.append(["GPU Power (W)",v])
-        elif stats['metricsType'] == "XPUM_STATS_ENERGY":
-            counter_row_keys.append("Energy Consumed (J)")
-            counter_row_values.append("{:.3f}".format(stats['value']/1e3))
-        elif stats['metricsType'] == "XPUM_STATS_GPU_FREQUENCY":
-            v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
-                stats["value"],
-                stats["avg"],
-                stats["min"],
-                stats["max"]
-            )
-            rows.append(["GPU Frequency (MHz)",v])
-        elif stats['metricsType'] == "XPUM_STATS_GPU_TEMEPERATURE":
-            v = "current: {}\navg: {}\nmin: {}\nmax: {}".format(
-                stats["value"],
-                stats["avg"],
-                stats["min"],
-                stats["max"]
-            )
-            rows.append(["GPU Temperature (°C)",v])
-        elif stats['metricsType'] == "XPUM_STATS_MEMORY_USED":
-            v = "current: {:.2f}\navg: {:.2f}\nmin: {:.2f}\nmax: {:.2f}".format(
-                stats["value"]/(2**20),
-                stats["avg"]/(2**20),
-                stats["min"]/(2**20),
-                stats["max"]/(2**20)
-            )
-            rows.append(["Memory Used (MiB)",v])
-        elif stats['metricsType'] == "XPUM_STATS_MEMORY_READ":
-            counter_row_keys.append("Memory Read (KB)")
-            counter_row_values.append("{:.2f}".format(stats['value']/1e3))
-        elif stats['metricsType'] == "XPUM_STATS_MEMORY_WRITE":
-            counter_row_keys.append("Memory Write (KB)")
-            counter_row_values.append("{:.2f}".format(stats['value']/1e3))
+    deviceLevelDataList = data["DeviceLevel"]
+    tileLevelDataLists =[]
+    if "TileLevel" in  data:
+        tileLevelDataLists = data["TileLevel"]
+
+    # Energy Consumed (J)
+    stats_counter_formater(
+        "XPUM_STATS_ENERGY",
+        counter_row_keys,
+        counter_row_values,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Energy Consumed (J)",
+        factor=1/1e3)
+
+    # GPU Utilization (%)
+    stats_non_counter_formater(
+        "XPUM_STATS_GPU_COMPUTATION",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "GPU Utilization (%)")
+
+    # GPU Power (W)
+    stats_non_counter_formater(
+        "XPUM_STATS_POWER",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "GPU Power (W)")
+
+    # GPU Frequency (MHz)
+    stats_non_counter_formater(
+        "XPUM_STATS_GPU_FREQUENCY",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "GPU Frequency (MHz)")
+
+    # GPU Temperature (°C)
+    stats_non_counter_formater(
+        "XPUM_STATS_GPU_TEMEPERATURE",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "GPU Temperature (°C)")
+
+    # Memory Used (MiB)
+    stats_non_counter_formater(
+        "XPUM_STATS_MEMORY_USED",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Memory Used (MiB)",
+        1/(2**20),2)
         
     counter_row = ["\n".join(counter_row_keys),"\n".join(counter_row_values)]
     return [header_row,counter_row,*rows]
