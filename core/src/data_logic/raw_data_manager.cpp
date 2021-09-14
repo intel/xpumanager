@@ -69,6 +69,22 @@ void RawDataManager::init() {
   data_handlers[MeasurementType::METRIC_COMPUTATION] = 
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);    
   data_handlers[MeasurementType::METRIC_COMPUTATION]->init();
+
+  //METRIC_RAS_ERROR
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_RESET, p_persistency);    
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET]->init();
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS, p_persistency);    
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS]->init();
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS, p_persistency);    
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS]->init();
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, p_persistency);    
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE]->init();
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, p_persistency);    
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE]->init();
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE, p_persistency);    
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE]->init();
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE, p_persistency);    
+  data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE]->init();
 }
 
 void RawDataManager::close() {

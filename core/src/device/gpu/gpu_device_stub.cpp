@@ -227,6 +227,15 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
   capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE);
   capabilities.push_back(DeviceCapability::METRIC_POWER);
   capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
+
+  //METRIC_RAS_ERROR
+  capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
+  capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
+  capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
+  capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
+  capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
+  capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
+  capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
   
   uint32_t driver_count = 0;
   ze_result_t res;
@@ -708,6 +717,95 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_devic
   } else {
     throw BaseException("toGetMemoryWrite error");
   }
+}
+
+void GPUDeviceStub::getRasError(const zes_device_handle_t& device, Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept{
+  if (device == nullptr) {
+    return;
+  }
+  //p_thread_pool->addTask(callback, toGetRasError, device,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+  p_thread_pool->addTask(callback, toGetRasError, device,rasCat,rasType);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasError(const zes_device_handle_t &device, const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) {
+    //rasCat: ZES_RAS_ERROR_CAT_RESET; rasType: ZES_RAS_ERROR_TYPE_CORRECTABLE,ZES_RAS_ERROR_TYPE_UNCORRECTABLE
+    if (device == nullptr) {
+        throw BaseException("toGetRasError error");
+    }
+    uint32_t numRasErrorSets = 0;
+    ze_result_t res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, nullptr);
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_ras_handle_t> phRasErrorSets(numRasErrorSets);
+        res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, phRasErrorSets.data());
+        if (res == ZE_RESULT_SUCCESS) {
+            uint64_t rasCounter = 0;
+            for (auto &rasHandle : phRasErrorSets) {
+                zes_ras_properties_t props;
+                res = zesRasGetProperties(rasHandle, &props);
+                if (res == ZE_RESULT_SUCCESS) {
+                    //if (props.supported && props.enabled) {
+                        if (props.type == rasType) {
+                            zes_ras_state_t errorDetails;
+                            res = zesRasGetState(rasHandle, 0, &errorDetails);
+                            if (res == ZE_RESULT_SUCCESS) {
+                                rasCounter += errorDetails.category[rasCat];
+                            }
+                        }
+                    //}
+                }
+            }
+            return std::make_shared<MeasurementData>(rasCounter);
+        }
+    }
+    throw BaseException("toGetRasError error");
+}
+
+void GPUDeviceStub::getRasError(const zes_device_handle_t &device,uint64_t errorCategory[XPUM_RAS_ERROR_MAX]) noexcept {
+    //uint64_t errorCategory[XPUM_RAS_ERROR_MAX];
+    for(int i=0;i<XPUM_RAS_ERROR_MAX;i++){
+      errorCategory[i] = 0;
+    }
+
+    if (device == nullptr) {
+        return;
+    }
+
+    //
+    uint32_t numRasErrorSets = 0;
+    ze_result_t res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, nullptr);
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_ras_handle_t> phRasErrorSets(numRasErrorSets);
+        res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, phRasErrorSets.data());
+        if (res == ZE_RESULT_SUCCESS) {
+            for (auto &rasHandle : phRasErrorSets) {
+                zes_ras_properties_t props;
+                res = zesRasGetProperties(rasHandle, &props);
+                if (res == ZE_RESULT_SUCCESS) {
+                    if (props.type == ZES_RAS_ERROR_TYPE_CORRECTABLE) {
+                        zes_ras_state_t errorDetails;
+                        res = zesRasGetState(rasHandle, 0, &errorDetails);
+                        if (res == ZE_RESULT_SUCCESS) {
+                            errorCategory[XPUM_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE] += errorDetails.category[ZES_RAS_ERROR_CAT_CACHE_ERRORS];
+                            errorCategory[XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE] += errorDetails.category[ZES_RAS_ERROR_CAT_DISPLAY_ERRORS];
+                        }
+                    } else if (props.type == ZES_RAS_ERROR_TYPE_UNCORRECTABLE) {
+                        zes_ras_state_t errorDetails;
+                        res = zesRasGetState(rasHandle, 0, &errorDetails);
+                        if (res == ZE_RESULT_SUCCESS) {
+                            errorCategory[XPUM_RAS_ERROR_CAT_RESET] += errorDetails.category[ZES_RAS_ERROR_CAT_RESET];
+                            errorCategory[XPUM_RAS_ERROR_CAT_PROGRAMMING_ERRORS] += errorDetails.category[ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS];
+                            errorCategory[XPUM_RAS_ERROR_CAT_DRIVER_ERRORS] += errorDetails.category[ZES_RAS_ERROR_CAT_DRIVER_ERRORS];
+                            //
+                            errorCategory[XPUM_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE] += errorDetails.category[ZES_RAS_ERROR_CAT_CACHE_ERRORS];
+                            errorCategory[XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE] += errorDetails.category[ZES_RAS_ERROR_CAT_DISPLAY_ERRORS];
+                        }
+                    }
+                }
+            }
+            return;
+        }
+    }
+    //throw BaseException("getRasError error");
 }
 
 void GPUDeviceStub::getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept{

@@ -59,6 +59,22 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
     return MeasurementType::METRIC_MEMORY_WRITE;
   case DeviceCapability::METRIC_COMPUTATION:
     return MeasurementType::METRIC_COMPUTATION;
+
+  //
+  case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
+    return MeasurementType::METRIC_RAS_ERROR_CAT_RESET;
+  case DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
+  case DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS;
+  case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
+  case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
+  case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
+  case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
   default:
     return MeasurementType::POWER;
   }
@@ -92,8 +108,24 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
     return DeviceCapability::METRIC_COMPUTATION;
   case MeasurementType::METRIC_ENERGY:
     return DeviceCapability::METRIC_ENERGY;
+
+  //
+  case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
+      return DeviceCapability::METRIC_RAS_ERROR_CAT_RESET;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+      return DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS:
+      return DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+      return DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+      return DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+      return DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+      return DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
   default:
-    return DeviceCapability::POWER;
+      return DeviceCapability::POWER;
   }
 }
 
@@ -120,8 +152,24 @@ std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capab
       return [p_device](Callback_t callback){ p_device->getMemoryWrite(callback); };
     case DeviceCapability::METRIC_ENERGY:
       return [p_device](Callback_t callback){ p_device->getEnergy(callback); };
+
+    //virtual void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept = 0;
+    case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
+        return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+    case DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+        return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS,ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+    case DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS:
+        return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_DRIVER_ERRORS,ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+    case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+        return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_CACHE_ERRORS,ZES_RAS_ERROR_TYPE_CORRECTABLE); };
+    case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+        return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_CACHE_ERRORS,ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+    case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+        return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_DISPLAY_ERRORS,ZES_RAS_ERROR_TYPE_CORRECTABLE); };
+    case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+        return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_DISPLAY_ERRORS,ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
     default:
-      break;
+        break;
     }
     return nullptr;
 }
@@ -135,7 +183,16 @@ bool Utility::isMetric(MeasurementType type) {
 bool Utility::isCounterMetric(MeasurementType type) {
   return type == MeasurementType::METRIC_ENERGY || 
          type == MeasurementType::METRIC_MEMORY_READ ||
-         type == MeasurementType::METRIC_MEMORY_WRITE;
+         type == MeasurementType::METRIC_MEMORY_WRITE ||
+         //
+         type == MeasurementType::METRIC_RAS_ERROR_CAT_RESET ||
+         type == MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS ||
+         type == MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS ||
+         type == MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE ||
+         type == MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE ||
+         type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE ||
+         type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE
+         ;
 }
 
 void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
@@ -147,6 +204,15 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
   metric_types.push_back(MeasurementType::METRIC_MEMORY_READ);
   metric_types.push_back(MeasurementType::METRIC_MEMORY_WRITE);
   metric_types.push_back(MeasurementType::METRIC_COMPUTATION);
+  
+  //METRIC_RAS_ERROR
+  metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_RESET);
+  metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
+  metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
+  metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
+  metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
+  metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
+  metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
 }
 
 xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& measurementType) {
@@ -167,6 +233,24 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
     return xpum_stats_type_enum::XPUM_STATS_GPU_COMPUTATION;
   case MeasurementType::METRIC_ENERGY:
     return xpum_stats_type_enum::XPUM_STATS_ENERGY;
+  
+  //
+  case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
+      return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_RESET;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+      return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS:
+      return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+      return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+      return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+      return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
+  case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+      return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+  
+  //
   default:
     return xpum_stats_type_enum::XPUM_STATS_POWER;
   }
