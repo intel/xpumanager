@@ -15,6 +15,10 @@ if (NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
 
+if (NOT DEFINED GIT_COMMIT)
+  set(GIT_COMMIT abcdefg0)
+endif()
+
 configure_file(
   ${CMAKE_CURRENT_LIST_DIR}/src/config.h.in 
   ${CMAKE_CURRENT_LIST_DIR}/src/config.h 

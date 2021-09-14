@@ -8,6 +8,7 @@ void ComletVersion::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletVersion::run() {
     auto json = this->coreStub->getVersion();
-    (*json)["cli_version"] = XPUM_VERSION;
+    (*json)["cli_version"] = CLI_VERSION;
+    (*json)["cli_version_git"] = CLI_VERSION_GIT_COMMIT;
     return json;
 }
