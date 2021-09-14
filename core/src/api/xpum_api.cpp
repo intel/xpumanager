@@ -131,7 +131,7 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 }
 
 xpum_result_t xpumRunFirmwareFlash( xpum_device_id_t deviceId, xpum_firmware_flash_job* job ) {
-    const std::string gfxPath{ "/usr/bin/GfxFwFPT" };
+    const std::string gfxPath{ "/usr/local/bin/GfxFwFPT" };
 
     std::ifstream fwFile( job->filePath );
     if ( !fwFile.is_open() ) {
@@ -139,6 +139,8 @@ xpum_result_t xpumRunFirmwareFlash( xpum_device_id_t deviceId, xpum_firmware_fla
         fwFile.close();
         return XPUM_GENERIC_ERROR;
     }
+
+    fwFile.close();
 
     fwFile.open( gfxPath );
     if ( !fwFile.is_open() ) {

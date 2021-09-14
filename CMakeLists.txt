@@ -124,6 +124,15 @@ install(
 		config
 )
 
+install(
+    FILES
+		tools/fwUpgrade/GfxFwFPT
+    PERMISSIONS
+        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+    DESTINATION
+	    bin
+)
+
 install(TARGETS DGMCore xpumcli
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
