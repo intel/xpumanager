@@ -424,10 +424,11 @@ def stats_counter_formater(
         deviceLevelDataList,
         tileLevelDataLists,
         keyName,
-        factor=1):
+        factor=1,
+        precision=3):
     stats = get_stats_data_by_metrics_type(metricsType, deviceLevelDataList)
     counter_row_keys.append(keyName)
-    value = "{:.3f}".format(stats['value'] * factor) if stats else ""
+    value = "{}".format(round(stats['value'] * factor,precision)) if stats else ""
     counter_row_values.append(value)
     if tileLevelDataLists:
         for tile in tileLevelDataLists:
@@ -438,7 +439,7 @@ def stats_counter_formater(
             if stats:
                 counter_row_keys.append("\n")
                 counter_row_values.append(
-                    "Tile {}: {}".format(tileId, stats["value"]*factor))
+                    "Tile {}: {}".format(tileId, round(stats["value"]*factor,precision)))
 
 
 def stats_non_counter_formater(
@@ -496,6 +497,69 @@ def get_stats_rows(data):
         tileLevelDataLists,
         "Energy Consumed (J)",
         factor=1/1e3)
+    
+    # Reset
+    stats_counter_formater(
+        "XPUM_STATS_RAS_ERROR_CAT_RESET",
+        counter_row_keys,
+        counter_row_values,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Reset")
+    
+    # Programming Errors
+    stats_counter_formater(
+        "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS",
+        counter_row_keys,
+        counter_row_values,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Programming Errors")
+    
+    # Driver Errors
+    stats_counter_formater(
+        "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS",
+        counter_row_keys,
+        counter_row_values,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Driver Errors")
+
+    # Cache Errors Correctable
+    stats_counter_formater(
+        "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE",
+        counter_row_keys,
+        counter_row_values,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Cache Errors Correctable")
+
+    # Cache Errors Uncorrectable
+    stats_counter_formater(
+        "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE",
+        counter_row_keys,
+        counter_row_values,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Cache Errors Uncorrectable")
+
+    # Display Errors Correctable
+    stats_counter_formater(
+        "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE",
+        counter_row_keys,
+        counter_row_values,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Display Errors Correctable")
+
+    # Display Errors Uncorrectable
+    stats_counter_formater(
+        "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE",
+        counter_row_keys,
+        counter_row_values,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Display Errors Uncorrectable")
 
     # GPU Utilization (%)
     stats_non_counter_formater(
