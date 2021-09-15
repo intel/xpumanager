@@ -1,4 +1,4 @@
-from prometheus_client import CollectorRegistry, Gauge, generate_latest
+from prometheus_client import CollectorRegistry, Gauge, Counter, generate_latest
 
 import traceback
 
@@ -6,54 +6,87 @@ import traceback
 def get_metrics(core, pod_resources):
 
     try:
-        registry = CollectorRegistry()
-        labels = ['uuid', 'dev_name', 'pci_dev_id',
-                  'sub_dev_id', 'vendor', 'pci_bdf', 'kube_pod', 'kube_namespace', 'kube_container']
-
         code, _, data = core.getDeviceList()
-        metrics = {}
-        if code == 0:
+        if code != 0:
+            return '#NODATA'
 
-            for dev in data:
-                stat_code, _, stat_data = core.getStatistics(
-                    dev.get('DeviceId'))
-                if stat_code == 0 and 'dataList' in stat_data:
-                    label_values = [
-                        dev.get('UUID', ''),
-                        dev.get('DeviceName', ''),
-                        dev.get('PCIDeviceId', ''),
-                        dev.get('SubDeviceId', ''),
-                        dev.get('VendorName', ''),
-                        dev.get('PCIBDFAddress', '')
-                    ]
+        resp = b''
 
-                    attach_pod_labels(dev, label_values, pod_resources)
+        for dev in data:
+            stat_code, _, stat_data = core.getStatistics(dev.get('DeviceId'))
 
-                    for stat in stat_data['dataList']:
-                        metrics_type = stat.get('metricsType')
-                        value = stat.get('value')
-                        avg = stat.get('avg')
-                        export_value = avg if avg is not None else value
-                        if export_value is not None:
-                            if metrics_type not in metrics:
-                                metrics[metrics_type] = Gauge(metrics_type, f'{metrics_type}_DESCRIPTION',
-                                                              labelnames=labels, registry=registry)
-                            gauge = metrics[metrics_type]
-                            gauge.labels(*label_values).set(export_value)
+            if stat_code != 0:
+                continue
 
-        return generate_latest(registry)
-    except:
+            if 'DeviceLevel' in stat_data:
+                r = convert_to_prometheus_metrics(
+                    pod_resources, dev, stat_data['DeviceLevel'])
+                resp = resp + r
+
+            for tile_data in stat_data.get('TileLevel', []):
+                r = convert_to_prometheus_metrics(
+                    pod_resources, dev, tile_data['dataList'], tile_data['tileId'])
+                resp = resp + r
+
+        return resp
+    except Exception as e:
+        print(e)
         traceback.print_exc()
 
 
-def attach_pod_labels(dev, label_values, pod_resources):
+def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
+
+    labels, label_values = build_basic_labels(dev)
+    attach_pod_labels(dev, labels, label_values, pod_resources)
+    attach_tile_labels(labels, label_values, tile_id)
+
+    registry = CollectorRegistry()
+    metrics = {}
+
+    for stat in datalist:
+        metrics_type = stat.get('metricsType')
+        value = stat.get('value')
+        avg = stat.get('avg')
+        if metrics_type not in metrics:
+            if avg is not None:
+                metrics[metrics_type] = Gauge(
+                    metrics_type, f'{metrics_type}_DESCRIPTION', labelnames=labels, registry=registry)
+                metrics[metrics_type].labels(*label_values).set(avg)
+            else:
+                metrics[metrics_type] = Counter(
+                    metrics_type, f'{metrics_type}_DESCRIPTION', labelnames=labels, registry=registry)
+                metrics[metrics_type].labels(*label_values).inc(value)
+
+    return generate_latest(registry)
+
+
+def build_basic_labels(dev):
+    labels = ['uuid', 'dev_name', 'pci_dev_id',
+              'sub_dev_id', 'vendor', 'pci_bdf']
+    label_values = [dev.get(key, '') for key in [
+        'UUID', 'DeviceName', 'PCIDeviceId', 'SubDeviceId', 'VendorName', 'PCIBDFAddress']]
+
+    return labels, label_values
+
+
+def attach_pod_labels(dev, labels, label_values, pod_resources):
     bdf = dev.get('PCIBDFAddress', '')
     pod_resource = pod_resources.get(bdf, {})
-    label_values.extend([
-        pod_resource.get('pod', ''),
-        pod_resource.get('namespace', ''),
-        pod_resource.get('container', '')
-    ])
+    if 'pod' in pod_resource:
+        labels.append('kube_pod')
+        label_values.append(pod_resource['pod'])
+    if 'namespace' in pod_resource:
+        labels.append('kube_namespace')
+        label_values.append(pod_resource['namespace'])
+    if 'container' in pod_resource:
+        labels.append('kube_container')
+        label_values.append(pod_resource['container'])
+
+
+def attach_tile_labels(labels, label_values, tile_id):
+    if tile_id is not None:
+        labels.append('tile')
+        label_values.append(tile_id)
 
 
 if __name__ == '__main__':
