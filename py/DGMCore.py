@@ -553,21 +553,20 @@ class DGMCore:
         res = self.lib.xpumGetStatsByGroup(c_int32(groupId),groupDeviceStats, byref(count),byref(begin),byref(end))
         if res != 0:
             return res, "Fail to get statistics", None
-        datas=[]
-        beginTimestamp = datetime.datetime.fromtimestamp(int(begin/1e3))
-        endTimestamp = datetime.datetime.fromtimestamp(int(end/1e3))
+        
+        deviceMap = dict()
+
         for deviceStats in groupDeviceStats[:count.value]:
-            data=dict()
-            data['DeviceId'] = deviceStats.deviceId
-            data['Begin'] = str(beginTimestamp)
-            data['End'] = str(endTimestamp)
+            deviceId = deviceStats.deviceId
+            if deviceId not in deviceMap:
+                deviceMap[deviceId] = {
+                    "DeviceLevel":[],
+                    "TileLevel":[]
+                }
             dataList = []
-            i = -1
-            for d in deviceStats.dataList:
+            
+            for d in deviceStats.dataList[:deviceStats.count]:
                 tmp = dict()
-                i += 1
-                if i != d.metricsType:
-                    continue
                 metricsType = XpumStatsType(d.metricsType).name
                 tmp["metricsType"] = metricsType
                 tmp["value"] = d.value
@@ -576,7 +575,24 @@ class DGMCore:
                     tmp["avg"] = d.avg
                     tmp["max"] = d.max
                 dataList.append(tmp)
-            data["dataList"] = dataList
+            if deviceStats.isTileData:
+                deviceMap[deviceId]["TileLevel"].append({
+                    "dataList":dataList,
+                    "tileId":deviceStats.tileId
+                })
+            else:
+                deviceMap[deviceId]["DeviceLevel"]=dataList
+            
+        datas=[]
+        beginTimestamp = datetime.datetime.fromtimestamp(begin.value/1e3)
+        endTimestamp = datetime.datetime.fromtimestamp(end.value/1e3)
+        for deviceId in deviceMap:
+            data = dict()
+            data['DeviceId'] = deviceId
+            data['Begin'] = str(beginTimestamp)
+            data['End'] = str(endTimestamp)
+            data["DeviceLevel"] =deviceMap[deviceId]["DeviceLevel"]
+            data["TileLevel"] =deviceMap[deviceId]["TileLevel"]
             datas.append(data)
         return 0, "OK", dict(GroupId=groupId,Datas=datas)
 
