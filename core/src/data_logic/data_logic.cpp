@@ -71,7 +71,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
   while (metric_types_iter != metric_types.end()) {
     MeasurementData m_data = getLatestData(*metric_types_iter, device_id);
     hasDataOnDevice = hasDataOnDevice || m_data.hasDataOnDevice();
-    num_subdevice = m_data.getSubdeviceDatas().size();
+    num_subdevice = num_subdevice < m_data.getSubdeviceDatas().size() ? m_data.getSubdeviceDatas().size() : num_subdevice;
     m_datas.insert(std::make_pair(*metric_types_iter, m_data));
     start_time = (uint64_t)m_data.getStartTime() < start_time ? m_data.getStartTime() : start_time;
     end_time = (uint64_t)m_data.getLatestTime() > end_time ? m_data.getLatestTime() : end_time;
