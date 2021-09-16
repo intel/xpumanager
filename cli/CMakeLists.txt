@@ -114,12 +114,12 @@ add_subdirectory(libs/googletest)
 
 enable_testing()
 
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TESTING_SRC)
-list(REMOVE_ITEM XPUM_CLI_TESTING_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TEST_SRC)
+list(REMOVE_ITEM XPUM_CLI_TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
-file( GLOB testing_sources testing/*_unittest.cpp )
+file( GLOB test_sources test/*_unittest.cpp )
 
-foreach( testsourcefile ${testing_sources} )
+foreach( testsourcefile ${test_sources} )
 
   get_filename_component(testname ${testsourcefile} NAME_WE)
 
@@ -128,7 +128,7 @@ foreach( testsourcefile ${testing_sources} )
   target_sources(
     ${testname}
     PUBLIC
-    ${XPUM_CLI_TESTING_SRC}
+    ${XPUM_CLI_TEST_SRC}
     ${GRPC_SRC})
 
   target_link_libraries(
@@ -141,4 +141,4 @@ foreach( testsourcefile ${testing_sources} )
   include(GoogleTest)
   gtest_discover_tests(${testname})
 
-endforeach( testsourcefile ${testing_sources} )
+endforeach( testsourcefile ${test_sources} )
