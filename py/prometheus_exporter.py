@@ -44,7 +44,8 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
     metrics = {}
 
     for stat in datalist:
-        metrics_type = stat.get('metricsType')
+        metrics_type: str = stat.get('metricsType')
+        metrics_type = 'xpum_' + metrics_type[11:].lower()
         value = stat.get('value')
         avg = stat.get('avg')
         if metrics_type not in metrics:
