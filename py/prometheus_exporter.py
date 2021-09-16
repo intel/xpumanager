@@ -1,5 +1,6 @@
 from prometheus_client import CollectorRegistry, Gauge, Counter, generate_latest
 
+import os
 import traceback
 
 
@@ -37,7 +38,7 @@ def get_metrics(core, pod_resources):
 def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
 
     labels, label_values = build_basic_labels(dev)
-    attach_pod_labels(dev, labels, label_values, pod_resources)
+    attach_kube_labels(dev, labels, label_values, pod_resources)
     attach_tile_labels(labels, label_values, tile_id)
 
     registry = CollectorRegistry()
@@ -70,7 +71,7 @@ def build_basic_labels(dev):
     return labels, label_values
 
 
-def attach_pod_labels(dev, labels, label_values, pod_resources):
+def attach_kube_labels(dev, labels, label_values, pod_resources):
     bdf = dev.get('PCIBDFAddress', '')
     pod_resource = pod_resources.get(bdf, {})
     if 'pod' in pod_resource:
@@ -82,6 +83,11 @@ def attach_pod_labels(dev, labels, label_values, pod_resources):
     if 'container' in pod_resource:
         labels.append('kube_container')
         label_values.append(pod_resource['container'])
+
+    nodename = os.getenv('NODE_NAME')
+    if nodename is not None:
+        labels.append('node')
+        label_values.append(nodename)
 
 
 def attach_tile_labels(labels, label_values, tile_id):
