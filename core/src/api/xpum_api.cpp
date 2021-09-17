@@ -46,9 +46,9 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count)
         return XPUM_BUFFER_TOO_SMALL;
     }
 
-    string xpumVersion = Version::getVersion();
-    string xpumVersionGit = Version::getVersionGit();
-    string levelZeroVersion("1.2.13");
+    std::string xpumVersion = Version::getVersion();
+    std::string xpumVersionGit = Version::getVersionGit();
+    std::string levelZeroVersion = Version::getZeLibVersion();
 
     versionInfoList[0].version = XPUM_VERSION;
     xpumVersion.copy(versionInfoList[0].versionString, xpumVersion.size());
