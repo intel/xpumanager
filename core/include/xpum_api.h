@@ -766,7 +766,15 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
 
 /** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
 
-xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topoloty_t * topology);
+/**
+ * @brief Get topology by device
+ * 
+ * @param deviceId           IN: The device id to query policy
+ * @param topology        OUT: The topology on device with \a deviceId
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ */
+xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topoloty_t * topology, std::size_t *memSize);
 
 
 /**

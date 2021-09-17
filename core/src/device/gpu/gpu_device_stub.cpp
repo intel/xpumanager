@@ -419,8 +419,7 @@ std::string GPUDeviceStub::to_string(xpum_switch pSwitch) {
   os << std::setfill('0') << std::setw(4) << std::hex
      << pSwitch.vendorId << std::string(":")
      << std::setw(4) << std::hex
-     << pSwitch.deviceId << std::string("@")
-     << pSwitch.pciSlot;
+     << pSwitch.deviceId;
   return os.str();
 }
 

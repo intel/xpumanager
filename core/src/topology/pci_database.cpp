@@ -366,16 +366,13 @@ bool PciDatabase::isSwitchDevice(int32_t vendor_id, int32_t device_id)
     return false;
 }
 
-bool PciDatabase::getSwitchInfo(int32_t vendor_id, int32_t device_id, char switchVendorName[], char switchName[]) {
+bool PciDatabase::getSwitchInfo(int32_t vendor_id, int32_t device_id, char switchDevicePath[]) {
     std::unique_lock<std::mutex> lock(mutex);
 
     pci_device_map::iterator it = switch_device.find(std::make_pair(vendor_id, device_id));
 
     if(it != switch_device.end()) {
-        std::size_t length = it->second.verdor_name.copy(switchVendorName, XPUM_VENDOR_NAME_LEN);
-        switchVendorName[length] = '\0';
-        length = it->second.device_name.copy(switchName, XPUM_VENDOR_NAME_LEN);
-        switchName[length] = '\0';
+        
         return true;
     }
     
