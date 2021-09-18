@@ -19,6 +19,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
+    const std::string notDetected = "Not Detected";
+
+    (*json)["xpum_version"] = notDetected;
+    (*json)["xpum_version_git"] = notDetected;
+    (*json)["level_zero_version"] = notDetected;
+
     grpc::ClientContext context;
     XpumVersionInfoArray response;
     grpc::Status status = stub->getVersion(&context, google::protobuf::Empty(), &response);
