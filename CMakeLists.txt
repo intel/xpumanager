@@ -51,6 +51,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_subdirectory(core)
 add_subdirectory(py)
 add_subdirectory(cli)
+add_subdirectory(daemon)
 
 if(NOT DEFINED CPACK_GENERATOR)
 	if(EXISTS "/etc/debian_version")
@@ -133,7 +134,7 @@ install(
 	    bin
 )
 
-install(TARGETS DGMCore xpumcli
+install(TARGETS DGMCore xpumcli xpumd
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION .)

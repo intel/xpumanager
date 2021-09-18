@@ -3,6 +3,8 @@ cmake_policy(SET CMP0077 OLD)
 
 project(XPUMCLI)
 
+include(../.cmake/grpc_common.cmake)
+
 # Set compilation options
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
@@ -21,36 +23,7 @@ endif()
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/src/config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/config.h @ONLY)
-
-# Find gRPC installation Looks for gRPCConfig.cmake file installed by gRPC's
-# cmake installation.
-find_package(gRPC CONFIG)
-if(${gRPC_FOUND})
-  message(STATUS "Using gRPC.cmake ${gRPC_VERSION}")
-  set(_GRPC_GRPCPP gRPC::grpc++)
-else()
-  message(STATUS "gRPC.cmake not found, use system provided lib")
-  set(_GRPC_GRPCPP grpc++)
-endif()
-
-# Find Protobuf installation Looks for protobuf-config.cmake file installed by
-# Protobuf's cmake installation.
-set(protobuf_MODULE_COMPATIBLE TRUE)
-find_package(Protobuf CONFIG)
-if(${Protobuf_FOUND})
-  message(STATUS "Using protobuf.cmake ${Protobuf_VERSION}")
-  set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
-else()
-  message(STATUS "protobuf.cmake not found, use system provided lib")
-  set(_PROTOBUF_LIBPROTOBUF protobuf)
-endif()
-
-find_program(_PROTOBUF_PROTOC protoc)
-
-# GRPC and Protoc tools
-find_program(_PROTOBUF_PROTOC protoc)
-find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
-
+               
 # Proto file
 get_filename_component(core_proto "../daemon/core.proto" ABSOLUTE)
 get_filename_component(core_proto_path "${core_proto}" PATH)
@@ -91,7 +64,7 @@ set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
 
 add_executable(xpumcli ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
-target_sources(xpumcli PUBLIC ${XPUM_CLI_SRC} ${GRPC_SRC})
+target_sources(xpumcli PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC})
 
 target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 
