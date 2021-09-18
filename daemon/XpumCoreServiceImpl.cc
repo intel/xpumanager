@@ -14,7 +14,6 @@ XpumCoreServiceImpl::~XpumCoreServiceImpl() {
 grpc::Status XpumCoreServiceImpl::getVersion( grpc::ServerContext* context, const google::protobuf::Empty* request,
         XpumVersionInfoArray* response ) {
     std::cout << "call get version" << std::endl;
-    request;
     
     int count{ 0 };
     xpum_result_t res = xpumVersionInfo( nullptr, &count );
@@ -40,7 +39,6 @@ grpc::Status XpumCoreServiceImpl::getVersion( grpc::ServerContext* context, cons
 
 grpc::Status XpumCoreServiceImpl::getDeviceList( grpc::ServerContext* context, const google::protobuf::Empty* request,
         XpumDeviceBasicInfoArray* response ) {
-    request;
 
     int count { 0 };
     xpum_device_basic_info devices[XPUM_MAX_NUM_DEVICES];
