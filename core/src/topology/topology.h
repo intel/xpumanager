@@ -16,7 +16,7 @@ class Topology {
     virtual ~Topology();
   public:
     static bool getParentSwitch(zes_pci_address_t address, xpum_switch *pswitch);
-    static xpum_result_t getSwitchTopo(std::string bdfAddress, xpum_topoloty_t * topology, std::size_t *memSize);
+    static xpum_result_t getSwitchTopo(std::string bdfAddress, xpum_topology_t * topology, std::size_t *memSize);
     static std::string getLocalCpus(std::string address);
     static std::string getLocalCpusList(std::string address);  
   private:
