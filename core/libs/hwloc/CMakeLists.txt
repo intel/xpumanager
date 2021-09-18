@@ -7,7 +7,7 @@ execute_process(
 	COMMAND ${CMAKE_CURRENT_LIST_DIR}/build.sh		
 	RESULT_VARIABLE rv
 )	
-message("build hwloc result:"${rv})
+message(STATUS "build hwloc result:${rv}")
 	
 
 

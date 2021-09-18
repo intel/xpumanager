@@ -510,13 +510,13 @@ struct xpum_scheduler_exclusive_t {
 struct parent_switch{
     char switchDevicePath[XPUM_DEVICE_PATH_LEN];
 };
-struct xpum_topoloty_t {
+struct xpum_topology_t {
     xpum_device_id_t deviceId;
     struct{
-        char local_cpulist[XPUM_MAX_CPU_LIST_LEN];
-        char local_cpus[XPUM_MAX_CPU_S_LEN];
+        char localCPUList[XPUM_MAX_CPU_LIST_LEN];
+        char localCPUs[XPUM_MAX_CPU_S_LEN];
     }cpu_affinity;
-    bool bSwitch;
+    uint32_t switchCount;
     parent_switch switches[];   
 };
 

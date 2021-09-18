@@ -698,7 +698,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
     return XPUM_GENERIC_ERROR;  
 }
 
-xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topoloty_t * topology, std::size_t *memSize)
+xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topology, std::size_t *memSize)
 {
     shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice( std::to_string( deviceId ) );
     if ( device == nullptr ) {
@@ -707,7 +707,7 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topoloty_t * topol
     vector<Property> properties;
     vector<Property>::iterator it;
     topology->deviceId = deviceId;
-    topology->bSwitch = false;
+    topology->switchCount = 0;
     string  bdfAddress;
     device->getProperties(properties);
 
@@ -718,12 +718,12 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topoloty_t * topol
 
         if(name.compare(DeviceProperty::BDF_ADDRESS)==0){
             string cpus = Topology::getLocalCpus(value);
-            size_t len = cpus.copy(topology->cpu_affinity.local_cpus, XPUM_MAX_CPU_S_LEN);
-            topology->cpu_affinity.local_cpus[len] = '\0';
+            size_t len = cpus.copy(topology->cpu_affinity.localCPUs, XPUM_MAX_CPU_S_LEN);
+            topology->cpu_affinity.localCPUs[len] = '\0';
 
             string cpulist = Topology::getLocalCpusList(value);
-            len = cpulist.copy(topology->cpu_affinity.local_cpulist, XPUM_MAX_CPU_LIST_LEN);
-            topology->cpu_affinity.local_cpulist[len] = '\0';
+            len = cpulist.copy(topology->cpu_affinity.localCPUList, XPUM_MAX_CPU_LIST_LEN);
+            topology->cpu_affinity.localCPUList[len] = '\0';
             bdfAddress = value;
             break;
         }
