@@ -515,7 +515,7 @@ struct xpum_topology_t {
     struct{
         char localCPUList[XPUM_MAX_CPU_LIST_LEN];
         char localCPUs[XPUM_MAX_CPU_S_LEN];
-    }cpu_affinity;
+    }cpuAffinity;
     uint32_t switchCount;
     parent_switch switches[];   
 };

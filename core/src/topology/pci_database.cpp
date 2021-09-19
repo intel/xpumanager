@@ -23,9 +23,11 @@ PciDatabase &PciDatabase::instance() {
     std::unique_lock<std::mutex> lock(instance.mutex);
 
     if (!instance.bInitialized) {
-        instance.bInitialized = instance.init();
+         if(!instance.init()){
+             LOG_ERROR("Failed to initialize PciDatabase, Device topology function does not work!");
+         }
     }
-
+    instance.bInitialized = true;
     return instance;
 }
 

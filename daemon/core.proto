@@ -36,8 +36,25 @@ message XpumDeviceBasicInfoArray {
     string errorMsg = 2;
 }
 
+message XpumTopologyInfo {
+    DeviceId id = 1;
+    message XpumCpuAffinity {
+        string localCpuList = 1;
+        string localCpus = 2;
+    }
+    XpumCpuAffinity cpuAffinity = 2;
+    uint32 switchCount = 3;    
+    message XpumSwitchInfo {
+        string switchDevicePath = 1;
+    }        
+    repeated XpumSwitchInfo switchInfo = 4;
+    string errorMsg = 5;    
+}
+
 /* services */
 service XpumCoreService {
+    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
     rpc getDeviceList( google.protobuf.Empty ) returns ( XpumDeviceBasicInfoArray );
+    rpc getTopology(  DeviceId ) returns ( XpumTopologyInfo );
 }

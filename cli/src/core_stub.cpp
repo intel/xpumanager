@@ -50,3 +50,31 @@ std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
 
     return json;
 }
+
+
+std::unique_ptr<nlohmann::json> CoreStub::getTopology(DeviceId deviceId) {
+
+    assert(this->stub != nullptr);
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    const std::string notDetected = "Not Detected";
+
+    (*json)["deviceId"] = deviceId.id();
+
+    grpc::ClientContext context;
+    XpumTopologyInfo response;
+    grpc::Status status = stub->getTopology(&context, deviceId, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["affinity.localcpulist"] = response.cpuaffinity().localcpulist();
+            (*json)["affinity.localcpus"] = response.cpuaffinity().localcpus();
+            for (int i{0}; i < response.switchinfo_size(); ++i) {
+                std::string switchIdx = std::string("switch_") + std::to_string(i);
+                (*json)[switchIdx] = response.switchinfo(i).switchdevicepath();
+            }
+        }
+    }
+
+    return json;
+}

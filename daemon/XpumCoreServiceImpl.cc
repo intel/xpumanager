@@ -63,3 +63,34 @@ grpc::Status XpumCoreServiceImpl::getDeviceList( grpc::ServerContext* context, c
 
     return grpc::Status::OK;
 }
+
+grpc::Status XpumCoreServiceImpl::getTopology( grpc::ServerContext* context, const DeviceId* request, 
+        XpumTopologyInfo* response) {
+    std::cout << "call get topology" << std::endl;
+    xpum_topology_t * topo = (xpum_topology_t*) malloc(sizeof(xpum_topology_t));
+    std::size_t size = sizeof(xpum_topology_t);
+    xpum_result_t res = xpumGetTopology(request->id(), topo, &size);
+
+    if(res == XPUM_BUFFER_TOO_SMALL){
+        free(topo);
+        topo = (xpum_topology_t*) malloc(size);
+        res = xpumGetTopology(request->id(), topo, &size);
+    }
+
+    if ( res == XPUM_OK ) {
+        response->mutable_id()->set_id(topo->deviceId);
+        response->mutable_cpuaffinity()->set_localcpulist(topo->cpuAffinity.localCPUList);
+        response->mutable_cpuaffinity()->set_localcpus(topo->cpuAffinity.localCPUs);
+        response->set_switchcount(topo->switchCount);
+        for(uint32_t i{ 0 }; i < topo->switchCount; ++i){
+            XpumTopologyInfo_XpumSwitchInfo * parentSwitch = response->add_switchinfo();
+            parentSwitch->set_switchdevicepath(topo->switches[i].switchDevicePath);
+        }
+    } else {
+        response->set_errormsg( "Error" );
+    }
+
+    free(topo);
+    topo = nullptr;
+    return grpc::Status::OK;
+}

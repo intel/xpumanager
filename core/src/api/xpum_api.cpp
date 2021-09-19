@@ -718,12 +718,12 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topol
 
         if(name.compare(DeviceProperty::BDF_ADDRESS)==0){
             string cpus = Topology::getLocalCpus(value);
-            size_t len = cpus.copy(topology->cpu_affinity.localCPUs, XPUM_MAX_CPU_S_LEN);
-            topology->cpu_affinity.localCPUs[len] = '\0';
+            size_t len = cpus.copy(topology->cpuAffinity.localCPUs, XPUM_MAX_CPU_S_LEN);
+            topology->cpuAffinity.localCPUs[len] = '\0';
 
             string cpulist = Topology::getLocalCpusList(value);
-            len = cpulist.copy(topology->cpu_affinity.localCPUList, XPUM_MAX_CPU_LIST_LEN);
-            topology->cpu_affinity.localCPUList[len] = '\0';
+            len = cpulist.copy(topology->cpuAffinity.localCPUList, XPUM_MAX_CPU_LIST_LEN);
+            topology->cpuAffinity.localCPUList[len] = '\0';
             bdfAddress = value;
             break;
         }

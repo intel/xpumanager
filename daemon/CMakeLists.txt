@@ -60,5 +60,18 @@ add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cc)
 
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 
-target_link_libraries(xpumd PRIVATE DGMCore ${_GRPC_GRPCPP}
-                                    ${_PROTOBUF_LIBPROTOBUF})
+
+if (NOT DEFINED WORK_PATH)
+  message(STATUS "WORK_PATH not defined!")
+  find_library(DGM_LIB 
+    NAMES libDGMCore.so
+    PATHS 
+    ${CMAKE_CURRENT_LIST_DIR}/../core/build
+    ${CMAKE_CURRENT_LIST_DIR}/../build/core
+    )
+  target_link_libraries(xpumd PRIVATE ${DGM_LIB} ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+else()
+  target_link_libraries(xpumd PRIVATE DGMCore ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+endif()
