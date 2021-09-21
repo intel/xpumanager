@@ -763,7 +763,7 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
                                            xpum_frequency_range_t* dataArray, int* count );
 
 xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
-                                        const xpum_frequency_range_t t);
+                                        const xpum_frequency_range_t& t);
 
 xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
                                       xpum_scheduler_data_t* dataArray, int* count );

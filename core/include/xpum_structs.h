@@ -457,10 +457,10 @@ enum xpum_frequency_type_t {
 };
 
 enum xpum_scheduler_mode_t {
-  XPUM_TIMEOUT             = 0,
-  XPUM_TIMESLICE           = 1,
-  XPUM_EXCLUSIVE           = 2,
-  XPUM_COMPUTE_UNIT_DEBUG  = 3,
+  XPUM_TIMEOUT             =1<<0,
+  XPUM_TIMESLICE           =1<<1,
+  XPUM_EXCLUSIVE           =1<<2,
+  XPUM_COMPUTE_UNIT_DEBUG  =1<<3,
   XPUM_MODE_FORCE_UINT32   = 0x7fffffff
 };
 
