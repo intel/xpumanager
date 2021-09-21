@@ -1,34 +1,30 @@
 #pragma once
-
-#include "data_logic_interface.h"
-#include "device_manager_interface.h"
-#include "topology_interface.h"
-
+#include "zes_api.h"
 #include "hwloc.h"
+#include <string>
+#include "xpum_structs.h"
 
-#include <atomic>
-#include <mutex>
 
-class Topology : public TopologyInterface,
-                 public std::enable_shared_from_this<Topology> {
-  public:
-    Topology(std::shared_ptr<DeviceManagerInterface> &p_device_manager,
-             std::shared_ptr<DataLogicInterface> &p_data_logic);
+struct xpum_switch{
+  int32_t  vendorId;
+  int32_t  deviceId;   
+};
+
+class Topology {
+  private:    
+    Topology();
     virtual ~Topology();
-
-    virtual xpum_result_t getTopologyInfo(xpum_device_id_t deviceId, xpum_topoloty_t *topology);
-
+  public:
+    static bool getParentSwitch(zes_pci_address_t address, xpum_switch *pswitch);
+    static xpum_result_t getSwitchTopo(std::string bdfAddress, xpum_topology_t * topology, std::size_t *memSize);
+    static std::string getLocalCpus(std::string address);
+    static std::string getLocalCpusList(std::string address);  
   private:
-    Topology() = default;
-    Topology &operator=(const Topology &) = delete;
-    Topology(const Topology &other) = delete;
+    static bool hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, int32_t device, int32_t function);
+    static bool isSwitchDevice(hwloc_obj_t obj);
+    static bool getSwitchInfo(hwloc_obj_t obj, xpum_switch *pswitch);
+    static int get_p_switch_count(hwloc_obj_t par_obj);
+    static void get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch * pSwitch );
+    static std::string pci2RegxString(hwloc_obj_t obj);
 
-    bool getCpuAffinity(std::string &bdf_address, xpum_topoloty_t *topology);
-    bool getSwitchTopology(int32_t domain, int32_t bus, int32_t device, int32_t function, xpum_topoloty_t *topology);
-    bool hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, int32_t device, int32_t function);
-    bool isSwitchDevice(hwloc_obj_t obj);
-    bool getSwitchInfo(hwloc_obj_t obj, xpum_topoloty_t *topology);
-
-    std::shared_ptr<DeviceManagerInterface> p_devicemanager;
-    std::shared_ptr<DataLogicInterface> p_datalogic;
 };

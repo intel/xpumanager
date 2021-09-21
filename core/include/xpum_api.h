@@ -647,21 +647,6 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   uint64_t *end);
 
 
-/**
- * @brief Get per tile statistics data by group
- * 
- * @param groupId                IN: Device id
- * @param dataList              OUT: The statistics data for group \a groupId
- * @param count              IN/OUT: The number of entries that \a dataList array can store,            
- *                                   count should equal to or larger than the count of tiles of all devices 
- *                                   that belong to the group ( \a groupid ); when return, the \a count will 
- *                                   store real number of entries returned by \a dataList                   
- * @return xpum_result_t 
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- */
-xpum_result_t xpumGetPerTileStatsByGroup(xpum_group_id_t groupId, xpum_device_stats_t dataList[], int *count);
-
 /** @} */ // Closing for STATISTICS_API
 
 /**************************************************************************/
@@ -780,6 +765,58 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
 
 /** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
+
+/**
+ * @brief Get topology by device
+ * 
+ * @param deviceId           IN: The device id to query policy
+ * @param topology        OUT: The topology on device with \a deviceId
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ */
+xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topology, std::size_t *memSize);
+
+
+/**
+ * @brief Set a policy on a device. One device only have one policy for one policy type. So if set a policy with same policy type on a devcie, the old policy will be overwritten.
+ * 
+ * @param deviceId           IN: The device id to set policy
+ * @param policy             IN: The policy will be set on the device. I
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy);
+
+/**
+ * @brief Set a policy on device in specified group. One device only have one policy for one policy type. So if set a policy with same policy type on a devcie, the old policy will be overwritten.
+ * 
+ * @param groupId            IN: The group id to set policy
+ * @param policy             IN: The policy will be set on the device. I
+ * @return xpum_result_t       Not Support
+ */
+xpum_result_t xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t policy);
+
+
+/**
+ * @brief Get policy list by device
+ * 
+ * @param deviceId           IN: The device id to query policy
+ * @param resultList        OUT: The list of policy run on device with \a deviceId
+ * @param count          IN/OUT: When \a resultList is NULL, \a count will be filled with the number of policys. \a count should be equal to or larger than the number of available policys. When return, the \a count will store real number of entries returned by \a resultList.
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ */
+xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[], int *count);
+
+/**
+ * @brief Get policy list by group
+ * 
+ * @param groupId           IN: The group id to query policy
+ * @param resultList        OUT: The list of policy run on group with \a groupId
+ * @param count          IN/OUT: When \a resultList is NULL, \a count will be filled with the number of policys. \a count should be equal to or larger than the number of available policys. When return, the \a count will store real number of entries returned by \a resultList.
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ */
+xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int *count);
 
 #if defined(__cplusplus)
 } // extern "C"

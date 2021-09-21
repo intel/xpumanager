@@ -12,6 +12,7 @@
 #include "power.h"
 #include "frequency.h"
 #include "health_data_type.h"
+#include "topology.h"
 
 class GPUDeviceStub {
  public:
@@ -35,6 +36,10 @@ class GPUDeviceStub {
   void getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
   void getEnergy(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
+  void getRasError(const zes_device_handle_t& device, Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept;
+
+  void getRasError(const zes_device_handle_t &device, uint64_t errorCategory[XPUM_RAS_ERROR_MAX]) noexcept;
 
   static void getSchedulers(const zes_device_handle_t& device, std::vector<Scheduler>& schedulers);
 
@@ -108,6 +113,8 @@ private:
 
   static std::shared_ptr<MeasurementData> toGetEnergy(const zes_device_handle_t& device);
 
+  static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t &device, const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType);
+
   static std::string to_string(ze_device_uuid_t val);
 
   static std::string to_hex_string(uint32_t val);
@@ -117,6 +124,8 @@ private:
   static std::string to_string(zes_pci_address_t address);
 
   static std::string to_regex_string(zes_pci_address_t address);
+
+  static std::string to_string(xpum_switch pSwitch);
 
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;

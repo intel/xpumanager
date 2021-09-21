@@ -5,6 +5,9 @@ import string
 from enum import Enum, IntEnum, unique
 import datetime
 
+import grpc
+# import core_pb2_grpc
+
 def hex_format(v):
     return hex(int(v))
 
@@ -105,6 +108,7 @@ class FirmwareFlashTaskResult( Structure ):
         ('version', c_char * 256 )
     ]
 
+
 XpumStatsType = Enum("xpum_stats_type_t", (
     "XPUM_STATS_GPU_COMPUTATION",
     "XPUM_STATS_OCCUPATION",
@@ -120,6 +124,13 @@ XpumStatsType = Enum("xpum_stats_type_t", (
     "XPUM_STATS_MEMORY_WRITE",
     "XPUM_STATS_PCIRX",
     "XPUM_STATS_PCITX",
+    "XPUM_STATS_RAS_ERROR_CAT_RESET",
+    "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS",
+    "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS",
+    "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE",
+    "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE",
+    "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE",
+    "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE",
     "XPUM_STATS_MAX"
 ), start=0)
 
@@ -138,8 +149,7 @@ class XpumDeviceStats(Structure):
         ("deviceId", c_int32),
         ("isTileData", c_bool),
         ("tileId", c_int32),
-        ("begin", c_uint64),
-        ("end", c_uint64),
+        ("count", c_int32),
         ("dataList", XpumStatsData * XpumStatsType.XPUM_STATS_MAX.value),
     ]
 
@@ -318,6 +328,14 @@ class DGMCore:
         lib_path = os.path.join(project_dir_path,"lib","libDGMCore.so")
         self.lib = cdll.LoadLibrary(lib_path)
         self.lib.xpumInit()
+        
+# unix web socket begin
+        '''
+        unixSockName = '/tmp/xpum.sock'
+        channel = grpc.insecure_channel( 'unix://' + unixSockName )
+        self.stub = core_pb2_grpc.XpumCoreServiceStub( channel ) 
+        '''
+# unix web socket end
     
     def getVersion(self):
         count = c_int(0)
@@ -328,6 +346,19 @@ class DGMCore:
         res = self.lib.xpumVersionInfo(versionArray,byref(count))
         if res != 0:
             return False, "Fail to get version info", None
+        '''
+        resp = self.stub.getVersion( core_pb2_grpc.google_dot_protobuf_dot_empty__pb2.Empty() )
+        if len( resp.errorMsg ) == 0:
+            print( "good" )
+            for version in resp.versions:
+                print( version.versionString )
+        else:
+            print( "error msg " + resp.errorMsg );
+            return 1, "Fail to get version info", None
+
+        return 0, "OK", "NICE"
+
+        '''
         data=dict()
         versionList = [(v.version,bytes.decode(v.versionString)) for v in versionArray]
         for versionType,versionStr in versionList[:count.value]:
@@ -476,55 +507,25 @@ class DGMCore:
         return 0, "OK", data 
     
     def getStatistics(self, deviceId):
-        deviceStats = XpumDeviceStats()
-        res = self.lib.xpumGetStats(c_int32(deviceId), byref(deviceStats))
+        count = c_int(5)
+        deviceStats = (XpumDeviceStats * count.value)()
+        begin = c_uint64()
+        end = c_uint64()
+        res = self.lib.xpumGetStats(c_int32(deviceId), byref(deviceStats), byref(count),byref(begin),byref(end))
         if res != 0:
             return res, "Fail to get statistics", None
         data = dict()
-        data['DeviceId'] = deviceStats.deviceId
-        beginTimestamp = datetime.datetime.fromtimestamp(deviceStats.begin/1e3)
-        endTimestamp = datetime.datetime.fromtimestamp(deviceStats.end/1e3)
+        data['DeviceId'] = deviceId
+        beginTimestamp = datetime.datetime.fromtimestamp(begin.value/1e3)
+        endTimestamp = datetime.datetime.fromtimestamp(end.value/1e3)
         data['Begin'] = beginTimestamp.isoformat(sep=' ', timespec='milliseconds')
         data['End'] = endTimestamp.isoformat(sep=' ', timespec='milliseconds')
-        dataList = []
-        i = -1
-        for d in deviceStats.dataList:
-            tmp = dict()
-            i += 1
-            if i != d.metricsType:
-                continue
-            metricsType = XpumStatsType(d.metricsType).name
-            tmp["metricsType"] = metricsType
-            tmp["value"] = d.value
-            if not d.isCounter:
-                tmp["min"] = d.min
-                tmp["avg"] = d.avg
-                tmp["max"] = d.max
-            dataList.append(tmp)
-        data["dataList"] = dataList
-        return 0, "OK", data
-
-    def getStatisticsByGroup(self, groupId):
-        groupDeviceStats = (XpumDeviceStats * 32)()
-        count = c_int(32)
-        res = self.lib.xpumGetStatsByGroup(c_int32(groupId),groupDeviceStats, byref(count))
-        if res != 0:
-            return res, "Fail to get statistics", None
-        datas=[]
-        for deviceStats in groupDeviceStats[:count.value]:
-            data=dict()
-            data['DeviceId'] = deviceStats.deviceId
-            beginTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.begin/1e3))
-            endTimestamp = datetime.datetime.fromtimestamp(int(deviceStats.end/1e3))
-            data['Begin'] = str(beginTimestamp)
-            data['End'] = str(endTimestamp)
-            dataList = []
-            i = -1
-            for d in deviceStats.dataList:
+        deviceLevelStatsDataList = []
+        tileLevelStatsDataList = []
+        for device in deviceStats[:count.value]:
+            dataList=[]
+            for d in device.dataList[:device.count]:
                 tmp = dict()
-                i += 1
-                if i != d.metricsType:
-                    continue
                 metricsType = XpumStatsType(d.metricsType).name
                 tmp["metricsType"] = metricsType
                 tmp["value"] = d.value
@@ -533,7 +534,65 @@ class DGMCore:
                     tmp["avg"] = d.avg
                     tmp["max"] = d.max
                 dataList.append(tmp)
-            data["dataList"] = dataList
+            # data["dataList"] = dataList
+            if device.isTileData:
+                tmp = dict(tileId=device.tileId,dataList=dataList)
+                tileLevelStatsDataList.append(tmp)
+            else:
+                deviceLevelStatsDataList=dataList
+        data["DeviceLevel"] = deviceLevelStatsDataList
+        if tileLevelStatsDataList:
+            data["TileLevel"] = tileLevelStatsDataList
+        return 0, "OK", data
+
+    def getStatisticsByGroup(self, groupId):
+        count = c_int(32*5)
+        groupDeviceStats = (XpumDeviceStats * count.value)()
+        begin = c_uint64()
+        end = c_uint64()
+        res = self.lib.xpumGetStatsByGroup(c_int32(groupId),groupDeviceStats, byref(count),byref(begin),byref(end))
+        if res != 0:
+            return res, "Fail to get statistics", None
+        
+        deviceMap = dict()
+
+        for deviceStats in groupDeviceStats[:count.value]:
+            deviceId = deviceStats.deviceId
+            if deviceId not in deviceMap:
+                deviceMap[deviceId] = {
+                    "DeviceLevel":[],
+                    "TileLevel":[]
+                }
+            dataList = []
+            
+            for d in deviceStats.dataList[:deviceStats.count]:
+                tmp = dict()
+                metricsType = XpumStatsType(d.metricsType).name
+                tmp["metricsType"] = metricsType
+                tmp["value"] = d.value
+                if not d.isCounter:
+                    tmp["min"] = d.min
+                    tmp["avg"] = d.avg
+                    tmp["max"] = d.max
+                dataList.append(tmp)
+            if deviceStats.isTileData:
+                deviceMap[deviceId]["TileLevel"].append({
+                    "dataList":dataList,
+                    "tileId":deviceStats.tileId
+                })
+            else:
+                deviceMap[deviceId]["DeviceLevel"]=dataList
+            
+        datas=[]
+        beginTimestamp = datetime.datetime.fromtimestamp(begin.value/1e3)
+        endTimestamp = datetime.datetime.fromtimestamp(end.value/1e3)
+        for deviceId in deviceMap:
+            data = dict()
+            data['DeviceId'] = deviceId
+            data['Begin'] = str(beginTimestamp)
+            data['End'] = str(endTimestamp)
+            data["DeviceLevel"] =deviceMap[deviceId]["DeviceLevel"]
+            data["TileLevel"] =deviceMap[deviceId]["TileLevel"]
             datas.append(data)
         return 0, "OK", dict(GroupId=groupId,Datas=datas)
 

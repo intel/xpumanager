@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "xpum_structs.h"
+
 class Property {
  public:
   Property() {}

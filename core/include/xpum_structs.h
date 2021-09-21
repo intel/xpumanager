@@ -82,6 +82,7 @@ const char *errorString(xpum_result_t result);
 
 typedef enum xpum_version_enum {
     XPUM_VERSION = 0,
+    XPUM_VERSION_GIT,
     XPUM_VERSION_LEVEL_ZERO
 } xpum_version_t;
 
@@ -368,6 +369,13 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_MEMORY_WRITE,
     XPUM_STATS_PCIRX,
     XPUM_STATS_PCITX,
+    XPUM_STATS_RAS_ERROR_CAT_RESET,
+    XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
+    XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS,
+    XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
+    XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
+    XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
+    XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -494,28 +502,92 @@ struct xpum_scheduler_exclusive_t {
   uint32_t subdevice_Id;
 };
 
- 
-#define XPUM_MAX_CPU_AFFINITY_SIZE  256
-#define XPUM_VENDOR_NAME_LEN        64
-#define XPUM_DEVICE_NAME_LEN        128
-struct xpum_topoloty_t {
-    xpum_device_id_t deviceId;
-    char affinity[XPUM_MAX_CPU_AFFINITY_SIZE];
-    bool bswitch;
-    struct{
-        int32_t  switchVendorId;
-        int32_t  switchDeviceId;        
-        uint32_t switchUpStreamDomain;
-        uint32_t switchUpStreamBus;
-        uint32_t switchUpStreamDev;
-        uint32_t switchUpStreamFunc;
-        uint32_t switchDownStreamDomain;
-        uint32_t switchDownStreamSecondaryBus;
-        uint32_t switchDownStreamSubordinateBus;
-        char switchVendorName[XPUM_VENDOR_NAME_LEN];
-        char switchName[XPUM_DEVICE_NAME_LEN];
-    }Switch;
+
+#define XPUM_MAX_CPU_LIST_LEN       32 
+#define XPUM_MAX_CPU_S_LEN          128
+#define XPUM_DEVICE_PATH_LEN        512  
+
+struct parent_switch{
+    char switchDevicePath[XPUM_DEVICE_PATH_LEN];
 };
+struct xpum_topology_t {
+    xpum_device_id_t deviceId;
+    struct{
+        char localCPUList[XPUM_MAX_CPU_LIST_LEN];
+        char localCPUs[XPUM_MAX_CPU_S_LEN];
+    }cpuAffinity;
+    uint32_t switchCount;
+    parent_switch switches[];   
+};
+
+
+typedef enum xpum_ras_type_enum {
+    XPUM_RAS_ERROR_CAT_RESET = 0,
+    XPUM_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
+    XPUM_RAS_ERROR_CAT_DRIVER_ERRORS,
+    XPUM_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
+    XPUM_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
+    XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
+    XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
+    XPUM_RAS_ERROR_MAX
+} xpum_ras_type_t;
+
+typedef enum xpum_policy_type_enum {  
+    XPUM_POLICY_TYPE_GPU_TEMPERATURE,
+    XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE,
+    XPUM_POLICY_TYPE_GPU_POWER,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
+    XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
+    XPUM_POLICY_TYPE_MAX
+} xpum_policy_type_t;
+
+typedef enum xpum_policy_conditon_type_enum {  
+    XPUM_POLICY_CONDITION_TYPE_GREATER,
+    XPUM_POLICY_CONDITION_TYPE_LESS,
+    XPUM_POLICY_CONDITION_TYPE_WHEN_INCREASE
+} xpum_policy_conditon_type_t;
+
+struct xpum_policy_condition_t {
+    xpum_policy_conditon_type_t type;
+    uint64_t threshold;
+};
+
+typedef enum xpum_policy_action_type_enum {  
+    XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE,
+    XPUM_POLICY_ACTION_TYPE_RESET_DEVICE,
+    XPUM_POLICY_ACTION_TYPE_NULL
+} xpum_policy_action_type_t;
+
+struct xpum_policy_action_t {
+    xpum_policy_action_type_t type;
+    double throttle_device_frequency_min;
+    double throttle_device_frequency_max;
+};
+
+struct xpum_policy_notify_callback_para_t {
+    xpum_policy_type_t type;
+    xpum_policy_condition_t condition;
+    xpum_policy_action_t    action;
+    xpum_device_id_t deviceId;               
+    uint64_t timestamp;
+    uint64_t curValue;
+};
+
+typedef void (*xpum_notify_callback_ptr_t)(xpum_policy_notify_callback_para_t *); //return value for policy condtion trigger and action
+struct xpum_policy_t {
+    xpum_policy_type_t type;
+    xpum_policy_condition_t condition;
+    xpum_policy_action_t    action;
+    xpum_notify_callback_ptr_t notifyCallBack;
+    xpum_device_id_t deviceId;               // Only for get policy api, ignored by set policy api.
+    bool isDeletePolicy;                     // Only for set policy api, ignored by get policy api. If true, then delete this policy in set policy api.
+};
+
 
 #if defined(__cplusplus)
 } // extern "C"

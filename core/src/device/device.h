@@ -39,6 +39,8 @@ class Device {
 
   virtual void getEnergy(Callback_t callback) noexcept = 0;
 
+  virtual void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept = 0;
+
   void addCapability(DeviceCapability& capability);
 
   void removeCapability(DeviceCapability& capability); 

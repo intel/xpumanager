@@ -15,6 +15,9 @@
 #include "device.h"
 
 #include "configuration.h"
+#include "topology.h"
+#include "device_property.h"
+
 using namespace std;
 
 
@@ -33,26 +36,31 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count)
 {
     if (!versionInfoList)
     {
-        *count = 2;
+        *count = 3;
         return XPUM_OK;
     }
 
-    if (*count < 2)
+    if (*count < 3)
     {
-        *count = 2;
+        *count = 3;
         return XPUM_BUFFER_TOO_SMALL;
     }
 
-    string xpumVersion = Version::getVersion();
-    string levelZeroVersion("1.2.13");
+    std::string xpumVersion = Version::getVersion();
+    std::string xpumVersionGit = Version::getVersionGit();
+    std::string levelZeroVersion = Version::getZeLibVersion();
 
     versionInfoList[0].version = XPUM_VERSION;
     xpumVersion.copy(versionInfoList[0].versionString, xpumVersion.size());
     versionInfoList[0].versionString[xpumVersion.size()]='\0';
 
-    versionInfoList[1].version = XPUM_VERSION_LEVEL_ZERO;
-    levelZeroVersion.copy(versionInfoList[1].versionString, levelZeroVersion.size());
-    versionInfoList[1].versionString[levelZeroVersion.size()]='\0';
+    versionInfoList[1].version = XPUM_VERSION_GIT;
+    xpumVersionGit.copy(versionInfoList[1].versionString, xpumVersionGit.size());
+    versionInfoList[1].versionString[xpumVersionGit.size()]='\0';
+
+    versionInfoList[2].version = XPUM_VERSION_LEVEL_ZERO;
+    levelZeroVersion.copy(versionInfoList[2].versionString, levelZeroVersion.size());
+    versionInfoList[2].versionString[levelZeroVersion.size()]='\0';
 
     return XPUM_OK;
 }
@@ -128,7 +136,7 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 }
 
 xpum_result_t xpumRunFirmwareFlash( xpum_device_id_t deviceId, xpum_firmware_flash_job* job ) {
-    const std::string gfxPath{ "/usr/bin/GfxFwFPT" };
+    const std::string gfxPath{ "/usr/local/bin/GfxFwFPT" };
 
     std::ifstream fwFile( job->filePath );
     if ( !fwFile.is_open() ) {
@@ -136,6 +144,8 @@ xpum_result_t xpumRunFirmwareFlash( xpum_device_id_t deviceId, xpum_firmware_fla
         fwFile.close();
         return XPUM_GENERIC_ERROR;
     }
+
+    fwFile.close();
 
     fwFile.open( gfxPath );
     if ( !fwFile.is_open() ) {
@@ -248,25 +258,34 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
 }
 
 
-xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, xpum_device_stats_t dataList[], int *count)
+xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, 
+                                  xpum_device_stats_t dataList[], 
+                                  int *count,
+                                  uint64_t *begin,
+                                  uint64_t *end)
 {
-    xpum_result_t result = XPUM_GENERIC_ERROR;
     xpum_group_info_t groupInfo;
+    int currentCount = 0, totalCount = 0;
+    xpum_device_stats_t * pStatus = dataList;
+
     if(Core::instance().getGroupManager()->getGroupInfo(groupId, &groupInfo) != XPUM_OK)
     {
-        return result;
+        return XPUM_GENERIC_ERROR;
     }
 
-    if( *count < groupInfo.count ) {
-        result = XPUM_BUFFER_TOO_SMALL;
-    } else {
-        for(int i=0; i<groupInfo.count; i++){
-            //Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], &dataList[i]);
-        }
-        result = XPUM_OK;
+    for(int i=0; i<groupInfo.count; i++){
+        currentCount = *count - totalCount;
+        Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], pStatus,
+                                                             &currentCount, begin, end);
+        totalCount += currentCount;   
+        pStatus += currentCount;
+        if(*count < totalCount){
+            return XPUM_BUFFER_TOO_SMALL;
+        }        
     }
-    *count = groupInfo.count;
-    return result;
+    
+    *count = totalCount;
+    return XPUM_OK;
 }
 
 xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
@@ -684,4 +703,51 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
         return XPUM_OK;
     }
     return XPUM_GENERIC_ERROR;  
+}
+
+xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topology, std::size_t *memSize)
+{
+    shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice( std::to_string( deviceId ) );
+    if ( device == nullptr ) {
+    	return XPUM_GENERIC_ERROR;
+    }
+    vector<Property> properties;
+    vector<Property>::iterator it;
+    xpum_topology_t *topo = nullptr;
+    if(*memSize >= sizeof(xpum_topology_t)) {
+        topo = topology;
+        topo->deviceId = deviceId;
+        topo->switchCount = 0;
+    }
+    
+    string  bdfAddress;
+    device->getProperties(properties);
+
+    for (Property& prop : properties) {
+
+        string name = prop.getName();
+        string value = prop.getValue();
+
+        if(name.compare(DeviceProperty::BDF_ADDRESS)==0){
+            string cpus = Topology::getLocalCpus(value);
+            size_t len = cpus.copy(topo->cpuAffinity.localCPUs, XPUM_MAX_CPU_S_LEN);
+            topo->cpuAffinity.localCPUs[len] = '\0';
+
+            string cpulist = Topology::getLocalCpusList(value);
+            len = cpulist.copy(topo->cpuAffinity.localCPUList, XPUM_MAX_CPU_LIST_LEN);
+            topo->cpuAffinity.localCPUList[len] = '\0';
+            bdfAddress = value;
+            break;
+        }
+    }    
+
+    if(*memSize < sizeof(xpum_topology_t)){
+        *memSize = sizeof(xpum_topology_t);
+    }
+
+    if(bdfAddress.length() == 0) {
+        return XPUM_GENERIC_ERROR; 
+    }
+
+    return Topology::getSwitchTopo(bdfAddress, topo, memSize);
 }
