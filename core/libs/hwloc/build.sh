@@ -16,13 +16,10 @@ if [ ! -f $WORK_DIR/install/lib/libhwloc.a ]; then
     make -j 
     echo "------------------------hwloc install---------------------------" 
     make install 
-    echo "------------------------hwloc end---------------------------"
 fi
 
- echo "------------------------hwloc ------------------------------"
 if [ ! -f $WORK_DIR/install/lib/libhwloc.a ]; then
     echo "build hwloc failed! can not find file $WORK_DIR/install/lib/libhwloc.a"
 else  
     echo "build hwloc, done!"
 fi
- echo "------------------------hwloc ------------------------------"

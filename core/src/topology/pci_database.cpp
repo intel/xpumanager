@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
+#include "dlfcn.h"
 
 PciDatabase::PciDatabase() {
     LOG_INFO("PciDatabase()");
@@ -31,17 +32,31 @@ PciDatabase &PciDatabase::instance() {
     return instance;
 }
 
+
+std::string GetSelfPath()
+{
+    std::string selfPath;
+    Dl_info di;
+    dladdr((void*)GetSelfPath, &di);
+    selfPath = di.dli_fname;
+    std::size_t mPos = selfPath.find("/");
+    if (mPos == std::string::npos) 
+    {
+        char exePath[MAX_PATH];
+        ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+        exePath[len] = '\0';
+        selfPath = exePath;
+    }  
+    return selfPath;
+}
+
 bool PciDatabase::init() {
     std::ifstream infile;
     std::string fileName, folder;
-    char exePath[MAX_PATH];
+    std::string currentFile = GetSelfPath();
 
-    ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
-    exePath[len] = '\0';
-
-    if (len > 0 && len != sizeof(exePath)) {
-        folder = std::string(exePath);
-        folder = folder.substr(0, folder.find_last_of('/'));
+    if (currentFile.length() > 0) {
+        folder = currentFile.substr(0, currentFile.find_last_of('/'));
         fileName = folder + "/../" + std::string(PCI_IDS_DIR) + std::string(PCI_IDS_CONFIG);
         infile.open(fileName.data());
 

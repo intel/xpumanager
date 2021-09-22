@@ -71,6 +71,11 @@ if (NOT DEFINED WORK_PATH)
     )
   target_link_libraries(xpumd PRIVATE ${DGM_LIB} ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
+  
+  string(REPLACE "/libDGMCore.so" "/" LIB_PATH ${DGM_LIB})
+  add_custom_command( TARGET xpumd 
+    PRE_BUILD
+    COMMAND /bin/sh -c "cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/config ${LIB_PATH}/../")
 else()
   target_link_libraries(xpumd PRIVATE DGMCore ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
