@@ -215,6 +215,43 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
 }
 
+MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type) {
+  switch (xpum_stats_type) {
+  case xpum_stats_type_enum::XPUM_STATS_GPU_TEMEPERATURE:
+    return MeasurementType::METRIC_TEMPERATURE;
+  case xpum_stats_type_enum::XPUM_STATS_GPU_FREQUENCY:
+    return MeasurementType::METRIC_FREQUENCY;
+  case xpum_stats_type_enum::XPUM_STATS_POWER:
+    return MeasurementType::METRIC_POWER;
+  case xpum_stats_type_enum::XPUM_STATS_MEMORY_USED:
+    return MeasurementType::METRIC_MEMORY_USED;
+  case xpum_stats_type_enum::XPUM_STATS_MEMORY_READ:
+    return MeasurementType::METRIC_MEMORY_READ;
+  case xpum_stats_type_enum::XPUM_STATS_MEMORY_WRITE:
+    return MeasurementType::METRIC_MEMORY_WRITE;
+  case xpum_stats_type_enum::XPUM_STATS_GPU_COMPUTATION:
+    return MeasurementType::METRIC_COMPUTATION;
+  case xpum_stats_type_enum::XPUM_STATS_ENERGY:
+    return MeasurementType::METRIC_ENERGY;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_RESET:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_RESET;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+  default:
+    return MeasurementType::METRIC_POWER;
+  }
+}
+
 xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& measurementType) {
   switch (measurementType) {
   case MeasurementType::METRIC_TEMPERATURE:

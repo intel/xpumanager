@@ -3,6 +3,8 @@
 
 #include <map>
 #include "xpum_structs.h"
+#include "measurement_cache_data.h"
+#include <deque>
 
 class DataLogicQueryInterface {
  public:
@@ -19,4 +21,12 @@ class DataLogicQueryInterface {
                                     int *count,
                                     uint64_t *begin,
                                     uint64_t *end) = 0;
+
+  virtual uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types) = 0;
+
+  virtual void stopRawDataCollectionTask(uint32_t task_id) = 0;
+
+  virtual std::deque<MeasurementCacheData> getCachedRawData(uint32_t task_id, MeasurementType type) = 0;
+
+  virtual std::vector<std::deque<MeasurementCacheData>> getCachedRawData(uint32_t task_id) = 0;
 };

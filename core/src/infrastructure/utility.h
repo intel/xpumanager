@@ -26,6 +26,8 @@ class Utility {
 
   static xpum_stats_type_t xpumStatsTypeFromMeasurementType(MeasurementType& MeasurementType);
 
+  static MeasurementType measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type);
+
   static bool isMetric(MeasurementType type);
 
   static bool isCounterMetric(MeasurementType type);
