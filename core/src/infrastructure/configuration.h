@@ -16,6 +16,8 @@ class Configuration {
   static int PCIE_MAX_LATENCY;
   static int DOUBLE_PRECISION_MIN_GFLOPS;
   static int POWER_MIN_STRESS;
+  static u_int32_t RAW_DATA_COLLECTION_TASK_NUM_MAX;
+  static u_int32_t CACHE_SIZE_LIMIT;
   static std::string MEDIA_CODER_TOOLS_PATH;
   static std::string MEDIA_CODER_TOOLS_DECODE_FILE;
   static std::string MEDIA_CODER_TOOLS_ENCODE_FILE;

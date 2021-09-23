@@ -38,7 +38,15 @@ class DataLogic : public DataLogicInterface {
                             uint64_t *begin,
                             uint64_t *end);
 
- private:
+  uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types);
+
+  void stopRawDataCollectionTask(uint32_t task_id);
+
+  std::deque<MeasurementCacheData> getCachedRawData(uint32_t task_id, MeasurementType type);
+
+  std::vector<std::deque<MeasurementCacheData>> getCachedRawData(uint32_t task_id);
+
+private:
   std::unique_ptr<RawDataManager> p_raw_data_manager;
 
   std::shared_ptr<Persistency> p_persistency;
