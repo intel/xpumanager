@@ -126,7 +126,7 @@ bool GPUDevice::runFirmwareFlash( const char* filePath, const std::string& toolP
     }
     addrForTool[begin] = ':';
 
-    std::string command = toolPath + " -Device " + addrForTool + " -F " + filePath;
+    std::string command = toolPath + "-Y -Device " + addrForTool + " -F " + filePath;
 
     std::lock_guard<std::mutex> lck( mtx );
     if ( commandExec != nullptr ) {
