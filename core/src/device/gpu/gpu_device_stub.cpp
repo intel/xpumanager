@@ -224,6 +224,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
   capabilities.push_back(DeviceCapability::METRIC_FREQUENCY);
   capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ);
   capabilities.push_back(DeviceCapability::METRIC_MEMORY_USED);
+  capabilities.push_back(DeviceCapability::METRIC_MEMORY_UTILIZATION);
+  capabilities.push_back(DeviceCapability::METRIC_MEMORY_BANDWIDTH);
   capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE);
   capabilities.push_back(DeviceCapability::METRIC_POWER);
   capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
@@ -619,7 +621,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_han
           sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
           res = zesMemoryGetState(mem, &sysman_memory_state);
           if (res == ZE_RESULT_SUCCESS) {
-            uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size : props.physicalSize - sysman_memory_state.free;
+            uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size  - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
             props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, used) : ret->setCurrent(used);
             dataAcquired = true;
           }
@@ -631,6 +633,101 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_han
     return ret;
   } else {
     throw BaseException("toGetMemory error");
+  }
+}
+
+void GPUDeviceStub::getMemoryUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept{
+  if (device == nullptr) {
+    return;
+  }
+  p_thread_pool->addTask(callback, toGetMemoryUtilization, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes_device_handle_t& device) {
+  if (device == nullptr) {
+    throw BaseException("toGetMemoryUtilization error");
+  }
+  bool dataAcquired = false;
+  std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+  uint32_t mem_module_count = 0;
+  ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_mem_handle_t> mems(mem_module_count);
+    res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+    if (res == ZE_RESULT_SUCCESS) {
+      for (auto& mem:mems) {
+        zes_mem_properties_t props;
+        props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+        res = zesMemoryGetProperties(mem, &props);
+        if (res == ZE_RESULT_SUCCESS) {
+          zes_mem_state_t sysman_memory_state = {};
+          sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+          res = zesMemoryGetState(mem, &sysman_memory_state);
+          if (res == ZE_RESULT_SUCCESS) {
+            uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
+            uint64_t utilization = used * 100.0 / sysman_memory_state.size;
+            props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, utilization) : ret->setCurrent(utilization);
+            dataAcquired = true;
+          }
+        } 
+      }
+    }
+  }
+  if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    return ret;
+  } else {
+    throw BaseException("toGetMemoryUtilization error");
+  }
+}
+
+void GPUDeviceStub::getMemoryBandwidth(const zes_device_handle_t& device, Callback_t callback) noexcept{
+  if (device == nullptr) {
+    return;
+  }
+  p_thread_pool->addTask(callback, toGetMemoryBandwidth, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_device_handle_t& device) {
+  if (device == nullptr) {
+    throw BaseException("toGetMemoryBandwidth error");
+  }
+  bool dataAcquired = false;
+  uint32_t mem_module_count = 0;
+  std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+  ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_mem_handle_t> mems(mem_module_count);
+    res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+    if (res == ZE_RESULT_SUCCESS) {
+      for (auto& mem:mems) {
+        zes_mem_properties_t props;
+        props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+        res = zesMemoryGetProperties(mem, &props);
+        if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
+          continue;
+        }
+
+        zes_mem_bandwidth_t s1, s2;
+        res = zesMemoryGetBandwidth(mem,&s1);
+        if (res == ZE_RESULT_SUCCESS) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
+          res = zesMemoryGetBandwidth(mem,&s2);
+          if (res == ZE_RESULT_SUCCESS) {
+            uint64_t val = 10 ^ 6 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp));
+            if (val > 100) {
+              val = 100;
+            }
+            props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, val) : ret->setCurrent(val);
+            dataAcquired = true;
+          }
+        }
+      }
+    }
+  }
+  if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    return ret;
+  } else {
+    throw BaseException("toGetMemoryBandwidth error");
   }
 }
 

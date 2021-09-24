@@ -11,6 +11,7 @@ SharedData::SharedData(
 }
 
 SharedData::~SharedData() {
+  datas.clear();
 }
 
 std::map<std::string, MeasurementData>& SharedData::getData() noexcept {

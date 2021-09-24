@@ -278,10 +278,10 @@ class XpumFrequencyRange(Structure):
     ]
 
 class XpumSchedulerMode(IntEnum):
-    XPUM_TIMEOUT = (0)
-    XPUM_TIMESLICE = (1)
-    XPUM_EXCLUSIVE = (2)
-    XPUM_COMPUTE_UNIT_DEBUG = (3)
+    XPUM_TIMEOUT = (1<<0)
+    XPUM_TIMESLICE = (1<<1)
+    XPUM_EXCLUSIVE = (1<<2)
+    XPUM_COMPUTE_UNIT_DEBUG = (1<<3)
     XPUM_MODE_FORCE_UINT32 = (0x7fffffff)
 
 class XpumEngineTypeFlags(IntEnum):
@@ -942,8 +942,8 @@ class DGMCore:
             return res, "Fail to set device scheduler Exclusive Mode", None
         return 0, "OK", {"result": "OK"}
     
-    def resetDevice(self, deviceId, force):
-        res = self.lib.xpumResetDevice(c_int32(deviceId), c_bool(force))
+    def resetDevice(self, deviceId):
+        res = self.lib.xpumResetDevice(c_int32(deviceId), c_bool(True))
         if res != 0:
             return res, "Fail to reset device", None
         return 0, "OK", {"result": "OK"}

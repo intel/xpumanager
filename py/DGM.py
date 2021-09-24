@@ -371,12 +371,8 @@ def operate_device_schedulers_result(deviceId):
 
 @app.route('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'])
 def operate_device_reset(deviceId):
-    req = request.get_json()
-    force = req["force"]
-    if force is None:
-        force = False
     if request.method == 'POST':
-        code, message, data = core.resetDevice(deviceId, force)
+        code, message, data = core.resetDevice(deviceId)
     else:
         code, message, data = 500, "invalid reset request",
     if code != 0:

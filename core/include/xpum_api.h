@@ -665,14 +665,12 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
  * @param deviceId                  IN: The device to collect raw metrics data
  * @param metricsTypeList           IN: The metrics to collect
  * @param count                     IN: The count of entries in \a metricsTypeList
- * @param perTile                   IN: Is collecting per tile raw data or not
  * @param taskId                   OUT: The id for task created to collect data
  * @return xpum_result_t 
  */
 xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId, 
                                                  xpum_stats_type_t metricsTypeList[], 
                                                  int count,
-                                                 bool perTile, 
                                                  xpum_dump_task_id_t *taskId);
 
 /**
@@ -748,7 +746,7 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
                                            xpum_frequency_range_t* dataArray, int* count );
 
 xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
-                                        const xpum_frequency_range_t t);
+                                        const xpum_frequency_range_t& t);
 
 xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
                                       xpum_scheduler_data_t* dataArray, int* count );
@@ -774,7 +772,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
  * @return
  *      - \ref XPUM_OK                  if query successfully
  */
-xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topoloty_t * topology, std::size_t *memSize);
+xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topology, std::size_t *memSize);
 
 
 /**

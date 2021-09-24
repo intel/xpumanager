@@ -1,6 +1,7 @@
 #include "cli_wrapper.h"
 #include "comlet_discovery.h"
 #include "comlet_version.h"
+#include "comlet_topology.h"
 #include <CLI/CLI.hpp>
 
 #include <iostream>
@@ -15,7 +16,8 @@ int main(int argc, char **argv) {
 
     wrapper
         .addComlet(MAKE_COMLET_PTR(ComletVersion))
-        .addComlet(MAKE_COMLET_PTR(ComletDiscovery));
+        .addComlet(MAKE_COMLET_PTR(ComletDiscovery))
+        .addComlet(MAKE_COMLET_PTR(ComletTopology));
 
     app.require_subcommand();
 

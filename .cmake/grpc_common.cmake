@@ -1,14 +1,7 @@
+cmake_minimum_required(VERSION 3.10.0)
+set(CMAKE_CXX_STANDARD 11)
 
-# Find gRPC installation Looks for gRPCConfig.cmake file installed by gRPC's
-# cmake installation.
-find_package(gRPC CONFIG)
-if(${gRPC_FOUND})
-  message(STATUS "Using gRPC.cmake ${gRPC_VERSION}")
-  set(_GRPC_GRPCPP gRPC::grpc++)
-else()
-  message(STATUS "gRPC.cmake not found, use system provided lib")
-  set(_GRPC_GRPCPP grpc++)
-endif()
+find_package(Threads REQUIRED)
 
 # Find Protobuf installation Looks for protobuf-config.cmake file installed by
 # Protobuf's cmake installation.
@@ -21,6 +14,18 @@ else()
   message(STATUS "protobuf.cmake not found, use system provided lib")
   set(_PROTOBUF_LIBPROTOBUF protobuf)
 endif()
+
+# Find gRPC installation Looks for gRPCConfig.cmake file installed by gRPC's
+# cmake installation.
+find_package(gRPC CONFIG)
+if(${gRPC_FOUND})
+  message(STATUS "Using gRPC.cmake ${gRPC_VERSION}")
+  set(_GRPC_GRPCPP gRPC::grpc++)
+else()
+  message(STATUS "gRPC.cmake not found, use system provided lib")
+  set(_GRPC_GRPCPP grpc++)
+endif()
+
 
 find_program(_PROTOBUF_PROTOC protoc)
 

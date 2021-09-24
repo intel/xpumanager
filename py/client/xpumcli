@@ -93,69 +93,29 @@ fwflash_parser.add_argument('-t', '--type', metavar="<firmwareName>", dest="firm
                           help='Firmware name to flash')
 fwflash_parser.add_argument('-f', '--file', metavar="<imagePath>", dest="imagePath", required=True,
                           help='The file path in the server, used to flash firmware, should be located in /usr/bin')
-# standby subcommand parser
-standby_parser = subparsers.add_parser("standby", help="Get/set standby mode")
-standby_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
-                          help='The device id to query')
-standby_parser.add_argument('-s', '--subdeviceid', metavar="<subDeviceId>", dest="subDeviceId", type=int,
-                          help='The sub device id to query')
-standby_parser.add_argument('-t', '--type', metavar="<standbyType>", dest="standbyType", type=int,
-                          help='Set standby type for device')
-standby_parser.add_argument('-m', '--mode', metavar="<mode>", dest="mode", type=int,
-                          help='The mode for device')
 
-# powerlimit subcommand parser
-powerlimit_parser = subparsers.add_parser("powerlimit", help="Get/set powerlimit")
-powerlimit_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
-                          help='The device id to query')
-powerlimit_parser.add_argument('-s', '--subdeviceid', metavar="<subDeviceId>", dest="subDeviceId", type=int,
-                          help='The sub device id to query')
-powerlimit_parser.add_argument('-t', '--type', metavar="<limitType>", dest="limitType", type=int,
-                          help='Set power limit type for device')
-powerlimit_parser.add_argument('-e', '--enabled', metavar="<enabled>", dest="enabled", type=int,
-                          help='Set enabled value for device')
-powerlimit_parser.add_argument('-p', '--power', metavar="<power>", dest="power", type=int,
-                          help='Set power value for device')
-powerlimit_parser.add_argument('-n', '--interval', metavar="<interval>", dest="interval", type=int,
-                          help='Set interval value for device')
-powerlimit_parser.add_argument('-ac', '--powerAC', metavar="<powerAC>", dest="powerAC", type=int,
-                          help='Set powerAC value for device')
-powerlimit_parser.add_argument('-dc', '--powerDC', metavar="<powerDC>", dest="powerDC", type=int,
-                          help='Set powerDC value for device')
-
-# frequencyRange subcommand parser
-freq_parser = subparsers.add_parser("frequencyrange", help="Get/set frequency ranges")
-freq_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
-                          help='The device id to query')
-freq_parser.add_argument('-s', '--subdeviceid', metavar="<subDeviceId>", dest="subDeviceId", type=int,
-                          help='The sub device id to query')
-freq_parser.add_argument('-t', '--type', metavar="<type>", dest="type", type=int,
-                          help='Set frequency ranges type for device')
-freq_parser.add_argument('-i', '--min', metavar="<min>", dest="min", type=float,
-                          help='Set min value for device')
-freq_parser.add_argument('-a', '--max', metavar="<max>", dest="max", type=float,
-                          help='Set max value for device')
-
-# scheduler subcommand parser
-scheduler_parser = subparsers.add_parser("scheduler", help="Get/set scheduler")
-scheduler_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
-                          help='The device id to query')
-scheduler_parser.add_argument('-s', '--subdeviceid', metavar="<subDeviceId>", dest="subDeviceId", type=int,
-                          help='The sub device id to query')
-scheduler_parser.add_argument('-t', '--type', metavar="<schedulerType>", dest="schedulerType", type=int,
-                          help='Set scheduler type for device')
-scheduler_parser.add_argument('-w', '--watchdogTimeout', metavar="<watchdogTimeout>", dest="watchdogTimeout", type=int,
-                          help='Set watchdogTimeout value for device')
-scheduler_parser.add_argument('-n', '--interval', metavar="<interval>", dest="interval", type=int,
-                          help='Set interval value for device')
-scheduler_parser.add_argument('-y', '--yieldTimeout', metavar="<yieldTimeout>", dest="yieldTimeout", type=int,
-                          help='Set yieldTimeout value for device')
 # reset subcommand parser
 reset_parser = subparsers.add_parser("reset", help="Reset device")
 reset_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
                           help='reset device')
-reset_parser.add_argument('-f', '--force', metavar="<force>", dest="force", type=bool,
-                          help='force reset device')
+
+# config subcommand parser
+config_parser = subparsers.add_parser("config", help="used to configure settings for devices.")
+config_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+                          help='The device id to query or change')
+config_parser.add_argument('-t', '--tile', metavar="<deviceTileId>", dest="deviceTileId", type=int,
+                          help='The device tile id to query or change')
+config_parser.add_argument('-l', '--list', action='store_true',
+                          help='get all config')
+config_parser.add_argument('--Scheduler', metavar="<SchedulerValue>", dest="SchedulerValue", type=str,
+                          help='Set device configurations')
+config_parser.add_argument('--Standby', metavar="<StandbyValue>", dest="StandbyValue", type=str,
+                          help='Set device configurations')
+config_parser.add_argument('--PowerLimit', metavar="<PowerLimitValue>", dest="PowerLimitValue", type=str,
+                          help='Set device configurations')
+config_parser.add_argument('--FrequencyRange', metavar="<FrequencyRangeValue>", dest="FrequencyRangeValue", type=str,
+                          help='Set device configurations')
+
 
 class PrintTable:
     _t = Texttable()
@@ -285,57 +245,28 @@ def arg():
         imagePath = parsed.imagePath
         flash_firmware(deviceId, firmwareName, imagePath)
         return
-    elif parsed.subcommand == "standby":
-        if parsed.deviceId is not None and parsed.mode is None and parsed.standbyType is None:
-            get_device_standbys(parsed.deviceId)
-            return
-        elif parsed.standbyType is not None and parsed.mode is not None:
-            set_device_standby(parsed.deviceId, parsed.subDeviceId, parsed.standbyType, parsed.mode)
-            return
-        else:
-            standby_parser.print_help()
-            return
-    elif parsed.subcommand == "powerlimit":
-        if parsed.deviceId is not None and parsed.subDeviceId is not None and parsed.limitType is None:
-            get_device_powerlimits(parsed.deviceId, parsed.subDeviceId)
-            return
-        elif parsed.limitType is not None:
-            set_device_powerlimit(parsed.deviceId, parsed.subDeviceId, parsed.limitType, parsed.enabled, parsed.power, parsed.interval, parsed.powerAC, parsed.powerDC)
-            return
-        else:
-            powerlimit_parser.print_help()
-            return
-    elif parsed.subcommand == "frequencyrange":
-        if parsed.deviceId is not None and parsed.type is None:
-            get_device_frequencyRanges(parsed.deviceId)
-            return
-        elif parsed.type is not None:
-            set_device_frequencyRange(parsed.deviceId, parsed.subDeviceId, parsed.type, parsed.min, parsed.max)
-            return
-        else:
-            freq_parser.print_help()
-            return
-    elif parsed.subcommand == "scheduler":
-        if parsed.deviceId is not None and parsed.schedulerType is None:
-            get_device_schedulers(parsed.deviceId)
-            return
-        elif parsed.schedulerType is not None:
-            set_device_scheduler(parsed.deviceId, parsed.subDeviceId, parsed.schedulerType, parsed.watchdogTimeout, parsed.interval, parsed.yieldTimeout)
-            return
-        else:
-            scheduler_parser.print_help()
-            return
     elif parsed.subcommand == "reset":
-        if parsed.force is None:
-            force = False
-        else:
-            force = parsed.force
-        
         if parsed.deviceId is not None:
-            reset_device(parsed.deviceId, force)
+            reset_device(parsed.deviceId)
             return
         else:
             reset_parser.print_help()
+            return
+    elif parsed.subcommand == "config":
+        if parsed.list:
+            display_device_all_config(parsed.deviceId, parsed.deviceTileId)
+            return
+        elif parsed.SchedulerValue is not None and parsed.deviceTileId is not None:
+            set_device_scheduler(parsed.deviceId, parsed.deviceTileId, parsed.SchedulerValue)
+            return
+        elif parsed.FrequencyRangeValue is not None and parsed.deviceTileId is not None:
+            set_device_frequencyRange(parsed.deviceId, parsed.deviceTileId, parsed.FrequencyRangeValue)
+            return
+        elif parsed.PowerLimitValue is not None and parsed.deviceTileId is not None:
+            set_device_powerlimit(parsed.deviceId, parsed.deviceTileId, parsed.PowerLimitValue)
+            return
+        elif parsed.StandbyValue is not None and parsed.deviceTileId is not None:
+            set_device_standby(parsed.deviceId, parsed.deviceTileId, parsed.StandbyValue)
             return
     parser.print_help()
 
@@ -1009,9 +940,9 @@ def flash_firmware(deviceId, firmwareName, imagePath):
 
 def search_standbys_enum_mode(num):
     return {
-        0: "XPUM_DEFAULT",
-        1: "XPUM_NEVER",
-        0x7fffffff:"XPUM_STANDBY_MODE_FORCE_UINT32",
+        0: "DEFAULT",
+        1: "NEVER",
+        0x7fffffff:"STANDBY_MODE_FORCE_UINT32",
     }.get(num, "unknown")
 
 def search_standbys_enum_type(num):
@@ -1026,16 +957,16 @@ def get_device_standbys(deviceId):
         print("Error occurs:"+res.content.decode())
         return
     data = res.json()
-    t = PrintTable(["Device ID", "SubDevice ID","Standby Type", "Standby Mode"])
+    standbyConfig = []
     for d in data["Standbys"]:
         if d["onSubdevice"] == True :
             subDeviceId = d["subdeviceId"]
         else:
             subDeviceId =' '
-        standbyType = d["standbyType"],search_standbys_enum_type(d["standbyType"])
-        standbyMode = d["mode"],search_standbys_enum_mode(d["mode"])
-        t.add_row([deviceId,subDeviceId,standbyType,standbyMode])
-    t.print()
+        #print( d["standbyType"],search_standbys_enum_type(d["standbyType"]))
+        #print( d["mode"],search_standbys_enum_mode(d["mode"]))
+        standbyConfig.append((subDeviceId,d["mode"]))
+    return standbyConfig
 
 def set_device_standby(deviceId, subDeviceId, standbyType, mode):
     reqData = {
@@ -1062,12 +993,13 @@ def get_device_powerlimits(deviceId, subDeviceId):
         print("Error occurs:"+res.content.decode())
         return
     data = res.json()
-    t = PrintTable(["Device ID", "SubDevice ID","Sustained Limit", "Burst Limit", "Peak Limit"])
-    sustained = "enabled:", data["limits"]["sustainedLimit"]["enabled"],"interval:",data["limits"]["sustainedLimit"]["interval"],'power:',data["limits"]["sustainedLimit"]["power"]
-    burst = "enabled:", data["limits"]["burstLimit"]["enabled"],'power:',data["limits"]["burstLimit"]["power"]
-    peak = "powerAC:", data["limits"]["peakLimit"]["powerAC"],'powerDC:',data["limits"]["peakLimit"]["powerDC"]
-    t.add_row([deviceId,subDeviceId,sustained,burst,peak])
-    t.print()
+    return data["limits"]["sustainedLimit"]["power"], data["limits"]["sustainedLimit"]["interval"]
+    #t = PrintTable(["Device ID", "SubDevice ID","Sustained Limit", "Burst Limit", "Peak Limit"])
+    #sustained = "enabled:", data["limits"]["sustainedLimit"]["enabled"],"interval:",data["limits"]["sustainedLimit"]["interval"],'power:',data["limits"]["sustainedLimit"]["power"]
+    #burst = "enabled:", data["limits"]["burstLimit"]["enabled"],'power:',data["limits"]["burstLimit"]["power"]
+    #peak = "powerAC:", data["limits"]["peakLimit"]["powerAC"],'powerDC:',data["limits"]["peakLimit"]["powerDC"]
+    #t.add_row([deviceId,subDeviceId,sustained,burst,peak])
+    #t.print()
 
 
 def set_device_powerlimit(deviceId, subDeviceId, limitType, enabled, power, interval, powerAC, powerDC):
@@ -1087,7 +1019,6 @@ def set_device_powerlimit(deviceId, subDeviceId, limitType, enabled, power, inte
         return
     else:
         print(res.status_code)
-    #get_device_powerlimits(deviceId, subDeviceId)
 
 def get_device_frequencyRanges(deviceId):
     res = requests.get(host+"/rest/v1/devices/{}/frequencyRanges".format(deviceId))
@@ -1095,10 +1026,13 @@ def get_device_frequencyRanges(deviceId):
         print("Error occurs:"+res.content.decode())
         return
     data = res.json()
-    t = PrintTable(["Device ID", "SubDevice ID","Frequency Type", "Min", "Max"])
+    freqRangeArray = []
+    #t = PrintTable(["Device ID", "SubDevice ID","Frequency Type", "Min", "Max"])
     for d in data["FrequencyRange"]:
-        t.add_row([deviceId,d['subdeviceId'],d['type'],d['min'],d['max']])
-    t.print()
+        #t.add_row([deviceId,d['subdeviceId'],d['type'],d['min'],d['max']])
+        freqRangeArray.append((d['subdeviceId'],d['type'],d['min'],d['max']))
+    return freqRangeArray
+    #t.print()
 
 def set_device_frequencyRange(deviceId, subDeviceId, type, min, max):
     reqData = {
@@ -1114,7 +1048,6 @@ def set_device_frequencyRange(deviceId, subDeviceId, type, min, max):
         return
     else:
         print(res.status_code)
-    get_device_frequencyRanges(deviceId)
 
 def search_engine_type_enum(num):
     return {
@@ -1130,40 +1063,34 @@ def search_engine_type_enum(num):
 def search_mode_enumList(num):
     nameList = []
     if num >= 0x7fffffff:
-        nameList.append('XPUM_MODE_FORCE_UINT32');
+        nameList.append('XPUM_MODE_FORCE_UINT32')
         num -= 0x7fffffff
-    if num >= 3:
+    if num >= (1<<3):
         nameList.append('XPUM_COMPUTE_UNIT_DEBUG')
         num -= 3
-    if num >= 2:
+    if num >= (1<<2):
         nameList.append('XPUM_EXCLUSIVE')
         num -= 2
-    if num >= 1:
+    if num >= (1<<1):
         nameList.append('XPUM_TIMESLICE')
         num -= 1
-    if num >= 0:
+    if num >= (1<<0):
         nameList.append('XPUM_TIMEOUT')
         num -= 0
     return nameList
 
 def search_mode_enum(num):
-    nameList = []
+    #nameList = []
     if num >= 0x7fffffff:
-        nameList.append('XPUM_MODE_FORCE_UINT32');
-        return nameList
-    if num >= 3:
-        nameList.append('XPUM_COMPUTE_UNIT_DEBUG')
-        return nameList
-    if num >= 2:
-        nameList.append('XPUM_EXCLUSIVE')
-        return nameList
-    if num >= 1:
-        nameList.append('XPUM_TIMESLICE')
-        return nameList
-    if num >= 0:
-        nameList.append('XPUM_TIMEOUT')
-        return nameList
-    return nameList
+        return 'MODE_FORCE_UINT32'
+    if num >= 3: #(1<<3)
+        return 'COMPUTE_UNIT_DEBUG'
+    if num >= 2: #(1<<2)
+        return 'EXCLUSIVE'
+    if num >= 1: #(1<<1)
+        return 'TIMESLICE'
+    if num >= 0: #(1<<0)
+         return 'TIMEOUT'
 
 def get_device_schedulers(deviceId):
     res = requests.get(host+"/rest/v1/devices/{}/schedulers".format(deviceId))
@@ -1171,18 +1098,21 @@ def get_device_schedulers(deviceId):
         print("Error occurs:"+res.content.decode())
         return
     data = res.json()
+    schedulerArray = []
     #print(data)
-    t = PrintTable(["Device ID", "SubDevice ID","Can Control", "Engine Type", "Mode", "Supported Mode"])
+    #t = PrintTable(["Device ID", "SubDevice ID","Can Control", "Engine Type", "Mode", "Supported Mode"])
     for d in data["schedulers"]:
         if d["onSubdevice"] == True :
             subDeviceId = d["subdeviceId"]
         else:
             subDeviceId =' '
-        engineType = d["engineType"],search_engine_type_enum(d["engineType"])
-        mode = d["mode"], search_mode_enum(d["mode"])
-        supportedMode = d["supportedMode"], search_mode_enumList(d["supportedMode"])
-        t.add_row([deviceId, subDeviceId, d["canControl"], engineType, mode, supportedMode])
-    t.print()
+        #engineType = d["engineType"],search_engine_type_enum(d["engineType"])
+        mode =subDeviceId, d["mode"]
+        schedulerArray.append(mode)
+        #supportedMode = d["supportedMode"], search_mode_enumList(d["supportedMode"])
+        #t.add_row([deviceId, subDeviceId, d["canControl"], engineType, mode, supportedMode])
+    return schedulerArray
+    #t.print()
 
 def set_device_scheduler(deviceId, subDeviceId, schedulerType, watchdogTimeout, interval, yieldTimeout):
     reqData = {
@@ -1200,17 +1130,158 @@ def set_device_scheduler(deviceId, subDeviceId, schedulerType, watchdogTimeout, 
     else:
         print(res.status_code)
 
-def reset_device(deviceId, force):
-    reqData = {
-        "force": force
-    }
-    #print(reqData)
-    res = requests.post(host+"/rest/v1/devices/{}/reset".format(deviceId),json=reqData)
+def reset_device(deviceId):
+    res = requests.post(host+"/rest/v1/devices/{}/reset".format(deviceId))
     if res.status_code != 200:
         print("Error occurs:"+res.content.decode())
         return
     else:
-        print(res.status_code)
+        print("OK")
+
+def get_device_tile_num(deviceId):
+    res = requests.get(host+"/rest/v1/devices/{}".format(deviceId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    data = res.json()
+    #print("get_device_tile_num",data["NumberOfSubDevices"])
+    return data["NumberOfSubDevices"]
+
+def display_device_all_config(deviceId, deviceTileId):
+    if deviceTileId is None:
+        numTile = get_device_tile_num(deviceId)
+        tileList = [*range(0,int(numTile),1)]
+    else:
+        numTile = 1
+        tileList = [deviceTileId]
+    #print(tileList)
+    powerLimit = []
+    for tileId in tileList :
+        power, interval = get_device_powerlimits(deviceId, tileId)
+        powerLimit.append((tileId, power, interval))
+    #print(powerLimit) 
+    standbyConfig = get_device_standbys(deviceId)
+    freqRange = get_device_frequencyRanges(deviceId)
+    scheduler = get_device_schedulers(deviceId)
+    t = PrintTable(["Device Type", "Device Id/Tile ID","Configuration"])
+    for tileId in tileList :
+        tileStandby = [(valx,valy) for (valx,valy) in standbyConfig if (valx ==tileId)]
+        tileFreq = [(vala,valb,valc,vald) for (vala,valb,valc,vald) in freqRange if (vala ==tileId)]
+        tileScheduler = list(set([(vala,valb) for (vala,valb) in scheduler if (vala ==tileId)]))
+        tilePowerLimit = [(vala,valb,valc) for (vala,valb,valc) in powerLimit if (vala ==tileId)]
+        #print("tileStandby",tileStandby)
+        #print("tileFreq",tileFreq)
+        #print("tileScheduler",tileScheduler)
+        #print("tilePowerLimit",tilePowerLimit)
+        configContent = "Power Limit(w): "+ str(tilePowerLimit[0][1]/1000)+"\n" + "    Legal Range: 0 to 500" +"\n"\
+            + "Power Average Window (ms): " + str(tilePowerLimit[0][2]) + "\n" + "    Legal Range: 0 to 125"
+        configContent += "\n\n"
+        configContent += "GPU Min Frequency(MHz): " + str(tileFreq[0][2]) + "\n"\
+            "GPU Max Frequency(MHz): " + str(tileFreq[0][3])\
+            +"\n    Legal Range: 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000,"\
+            + "1050,1100, 1150, 1200, 1250, 1300\n"
+        configContent += "\n"
+        configContent += "Standby type: " + search_standbys_enum_mode(tileStandby[0][1]) +"\n"\
+            "    Legal Options: Default, Never\n"
+        configContent += "\n"
+        configContent += "Scheduler Mode: " + search_mode_enum( tileScheduler[0][1]) + "\n    Legal Options: Timeout,Timeslice, Exclusive"
+        row = "GPU",str(deviceId)+"/"+str(tileId),configContent
+        t.add_row(row)  
+    t.print()
+
+def set_device_scheduler(deviceId, deviceTileId, keyValue):
+    #print(keyValue)
+    keyValueArray = keyValue.split(",")
+    #print(keyValueArray)
+    watchdogTimeout = 0
+    interval = 0
+    yieldTimeout = 0
+
+    if keyValueArray[0] == "Timeout":
+        watchdogTimeout = int(keyValueArray[1])
+        schedulerType = 0
+    elif keyValueArray[0] == "Timeslice":
+        yieldTimeout = int(keyValueArray[2])
+        interval = int(keyValueArray[1])
+        schedulerType = 1
+    else:
+        schedulerType =2
+    reqData = {
+        "subDeviceId": deviceTileId,
+        "SchedulerType": schedulerType,
+        "watchdogTimeout":watchdogTimeout,
+        "interval":interval,
+        "yieldTimeout":yieldTimeout
+    }
+    #print(reqData)
+    res = requests.post(host+"/rest/v1/devices/{}/schedulers".format(deviceId),json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    else:
+        print("OK")
+    return
+
+def set_device_frequencyRange(deviceId, deviceTileId, keyValue):
+    keyValueArray = keyValue.split(",")
+    #print(keyValueArray)
+    reqData = {
+        "subDeviceId": deviceTileId,
+        "type": int(0),
+        "min":int(keyValueArray[0]),
+        "max":int(keyValueArray[1])
+    }
+    #print(reqData)
+    res = requests.post(host+"/rest/v1/devices/{}/frequencyRanges".format(deviceId),json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    else:
+        print("OK")
+    return
+
+def set_device_powerlimit(deviceId, deviceTileId, keyValue):
+    keyValueArray = keyValue.split(",")
+    #print(keyValueArray)
+    reqData = {
+        "subDeviceId": deviceTileId,
+        "limitType": int(0),
+        "enabled":bool(True),
+        "power":int(keyValueArray[0])*1000,
+        "interval":int(keyValueArray[1]),
+        "powerAC":int(0),
+        "powerDC":int(0),
+    }
+    #print(reqData)
+    res = requests.post(host+"/rest/v1/devices/{}/powerLimits".format(deviceId),json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    else:
+        print("OK")
+    return
+
+def set_device_standby(deviceId, deviceTileId, keyValue):
+    if keyValue == "Never":
+        KeyValueInt = 1
+    elif keyValue == "Default":
+        KeyValueInt = 0
+    else:
+        print("Error occurs: invalid parameter")
+        return
+    reqData = {
+        "subDeviceId": deviceTileId,
+        "standbyType": int(0),
+        "mode": KeyValueInt
+    }
+    #print(reqData)
+    res = requests.post(host+"/rest/v1/devices/{}/standbys".format(deviceId),json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    else:
+        print("OK")
+    return
 
 if __name__ == "__main__":
     arg()

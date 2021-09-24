@@ -111,6 +111,7 @@ target_sources(
 add_subdirectory(./libs/spdlog)
 add_subdirectory(./libs/hwloc)
 
-target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc)
+add_dependencies(DGMCore lib_hwloc)
+target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc stdc++fs)
 
 unset(BUILD_TEST CACHE)

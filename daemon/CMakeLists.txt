@@ -43,7 +43,7 @@ add_custom_command(
   DEPENDS "${core_proto}")
 
 # Include generated *.pb.h files
-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # Specifiy header file location
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
@@ -54,11 +54,29 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR} XPUM_DAEMON_SRC)
 set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
              ${core_proto_hdrs})
 
-link_directories("/root/XPUManagerGit/core")
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../core/build)
 
 add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cc)
 
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 
-target_link_libraries(xpumd DGMCore.so ${_GRPC_GRPCPP}
-                      ${_PROTOBUF_LIBPROTOBUF})
+
+if (NOT DEFINED WORK_PATH)
+  message(STATUS "WORK_PATH not defined!")
+  find_library(DGM_LIB 
+    NAMES libDGMCore.so
+    PATHS 
+    ${CMAKE_CURRENT_LIST_DIR}/../core/build
+    ${CMAKE_CURRENT_LIST_DIR}/../build/core
+    )
+  target_link_libraries(xpumd PRIVATE ${DGM_LIB} ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+  
+  string(REPLACE "/libDGMCore.so" "/" LIB_PATH ${DGM_LIB})
+  add_custom_command( TARGET xpumd 
+    PRE_BUILD
+    COMMAND /bin/sh -c "cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/config ${LIB_PATH}/../")
+else()
+  target_link_libraries(xpumd PRIVATE DGMCore ${_GRPC_GRPCPP}
+    ${_PROTOBUF_LIBPROTOBUF})
+endif()

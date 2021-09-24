@@ -11,6 +11,8 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 
+#include "xpum_api.h"
+#include "xpum_structs.h"
 #include "XpumCoreServiceImpl.h"
 
 using grpc::Server;
@@ -50,7 +52,16 @@ void runRPCServer() {
 }
 
 int main( int argc, char* argv[] ) {
+    
+    xpum_result_t res = xpumInit();
+    if(res != XPUM_OK){
+        cout << "Load DGMCore failed!" << endl;
+        return 1;
+    }
+
     runRPCServer();
+
+    res = xpumShutdown();
 
     return 0;
 }

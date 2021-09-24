@@ -9,7 +9,7 @@ if (NOT DEFINED BUILD_TIMESTAMP)
 		OUTPUT_VARIABLE BUILD_DATE
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
-	message("build date=${BUILD_DATE}")
+	message(STATUS "build date=${BUILD_DATE}")
 	SET(BUILD_TIMESTAMP "${BUILD_DATE}")
 endif()
 
@@ -20,9 +20,13 @@ if (NOT DEFINED GIT_COMMIT)
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)	
 	string(SUBSTRING ${BUILD_HASH} 0 8 GIT_COMMIT)
-	message("git hash=${GIT_COMMIT}")
+	message(STATUS "git hash=${GIT_COMMIT}")
 endif()
 
+
+if (NOT DEFINED WORK_PATH)	
+	set(WORK_PATH ${CMAKE_CURRENT_BINARY_DIR})	
+endif()
 
 set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${BUILD_TIMESTAMP}")
 set(XPUM_VERSION_STRING ${PROJECT_VERSION})
@@ -51,7 +55,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_subdirectory(core)
 add_subdirectory(py)
 add_subdirectory(cli)
-# add_subdirectory(daemon)
+add_subdirectory(daemon)
 
 if(NOT DEFINED CPACK_GENERATOR)
 	if(EXISTS "/etc/debian_version")
@@ -129,12 +133,12 @@ install(
     FILES
 		tools/fwUpgrade/GfxFwFPT
     PERMISSIONS
-        OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+		OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
     DESTINATION
 	    bin
 )
 
-install(TARGETS DGMCore xpumcli
+install(TARGETS DGMCore xpumcli xpumd
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION .)

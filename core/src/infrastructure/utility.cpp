@@ -53,6 +53,10 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
     return MeasurementType::METRIC_ENERGY;
   case DeviceCapability::METRIC_MEMORY_USED:
     return MeasurementType::METRIC_MEMORY_USED;
+  case DeviceCapability::METRIC_MEMORY_UTILIZATION:
+    return MeasurementType::METRIC_MEMORY_UTILIZATION;
+  case DeviceCapability::METRIC_MEMORY_BANDWIDTH:
+    return MeasurementType::METRIC_MEMORY_BANDWIDTH;
   case DeviceCapability::METRIC_MEMORY_READ:
     return MeasurementType::METRIC_MEMORY_READ;
   case DeviceCapability::METRIC_MEMORY_WRITE:
@@ -100,6 +104,10 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
     return DeviceCapability::METRIC_POWER;
   case MeasurementType::METRIC_MEMORY_USED:
     return DeviceCapability::METRIC_MEMORY_USED;
+  case MeasurementType::METRIC_MEMORY_UTILIZATION:
+    return DeviceCapability::METRIC_MEMORY_UTILIZATION;
+  case MeasurementType::METRIC_MEMORY_BANDWIDTH:
+    return DeviceCapability::METRIC_MEMORY_BANDWIDTH;
   case MeasurementType::METRIC_MEMORY_READ:
     return DeviceCapability::METRIC_MEMORY_READ;
   case MeasurementType::METRIC_MEMORY_WRITE:
@@ -152,6 +160,10 @@ std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capab
       return [p_device](Callback_t callback){ p_device->getMemoryWrite(callback); };
     case DeviceCapability::METRIC_ENERGY:
       return [p_device](Callback_t callback){ p_device->getEnergy(callback); };
+    case DeviceCapability::METRIC_MEMORY_UTILIZATION:
+      return [p_device](Callback_t callback){ p_device->getMemoryUtilization(callback); };
+    case DeviceCapability::METRIC_MEMORY_BANDWIDTH:
+      return [p_device](Callback_t callback){ p_device->getMemoryBandwidth(callback); };
 
     //virtual void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept = 0;
     case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
@@ -201,6 +213,8 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
   metric_types.push_back(MeasurementType::METRIC_ENERGY);
   metric_types.push_back(MeasurementType::METRIC_TEMPERATURE);
   metric_types.push_back(MeasurementType::METRIC_MEMORY_USED);
+  metric_types.push_back(MeasurementType::METRIC_MEMORY_UTILIZATION);
+  metric_types.push_back(MeasurementType::METRIC_MEMORY_BANDWIDTH);
   metric_types.push_back(MeasurementType::METRIC_MEMORY_READ);
   metric_types.push_back(MeasurementType::METRIC_MEMORY_WRITE);
   metric_types.push_back(MeasurementType::METRIC_COMPUTATION);
@@ -215,6 +229,47 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
 }
 
+MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type) {
+  switch (xpum_stats_type) {
+  case xpum_stats_type_enum::XPUM_STATS_GPU_TEMEPERATURE:
+    return MeasurementType::METRIC_TEMPERATURE;
+  case xpum_stats_type_enum::XPUM_STATS_GPU_FREQUENCY:
+    return MeasurementType::METRIC_FREQUENCY;
+  case xpum_stats_type_enum::XPUM_STATS_POWER:
+    return MeasurementType::METRIC_POWER;
+  case xpum_stats_type_enum::XPUM_STATS_MEMORY_USED:
+    return MeasurementType::METRIC_MEMORY_USED;
+  case xpum_stats_type_enum::XPUM_STATS_MEMORY_UTILIZATION:
+    return MeasurementType::METRIC_MEMORY_UTILIZATION;
+  case xpum_stats_type_enum::XPUM_STATS_MEMORY_BANDWIDTH:
+    return MeasurementType::METRIC_MEMORY_BANDWIDTH;
+  case xpum_stats_type_enum::XPUM_STATS_MEMORY_READ:
+    return MeasurementType::METRIC_MEMORY_READ;
+  case xpum_stats_type_enum::XPUM_STATS_MEMORY_WRITE:
+    return MeasurementType::METRIC_MEMORY_WRITE;
+  case xpum_stats_type_enum::XPUM_STATS_GPU_COMPUTATION:
+    return MeasurementType::METRIC_COMPUTATION;
+  case xpum_stats_type_enum::XPUM_STATS_ENERGY:
+    return MeasurementType::METRIC_ENERGY;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_RESET:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_RESET;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
+  case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+      return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+  default:
+    return MeasurementType::METRIC_POWER;
+  }
+}
+
 xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& measurementType) {
   switch (measurementType) {
   case MeasurementType::METRIC_TEMPERATURE:
@@ -225,6 +280,10 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
     return xpum_stats_type_enum::XPUM_STATS_POWER;
   case MeasurementType::METRIC_MEMORY_USED:
     return xpum_stats_type_enum::XPUM_STATS_MEMORY_USED;
+  case MeasurementType::METRIC_MEMORY_UTILIZATION:
+    return xpum_stats_type_enum::XPUM_STATS_MEMORY_UTILIZATION;
+  case MeasurementType::METRIC_MEMORY_BANDWIDTH:
+    return xpum_stats_type_enum::XPUM_STATS_MEMORY_BANDWIDTH;
   case MeasurementType::METRIC_MEMORY_READ:
     return xpum_stats_type_enum::XPUM_STATS_MEMORY_READ;
   case MeasurementType::METRIC_MEMORY_WRITE:

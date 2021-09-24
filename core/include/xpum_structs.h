@@ -365,6 +365,8 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_GPU_FREQUENCY,
     XPUM_STATS_GPU_TEMEPERATURE,
     XPUM_STATS_MEMORY_USED,
+    XPUM_STATS_MEMORY_UTILIZATION,
+    XPUM_STATS_MEMORY_BANDWIDTH,
     XPUM_STATS_MEMORY_READ,
     XPUM_STATS_MEMORY_WRITE,
     XPUM_STATS_PCIRX,
@@ -465,10 +467,10 @@ enum xpum_frequency_type_t {
 };
 
 enum xpum_scheduler_mode_t {
-  XPUM_TIMEOUT             = 0,
-  XPUM_TIMESLICE           = 1,
-  XPUM_EXCLUSIVE           = 2,
-  XPUM_COMPUTE_UNIT_DEBUG  = 3,
+  XPUM_TIMEOUT             =1<<0,
+  XPUM_TIMESLICE           =1<<1,
+  XPUM_EXCLUSIVE           =1<<2,
+  XPUM_COMPUTE_UNIT_DEBUG  =1<<3,
   XPUM_MODE_FORCE_UINT32   = 0x7fffffff
 };
 
@@ -510,13 +512,13 @@ struct xpum_scheduler_exclusive_t {
 struct parent_switch{
     char switchDevicePath[XPUM_DEVICE_PATH_LEN];
 };
-struct xpum_topoloty_t {
+struct xpum_topology_t {
     xpum_device_id_t deviceId;
     struct{
-        char local_cpulist[XPUM_MAX_CPU_LIST_LEN];
-        char local_cpus[XPUM_MAX_CPU_S_LEN];
-    }cpu_affinity;
-    bool bSwitch;
+        char localCPUList[XPUM_MAX_CPU_LIST_LEN];
+        char localCPUs[XPUM_MAX_CPU_S_LEN];
+    }cpuAffinity;
+    uint32_t switchCount;
     parent_switch switches[];   
 };
 
