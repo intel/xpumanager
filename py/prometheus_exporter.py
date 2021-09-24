@@ -29,11 +29,21 @@ def get_metrics(core, pod_resources):
                     pod_resources, dev, tile_data['dataList'], tile_data['tileId'])
                 resp = resp + r
 
-        return resp
+        return tidy_response(resp)
     except Exception as e:
         print(e)
         traceback.print_exc()
 
+def tidy_response(resp):
+    resp_str = resp.decode('UTF-8')
+    comments = []
+    metrics = []
+    for line in resp_str.splitlines():
+        if not line.startswith('#'):
+            metrics.append(line)
+        elif line not in comments:
+            comments.append(line)
+    return '\n'.join(comments + metrics)
 
 def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
 
