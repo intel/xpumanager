@@ -525,15 +525,18 @@ class DGMCore:
         for device in deviceStats[:count.value]:
             dataList=[]
             for d in device.dataList[:device.count]:
-                tmp = dict()
-                metricsType = XpumStatsType(d.metricsType).name
-                tmp["metricsType"] = metricsType
-                tmp["value"] = d.value
-                if not d.isCounter:
-                    tmp["min"] = d.min
-                    tmp["avg"] = d.avg
-                    tmp["max"] = d.max
-                dataList.append(tmp)
+                try:
+                    tmp = dict()
+                    metricsType = XpumStatsType(d.metricsType).name
+                    tmp["metricsType"] = metricsType
+                    tmp["value"] = d.value
+                    if not d.isCounter:
+                        tmp["min"] = d.min
+                        tmp["avg"] = d.avg
+                        tmp["max"] = d.max
+                    dataList.append(tmp)
+                except:
+                    pass
             # data["dataList"] = dataList
             if device.isTileData:
                 tmp = dict(tileId=device.tileId,dataList=dataList)
