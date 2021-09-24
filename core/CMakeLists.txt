@@ -19,6 +19,9 @@ if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
 
+INCLUDE(CheckIncludeFile)
+CHECK_INCLUDE_FILE(pciaccess.h     HAVE_PCIACCESS_H)
+
 configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h @ONLY)
 
@@ -112,6 +115,12 @@ add_subdirectory(./libs/spdlog)
 add_subdirectory(./libs/hwloc)
 
 add_dependencies(DGMCore lib_hwloc)
-target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc stdc++fs)
+
+
+if(HAVE_PCIACCESS_H)
+  target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
+else()
+  target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc stdc++fs)
+endif()
 
 unset(BUILD_TEST CACHE)
