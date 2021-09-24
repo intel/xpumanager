@@ -18,7 +18,6 @@ struct SubdeviceData {
 class MeasurementData {
  public:
   ~MeasurementData() {
-    subdevice_datas.clear();
   }
 
   MeasurementData(): avg(-1), min(-1), 
