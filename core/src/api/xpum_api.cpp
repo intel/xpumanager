@@ -270,6 +270,7 @@ xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
     if (id == -1) {
         return xpum_result_t::XPUM_GENERIC_ERROR;
     } else {
+        *taskId = id;
         return xpum_result_t::XPUM_OK;
     }
 }
