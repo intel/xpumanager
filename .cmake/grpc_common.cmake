@@ -27,8 +27,8 @@ else()
 endif()
 
 
-find_program(_PROTOBUF_PROTOC protoc)
-
 # GRPC and Protoc tools
 find_program(_PROTOBUF_PROTOC protoc)
 find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
+message(STATUS "protoc: ${_PROTOBUF_PROTOC}")
+message(STATUS "grpc_cpp_plugin: ${_GRPC_CPP_PLUGIN_EXECUTABLE}")

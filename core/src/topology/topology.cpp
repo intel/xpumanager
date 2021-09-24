@@ -177,14 +177,6 @@ bool Topology::isSwitchDevice(hwloc_obj_t obj)
     return (sdevice != nullptr);
 }
 
-/*
-bool Topology::getSwitchInfo(hwloc_obj_t obj, xpum_switch *pswitch) {
-    pswitch->vendorId = obj->attr->bridge.upstream.pci.vendor_id;
-    pswitch->deviceId = obj->attr->bridge.upstream.pci.device_id;
-
-    return true;
-}*/
-
 std::string Topology::pci2RegxString(hwloc_obj_t obj)
 {    
   std::ostringstream os;
@@ -259,10 +251,8 @@ void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch * pSwitc
                     preVendorId = obj->attr->bridge.upstream.pci.vendor_id;
                     preDeviceId = obj->attr->bridge.upstream.pci.device_id;
                     std::string address = pci2RegxString(obj);
-                    assert(address.length() > 0);
                     if(address.length() > 0){
                         std::string path = HWInfo::getDevicePath(address);
-                        assert(path.length() > 0);
                         if(path.length()>0){
                             std::size_t len = path.copy(pSwitch[count].switchDevicePath, XPUM_DEVICE_PATH_LEN);
                             pSwitch[count].switchDevicePath[len] = '\0';

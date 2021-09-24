@@ -3,7 +3,6 @@
 #include "logger.h"
 #include "xpum_config.h"
 
-#include <assert.h>
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
@@ -153,7 +152,6 @@ bool PciDatabase::parse_pci_device(std::ifstream &fstream) {
             }
             //sub_s_name.erase();
         } else {
-            assert(0);
             // level 3 if not defined, the code should not be here, just ignore this line
             continue;
         }
@@ -257,7 +255,6 @@ bool PciDatabase::parse_level_2(const std::string &info, int len, id_type *type,
         }
     } break;
     case ID_VENDOR: {
-        assert(0);
         LOG_ERROR("PciDatabase::parse_level_2() error- unknow device.");
         bResult = true;
     } break;
@@ -307,8 +304,8 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
                 SwitchDevice device = 
                     {SW_UNKNOW, vendor_id, device_id, 0, 0};
                 if (info.at(start) == '0') {
-                    //switch_config[std::make_pair(vendor_id, device_id)] = SW_UNKNOW;
-                    switch_device.erase(std::make_pair(vendor_id, device_id));
+                    int ret = switch_device.erase(std::make_pair(vendor_id, device_id));
+                    LOG_TRACE("PciDatabase::parse_switch_config()- remove d_id:v_id = [{}:{}] count:{}", vendor_id, device_id, ret);
                 } else if (info.at(start) == '1') {
                     device.type = SW_BUILDIN;
                     switch_device[std::make_pair(vendor_id, device_id)] = device;
@@ -316,7 +313,6 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
                     device.type = SW_NORMAL;
                     switch_device[std::make_pair(vendor_id, device_id)] = device;
                 } else {
-                    assert(0);
                     LOG_ERROR("PciDatabase::parse_switch_config() error- unknow value.");
                 }
             }
@@ -341,7 +337,6 @@ void PciDatabase::add_switch_device(int32_t vendor_id, int32_t device_id, std::s
             switch_device[std::make_pair(vendor_id, device_id)] = device;
         }
     } else {
-        assert(0);
         LOG_ERROR("PciDatabase::add_switch_device() error- unknow device {}.", device.tostring());
     }    
 }
@@ -358,17 +353,3 @@ const SwitchDevice* PciDatabase::getSwitchDevice(int32_t vendor_id, int32_t devi
     
     return nullptr;
 }
-
-/*
-bool PciDatabase::getSwitchInfo(int32_t vendor_id, int32_t device_id, char switchDevicePath[]) {
-    std::unique_lock<std::mutex> lock(mutex);
-
-    pci_device_map::iterator it = switch_device.find(std::make_pair(vendor_id, device_id));
-
-    if(it != switch_device.end()) {
-        
-        return true;
-    }
-    
-    return false;
-}*/
