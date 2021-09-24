@@ -13,3 +13,10 @@ core/config/pci.ids
 pci.ids.upgrade
 core/libs/hwloc/install/
 core/test/xpumd
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
