@@ -288,18 +288,22 @@ xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metri
     while (iter != datas.end()) {
         std::deque<MeasurementCacheData>::iterator iter_cache_data = (*iter).begin();
         while (iter_cache_data != (*iter).end()) {
-            xpum_metrics_raw_data_t t;
-            t.deviceId = std::stoi(iter_cache_data->getDeviceId());
-            MeasurementType type = iter_cache_data->getType();
-            t.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-            t.isTileData = iter_cache_data->onSubdevice();
-            t.tileId = t.isTileData ? iter_cache_data->getSubdeviceID() : -1;
-            t.timestamp = iter_cache_data->getTime();
-            t.value = iter_cache_data->getData();
-            if (item_count >= *count) {
-                return XPUM_BUFFER_TOO_SMALL;
+            if (dataList == nullptr) {
+                item_count++;
+            } else {
+                xpum_metrics_raw_data_t t;
+                t.deviceId = std::stoi(iter_cache_data->getDeviceId());
+                MeasurementType type = iter_cache_data->getType();
+                t.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+                t.isTileData = iter_cache_data->onSubdevice();
+                t.tileId = t.isTileData ? iter_cache_data->getSubdeviceID() : -1;
+                t.timestamp = iter_cache_data->getTime();
+                t.value = iter_cache_data->getData();
+                if (item_count >= *count) {
+                    return XPUM_BUFFER_TOO_SMALL;
+                }
+                dataList[item_count++] = t;
             }
-            dataList[item_count++] = t;
             ++iter_cache_data;
         }
         ++iter;
