@@ -211,6 +211,54 @@ static std::string getPciSlot(const std::string& bdf_regex) {
 	return res;
 }
 
+void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities) {
+  ze_result_t res;
+  uint32_t engine_grp_count = 0;
+  std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+  res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_engine_handle_t> engines(engine_grp_count);
+    res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data());
+    if (res == ZE_RESULT_SUCCESS) {
+      for (auto &engine : engines) {
+        zes_engine_properties_t props;
+        res = zesEngineGetProperties(engine, &props);
+        if (res == ZE_RESULT_SUCCESS) {
+          switch (props.type) {
+          case ZES_ENGINE_GROUP_COMPUTE_ALL:
+            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION) == capabilities.end()) {
+              capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
+            }
+            break;
+          case ZES_ENGINE_GROUP_MEDIA_ALL:
+            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION) == capabilities.end()) {
+              capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
+            }
+            break;
+          case ZES_ENGINE_GROUP_COPY_ALL:
+            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) == capabilities.end()) {
+              capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
+            }
+            break;
+          case ZES_ENGINE_GROUP_RENDER_ALL:
+            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) == capabilities.end()) {
+              capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
+            }
+            break;
+          case ZES_ENGINE_GROUP_3D_ALL:
+            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION) == capabilities.end()) {
+              capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
+            }
+            break;
+          default:
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
 std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover() {
   std::vector<DeviceCapability> capabilities;
   auto p_devices = std::make_shared<std::vector<std::shared_ptr<Device>>>();
@@ -259,6 +307,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
       props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
       zesDeviceGetProperties(zes_device, &props);
       if (props.core.type == ZE_DEVICE_TYPE_GPU) {
+        addEgnineCapabilities(device, capabilities);
         auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
         p_gpu->addProperty(Property(DeviceProperty::TYPE,std::string("GPU")));
         p_gpu->addProperty(Property(DeviceProperty::DEVICE_ID,to_hex_string(props.core.deviceId)));
@@ -350,41 +399,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
            }
         }
 
-        uint32_t engine_grp_count = 0;
-        std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-        ze_result_t res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr);
-        if (res == ZE_RESULT_SUCCESS) {
-          std::vector<zes_engine_handle_t> engines(engine_grp_count);
-          res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data());
-          if (res == ZE_RESULT_SUCCESS) {
-            for (auto &engine : engines) {
-              zes_engine_properties_t props;
-              res = zesEngineGetProperties(engine, &props);
-              if (res == ZE_RESULT_SUCCESS) {
-                switch (props.type)
-                {
-                case ZES_ENGINE_GROUP_COMPUTE_ALL:
-                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
-                  break;
-                case ZES_ENGINE_GROUP_MEDIA_ALL:
-                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
-                  break;
-                case ZES_ENGINE_GROUP_COPY_ALL:
-                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
-                  break;
-                case ZES_ENGINE_GROUP_RENDER_ALL:
-                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
-                  break;
-                case ZES_ENGINE_GROUP_3D_ALL:
-                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
-                  break;
-                default:
-                  break;
-                }
-              }
-            }
-          }
-        }
+        
         p_devices->push_back(p_gpu);
       }
     }

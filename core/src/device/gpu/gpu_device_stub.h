@@ -139,6 +139,8 @@ private:
 
   static std::string to_string(xpum_switch pSwitch);
 
+  static void addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities);
+
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;
   
