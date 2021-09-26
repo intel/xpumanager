@@ -350,6 +350,41 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
            }
         }
 
+        uint32_t engine_grp_count = 0;
+        std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+        ze_result_t res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr);
+        if (res == ZE_RESULT_SUCCESS) {
+          std::vector<zes_engine_handle_t> engines(engine_grp_count);
+          res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data());
+          if (res == ZE_RESULT_SUCCESS) {
+            for (auto &engine : engines) {
+              zes_engine_properties_t props;
+              res = zesEngineGetProperties(engine, &props);
+              if (res == ZE_RESULT_SUCCESS) {
+                switch (props.type)
+                {
+                case ZES_ENGINE_GROUP_COMPUTE_ALL:
+                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
+                  break;
+                case ZES_ENGINE_GROUP_MEDIA_ALL:
+                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
+                  break;
+                case ZES_ENGINE_GROUP_COPY_ALL:
+                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
+                  break;
+                case ZES_ENGINE_GROUP_RENDER_ALL:
+                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
+                  break;
+                case ZES_ENGINE_GROUP_3D_ALL:
+                  capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
+                  break;
+                default:
+                  break;
+                }
+              }
+            }
+          }
+        }
         p_devices->push_back(p_gpu);
       }
     }
@@ -957,6 +992,56 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
     }
   }
   throw BaseException("toGetEngineUtilization error");
+}
+
+void GPUDeviceStub::getEngineGroupUtilization(const zes_device_handle_t& device, Callback_t callback, zes_engine_group_t engine_group_type) noexcept{
+  if (device == nullptr) {
+    return;
+  }
+  p_thread_pool->addTask(callback, toGetEngineGroupUtilization, device, engine_group_type);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(const zes_device_handle_t& device, zes_engine_group_t engine_group_type) {
+  if (device == nullptr) {
+    throw BaseException("toGetEngineGroupUtilization error");
+  }
+  bool dataAcquired = false;
+  uint32_t engineCount = 0;
+  std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+  ze_result_t res = zesDeviceEnumEngineGroups(device, &engineCount, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zes_engine_handle_t> engines(engineCount);
+    res = zesDeviceEnumEngineGroups(device, &engineCount, engines.data());
+    if (res == ZE_RESULT_SUCCESS) {
+      for (auto &engine : engines) {
+        zes_engine_properties_t props;
+        res = zesEngineGetProperties(engine,&props);
+        if (res == ZE_RESULT_SUCCESS && props.type == engine_group_type) {
+          zes_engine_stats_t snap1 = {};
+          zes_engine_stats_t snap2 = {};
+          res = zesEngineGetActivity(engine, &snap1);
+          if (res == ZE_RESULT_SUCCESS) {
+            std::this_thread::sleep_for(std::chrono::microseconds(Configuration::ENGINE_STATE_MONITOR_INTERNAL_PERIOD));
+            res = zesEngineGetActivity(engine, &snap2);
+            if (res == ZE_RESULT_SUCCESS)
+            {
+              uint64_t val = 100 * (snap2.activeTime - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
+              if (val > 100) {
+                val = 100;
+              }
+              props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, val) : ret->setCurrent(val);
+              dataAcquired = true;
+            }
+          }
+        }
+      }
+    }
+  }
+  if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+      return ret;
+  } else {
+      throw BaseException("toGetEngineGroupUtilization error. Engine group type " + std::to_string(engine_group_type));
+  }
 }
 
 void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector<Scheduler>& schedulers) {

@@ -63,6 +63,16 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
     return MeasurementType::METRIC_MEMORY_WRITE;
   case DeviceCapability::METRIC_COMPUTATION:
     return MeasurementType::METRIC_COMPUTATION;
+  case DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
+  case DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
+  case DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+  case DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
+  case DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION;
 
   //
   case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
@@ -116,6 +126,16 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
     return DeviceCapability::METRIC_COMPUTATION;
   case MeasurementType::METRIC_ENERGY:
     return DeviceCapability::METRIC_ENERGY;
+  case MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+    return DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
+  case MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+    return DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
+  case MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+    return DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+  case MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+    return DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
+  case MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
+    return DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION;
 
   //
   case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
@@ -154,6 +174,16 @@ std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capab
     case DeviceCapability::ENGINE_UTILIZATION:
     case DeviceCapability::METRIC_COMPUTATION:
       return [p_device](Callback_t callback){ p_device->getEngineUtilization(callback); };
+    case DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+      return [p_device](Callback_t callback){ p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COMPUTE_ALL); };
+    case DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+      return [p_device](Callback_t callback){ p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_MEDIA_ALL); };
+    case DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+      return [p_device](Callback_t callback){ p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COPY_ALL); };
+    case DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+      return [p_device](Callback_t callback){ p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_RENDER_ALL); };
+    case DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
+      return [p_device](Callback_t callback){ p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_3D_ALL); };
     case DeviceCapability::METRIC_MEMORY_READ:
       return [p_device](Callback_t callback){ p_device->getMemoryRead(callback); };
     case DeviceCapability::METRIC_MEMORY_WRITE:
@@ -218,6 +248,11 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
   metric_types.push_back(MeasurementType::METRIC_MEMORY_READ);
   metric_types.push_back(MeasurementType::METRIC_MEMORY_WRITE);
   metric_types.push_back(MeasurementType::METRIC_COMPUTATION);
+  metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
+  metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
+  metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
+  metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
+  metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
   
   //METRIC_RAS_ERROR
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_RESET);
@@ -249,6 +284,16 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
     return MeasurementType::METRIC_MEMORY_WRITE;
   case xpum_stats_type_enum::XPUM_STATS_GPU_COMPUTATION:
     return MeasurementType::METRIC_COMPUTATION;
+  case xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
+  case xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
+  case xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+  case xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
+  case xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION:
+    return MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION;
   case xpum_stats_type_enum::XPUM_STATS_ENERGY:
     return MeasurementType::METRIC_ENERGY;
   case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_RESET:
@@ -290,6 +335,16 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
     return xpum_stats_type_enum::XPUM_STATS_MEMORY_WRITE;
   case MeasurementType::METRIC_COMPUTATION:
     return xpum_stats_type_enum::XPUM_STATS_GPU_COMPUTATION;
+  case MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+    return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
+  case MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+    return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
+  case MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+    return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+  case MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+    return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
+  case MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
+    return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION;
   case MeasurementType::METRIC_ENERGY:
     return xpum_stats_type_enum::XPUM_STATS_ENERGY;
   

@@ -117,6 +117,13 @@ void GPUDevice::getEngineUtilization(Callback_t callback) noexcept {
   });    
 }
 
+void GPUDevice::getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept {
+  GPUDeviceStub::instance().getEngineGroupUtilization(zes_device_handle, 
+    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+    callback(ret, e);
+  }, engine_group_type);    
+}
+
 bool GPUDevice::runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept {
     Property pcieAddrProp;
     bool res = getProperty( DeviceProperty::BDF_ADDRESS, pcieAddrProp );

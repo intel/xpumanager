@@ -39,6 +39,8 @@ class GPUDeviceStub {
 
   void getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
+  void getEngineGroupUtilization(const zes_device_handle_t& device, Callback_t callback, zes_engine_group_t engine_group_type) noexcept;
+
   void getEnergy(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
   void getRasError(const zes_device_handle_t& device, Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept;
@@ -118,6 +120,8 @@ private:
   static std::shared_ptr<MeasurementData> toGetMemoryWrite(const zes_device_handle_t& device);
 
   static std::shared_ptr<MeasurementData> toGetEngineUtilization(const zes_device_handle_t& device);
+
+  static std::shared_ptr<MeasurementData> toGetEngineGroupUtilization(const zes_device_handle_t& device, zes_engine_group_t group_type);
 
   static std::shared_ptr<MeasurementData> toGetEnergy(const zes_device_handle_t& device);
 
