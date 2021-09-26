@@ -100,6 +100,10 @@ void RawDataManager::init() {
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION, p_persistency);    
   data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION]->init();
 
+  data_handlers[MeasurementType::METRIC_OCCUPATION_EFFICIENCY] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_OCCUPATION_EFFICIENCY, p_persistency);    
+  data_handlers[MeasurementType::METRIC_OCCUPATION_EFFICIENCY]->init();
+
   //METRIC_RAS_ERROR
   data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_RESET, p_persistency);    
   data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET]->init();

@@ -417,4 +417,4 @@ def metrics_raw_data_collect_task(taskId):
 if __name__ == '__main__':
     app.debug = True
 #   app.run()
-    app.run(host='0.0.0.0', port=30000)
+    app.run(host='0.0.0.0', port=30000, use_reloader=False)

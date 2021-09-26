@@ -103,6 +103,13 @@ void GPUDevice::getEnergy(Callback_t callback) noexcept {
   });    
 }
 
+void GPUDevice::getOccupationEfficiency(Callback_t callback) noexcept {
+  GPUDeviceStub::instance().getOccupationEfficiency(ze_device_handle, ze_driver_handle,
+    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+    callback(ret, e);
+  }); 
+}
+
 void GPUDevice::getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept {
   GPUDeviceStub::instance().getRasError(zes_device_handle, 
     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {

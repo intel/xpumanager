@@ -35,6 +35,7 @@ void GPUDeviceStub::init() {
   p_thread_pool = make_unique<ThreadPool>(Configuration::DEVICE_THREAD_POOL_SIZE);
   initialized = true;
   putenv(const_cast<char *>( "ZES_ENABLE_SYSMAN=1" ) );
+  putenv(const_cast<char *>( "ZET_ENABLE_METRICS=1" ) );
   zeInit(0);
 }
 
@@ -277,6 +278,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
   capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE);
   capabilities.push_back(DeviceCapability::METRIC_POWER);
   capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
+  capabilities.push_back(DeviceCapability::METRIC_OCCUPATION_EFFICIENCY);
 
   //METRIC_RAS_ERROR
   capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
@@ -864,6 +866,192 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_devic
     throw BaseException("toGetMemoryWrite error");
   }
 }
+
+
+void GPUDeviceStub::getOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, Callback_t callback) noexcept{
+  if (device == nullptr) {
+    return;
+  }
+  p_thread_pool->addTask(callback, toGetOccupationEfficiency, device, driver);
+}
+
+void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t &device, int subdeviceId, const ze_driver_handle_t& driver, std::shared_ptr<MeasurementData>& data) {
+  ze_result_t res;
+  zet_metric_group_handle_t target_metric_group = nullptr;
+  uint32_t metricGroupCount = 0;
+  res = zetMetricGroupGet(device, &metricGroupCount, nullptr);
+  if (res == ZE_RESULT_SUCCESS) {
+    std::vector<zet_metric_group_handle_t> metricGroups(metricGroupCount);
+    res = zetMetricGroupGet(device, &metricGroupCount, metricGroups.data());
+    if (res == ZE_RESULT_SUCCESS) {
+      for (auto& metric_group: metricGroups) {
+        zet_metric_group_properties_t metric_group_properties;
+        metric_group_properties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
+        res = zetMetricGroupGetProperties(metric_group, &metric_group_properties);
+        if (res == ZE_RESULT_SUCCESS) {
+          if (std::strcmp(metric_group_properties.name, "ComputeBasic") == 0 
+            && metric_group_properties.samplingType == ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED) {
+            target_metric_group = metric_group;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (target_metric_group == nullptr) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  zet_metric_group_handle_t hMetricGroup = target_metric_group;
+  ze_context_handle_t hContext;
+  ze_context_desc_t context_desc;
+  context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+  res = zeContextCreate(driver, &context_desc, &hContext);
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  zet_metric_streamer_handle_t hMetricStreamer = nullptr;
+  zet_metric_streamer_desc_t metricStreamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
+  res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup);
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  
+  metricStreamerDesc.samplingPeriod = 10000000;
+  res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &metricStreamerDesc, nullptr, &hMetricStreamer);
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency when open MetricStreamer");
+  }
+  
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  size_t rawSize = 0;
+  res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, nullptr);
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  std::vector<uint8_t> rawData(rawSize);
+  res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, rawData.data());           
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  uint32_t numMetricValues = 0;
+  zet_metric_group_calculation_type_t calculationType = ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES;
+  res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues, nullptr );
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  std::vector<zet_typed_value_t> metricValues(numMetricValues);
+  res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues, metricValues.data());
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  uint32_t metricCount = 0;
+  res = zetMetricGet(hMetricGroup, &metricCount, nullptr );
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  std::vector<zet_metric_handle_t> phMetrics(metricCount);
+  res = zetMetricGet(hMetricGroup, &metricCount, phMetrics.data());
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+
+  uint32_t numReports = numMetricValues / metricCount;
+  std::vector<uint64_t> currents(4);
+  std::vector<uint64_t> maxs(4);
+  std::vector<uint64_t> mins(4, 101);
+  std::vector<uint64_t> totals(4);
+  for (uint32_t report = 0; report < numReports; ++report) {
+    uint64_t currentGpuBusy = 0;
+    uint64_t currentEuActive = 0;
+    uint64_t currentEuStall = 0;
+    for( uint32_t metric = 0; metric < metricCount; metric++) {
+      zet_typed_value_t data = metricValues[report * metricCount + metric];
+      zet_metric_properties_t metricProperties;
+      res = zetMetricGetProperties(phMetrics[metric], &metricProperties);
+      if (res != ZE_RESULT_SUCCESS) {
+        throw BaseException("toGetOccupationEfficiency");
+      }
+      if (std::strcmp(metricProperties.name, "GpuBusy") == 0) {
+        currentGpuBusy = data.value.fp32;
+      }
+      if (std::strcmp(metricProperties.name, "EuActive") == 0) {
+        currentEuActive = data.value.fp32;
+      }
+      if (std::strcmp(metricProperties.name, "EuStall")  == 0) {
+        currentEuStall = data.value.fp32;
+      }
+    }
+    currents[0] = currentEuActive + currentEuStall;
+    currents[1] = currentEuStall;
+    currents[2] = currentEuActive;
+    currents[3] = currentGpuBusy - currents[0];
+    for (int i = 0; i < 4; i++) {
+      maxs[i] = std::max(maxs[i], currents[i]);
+      mins[i] = std::min(mins[i], currents[i]);
+      totals[i] += currents[i];
+    }
+  }
+  res = zetMetricStreamerClose(hMetricStreamer);
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }    
+  res = zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  res = zeContextDestroy(hContext);
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  std::vector<std::string> names = {"OCCUPATION", "ISSUE_EFFICIENCY", "EXECUTION_EFFICIENCY", "NON_OCCUPATION"};
+  if (subdeviceId == -1) {
+    data->setCurrent(currents[0]);
+    for (int i = 0; i < (int)names.size(); i++) {
+      data->setAdditionalDataCurrent(names[i], currents[i]);
+      data->setAdditionalDataMax(names[i], maxs[i]);
+      data->setAdditionalDataMin(names[i], (mins[i] > 100 ? -1 : mins[i]));
+      data->setAdditionalDataAvg(names[i], totals[i] / numReports);
+    }
+  } else {
+    for (int i = 0; i < (int)names.size(); i++) {
+      data->setSubdeviceAdditionalDataCurrent(subdeviceId, names[i], currents[i]);
+      data->setSubdeviceAdditionalDataMax(subdeviceId, names[i], maxs[i]);
+      data->setSubdeviceAdditionalDataMin(subdeviceId, names[i], (mins[i] > 100 ? -1 : mins[i]));
+      data->setSubdeviceAdditionalDataAvg(subdeviceId, names[i], totals[i] / numReports);
+    }
+  }
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetOccupationEfficiency(const ze_device_handle_t &device, const ze_driver_handle_t& driver) {
+  if (device == nullptr) {
+      throw BaseException("toGetOccupationEfficiency");
+  }
+  
+  std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>(); 
+  ze_result_t res;
+  uint32_t sub_device_count = 0;
+  res = zeDeviceGetSubDevices(device, &sub_device_count, nullptr);
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
+  res = zeDeviceGetSubDevices(device, &sub_device_count, sub_device_handles.data());
+  if (res != ZE_RESULT_SUCCESS) {
+    throw BaseException("toGetOccupationEfficiency");
+  }
+  for (auto& sub_device: sub_device_handles) {
+    ze_device_properties_t props = {};
+    props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    res = zeDeviceGetProperties(sub_device, &props);
+    if (res != ZE_RESULT_SUCCESS) {
+      throw BaseException("toGetOccupationEfficiency");
+    }
+    toGetOccupationEfficiencyCore(device, props.subdeviceId, driver, ret);
+  }
+  return ret;
+}
+
 
 void GPUDeviceStub::getRasError(const zes_device_handle_t& device, Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept{
   if (device == nullptr) {
