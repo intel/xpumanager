@@ -116,6 +116,35 @@ config_parser.add_argument('--PowerLimit', metavar="<PowerLimitValue>", dest="Po
 config_parser.add_argument('--FrequencyRange', metavar="<FrequencyRangeValue>", dest="FrequencyRangeValue", type=str,
                           help='Set device configurations')
 
+# telemetry subcommand parser
+telemetry_parser = subparsers.add_parser("telemetry", help="used to collect and dump metrics raw data", formatter_class=argparse.RawTextHelpFormatter)
+telemetry_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int, help='The device id to query or change')
+telemetry_parser.add_argument('-g', '--group', metavar="<groupId>", dest="groupId", type=int, help='The group id to query')
+telemetry_parser.add_argument('-m', '--metrics', metavar="<metricsId>", dest="metricsIds",nargs='+', type=int, help='''\
+Metrics type to collect raw data, options:
+    0. GPU Utilization
+    1. Occupation
+    2. Issue Efficiency
+    3. Execution Efficiency
+    4. Non Occupation
+    5. Power
+    6. Energy
+    7. Gpu Frequency
+    8. Gpu Temperature
+    9. Memory Used
+    10. Memory Read
+    11. Memory Write
+    12. PCIRX
+    13. PCITX''')
+telemetry_parser.add_argument('--start',action='store_true',help="""\
+Start metrics raw data collect task, will return a task id.
+    Notice XPU Manager supports at most 16 tasks coexist.
+    When limit reached, start a new task will cause the oldest task automatically terminated and data removed.""")
+telemetry_parser.add_argument('--stop', metavar="<taskId>", dest="stopTaskId", type=int, help="""\
+Stop corresponding collect task. 
+    Notice a task collect 5000 time frames at most. 
+    When limit reached, the task will be terminated automatically.""")
+telemetry_parser.add_argument('--dump', metavar="<taskId>", dest="dumpTaskId", type=int, help="""Dump raw datas that collected in <taskId>, in csv format""")
 
 class PrintTable:
     _t = Texttable()
@@ -268,6 +297,25 @@ def arg():
         elif parsed.StandbyValue is not None and parsed.deviceTileId is not None:
             set_device_standby(parsed.deviceId, parsed.deviceTileId, parsed.StandbyValue)
             return
+    elif parsed.subcommand == "telemetry":
+        if parsed.start:
+            if parsed.deviceId is None and parsed.groupId is None:
+                print("Wrong arguments")
+            if parsed.metricsIds is None:
+                print("Wrong arguments")
+            if parsed.deviceId is not None:
+                start_collect_metrics_raw_data_by_device(
+                    parsed.deviceId, parsed.metricsIds)
+            elif parsed.groupId is not None:
+                start_collect_metrics_raw_data_by_group(
+                    parsed.groupId, parsed.metricsIds)
+        elif parsed.stopTaskId is not None:
+            stop_collect_metrics_raw_data_task(parsed.stopTaskId)
+        elif parsed.dumpTaskId is not None:
+            dump_metrics_raw_data(parsed.dumpTaskId)
+        else:
+            telemetry_parser.print_help()
+        return
     parser.print_help()
 
 def set_agent_settings(**kwargs):
@@ -1282,6 +1330,39 @@ def set_device_standby(deviceId, deviceTileId, keyValue):
     else:
         print("OK")
     return
+
+
+def start_collect_metrics_raw_data_by_device(deviceId, metricsIds):
+    reqData = {
+        "deviceId": deviceId,
+        "metricsTypeList": metricsIds
+    }
+    res = requests.post(host+"/rest/v1/metricsRawDataTask",json=reqData)
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    resData = res.json()
+    print("Metrics raw data collection task start successfully!")
+    print("Task id: {}".format(resData['TaskId']))
+
+
+def start_collect_metrics_raw_data_by_group(groupId, metricsIds):
+    pass
+
+
+def stop_collect_metrics_raw_data_task(taskId):
+    res = requests.post(host+"/rest/v1/metricsRawDataTask/{}".format(taskId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    print("Task {} stop successfully!".format(taskId))
+
+def dump_metrics_raw_data(taskId):
+    res = requests.get(host+"/rest/v1/metricsRawDataTask/{}".format(taskId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    pprint.pprint(res.json())
 
 if __name__ == "__main__":
     arg()

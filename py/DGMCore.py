@@ -124,6 +124,11 @@ XpumStatsType = Enum("xpum_stats_type_t", (
     "XPUM_STATS_MEMORY_BANDWIDTH",
     "XPUM_STATS_MEMORY_READ",
     "XPUM_STATS_MEMORY_WRITE",
+    "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION",
     "XPUM_STATS_PCIRX",
     "XPUM_STATS_PCITX",
     "XPUM_STATS_RAS_ERROR_CAT_RESET",
@@ -321,6 +326,17 @@ class XpumSchedulerTimeslice(Structure):
 class XpumSchedulerExclusive(Structure):
      _fields_ = [
         ("subdeviceId", c_int32),
+    ]
+
+
+class XpumMetricsRawData(Structure):
+    _fields_ = [
+        ("deviceId", c_int32),
+        ("isTileData", c_bool),
+        ("tileId", c_int32),
+        ("timestamp", c_uint64),
+        ("metricsType", c_int),
+        ("value", c_uint64),
     ]
 
 class DGMCore:
@@ -952,4 +968,91 @@ class DGMCore:
         if res != 0:
             return res, "Fail to reset device", None
         return 0, "OK", {"result": "OK"}
+
+    def startCollectMetricsRawDataTask(self, deviceId, metricsTypeList):
+        count = len(metricsTypeList)
+        metricsTypeArray = (c_int * count) ()
+        for i in range(count):
+            metricsTypeArray[i] = metricsTypeList[i]
+        taskId = c_int32()
+        res = self.lib.xpumStartCollectMetricsRawDataTask(
+            c_int32(deviceId),
+            metricsTypeArray,
+            c_int(count),
+            byref(taskId)
+            )
+        if res != 0:
+            return res, "Fail to start collect metrics raw data task", None
+        return 0, "OK", dict(TaskId=taskId.value)
+
+    def startCollectMetricsRawDataTaskByGroup(self, groupId, metricsTypeList):
+        pass
+
+    def stopCollectMetricsRawDataTask(self, taskId):
+        res = self.lib.xpumStopCollectMetricsRawDataTask(c_int32(taskId))
+        if res!= 0:
+            return res, "Fail to stop collect metrics raw data task"
+        return 0, "OK", None
     
+    def getMetricsRawDataByTask(self, taskId):
+        # XpumMetricsRawData
+        count = c_int()
+        res = self.lib.xpumGetMetricsRawDataByTask(
+            c_int32(taskId),
+            None,
+            byref(count))
+        if res != 0:
+            return res, "Fail to get metrics raw data", None
+        dataList = (XpumMetricsRawData * count.value) ()
+        res = self.lib.xpumGetMetricsRawDataByTask(
+            c_int32(taskId),
+            dataList,
+            byref(count))
+        if res != 0:
+            return res, "Fail to get metrics raw data", None
+        
+        dataListByDevice = dict()
+
+        for rawData in dataList[:count.value]:
+            deviceId = rawData.deviceId
+            if deviceId not in dataListByDevice:
+                dataListByDevice[deviceId] = []
+            dataListByDevice[deviceId].append(rawData)
+        
+        datas = dict()
+        datas["TaskId"] = taskId
+
+        deviceDatas = []
+        for deviceId in dataListByDevice:
+            data = {"DeviceId": deviceId}
+            rawDataList = dataListByDevice[deviceId]
+            buckets = []
+            for rawData in rawDataList:
+                flag = False
+                for v in buckets:
+                    if rawData.timestamp-v[0].timestamp < 100:
+                        v.append(rawData)
+                        flag = True
+                        break
+                if not flag:
+                    buckets.append([rawData])
+            cycles = []
+            for cycle in buckets:
+                cycleData = {}
+                first = cycle[0]
+                cycleData["timestamp"] = int(first.timestamp/100)*100
+                metrics = []
+                for d in cycle:
+                    tmp = {
+                        "metricsType": XpumStatsType(d.metricsType).name,
+                        "value": d.value
+                    }
+                    if d.isTileData:
+                        tmp["tileId"] = d.tileId
+                    metrics.append(tmp)
+                cycleData['Metrics'] = metrics
+                cycles.append(cycleData)
+            data['Cycles'] = cycles
+            deviceDatas.append(data)
+        datas["DataList"] = deviceDatas
+        return 0, "OK", datas
