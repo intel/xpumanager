@@ -540,6 +540,38 @@ def get_stats_rows(data):
         tileLevelDataLists,
         "Display Errors Uncorrectable")
 
+    # Occupation (%)
+    stats_non_counter_formater(
+        "XPUM_STATS_OCCUPATION",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Occupation (%)")
+    
+    # Issue Efficiency (%)
+    stats_non_counter_formater(
+        "XPUM_STATS_ISSUE_EFFICIENCY",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Issue Efficiency (%)")
+    
+    # Execution Efficiency (%)
+    stats_non_counter_formater(
+        "XPUM_STATS_EXECUTION_EFFICIENCY",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Execution Efficiency (%)")
+    
+    # Non-Occupation (%)
+    stats_non_counter_formater(
+        "XPUM_STATS_NON_OCCUPATION",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Non-Occupation (%)")
+    
     # GPU Utilization (%)
     stats_non_counter_formater(
         "XPUM_STATS_GPU_COMPUTATION",
