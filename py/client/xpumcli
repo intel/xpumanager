@@ -1408,7 +1408,7 @@ def start_collect_metrics_raw_data_by_device(deviceId, metricsIds):
         print("Error occurs:"+res.content.decode())
         return
     resData = res.json()
-    print("Metrics raw data collection task start successfully!")
+    print("Start telemetry successfully!")
     print("Task id: {}".format(resData['TaskId']))
 
 

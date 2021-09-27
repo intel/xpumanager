@@ -333,6 +333,16 @@ void test_freq(ze_device_handle_t device) {
     // zes_freq_handle_t handle;
 }
 
+void test_pci(ze_device_handle_t device) {
+    using namespace std;
+    zes_pci_state_t data;
+    auto res = zesDevicePciGetState(device, &data);
+    assert(res==ZE_RESULT_SUCCESS);
+    cout<<"PCIe generation: "<<data.speed.gen<<endl;
+    cout<<data.speed.gen<<endl;
+    cout<<data.speed.width<<endl;
+}
+
 int main()
 {
     putenv(const_cast<char *>("ZES_ENABLE_SYSMAN=1"));
@@ -376,12 +386,13 @@ int main()
             if (props.core.type == ZE_DEVICE_TYPE_GPU)
             {
                 // print_gpu_props(props, driver_prop);
-                get_gpu_power(device);
+                // get_gpu_power(device);
                 // get_gpu_temp(device);
                 // get_gpu_engine(device);
                 // get_gpu_firmware(device);
                 // get_gpu_process(device);
                 // test_freq(device);
+                test_pci(device);
             }
         }
     }
