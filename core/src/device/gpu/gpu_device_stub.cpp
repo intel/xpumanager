@@ -1048,7 +1048,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetOccupationEfficiency(const 
     if (res != ZE_RESULT_SUCCESS) {
       throw BaseException("toGetOccupationEfficiency");
     }
-    toGetOccupationEfficiencyCore(device, props.subdeviceId, driver, ret);
+    toGetOccupationEfficiencyCore(sub_device, props.subdeviceId, driver, ret);
   }
   // uint64_t end_time = Utility::getCurrentMillisecond();
   // std::cout << "GetOccupationEfficiency total_time: " << (end_time - start_time) << std::endl;
