@@ -1,6 +1,6 @@
 #
 # Syntax:
-# vendor_id  device_id 0|1 
-# (0:not a Switch) (1: a Switch)
+# vendor_id  device_id 0|1|2 
+# (0:not a Switch) (1: a build-in Switch) (2 : a normal Switch)
 #
-0010  8139 0
+8086  4FA1 1

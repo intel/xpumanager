@@ -4,5 +4,5 @@
 
 class HWInfo {
     public:
-      static std::string getPciSlot(const std::string& bdf_regex);
+      static std::string getDevicePath(const std::string& bdf_address);
 };

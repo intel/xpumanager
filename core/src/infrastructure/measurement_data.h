@@ -15,10 +15,16 @@ struct SubdeviceData {
   uint64_t current;
 };
 
+struct AddictionalData {
+  uint64_t avg;
+  uint64_t min;
+  uint64_t max;
+  uint64_t current;
+};
+
 class MeasurementData {
  public:
   ~MeasurementData() {
-    subdevice_datas.clear();
   }
 
   MeasurementData(): avg(-1), min(-1), 
@@ -51,6 +57,8 @@ class MeasurementData {
     latest_time = other.latest_time;
     bHasDataOnDevice = other.bHasDataOnDevice;
     subdevice_datas = other.subdevice_datas;
+    additional_datas = other.additional_datas;
+    subdevice_additional_datas = other.subdevice_additional_datas;
   }
 
  public:  
@@ -112,6 +120,40 @@ class MeasurementData {
 
   bool hasDataOnDevice() { return bHasDataOnDevice; }
 
+  uint64_t getAdditionalDataCurrent(std::string name);
+
+  uint64_t getAdditionalDataMin(std::string name);
+
+  uint64_t getAdditionalDataMax(std::string name);
+
+  uint64_t getAdditionalDataAvg(std::string name);
+
+  uint64_t getSubdeviceAdditionalDataCurrent(uint32_t subdevice_id, std::string name);
+
+  uint64_t getSubdeviceAdditionalDataMin(uint32_t subdevice_id, std::string name);
+
+  uint64_t getSubdeviceAdditionalDataMax(uint32_t subdevice_id, std::string name);
+
+  uint64_t getSubdeviceAdditionalDataAvg(uint32_t subdevice_id, std::string name);
+
+  void setAdditionalDataCurrent(std::string name, uint64_t value);
+
+  void setAdditionalDataMin(std::string name, uint64_t value);
+
+  void setAdditionalDataMax(std::string name, uint64_t value);
+
+  void setAdditionalDataAvg(std::string name, uint64_t value);
+
+  void setSubdeviceAdditionalDataCurrent(uint32_t subdevice_id, std::string name, uint64_t value);
+
+  void setSubdeviceAdditionalDataMin(uint32_t subdevice_id, std::string name, uint64_t value);
+
+  void setSubdeviceAdditionalDataMax(uint32_t subdevice_id, std::string name, uint64_t value);
+
+  void setSubdeviceAdditionalDataAvg(uint32_t subdevice_id, std::string name, uint64_t value);
+
+  bool hasSubdeviceAdditionalData();
+
  protected:
   std::string device_id;  
 
@@ -132,4 +174,8 @@ class MeasurementData {
   bool bHasDataOnDevice;
 
   std::map<uint32_t, SubdeviceData> subdevice_datas;
+
+  std::map<std::string, AddictionalData> additional_datas;
+
+  std::map<uint32_t, std::map<std::string, AddictionalData>> subdevice_additional_datas;
 };

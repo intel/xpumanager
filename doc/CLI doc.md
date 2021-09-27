@@ -20,6 +20,8 @@ Subcommand options:
     agentset                XPUM agent settings
     stats                   Display device statistics
     telemetry               Collect and dump metrics raw data
+    reset                   Reset the device
+	
 
 ```
 
@@ -353,92 +355,223 @@ Optional arguments:
     -h, --help              Show this help message and exit
     -d <deviceId>, --device <deviceId>      
                             The device id to query
-    -g <groupId>, --group <groupId>         
-                            The group id to query
     -l, --list              List all configurations
     -- <key>=<value>        Set device configurations
 ```
 ## List configurations
 ```
-$ xpumcli config -l
-+-------------+-----------+------------------------------+
-| Device Type | Device Id | Configuration                |
-+-------------+-----------+------------------------------+
-| GPU         | 0         | Power Limit(w): 300          |
-|             |           |     Legal Range: 0 to 500    |
-|             |           |                              |
-|             |           | GPU Frequency(MHz): 300,     |
-|             |           |     Legal Range: 100 to 1500 |
-|             |           |                              |
-|             |           | Memory Frequency(MHz): 800   |
-|             |           |     Legal Range: 200 to 1000 |
-|             |           |                              |
-|             |           | Performance Factor: 1        |
-|             |           |     Legal Options: 1,2,3     |
-|             +-----------+------------------------------+
-|             | 1         | Power Limit(w): 300          |
-|             |           |     Legal Range: 0 to 500    |
-|             |           |                              |
-|             |           | GPU Frequency(MHz): 300,     |
-|             |           |     Legal Range: 100 to 1500 |
-|             |           |                              |
-|             |           | Memory Frequency(MHz): 800   |
-|             |           |     Legal Range: 200 to 1000 |
-|             |           |                              |
-|             |           | Performance Factor: 1        |
-|             |           |     Legal Options: 1,2,3     |
-+-------------+-----------+------------------------------+
-```
+$ xpumcli config -l -d 0 
++-------------+-------------------+--------------------------------------------+
+| Device Type | Device Id/Tile ID | Configuration                              |
++-------------+-------------------+--------------------------------------------+
+| GPU         | 0/0               | Power Limit(w): 320.0                      |
+|             |                   |     Legal Range: 0 to 500                  |
+|             |                   | Power Average Window (ms): 124             |
+|             |                   |     Legal Range: 0 to 125                  |
+|             |                   |                                            |
+|             |                   | GPU Min Frequency(MHz): 370.0              |
+|             |                   | GPU Max Frequency(MHz): 1250.0             |
+|             |                   |     Legal Range: 300, 350, 400, 450, 500,  |
+|             |                   | 550, 600, 650, 700, 750, 800, 850, 900,    |
+|             |                   | 950, 1000,1050,1100, 1150, 1200, 1250,     |
+|             |                   | 1300                                       |
+|             |                   |                                            |
+|             |                   | Standby type: NEVER                        |
+|             |                   |     Legal Options: Default, Never          |
+|             |                   |                                            |
+|             |                   | Scheduler Mode: TIMESLICE                  |
+|             |                   |     Legal Options: Timeout,Timeslice,      |
+|             |                   | Exclusive                                  |
++-------------+-------------------+--------------------------------------------+
+| GPU         | 0/1               | Power Limit(w): 320.0                      |
+|             |                   |     Legal Range: 0 to 500                  |
+|             |                   | Power Average Window (ms): 124             |
+|             |                   |     Legal Range: 0 to 125                  |
+|             |                   |                                            |
+|             |                   | GPU Min Frequency(MHz): 300.0              |
+|             |                   | GPU Max Frequency(MHz): 300.0              |
+|             |                   |     Legal Range: 300, 350, 400, 450, 500,  |
+|             |                   | 550, 600, 650, 700, 750, 800, 850, 900,    |
+|             |                   | 950, 1000,1050,1100, 1150, 1200, 1250,     |
+|             |                   | 1300                                       |
+|             |                   |                                            |
+|             |                   | Standby type: NEVER                        |
+|             |                   |     Legal Options: Default, Never          |
+|             |                   |                                            |
+|             |                   | Scheduler Mode: EXCLUSIVE                  |
+|             |                   |     Legal Options: Timeout,Timeslice,      |
+|             |                   | Exclusive                                  |
++-------------+-------------------+--------------------------------------------+
 
+$ xpumcli config -l -d 0 -t 0
++-------------+-------------------+--------------------------------------------+
+| Device Type | Device Id/Tile ID | Configuration                              |
++-------------+-------------------+--------------------------------------------+
+| GPU         | 0/0               | Power Limit(w): 300.0                      |
+|             |                   |     Legal Range: 0 to 500                  |
+|             |                   | Power Average Window (ms): 0               |
+|             |                   |     Legal Range: 0 to 125                  |
+|             |                   |                                            |
+|             |                   | GPU Min Frequency(MHz): 370.0              |
+|             |                   | GPU Max Frequency(MHz): 1250.0             |
+|             |                   |     Legal Range: 300, 350, 400, 450, 500,  |
+|             |                   | 550, 600, 650, 700, 750, 800, 850, 900,    |
+|             |                   | 950, 1000,1050,1100, 1150, 1200, 1250,     |
+|             |                   | 1300                                       |
+|             |                   |                                            |
+|             |                   | Standby type: NEVER                        |
+|             |                   |     Legal Options: Default, Never          |
+|             |                   |                                            |
+|             |                   | Scheduler Mode: TIMESLICE                  |
+|             |                   |     Legal Options: Timeout,Timeslice,      |
+|             |                   | Exclusive                                  |
++-------------+-------------------+--------------------------------------------+
+```
 ## Set configurations
 ```
-$ xpumcli config -- "Power Limit"=400 -d 0
-+-------------+-----------+------------------------------+
-| Device Type | Device Id | Configuration                |
-+-------------+-----------+------------------------------+
-| GPU         | 0         | Power Limit(w): 400          |
-|             |           |     Legal Range: 0 to 500    |
-|             |           |                              |
-|             |           | GPU Frequency(MHz): 300,     |
-|             |           |     Legal Range: 100 to 1500 |
-|             |           |                              |
-|             |           | Memory Frequency(MHz): 800   |
-|             |           |     Legal Range: 200 to 1000 |
-|             |           |                              |
-|             |           | Performance Factor: 1        |
-|             |           |     Legal Options: 1,2,3     |
-+-------------+-----------+------------------------------+
-```
+$ xpumcli config -d 0 -t 0 --"Scheduler"=Timeout,50000
++-------------+-------------------+--------------------------------------------+
+| Device Type | Device Id/Tile ID | Configuration                              |
++-------------+-------------------+--------------------------------------------+
+| GPU         | 0/0               | Power Limit(w): 300.0                      |
+|             |                   |     Legal Range: 0 to 500                  |
+|             |                   | Power Average Window (ms): 0               |
+|             |                   |     Legal Range: 0 to 125                  |
+|             |                   |                                            |
+|             |                   | GPU Min Frequency(MHz): 370.0              |
+|             |                   | GPU Max Frequency(MHz): 1250.0             |
+|             |                   |     Legal Range: 300, 350, 400, 450, 500,  |
+|             |                   | 550, 600, 650, 700, 750, 800, 850, 900,    |
+|             |                   | 950, 1000,1050,1100, 1150, 1200, 1250,     |
+|             |                   | 1300                                       |
+|             |                   |                                            |
+|             |                   | Standby type: NEVER                        |
+|             |                   |     Legal Options: Default, Never          |
+|             |                   |                                            |
+|             |                   | Scheduler Mode: TIMEOUT                    |
+|             |                   |     Legal Options: Timeout,Timeslice,      |
+|             |                   | Exclusive                                  |
++-------------+-------------------+--------------------------------------------+
 
-```
-$ xpumcli config -- "Power Limit"=400 -g 0
-+-------------+-----------+------------------------------+
-| Device Type | Device Id | Configuration                |
-+-------------+-----------+------------------------------+
-| GPU         | 0         | Power Limit(w): 400          |
-|             |           |     Legal Range: 0 to 500    |
-|             |           |                              |
-|             |           | GPU Frequency(MHz): 300,     |
-|             |           |     Legal Range: 100 to 1500 |
-|             |           |                              |
-|             |           | Memory Frequency(MHz): 800   |
-|             |           |     Legal Range: 200 to 1000 |
-|             |           |                              |
-|             |           | Performance Factor: 1        |
-|             |           |     Legal Options: 1,2,3     |
-|             +-----------+------------------------------+
-|             | 1         | Power Limit(w): 400          |
-|             |           |     Legal Range: 0 to 500    |
-|             |           |                              |
-|             |           | GPU Frequency(MHz): 300,     |
-|             |           |     Legal Range: 100 to 1500 |
-|             |           |                              |
-|             |           | Memory Frequency(MHz): 800   |
-|             |           |     Legal Range: 200 to 1000 |
-|             |           |                              |
-|             |           | Performance Factor: 1        |
-|             |           |     Legal Options: 1,2,3     |
-+-------------+-----------+------------------------------+
+$ xpumcli config -d 0 -t 0 --"Scheduler"=Exclusive
++-------------+-------------------+--------------------------------------------+
+| Device Type | Device Id/Tile ID | Configuration                              |
++-------------+-------------------+--------------------------------------------+
+| GPU         | 0/0               | Power Limit(w): 300.0                      |
+|             |                   |     Legal Range: 0 to 500                  |
+|             |                   | Power Average Window (ms): 0               |
+|             |                   |     Legal Range: 0 to 125                  |
+|             |                   |                                            |
+|             |                   | GPU Min Frequency(MHz): 370.0              |
+|             |                   | GPU Max Frequency(MHz): 1250.0             |
+|             |                   |     Legal Range: 300, 350, 400, 450, 500,  |
+|             |                   | 550, 600, 650, 700, 750, 800, 850, 900,    |
+|             |                   | 950, 1000,1050,1100, 1150, 1200, 1250,     |
+|             |                   | 1300                                       |
+|             |                   |                                            |
+|             |                   | Standby type: NEVER                        |
+|             |                   |     Legal Options: Default, Never          |
+|             |                   |                                            |
+|             |                   | Scheduler Mode: EXCLUSIVE                  |
+|             |                   |     Legal Options: Timeout,Timeslice,      |
+|             |                   | Exclusive                                  |
++-------------+-------------------+--------------------------------------------+
+
+$ xpumcli config -d 0 -t 0 --"Scheduler"=Timeslice,10000,50000
++-------------+-------------------+--------------------------------------------+
+| Device Type | Device Id/Tile ID | Configuration                              |
++-------------+-------------------+--------------------------------------------+
+| GPU         | 0/0               | Power Limit(w): 300.0                      |
+|             |                   |     Legal Range: 0 to 500                  |
+|             |                   | Power Average Window (ms): 0               |
+|             |                   |     Legal Range: 0 to 125                  |
+|             |                   |                                            |
+|             |                   | GPU Min Frequency(MHz): 370.0              |
+|             |                   | GPU Max Frequency(MHz): 1250.0             |
+|             |                   |     Legal Range: 300, 350, 400, 450, 500,  |
+|             |                   | 550, 600, 650, 700, 750, 800, 850, 900,    |
+|             |                   | 950, 1000,1050,1100, 1150, 1200, 1250,     |
+|             |                   | 1300                                       |
+|             |                   |                                            |
+|             |                   | Standby type: NEVER                        |
+|             |                   |     Legal Options: Default, Never          |
+|             |                   |                                            |
+|             |                   | Scheduler Mode: TIMESLICE                  |
+|             |                   |     Legal Options: Timeout,Timeslice,      |
+|             |                   | Exclusive                                  |
++-------------+-------------------+--------------------------------------------+
+
+$ xpumcli config -d 0 -t 0  --"PowerLimit"=330,120
++-------------+-------------------+--------------------------------------------+
+| Device Type | Device Id/Tile ID | Configuration                              |
++-------------+-------------------+--------------------------------------------+
+| GPU         | 0/0               | Power Limit(w): 330.0                      |
+|             |                   |     Legal Range: 0 to 500                  |
+|             |                   | Power Average Window (ms): 120             |
+|             |                   |     Legal Range: 0 to 125                  |
+|             |                   |                                            |
+|             |                   | GPU Min Frequency(MHz): 370.0              |
+|             |                   | GPU Max Frequency(MHz): 1250.0             |
+|             |                   |     Legal Range: 300, 350, 400, 450, 500,  |
+|             |                   | 550, 600, 650, 700, 750, 800, 850, 900,    |
+|             |                   | 950, 1000,1050,1100, 1150, 1200, 1250,     |
+|             |                   | 1300                                       |
+|             |                   |                                            |
+|             |                   | Standby type: NEVER                        |
+|             |                   |     Legal Options: Default, Never          |
+|             |                   |                                            |
+|             |                   | Scheduler Mode: TIMESLICE                  |
+|             |                   |     Legal Options: Timeout,Timeslice,      |
+|             |                   | Exclusive                                  |
++-------------+-------------------+--------------------------------------------+
+
+$ xpumcli config -d 0 -t 0 --"FrequencyRange"=400,1200
++-------------+-------------------+--------------------------------------------+
+| Device Type | Device Id/Tile ID | Configuration                              |
++-------------+-------------------+--------------------------------------------+
+| GPU         | 0/0               | Power Limit(w): 330.0                      |
+|             |                   |     Legal Range: 0 to 500                  |
+|             |                   | Power Average Window (ms): 120             |
+|             |                   |     Legal Range: 0 to 125                  |
+|             |                   |                                            |
+|             |                   | GPU Min Frequency(MHz): 400.0              |
+|             |                   | GPU Max Frequency(MHz): 1200.0             |
+|             |                   |     Legal Range: 300, 350, 400, 450, 500,  |
+|             |                   | 550, 600, 650, 700, 750, 800, 850, 900,    |
+|             |                   | 950, 1000,1050,1100, 1150, 1200, 1250,     |
+|             |                   | 1300                                       |
+|             |                   |                                            |
+|             |                   | Standby type: NEVER                        |
+|             |                   |     Legal Options: Default, Never          |
+|             |                   |                                            |
+|             |                   | Scheduler Mode: TIMESLICE                  |
+|             |                   |     Legal Options: Timeout,Timeslice,      |
+|             |                   | Exclusive                                  |
++-------------+-------------------+--------------------------------------------+
+
+$ xpumcli config -d 0 -t 0 --"Standby"=Never
++-------------+-------------------+--------------------------------------------+
+| Device Type | Device Id/Tile ID | Configuration                              |
++-------------+-------------------+--------------------------------------------+
+| GPU         | 0/0               | Power Limit(w): 330.0                      |
+|             |                   |     Legal Range: 0 to 500                  |
+|             |                   | Power Average Window (ms): 120             |
+|             |                   |     Legal Range: 0 to 125                  |
+|             |                   |                                            |
+|             |                   | GPU Min Frequency(MHz): 400.0              |
+|             |                   | GPU Max Frequency(MHz): 1200.0             |
+|             |                   |     Legal Range: 300, 350, 400, 450, 500,  |
+|             |                   | 550, 600, 650, 700, 750, 800, 850, 900,    |
+|             |                   | 950, 1000,1050,1100, 1150, 1200, 1250,     |
+|             |                   | 1300                                       |
+|             |                   |                                            |
+|             |                   | Standby type: NEVER                        |
+|             |                   |     Legal Options: Default, Never          |
+|             |                   |                                            |
+|             |                   | Scheduler Mode: TIMESLICE                  |
+|             |                   |     Legal Options: Timeout,Timeslice,      |
+|             |                   | Exclusive                                  |
++-------------+-------------------+--------------------------------------------+
 ```
 
 # Firmware flash subcommand
@@ -726,4 +859,18 @@ Timestamp,DeviceId,TileId,Power(W),GPU Frequency(MHz),GPU Temperature(°C),Memor
 2021-07-09 16:03:38,0,0,71,300,35,32.8,0
 2021-07-09 16:03:39,0,0,71,300,35,32.8,0
 2021-07-09 16:03:40,0,0,71,300,35,32.8,0
+```
+# Reset device
+## Help info
+```
+usage: xpumcli reset [-h] [-d <deviceId>]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d <deviceId>, --device <deviceId>
+                        reset device
+## forcely reset device
+```
+$ xpumcli reset -d 0
+OK
 ```

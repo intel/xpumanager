@@ -6,6 +6,8 @@
 #include "memory_data_handler.h"
 #include "engine_utilization_data_handler.h"
 #include "metric_statistics_data_handler.h"
+#include "configuration.h"
+#include <algorithm>
 
 RawDataManager::RawDataManager(std::shared_ptr<Persistency>& persistency) 
   : p_persistency(persistency) {
@@ -58,6 +60,14 @@ void RawDataManager::init() {
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_USED, p_persistency);    
   data_handlers[MeasurementType::METRIC_MEMORY_USED]->init();
 
+  data_handlers[MeasurementType::METRIC_MEMORY_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_MEMORY_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_MEMORY_BANDWIDTH] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_BANDWIDTH, p_persistency);    
+  data_handlers[MeasurementType::METRIC_MEMORY_BANDWIDTH]->init();
+
   data_handlers[MeasurementType::METRIC_MEMORY_READ] = 
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_READ, p_persistency);    
   data_handlers[MeasurementType::METRIC_MEMORY_READ]->init();
@@ -65,10 +75,34 @@ void RawDataManager::init() {
   data_handlers[MeasurementType::METRIC_MEMORY_WRITE] = 
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_WRITE, p_persistency);    
   data_handlers[MeasurementType::METRIC_MEMORY_WRITE]->init();
-
+  
   data_handlers[MeasurementType::METRIC_COMPUTATION] = 
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);    
   data_handlers[MeasurementType::METRIC_COMPUTATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_OCCUPATION_EFFICIENCY] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_OCCUPATION_EFFICIENCY, p_persistency);    
+  data_handlers[MeasurementType::METRIC_OCCUPATION_EFFICIENCY]->init();
 
   //METRIC_RAS_ERROR
   data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_RESET, p_persistency);    
@@ -100,6 +134,7 @@ void RawDataManager::storeMeasurementData(
 
   if (p_handler != nullptr) {
     auto p_shared_data = std::make_shared<SharedData>(time, datas);
+    updateCaches(type, p_shared_data);
     p_handler->handleData(p_shared_data);
   }
 }
@@ -125,4 +160,101 @@ void RawDataManager::getLatestData(
   if (p_handler != nullptr) {
     p_handler->getLatestData(datas);
   }
+}
+
+std::deque<MeasurementCacheData> RawDataManager::getCachedRawData(uint32_t task_id, MeasurementType type) {
+    std::unique_lock<std::mutex> lock(mutex);
+    if (caches.find(task_id) != caches.end() && caches.find(task_id)->second.find(type) != caches.find(task_id)->second.end()) {
+        return caches[task_id][type];
+    }
+    std::deque<MeasurementCacheData> ret;
+    return ret;
+}
+
+std::vector<std::deque<MeasurementCacheData>> RawDataManager::getCachedRawData(uint32_t task_id) {
+    std::unique_lock<std::mutex> lock(mutex);
+    std::vector<std::deque<MeasurementCacheData>> datas;
+    std::vector<MeasurementType> types;
+    std::deque<RawDataCollectionTask>::iterator iter = std::find_if(raw_data_collection_tasks.begin(), raw_data_collection_tasks.end(), [task_id](RawDataCollectionTask &task) { return task.task_id == task_id && task.running == false; });
+    if (iter != raw_data_collection_tasks.end()) {
+        types = iter->types;
+    }
+    lock.unlock();
+    for (auto type : types) {
+        datas.push_back(getCachedRawData(task_id, type));
+    }
+    return datas;
+}
+
+uint32_t RawDataManager::startRawDataCollectionTask(std::string &device_id, std::vector<MeasurementType>& types) {
+    std::unique_lock<std::mutex> lock(mutex);
+    uint32_t task_id = -1;
+    if (raw_data_collection_tasks.size() < Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX) {
+        task_id = raw_data_collection_tasks.size();
+        RawDataCollectionTask task(device_id, types, task_id);
+        raw_data_collection_tasks.push_back(task);
+    } else {
+        std::deque<RawDataCollectionTask>::iterator iter =
+            std::find_if(raw_data_collection_tasks.begin(), raw_data_collection_tasks.end(), [](RawDataCollectionTask &task) { return task.running == false; });
+        task_id = iter->task_id;
+        if (iter != raw_data_collection_tasks.end()) {
+            raw_data_collection_tasks.erase(iter);
+            caches[task_id].clear();
+        }
+        if (raw_data_collection_tasks.size() < Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX) {
+            RawDataCollectionTask task(device_id, types, task_id);
+            raw_data_collection_tasks.push_back(task);
+        }
+    }
+    return task_id;
+}
+
+void RawDataManager::stopRawDataCollectionTask(uint32_t task_id) {
+    std::unique_lock<std::mutex> lock(mutex);
+    std::deque<RawDataCollectionTask>::iterator iter = std::find_if(raw_data_collection_tasks.begin(), raw_data_collection_tasks.end(), [task_id](RawDataCollectionTask &task) { return task.task_id == task_id; });
+    if (iter != raw_data_collection_tasks.end() && iter->running) {
+        iter->running = false;
+        iter->stop_time = Utility::getCurrentMillisecond();
+    }
+}
+
+void RawDataManager::updateCaches(MeasurementType type, std::shared_ptr<SharedData> &p_data) {
+    std::unique_lock<std::mutex> lock(mutex);
+    std::deque<RawDataCollectionTask>::iterator iter = raw_data_collection_tasks.begin();
+    while (iter != raw_data_collection_tasks.end()) {
+        if (iter->running) {
+            bool added = false;
+            if (iter->time_frames_count[type] < Configuration::CACHE_SIZE_LIMIT) {
+                std::map<std::string, MeasurementData>::iterator iter_p_data = p_data->getData().begin();
+                while (iter_p_data != p_data->getData().end()) {
+                    if (iter_p_data->first == iter->device_id) {
+                        if (iter_p_data->second.hasDataOnDevice()) {
+                            MeasurementCacheData data(iter_p_data->first, type, iter_p_data->second.getCurrent(), p_data->getTime(), false, 0);
+                            caches[iter->task_id][type].push_back(data);
+                            added = true;
+                        }
+                        std::map<uint32_t, SubdeviceData>::const_iterator iter_p_data_sub = iter_p_data->second.getSubdeviceDatas().begin();
+                        while (iter_p_data_sub != iter_p_data->second.getSubdeviceDatas().end()) {
+                            MeasurementCacheData data(iter_p_data->first, type, iter_p_data_sub->second.current, p_data->getTime(), true, iter_p_data_sub->first);
+                            caches[iter->task_id][type].push_back(data);
+                            added = true;
+                            ++iter_p_data_sub;
+                        }
+                    }
+                    ++iter_p_data;
+                }
+            } else {
+                auto frames = std::min_element(iter->time_frames_count.begin(), iter->time_frames_count.end(), 
+                [](decltype(iter->time_frames_count)::value_type& l, decltype(iter->time_frames_count)::value_type& r) -> bool { return l.second < r.second; });
+                if (frames->second >= Configuration::CACHE_SIZE_LIMIT) {
+                    iter->running = false;
+                    iter->stop_time = Utility::getCurrentMillisecond();
+                }
+            }
+            if (added) {
+                iter->time_frames_count[type]++;
+            }
+        }
+        ++iter;
+    }
 }

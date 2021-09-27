@@ -33,7 +33,7 @@ popd
 # apt-get install -y libc-ares-dev
 mkdir -p "third_party/cares/cares/cmake/build"
 pushd "third_party/cares/cares/cmake/build"
-cmake -DCMAKE_BUILD_TYPE=Release ../..
+cmake -DCMAKE_BUILD_TYPE=Release -DCARES_STATIC=ON -DCARES_SHARED=OFF -DCARES_STATIC_PIC=ON ../..
 make -j4 install
 popd
 
@@ -54,7 +54,7 @@ popd
 # Install zlib
 mkdir -p "third_party/zlib/cmake/build"
 pushd "third_party/zlib/cmake/build"
-cmake -DCMAKE_BUILD_TYPE=Release ../..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON ../..
 make -j4 install
 popd
 
@@ -62,6 +62,7 @@ popd
 # a standalone build from an archive
 # shellcheck disable=SC2016
 git submodule foreach 'cd $toplevel; rm -rf $name'
+rm /usr/local/lib/libz.so*
 
 # Install gRPC
 mkdir -p "cmake/build"

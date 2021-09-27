@@ -4,22 +4,23 @@
 #include <mutex>
 #include <string>
 
-struct PciDevice {
+enum SwitchType{
+  SW_UNKNOW = 0,
+  SW_BUILDIN = 1,
+  SW_NORMAL = 2
+};
+
+struct SwitchDevice {
+    SwitchType type;
     int32_t vendor_id;
     int32_t device_id;
-    std::string verdor_name;
-    std::string device_name;
     int32_t sub_v_id;
     int32_t sub_d_id;
-    std::string sub_s_name;
     std::string tostring() {
-      return std::string("verdor_id:") + std::to_string(vendor_id)
-              + std::string(" device_id:") + std::to_string(device_id)
-              + std::string(" sub_vendor_id:") + std::to_string(sub_v_id)
-              + std::string(" sub_device_id:") + std::to_string(sub_d_id)
-              + std::string(" verdor:") + verdor_name
-              + std::string(" device:") + device_name
-              + std::string(" sub name:") + sub_s_name;           
+        return std::string("verdor_id:") + std::to_string(vendor_id) 
+               + std::string(" device_id:") + std::to_string(device_id) 
+               + std::string(" sub_vendor_id:") + std::to_string(sub_v_id) 
+               + std::string(" sub_device_id:") + std::to_string(sub_d_id);
     }
 };
 
@@ -35,8 +36,7 @@ class PciDatabase {
   public:
     static PciDatabase &instance();
 
-    bool isSwitchDevice(int32_t vendor_id, int32_t device_id);
-    bool getSwitchInfo(int32_t vendor_id, int32_t device_id, char switchVendorName[], char switchName[]);
+    const SwitchDevice* getSwitchDevice(int32_t vendor_id, int32_t device_id);
 
   private:
     PciDatabase();
@@ -50,7 +50,8 @@ class PciDatabase {
     bool parse_pci_device(std::ifstream &fstream);
     bool parse_level_0(const std::string &info, int len, id_type *type, int *vendor_id, std::size_t *idx);
     bool parse_level_1(const std::string &info, int len, id_type *type, int *device_id, std::size_t *idx);
-    bool parse_level_2(const std::string &info, int len, id_type *type, int *sub_vendor_id, int *sub_device_id, std::size_t *idx);
+    bool parse_level_2(const std::string &info, int len, id_type *type, int *sub_vendor_id,
+                       int *sub_device_id, std::size_t *idx);
 
     void parse_switch_config(std::ifstream &fstream);
 
@@ -62,9 +63,7 @@ class PciDatabase {
     bool bInitialized;
     std::mutex mutex;
     typedef std::pair<int32_t, int32_t> pair;
-    typedef std::map<pair, PciDevice> pci_device_map;
-    typedef std::map<pair, bool> switch_config_map;
+    typedef std::map<pair, SwitchDevice> pci_device_map;
 
     pci_device_map switch_device;
-    switch_config_map switch_config;
 };

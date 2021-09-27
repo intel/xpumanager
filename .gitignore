@@ -7,8 +7,16 @@ __pycache__
 DGMCore
 core/src/infrastructure/xpum_config.h
 cli/src/config.h
+daemon/config.h
 lib/
 core/config/pci.ids
 pci.ids.upgrade
 core/libs/hwloc/install/
-.vscode/
+core/test/xpumd
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace

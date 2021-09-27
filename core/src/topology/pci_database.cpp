@@ -3,10 +3,10 @@
 #include "logger.h"
 #include "xpum_config.h"
 
-#include <assert.h>
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
+#include "dlfcn.h"
 
 PciDatabase::PciDatabase() {
     LOG_INFO("PciDatabase()");
@@ -14,7 +14,6 @@ PciDatabase::PciDatabase() {
 
 PciDatabase::~PciDatabase() {
     LOG_INFO("~PciDatabase()");
-    switch_config.clear();
     switch_device.clear();
 }
 
@@ -23,61 +22,65 @@ PciDatabase &PciDatabase::instance() {
     std::unique_lock<std::mutex> lock(instance.mutex);
 
     if (!instance.bInitialized) {
-        instance.bInitialized = instance.init();
+         if(!instance.init()){
+             LOG_ERROR("Failed to initialize PciDatabase, Device topology function does not work!");
+         }
     }
-
+    instance.bInitialized = true;
     return instance;
+}
+
+
+std::string GetSelfPath()
+{
+    std::string selfPath;
+    Dl_info di;
+    dladdr((void*)GetSelfPath, &di);
+    selfPath = di.dli_fname;
+    std::size_t mPos = selfPath.find("/");
+    if (mPos == std::string::npos) 
+    {
+        char exePath[MAX_PATH];
+        ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+        exePath[len] = '\0';
+        selfPath = exePath;
+    }  
+    return selfPath;
 }
 
 bool PciDatabase::init() {
     std::ifstream infile;
     std::string fileName, folder;
-    char exePath[MAX_PATH];
+    std::string currentFile = GetSelfPath();
 
-    ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
-    exePath[len] = '\0';
-
-    if (len > 0 && len != sizeof(exePath)) {
-        folder = std::string(exePath);
-        folder = folder.substr(0, folder.find_last_of('/'));
-        fileName = folder + "/../" + std::string(PCI_IDS_DIR) + std::string(PCI_IDS_CONFIG);
-        infile.open(fileName.data());
-
-        if (infile.is_open()) {
-            parse_switch_config(infile);
-            infile.close();
-            
-        } else {
-            LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
-        }
-        
-    }
-
-    if (folder.empty()) {
-        fileName = std::string(PCI_IDS_DIR_BAK) + std::string(PCI_IDS_FILE);
+    if (currentFile.length() <= 0) {
+        folder = std::string(PCI_IDS_DIR_BAK);
     } else {
-        fileName = folder + "/../" + std::string(PCI_IDS_DIR) + std::string(PCI_IDS_FILE);
-    }
+        folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../" + std::string(PCI_IDS_DIR);
+    }        
+
+    fileName = folder + std::string(PCI_IDS_FILE);
 
     infile.open(fileName.data());
 
-    if (!infile.is_open()) {
+    if (infile.is_open()) {
+        if (!parse_pci_device(infile)) {
+            LOG_ERROR("PciDatabase::init()- parse_pci_device error.");
+        }   
+        infile.close();     
+    } else {
         LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
-        fileName = std::string(PCI_IDS_DIR_BAK) + std::string(PCI_IDS_FILE);
-
-        infile.open(fileName.data());
-
-        if (!infile.is_open()) {
-            LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
-            return false;
-        }
     }
 
-    if (!parse_pci_device(infile)) {
-        LOG_ERROR("PciDatabase::init()- parse_pci_device error.");
-    }
+    fileName = folder + std::string(PCI_IDS_CONFIG);
+    infile.open(fileName.data());
 
-    infile.close();
+    if (infile.is_open()) {
+        parse_switch_config(infile);
+        infile.close();            
+    } else {
+        LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
+    } 
 
     return true;
 }
@@ -149,7 +152,6 @@ bool PciDatabase::parse_pci_device(std::ifstream &fstream) {
             }
             //sub_s_name.erase();
         } else {
-            assert(0);
             // level 3 if not defined, the code should not be here, just ignore this line
             continue;
         }
@@ -253,7 +255,6 @@ bool PciDatabase::parse_level_2(const std::string &info, int len, id_type *type,
         }
     } break;
     case ID_VENDOR: {
-        assert(0);
         LOG_ERROR("PciDatabase::parse_level_2() error- unknow device.");
         bResult = true;
     } break;
@@ -300,12 +301,18 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
             device_id = std::stoi(info.substr(start), &pos, 16);
             start += pos + 1;
             if (start < len) {
+                SwitchDevice device = 
+                    {SW_UNKNOW, vendor_id, device_id, 0, 0};
                 if (info.at(start) == '0') {
-                    switch_config[std::make_pair(vendor_id, device_id)] = false;
+                    int ret = switch_device.erase(std::make_pair(vendor_id, device_id));
+                    LOG_TRACE("PciDatabase::parse_switch_config()- remove d_id:v_id = [{}:{}] count:{}", vendor_id, device_id, ret);
                 } else if (info.at(start) == '1') {
-                    switch_config[std::make_pair(vendor_id, device_id)] = true;
+                    device.type = SW_BUILDIN;
+                    switch_device[std::make_pair(vendor_id, device_id)] = device;
+                } else if (info.at(start) == '2'){
+                    device.type = SW_NORMAL;
+                    switch_device[std::make_pair(vendor_id, device_id)] = device;
                 } else {
-                    assert(0);
                     LOG_ERROR("PciDatabase::parse_switch_config() error- unknow value.");
                 }
             }
@@ -316,26 +323,8 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
 void PciDatabase::add_switch_device(int32_t vendor_id, int32_t device_id, std::string &verdor_name,
                                     std::string &device_name, int32_t sub_v_id, int32_t sub_d_id, std::string &sub_s_name) {
     std::string switch_string = std::string(" Switch ");
-    bool bAdd = false;
-    if(vendor_id >= 0 && device_id >= 0){
-        switch_config_map::iterator it = switch_config.find(std::make_pair(vendor_id, device_id));
-        if(it != switch_config.end()) {
-            if(it->second) {
-                bAdd = true;
-            } else {
-                return;
-            }
-        }
-    }
-
-    PciDevice device = 
-            {vendor_id, device_id, verdor_name, device_name, sub_v_id, sub_d_id, sub_s_name};
-    
-    if(bAdd) {
-        LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
-        switch_device[std::make_pair(vendor_id, device_id)] = device;
-        return;
-    }
+    SwitchDevice device = 
+            {SW_NORMAL, vendor_id, device_id, sub_v_id, sub_d_id};
 
     if(sub_v_id>=0 && sub_d_id>=0 && !sub_s_name.empty()){
         if (sub_s_name.find(switch_string) != std::string::npos) {
@@ -348,36 +337,19 @@ void PciDatabase::add_switch_device(int32_t vendor_id, int32_t device_id, std::s
             switch_device[std::make_pair(vendor_id, device_id)] = device;
         }
     } else {
-        assert(0);
         LOG_ERROR("PciDatabase::add_switch_device() error- unknow device {}.", device.tostring());
     }    
 }
 
-bool PciDatabase::isSwitchDevice(int32_t vendor_id, int32_t device_id)
+const SwitchDevice* PciDatabase::getSwitchDevice(int32_t vendor_id, int32_t device_id)
 {
     std::unique_lock<std::mutex> lock(mutex);
 
     pci_device_map::iterator it = switch_device.find(std::make_pair(vendor_id, device_id));
 
     if(it != switch_device.end()) {
-        return true;
+        return &it->second;
     }
     
-    return false;
-}
-
-bool PciDatabase::getSwitchInfo(int32_t vendor_id, int32_t device_id, char switchVendorName[], char switchName[]) {
-    std::unique_lock<std::mutex> lock(mutex);
-
-    pci_device_map::iterator it = switch_device.find(std::make_pair(vendor_id, device_id));
-
-    if(it != switch_device.end()) {
-        std::size_t length = it->second.verdor_name.copy(switchVendorName, XPUM_VENDOR_NAME_LEN);
-        switchVendorName[length] = '\0';
-        length = it->second.device_name.copy(switchName, XPUM_VENDOR_NAME_LEN);
-        switchName[length] = '\0';
-        return true;
-    }
-    
-    return false;
+    return nullptr;
 }

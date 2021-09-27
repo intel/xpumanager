@@ -9,6 +9,7 @@
 #include "device_capability.h"
 #include "ze_api.h"
 #include "zes_api.h"
+#include "zet_api.h"
 #include "xpum_structs.h"
 
 class Device {
@@ -31,13 +32,21 @@ class Device {
 
   virtual void getMemory(Callback_t callback) noexcept = 0;
 
+  virtual void getMemoryUtilization(Callback_t callback) noexcept = 0;
+
+  virtual void getMemoryBandwidth(Callback_t callback) noexcept = 0;
+
   virtual void getMemoryRead(Callback_t callback) noexcept = 0;
 
   virtual void getMemoryWrite(Callback_t callback) noexcept = 0;
 
   virtual void getEngineUtilization(Callback_t callback) noexcept = 0;
 
+  virtual void getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept = 0;
+
   virtual void getEnergy(Callback_t callback) noexcept = 0;
+
+  virtual void getOccupationEfficiency(Callback_t callback) noexcept = 0;
 
   virtual void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept = 0;
 

@@ -18,10 +18,14 @@ class GPUDevice : public Device {
   void getActuralFrequency(Callback_t callback) noexcept override;
   void getTemperature(Callback_t callback) noexcept override;
   void getMemory(Callback_t callback) noexcept override;
+  void getMemoryUtilization(Callback_t callback) noexcept override;
+  void getMemoryBandwidth(Callback_t callback) noexcept override;
   void getMemoryRead(Callback_t callback) noexcept override;
   void getMemoryWrite(Callback_t callback) noexcept override;
   void getEngineUtilization(Callback_t callback) noexcept override;
+  void getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept override;
   void getEnergy(Callback_t callback) noexcept override;
+  void getOccupationEfficiency(Callback_t callback) noexcept override;
   void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType)  noexcept override;
 
   virtual bool runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept override;
