@@ -8,6 +8,9 @@ import datetime
 import grpc
 # import core_pb2_grpc
 
+import io
+import csv
+
 def hex_format(v):
     return hex(int(v))
 
@@ -983,6 +986,12 @@ class DGMCore:
             )
         if res != 0:
             return res, "Fail to start collect metrics raw data task", None
+        if self.rawDumpTaskMap is None:
+            self.rawDumpTaskMap = dict()
+        self.rawDumpTaskMap[taskId.value] = {
+            "metricsTypeList": metricsTypeList,
+            "deviceIds": [deviceId]
+        }
         return 0, "OK", dict(TaskId=taskId.value)
 
     def startCollectMetricsRawDataTaskByGroup(self, groupId, metricsTypeList):
@@ -1022,9 +1031,17 @@ class DGMCore:
         datas = dict()
         datas["TaskId"] = taskId
 
-        deviceDatas = []
+        metricsTypeList = self.rawDumpTaskMap[taskId]['metricsTypeList']
+
+        metricsTypeList = [XpumStatsType(t).name for t in metricsTypeList]
+
+        headers = ["Timestamp", "DeviceId", "TileId"]+metricsTypeList
+
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+        writer.writerow(headers)
+
         for deviceId in dataListByDevice:
-            data = {"DeviceId": deviceId}
             rawDataList = dataListByDevice[deviceId]
             buckets = []
             for rawData in rawDataList:
@@ -1036,23 +1053,24 @@ class DGMCore:
                         break
                 if not flag:
                     buckets.append([rawData])
-            cycles = []
             for cycle in buckets:
-                cycleData = {}
                 first = cycle[0]
                 cycleData["timestamp"] = int(first.timestamp/100)*100
-                metrics = []
+                
+                cycleData = {}
+                cycleData[None] = {
+                    "Timestamp":None
+                }
                 for d in cycle:
+                    if d.isTileData:
+                        pass
                     tmp = {
                         "metricsType": XpumStatsType(d.metricsType).name,
                         "value": d.value
                     }
                     if d.isTileData:
                         tmp["tileId"] = d.tileId
-                    metrics.append(tmp)
-                cycleData['Metrics'] = metrics
-                cycles.append(cycleData)
-            data['Cycles'] = cycles
-            deviceDatas.append(data)
-        datas["DataList"] = deviceDatas
-        return 0, "OK", datas
+                for k in cycleData:
+                    d = cycleData[k]
+                    writer.writerow([d[i] for i in headers])
+        return 0, "OK", output.getvalue()
