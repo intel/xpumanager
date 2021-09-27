@@ -875,24 +875,31 @@ void GPUDeviceStub::getOccupationEfficiency(const ze_device_handle_t& device, co
   p_thread_pool->addTask(callback, toGetOccupationEfficiency, device, driver);
 }
 
+std::map<ze_device_handle_t, zet_metric_group_handle_t> GPUDeviceStub::target_metric_groups;
+std::map<ze_device_handle_t, zet_metric_streamer_handle_t> GPUDeviceStub::target_metric_streamers;
 void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t &device, int subdeviceId, const ze_driver_handle_t& driver, std::shared_ptr<MeasurementData>& data) {
   ze_result_t res;
   zet_metric_group_handle_t target_metric_group = nullptr;
-  uint32_t metricGroupCount = 0;
-  res = zetMetricGroupGet(device, &metricGroupCount, nullptr);
-  if (res == ZE_RESULT_SUCCESS) {
-    std::vector<zet_metric_group_handle_t> metricGroups(metricGroupCount);
-    res = zetMetricGroupGet(device, &metricGroupCount, metricGroups.data());
+  if (GPUDeviceStub::target_metric_groups.find(device) != GPUDeviceStub::target_metric_groups.end()) {
+    target_metric_group = GPUDeviceStub::target_metric_groups.at(device);
+  } else {
+    uint32_t metricGroupCount = 0;
+    res = zetMetricGroupGet(device, &metricGroupCount, nullptr);
     if (res == ZE_RESULT_SUCCESS) {
-      for (auto& metric_group: metricGroups) {
-        zet_metric_group_properties_t metric_group_properties;
-        metric_group_properties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-        res = zetMetricGroupGetProperties(metric_group, &metric_group_properties);
-        if (res == ZE_RESULT_SUCCESS) {
-          if (std::strcmp(metric_group_properties.name, "ComputeBasic") == 0 
-            && metric_group_properties.samplingType == ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED) {
-            target_metric_group = metric_group;
-            break;
+      std::vector<zet_metric_group_handle_t> metricGroups(metricGroupCount);
+      res = zetMetricGroupGet(device, &metricGroupCount, metricGroups.data());
+      if (res == ZE_RESULT_SUCCESS) {
+        for (auto& metric_group: metricGroups) {
+          zet_metric_group_properties_t metric_group_properties;
+          metric_group_properties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
+          res = zetMetricGroupGetProperties(metric_group, &metric_group_properties);
+          if (res == ZE_RESULT_SUCCESS) {
+            if (std::strcmp(metric_group_properties.name, "ComputeBasic") == 0 
+              && metric_group_properties.samplingType == ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED) {
+              GPUDeviceStub::target_metric_groups[device] = metric_group;
+              target_metric_group = metric_group;
+              break;
+            }
           }
         }
       }
@@ -903,24 +910,29 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t &devi
     throw BaseException("toGetOccupationEfficiency");
   }
   zet_metric_group_handle_t hMetricGroup = target_metric_group;
-  ze_context_handle_t hContext;
-  ze_context_desc_t context_desc;
-  context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-  res = zeContextCreate(driver, &context_desc, &hContext);
-  if (res != ZE_RESULT_SUCCESS) {
-    throw BaseException("toGetOccupationEfficiency");
-  }
   zet_metric_streamer_handle_t hMetricStreamer = nullptr;
-  zet_metric_streamer_desc_t metricStreamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
-  res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup);
-  if (res != ZE_RESULT_SUCCESS) {
-    throw BaseException("toGetOccupationEfficiency");
-  }
-  
-  metricStreamerDesc.samplingPeriod = 10000000;
-  res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &metricStreamerDesc, nullptr, &hMetricStreamer);
-  if (res != ZE_RESULT_SUCCESS) {
-    throw BaseException("toGetOccupationEfficiency when open MetricStreamer");
+  if (GPUDeviceStub::target_metric_streamers.find(device) != GPUDeviceStub::target_metric_streamers.end()) {
+    hMetricStreamer = GPUDeviceStub::target_metric_streamers.at(device);
+  } else {
+    ze_context_handle_t hContext;
+    ze_context_desc_t context_desc;
+    context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+    res = zeContextCreate(driver, &context_desc, &hContext);
+    if (res != ZE_RESULT_SUCCESS) {
+      throw BaseException("toGetOccupationEfficiency - zeContextCreate");
+    }
+    zet_metric_streamer_desc_t metricStreamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
+    res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup);
+    if (res != ZE_RESULT_SUCCESS) {
+      throw BaseException("toGetOccupationEfficiency - zetContextActivateMetricGroups");
+    }
+    
+    metricStreamerDesc.samplingPeriod = 10000000;
+    res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &metricStreamerDesc, nullptr, &hMetricStreamer);
+    if (res != ZE_RESULT_SUCCESS) {
+      throw BaseException("toGetOccupationEfficiency - MetricStreamer");
+    }
+    GPUDeviceStub::target_metric_streamers[device] = hMetricStreamer;
   }
   
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -957,6 +969,7 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t &devi
   }
 
   uint32_t numReports = numMetricValues / metricCount;
+  numReports = std::min((int)numReports, 10);
   std::vector<uint64_t> currents(4);
   std::vector<uint64_t> maxs(4);
   std::vector<uint64_t> mins(4, 101);
@@ -992,18 +1005,6 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t &devi
       totals[i] += currents[i];
     }
   }
-  res = zetMetricStreamerClose(hMetricStreamer);
-  if (res != ZE_RESULT_SUCCESS) {
-    throw BaseException("toGetOccupationEfficiency");
-  }    
-  res = zetContextActivateMetricGroups(hContext, device, 0, nullptr);
-  if (res != ZE_RESULT_SUCCESS) {
-    throw BaseException("toGetOccupationEfficiency");
-  }
-  res = zeContextDestroy(hContext);
-  if (res != ZE_RESULT_SUCCESS) {
-    throw BaseException("toGetOccupationEfficiency");
-  }
   std::vector<std::string> names = {"OCCUPATION", "ISSUE_EFFICIENCY", "EXECUTION_EFFICIENCY", "NON_OCCUPATION"};
   if (subdeviceId == -1) {
     data->setCurrent(currents[0]);
@@ -1027,7 +1028,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetOccupationEfficiency(const 
   if (device == nullptr) {
       throw BaseException("toGetOccupationEfficiency");
   }
-  
+  // uint64_t start_time = Utility::getCurrentMillisecond();
   std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>(); 
   ze_result_t res;
   uint32_t sub_device_count = 0;
@@ -1047,8 +1048,10 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetOccupationEfficiency(const 
     if (res != ZE_RESULT_SUCCESS) {
       throw BaseException("toGetOccupationEfficiency");
     }
-    toGetOccupationEfficiencyCore(device, props.subdeviceId, driver, ret);
+    toGetOccupationEfficiencyCore(sub_device, props.subdeviceId, driver, ret);
   }
+  // uint64_t end_time = Utility::getCurrentMillisecond();
+  // std::cout << "GetOccupationEfficiency total_time: " << (end_time - start_time) << std::endl;
   return ret;
 }
 

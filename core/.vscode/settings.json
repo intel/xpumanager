@@ -60,6 +60,12 @@
         "io_context": "cpp",
         "netfwd": "cpp",
         "timer": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "bitset": "cpp",
+        "set": "cpp",
+        "regex": "cpp",
+        "iomanip": "cpp",
+        "shared_mutex": "cpp",
+        "variant": "cpp"
     }
 }

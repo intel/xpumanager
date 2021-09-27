@@ -64,8 +64,9 @@ typedef int32_t xpum_dump_task_id_t;
 typedef enum xpum_result_enum {
     XPUM_OK = 0,
     XPUM_GENERIC_ERROR,
-    XPUM_BUFFER_TOO_SMALL,
-    XPUM_RESULT_DEVICE_NOT_FOUND
+    XPUM_BUFFER_TOO_SMALL,    
+    XPUM_RESULT_DEVICE_NOT_FOUND,
+    XPUM_RESULT_GROUP_NOT_FOUND
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -565,9 +566,9 @@ struct xpum_policy_condition_t {
 };
 
 typedef enum xpum_policy_action_type_enum {  
+    XPUM_POLICY_ACTION_TYPE_NULL,
     XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE,
-    XPUM_POLICY_ACTION_TYPE_RESET_DEVICE,
-    XPUM_POLICY_ACTION_TYPE_NULL
+    XPUM_POLICY_ACTION_TYPE_RESET_DEVICE    
 } xpum_policy_action_type_t;
 
 struct xpum_policy_action_t {
