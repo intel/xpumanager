@@ -152,8 +152,6 @@ telemetry_parser = subparsers.add_parser(
     "telemetry", help="used to collect and dump metrics raw data", formatter_class=argparse.RawTextHelpFormatter)
 telemetry_parser.add_argument('-d', '--device', metavar="<deviceId>",
                               dest="deviceId", type=int, help='The device id to query or change')
-telemetry_parser.add_argument('-g', '--group', metavar="<groupId>",
-                              dest="groupId", type=int, help='The group id to query')
 telemetry_support_metrics = [
     "XPUM_STATS_GPU_UTILIZATION",
     "XPUM_STATS_POWER",
@@ -333,16 +331,10 @@ def arg():
             return
     elif parsed.subcommand == "telemetry":
         if parsed.start:
-            if parsed.deviceId is None and parsed.groupId is None:
+            if parsed.deviceId is None or parsed.metricsIds is None:
                 print("Wrong arguments")
-            if parsed.metricsIds is None:
-                print("Wrong arguments")
-            if parsed.deviceId is not None:
-                start_collect_metrics_raw_data_by_device(
+            start_collect_metrics_raw_data_by_device(
                     parsed.deviceId, parsed.metricsIds)
-            elif parsed.groupId is not None:
-                start_collect_metrics_raw_data_by_group(
-                    parsed.groupId, parsed.metricsIds)
         elif parsed.stopTaskId is not None:
             stop_collect_metrics_raw_data_task(parsed.stopTaskId)
         elif parsed.dumpTaskId is not None:
