@@ -726,3 +726,22 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topoloty_t * topol
     }
     return XPUM_GENERIC_ERROR;
 }
+
+///////////////////Policy//////////////////////
+xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy)
+{
+    return Core::instance().getPolicyManager()->xpumSetPolicy(deviceId,policy);
+}
+xpum_result_t xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t policy)
+{
+    return Core::instance().getPolicyManager()->xpumSetPolicyByGroup(groupId,policy);
+}
+xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[], int *count)
+{
+    return Core::instance().getPolicyManager()->xpumGetPolicy(deviceId,resultList,count);
+}
+xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int *count)
+{
+    return Core::instance().getPolicyManager()->xpumGetPolicyByGroup(groupId,resultList,count);
+}
+///////////////////Policy//////////////////////
