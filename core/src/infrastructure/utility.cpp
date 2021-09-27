@@ -289,7 +289,7 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
     return MeasurementType::METRIC_MEMORY_READ;
   case xpum_stats_type_enum::XPUM_STATS_MEMORY_WRITE:
     return MeasurementType::METRIC_MEMORY_WRITE;
-  case xpum_stats_type_enum::XPUM_STATS_GPU_COMPUTATION:
+  case xpum_stats_type_enum::XPUM_STATS_GPU_UTILIZATION:
     return MeasurementType::METRIC_COMPUTATION;
   case xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
     return MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
@@ -341,7 +341,7 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
   case MeasurementType::METRIC_MEMORY_WRITE:
     return xpum_stats_type_enum::XPUM_STATS_MEMORY_WRITE;
   case MeasurementType::METRIC_COMPUTATION:
-    return xpum_stats_type_enum::XPUM_STATS_GPU_COMPUTATION;
+    return xpum_stats_type_enum::XPUM_STATS_GPU_UTILIZATION;
   case MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
     return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
   case MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:

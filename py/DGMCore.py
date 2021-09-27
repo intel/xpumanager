@@ -113,7 +113,7 @@ class FirmwareFlashTaskResult( Structure ):
 
 
 XpumStatsType = Enum("xpum_stats_type_t", (
-    "XPUM_STATS_GPU_COMPUTATION",
+    "XPUM_STATS_GPU_UTILIZATION",
     "XPUM_STATS_OCCUPATION",
     "XPUM_STATS_ISSUE_EFFICIENCY",
     "XPUM_STATS_EXECUTION_EFFICIENCY",
@@ -349,6 +349,7 @@ class DGMCore:
         lib_path = os.path.join(project_dir_path,"lib","libDGMCore.so")
         self.lib = cdll.LoadLibrary(lib_path)
         self.lib.xpumInit()
+        self.rawDumpTaskMap = dict()
         
 # unix web socket begin
         '''
@@ -972,7 +973,8 @@ class DGMCore:
             return res, "Fail to reset device", None
         return 0, "OK", {"result": "OK"}
 
-    def startCollectMetricsRawDataTask(self, deviceId, metricsTypeList):
+    def startCollectMetricsRawDataTask(self, deviceId, metricsTypeListInStr):
+        metricsTypeList = [XpumStatsType[m].value for m in metricsTypeListInStr]
         count = len(metricsTypeList)
         metricsTypeArray = (c_int * count) ()
         for i in range(count):
@@ -986,8 +988,6 @@ class DGMCore:
             )
         if res != 0:
             return res, "Fail to start collect metrics raw data task", None
-        if self.rawDumpTaskMap is None:
-            self.rawDumpTaskMap = dict()
         self.rawDumpTaskMap[taskId.value] = {
             "metricsTypeList": metricsTypeList,
             "deviceIds": [deviceId]
@@ -998,12 +998,16 @@ class DGMCore:
         pass
 
     def stopCollectMetricsRawDataTask(self, taskId):
+        if taskId not in self.rawDumpTaskMap:
+            return -1, "Task not found", None
         res = self.lib.xpumStopCollectMetricsRawDataTask(c_int32(taskId))
         if res!= 0:
             return res, "Fail to stop collect metrics raw data task"
         return 0, "OK", None
     
     def getMetricsRawDataByTask(self, taskId):
+        if taskId not in self.rawDumpTaskMap:
+            return -1, "Task not found", None
         # XpumMetricsRawData
         count = c_int()
         res = self.lib.xpumGetMetricsRawDataByTask(
@@ -1038,7 +1042,7 @@ class DGMCore:
         headers = ["Timestamp", "DeviceId", "TileId"]+metricsTypeList
 
         output = io.StringIO()
-        writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+        writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
         writer.writerow(headers)
 
         for deviceId in dataListByDevice:
@@ -1055,22 +1059,25 @@ class DGMCore:
                     buckets.append([rawData])
             for cycle in buckets:
                 first = cycle[0]
-                cycleData["timestamp"] = int(first.timestamp/100)*100
-                
+                timestamp = datetime.datetime.fromtimestamp(int(first.timestamp/100)*100/1e3).isoformat(sep=' ', timespec='milliseconds')
                 cycleData = {}
                 cycleData[None] = {
-                    "Timestamp":None
+                    "Timestamp":timestamp,
+                    "DeviceId": deviceId,
+                    "TileId":None
                 }
                 for d in cycle:
-                    if d.isTileData:
-                        pass
-                    tmp = {
-                        "metricsType": XpumStatsType(d.metricsType).name,
-                        "value": d.value
-                    }
-                    if d.isTileData:
-                        tmp["tileId"] = d.tileId
+                    tileId = d.tileId if d.isTileData else None
+                    if tileId not in cycleData:
+                        cycleData[tileId] = {
+                            "Timestamp": timestamp,
+                            "DeviceId": deviceId,
+                            "TileId": tileId
+                        }
+                    rowData = cycleData[tileId]
+                    metricsType=XpumStatsType(d.metricsType).name
+                    rowData[metricsType]=d.value
                 for k in cycleData:
                     d = cycleData[k]
-                    writer.writerow([d[i] for i in headers])
+                    writer.writerow([d.get(i,None) for i in headers])
         return 0, "OK", output.getvalue()

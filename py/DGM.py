@@ -412,7 +412,7 @@ def metrics_raw_data_collect_task(taskId):
         if code != 0:
             error = dict(Status=code, Message=message)
             return jsonify(error), 500
-        return jsonify(data)
+        return data
 
 if __name__ == '__main__':
     app.debug = True

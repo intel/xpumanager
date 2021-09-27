@@ -355,7 +355,7 @@ typedef enum xpum_agent_config_enum {
 /**************************************************************************/
 
 typedef enum xpum_stats_type_enum {
-    XPUM_STATS_GPU_COMPUTATION = 0,
+    XPUM_STATS_GPU_UTILIZATION = 0,
     XPUM_STATS_OCCUPATION,
     XPUM_STATS_ISSUE_EFFICIENCY,
     XPUM_STATS_EXECUTION_EFFICIENCY,
