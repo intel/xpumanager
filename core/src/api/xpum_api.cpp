@@ -798,8 +798,11 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topol
     if(*memSize < sizeof(xpum_topology_t)){
         *memSize = sizeof(xpum_topology_t);
     }
-<<<<<<< HEAD
-    return XPUM_GENERIC_ERROR;
+    if(bdfAddress.length() == 0) {
+        return XPUM_GENERIC_ERROR; 
+    }
+
+    return Topology::getSwitchTopo(bdfAddress, topo, memSize);
 }
 
 ///////////////////Policy//////////////////////
@@ -820,12 +823,3 @@ xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t result
     return Core::instance().getPolicyManager()->xpumGetPolicyByGroup(groupId,resultList,count);
 }
 ///////////////////Policy//////////////////////
-=======
-
-    if(bdfAddress.length() == 0) {
-        return XPUM_GENERIC_ERROR; 
-    }
-
-    return Topology::getSwitchTopo(bdfAddress, topo, memSize);
-}
->>>>>>> ee1b9b690451cfc4bc7122efd4ae277138da33d9
