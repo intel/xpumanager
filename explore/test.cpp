@@ -238,18 +238,12 @@ void get_gpu_firmware(ze_device_handle_t device)
     using namespace std;
     uint32_t firmware_count;
 
-    if (ZE_RESULT_SUCCESS != zesDeviceEnumFirmwares(device, &firmware_count, nullptr))
-    {
-        std::cout << "fail to get temperature sensors" << std::endl;
-        return;
-    }
+    auto res = zesDeviceEnumFirmwares(device, &firmware_count, nullptr);
+    assert(res==ZE_RESULT_SUCCESS);
     cout << "firmware_count:" << firmware_count << endl;
     vector<zes_firmware_handle_t> firmwares(firmware_count);
-    if (ZE_RESULT_SUCCESS != zesDeviceEnumFirmwares(device, &firmware_count, firmwares.data()))
-    {
-        std::cout << "fail to get temperature sensors" << std::endl;
-        return;
-    }
+    res = zesDeviceEnumFirmwares(device, &firmware_count, firmwares.data());
+    assert(res==ZE_RESULT_SUCCESS);
     for (auto &firmware : firmwares)
     {
         zes_firmware_properties_t props;
@@ -313,34 +307,51 @@ void test_freq(ze_device_handle_t device) {
     using namespace std;
     uint32_t count;
     auto res = zesDeviceEnumFrequencyDomains(device, &count, nullptr);
-    assert(res==ZE_RESULT_SUCCESS);
+    assert(res == ZE_RESULT_SUCCESS);
     vector<zes_freq_handle_t> handles(count);
     res = zesDeviceEnumFrequencyDomains(device, &count, handles.data());
-    assert(res==ZE_RESULT_SUCCESS);
-    for(auto& handle:handles){
+    assert(res == ZE_RESULT_SUCCESS);
+    for (auto &handle : handles) {
         zes_freq_range_t data;
-        res = zesFrequencyGetRange(handle,&data);
-        assert(res==ZE_RESULT_SUCCESS);
-        cout<<data.min<<" to "<<data.max<<endl;
+        res = zesFrequencyGetRange(handle, &data);
+        assert(res == ZE_RESULT_SUCCESS);
+        cout << data.min << " to " << data.max << endl;
 
         zes_freq_state_t stateData;
         zesFrequencyGetState(handle, &stateData);
-        assert(res==ZE_RESULT_SUCCESS);
-        cout<<"actual "<<stateData.actual<<endl;
-        cout<<"tdp "<<stateData.tdp<<endl;
-        cout<<"request "<<stateData.request<<endl;
+        assert(res == ZE_RESULT_SUCCESS);
+        cout << "actual " << stateData.actual << endl;
+        cout << "tdp " << stateData.tdp << endl;
+        cout << "request " << stateData.request << endl;
     }
     // zes_freq_handle_t handle;
 }
 
 void test_pci(ze_device_handle_t device) {
     using namespace std;
-    zes_pci_state_t data;
-    auto res = zesDevicePciGetState(device, &data);
+    zes_pci_properties_t data;
+    auto res = zesDevicePciGetProperties(device, &data);
+    assert(res == ZE_RESULT_SUCCESS);
+    cout << "PCIe generation: " << data.maxSpeed.gen << endl;
+    cout << "PCIe Max Link Width: " << data.maxSpeed.width << endl;
+}
+
+void test_mem(ze_device_handle_t device) {
+    using namespace std;
+    uint32_t memCount;
+    auto res = zesDeviceEnumMemoryModules(device, &memCount, nullptr);
+    assert(res == ZE_RESULT_SUCCESS);
+    assert(memCount > 0);
+    vector<zes_mem_handle_t> memHandleList(memCount);
+    res = zesDeviceEnumMemoryModules(device, &memCount, memHandleList.data());
     assert(res==ZE_RESULT_SUCCESS);
-    cout<<"PCIe generation: "<<data.speed.gen<<endl;
-    cout<<data.speed.gen<<endl;
-    cout<<data.speed.width<<endl;
+    for (auto &memHandle : memHandleList) {
+        zes_mem_properties_t data;
+        res = zesMemoryGetProperties(memHandle, &data);
+        assert(res == ZE_RESULT_SUCCESS);
+        cout << "Num of Channels: " << data.numChannels << endl;
+        cout << "Buswidth: " << data.busWidth << endl;
+    }
 }
 
 int main()
@@ -392,7 +403,8 @@ int main()
                 // get_gpu_firmware(device);
                 // get_gpu_process(device);
                 // test_freq(device);
-                test_pci(device);
+                // test_pci(device);
+                test_mem(device);
             }
         }
     }

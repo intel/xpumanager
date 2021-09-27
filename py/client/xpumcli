@@ -836,6 +836,11 @@ def device_info_to_str(props):
     #     props["KernelTimestampValidBits"]))
     # rows.append("Flags: {}".format(props["Flags"]))
     
+    rows.append("")
+    rows.append("PCIe Generation: {}".format(props["PCIeGen"]))
+    rows.append("PCIe Max Link Width: {}".format(props["PCIeMaxLinkWidth"]))
+    rows.append("Number of Memory Channels: {}".format(props["NumberOfMemoryChannel"]))
+    rows.append("Memory Bus Width: {}".format(props["MemoryBusWidth"]))
 
     return "\n".join(rows)
 

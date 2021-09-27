@@ -260,6 +260,16 @@ void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, std::vecto
   }
 }
 
+void addPCIeProperties(ze_device_handle_t &device,std::shared_ptr<GPUDevice> p_gpu){
+  using namespace std;
+  zes_pci_properties_t data;
+  auto res = zesDevicePciGetProperties(device, &data);
+  if(res == ZE_RESULT_SUCCESS){
+    p_gpu->addProperty(Property(DeviceProperty::PCIE_GEN,std::to_string(data.maxSpeed.gen)));
+    p_gpu->addProperty(Property(DeviceProperty::PCIE_MAX_LINK_WIDTH,std::to_string(data.maxSpeed.width)));
+  }
+}
+
 std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover() {
   std::vector<DeviceCapability> capabilities;
   auto p_devices = std::make_shared<std::vector<std::shared_ptr<Device>>>();
@@ -367,6 +377,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
             res = zesMemoryGetProperties(mem, &props);
             if (res == ZE_RESULT_SUCCESS) {
               mem_module_physical_size = props.physicalSize;
+              int32_t mem_bus_width = props.busWidth;
+              int32_t mem_channel_num = props.numChannels;
+              p_gpu->addProperty(Property(DeviceProperty::MEM_BUS_WIDTH,std::to_string(mem_bus_width)));
+              p_gpu->addProperty(Property(DeviceProperty::MEM_CHANNEL_NUM,std::to_string(mem_channel_num)));
             }
             
             zes_mem_state_t sysman_memory_state = {};
@@ -401,6 +415,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
            }
         }
 
+        addPCIeProperties(device,p_gpu);
         
         p_devices->push_back(p_gpu);
       }

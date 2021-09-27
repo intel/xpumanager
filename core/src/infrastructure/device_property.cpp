@@ -35,3 +35,7 @@ const std::string DeviceProperty::FIRMWARE_VERSION = "FIRMWARE_VERSION";
 const std::string DeviceProperty::BDF_ADDRESS = "BDF ADDRESS";
 const std::string DeviceProperty::PCI_SLOT = "PCI SLOT";
 const std::string DeviceProperty::PARENT_SWITCH = "PARENT_SWITCH";
+const std::string DeviceProperty::PCIE_GEN = "PCIE_GEN";
+const std::string DeviceProperty::PCIE_MAX_LINK_WIDTH = "PCIE_MAX_LINK_WIDTH";
+const std::string DeviceProperty::MEM_BUS_WIDTH = "MEM_BUS_WIDTH";
+const std::string DeviceProperty::MEM_CHANNEL_NUM = "MEM_CHANNEL_NUM";

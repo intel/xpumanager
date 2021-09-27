@@ -50,7 +50,11 @@ field_translation = {
     "FIRMWARE_VERSION": dict(name="FirmwareVersion"),
     "NUM_SUB_SLICES_PER_SLICE": dict(name="NumberOfSubSlicesPerSubSlice"),
     "BDF ADDRESS": dict(name="PCIBdfAddress"),
-    "PCI SLOT": dict(name="PCISlot")
+    "PCI SLOT": dict(name="PCISlot"),
+    "PCIE_GEN": dict(name="PCIeGen"),
+    "PCIE_MAX_LINK_WIDTH": dict(name="PCIeMaxLinkWidth"),
+    "MEM_BUS_WIDTH": dict(name="MemoryBusWidth"),
+    "MEM_CHANNEL_NUM": dict(name="NumberOfMemoryChannel")
 }
 
 class XpumVersionInfo(Structure):
