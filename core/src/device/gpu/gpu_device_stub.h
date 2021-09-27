@@ -154,5 +154,8 @@ private:
   bool initialized;
   
   std::mutex  mutex;
-    
+  
+  static std::map<ze_device_handle_t, zet_metric_group_handle_t> target_metric_groups;
+  
+  static std::map<ze_device_handle_t, zet_metric_streamer_handle_t> target_metric_streamers;
 };
