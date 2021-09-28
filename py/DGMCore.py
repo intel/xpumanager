@@ -346,6 +346,25 @@ class XpumMetricsRawData(Structure):
         ("value", c_uint64),
     ]
 
+class XpumCpuAffinity(Structure):
+    _fields_ = [
+        ("localCPUList", c_char * 32),
+        ("localCPUs", c_char * 128)
+    ]
+
+class XpumSwitch(Structure):
+    _fields_ = [
+        ("switchDevicePath", c_char * 512)
+    ]
+
+class XpumTopology(Structure):
+    _fields_ = [
+        ("deviceId", c_int32),
+        ("cpuAffinity", XpumCpuAffinity),
+        ("switchCount", c_int32),
+        ("switches", XpumSwitch * 8)
+    ]
+
 class DGMCore:
     def __init__(self):
         py_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -1085,3 +1104,19 @@ class DGMCore:
                     d = cycleData[k]
                     writer.writerow([d.get(i,None) for i in headers])
         return 0, "OK", output.getvalue()
+    
+    def getTopology(self, deviceId):
+        topoInfo = XpumTopology()
+        res = self.lib.xpumGetTopology(c_int(deviceId),byref(topoInfo))
+        if res != 0:
+            return res, "Fail to get topology info", None
+        data = dict()
+        data["DeviceId"] = deviceId
+        data["localCPUList"] = bytes.decode(topoInfo.cpuAffinity.localCPUList)
+        data["localCPUs"] = bytes.decode(topoInfo.cpuAffinity.localCPUs)
+        data["switchCount"] = topoInfo.switchCount
+        i=0
+        for s in topoInfo.switches:
+            data["switch_"+str(i)]=bytes.decode(s.switchDevicePath)
+            i=i+1
+        return 0, "OK", data

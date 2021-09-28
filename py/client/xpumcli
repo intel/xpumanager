@@ -178,6 +178,12 @@ Stop corresponding collect task.
 telemetry_parser.add_argument('--dump', metavar="<taskId>", dest="dumpTaskId",
                               type=int, help="""Dump raw datas that collected in <taskId>, in csv format""")
 
+# topology subcommand parser
+topo_parser = subparsers.add_parser("topology", help="topology management")
+
+topo_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+                          help='The device id to query')
+
 class PrintTable:
     _t = Texttable()
 
@@ -342,6 +348,14 @@ def arg():
         else:
             telemetry_parser.print_help()
         return
+    elif parsed.subcommand == "topology":
+        if parsed.deviceId is not None:
+            get_device_topology(parsed.deviceId)
+            return
+        else:
+            topo_parser.print_help()
+            return
+
     parser.print_help()
 
 def set_agent_settings(**kwargs):
@@ -1430,6 +1444,38 @@ def dump_metrics_raw_data(taskId):
     headers = [n.strip() for n in header.split(",")]
     print(",".join(["{}".format(metricsTypeTranslationMap.get(n,n)) for n in headers]))
     print(body)
+
+
+def get_device_topology(deviceId):
+    res = requests.get(host+"/rest/v1/devices/{}/topology".format(deviceId))
+    if res.status_code != 200:
+        print("Error occurs:"+res.content.decode())
+        return
+    data = res.json()
+    template = '''Topology:
+    leviceId: {deviceId}
+    localCPUList: {localCPUList}
+    localCPUs: {localCPUs}
+    switchCount:{switchCount} 
+    '''
+    deviceId = data['DeviceId']
+    localCPUList = data['localCPUList']
+    localCPUs = data['localCPUs']
+    switchCount = data['switchCount']
+    output = template.format(
+        deviceId=deviceId,
+        localCPUList=localCPUList,
+        localCPUs=localCPUs,
+        switchCount=switchCount
+    )
+    print(output)
+    if switchCount>0:
+        t = PrintTable(["Switch","Device Path"])
+        rows = []
+        for k in range(switchCount):
+            rows.append(["switch_"+str(k), data['switch_'+str(k)]])
+        t.add_rows(rows)
+        t.print()
 
 if __name__ == "__main__":
     arg()

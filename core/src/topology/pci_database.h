@@ -4,14 +4,14 @@
 #include <mutex>
 #include <string>
 
-enum SwitchType{
-  SW_UNKNOW = 0,
-  SW_BUILDIN = 1,
-  SW_NORMAL = 2
+enum DeviceType{
+  DV_UNKNOW = 0,
+  DV_SWITCH = 1,
+  DV_GRAPHIC = 2
 };
 
-struct SwitchDevice {
-    SwitchType type;
+struct PcieDevice {
+    DeviceType type;
     int32_t vendor_id;
     int32_t device_id;
     int32_t sub_v_id;
@@ -36,7 +36,7 @@ class PciDatabase {
   public:
     static PciDatabase &instance();
 
-    const SwitchDevice* getSwitchDevice(int32_t vendor_id, int32_t device_id);
+    const PcieDevice* getDevice(int32_t vendor_id, int32_t device_id);
 
   private:
     PciDatabase();
@@ -63,7 +63,7 @@ class PciDatabase {
     bool bInitialized;
     std::mutex mutex;
     typedef std::pair<int32_t, int32_t> pair;
-    typedef std::map<pair, SwitchDevice> pci_device_map;
+    typedef std::map<pair, PcieDevice> device_map;
 
-    pci_device_map switch_device;
+    device_map devices;
 };

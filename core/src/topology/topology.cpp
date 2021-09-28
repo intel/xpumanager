@@ -49,36 +49,35 @@ std::string  Topology::getLocalCpusList(std::string address) {
 }
 
 bool Topology::getParentSwitch(zes_pci_address_t address, xpum_switch *pswitch) {
-    
+    bool bBuildinGroup = false;
     hwloc_topology_t hwtopology;
     hwloc_obj_t obj = nullptr;
-    SwitchType switchType = SW_UNKNOW;
 
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
     hwloc_topology_load(hwtopology);
 
-
-    int32_t domain = address.domain;
-    int32_t bus = address.bus;
-    int32_t device = address.device;
-    int32_t function = address.function;
-    
     while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
         assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
-        if( obj->attr->pcidev.domain == domain 
-            && obj->attr->pcidev.bus == bus 
-            && obj->attr->pcidev.dev == device 
-            && obj->attr->pcidev.func == function ){
-
+        if( obj->attr->pcidev.domain == address.domain 
+            && obj->attr->pcidev.bus == address.bus 
+            && obj->attr->pcidev.dev == address.device 
+            && obj->attr->pcidev.func == address.function ){
             hwloc_obj_t parent =  obj->parent;
+            const PcieDevice * pDevice = PciDatabase::instance().getDevice(
+                obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
+            if(pDevice != nullptr){
+                if(pDevice->type == DV_GRAPHIC) {
+                    bBuildinGroup = true;
+                }
+            }
+            
             while(parent != nullptr){
-                const SwitchDevice * sdevice =
-                    PciDatabase::instance().getSwitchDevice(parent->attr->pcidev.vendor_id, parent->attr->pcidev.device_id);
-                if(sdevice != nullptr){
-                    pswitch->deviceId = sdevice->device_id;
-                    pswitch->vendorId = sdevice->vendor_id;
-                    switchType = sdevice->type;
+                pDevice = PciDatabase::instance().getDevice(
+                    parent->attr->pcidev.vendor_id, parent->attr->pcidev.device_id);
+                if(pDevice != nullptr){
+                    pswitch->deviceId = pDevice->device_id;
+                    pswitch->vendorId = pDevice->vendor_id;
                     break;
                 }
                 parent = parent->parent;
@@ -89,11 +88,8 @@ bool Topology::getParentSwitch(zes_pci_address_t address, xpum_switch *pswitch) 
     }
 
     hwloc_topology_destroy(hwtopology);
-    if(switchType == SW_BUILDIN) {
-        return true;
-    }
 
-    return false;
+    return bBuildinGroup;
 }
 
 
@@ -127,13 +123,13 @@ xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t * 
             && obj->attr->pcidev.dev == device 
             && obj->attr->pcidev.func == function ){
             switchCount = get_p_switch_count(obj);
-            if(switchCount>0) {
-                topology->switchCount = switchCount;
+            if(switchCount>0) {                
                 std::size_t size = sizeof(xpum_topology_t) + switchCount * sizeof(parent_switch);
                 if(*memSize < size) {
                     *memSize = size;
                     return XPUM_BUFFER_TOO_SMALL;
                 }
+                topology->switchCount = switchCount;
                 parent_switch * pSwitch = topology->switches;
                 get_p_switch_dev_path(obj, pSwitch);
             }
@@ -173,8 +169,8 @@ bool Topology::isSwitchDevice(hwloc_obj_t obj)
 {
     int verdor_id = obj->attr->pcidev.vendor_id;
     int device_id = obj->attr->pcidev.device_id;
-    const SwitchDevice* sdevice = PciDatabase::instance().getSwitchDevice(verdor_id, device_id);
-    return (sdevice != nullptr);
+    const PcieDevice* pDevice = PciDatabase::instance().getDevice(verdor_id, device_id);
+    return (pDevice != nullptr);
 }
 
 std::string Topology::pci2RegxString(hwloc_obj_t obj)

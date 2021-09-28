@@ -414,6 +414,14 @@ def metrics_raw_data_collect_task(taskId):
             return jsonify(error), 500
         return data
 
+@app.route('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'])
+def get_topology(deviceId):
+    code, message, data = core.getTopology(deviceId)
+    if code == 0:
+        return jsonify(data)
+    else:
+        return message, 500
+
 if __name__ == '__main__':
     app.debug = True
 #   app.run()
