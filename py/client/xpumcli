@@ -27,9 +27,6 @@ subparsers = parser.add_subparsers(
 discovery_parser = subparsers.add_parser(
     "discovery", help="Discover devices on the system")
 
-discovery_parser.add_argument('-l', '--list', action='store_true',
-                              help='List all devices discovered on the host')
-
 discovery_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId",
                               help='The device id to query, will show more detailed info')
 
@@ -211,12 +208,11 @@ def arg():
             display_version()
             return
     elif parsed.subcommand == "discovery":
-        if parsed.list:
-            if parsed.deviceId:
-                display_device_detail(parsed.deviceId)
-                return
-            display_devices()
+        if parsed.deviceId:
+            display_device_detail(parsed.deviceId)
             return
+        display_devices()
+        return
     elif parsed.subcommand == "group":
         if parsed.groupNameToCreate:
             groupName = parsed.groupNameToCreate
