@@ -1105,9 +1105,16 @@ class DGMCore:
                     writer.writerow([d.get(i,None) for i in headers])
         return 0, "OK", output.getvalue()
     
+    
     def getTopology(self, deviceId):
+        import sys
+        import ctypes
         topoInfo = XpumTopology()
-        res = self.lib.xpumGetTopology(c_int(deviceId),byref(topoInfo))
+        size = sys.getsizeof(topoInfo) + sys.getsizeof(XpumSwitch) * 8
+        
+        csize = c_size_t(size)
+        
+        res = self.lib.xpumGetTopology(c_int(deviceId),byref(topoInfo), byref(csize))
         if res != 0:
             return res, "Fail to get topology info", None
         data = dict()

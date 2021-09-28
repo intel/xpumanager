@@ -207,11 +207,11 @@ int Topology::get_p_switch_count(hwloc_obj_t chi_obj)
                     obj = obj->parent;
                     continue;
                 }
-                if(isSwitchDevice(obj)) {
-                   
+                if(isSwitchDevice(obj)) {                   
                     preVendorId = obj->attr->bridge.upstream.pci.vendor_id;
                     preDeviceId = obj->attr->bridge.upstream.pci.device_id;
                     count++;
+                    LOG_TRACE("Found Switch count {}.", count);
                 }
             }
         } else {
