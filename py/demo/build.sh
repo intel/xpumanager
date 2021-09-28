@@ -32,5 +32,8 @@ mkdir build/tmp
 mkdir build/tool
 cp ../../tools/fwUpgrade/GfxFwFPT build/tool
 
+# copy config folder
+cp -r ../../core/config build/
+
 # packaging
 zip -r demo.zip build
