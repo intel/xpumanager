@@ -1,6 +1,7 @@
 #
 # Syntax:
 # vendor_id  device_id 0|1|2 
-# (0:not a Switch) (1: a build-in Switch) (2 : a normal Switch)
+# (0:ignored device) (1: Switch) (2 : graphic card)
 #
-8086  4FA1 1
+8086  4FA4 1
+8086  56C1 2

@@ -682,14 +682,12 @@ xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
  * @param groupId                   IN: The group to collect raw metrics data
  * @param metricsTypeList           IN: The metrics to collect
  * @param count                     IN: The count of entries in \a metricsTypeList
- * @param perTile                   IN: Is collecting per tile raw data or not
  * @param taskId                   OUT: The id for task created to collect data
  * @return xpum_result_t 
  */
 xpum_result_t xpumStartCollectMetricsRawDataTaskByGroup(xpum_group_id_t groupId, 
                                                         xpum_stats_type_t metricsTypeList[], 
                                                         int count,
-                                                        bool perTile, 
                                                         xpum_dump_task_id_t *taskId);
 
 /**
@@ -704,15 +702,8 @@ xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId);
  * @brief Get metrics raw data 
  * 
  * @param taskId                IN: The task id to query
- * @param dataList          IN/OUT: First pass NULL to query raw data count.    
- *                                  Then pass array with desired length to           
- *                                  store raw data.                          
- * @param count             IN/OUT: When \a dataList is NULL, \a count will be filled with the number of             
- *                                  available entries, and return.             
- *                                  When \a dataList is not NULL, \a count denotes the length of \a dataList,         
- *                                  \a count should be equal to or larger than the number of available entries,                 
- *                                  when return, the \a count will store real number of entries returned by                             
- *                                  \a dataList                
+ * @param dataList          IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.                          
+ * @param count             IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList                
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed 

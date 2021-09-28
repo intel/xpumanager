@@ -23,11 +23,15 @@ class GPUDevice : public Device {
   void getMemoryRead(Callback_t callback) noexcept override;
   void getMemoryWrite(Callback_t callback) noexcept override;
   void getEngineUtilization(Callback_t callback) noexcept override;
+  void getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept override;
   void getEnergy(Callback_t callback) noexcept override;
+  void getOccupationEfficiency(Callback_t callback) noexcept override;
   void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType)  noexcept override;
 
   virtual bool runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept override;
   virtual xpum_firmware_flash_result_t getFirmwareFlashResult() noexcept override;
+
+  virtual bool isUpgradingFw( void ) noexcept override;
 
  private:
   void dumpFirmwareFlashLog() noexcept;

@@ -8,6 +8,9 @@ import datetime
 import grpc
 # import core_pb2_grpc
 
+import io
+import csv
+
 def hex_format(v):
     return hex(int(v))
 
@@ -47,7 +50,11 @@ field_translation = {
     "FIRMWARE_VERSION": dict(name="FirmwareVersion"),
     "NUM_SUB_SLICES_PER_SLICE": dict(name="NumberOfSubSlicesPerSubSlice"),
     "BDF ADDRESS": dict(name="PCIBdfAddress"),
-    "PCI SLOT": dict(name="PCISlot")
+    "PCI SLOT": dict(name="PCISlot"),
+    "PCIE_GEN": dict(name="PCIeGen"),
+    "PCIE_MAX_LINK_WIDTH": dict(name="PCIeMaxLinkWidth"),
+    "MEM_BUS_WIDTH": dict(name="MemoryBusWidth"),
+    "MEM_CHANNEL_NUM": dict(name="NumberOfMemoryChannel")
 }
 
 class XpumVersionInfo(Structure):
@@ -110,7 +117,7 @@ class FirmwareFlashTaskResult( Structure ):
 
 
 XpumStatsType = Enum("xpum_stats_type_t", (
-    "XPUM_STATS_GPU_COMPUTATION",
+    "XPUM_STATS_GPU_UTILIZATION",
     "XPUM_STATS_OCCUPATION",
     "XPUM_STATS_ISSUE_EFFICIENCY",
     "XPUM_STATS_EXECUTION_EFFICIENCY",
@@ -124,6 +131,11 @@ XpumStatsType = Enum("xpum_stats_type_t", (
     "XPUM_STATS_MEMORY_BANDWIDTH",
     "XPUM_STATS_MEMORY_READ",
     "XPUM_STATS_MEMORY_WRITE",
+    "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION",
     "XPUM_STATS_PCIRX",
     "XPUM_STATS_PCITX",
     "XPUM_STATS_RAS_ERROR_CAT_RESET",
@@ -323,6 +335,36 @@ class XpumSchedulerExclusive(Structure):
         ("subdeviceId", c_int32),
     ]
 
+
+class XpumMetricsRawData(Structure):
+    _fields_ = [
+        ("deviceId", c_int32),
+        ("isTileData", c_bool),
+        ("tileId", c_int32),
+        ("timestamp", c_uint64),
+        ("metricsType", c_int),
+        ("value", c_uint64),
+    ]
+
+class XpumCpuAffinity(Structure):
+    _fields_ = [
+        ("localCPUList", c_char * 32),
+        ("localCPUs", c_char * 128)
+    ]
+
+class XpumSwitch(Structure):
+    _fields_ = [
+        ("switchDevicePath", c_char * 512)
+    ]
+
+class XpumTopology(Structure):
+    _fields_ = [
+        ("deviceId", c_int32),
+        ("cpuAffinity", XpumCpuAffinity),
+        ("switchCount", c_int32),
+        ("switches", XpumSwitch * 8)
+    ]
+
 class DGMCore:
     def __init__(self):
         py_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -330,6 +372,7 @@ class DGMCore:
         lib_path = os.path.join(project_dir_path,"lib","libDGMCore.so")
         self.lib = cdll.LoadLibrary(lib_path)
         self.lib.xpumInit()
+        self.rawDumpTaskMap = dict()
         
 # unix web socket begin
         '''
@@ -952,4 +995,128 @@ class DGMCore:
         if res != 0:
             return res, "Fail to reset device", None
         return 0, "OK", {"result": "OK"}
+
+    def startCollectMetricsRawDataTask(self, deviceId, metricsTypeListInStr):
+        metricsTypeList = [XpumStatsType[m].value for m in metricsTypeListInStr]
+        count = len(metricsTypeList)
+        metricsTypeArray = (c_int * count) ()
+        for i in range(count):
+            metricsTypeArray[i] = metricsTypeList[i]
+        taskId = c_int32()
+        res = self.lib.xpumStartCollectMetricsRawDataTask(
+            c_int32(deviceId),
+            metricsTypeArray,
+            c_int(count),
+            byref(taskId)
+            )
+        if res != 0:
+            return res, "Fail to start collect metrics raw data task", None
+        self.rawDumpTaskMap[taskId.value] = {
+            "metricsTypeList": metricsTypeList,
+            "deviceIds": [deviceId]
+        }
+        return 0, "OK", dict(TaskId=taskId.value)
+
+    def startCollectMetricsRawDataTaskByGroup(self, groupId, metricsTypeList):
+        pass
+
+    def stopCollectMetricsRawDataTask(self, taskId):
+        if taskId not in self.rawDumpTaskMap:
+            return -1, "Task not found", None
+        res = self.lib.xpumStopCollectMetricsRawDataTask(c_int32(taskId))
+        if res!= 0:
+            return res, "Fail to stop collect metrics raw data task"
+        return 0, "OK", None
     
+    def getMetricsRawDataByTask(self, taskId):
+        if taskId not in self.rawDumpTaskMap:
+            return -1, "Task not found", None
+        # XpumMetricsRawData
+        count = c_int()
+        res = self.lib.xpumGetMetricsRawDataByTask(
+            c_int32(taskId),
+            None,
+            byref(count))
+        if res != 0:
+            return res, "Fail to get metrics raw data", None
+        dataList = (XpumMetricsRawData * count.value) ()
+        res = self.lib.xpumGetMetricsRawDataByTask(
+            c_int32(taskId),
+            dataList,
+            byref(count))
+        if res != 0:
+            return res, "Fail to get metrics raw data", None
+        
+        dataListByDevice = dict()
+
+        for rawData in dataList[:count.value]:
+            deviceId = rawData.deviceId
+            if deviceId not in dataListByDevice:
+                dataListByDevice[deviceId] = []
+            dataListByDevice[deviceId].append(rawData)
+        
+        datas = dict()
+        datas["TaskId"] = taskId
+
+        metricsTypeList = self.rawDumpTaskMap[taskId]['metricsTypeList']
+
+        metricsTypeList = [XpumStatsType(t).name for t in metricsTypeList]
+
+        headers = ["Timestamp", "DeviceId", "TileId"]+metricsTypeList
+
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(headers)
+
+        for deviceId in dataListByDevice:
+            rawDataList = dataListByDevice[deviceId]
+            buckets = []
+            for rawData in rawDataList:
+                flag = False
+                for v in buckets:
+                    if rawData.timestamp-v[0].timestamp < 100:
+                        v.append(rawData)
+                        flag = True
+                        break
+                if not flag:
+                    buckets.append([rawData])
+            for cycle in buckets:
+                first = cycle[0]
+                timestamp = datetime.datetime.fromtimestamp(int(first.timestamp/100)*100/1e3).isoformat(sep=' ', timespec='milliseconds')
+                cycleData = {}
+                cycleData[None] = {
+                    "Timestamp":timestamp,
+                    "DeviceId": deviceId,
+                    "TileId":None
+                }
+                for d in cycle:
+                    tileId = d.tileId if d.isTileData else None
+                    if tileId not in cycleData:
+                        cycleData[tileId] = {
+                            "Timestamp": timestamp,
+                            "DeviceId": deviceId,
+                            "TileId": tileId
+                        }
+                    rowData = cycleData[tileId]
+                    metricsType=XpumStatsType(d.metricsType).name
+                    rowData[metricsType]=d.value
+                for k in cycleData:
+                    d = cycleData[k]
+                    writer.writerow([d.get(i,None) for i in headers])
+        return 0, "OK", output.getvalue()
+    
+    def getTopology(self, deviceId):
+        topoInfo = XpumTopology()
+        res = self.lib.xpumGetTopology(c_int(deviceId),byref(topoInfo))
+        if res != 0:
+            return res, "Fail to get topology info", None
+        data = dict()
+        data["DeviceId"] = deviceId
+        data["localCPUList"] = bytes.decode(topoInfo.cpuAffinity.localCPUList)
+        data["localCPUs"] = bytes.decode(topoInfo.cpuAffinity.localCPUs)
+        data["switchCount"] = topoInfo.switchCount
+        i=0
+        for s in topoInfo.switches:
+            data["switch_"+str(i)]=bytes.decode(s.switchDevicePath)
+            i=i+1
+        return 0, "OK", data

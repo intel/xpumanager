@@ -75,9 +75,34 @@ void RawDataManager::init() {
   data_handlers[MeasurementType::METRIC_MEMORY_WRITE] = 
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_WRITE, p_persistency);    
   data_handlers[MeasurementType::METRIC_MEMORY_WRITE]->init();
+  
   data_handlers[MeasurementType::METRIC_COMPUTATION] = 
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);    
   data_handlers[MeasurementType::METRIC_COMPUTATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION, p_persistency);    
+  data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION]->init();
+
+  data_handlers[MeasurementType::METRIC_OCCUPATION_EFFICIENCY] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_OCCUPATION_EFFICIENCY, p_persistency);    
+  data_handlers[MeasurementType::METRIC_OCCUPATION_EFFICIENCY]->init();
 
   //METRIC_RAS_ERROR
   data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_RESET, p_persistency);    

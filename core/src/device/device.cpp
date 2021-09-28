@@ -109,3 +109,7 @@ ze_driver_handle_t Device::getDriverHandle() {
   std::unique_lock<std::mutex> lock(this->mutex);
   return ze_driver_handle;
 }
+
+bool Device::isUpgradingFw( void ) noexcept {
+  return false;
+}

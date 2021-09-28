@@ -9,6 +9,7 @@
 #include "device_capability.h"
 #include "ze_api.h"
 #include "zes_api.h"
+#include "zet_api.h"
 #include "xpum_structs.h"
 
 class Device {
@@ -41,7 +42,11 @@ class Device {
 
   virtual void getEngineUtilization(Callback_t callback) noexcept = 0;
 
+  virtual void getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept = 0;
+
   virtual void getEnergy(Callback_t callback) noexcept = 0;
+
+  virtual void getOccupationEfficiency(Callback_t callback) noexcept = 0;
 
   virtual void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept = 0;
 
@@ -61,6 +66,8 @@ class Device {
   ze_device_handle_t getDeviceZeHandle();
 
   ze_driver_handle_t getDriverHandle();
+
+  virtual bool isUpgradingFw( void ) noexcept;
   
  public:
   virtual ~Device() {}

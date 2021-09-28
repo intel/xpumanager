@@ -5,6 +5,7 @@
 #include "raw_data_manager.h"
 #include "data_logic_interface.h"
 #include "xpum_structs.h"
+#include <vector>
 
 class DataLogic : public DataLogicInterface {
  public:

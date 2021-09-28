@@ -74,4 +74,12 @@ class DeviceProperty {
 
     static const std::string PARENT_SWITCH;
 
+    static const std::string PCIE_GEN;
+
+    static const std::string PCIE_MAX_LINK_WIDTH;
+
+    static const std::string MEM_BUS_WIDTH;
+
+    static const std::string MEM_CHANNEL_NUM;
+
 };

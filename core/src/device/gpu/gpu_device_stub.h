@@ -7,6 +7,7 @@
 #include "thread_pool.h"
 #include "ze_api.h"
 #include "zes_api.h"
+#include "zet_api.h"
 #include "scheduler.h"
 #include "standby.h"
 #include "power.h"
@@ -39,7 +40,11 @@ class GPUDeviceStub {
 
   void getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
+  void getEngineGroupUtilization(const zes_device_handle_t& device, Callback_t callback, zes_engine_group_t engine_group_type) noexcept;
+
   void getEnergy(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
+  void getOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, Callback_t callback) noexcept;
 
   void getRasError(const zes_device_handle_t& device, Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept;
 
@@ -119,7 +124,13 @@ private:
 
   static std::shared_ptr<MeasurementData> toGetEngineUtilization(const zes_device_handle_t& device);
 
+  static std::shared_ptr<MeasurementData> toGetEngineGroupUtilization(const zes_device_handle_t& device, zes_engine_group_t group_type);
+
   static std::shared_ptr<MeasurementData> toGetEnergy(const zes_device_handle_t& device);
+
+  static std::shared_ptr<MeasurementData> toGetOccupationEfficiency(const ze_device_handle_t &device, const ze_driver_handle_t& driver);
+
+  static void toGetOccupationEfficiencyCore(const ze_device_handle_t &device, int subdeviceId, const ze_driver_handle_t& driver, std::shared_ptr<MeasurementData>& data);
 
   static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t &device, const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType);
 
@@ -135,11 +146,16 @@ private:
 
   static std::string to_string(xpum_switch pSwitch);
 
+  static void addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities);
+
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;
   
   bool initialized;
   
   std::mutex  mutex;
-    
+  
+  static std::map<ze_device_handle_t, zet_metric_group_handle_t> target_metric_groups;
+  
+  static std::map<ze_device_handle_t, zet_metric_streamer_handle_t> target_metric_streamers;
 };

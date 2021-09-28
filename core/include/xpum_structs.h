@@ -64,8 +64,9 @@ typedef int32_t xpum_dump_task_id_t;
 typedef enum xpum_result_enum {
     XPUM_OK = 0,
     XPUM_GENERIC_ERROR,
-    XPUM_BUFFER_TOO_SMALL,
-    XPUM_RESULT_DEVICE_NOT_FOUND
+    XPUM_BUFFER_TOO_SMALL,    
+    XPUM_RESULT_DEVICE_NOT_FOUND,
+    XPUM_RESULT_GROUP_NOT_FOUND
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -355,7 +356,7 @@ typedef enum xpum_agent_config_enum {
 /**************************************************************************/
 
 typedef enum xpum_stats_type_enum {
-    XPUM_STATS_GPU_COMPUTATION = 0,
+    XPUM_STATS_GPU_UTILIZATION = 0,
     XPUM_STATS_OCCUPATION,
     XPUM_STATS_ISSUE_EFFICIENCY,
     XPUM_STATS_EXECUTION_EFFICIENCY,
@@ -369,6 +370,11 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_MEMORY_BANDWIDTH,
     XPUM_STATS_MEMORY_READ,
     XPUM_STATS_MEMORY_WRITE,
+    XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION,
+    XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION,
+    XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,
+    XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION,
+    XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION,
     XPUM_STATS_PCIRX,
     XPUM_STATS_PCITX,
     XPUM_STATS_RAS_ERROR_CAT_RESET,
@@ -560,9 +566,9 @@ struct xpum_policy_condition_t {
 };
 
 typedef enum xpum_policy_action_type_enum {  
+    XPUM_POLICY_ACTION_TYPE_NULL,
     XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE,
-    XPUM_POLICY_ACTION_TYPE_RESET_DEVICE,
-    XPUM_POLICY_ACTION_TYPE_NULL
+    XPUM_POLICY_ACTION_TYPE_RESET_DEVICE    
 } xpum_policy_action_type_t;
 
 struct xpum_policy_action_t {

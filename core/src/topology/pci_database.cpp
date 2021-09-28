@@ -14,7 +14,7 @@ PciDatabase::PciDatabase() {
 
 PciDatabase::~PciDatabase() {
     LOG_INFO("~PciDatabase()");
-    switch_device.clear();
+    devices.clear();
 }
 
 PciDatabase &PciDatabase::instance() {
@@ -301,17 +301,17 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
             device_id = std::stoi(info.substr(start), &pos, 16);
             start += pos + 1;
             if (start < len) {
-                SwitchDevice device = 
-                    {SW_UNKNOW, vendor_id, device_id, 0, 0};
+                PcieDevice device = 
+                    {DV_UNKNOW, vendor_id, device_id, 0, 0};
                 if (info.at(start) == '0') {
-                    int ret = switch_device.erase(std::make_pair(vendor_id, device_id));
+                    int ret = devices.erase(std::make_pair(vendor_id, device_id));
                     LOG_TRACE("PciDatabase::parse_switch_config()- remove d_id:v_id = [{}:{}] count:{}", vendor_id, device_id, ret);
                 } else if (info.at(start) == '1') {
-                    device.type = SW_BUILDIN;
-                    switch_device[std::make_pair(vendor_id, device_id)] = device;
+                    device.type = DV_SWITCH;
+                    devices[std::make_pair(vendor_id, device_id)] = device;
                 } else if (info.at(start) == '2'){
-                    device.type = SW_NORMAL;
-                    switch_device[std::make_pair(vendor_id, device_id)] = device;
+                    device.type = DV_GRAPHIC;
+                    devices[std::make_pair(vendor_id, device_id)] = device;
                 } else {
                     LOG_ERROR("PciDatabase::parse_switch_config() error- unknow value.");
                 }
@@ -323,31 +323,31 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
 void PciDatabase::add_switch_device(int32_t vendor_id, int32_t device_id, std::string &verdor_name,
                                     std::string &device_name, int32_t sub_v_id, int32_t sub_d_id, std::string &sub_s_name) {
     std::string switch_string = std::string(" Switch ");
-    SwitchDevice device = 
-            {SW_NORMAL, vendor_id, device_id, sub_v_id, sub_d_id};
+    PcieDevice device = 
+            {DV_SWITCH, vendor_id, device_id, sub_v_id, sub_d_id};
 
     if(sub_v_id>=0 && sub_d_id>=0 && !sub_s_name.empty()){
         if (sub_s_name.find(switch_string) != std::string::npos) {
             LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
-            switch_device[std::make_pair(vendor_id, device_id)] = device;
+            devices[std::make_pair(vendor_id, device_id)] = device;
         }
     } else if(vendor_id>=0 && device_id>=0 && !device_name.empty()) {
         if (device_name.find(switch_string) != std::string::npos) {
             LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
-            switch_device[std::make_pair(vendor_id, device_id)] = device;
+            devices[std::make_pair(vendor_id, device_id)] = device;
         }
     } else {
         LOG_ERROR("PciDatabase::add_switch_device() error- unknow device {}.", device.tostring());
     }    
 }
 
-const SwitchDevice* PciDatabase::getSwitchDevice(int32_t vendor_id, int32_t device_id)
+const PcieDevice* PciDatabase::getDevice(int32_t vendor_id, int32_t device_id)
 {
     std::unique_lock<std::mutex> lock(mutex);
 
-    pci_device_map::iterator it = switch_device.find(std::make_pair(vendor_id, device_id));
+    device_map::iterator it = devices.find(std::make_pair(vendor_id, device_id));
 
-    if(it != switch_device.end()) {
+    if(it != devices.end()) {
         return &it->second;
     }
     

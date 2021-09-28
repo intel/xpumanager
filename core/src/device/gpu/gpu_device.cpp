@@ -103,6 +103,13 @@ void GPUDevice::getEnergy(Callback_t callback) noexcept {
   });    
 }
 
+void GPUDevice::getOccupationEfficiency(Callback_t callback) noexcept {
+  GPUDeviceStub::instance().getOccupationEfficiency(ze_device_handle, ze_driver_handle,
+    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+    callback(ret, e);
+  }); 
+}
+
 void GPUDevice::getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept {
   GPUDeviceStub::instance().getRasError(zes_device_handle, 
     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
@@ -115,6 +122,13 @@ void GPUDevice::getEngineUtilization(Callback_t callback) noexcept {
     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
     callback(ret, e);
   });    
+}
+
+void GPUDevice::getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept {
+  GPUDeviceStub::instance().getEngineGroupUtilization(zes_device_handle, 
+    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+    callback(ret, e);
+  }, engine_group_type);    
 }
 
 bool GPUDevice::runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept {
@@ -221,4 +235,8 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult() noexcept {
     else {
         return XPUM_DEVICE_FIRMWARE_FLASH_OK;
     }
+}
+
+bool GPUDevice::isUpgradingFw( void ) noexcept {
+  return commandExec != nullptr;
 }
