@@ -54,6 +54,21 @@ Optional arguments:
                             The device id to query, will show more detailed info
 ```
 
+# Topology subcommand
+## Help info
+```
+$ xpumcli topology --help
+
+topology -- Used to discover GPU topology.
+
+Usage: xpumcli topology [-h][-d]
+
+Optional arguments:
+    -h, --help              Show this help message and exit
+    -d <deviceId>, --device <deviceId> 
+                            The device id to query, will show more detailed info
+```
+
 ## List GPUs
 ```
 $ xpumcli discovery -l
