@@ -44,7 +44,7 @@ class GPUDeviceStub {
 
   void getEnergy(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-  void getOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, Callback_t callback) noexcept;
+  void getOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type, Callback_t callback) noexcept;
 
   void getRasError(const zes_device_handle_t& device, Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept;
 
@@ -128,9 +128,9 @@ private:
 
   static std::shared_ptr<MeasurementData> toGetEnergy(const zes_device_handle_t& device);
 
-  static std::shared_ptr<MeasurementData> toGetOccupationEfficiency(const ze_device_handle_t &device, const ze_driver_handle_t& driver);
+  static std::shared_ptr<MeasurementData> toGetOccupationEfficiency(const ze_device_handle_t &device, const ze_driver_handle_t& driver, MeasurementType type);
 
-  static void toGetOccupationEfficiencyCore(const ze_device_handle_t &device, int subdeviceId, const ze_driver_handle_t& driver, std::shared_ptr<MeasurementData>& data);
+  static void toGetOccupationEfficiencyCore(const ze_device_handle_t &device, int subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data);
 
   static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t &device, const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType);
 
@@ -154,6 +154,8 @@ private:
   bool initialized;
   
   std::mutex  mutex;
+
+  static std::mutex metric_streamer_mutex;
   
   static std::map<ze_device_handle_t, zet_metric_group_handle_t> target_metric_groups;
   

@@ -7,6 +7,7 @@
 #include "const.h"
 #include "property.h"
 #include "device_capability.h"
+#include "measurement_type.h"
 #include "ze_api.h"
 #include "zes_api.h"
 #include "zet_api.h"
@@ -46,7 +47,7 @@ class Device {
 
   virtual void getEnergy(Callback_t callback) noexcept = 0;
 
-  virtual void getOccupationEfficiency(Callback_t callback) noexcept = 0;
+  virtual void getOccupationEfficiency(Callback_t callback, MeasurementType type) noexcept = 0;
 
   virtual void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept = 0;
 

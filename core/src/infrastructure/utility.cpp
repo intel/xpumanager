@@ -73,8 +73,14 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
     return MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
   case DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
     return MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION;
-  case DeviceCapability::METRIC_OCCUPATION_EFFICIENCY:
-    return MeasurementType::METRIC_OCCUPATION_EFFICIENCY;
+  case DeviceCapability::METRIC_OCCUPATION:
+    return MeasurementType::METRIC_OCCUPATION;
+  case DeviceCapability::METRIC_ISSUE_EFFICIENCY:
+    return MeasurementType::METRIC_ISSUE_EFFICIENCY;
+  case DeviceCapability::METRIC_EXECUTION_EFFICIENCY:
+    return MeasurementType::METRIC_EXECUTION_EFFICIENCY;
+  case DeviceCapability::METRIC_NON_OCCUPATION:
+    return MeasurementType::METRIC_NON_OCCUPATION;
 
   //
   case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
@@ -138,8 +144,14 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
     return DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
   case MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
     return DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION;
-  case MeasurementType::METRIC_OCCUPATION_EFFICIENCY:
-    return DeviceCapability::METRIC_OCCUPATION_EFFICIENCY;
+  case MeasurementType::METRIC_OCCUPATION:
+    return DeviceCapability::METRIC_OCCUPATION;
+  case MeasurementType::METRIC_ISSUE_EFFICIENCY:
+    return DeviceCapability::METRIC_ISSUE_EFFICIENCY;
+  case MeasurementType::METRIC_EXECUTION_EFFICIENCY:
+    return DeviceCapability::METRIC_EXECUTION_EFFICIENCY;
+  case MeasurementType::METRIC_NON_OCCUPATION:
+    return DeviceCapability::METRIC_NON_OCCUPATION;
 
   //
   case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
@@ -198,8 +210,14 @@ std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capab
       return [p_device](Callback_t callback){ p_device->getMemoryUtilization(callback); };
     case DeviceCapability::METRIC_MEMORY_BANDWIDTH:
       return [p_device](Callback_t callback){ p_device->getMemoryBandwidth(callback); };
-    case DeviceCapability::METRIC_OCCUPATION_EFFICIENCY:
-      return [p_device](Callback_t callback){ p_device->getOccupationEfficiency(callback); };
+    case DeviceCapability::METRIC_OCCUPATION:
+      return [p_device](Callback_t callback){ p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_OCCUPATION); };
+    case DeviceCapability::METRIC_ISSUE_EFFICIENCY:
+      return [p_device](Callback_t callback){ p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_ISSUE_EFFICIENCY); };
+    case DeviceCapability::METRIC_EXECUTION_EFFICIENCY:
+      return [p_device](Callback_t callback){ p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_EXECUTION_EFFICIENCY); };
+    case DeviceCapability::METRIC_NON_OCCUPATION:
+      return [p_device](Callback_t callback){ p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_NON_OCCUPATION); };
 
     //virtual void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept = 0;
     case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
@@ -259,7 +277,10 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
   metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
   metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
   metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
-  metric_types.push_back(MeasurementType::METRIC_OCCUPATION_EFFICIENCY);
+  metric_types.push_back(MeasurementType::METRIC_OCCUPATION);
+  metric_types.push_back(MeasurementType::METRIC_ISSUE_EFFICIENCY);
+  metric_types.push_back(MeasurementType::METRIC_EXECUTION_EFFICIENCY);
+  metric_types.push_back(MeasurementType::METRIC_NON_OCCUPATION);
   
   //METRIC_RAS_ERROR
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_RESET);
@@ -354,8 +375,14 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
     return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION;
   case MeasurementType::METRIC_ENERGY:
     return xpum_stats_type_enum::XPUM_STATS_ENERGY;
-  case MeasurementType::METRIC_OCCUPATION_EFFICIENCY:
+  case MeasurementType::METRIC_OCCUPATION:
     return xpum_stats_type_enum::XPUM_STATS_OCCUPATION;
+  case MeasurementType::METRIC_ISSUE_EFFICIENCY:
+    return xpum_stats_type_enum::XPUM_STATS_ISSUE_EFFICIENCY;
+  case MeasurementType::METRIC_EXECUTION_EFFICIENCY:
+    return xpum_stats_type_enum::XPUM_STATS_EXECUTION_EFFICIENCY;
+  case MeasurementType::METRIC_NON_OCCUPATION:
+    return xpum_stats_type_enum::XPUM_STATS_NON_OCCUPATION;
   
   //
   case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:

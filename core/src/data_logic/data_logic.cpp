@@ -88,50 +88,20 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         device_stats.count = 0;
         while (datas_iter != m_datas.end()) {
             if (datas_iter->second.hasDataOnDevice()) {
+                xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
-                if (type != MeasurementType::METRIC_OCCUPATION_EFFICIENCY) {
-                  xpum_device_stats_data_t stats_data;  
-                  stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                  if (Utility::isCounterMetric(type)) {
-                      stats_data.isCounter = true;
-                      stats_data.value = datas_iter->second.getCurrent() - datas_iter->second.getMin();
-                  } else {
-                      stats_data.isCounter = false;
-                      stats_data.avg = datas_iter->second.getAvg();
-                      stats_data.min = datas_iter->second.getMin();
-                      stats_data.max = datas_iter->second.getMax();
-                      stats_data.value = datas_iter->second.getCurrent();
-                  }
-                  device_stats.dataList[device_stats.count++] = stats_data;                
+                stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+                if (Utility::isCounterMetric(type)) {
+                    stats_data.isCounter = true;
+                    stats_data.value = datas_iter->second.getCurrent() - datas_iter->second.getMin();
                 } else {
-                  std::vector<xpum_stats_type_t> stats_types = {XPUM_STATS_OCCUPATION, 
-                                                                XPUM_STATS_ISSUE_EFFICIENCY, 
-                                                                XPUM_STATS_EXECUTION_EFFICIENCY, 
-                                                                XPUM_STATS_NON_OCCUPATION};
-                  for (auto& stat_type: stats_types) {
-                    xpum_device_stats_data_t stats_data;
-                    stats_data.metricsType = stat_type;
-                    std::string name;
-                    switch (stat_type) {
-                      case XPUM_STATS_OCCUPATION:
-                        name = "OCCUPATION"; break;
-                      case XPUM_STATS_ISSUE_EFFICIENCY:
-                        name = "ISSUE_EFFICIENCY"; break;
-                      case XPUM_STATS_EXECUTION_EFFICIENCY:
-                        name = "EXECUTION_EFFICIENCY"; break;
-                      case XPUM_STATS_NON_OCCUPATION:
-                        name = "NON_OCCUPATION"; break;
-                      default:
-                        break;
-                    }
                     stats_data.isCounter = false;
-                    stats_data.value = datas_iter->second.getAdditionalDataCurrent(name);
-                    stats_data.max = datas_iter->second.getAdditionalDataMax(name);
-                    stats_data.min = datas_iter->second.getAdditionalDataMin(name);
-                    stats_data.avg = datas_iter->second.getAdditionalDataAvg(name);
-                    device_stats.dataList[device_stats.count++] = stats_data;
-                  }
+                    stats_data.avg = datas_iter->second.getAvg();
+                    stats_data.min = datas_iter->second.getMin();
+                    stats_data.max = datas_iter->second.getMax();
+                    stats_data.value = datas_iter->second.getCurrent();
                 }
+                device_stats.dataList[device_stats.count++] = stats_data;
             }
             ++datas_iter;
         }
@@ -146,7 +116,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         subdevice_stats.count = 0;
         datas_iter = m_datas.begin();
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second.hasSubdeviceData() && datas_iter->first != MeasurementType::METRIC_OCCUPATION_EFFICIENCY) {
+            if (datas_iter->second.hasSubdeviceData()) {
                 xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
@@ -161,34 +131,6 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                     stats_data.value = datas_iter->second.getSubdeviceDataCurrent(i);
                 }
                 subdevice_stats.dataList[subdevice_stats.count++] = stats_data;
-            } else if (datas_iter->second.hasSubdeviceAdditionalData() && datas_iter->first == MeasurementType::METRIC_OCCUPATION_EFFICIENCY) {
-                std::vector<xpum_stats_type_t> stats_types = {XPUM_STATS_OCCUPATION, 
-                                                              XPUM_STATS_ISSUE_EFFICIENCY, 
-                                                              XPUM_STATS_EXECUTION_EFFICIENCY, 
-                                                              XPUM_STATS_NON_OCCUPATION};
-                for (auto& stat_type: stats_types) {
-                  xpum_device_stats_data_t stats_data;
-                  stats_data.metricsType = stat_type;
-                  std::string name;
-                  switch (stat_type) {
-                    case XPUM_STATS_OCCUPATION:
-                      name = "OCCUPATION"; break;
-                    case XPUM_STATS_ISSUE_EFFICIENCY:
-                      name = "ISSUE_EFFICIENCY"; break;
-                    case XPUM_STATS_EXECUTION_EFFICIENCY:
-                      name = "EXECUTION_EFFICIENCY"; break;
-                    case XPUM_STATS_NON_OCCUPATION:
-                      name = "NON_OCCUPATION"; break;
-                    default:
-                      break;
-                  }
-                  stats_data.isCounter = false;
-                  stats_data.value = datas_iter->second.getSubdeviceAdditionalDataCurrent(subdevice_stats.tileId, name);
-                  stats_data.max = datas_iter->second.getSubdeviceAdditionalDataMax(subdevice_stats.tileId, name);
-                  stats_data.min = datas_iter->second.getSubdeviceAdditionalDataMin(subdevice_stats.tileId, name);
-                  stats_data.avg = datas_iter->second.getSubdeviceAdditionalDataAvg(subdevice_stats.tileId, name);
-                  subdevice_stats.dataList[subdevice_stats.count++] = stats_data;
-                }
             }
             ++datas_iter;
         }
