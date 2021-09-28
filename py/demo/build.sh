@@ -25,6 +25,15 @@ cp ../../lib/libDGMCore.so build/lib/
 # supervisor
 cp start.sh stop.sh supervisord.conf build
 
+# create tmp folder
 mkdir build/tmp
 
+# firmware flash tool
+mkdir build/tool
+cp ../../tools/fwUpgrade/GfxFwFPT build/tool
+
+# copy config folder
+cp -r ../../core/config build/
+
+# packaging
 zip -r demo.zip build
