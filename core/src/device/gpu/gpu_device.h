@@ -31,6 +31,8 @@ class GPUDevice : public Device {
   virtual bool runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept override;
   virtual xpum_firmware_flash_result_t getFirmwareFlashResult() noexcept override;
 
+  virtual bool isUpgradingFw( void ) noexcept override;
+
  private:
   void dumpFirmwareFlashLog() noexcept;
 

@@ -66,6 +66,8 @@ class Device {
   ze_device_handle_t getDeviceZeHandle();
 
   ze_driver_handle_t getDriverHandle();
+
+  virtual bool isUpgradingFw( void ) noexcept;
   
  public:
   virtual ~Device() {}

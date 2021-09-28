@@ -236,3 +236,7 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult() noexcept {
         return XPUM_DEVICE_FIRMWARE_FLASH_OK;
     }
 }
+
+bool GPUDevice::isUpgradingFw( void ) noexcept {
+  return commandExec != nullptr;
+}
