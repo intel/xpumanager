@@ -3,6 +3,35 @@ from prometheus_client import CollectorRegistry, Gauge, Counter, generate_latest
 import os
 import traceback
 
+metrics_map = {
+    'XPUM_STATS_GPU_UTILIZATION': 'xpum_gpu_ratio',
+    'XPUM_STATS_OCCUPATION': 'xpum_occupation',
+    'XPUM_STATS_ISSUE_EFFICIENCY': 'xpum_issue_efficiency_ratio',
+    'XPUM_STATS_EXECUTION_EFFICIENCY': 'xpum_execution_efficiency_ratio',
+    'XPUM_STATS_NON_OCCUPATION': 'xpum_non_occupation_ratio',
+    'XPUM_STATS_POWER': 'xpum_power_watts',
+    'XPUM_STATS_ENERGY': 'xpum_energy_joules',
+    'XPUM_STATS_GPU_FREQUENCY': 'xpum_gpu_frequency_mhz',
+    'XPUM_STATS_GPU_TEMEPERATURE': 'xpum_gpu_temeperature_celsius',
+    'XPUM_STATS_MEMORY_USED': 'xpum_memory_used_bytes',
+    'XPUM_STATS_MEMORY_UTILIZATION': 'xpum_memory_ratio',
+    'XPUM_STATS_MEMORY_BANDWIDTH': 'xpum_memory_bandwidth_bytes',
+    'XPUM_STATS_MEMORY_READ': 'xpum_memory_read_bytes',
+    'XPUM_STATS_MEMORY_WRITE': 'xpum_memory_write_bytes',
+    'XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION': 'xpum_engine_group_compute_all_ratio',
+    'XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION': 'xpum_engine_group_media_all_ratio',
+    'XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION': 'xpum_engine_group_copy_all_ratio',
+    'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': 'xpum_engine_group_render_all_ratio',
+    'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': 'xpum_engine_group_3d_all_ratio',
+    'XPUM_STATS_RAS_ERROR_CAT_RESET': 'xpum_resets',
+    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': 'xpum_programming_errors',
+    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': 'xpum_driver_errors',
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': 'xpum_cache_errors_correctable',
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': 'xpum_cache_errors_uncorrectable',
+    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE': 'xpum_display_errors_correctable',
+    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE': 'xpum_display_errors_uncorrectable'
+}
+
 
 def get_metrics(core, pod_resources):
 
@@ -34,6 +63,7 @@ def get_metrics(core, pod_resources):
         print(e)
         traceback.print_exc()
 
+
 def tidy_response(resp):
     resp_str = resp.decode('UTF-8')
     comments = []
@@ -45,6 +75,7 @@ def tidy_response(resp):
             comments.append(line)
     return '\n'.join(comments + metrics)
 
+
 def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
 
     labels, label_values = build_basic_labels(dev)
@@ -55,8 +86,9 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
     metrics = {}
 
     for stat in datalist:
-        metrics_type: str = stat.get('metricsType')
-        metrics_type = 'xpum_' + metrics_type[11:].lower()
+        metrics_type = metrics_map.get(stat.get('metricsType'))
+        if metrics_type is None:
+            continue
         value = stat.get('value')
         avg = stat.get('avg')
         if metrics_type not in metrics:
@@ -73,10 +105,9 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
 
 
 def build_basic_labels(dev):
-    labels = ['uuid', 'dev_name', 'pci_dev',
-              'sub_dev', 'vendor', 'pci_bdf']
+    labels = ['uuid', 'dev_name', 'pci_dev', 'vendor', 'pci_bdf']
     label_values = [dev.get(key, '') for key in [
-        'UUID', 'DeviceName', 'PCIDeviceId', 'SubDeviceId', 'VendorName', 'PCIBDFAddress']]
+        'UUID', 'DeviceName', 'PCIDeviceId', 'VendorName', 'PCIBDFAddress']]
 
     return labels, label_values
 
