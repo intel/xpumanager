@@ -133,7 +133,7 @@ def attach_kube_labels(dev, labels, label_values, pod_resources):
 
 def attach_tile_labels(labels, label_values, tile_id):
     if tile_id is not None:
-        labels.append('tile')
+        labels.append('sub_dev')
         label_values.append(tile_id)
 
 
