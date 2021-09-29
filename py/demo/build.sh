@@ -32,8 +32,11 @@ mkdir build/tmp
 mkdir build/tool
 cp ../../tools/fwUpgrade/GfxFwFPT build/tool
 
-# copy config folder
+# copy topology config folder
 cp -r ../../core/config build/
+
+# copy diag kernel files and media files
+cp -r ../../core/kernels ../../core/mediadata build/py
 
 # packaging
 zip -r demo.zip build

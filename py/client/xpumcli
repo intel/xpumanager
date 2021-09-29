@@ -5,6 +5,7 @@ import json
 
 import pprint
 import requests
+from requests import ConnectionError
 import time
 
 from texttable import Texttable
@@ -14,7 +15,7 @@ import os
 os.environ['NO_PROXY'] = 'localhost'
 
 # host = "http://localhost:5000"
-host = "http://localhost:34567"
+host = "http://localhost:30000"
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--version', action='store_true',
@@ -1474,4 +1475,8 @@ def get_device_topology(deviceId):
         t.print()
 
 if __name__ == "__main__":
-    arg()
+    try:
+        arg()
+    except ConnectionError as e:
+        print("Fail to connect to service!")
+        print("Please check xpum engine is running")
