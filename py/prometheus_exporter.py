@@ -5,7 +5,7 @@ import traceback
 
 metrics_map = {
     'XPUM_STATS_GPU_UTILIZATION': 'xpum_gpu_ratio',
-    'XPUM_STATS_OCCUPATION': 'xpum_occupation',
+    'XPUM_STATS_OCCUPATION': 'xpum_occupation_ratio',
     'XPUM_STATS_ISSUE_EFFICIENCY': 'xpum_issue_efficiency_ratio',
     'XPUM_STATS_EXECUTION_EFFICIENCY': 'xpum_execution_efficiency_ratio',
     'XPUM_STATS_NON_OCCUPATION': 'xpum_non_occupation_ratio',
