@@ -232,7 +232,8 @@ void DiagnosticManager::doDeviceDiagnosticSoftware(const zes_device_handle_t& de
   updateMessage(component4.message, std::string("Running"));
   uint32_t process_count = 0;
   zesDeviceProcessesGetState(device, &process_count, nullptr);
-  if (process_count > 1) {
+  // relax exclusive process count
+  if (process_count > 2) {
     std::vector<zes_process_state_t> process_statuses(process_count);
     component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING;
     std::string desc = "Exclusive check failed. " + std::to_string(process_count) + " processses are using the device.";
