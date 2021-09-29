@@ -73,8 +73,8 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
 
 
 def build_basic_labels(dev):
-    labels = ['uuid', 'dev_name', 'pci_dev_id',
-              'sub_dev_id', 'vendor', 'pci_bdf']
+    labels = ['uuid', 'dev_name', 'pci_dev',
+              'sub_dev', 'vendor', 'pci_bdf']
     label_values = [dev.get(key, '') for key in [
         'UUID', 'DeviceName', 'PCIDeviceId', 'SubDeviceId', 'VendorName', 'PCIBDFAddress']]
 
