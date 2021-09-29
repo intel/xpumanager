@@ -5,6 +5,7 @@ import json
 
 import pprint
 import requests
+from requests import ConnectionError
 import time
 
 from texttable import Texttable
@@ -1474,4 +1475,8 @@ def get_device_topology(deviceId):
         t.print()
 
 if __name__ == "__main__":
-    arg()
+    try:
+        arg()
+    except ConnectionError as e:
+        print("Fail to connect to service!")
+        print("Please check xpum engine is running")
