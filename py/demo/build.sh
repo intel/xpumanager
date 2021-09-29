@@ -15,7 +15,10 @@ mkdir build/py
 
 cp ../*.py build/py/
 
-cp ../client/xpumcli build/xpumcli
+cp ../client/xpumcli build/py/xpumcli
+
+# CLI wrapper
+cp xpumcli build/
 
 # core lib
 mkdir build/lib
