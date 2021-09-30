@@ -15,7 +15,7 @@ metrics_map = {
     'XPUM_STATS_GPU_TEMEPERATURE': 'xpum_gpu_temeperature_celsius',
     'XPUM_STATS_MEMORY_USED': 'xpum_memory_used_bytes',
     'XPUM_STATS_MEMORY_UTILIZATION': 'xpum_memory_ratio',
-    'XPUM_STATS_MEMORY_BANDWIDTH': 'xpum_memory_bandwidth_bytes',
+    'XPUM_STATS_MEMORY_BANDWIDTH': 'xpum_memory_bandwidth_ratio',
     'XPUM_STATS_MEMORY_READ': 'xpum_memory_read_bytes',
     'XPUM_STATS_MEMORY_WRITE': 'xpum_memory_write_bytes',
     'XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION': 'xpum_engine_group_compute_all_ratio',
