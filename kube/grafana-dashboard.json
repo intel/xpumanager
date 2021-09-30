@@ -21,8 +21,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 26,
-  "iteration": 1632832514294,
+  "id": 27,
+  "iteration": 1632967259855,
   "links": [],
   "panels": [
     {
@@ -74,7 +74,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -98,7 +99,8 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_gpu_utilization{node=\"$Node\"}",
+          "expr": "xpum_gpu_ratio{node=\"$Node\"}",
+          "instant": false,
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -180,7 +182,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_gpu_frequency{node=\"$Node\"}*1000000",
+          "expr": "xpum_gpu_frequency_mhz{node=\"$Node\"}*1000000",
           "hide": false,
           "interval": "",
           "legendFormat": "",
@@ -263,7 +265,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_gpu_temeperature{node=\"$Node\"}",
+          "expr": "xpum_gpu_temeperature_celsius{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -345,7 +347,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_power{node=\"$Node\"}",
+          "expr": "xpum_power_watts{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -427,7 +429,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_energy_total{node=\"$Node\"}/1000",
+          "expr": "xpum_energy_joules_total{node=\"$Node\"}/1000",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -509,7 +511,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_write_total{node=\"$Node\"}",
+          "expr": "xpum_memory_write_bytes_total{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -591,7 +593,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_used{node=\"$Node\"}",
+          "expr": "xpum_memory_used_bytes{node=\"$Node\"}",
           "instant": false,
           "interval": "",
           "legendFormat": "",
@@ -674,7 +676,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_read_total{node=\"$Node\"}",
+          "expr": "xpum_memory_read_bytes_total{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -756,7 +758,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_ras_error_cat_cache_errors_correctable_total{node=\"$Node\"}",
+          "expr": "xpum_cache_errors_correctable_total{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -837,7 +839,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_ras_error_cat_cache_errors_uncorrectable_total{node=\"$Node\"}",
+          "expr": "xpum_cache_errors_uncorrectable_total{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -919,7 +921,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_ras_error_cat_display_errors_correctable_total{node=\"$Node\"}",
+          "expr": "xpum_display_errors_correctable_total{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1000,7 +1002,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_ras_error_cat_display_errors_uncorrectable_total{node=\"$Node\"}",
+          "expr": "xpum_display_errors_uncorrectable_total{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1081,7 +1083,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_ras_error_cat_driver_errors_total{node=\"$Node\"}",
+          "expr": "xpum_driver_errors_total{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1162,7 +1164,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_ras_error_cat_programming_errors_total{node=\"$Node\"}",
+          "expr": "xpum_programming_errors_total{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1243,7 +1245,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_ras_error_cat_reset_total{node=\"$Node\"}",
+          "expr": "xpum_resets_total{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1300,7 +1302,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1324,7 +1327,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_issue_efficiency{node=\"$Node\"}",
+          "expr": "xpum_issue_efficiency_ratio{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1381,7 +1384,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1405,7 +1409,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_occupation{node=\"$Node\"}",
+          "expr": "xpum_occupation_ratio{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1462,7 +1466,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1486,7 +1491,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_engine_group_compute_all_utilization{node=\"$Node\"}",
+          "expr": "xpum_engine_group_compute_all_ratio{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1543,7 +1548,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1567,7 +1573,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_execution_efficiency{node=\"$Node\"}",
+          "expr": "xpum_execution_efficiency_ratio{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1624,7 +1630,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1648,7 +1655,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_non_occupation{node=\"$Node\"}",
+          "expr": "xpum_non_occupation_ratio{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1705,7 +1712,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1729,7 +1737,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_engine_group_copy_all_utilization{node=\"$Node\"}",
+          "expr": "xpum_engine_group_copy_all_ratio{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1786,7 +1794,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1810,7 +1819,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_bandwidth{node=\"$Node\"}",
+          "expr": "xpum_memory_bandwidth_ratio{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1867,7 +1876,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1891,7 +1901,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_memory_utilization{node=\"$Node\"}",
+          "expr": "xpum_memory_ratio{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1948,7 +1958,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -1972,7 +1983,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "xpum_engine_group_media_all_utilization{node=\"$Node\"}",
+          "expr": "xpum_engine_group_media_all_ratio{node=\"$Node\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -1993,12 +2004,12 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "dcm-atsp-2",
           "value": "dcm-atsp-2"
         },
         "datasource": null,
-        "definition": "label_values(xpum_power, node)",
+        "definition": "label_values(xpum_power_watts, node)",
         "description": null,
         "error": null,
         "hide": 0,
@@ -2008,7 +2019,7 @@
         "name": "Node",
         "options": [],
         "query": {
-          "query": "label_values(xpum_power, node)",
+          "query": "label_values(xpum_power_watts, node)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
@@ -2020,12 +2031,12 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Intel XPU Manager Exporter",
-  "uid": "FW8KX8Snk",
-  "version": 11
+  "uid": "ldrAjlN7z",
+  "version": 4
 }
