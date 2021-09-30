@@ -3,9 +3,11 @@
 # create python virtual env
 
 if [ -d xpumvenv ]; then
-    echo virtual env exists;
-    exit 0;
+    echo virtual env exists, will remove the xpumvenv folder
+    rm -rf xpumvenv
 fi
+
+sudo apt install -y python3-venv
 
 python3 -m venv xpumvenv
 
@@ -18,6 +20,9 @@ python -m pip install --no-cache-dir -r requirements.txt
 deactivate
 
 # link firmware flash tool to /usr/local/bin
-if [ ! -f /usr/local/bin/GfxFwFPT ]; then
-    ln -s $PWD/tool/GfxFwFPT /usr/local/bin/GfxFwFPT
+if [ ! -L /usr/local/bin/GfxFwFPT ]; then
+    sudo ln -s $PWD/tool/GfxFwFPT /usr/local/bin/GfxFwFPT
 fi
+
+# start daemon
+sudo ./start.sh

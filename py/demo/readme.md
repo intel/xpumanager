@@ -20,7 +20,7 @@ export https_proxy=...
 
 # Daemon
 
-Start daemon
+Start daemon mannually. The `install.sh` script will start the daemon by default.
 
 ```bash
 sudo ./start.sh

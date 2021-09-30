@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if [ -f ./tmp/supervisord.pid ]; then
     PID=$(cat ./tmp/supervisord.pid)
     if ps -p $PID > /dev/null
