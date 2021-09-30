@@ -278,6 +278,7 @@ xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
 xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId)
 {
     Core::instance().getDataLogic()->stopRawDataCollectionTask(taskId);
+    return xpum_result_t::XPUM_OK;
 }
 
 xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count)
