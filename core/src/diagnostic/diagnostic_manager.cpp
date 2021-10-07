@@ -6,11 +6,11 @@
 DiagnosticManager::DiagnosticManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {    
-  LOG_INFO("DiagnosticManager()");
+  XPUM_LOG_INFO("DiagnosticManager()");
 }
 
 DiagnosticManager::~DiagnosticManager() {
-  LOG_INFO("~DiagnosticManager()");
+  XPUM_LOG_INFO("~DiagnosticManager()");
 }
 
 void DiagnosticManager::init() {

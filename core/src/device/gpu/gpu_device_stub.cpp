@@ -15,11 +15,11 @@
 #include <iostream>
 
 GPUDeviceStub::GPUDeviceStub() : p_thread_pool(nullptr), initialized(false) {
-  LOG_INFO("GPUDeviceStub()");
+  XPUM_LOG_INFO("GPUDeviceStub()");
 }
 
 GPUDeviceStub::~GPUDeviceStub() {
-  LOG_INFO("~GPUDeviceStub()");
+  XPUM_LOG_INFO("~GPUDeviceStub()");
 }
 
 GPUDeviceStub& GPUDeviceStub::instance() {

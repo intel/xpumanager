@@ -5,5 +5,5 @@
 void DBPersistency::storeMeasurementData(
     MeasurementType type, Timestamp_t time,
     std::map<std::string, MeasurementData> &datas) {
-    LOG_DEBUG("Receieved monitor data");
+    XPUM_LOG_DEBUG("Receieved monitor data");
 }

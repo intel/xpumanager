@@ -9,7 +9,7 @@
 #include <fstream>
 
 GPUDevice::GPUDevice() : commandExec( nullptr ) {
-  LOG_INFO("GPUDevice()");
+  XPUM_LOG_INFO("GPUDevice()");
 }
 
 GPUDevice::GPUDevice(const std::string& id,
@@ -37,7 +37,7 @@ GPUDevice::GPUDevice(const std::string& id,
 }
 
 GPUDevice::~GPUDevice() {
-  LOG_INFO("~GPUDevice()");
+  XPUM_LOG_INFO("~GPUDevice()");
 }
 
 void GPUDevice::getPower(Callback_t callback) noexcept {

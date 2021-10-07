@@ -6,11 +6,11 @@
 HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {    
-  LOG_INFO("HealthManager()");
+  XPUM_LOG_INFO("HealthManager()");
 }
 
 HealthManager::~HealthManager() {
-  LOG_INFO("~HealthManager()");
+  XPUM_LOG_INFO("~HealthManager()");
 }
 
 void HealthManager::init() {
