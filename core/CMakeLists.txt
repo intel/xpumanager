@@ -19,8 +19,8 @@ if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
 
-INCLUDE(CheckIncludeFile)
-CHECK_INCLUDE_FILE(pciaccess.h     HAVE_PCIACCESS_H)
+include(CheckIncludeFile)
+check_include_file(pciaccess.h HAVE_PCIACCESS_H)
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h @ONLY)
@@ -73,26 +73,9 @@ endif()
 target_include_directories(
   DGMCore
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
-  PRIVATE /usr/local/include/level_zero/
-          /usr/include/level_zero/
+  PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
           ${CMAKE_CURRENT_LIST_DIR}/libs/hwloc/install/include/
-          ${CMAKE_CURRENT_LIST_DIR}/include
-          ${CMAKE_CURRENT_LIST_DIR}/src/api
-          ${CMAKE_CURRENT_LIST_DIR}/src/control
-          ${CMAKE_CURRENT_LIST_DIR}/src/core
-          ${CMAKE_CURRENT_LIST_DIR}/src/data_logic
-          ${CMAKE_CURRENT_LIST_DIR}/src/device
-          ${CMAKE_CURRENT_LIST_DIR}/src/device/gpu
-          ${CMAKE_CURRENT_LIST_DIR}/src/event
-          ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure
-          ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/exception
-          ${CMAKE_CURRENT_LIST_DIR}/src/monitor
-          ${CMAKE_CURRENT_LIST_DIR}/src/policy
-          ${CMAKE_CURRENT_LIST_DIR}/src/group
-          ${CMAKE_CURRENT_LIST_DIR}/src/health
-          ${CMAKE_CURRENT_LIST_DIR}/src/diagnostic
-          ${CMAKE_CURRENT_LIST_DIR}/src/topology)
-
+          ${CMAKE_CURRENT_LIST_DIR}/src)
 target_sources(
   DGMCore
   PRIVATE ${API_SRC}
@@ -116,9 +99,9 @@ add_subdirectory(./libs/hwloc)
 
 add_dependencies(DGMCore lib_hwloc)
 
-
 if(HAVE_PCIACCESS_H)
-  target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
+  target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc stdc++fs
+                                        pciaccess)
 else()
   target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc stdc++fs)
 endif()

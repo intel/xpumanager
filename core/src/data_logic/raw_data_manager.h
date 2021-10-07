@@ -5,8 +5,8 @@
 
 #include "persistency.h"
 #include "data_handler.h"
-#include "measurement_type.h"
-#include "measurement_cache_data.h"
+#include "infrastructure/measurement_type.h"
+#include "infrastructure/measurement_cache_data.h"
 
 struct RawDataCollectionTask {
   std::string device_id;

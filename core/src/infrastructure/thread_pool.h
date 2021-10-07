@@ -4,7 +4,7 @@
 #include <thread>
 
 #include "const.h"
-#include "base_exception.h"
+#include "infrastructure/exception/base_exception.h"
 #include "logger.h"
 #include "shared_queue.h"
 

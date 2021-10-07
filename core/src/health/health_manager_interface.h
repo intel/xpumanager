@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "init_close_interface.h"
+#include "infrastructure/init_close_interface.h"
 #include "health_data_type.h"
 
 class HealthManagerInterface : public InitCloseInterface {

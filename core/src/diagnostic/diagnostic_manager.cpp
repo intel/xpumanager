@@ -1,7 +1,7 @@
-#include "logger.h"
+#include "infrastructure/logger.h"
 #include "diagnostic_manager.h"
-#include "gpu_device_stub.h"
-#include "configuration.h"
+#include "device/gpu/gpu_device_stub.h"
+#include "infrastructure/configuration.h"
 
 DiagnosticManager::DiagnosticManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)

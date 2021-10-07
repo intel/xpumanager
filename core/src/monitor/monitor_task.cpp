@@ -3,9 +3,9 @@
 #include <thread>
 
 #include "monitor_task.h"
-#include "utility.h"
-#include "logger.h"
-#include "device_manager.h"
+#include "infrastructure/utility.h"
+#include "infrastructure/logger.h"
+#include "control/device_manager.h"
 
 MonitorTask::MonitorTask(
     DeviceCapability capability, int freq,

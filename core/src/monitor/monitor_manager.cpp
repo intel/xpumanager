@@ -1,10 +1,10 @@
-#include "device_capability.h"
-#include "configuration.h"
+#include "infrastructure/device_capability.h"
+#include "infrastructure/configuration.h"
 #include "monitor_task.h"
-#include "logger.h"
+#include "infrastructure/logger.h"
 #include "monitor_manager.h"
 #include <algorithm>
-#include "utility.h"
+#include "infrastructure/utility.h"
 
 MonitorManager::MonitorManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)

@@ -11,10 +11,10 @@
 #include <sstream>
 #include <iostream>
 #include "policy_manager_interface.h"
-#include "device_manager_interface.h"
-#include "data_logic_interface.h"
-#include "group_manager_interface.h"
-#include "timer.h"
+#include "control/device_manager_interface.h"
+#include "data_logic/data_logic_interface.h"
+#include "group/group_manager_interface.h"
+#include "infrastructure/timer.h"
 
 struct xpum_policy_data {
     xpum_policy_type_t type;

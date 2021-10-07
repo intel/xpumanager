@@ -1,10 +1,10 @@
 #pragma once
 
-#include "const.h"
+#include "infrastructure/const.h"
 #include "persistency.h"
 #include "raw_data_manager.h"
 #include "data_logic_interface.h"
-#include "xpum_structs.h"
+#include "../include/xpum_structs.h"
 
 class DataLogic : public DataLogicInterface {
  public:

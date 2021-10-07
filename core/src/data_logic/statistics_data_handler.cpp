@@ -1,5 +1,5 @@
 #include "statistics_data_handler.h"
-#include "configuration.h"
+#include "infrastructure/configuration.h"
 
 StatisticsDataHandler::StatisticsDataHandler(MeasurementType type,
                          std::shared_ptr<Persistency>& p_persistency)

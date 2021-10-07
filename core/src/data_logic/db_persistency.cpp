@@ -1,6 +1,6 @@
 #include "db_persistency.h"
 
-#include "logger.h"
+#include "infrastructure/logger.h"
 
 void DBPersistency::storeMeasurementData(
     MeasurementType type, Timestamp_t time,

@@ -1,7 +1,7 @@
 #include "metric_statistics_data_handler.h"
-#include "configuration.h"
+#include "infrastructure/configuration.h"
 #include <iostream>
-#include "utility.h"
+#include "infrastructure/utility.h"
 
 MetricStatisticsDataHandler::MetricStatisticsDataHandler(MeasurementType type,
                          std::shared_ptr<Persistency>& p_persistency)

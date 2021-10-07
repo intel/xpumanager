@@ -1,6 +1,9 @@
-#include "core.h"
-#include "error_code.h"
-#include "logger.h"
+#include "core/core.h"
+#include "infrastructure/error_code.h"
+#include "infrastructure/logger.h"
+#include "device/scheduler.h"
+#include "device/standby.h"
+#include "device/frequency.h"
 
 #include "api.h"
 

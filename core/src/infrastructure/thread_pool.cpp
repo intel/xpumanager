@@ -1,7 +1,7 @@
 #include <future>
 
 #include "logger.h"
-#include "ilegal_state_exception.h"
+#include "infrastructure/exception/ilegal_state_exception.h"
 #include "thread_pool.h"
 
 ThreadPool::ThreadPool(unsigned int size) : stop(false), size(size) {

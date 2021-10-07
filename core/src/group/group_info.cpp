@@ -1,4 +1,4 @@
-#include "logger.h"
+#include "infrastructure/logger.h"
 #include "group_info.h"
 
 GroupInfo::GroupInfo(const char * groupname, xpum_group_id_t groupId)

@@ -1,9 +1,9 @@
-#include "logger.h"
-#include "gpu_device_stub.h"
+#include "infrastructure/logger.h"
+#include "device/gpu/gpu_device_stub.h"
 #include "gpu_device.h"
-#include "device_property.h"
+#include "infrastructure/device_property.h"
 
-#include "api_types.h"
+#include "api/api_types.h"
 #include "unistd.h"
 #include "stdio.h"
 #include <fstream>

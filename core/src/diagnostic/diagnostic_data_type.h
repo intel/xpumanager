@@ -1,5 +1,5 @@
 #pragma once
-#include "xpum_structs.h"
+#include "../include/xpum_structs.h"
 
 struct ZeWorkGroups {
     uint32_t groupCountX;              // number of thread groups in X dimension

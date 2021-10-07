@@ -1,8 +1,8 @@
 #include <chrono>
 
-#include "device.h"
+#include "device/device.h"
 #include "utility.h"
-#include "xpum_structs.h"
+#include "../include/xpum_structs.h"
 #include <algorithm>
 
 long long Utility::getCurrentMillisecond() {

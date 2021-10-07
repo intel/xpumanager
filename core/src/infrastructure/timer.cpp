@@ -6,8 +6,8 @@
 #include "timer.h"
 #include "utility.h"
 #include "logger.h"
-#include "ilegal_state_exception.h"
-#include "ilegal_parameter_exception.h"
+#include "infrastructure/exception/ilegal_state_exception.h"
+#include "infrastructure/exception/ilegal_parameter_exception.h"
 
 Timer::Timer() : canceled(true), to_cancel(false) {
 

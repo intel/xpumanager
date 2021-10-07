@@ -1,6 +1,6 @@
 #include <thread>
 
-#include "logger.h"
+#include "infrastructure/logger.h"
 #include "data_handler.h"
 
 DataHandler::DataHandler(MeasurementType type,

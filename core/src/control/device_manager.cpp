@@ -2,10 +2,10 @@
 #include <atomic>
 #include <iostream>
 
-#include "logger.h"
-#include "ilegal_parameter_exception.h"
-#include "gpu_device_stub.h"
-#include "utility.h"
+#include "infrastructure/logger.h"
+#include "infrastructure/exception/ilegal_parameter_exception.h"
+#include "device/gpu/gpu_device_stub.h"
+#include "infrastructure/utility.h"
 #include "device_manager.h"
 
 DeviceManager::DeviceManager(std::shared_ptr<DataLogicInterface>& p_data_logic) 

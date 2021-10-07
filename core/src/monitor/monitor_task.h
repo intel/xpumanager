@@ -1,9 +1,9 @@
 #pragma once
 
-#include "timer.h"
-#include "device_capability.h"
-#include "device_manager_interface.h"
-#include "data_logic_interface.h"
+#include "infrastructure/timer.h"
+#include "infrastructure/device_capability.h"
+#include "control/device_manager_interface.h"
+#include "data_logic/data_logic_interface.h"
 
 enum MonitorTaskType {
   DEFAULT_TELEMETRY         = 0,

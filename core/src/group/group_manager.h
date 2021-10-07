@@ -1,11 +1,11 @@
 #pragma once
 
-#include "data_logic_interface.h"
-#include "device_manager_interface.h"
+#include "data_logic/data_logic_interface.h"
+#include "control/device_manager_interface.h"
 #include "group_info.h"
 #include "group_manager_interface.h"
 
-#include "xpum_structs.h"
+#include "../include/xpum_structs.h"
 
 #include <atomic>
 #include <map>

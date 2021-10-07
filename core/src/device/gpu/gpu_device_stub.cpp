@@ -1,13 +1,13 @@
-#include "configuration.h"
-#include "logger.h"
-#include "measurement_data.h"
+#include "infrastructure/configuration.h"
+#include "infrastructure/logger.h"
+#include "infrastructure/measurement_data.h"
 #include "gpu_device.h"
-#include "gpu_device_stub.h"
-#include "device_property.h"
-#include "device_type.h"
-#include "scheduler.h"
-#include "standby.h"
-#include "frequency.h"
+#include "device/gpu/gpu_device_stub.h"
+#include "infrastructure/device_property.h"
+#include "infrastructure/device_type.h"
+#include "device/scheduler.h"
+#include "device/standby.h"
+#include "device/frequency.h"
 
 #include <iomanip>
 #include <sstream>

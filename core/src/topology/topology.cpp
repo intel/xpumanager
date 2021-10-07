@@ -6,8 +6,8 @@
 #include <fstream>
 
 #include "topology.h"
-#include "device_property.h"
-#include "logger.h"
+#include "infrastructure/device_property.h"
+#include "infrastructure/logger.h"
 #include "pci_database.h"
 #include "hwinfo.h"
 

@@ -1,7 +1,7 @@
 #include "pci_database.h"
-#include "xpum_structs.h"
-#include "logger.h"
-#include "xpum_config.h"
+#include "../include/xpum_structs.h"
+#include "infrastructure/logger.h"
+#include "infrastructure/xpum_config.h"
 
 #include <fstream>
 #include <iostream>

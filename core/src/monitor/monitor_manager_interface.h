@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "init_close_interface.h"
+#include "infrastructure/init_close_interface.h"
 
 class MonitorManagerInterface : public InitCloseInterface {
  public:

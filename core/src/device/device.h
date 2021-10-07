@@ -4,14 +4,14 @@
 #include <mutex>
 #include <string>
 
-#include "const.h"
-#include "property.h"
-#include "device_capability.h"
-#include "measurement_type.h"
+#include "infrastructure/const.h"
+#include "infrastructure/property.h"
+#include "infrastructure/device_capability.h"
+#include "infrastructure/measurement_type.h"
 #include "ze_api.h"
 #include "zes_api.h"
 #include "zet_api.h"
-#include "xpum_structs.h"
+#include "../include/xpum_structs.h"
 
 class Device {
  public:

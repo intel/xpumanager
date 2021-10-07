@@ -3,9 +3,9 @@
 #include <vector>
 #include <string>
 
-#include "init_close_interface.h"
+#include "infrastructure/init_close_interface.h"
 #include "diagnostic_data_type.h"
-#include "xpum_structs.h"
+#include "../include/xpum_structs.h"
 
 class DiagnosticManagerInterface : public InitCloseInterface {
  public:
