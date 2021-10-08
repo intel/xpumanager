@@ -808,6 +808,8 @@ def device_info_to_str(props):
     rows.append("UUID: {}".format(props["UUID"]))
     rows.append("PCI BDF Address: {}".format(props["PCIBdfAddress"]))
     rows.append("PCI Slot: {}".format(props["PCISlot"]))
+    rows.append("PCIe Generation: {}".format(props["PCIeGen"]))
+    rows.append("PCIe Max Link Width: {}".format(props["PCIeMaxLinkWidth"]))
     rows.append("")
     rows.append("Driver Version: {}".format(props["DriverVersion"]))
     if "FirmwareName" in props:
@@ -822,6 +824,8 @@ def device_info_to_str(props):
     rows.append("Memory Physical Size: {}".format(props["MemoryPhysicalSize"]))
     rows.append("Memory Free Size: {}".format(props["MemoryFreeSize"]))
     rows.append("Max Mem Alloc Size: {}".format(props["MaxMemAllocSize"]))
+    rows.append("Number of Memory Channels: {}".format(props["NumberOfMemoryChannel"]))
+    rows.append("Memory Bus Width: {}".format(props["MemoryBusWidth"]))
     rows.append("Max Hardware Contexts: {}".format(
         props["MaxHardwareContexts"]))
     rows.append("Max Command Queue Priority: {}".format(
@@ -842,12 +846,6 @@ def device_info_to_str(props):
     # rows.append("Kernel Timestamp Valid Bits: {}".format(
     #     props["KernelTimestampValidBits"]))
     # rows.append("Flags: {}".format(props["Flags"]))
-    
-    rows.append("")
-    rows.append("PCIe Generation: {}".format(props["PCIeGen"]))
-    rows.append("PCIe Max Link Width: {}".format(props["PCIeMaxLinkWidth"]))
-    rows.append("Number of Memory Channels: {}".format(props["NumberOfMemoryChannel"]))
-    rows.append("Memory Bus Width: {}".format(props["MemoryBusWidth"]))
 
     return "\n".join(rows)
 
@@ -1458,7 +1456,7 @@ def set_device_burstlimit(deviceId, deviceTileId, keyValue):
     reqData = {
         "subDeviceId": deviceTileId,
         "limitType": int(1),
-        "enabled":bool(keyValueArray[1]=='True'),
+        "enabled":bool(keyValueArray[1]=='true'),
         "power":int(keyValueArray[0])*1000,
         "interval":int(0),
         "powerAC":int(0),
