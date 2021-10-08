@@ -1,6 +1,7 @@
 #pragma once
 
-#include "measurement_type.h"
+#include "infrastructure/measurement_type.h"
+#include "device/power.h"
 
 extern "C" {
 

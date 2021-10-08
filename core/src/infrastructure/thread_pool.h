@@ -4,7 +4,7 @@
 #include <thread>
 
 #include "const.h"
-#include "base_exception.h"
+#include "infrastructure/exception/base_exception.h"
 #include "logger.h"
 #include "shared_queue.h"
 
@@ -30,12 +30,12 @@ class ThreadPool {
       } catch (std::exception &e) {
         std::string error = "Failed to execute task in thread pool:";
         error += e.what();
-        LOG_ERROR(error);
+        XPUM_LOG_ERROR(error);
         (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(e.what()));
       } catch (...) {
         std::string error =
             "Failed to execute task in thread pool: unexpected exception";
-        LOG_ERROR(error);
+        XPUM_LOG_ERROR(error);
         (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(error));
       }
     });

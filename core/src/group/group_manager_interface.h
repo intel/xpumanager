@@ -1,7 +1,7 @@
 #pragma once
 
-#include "init_close_interface.h"
-#include "xpum_structs.h"
+#include "infrastructure/init_close_interface.h"
+#include "../include/xpum_structs.h"
 
 class GroupManagerInterface : public InitCloseInterface {
     public:

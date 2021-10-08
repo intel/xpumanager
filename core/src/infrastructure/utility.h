@@ -5,8 +5,8 @@
 #include "const.h"
 #include "measurement_type.h"
 #include "device_capability.h"
-#include "device.h"
-#include "xpum_structs.h"
+#include "device/device.h"
+#include "../include/xpum_structs.h"
 
 class Utility {
  public:

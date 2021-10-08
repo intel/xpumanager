@@ -5,7 +5,7 @@
 #include <mutex>
 #include <queue>
 
-#include "base_exception.h"
+#include "infrastructure/exception/base_exception.h"
 
 template <class T>
 class SharedQueue {

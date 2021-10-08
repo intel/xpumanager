@@ -1,4 +1,4 @@
-#include "logger.h"
+#include "infrastructure/logger.h"
 #include "group_manager.h"
 
 
@@ -6,11 +6,11 @@ GroupManager::GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_man
                             std::shared_ptr<DataLogicInterface>& p_data_logic) 
     : p_devicemanager(p_device_manager), p_datalogic(p_data_logic),
     groupSequence(0)  {
-    LOG_INFO("GroupManager()");
+    XPUM_LOG_INFO("GroupManager()");
 }
 
 GroupManager::~GroupManager() {    
-    LOG_INFO("~GroupManager()");
+    XPUM_LOG_INFO("~GroupManager()");
     groupMap.clear();
 }
 
@@ -21,27 +21,27 @@ xpum_result_t GroupManager::createGroup(const char *pGroupName, xpum_group_id_t 
     xpum_group_id_t groupId;
     GroupInfo* pGroupInfo;    
 
-    LOG_INFO("GroupManager::createGroup");
+    XPUM_LOG_INFO("GroupManager::createGroup");
 
     if(pGroupName == nullptr) {
-        LOG_ERROR("GroupManager::createGroup-groupName is nullptr.");
+        XPUM_LOG_ERROR("GroupManager::createGroup-groupName is nullptr.");
         return ret;
     }
 
     if(pGroupId == nullptr) {
-        LOG_ERROR("GroupManager::createGroup-pGroupId is nullptr.");
+        XPUM_LOG_ERROR("GroupManager::createGroup-pGroupId is nullptr.");
         return ret;
     }
 
     if(groupMap.size() >= XPUM_MAX_NUM_GROUPS){
-        LOG_ERROR("GroupManager::createGroup-group number exceed XPUM_MAX_NUM_GROUPS.");
+        XPUM_LOG_ERROR("GroupManager::createGroup-group number exceed XPUM_MAX_NUM_GROUPS.");
         return ret;
     }
 
     groupId = groupSequence++;
     pGroupInfo = new GroupInfo(pGroupName, groupId);
     if(pGroupInfo == nullptr){
-        LOG_ERROR("GroupManager::createGroup-pGroupInfo is nullptr, not enough memory.");
+        XPUM_LOG_ERROR("GroupManager::createGroup-pGroupInfo is nullptr, not enough memory.");
         return ret;
     }
 
@@ -56,24 +56,24 @@ xpum_result_t GroupManager::destroyGroup(xpum_group_id_t groupId){
     xpum_result_t ret = XPUM_GENERIC_ERROR;
     GroupInfo* pGroupInfo;
 
-    LOG_INFO("GroupManager::destroyGroup");
+    XPUM_LOG_INFO("GroupManager::destroyGroup");
 
     GroupMap::iterator groupIterator = groupMap.find(groupId);
     if(groupIterator == groupMap.end()) {
-        LOG_ERROR("GroupManager::destroyGroup-not able to find the group {}", groupId);
+        XPUM_LOG_ERROR("GroupManager::destroyGroup-not able to find the group {}", groupId);
         return ret;
     } else {
         pGroupInfo = groupIterator->second;
 
         if(pGroupInfo == nullptr) {
-            LOG_ERROR("GroupManager::destroyGroup-invalid group {}", groupId);
+            XPUM_LOG_ERROR("GroupManager::destroyGroup-invalid group {}", groupId);
             return ret;
         }
 
         delete pGroupInfo;
         pGroupInfo = nullptr;
         groupMap.erase(groupIterator);
-        LOG_INFO("GroupManager::destroyGroup-group {}", groupId);
+        XPUM_LOG_INFO("GroupManager::destroyGroup-group {}", groupId);
     }
 
     return XPUM_OK;
@@ -86,12 +86,12 @@ xpum_result_t GroupManager::addDeviceToGroup(xpum_group_id_t groupId, xpum_devic
 
     GroupInfo * pGroupInfo = getGroupById(groupId);
     if(pGroupInfo == nullptr) {
-        LOG_ERROR("GroupManager::addDeviceToGroup-invalid group {}", groupId);
+        XPUM_LOG_ERROR("GroupManager::addDeviceToGroup-invalid group {}", groupId);
         return ret;
     }
 
     if(p_devicemanager->getDevice(std::to_string(deviceId)) == nullptr) {
-        LOG_ERROR("GroupInfo::addDevice-invalid device id {}", deviceId);
+        XPUM_LOG_ERROR("GroupInfo::addDevice-invalid device id {}", deviceId);
         return ret;
     }
 
@@ -105,7 +105,7 @@ xpum_result_t GroupManager::removeDeviceFromGroup(xpum_group_id_t groupId, xpum_
 
     GroupInfo * pGroupInfo = getGroupById(groupId);
     if(pGroupInfo == nullptr) {
-        LOG_ERROR("GroupManager::removeDeviceFromGroup-invalid group {}", groupId);
+        XPUM_LOG_ERROR("GroupManager::removeDeviceFromGroup-invalid group {}", groupId);
         return ret;
     }
 
@@ -119,7 +119,7 @@ xpum_result_t GroupManager::getGroupInfo(xpum_group_id_t groupId, xpum_group_inf
 
     GroupInfo * p_GroupInfo = getGroupById(groupId);
     if(p_GroupInfo == nullptr) {
-        LOG_ERROR("GroupManager::removeDeviceFromGroup-invalid group {}", groupId);
+        XPUM_LOG_ERROR("GroupManager::removeDeviceFromGroup-invalid group {}", groupId);
         return ret;
     }
 
@@ -140,7 +140,7 @@ xpum_result_t GroupManager::getAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM
     for(iterator=groupMap.begin(); iterator!=groupMap.end(); iterator++){
         GroupInfo * pGroupInfo = iterator->second;
         if(pGroupInfo == nullptr) {
-            LOG_ERROR("GroupManager::getAllGroupIds- fatal error, nullptr @ group {}", iterator->first);
+            XPUM_LOG_ERROR("GroupManager::getAllGroupIds- fatal error, nullptr @ group {}", iterator->first);
             return ret;
         }
         groupIds[index++] = pGroupInfo->getId();
@@ -155,12 +155,12 @@ GroupInfo * GroupManager::getGroupById(xpum_group_id_t groupId)
     GroupInfo * pGroupInfo;
     GroupMap::iterator groupIterator = groupMap.find(groupId);
     if(groupIterator == groupMap.end()) {
-        LOG_ERROR("GroupManager::getGroupById-not able to find group {}", groupId);
+        XPUM_LOG_ERROR("GroupManager::getGroupById-not able to find group {}", groupId);
         return nullptr;
     }else{
         pGroupInfo = groupIterator->second;
         if(pGroupInfo == nullptr) {
-            LOG_ERROR("GroupManager::getGroupById-not able to find group {}", groupId);
+            XPUM_LOG_ERROR("GroupManager::getGroupById-not able to find group {}", groupId);
             return nullptr;
         }
     }

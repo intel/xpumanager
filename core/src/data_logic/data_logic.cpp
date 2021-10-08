@@ -1,17 +1,17 @@
-#include "const.h"
-#include "ilegal_state_exception.h"
+#include "infrastructure/const.h"
+#include "infrastructure/exception/ilegal_state_exception.h"
 #include "db_persistency.h"
 #include "data_logic.h"
-#include "utility.h"
+#include "infrastructure/utility.h"
 #include <iostream>
 
 DataLogic::DataLogic() : p_raw_data_manager(nullptr), 
   p_persistency(nullptr) {
-  LOG_INFO("DataLogic()");    
+  XPUM_LOG_INFO("DataLogic()");    
 }
 
 DataLogic::~DataLogic() {
-  LOG_INFO("~DataLogic()");
+  XPUM_LOG_INFO("~DataLogic()");
 }
 
 void DataLogic::init() {  

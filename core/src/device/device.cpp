@@ -1,6 +1,6 @@
 #include <cstring>
 
-#include "ilegal_parameter_exception.h"
+#include "infrastructure/exception/ilegal_parameter_exception.h"
 #include "device.h"
 
 std::string Device::getId() noexcept {

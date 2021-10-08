@@ -4,7 +4,7 @@
 #include <exception>
 #include <stdexcept>
 
-#include "error_code.h"
+#include "infrastructure/error_code.h"
 
 class BaseException : public std::exception {
  public: 

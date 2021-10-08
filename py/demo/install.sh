@@ -20,7 +20,7 @@ python -m pip install --no-cache-dir -r requirements.txt
 deactivate
 
 # link firmware flash tool to /usr/local/bin
-if [ ! -L /usr/local/bin/GfxFwFPT ]; then
+if ! [ -e /usr/local/bin/GfxFwFPT ]; then
     sudo ln -s $PWD/tool/GfxFwFPT /usr/local/bin/GfxFwFPT
 fi
 

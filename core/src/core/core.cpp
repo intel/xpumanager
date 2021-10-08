@@ -1,14 +1,14 @@
-#include "logger.h"
-#include "configuration.h"
-#include "ilegal_state_exception.h"
-#include "data_logic.h"
-#include "device_manager.h"
-#include "monitor_manager.h"
-#include "health_manager.h"
-#include "diagnostic_manager.h"
-#include "policy_manager.h"
+#include "infrastructure/logger.h"
+#include "infrastructure/configuration.h"
+#include "infrastructure/exception/ilegal_state_exception.h"
+#include "data_logic/data_logic.h"
+#include "control/device_manager.h"
+#include "monitor/monitor_manager.h"
+#include "health/health_manager.h"
+#include "diagnostic/diagnostic_manager.h"
+#include "policy/policy_manager.h"
 #include "core.h"
-#include "group_manager.h"
+#include "group/group_manager.h"
 
 Core::Core()
     : p_device_manager(nullptr),
@@ -19,11 +19,11 @@ Core::Core()
       p_policy_manager(nullptr),
       initialized(false) {
     Logger::init();
-    LOG_INFO("core()");
+    XPUM_LOG_INFO("core()");
 }
 
 Core::~Core() {
-    LOG_INFO("~core()");
+    XPUM_LOG_INFO("~core()");
     close();
 }
 
@@ -73,34 +73,34 @@ void Core::init() {
     return ;
   }
 
-  LOG_INFO("initialize configuration");
+  XPUM_LOG_INFO("initialize configuration");
   Configuration::init();
 
-  LOG_INFO("initialize datalogic");
+  XPUM_LOG_INFO("initialize datalogic");
   p_data_logic = std::make_shared<DataLogic>();
   p_data_logic->init();
 
-  LOG_INFO("initialize device manager");
+  XPUM_LOG_INFO("initialize device manager");
   p_device_manager = std::make_shared<DeviceManager>(p_data_logic);
   p_device_manager->init();
 
-  LOG_INFO("initialize monitor manager");
+  XPUM_LOG_INFO("initialize monitor manager");
   p_monitor_manager = std::make_shared<MonitorManager>(p_device_manager, p_data_logic);
   p_monitor_manager->init();
 
-  LOG_INFO("initialize health manager");
+  XPUM_LOG_INFO("initialize health manager");
   p_health_manager = std::make_shared<HealthManager>(p_device_manager, p_data_logic);
   p_health_manager->init();
 
-  LOG_INFO("initialize group manager");
+  XPUM_LOG_INFO("initialize group manager");
   p_group_manager = std::make_shared<GroupManager>(p_device_manager, p_data_logic);
   p_group_manager->init();
 
-  LOG_INFO("initialize diagnostic manager");
+  XPUM_LOG_INFO("initialize diagnostic manager");
   p_diagnostic_manager = std::make_shared<DiagnosticManager>(p_device_manager, p_data_logic);
   p_diagnostic_manager->init();
 
-  LOG_INFO("initialize policy manager");
+  XPUM_LOG_INFO("initialize policy manager");
   p_policy_manager = std::make_shared<PolicyManager>(p_device_manager, p_data_logic,p_group_manager);
   p_policy_manager->init();
 
@@ -138,9 +138,9 @@ void Core::close(const std::shared_ptr<InitCloseInterface>& p_init_close_interfa
   try {
     p_init_close_interface->close();
   } catch (std::exception& e) {  
-    LOG_WARN("{}: {}", p_msgPrix, e.what());    
+    XPUM_LOG_WARN("{}: {}", p_msgPrix, e.what());    
   } catch (...) {
-    LOG_WARN("{}: unexpected exception", p_msgPrix);    
+    XPUM_LOG_WARN("{}: unexpected exception", p_msgPrix);    
   }
 }
 

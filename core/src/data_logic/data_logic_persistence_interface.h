@@ -1,10 +1,10 @@
 #pragma once
 
 #include <map>
-#include "const.h"
+#include "infrastructure/const.h"
 
-#include "measurement_type.h"
-#include "measurement_data.h"
+#include "infrastructure/measurement_type.h"
+#include "infrastructure/measurement_data.h"
 
 class DataLogicPersistenceInterface {
  public:

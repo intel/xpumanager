@@ -1,16 +1,16 @@
-#include "logger.h"
+#include "infrastructure/logger.h"
 #include "health_manager.h"
-#include "gpu_device_stub.h"
-#include "configuration.h"
+#include "device/gpu/gpu_device_stub.h"
+#include "infrastructure/configuration.h"
 
 HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {    
-  LOG_INFO("HealthManager()");
+  XPUM_LOG_INFO("HealthManager()");
 }
 
 HealthManager::~HealthManager() {
-  LOG_INFO("~HealthManager()");
+  XPUM_LOG_INFO("~HealthManager()");
 }
 
 void HealthManager::init() {

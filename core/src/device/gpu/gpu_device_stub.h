@@ -1,19 +1,19 @@
 #pragma once
 
 #include <string>
-#include "const.h"
-#include "device.h"
-#include "measurement_data.h"
-#include "thread_pool.h"
+#include "infrastructure/const.h"
+#include "device/device.h"
+#include "infrastructure/measurement_data.h"
+#include "infrastructure/thread_pool.h"
 #include "ze_api.h"
 #include "zes_api.h"
 #include "zet_api.h"
-#include "scheduler.h"
-#include "standby.h"
-#include "power.h"
-#include "frequency.h"
-#include "health_data_type.h"
-#include "topology.h"
+#include "device/scheduler.h"
+#include "device/standby.h"
+#include "device/power.h"
+#include "device/frequency.h"
+#include "health/health_data_type.h"
+#include "topology/topology.h"
 
 class GPUDeviceStub {
  public:

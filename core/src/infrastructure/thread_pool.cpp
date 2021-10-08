@@ -1,16 +1,16 @@
 #include <future>
 
 #include "logger.h"
-#include "ilegal_state_exception.h"
+#include "infrastructure/exception/ilegal_state_exception.h"
 #include "thread_pool.h"
 
 ThreadPool::ThreadPool(unsigned int size) : stop(false), size(size) {
-  LOG_INFO("ThreadPool()");
+  XPUM_LOG_INFO("ThreadPool()");
   init();
 }
 
 ThreadPool::~ThreadPool() {
-  LOG_INFO("~ThreadPool()");
+  XPUM_LOG_INFO("~ThreadPool()");
   close();
 }
 
@@ -32,10 +32,10 @@ void ThreadPool::init() {
         } catch (std::exception& e) {
           std::string error = "Failed to execute task in thread pool: ";
           error += e.what();
-          LOG_ERROR(error);          
+          XPUM_LOG_ERROR(error);          
         } catch (...) {
           std::string error = "Failed to execute task in thread pool: unexpected exception";
-          LOG_ERROR(error);
+          XPUM_LOG_ERROR(error);
         }
 
       }
