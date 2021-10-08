@@ -81,7 +81,7 @@ diag_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId"
 diag_parser.add_argument('-g', '--group', metavar="<groupId>", dest="groupId", type=int,
                           help='The group id to query')
 diag_parser.add_argument('-l', '--level', metavar="<level>", dest="level", type=int,
-                          help='The diagnostics level to run')
+                          help='The diagnostics level to run, it must be 1, 2 or 3, where 1 is quick test, 2 is medium test and 3 is long test')
 
 # fwflash subcommand parser
 fwflash_parser = subparsers.add_parser("fwflash", help="Flash device firmware")
@@ -272,7 +272,10 @@ def arg():
             display_all_device_stats()
             return
     elif parsed.subcommand == "health":
-        if parsed.deviceId is not None:
+        if parsed.list:
+            display_all_device_health()
+            return
+        elif parsed.deviceId is not None:
             if parsed.thermalThreshold is not None:
                 set_device_health_config(parsed.deviceId, "temperature", parsed.thermalThreshold)
                 return
@@ -906,6 +909,9 @@ def get_diag_rows(data):
     return [header_row, base_row, *rows]
 
 def run_device_diagnostics(deviceId, level):
+    if level <= 0 or level > 3:
+        print("Error occurs: diagnostic level must be 1, 2 or 3")
+        return
     reqData = {
         "DiagnosticsLevel":level
     }
@@ -929,6 +935,9 @@ def run_device_diagnostics(deviceId, level):
     t.print()
 
 def run_group_diagnostics(groupId, level):
+    if level <= 0 or level > 3:
+        print("Error occurs: diagnostic level must be 1, 2 or 3")
+        return
     reqData = {
         "DiagnosticsLevel":level
     }
@@ -987,6 +996,27 @@ def get_health_rows(data):
         )
         rows.append(["Fabricport",v])
     return [header_row, *rows]
+
+def display_all_device_health():
+    res = requests.get(host+"/rest/v1/devices")
+    if res.status_code != 200:
+        print("Fail to query data")
+        return
+    data = res.json()
+    gpus = [d for d in data if d['DeviceType'] == 0]
+    if not gpus:
+        return
+    print("Device Type: GPU")
+    t = PrintTable()
+    for d in gpus:
+        res = requests.get(host+"/rest/v1/devices/{}/health".format(d["DeviceId"]))
+        if res.status_code != 200:
+            print("Error occurs:"+res.content.decode())
+            return
+        data = res.json()
+        rows = get_health_rows(data)
+        t.add_rows(rows)
+    t.print()
 
 def display_device_health(deviceId):
     # print("health for device {}".format(deviceId))
