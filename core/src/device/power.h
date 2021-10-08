@@ -3,8 +3,8 @@
 #include <vector>
 #include <mutex>
 #include <string>
-#include "ze_api.h"
-#include "zes_api.h"
+#include "level_zero/ze_api.h"
+#include "level_zero/zes_api.h"
 
 struct Power_sustained_limit_t {
   bool enabled;

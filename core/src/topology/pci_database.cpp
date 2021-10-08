@@ -40,7 +40,7 @@ std::string GetSelfPath()
     std::size_t mPos = selfPath.find("/");
     if (mPos == std::string::npos) 
     {
-        char exePath[MAX_PATH];
+        char exePath[XPUM_MAX_PATH_LEN];
         ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
         exePath[len] = '\0';
         selfPath = exePath;

@@ -8,9 +8,9 @@
 #include "infrastructure/property.h"
 #include "infrastructure/device_capability.h"
 #include "infrastructure/measurement_type.h"
-#include "ze_api.h"
-#include "zes_api.h"
-#include "zet_api.h"
+#include "level_zero/ze_api.h"
+#include "level_zero/zes_api.h"
+#include "level_zero/zet_api.h"
 #include "../include/xpum_structs.h"
 
 class Device {

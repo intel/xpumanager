@@ -5,9 +5,9 @@
 #include "device/device.h"
 #include "infrastructure/measurement_data.h"
 #include "infrastructure/thread_pool.h"
-#include "ze_api.h"
-#include "zes_api.h"
-#include "zet_api.h"
+#include "level_zero/ze_api.h"
+#include "level_zero/zes_api.h"
+#include "level_zero/zet_api.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
 #include "device/power.h"
@@ -143,8 +143,6 @@ private:
   static std::string to_string(zes_pci_address_t address);
 
   static std::string to_regex_string(zes_pci_address_t address);
-
-  static std::string to_string(xpum_switch pSwitch);
 
   static void addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities);
 

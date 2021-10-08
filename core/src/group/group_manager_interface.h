@@ -7,7 +7,7 @@ class GroupManagerInterface : public InitCloseInterface {
     public:
         virtual ~GroupManagerInterface() {}
 
-        virtual xpum_result_t createGroup(const char *pGroupName, xpum_group_id_t *pGroupId) = 0;
+        virtual xpum_result_t createGroup(const char *pGroupName, xpum_group_id_t *pGroupId, bool buildIn=false) = 0;
 
         virtual xpum_result_t destroyGroup(xpum_group_id_t groupId) = 0;
 

@@ -1,7 +1,7 @@
 #include "infrastructure/logger.h"
 #include "group_info.h"
 
-GroupInfo::GroupInfo(const char * groupname, xpum_group_id_t groupId)
+GroupInfo::GroupInfo(std::string groupname, xpum_group_id_t groupId)
 {
     XPUM_LOG_INFO("GroupInfo");
     name = groupname;
@@ -36,7 +36,7 @@ void GroupInfo::getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES]
     }
 }
 
-xpum_result_t GroupInfo::addDevice(xpum_group_id_t groupId, xpum_device_id_t deviceId)
+xpum_result_t GroupInfo::addDevice(xpum_device_id_t deviceId)
 {
     XPUM_LOG_INFO("GroupInfo::addDevice");
     xpum_result_t ret = XPUM_GENERIC_ERROR;    
