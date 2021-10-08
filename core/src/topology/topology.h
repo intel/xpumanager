@@ -1,5 +1,5 @@
 #pragma once
-#include "zes_api.h"
+#include "level_zero/zes_api.h"
 #include "hwloc.h"
 #include <string>
 #include "../include/xpum_structs.h"
