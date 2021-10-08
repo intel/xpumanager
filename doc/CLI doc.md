@@ -20,8 +20,7 @@ Subcommand options:
     agentset                XPUM agent settings
     stats                   Display device statistics
     telemetry               Collect and dump metrics raw data
-    reset                   Reset the device
-	
+
 
 ```
 
@@ -876,17 +875,4 @@ Timestamp,DeviceId,TileId,Power(W),GPU Frequency(MHz),GPU Temperature(°C),Memor
 2021-07-09 16:03:39,0,0,71,300,35,32.8,0
 2021-07-09 16:03:40,0,0,71,300,35,32.8,0
 ```
-# Reset device
-## Help info
-```
-usage: xpumcli reset [-h] [-d <deviceId>]
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -d <deviceId>, --device <deviceId>
-                        reset device
-## forcely reset device
-```
-$ xpumcli reset -d 0
-OK
-```
