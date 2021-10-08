@@ -123,7 +123,7 @@ metricsTypeTranslationMap = {
     "XPUM_STATS_ISSUE_EFFICIENCY": "Issue Efficiency (%)",
     "XPUM_STATS_EXECUTION_EFFICIENCY": "Execution Efficiency (%)",
     "XPUM_STATS_NON_OCCUPATION": "Non-Occupation (%)",
-    "XPUM_STATS_POWER": "GPU Power (milliwatt)",
+    "XPUM_STATS_POWER": "GPU Power (W)",
     "XPUM_STATS_ENERGY": "Energy Counter (millijoule)",
     "XPUM_STATS_GPU_FREQUENCY": "GPU Frequency (MHz)",
     "XPUM_STATS_GPU_TEMEPERATURE": "GPU Temperature (°C)",
