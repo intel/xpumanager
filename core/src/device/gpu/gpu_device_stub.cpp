@@ -36,7 +36,11 @@ void GPUDeviceStub::init() {
   initialized = true;
   putenv(const_cast<char *>( "ZES_ENABLE_SYSMAN=1" ) );
   putenv(const_cast<char *>( "ZET_ENABLE_METRICS=1" ) );
-  zeInit(0);
+  ze_result_t ret = zeInit(0);
+  if ( ret != ZE_RESULT_SUCCESS){
+    XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
+    throw BaseException("zeInit error");
+  }
 }
 
 void GPUDeviceStub::discoverDevices(Callback_t callback) {
