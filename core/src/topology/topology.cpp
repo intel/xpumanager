@@ -98,6 +98,7 @@ bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t
     }
 
     hwloc_topology_destroy(hwtopology);
+    return true;
 }
 
 xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t * topology, std::size_t *memSize)

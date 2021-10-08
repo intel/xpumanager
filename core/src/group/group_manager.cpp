@@ -232,7 +232,7 @@ void GroupManager::createBuildInGroup(bool bBuildInDevice, int vendorId, int dev
 void GroupManager::createBuildInGroup(){
     std::vector<std::shared_ptr<Device>> devices;
     std::map<std::string, std::vector<zes_pci_address_t>> pcieMap;
-    xpum_group_id_t groupId;    
+    //xpum_group_id_t groupId;    
     bool bBuildInGroup = false, bBuildInDevice = false;
     if(p_devicemanager == nullptr){
         return;
@@ -242,7 +242,7 @@ void GroupManager::createBuildInGroup(){
     }
     
     p_devicemanager->getDeviceList(devices);
-    for(int i=0;i<devices.size();i++) {
+    for(std::size_t i=0;i<devices.size();i++) {
         int vendorId = -1, deviceId = -1;
         std::string bdfAddress;
         auto& p_device = devices[i];
@@ -284,7 +284,7 @@ void GroupManager::createBuildInGroup(){
 }
 
 void GroupManager::init() {
-    createBuildInGroup();
+    //createBuildInGroup();
 }
 
 void GroupManager::close() {
