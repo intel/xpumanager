@@ -1428,7 +1428,7 @@ def set_device_burstlimit(deviceId, deviceTileId, keyValue):
     reqData = {
         "subDeviceId": deviceTileId,
         "limitType": int(1),
-        "enabled":bool(keyValueArray[1]=='True'),
+        "enabled":bool(keyValueArray[1]=='true'),
         "power":int(keyValueArray[0])*1000,
         "interval":int(0),
         "powerAC":int(0),
