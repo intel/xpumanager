@@ -1,8 +1,8 @@
 #pragma once
 
 #include "health_manager_interface.h"
-#include "device_manager_interface.h"
-#include "data_logic_interface.h"
+#include "control/device_manager_interface.h"
+#include "data_logic/data_logic_interface.h"
 #include "health_data_type.h"
 
 class HealthManager : public HealthManagerInterface {

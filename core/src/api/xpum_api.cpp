@@ -6,17 +6,17 @@
 #include <memory>
 
 #include "xpum_api.h"
-#include "core.h"
-#include "power.h"
+#include "core/core.h"
+#include "device/power.h"
 #include "api.h"
-#include "device.h"
+#include "device/device.h"
 
-#include "version.h"
-#include "device.h"
+#include "infrastructure/version.h"
+#include "device/device.h"
 
-#include "configuration.h"
-#include "topology.h"
-#include "device_property.h"
+#include "infrastructure/configuration.h"
+#include "topology/topology.h"
+#include "infrastructure/device_property.h"
 
 using namespace std;
 
@@ -278,6 +278,7 @@ xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
 xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId)
 {
     Core::instance().getDataLogic()->stopRawDataCollectionTask(taskId);
+    return xpum_result_t::XPUM_OK;
 }
 
 xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "measurement_type.h"
+#include "infrastructure/measurement_type.h"
 #include "persistency.h"
 
 class DBPersistency : public Persistency {

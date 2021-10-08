@@ -1,4 +1,4 @@
-#include "logger.h"
+#include "infrastructure/logger.h"
 #include "power.h"
 
 Power::Power(bool on_subdevice, uint32_t subdevice_id, bool can_control, bool is_energy_threshold_supported, int32_t default_limit, int32_t min_limit, int32_t max_limit) {

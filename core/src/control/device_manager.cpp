@@ -2,20 +2,20 @@
 #include <atomic>
 #include <iostream>
 
-#include "logger.h"
-#include "ilegal_parameter_exception.h"
-#include "gpu_device_stub.h"
-#include "utility.h"
+#include "infrastructure/logger.h"
+#include "infrastructure/exception/ilegal_parameter_exception.h"
+#include "device/gpu/gpu_device_stub.h"
+#include "infrastructure/utility.h"
 #include "device_manager.h"
 
 DeviceManager::DeviceManager(std::shared_ptr<DataLogicInterface>& p_data_logic) 
   : p_data_logic(p_data_logic) {
-  LOG_INFO("DeviceManager()");
+  XPUM_LOG_INFO("DeviceManager()");
 }
 
 DeviceManager::~DeviceManager() {
   close();
-  LOG_INFO("~DeviceManager()");
+  XPUM_LOG_INFO("~DeviceManager()");
 }
 
 void DeviceManager::init() {
@@ -32,7 +32,7 @@ void DeviceManager::init() {
     }
 
     if (e != nullptr) {
-      LOG_ERROR("Failed to init device list: {}", e->what());
+      XPUM_LOG_ERROR("Failed to init device list: {}", e->what());
       ready = true;
       cv.notify_all();
       return ;

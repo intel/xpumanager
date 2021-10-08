@@ -2,9 +2,10 @@
 #pragma once
 
 #include <map>
-#include "xpum_structs.h"
-#include "measurement_cache_data.h"
 #include <deque>
+
+#include "../include/xpum_structs.h"
+#include "infrastructure/measurement_cache_data.h"
 
 class DataLogicQueryInterface {
  public:

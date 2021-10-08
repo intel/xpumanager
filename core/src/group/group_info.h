@@ -2,8 +2,8 @@
 #include <string>
 #include <vector>
 
-#include "xpum_structs.h"
-#include "device_manager_interface.h"
+#include "../include/xpum_structs.h"
+#include "control/device_manager_interface.h"
 
 class GroupInfo
 {

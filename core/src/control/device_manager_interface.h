@@ -3,15 +3,15 @@
 #include <mutex>
 #include <vector>
 
-#include "device_capability.h"
-#include "init_close_interface.h"
-#include "device.h"
-#include "measurement_data.h"
-#include "measurement_type.h"
-#include "scheduler.h"
-#include "standby.h"
-#include "power.h"
-#include "frequency.h"
+#include "infrastructure/device_capability.h"
+#include "infrastructure/init_close_interface.h"
+#include "device/device.h"
+#include "infrastructure/measurement_data.h"
+#include "infrastructure/measurement_type.h"
+#include "device/scheduler.h"
+#include "device/standby.h"
+#include "device/power.h"
+#include "device/frequency.h"
 
 class DeviceManagerInterface : public InitCloseInterface {
  public:

@@ -1,15 +1,15 @@
-#include "logger.h"
-#include "gpu_device_stub.h"
+#include "infrastructure/logger.h"
+#include "device/gpu/gpu_device_stub.h"
 #include "gpu_device.h"
-#include "device_property.h"
+#include "infrastructure/device_property.h"
 
-#include "api_types.h"
+#include "api/api_types.h"
 #include "unistd.h"
 #include "stdio.h"
 #include <fstream>
 
 GPUDevice::GPUDevice() : commandExec( nullptr ) {
-  LOG_INFO("GPUDevice()");
+  XPUM_LOG_INFO("GPUDevice()");
 }
 
 GPUDevice::GPUDevice(const std::string& id,
@@ -37,7 +37,7 @@ GPUDevice::GPUDevice(const std::string& id,
 }
 
 GPUDevice::~GPUDevice() {
-  LOG_INFO("~GPUDevice()");
+  XPUM_LOG_INFO("~GPUDevice()");
 }
 
 void GPUDevice::getPower(Callback_t callback) noexcept {

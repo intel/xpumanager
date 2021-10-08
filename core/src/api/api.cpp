@@ -1,6 +1,9 @@
-#include "core.h"
-#include "error_code.h"
-#include "logger.h"
+#include "core/core.h"
+#include "infrastructure/error_code.h"
+#include "infrastructure/logger.h"
+#include "device/scheduler.h"
+#include "device/standby.h"
+#include "device/frequency.h"
 
 #include "api.h"
 
@@ -93,10 +96,10 @@ bool init() {
   try {
     Core::instance().init();
   } catch (BaseException &e) {
-    LOG_ERROR("Failed to init DCM Core: {}", e.what());
+    XPUM_LOG_ERROR("Failed to init DCM Core: {}", e.what());
     return false;
   } catch (std::exception& e) {
-    LOG_ERROR("Failed to init DCM Core: {}", e.what());
+    XPUM_LOG_ERROR("Failed to init DCM Core: {}", e.what());
     return false;
   }
 
@@ -122,7 +125,7 @@ void getDeviceList(void (*callback)(Device_t*), Api_result_t* api_result) {
       des.properties[des.property_len].name = prop.getName().c_str();
       des.properties[des.property_len].value = prop.getValue().c_str();
       if (++des.property_len >= MAX_PROPERTY) {
-        LOG_WARN("property limitation is reached");    
+        XPUM_LOG_WARN("property limitation is reached");    
         break;
       }
     }

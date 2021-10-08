@@ -2,12 +2,12 @@
 
 #include <atomic>
 
-#include "base_exception.h"
-#include "const.h"
+#include "infrastructure/exception/base_exception.h"
+#include "infrastructure/const.h"
 #include "shared_data.h"
-#include "shared_queue.h"
+#include "infrastructure/shared_queue.h"
 #include "persistency.h"
-#include "measurement_type.h"
+#include "infrastructure/measurement_type.h"
 
 class DataHandler : public std::enable_shared_from_this<DataHandler> {
 public:

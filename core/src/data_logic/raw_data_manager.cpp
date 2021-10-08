@@ -6,7 +6,7 @@
 #include "memory_data_handler.h"
 #include "engine_utilization_data_handler.h"
 #include "metric_statistics_data_handler.h"
-#include "configuration.h"
+#include "infrastructure/configuration.h"
 #include <algorithm>
 
 RawDataManager::RawDataManager(std::shared_ptr<Persistency>& persistency) 

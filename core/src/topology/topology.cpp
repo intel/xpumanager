@@ -6,17 +6,17 @@
 #include <fstream>
 
 #include "topology.h"
-#include "device_property.h"
-#include "logger.h"
+#include "infrastructure/device_property.h"
+#include "infrastructure/logger.h"
 #include "pci_database.h"
 #include "hwinfo.h"
 
 Topology::Topology()    {
-    LOG_INFO("Topology()");
+    XPUM_LOG_INFO("Topology()");
 }
 
 Topology::~Topology() {
-    LOG_INFO("~Topology()");
+    XPUM_LOG_INFO("~Topology()");
 }
 
 std::string Topology::getLocalCpus(std::string address) {
@@ -211,11 +211,11 @@ int Topology::get_p_switch_count(hwloc_obj_t chi_obj)
                     preVendorId = obj->attr->bridge.upstream.pci.vendor_id;
                     preDeviceId = obj->attr->bridge.upstream.pci.device_id;
                     count++;
-                    LOG_TRACE("Found Switch count {}.", count);
+                    XPUM_LOG_TRACE("Found Switch count {}.", count);
                 }
             }
         } else {
-            LOG_WARN("Unknow hwloc-obj type  {}.", obj->type);
+            XPUM_LOG_WARN("Unknow hwloc-obj type  {}.", obj->type);
         }
         obj = obj->parent;
     }
@@ -258,7 +258,7 @@ void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch * pSwitc
                 }
             }
         } else {
-            LOG_WARN("Unknow hwloc-obj type  {}.", obj->type);
+            XPUM_LOG_WARN("Unknow hwloc-obj type  {}.", obj->type);
         }
         obj = obj->parent;
     }

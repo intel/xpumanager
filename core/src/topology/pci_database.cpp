@@ -1,7 +1,7 @@
 #include "pci_database.h"
-#include "xpum_structs.h"
-#include "logger.h"
-#include "xpum_config.h"
+#include "../include/xpum_structs.h"
+#include "infrastructure/logger.h"
+#include "infrastructure/xpum_config.h"
 
 #include <fstream>
 #include <iostream>
@@ -9,11 +9,11 @@
 #include "dlfcn.h"
 
 PciDatabase::PciDatabase() {
-    LOG_INFO("PciDatabase()");
+    XPUM_LOG_INFO("PciDatabase()");
 }
 
 PciDatabase::~PciDatabase() {
-    LOG_INFO("~PciDatabase()");
+    XPUM_LOG_INFO("~PciDatabase()");
     devices.clear();
 }
 
@@ -23,7 +23,7 @@ PciDatabase &PciDatabase::instance() {
 
     if (!instance.bInitialized) {
          if(!instance.init()){
-             LOG_ERROR("Failed to initialize PciDatabase, Device topology function does not work!");
+             XPUM_LOG_ERROR("Failed to initialize PciDatabase, Device topology function does not work!");
          }
     }
     instance.bInitialized = true;
@@ -65,11 +65,11 @@ bool PciDatabase::init() {
 
     if (infile.is_open()) {
         if (!parse_pci_device(infile)) {
-            LOG_ERROR("PciDatabase::init()- parse_pci_device error.");
+            XPUM_LOG_ERROR("PciDatabase::init()- parse_pci_device error.");
         }   
         infile.close();     
     } else {
-        LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
+        XPUM_LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
     }
 
     fileName = folder + std::string(PCI_IDS_CONFIG);
@@ -79,7 +79,7 @@ bool PciDatabase::init() {
         parse_switch_config(infile);
         infile.close();            
     } else {
-        LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
+        XPUM_LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
     } 
 
     return true;
@@ -255,7 +255,7 @@ bool PciDatabase::parse_level_2(const std::string &info, int len, id_type *type,
         }
     } break;
     case ID_VENDOR: {
-        LOG_ERROR("PciDatabase::parse_level_2() error- unknow device.");
+        XPUM_LOG_ERROR("PciDatabase::parse_level_2() error- unknow device.");
         bResult = true;
     } break;
     }
@@ -305,7 +305,7 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
                     {DV_UNKNOW, vendor_id, device_id, 0, 0};
                 if (info.at(start) == '0') {
                     int ret = devices.erase(std::make_pair(vendor_id, device_id));
-                    LOG_TRACE("PciDatabase::parse_switch_config()- remove d_id:v_id = [{}:{}] count:{}", vendor_id, device_id, ret);
+                    XPUM_LOG_TRACE("PciDatabase::parse_switch_config()- remove d_id:v_id = [{}:{}] count:{}", vendor_id, device_id, ret);
                 } else if (info.at(start) == '1') {
                     device.type = DV_SWITCH;
                     devices[std::make_pair(vendor_id, device_id)] = device;
@@ -313,7 +313,7 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
                     device.type = DV_GRAPHIC;
                     devices[std::make_pair(vendor_id, device_id)] = device;
                 } else {
-                    LOG_ERROR("PciDatabase::parse_switch_config() error- unknow value.");
+                    XPUM_LOG_ERROR("PciDatabase::parse_switch_config() error- unknow value.");
                 }
             }
         }
@@ -328,16 +328,16 @@ void PciDatabase::add_switch_device(int32_t vendor_id, int32_t device_id, std::s
 
     if(sub_v_id>=0 && sub_d_id>=0 && !sub_s_name.empty()){
         if (sub_s_name.find(switch_string) != std::string::npos) {
-            LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
+            XPUM_LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
             devices[std::make_pair(vendor_id, device_id)] = device;
         }
     } else if(vendor_id>=0 && device_id>=0 && !device_name.empty()) {
         if (device_name.find(switch_string) != std::string::npos) {
-            LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
+            XPUM_LOG_DEBUG("PciDatabase::add_switch_device {}", device.tostring());
             devices[std::make_pair(vendor_id, device_id)] = device;
         }
     } else {
-        LOG_ERROR("PciDatabase::add_switch_device() error- unknow device {}.", device.tostring());
+        XPUM_LOG_ERROR("PciDatabase::add_switch_device() error- unknow device {}.", device.tostring());
     }    
 }
 

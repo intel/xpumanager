@@ -3,8 +3,8 @@
 #include <vector>
 #include <string>
 
-#include "init_close_interface.h"
-#include "xpum_structs.h"
+#include "infrastructure/init_close_interface.h"
+#include "../include/xpum_structs.h"
 
 class PolicyManagerInterface : public InitCloseInterface {
  public:

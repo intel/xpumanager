@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "xpum_structs.h"
+#include "../include/xpum_structs.h"
 
 class Property {
  public:

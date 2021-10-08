@@ -11,8 +11,8 @@
 #include <sstream>
 #include <iostream>
 #include "diagnostic_manager_interface.h"
-#include "device_manager_interface.h"
-#include "data_logic_interface.h"
+#include "control/device_manager_interface.h"
+#include "data_logic/data_logic_interface.h"
 #include "diagnostic_data_type.h"
 
 class DiagnosticManager : public DiagnosticManagerInterface {

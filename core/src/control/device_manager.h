@@ -3,9 +3,9 @@
 #include <vector>
 #include <map>
 
-#include "data_logic_interface.h"
+#include "data_logic/data_logic_interface.h"
 #include "device_manager_interface.h"
-#include "scheduler.h"
+#include "device/scheduler.h"
 
 class DeviceManager : public DeviceManagerInterface,
                       public std::enable_shared_from_this<DeviceManager> {

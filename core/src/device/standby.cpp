@@ -1,4 +1,4 @@
-#include "logger.h"
+#include "infrastructure/logger.h"
 #include "standby.h"
 
 Standby::Standby(zes_standby_type_t type, bool on_subdevice, uint32_t subdevice_id, zes_standby_promo_mode_t mode) {

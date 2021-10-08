@@ -2,7 +2,7 @@
 #include "zes_api.h"
 #include "hwloc.h"
 #include <string>
-#include "xpum_structs.h"
+#include "../include/xpum_structs.h"
 
 
 struct xpum_switch{
