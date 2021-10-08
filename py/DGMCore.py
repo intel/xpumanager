@@ -783,7 +783,11 @@ class DGMCore:
             i = i + 1
             new_component = dict()
             typeStr = XpumDiagType(component.type).name.replace("XPUM_DIAG_", "")
+            if typeStr == "HARDWARE_SYSMAN" or typeStr == "MEDIA_CODEC":
+                data['Count'] -= 1
+                continue
             typeStr = " ".join([t.capitalize() for t in typeStr.split("_")])
+            typeStr = typeStr.replace("Pcie", "PCIe")
             new_component['Type'] = typeStr
             new_component['Finished'] = component.finished
             new_component['Result'] = XpumDiagResult(component.result).name.split("_")[-1].capitalize()
@@ -817,7 +821,11 @@ class DGMCore:
                 i = i + 1
                 new_component = dict()
                 typeStr = XpumDiagType(component.type).name.replace("XPUM_DIAG_", "")
+                if typeStr == "HARDWARE_SYSMAN" or typeStr == "MEDIA_CODEC":
+                    data['Count'] -= 1
+                    continue
                 typeStr = " ".join([t.capitalize() for t in typeStr.split("_")])
+                typeStr = typeStr.replace("Pcie", "PCIe")
                 new_component['Type'] = typeStr
                 new_component['Finished'] = component.finished
                 new_component['Result'] = XpumDiagResult(component.result).name.split("_")[-1].capitalize()

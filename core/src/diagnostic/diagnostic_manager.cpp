@@ -449,17 +449,15 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t& 
   calculateBandwidthLatency(total_time_nsec, static_cast<long double>(size * number_iterations), total_bandwidth, total_latency, number_iterations);
   //showResultsHost2device(size, total_bandwidth, total_latency);
   
+  std::string desc = "PCIe check info: ";
+  desc += " Its bandwidth is " + roundDouble(total_bandwidth, 3) + " GBPS.";
+  desc += " Its latency is " + roundDouble(total_latency, 3) + " usec.";
   if (total_bandwidth < Configuration::PCIE_MIN_BANDWIDTH || total_latency > Configuration::PCIE_MAX_LATENCY) {
-    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING;
-    std::string desc = "PCIe check failed.";
-    if (total_bandwidth < Configuration::PCIE_MIN_BANDWIDTH)
-      desc += " Its bandwidth is " + roundDouble(total_bandwidth, 3) + " GBPS.";
-    if (total_latency > Configuration::PCIE_MAX_LATENCY)
-      desc += " Its latency is " + roundDouble(total_latency, 3) + " usec.";
+    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
     updateMessage(component.message, desc);
   } else {
     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-    updateMessage(component.message, std::string("PCIe bandwidth and latency check pass"));
+    updateMessage(component.message, desc);
   }
   component.finished = true;
 }
@@ -907,10 +905,10 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   std::string power_detail;
   int power_value = 0;
   if (powerReachStress(ze_device, Configuration::POWER_MIN_STRESS, power_value)) {
-      power_detail = "Its power is " + roundDouble(gflops, 3) + ".";
       powerCheckPass = false;
   }
-  
+  power_detail = "Its stress power is " + std::to_string(power_value) + " W.";
+
   zeKernelDestroy(compute_dp_v1);
   zeKernelDestroy(compute_dp_v2);
   zeKernelDestroy(compute_dp_v4);
@@ -934,10 +932,12 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   
   if (powerCheckPass) {
     power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-    updateMessage(power_component.message, std::string("Performance power check pass"));
+    std:: string desc = "Performance power check info: ";
+    desc += " " + power_detail; 
+    updateMessage(power_component.message, desc);
   } else {
-    power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING;
-    std:: string desc = "Performance power check failed.";
+    power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+    std:: string desc = "Performance power check info: ";
     desc += " " + power_detail; 
     updateMessage(power_component.message, desc);
   }
