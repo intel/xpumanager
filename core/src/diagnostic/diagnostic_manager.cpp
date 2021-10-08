@@ -762,7 +762,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   long double gflops, timed;
   std::size_t flops_per_work_item = 4096;
   struct ZeWorkGroups workgroup_info;
-  double input_value = 1.3f;
+  float input_value = 1.3f;
 
   ze_context_handle_t context;
   ze_context_desc_t context_desc = {};
@@ -771,7 +771,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
 
   ze_module_handle_t module_handle;
   ze_module_desc_t module_description = {};
-  std::vector<uint8_t> binary_file = loadBinaryFile("kernels/ze_dp_compute.spv");
+  std::vector<uint8_t> binary_file = loadBinaryFile("kernels/ze_sp_compute.spv");
   module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
   module_description.pNext = nullptr;
   module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
@@ -791,10 +791,10 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   uint64_t max_work_items = device_properties.numSlices * 
                   device_properties.numSubslicesPerSlice *
                   device_properties.numEUsPerSubslice *
-                  device_compute_properties.maxGroupCountX * 512;
+                  device_compute_properties.maxGroupCountX * 2048;
 
-  uint64_t max_number_of_allocated_items = device_properties.maxMemAllocSize / sizeof(double);
-  uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(double)));
+  uint64_t max_number_of_allocated_items = device_properties.maxMemAllocSize / sizeof(float);
+  uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(float)));
   number_of_work_items = setWorkgroups(device_compute_properties, number_of_work_items, &workgroup_info);
 
   void *device_input_value;
@@ -803,7 +803,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   in_device_desc.pNext = nullptr;
   in_device_desc.ordinal = 0;
   in_device_desc.flags = 0;
-  zeMemAllocDevice(context, &in_device_desc, sizeof(double), 1, ze_device, &device_input_value);
+  zeMemAllocDevice(context, &in_device_desc, sizeof(float), 1, ze_device, &device_input_value);
 
   void *device_output_buffer;
   ze_device_mem_alloc_desc_t out_device_desc = {};
@@ -811,7 +811,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   out_device_desc.pNext = nullptr;
   out_device_desc.ordinal = 0;
   out_device_desc.flags = 0;
-  zeMemAllocDevice(context, &out_device_desc, static_cast<std::size_t>((number_of_work_items * sizeof(double))),
+  zeMemAllocDevice(context, &out_device_desc, static_cast<std::size_t>((number_of_work_items * sizeof(float))),
                             1, ze_device, &device_output_buffer);
 
   ze_command_list_handle_t command_list;
@@ -832,7 +832,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
 
   zeCommandListCreate(context, ze_device, &command_list_description, &command_list);
   zeCommandQueueCreate(context, ze_device, &command_queue_description, &command_queue);
-  zeCommandListAppendMemoryCopy(command_list, device_input_value, &input_value, sizeof(double), nullptr, 0, nullptr);
+  zeCommandListAppendMemoryCopy(command_list, device_input_value, &input_value, sizeof(float), nullptr, 0, nullptr);
 
   zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
   zeCommandListClose(command_list);
@@ -841,65 +841,55 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   zeCommandQueueSynchronize(command_queue, UINT64_MAX);
   zeCommandListReset(command_list);
 
-  ze_kernel_handle_t compute_dp_v1;
-  ze_kernel_handle_t compute_dp_v2;
-  ze_kernel_handle_t compute_dp_v4;
-  ze_kernel_handle_t compute_dp_v8;
-  ze_kernel_handle_t compute_dp_v16;
+  ze_kernel_handle_t compute_sp_v1;
+  ze_kernel_handle_t compute_sp_v2;
+  ze_kernel_handle_t compute_sp_v4;
+  ze_kernel_handle_t compute_sp_v8;
+  ze_kernel_handle_t compute_sp_v16;
 
-  setupFunction(module_handle, compute_dp_v1, "compute_dp_v1", device_input_value, device_output_buffer);
-  setupFunction(module_handle, compute_dp_v2, "compute_dp_v2", device_input_value, device_output_buffer);
-  setupFunction(module_handle, compute_dp_v4, "compute_dp_v4", device_input_value, device_output_buffer);
-  setupFunction(module_handle, compute_dp_v8, "compute_dp_v8", device_input_value, device_output_buffer);
-  setupFunction(module_handle, compute_dp_v16, "compute_dp_v16", device_input_value, device_output_buffer);
+  setupFunction(module_handle, compute_sp_v1, "compute_sp_v1", device_input_value, device_output_buffer);
+  setupFunction(module_handle, compute_sp_v2, "compute_sp_v2", device_input_value, device_output_buffer);
+  setupFunction(module_handle, compute_sp_v4, "compute_sp_v4", device_input_value, device_output_buffer);
+  setupFunction(module_handle, compute_sp_v8, "compute_sp_v8", device_input_value, device_output_buffer);
+  setupFunction(module_handle, compute_sp_v16, "compute_sp_v16", device_input_value, device_output_buffer);
 
   bool computeCheckPass = true;
   std::string compute_detail;
   timed = 0;
+  long double current;
   // Vector width 1
-  timed = runKernel(command_queue, command_list, compute_dp_v1, workgroup_info);
-  gflops = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-  if (gflops < Configuration::DOUBLE_PRECISION_MIN_GFLOPS) {
-    compute_detail = "Its GFLOPS is " + roundDouble(gflops, 3) + ".";
-    computeCheckPass = false;
-  }
+  timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info);
+  current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+  gflops = std::max(gflops, current);
 
   timed = 0;
   // Vector width 2
-  timed = runKernel(command_queue, command_list, compute_dp_v2, workgroup_info);
-  gflops = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-  if (gflops < Configuration::DOUBLE_PRECISION_MIN_GFLOPS) {
-    compute_detail = "Its GFLOPS is " + roundDouble(gflops, 3) + ".";
-    computeCheckPass = false;
-  }
+  timed = runKernel(command_queue, command_list, compute_sp_v2, workgroup_info);
+  current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+  gflops = std::max(gflops, current);
 
   timed = 0;
   // Vector width 4
-  timed = runKernel(command_queue, command_list, compute_dp_v4, workgroup_info);
-  gflops = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-
-  if (gflops < Configuration::DOUBLE_PRECISION_MIN_GFLOPS) {
-    compute_detail = "Its GFLOPS is " + roundDouble(gflops, 3) + ".";
-    computeCheckPass = false;
-  }
+  timed = runKernel(command_queue, command_list, compute_sp_v4, workgroup_info);
+  current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+  gflops = std::max(gflops, current);
 
   timed = 0;
   // Vector width 8
-  timed = runKernel(command_queue, command_list, compute_dp_v8, workgroup_info);
-  gflops = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-  if (gflops < Configuration::DOUBLE_PRECISION_MIN_GFLOPS) {
-    compute_detail = "Its GFLOPS is " + roundDouble(gflops, 3) + ".";
-    computeCheckPass = false;
-  }
+  timed = runKernel(command_queue, command_list, compute_sp_v8, workgroup_info);
+  current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+  gflops = std::max(gflops, current);
 
   timed = 0;
   // Vector width 16
-  timed = runKernel(command_queue, command_list, compute_dp_v16, workgroup_info);
-  gflops = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-  if (gflops < Configuration::DOUBLE_PRECISION_MIN_GFLOPS) {
-    compute_detail = "Its GFLOPS is " + roundDouble(gflops, 3) + ".";
+  timed = runKernel(command_queue, command_list, compute_sp_v16, workgroup_info);
+  current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+  gflops = std::max(gflops, current);
+
+  if (gflops < Configuration::SINGLE_PRECISION_MIN_GFLOPS) {
     computeCheckPass = false;
   }
+  compute_detail = "Its Single-precision GFLOPS is " + roundDouble(gflops, 3) + ".";
 
   bool powerCheckPass = true;
   std::string power_detail;
@@ -909,11 +899,11 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   }
   power_detail = "Its stress power is " + std::to_string(power_value) + " W.";
 
-  zeKernelDestroy(compute_dp_v1);
-  zeKernelDestroy(compute_dp_v2);
-  zeKernelDestroy(compute_dp_v4);
-  zeKernelDestroy(compute_dp_v8);
-  zeKernelDestroy(compute_dp_v16);
+  zeKernelDestroy(compute_sp_v1);
+  zeKernelDestroy(compute_sp_v2);
+  zeKernelDestroy(compute_sp_v4);
+  zeKernelDestroy(compute_sp_v8);
+  zeKernelDestroy(compute_sp_v16);
 
   zeMemFree(context, device_input_value);
   zeMemFree(context, device_output_buffer);
@@ -921,10 +911,12 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
 
   if (computeCheckPass) {
     compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-    updateMessage(compute_component.message, std::string("Performance compute check pass"));
+    std:: string desc = "Performance compute check info: ";
+    desc += " " + compute_detail;
+    updateMessage(compute_component.message, desc);
   } else {
-    compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING;
-    std:: string desc = "Performance compute check failed.";
+    compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+    std:: string desc = "Performance compute check info: ";
     desc += " " + compute_detail;
     updateMessage(compute_component.message, desc);
   }
