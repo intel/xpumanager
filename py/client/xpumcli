@@ -1493,10 +1493,10 @@ def get_device_topology(deviceId):
         return
     data = res.json()
     template = '''Topology:
-    leviceId: {deviceId}
-    localCPUList: {localCPUList}
-    localCPUs: {localCPUs}
-    switchCount:{switchCount} 
+    Device ID: {deviceId}
+    Local CPU List: {localCPUList}
+    Local CPUs: {localCPUs}
+    Switch Count:{switchCount} 
     '''
     deviceId = data['DeviceId']
     localCPUList = data['localCPUList']
