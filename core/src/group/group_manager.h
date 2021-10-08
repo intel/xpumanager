@@ -7,9 +7,8 @@
 
 #include "../include/xpum_structs.h"
 
-#include <atomic>
-#include <map>
-#include <mutex>
+#define BUILD_IN_GROUP      0
+#define BUILD_IN_DEVICE     1
 
 class GroupManager : public GroupManagerInterface,
                      public std::enable_shared_from_this<GroupManager> {
@@ -19,7 +18,7 @@ class GroupManager : public GroupManagerInterface,
 
     virtual ~GroupManager();
 
-    xpum_result_t createGroup(const char *pGroupName, xpum_group_id_t *pGroupId) override;
+    xpum_result_t createGroup(const char *pGroupName, xpum_group_id_t *pGroupId, bool buildIn=false) override;
 
     xpum_result_t destroyGroup(xpum_group_id_t groupId) override;
 
@@ -44,11 +43,15 @@ class GroupManager : public GroupManagerInterface,
 
     GroupManager(const GroupManager &other) = delete;
 
+    void createBuildInGroup();
+    void createBuildInGroup(bool bBuildInDevice, int vendorId, int deviceId, std::string devID, std::string bdfAddress);
+
   private:
     std::shared_ptr<DeviceManagerInterface> p_devicemanager;
     std::shared_ptr<DataLogicInterface> p_datalogic;
     std::mutex mutex;
-    std::atomic_uint groupSequence;
+    std::atomic_int groupSequence;
+    std::atomic_int internalSequence;
     typedef std::map<xpum_group_id_t, GroupInfo *> GroupMap;
     GroupMap groupMap;
 };

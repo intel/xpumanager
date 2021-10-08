@@ -513,10 +513,10 @@ struct xpum_scheduler_exclusive_t {
 
 #define XPUM_MAX_CPU_LIST_LEN       32 
 #define XPUM_MAX_CPU_S_LEN          128
-#define XPUM_DEVICE_PATH_LEN        512  
+#define XPUM_MAX_PATH_LEN           512  
 
 struct parent_switch{
-    char switchDevicePath[XPUM_DEVICE_PATH_LEN];
+    char switchDevicePath[XPUM_MAX_PATH_LEN];
 };
 struct xpum_topology_t {
     xpum_device_id_t deviceId;

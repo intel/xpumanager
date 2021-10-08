@@ -144,8 +144,6 @@ private:
 
   static std::string to_regex_string(zes_pci_address_t address);
 
-  static std::string to_string(xpum_switch pSwitch);
-
   static void addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities);
 
  private:

@@ -8,7 +8,7 @@
 class GroupInfo
 {
     public:
-        GroupInfo(const char * groupname, xpum_group_id_t groupId);
+        GroupInfo(std::string groupname, xpum_group_id_t groupId);
         ~GroupInfo();
 
         xpum_group_id_t getId();
@@ -17,7 +17,7 @@ class GroupInfo
         void getName(char groupname[XPUM_MAX_STR_LENGTH]);
         void getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES]);
 
-        xpum_result_t addDevice(xpum_group_id_t groupId, xpum_device_id_t deviceId);
+        xpum_result_t addDevice(xpum_device_id_t deviceId);
 
         xpum_result_t removeDevice(const std::shared_ptr<DeviceManagerInterface>& p_devicemanager,
             xpum_group_id_t groupId, xpum_device_id_t deviceId);
