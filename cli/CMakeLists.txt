@@ -76,7 +76,7 @@ enable_testing()
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TEST_SRC)
 list(REMOVE_ITEM XPUM_CLI_TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
-file(GLOB test_sources test/*_unittest.cpp)
+file(GLOB test_sources test/*_test.cpp)
 
 foreach(testsourcefile ${test_sources})
 
