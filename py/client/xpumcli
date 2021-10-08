@@ -103,18 +103,18 @@ config_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceI
                           help='The device id to query or change')
 config_parser.add_argument('-t', '--tile', metavar="<deviceTileId>", dest="deviceTileId", type=int,
                           help='The device tile id to query or change')
-config_parser.add_argument('-l', '--list', action='store_true',
-                          help='get all config')
-config_parser.add_argument('--Scheduler', metavar="<SchedulerValue>", dest="SchedulerValue", type=str,
-                          help='config Scheduler：[Timeout,TimeoutValue],[Timeslice,intervalTime,yieldTime],[Exclusive]. Ex: --Scheduler Timeout,50000  --Scheduler Timeslice,10000,50000  --Scheduler Exclusive')
-config_parser.add_argument('--Standby', metavar="<StandbyValue>", dest="StandbyValue", type=str,
-                          help='config standby mode: [Default], [Never]. Ex: --Standby Default  ,--Standby Never')
-config_parser.add_argument('--PowerLimit', metavar="<PowerLimitValue>", dest="PowerLimitValue", type=str,
-                          help='config power limit: [powerValue,intervalValue]. Ex: --PowerLimit 330,120')
-config_parser.add_argument('--FrequencyRange', metavar="<FrequencyRangeValue>", dest="FrequencyRangeValue", type=str,
-                          help='config frequency range: [min frequency,max frequency]. Ex: --FrequencyRange 400,1200')
-config_parser.add_argument('--BurstLimit', metavar="<BurstLimitValue>", dest="BurstLimitValue", type=str,
-                          help='config burst power limit: [powerValue, enable/disable] Ex: --BurstLimit 800,True')
+#config_parser.add_argument('-l', '--list', action='store_true',
+#                          help='get all config')
+config_parser.add_argument('--scheduler', metavar="<scheduler mode>", dest="SchedulerValue", type=str,
+                          help='config scheduler：[timeout,timeout value],[timeslice,interval time,yield time],[exclusive]. Ex: --scheduler timeout,50000  --scheduler timeslice,10000,50000  --scheduler exclusive')
+config_parser.add_argument('--standby', metavar="<standby mode>", dest="StandbyValue", type=str,
+                          help='config standby mode: [default], [never]. Ex: --standby default  ,--standby never')
+config_parser.add_argument('--powerlimit', metavar="<power limit>", dest="PowerLimitValue", type=str,
+                          help='config power limit: [power value,average window]. Ex: --powerlimit 330,120')
+config_parser.add_argument('--frequencyrange', metavar="<frequency range>", dest="FrequencyRangeValue", type=str,
+                          help='config frequency range: [min frequency,max frequency]. Ex: --frequencyrange 400,1200')
+config_parser.add_argument('--burstlimit', metavar="<burst limit>", dest="BurstLimitValue", type=str,
+                          help='config burst limit: [power value, enable/disable] Ex: --burstlimit 800,true')
 
 # telemetry subcommand parser
 metricsTypeTranslationMap = {
@@ -319,10 +319,7 @@ def arg():
             reset_parser.print_help()
             return
     elif parsed.subcommand == "config":
-        if parsed.list:
-            display_device_all_config(parsed.deviceId, parsed.deviceTileId)
-            return
-        elif parsed.SchedulerValue is not None and parsed.deviceTileId is not None:
+        if parsed.SchedulerValue is not None and parsed.deviceTileId is not None:
             set_device_scheduler(parsed.deviceId, parsed.deviceTileId, parsed.SchedulerValue)
             return
         elif parsed.FrequencyRangeValue is not None and parsed.deviceTileId is not None:
@@ -336,6 +333,12 @@ def arg():
             return
         elif parsed.BurstLimitValue is not None and parsed.deviceTileId is not None:
             set_device_burstlimit(parsed.deviceId, parsed.deviceTileId, parsed.BurstLimitValue)
+            return
+        elif parsed.deviceId is not None:
+            display_device_all_config(parsed.deviceId, parsed.deviceTileId)
+            return
+        else:
+            config_parser.print_help()
             return
     elif parsed.subcommand == "telemetry":
         if parsed.start:
@@ -1303,7 +1306,7 @@ def display_device_all_config(deviceId, deviceTileId):
     standbyConfig = get_device_standbys(deviceId)
     freqRange = get_device_frequencyRanges(deviceId)
     scheduler = get_device_schedulers(deviceId)
-    t = PrintTable(["Device Type", "Device Id/Tile ID","Configuration"])
+    t = PrintTable(["Device Type", "Device Id/Tile Id","Configuration"])
     for tileId in tileList :
         tileStandby = [(valx,valy) for (valx,valy) in standbyConfig if (valx ==tileId)]
         tileFreq = [(vala,valb,valc,vald) for (vala,valb,valc,vald) in freqRange if (vala ==tileId)]
@@ -1339,10 +1342,10 @@ def set_device_scheduler(deviceId, deviceTileId, keyValue):
     interval = 0
     yieldTimeout = 0
 
-    if keyValueArray[0] == "Timeout":
+    if keyValueArray[0] == "timeout":
         watchdogTimeout = int(keyValueArray[1])
         schedulerType = 0
-    elif keyValueArray[0] == "Timeslice":
+    elif keyValueArray[0] == "timeslice":
         yieldTimeout = int(keyValueArray[2])
         interval = int(keyValueArray[1])
         schedulerType = 1
@@ -1404,9 +1407,9 @@ def set_device_powerlimit(deviceId, deviceTileId, keyValue):
     return
 
 def set_device_standby(deviceId, deviceTileId, keyValue):
-    if keyValue == "Never":
+    if keyValue == "never":
         KeyValueInt = 1
-    elif keyValue == "Default":
+    elif keyValue == "default":
         KeyValueInt = 0
     else:
         print("Error occurs: invalid parameter")
