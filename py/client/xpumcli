@@ -581,38 +581,6 @@ def get_stats_rows(data):
         tileLevelDataLists,
         "Display Errors Uncorrectable")
 
-    # Occupation (%)
-    stats_non_counter_formater(
-        "XPUM_STATS_OCCUPATION",
-        rows,
-        deviceLevelDataList,
-        tileLevelDataLists,
-        "Occupation (%)")
-    
-    # Issue Efficiency (%)
-    stats_non_counter_formater(
-        "XPUM_STATS_ISSUE_EFFICIENCY",
-        rows,
-        deviceLevelDataList,
-        tileLevelDataLists,
-        "Issue Efficiency (%)")
-    
-    # Execution Efficiency (%)
-    stats_non_counter_formater(
-        "XPUM_STATS_EXECUTION_EFFICIENCY",
-        rows,
-        deviceLevelDataList,
-        tileLevelDataLists,
-        "Execution Efficiency (%)")
-    
-    # Non-Occupation (%)
-    stats_non_counter_formater(
-        "XPUM_STATS_NON_OCCUPATION",
-        rows,
-        deviceLevelDataList,
-        tileLevelDataLists,
-        "Non-Occupation (%)")
-    
     # GPU Utilization (%)
     stats_non_counter_formater(
         "XPUM_STATS_GPU_UTILIZATION",
@@ -653,6 +621,39 @@ def get_stats_rows(data):
         tileLevelDataLists,
         "Memory Used (MiB)",
         1/(2**20),2)
+    
+    # Occupation (%)
+    stats_non_counter_formater(
+        "XPUM_STATS_OCCUPATION",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Occupation (%)")
+    
+    # Issue Efficiency (%)
+    stats_non_counter_formater(
+        "XPUM_STATS_ISSUE_EFFICIENCY",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Issue Efficiency (%)")
+    
+    # Execution Efficiency (%)
+    stats_non_counter_formater(
+        "XPUM_STATS_EXECUTION_EFFICIENCY",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Execution Efficiency (%)")
+    
+    # Non-Occupation (%)
+    stats_non_counter_formater(
+        "XPUM_STATS_NON_OCCUPATION",
+        rows,
+        deviceLevelDataList,
+        tileLevelDataLists,
+        "Non-Occupation (%)")
+    
         
     counter_row = ["\n".join(counter_row_keys),"\n".join(counter_row_values)]
     return [header_row,counter_row,*rows]
