@@ -93,9 +93,9 @@ fwflash_parser.add_argument('-f', '--file', metavar="<imagePath>", dest="imagePa
                           help='The file path in the server, used to flash firmware, should be located in /usr/bin')
 
 # reset subcommand parser
-reset_parser = subparsers.add_parser("reset", help="Reset device")
-reset_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
-                          help='reset device')
+#reset_parser = subparsers.add_parser("reset", help="Reset device")
+#reset_parser.add_argument('-d', '--device', metavar="<deviceId>", dest="deviceId", type=int,
+#                          help='reset device')
 
 # config subcommand parser
 config_parser = subparsers.add_parser("config", help="used to configure settings for devices.")
@@ -114,7 +114,7 @@ config_parser.add_argument('--powerlimit', metavar="<power limit>", dest="PowerL
 config_parser.add_argument('--frequencyrange', metavar="<frequency range>", dest="FrequencyRangeValue", type=str,
                           help='config frequency range: [min frequency,max frequency]. Ex: --frequencyrange 400,1200')
 config_parser.add_argument('--burstlimit', metavar="<burst limit>", dest="BurstLimitValue", type=str,
-                          help='config burst limit: [power value, enable/disable] Ex: --burstlimit 800,true')
+                          help='config burst power limit: [power value, enable/disable] Ex: --burstlimit 800,true')
 
 # telemetry subcommand parser
 metricsTypeTranslationMap = {
@@ -311,13 +311,6 @@ def arg():
         imagePath = parsed.imagePath
         flash_firmware(deviceId, firmwareName, imagePath)
         return
-    elif parsed.subcommand == "reset":
-        if parsed.deviceId is not None:
-            reset_device(parsed.deviceId)
-            return
-        else:
-            reset_parser.print_help()
-            return
     elif parsed.subcommand == "config":
         if parsed.SchedulerValue is not None and parsed.deviceTileId is not None:
             set_device_scheduler(parsed.deviceId, parsed.deviceTileId, parsed.SchedulerValue)
@@ -812,8 +805,6 @@ def device_info_to_str(props):
     rows.append("UUID: {}".format(props["UUID"]))
     rows.append("PCI BDF Address: {}".format(props["PCIBdfAddress"]))
     rows.append("PCI Slot: {}".format(props["PCISlot"]))
-    rows.append("PCIe Generation: {}".format(props["PCIeGen"]))
-    rows.append("PCIe Max Link Width: {}".format(props["PCIeMaxLinkWidth"]))
     rows.append("")
     rows.append("Driver Version: {}".format(props["DriverVersion"]))
     if "FirmwareName" in props:
@@ -828,8 +819,6 @@ def device_info_to_str(props):
     rows.append("Memory Physical Size: {}".format(props["MemoryPhysicalSize"]))
     rows.append("Memory Free Size: {}".format(props["MemoryFreeSize"]))
     rows.append("Max Mem Alloc Size: {}".format(props["MaxMemAllocSize"]))
-    rows.append("Number of Memory Channels: {}".format(props["NumberOfMemoryChannel"]))
-    rows.append("Memory Bus Width: {}".format(props["MemoryBusWidth"]))
     rows.append("Max Hardware Contexts: {}".format(
         props["MaxHardwareContexts"]))
     rows.append("Max Command Queue Priority: {}".format(
@@ -850,6 +839,12 @@ def device_info_to_str(props):
     # rows.append("Kernel Timestamp Valid Bits: {}".format(
     #     props["KernelTimestampValidBits"]))
     # rows.append("Flags: {}".format(props["Flags"]))
+    
+    rows.append("")
+    rows.append("PCIe Generation: {}".format(props["PCIeGen"]))
+    rows.append("PCIe Max Link Width: {}".format(props["PCIeMaxLinkWidth"]))
+    rows.append("Number of Memory Channels: {}".format(props["NumberOfMemoryChannel"]))
+    rows.append("Memory Bus Width: {}".format(props["MemoryBusWidth"]))
 
     return "\n".join(rows)
 
