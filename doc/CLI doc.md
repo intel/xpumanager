@@ -364,20 +364,21 @@ $ xpumcli config --help
 
 config -- used to configure settings for devices.
 
-Usage: xpumcli config [-h] [-d] [-g] [-l]
+Usage: xpumcli config [-h] [-d] [-t]
 
 Optional arguments:
     -h, --help              Show this help message and exit
     -d <deviceId>, --device <deviceId>      
                             The device id to query
-    -l, --list              List all configurations
+    -t <deviceTileId>
+                            The device tile id to query
     -- <key>=<value>        Set device configurations
 ```
 ## List configurations
 ```
-$ xpumcli config -l -d 0 
+$ xpumcli config -d 0
 +-------------+-------------------+--------------------------------------------+
-| Device Type | Device Id/Tile ID | Configuration                              |
+| Device Type | Device Id/Tile Id | Configuration                              |
 +-------------+-------------------+--------------------------------------------+
 | GPU         | 0/0               | Power Limit(w): 320.0                      |
 |             |                   |     Legal Range: 0 to 500                  |
@@ -418,9 +419,9 @@ $ xpumcli config -l -d 0
 |             |                   | Exclusive                                  |
 +-------------+-------------------+--------------------------------------------+
 
-$ xpumcli config -l -d 0 -t 0
+$ xpumcli config -d 0 -t 0
 +-------------+-------------------+--------------------------------------------+
-| Device Type | Device Id/Tile ID | Configuration                              |
+| Device Type | Device Id/Tile Id | Configuration                              |
 +-------------+-------------------+--------------------------------------------+
 | GPU         | 0/0               | Power Limit(w): 300.0                      |
 |             |                   |     Legal Range: 0 to 500                  |
@@ -444,9 +445,9 @@ $ xpumcli config -l -d 0 -t 0
 ```
 ## Set configurations
 ```
-$ xpumcli config -d 0 -t 0 --"Scheduler"=Timeout,50000
+$ xpumcli config -d 0 -t 0 --scheduler timeout,50000
 +-------------+-------------------+--------------------------------------------+
-| Device Type | Device Id/Tile ID | Configuration                              |
+| Device Type | Device Id/Tile Id | Configuration                              |
 +-------------+-------------------+--------------------------------------------+
 | GPU         | 0/0               | Power Limit(w): 300.0                      |
 |             |                   |     Legal Range: 0 to 500                  |
@@ -468,9 +469,9 @@ $ xpumcli config -d 0 -t 0 --"Scheduler"=Timeout,50000
 |             |                   | Exclusive                                  |
 +-------------+-------------------+--------------------------------------------+
 
-$ xpumcli config -d 0 -t 0 --"Scheduler"=Exclusive
+$ xpumcli config -d 0 -t 0 --scheduler exclusive
 +-------------+-------------------+--------------------------------------------+
-| Device Type | Device Id/Tile ID | Configuration                              |
+| Device Type | Device Id/Tile Id | Configuration                              |
 +-------------+-------------------+--------------------------------------------+
 | GPU         | 0/0               | Power Limit(w): 300.0                      |
 |             |                   |     Legal Range: 0 to 500                  |
@@ -492,7 +493,7 @@ $ xpumcli config -d 0 -t 0 --"Scheduler"=Exclusive
 |             |                   | Exclusive                                  |
 +-------------+-------------------+--------------------------------------------+
 
-$ xpumcli config -d 0 -t 0 --"Scheduler"=Timeslice,10000,50000
+$ xpumcli config -d 0 -t 0 --scheduler timeslice,10000,50000
 +-------------+-------------------+--------------------------------------------+
 | Device Type | Device Id/Tile ID | Configuration                              |
 +-------------+-------------------+--------------------------------------------+
@@ -516,7 +517,7 @@ $ xpumcli config -d 0 -t 0 --"Scheduler"=Timeslice,10000,50000
 |             |                   | Exclusive                                  |
 +-------------+-------------------+--------------------------------------------+
 
-$ xpumcli config -d 0 -t 0  --"PowerLimit"=330,120
+$ xpumcli config -d 0 -t 0 --powerlimit 330,120
 +-------------+-------------------+--------------------------------------------+
 | Device Type | Device Id/Tile ID | Configuration                              |
 +-------------+-------------------+--------------------------------------------+
@@ -540,7 +541,7 @@ $ xpumcli config -d 0 -t 0  --"PowerLimit"=330,120
 |             |                   | Exclusive                                  |
 +-------------+-------------------+--------------------------------------------+
 
-$ xpumcli config -d 0 -t 0 --"FrequencyRange"=400,1200
+$ xpumcli config -d 0 -t 0 --frequencyrange 400,1200
 +-------------+-------------------+--------------------------------------------+
 | Device Type | Device Id/Tile ID | Configuration                              |
 +-------------+-------------------+--------------------------------------------+
@@ -564,7 +565,7 @@ $ xpumcli config -d 0 -t 0 --"FrequencyRange"=400,1200
 |             |                   | Exclusive                                  |
 +-------------+-------------------+--------------------------------------------+
 
-$ xpumcli config -d 0 -t 0 --"Standby"=Never
+$ xpumcli config -d 0 -t 0 --standby never
 +-------------+-------------------+--------------------------------------------+
 | Device Type | Device Id/Tile ID | Configuration                              |
 +-------------+-------------------+--------------------------------------------+
