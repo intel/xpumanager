@@ -818,8 +818,6 @@ def device_info_to_str(props):
     if "FirmwareVersion" in props:
         rows.append("Firmware Version: {}".format(props["FirmwareVersion"]))
     rows.append("")
-    # rows.append("Number of Sub Devices: {}".format(
-    #     props["NumberOfSubDevices"]))
     rows.append("Serial Number: {}".format(props["SerialNumber"]))
     rows.append("Core Clock Rate: {}".format(props["CoreClockRate"]))
     rows.append("Memory Physical Size: {}".format(props["MemoryPhysicalSize"]))
@@ -832,6 +830,8 @@ def device_info_to_str(props):
     rows.append("Max Command Queue Priority: {}".format(
         props["MaxCommandQueuePriority"]))
     rows.append("")
+    rows.append("Number of Tiles: {}".format(
+        props["NumberOfSubDevices"]))
     rows.append("Number of Slices: {}".format(props["NumberOfSlices"]))
     rows.append("Number of Sub Slices Per Slice: {}".format(
         props["NumberOfSubSlicesPerSubSlice"]))
