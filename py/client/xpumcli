@@ -110,7 +110,7 @@ config_parser.add_argument('--scheduler', metavar="<scheduler mode>", dest="Sche
 config_parser.add_argument('--standby', metavar="<standby mode>", dest="StandbyValue", type=str,
                           help='config standby mode: [default], [never]. Ex: --standby default  ,--standby never')
 config_parser.add_argument('--powerlimit', metavar="<power limit>", dest="PowerLimitValue", type=str,
-                          help='config power limit: [power value,average window]. Ex: --powerlimit 330,120')
+                          help='config power limit: [power value,average window]. GPU only supports device level powerlimit setting. Ex: --powerlimit 330,120')
 config_parser.add_argument('--frequencyrange', metavar="<frequency range>", dest="FrequencyRangeValue", type=str,
                           help='config frequency range: [min frequency,max frequency]. Ex: --frequencyrange 400,1200')
 #config_parser.add_argument('--burstlimit', metavar="<burst limit>", dest="BurstLimitValue", type=str,

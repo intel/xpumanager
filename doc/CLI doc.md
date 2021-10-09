@@ -512,7 +512,7 @@ $ xpumcli config -d 0 -t 0 --scheduler timeslice,10000,50000
 |             |                   | exclusive                                  |
 +-------------+-------------------+--------------------------------------------+
 
-$ xpumcli config -d 0 -t 0 --powerlimit 350,80
+$ xpumcli config -d 0 --powerlimit 350,80 #GPU only supports device level powerlimit setting
 +-------------+-------------------+--------------------------------------------+
 | Device Type | Device Id/Tile Id | Configuration                              |
 +-------------+-------------------+--------------------------------------------+
