@@ -99,7 +99,7 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
  * @param pGroupId          OUT: Pointer to group id that newly created
  * @return \ref xpum_result_t 
  */
-xpum_result_t xpumGroupCreate(char *groupName, xpum_group_id_t *pGroupId);
+xpum_result_t xpumGroupCreate(const char *groupName, xpum_group_id_t *pGroupId);
 
 /**
  * @brief Used to destroy a group represented by \a groupId.

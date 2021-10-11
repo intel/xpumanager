@@ -217,7 +217,7 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
     
 }
 
-xpum_result_t xpumGroupCreate(char *groupName, xpum_group_id_t *pGroupId)
+xpum_result_t xpumGroupCreate(const char *groupName, xpum_group_id_t *pGroupId)
 {
     return Core::instance().getGroupManager()->createGroup(groupName, pGroupId);    
 }
