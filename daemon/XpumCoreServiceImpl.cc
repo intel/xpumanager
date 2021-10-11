@@ -64,6 +64,22 @@ grpc::Status XpumCoreServiceImpl::getDeviceList( grpc::ServerContext* context, c
     return grpc::Status::OK;
 }
 
+grpc::Status XpumCoreServiceImpl::getDeviceProperties( grpc::ServerContext* context, const DeviceId* request, XpumDeviceProperties* response) {
+    xpum_device_properties_t data;
+    auto res = xpumGetDeviceProperties(request->id(), &data);
+    if (res == XPUM_OK) {
+        for (int i = 0; i < data.propertyLen; i++) {
+            auto &prop = data.properties[i];
+            auto propRpc = response->add_properties();
+            propRpc->set_name(prop.name);
+            propRpc->set_value(prop.value);
+        }
+    } else {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
 grpc::Status XpumCoreServiceImpl::getTopology( grpc::ServerContext* context, const DeviceId* request, 
         XpumTopologyInfo* response) {
     std::cout << "call get topology" << std::endl;

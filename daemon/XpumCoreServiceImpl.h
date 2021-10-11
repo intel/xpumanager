@@ -19,6 +19,8 @@ public:
 
     virtual grpc::Status getDeviceList( grpc::ServerContext* context, const google::protobuf::Empty* request,
             XpumDeviceBasicInfoArray* response ) override;
+            
+    virtual grpc::Status getDeviceProperties( grpc::ServerContext* context, const DeviceId* request, XpumDeviceProperties* response) override;
 
     virtual grpc::Status getTopology( grpc::ServerContext* context, const DeviceId* request, 
             XpumTopologyInfo* response) override;

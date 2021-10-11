@@ -11,6 +11,8 @@ class CoreStub {
 
     std::unique_ptr<nlohmann::json> getDeviceList();
 
+    std::unique_ptr<nlohmann::json> getDeviceProperties(int deviceId);
+
     std::unique_ptr<nlohmann::json> getTopology(DeviceId deviceId);
 
   private:

@@ -5,8 +5,8 @@ from flask import render_template
 from flask import request, Response
 from requests import NullHandler
 
-from DGMCore import DGMCore
-# from GRPCDGMCore import DGMCore
+# from DGMCore import DGMCore
+from GRPCDGMCore import DGMCore
 from kube_pod_resource import get_pod_resources
 from prometheus_exporter import get_metrics
 

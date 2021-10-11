@@ -83,6 +83,29 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
+
+    assert(this->stub != nullptr);
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    grpc::ClientContext context;
+    XpumDeviceProperties response;
+    DeviceId grpcDeviceId;
+    grpcDeviceId.set_id(deviceId);
+    grpc::Status status = stub->getDeviceProperties(&context, grpcDeviceId, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            for (int i{0}; i < response.properties_size(); ++i) {
+                auto &p = response.properties(i);
+                (*json)[p.name()] = p.value();
+            }
+        }
+    }
+
+    return json;
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getTopology(DeviceId deviceId) {
     assert(this->stub != nullptr);
 

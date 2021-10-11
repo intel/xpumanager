@@ -36,6 +36,15 @@ message XpumDeviceBasicInfoArray {
     string errorMsg = 2;
 }
 
+message XpumDeviceProperties {
+    message XpumDeviceProperty {
+        string name = 1;
+        string value = 2;
+    }
+    repeated XpumDeviceProperty properties = 1;
+    string errorMsg = 2;
+}
+
 message XpumTopologyInfo {
     DeviceId id = 1;
     message XpumCpuAffinity {
@@ -56,5 +65,6 @@ service XpumCoreService {
     
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
     rpc getDeviceList( google.protobuf.Empty ) returns ( XpumDeviceBasicInfoArray );
+    rpc getDeviceProperties( DeviceId ) returns ( XpumDeviceProperties );
     rpc getTopology(  DeviceId ) returns ( XpumTopologyInfo );
 }
