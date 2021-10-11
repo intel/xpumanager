@@ -612,9 +612,7 @@ class DGMCore:
                     tmp["metricsType"] = metricsType
                     tmp["value"] = d.value
                     if not d.isCounter:
-                        tmp["min"] = d.min
-                        tmp["avg"] = d.avg
-                        tmp["max"] = d.max
+                        tmp["avg"] = d.value
                     dataList.append(tmp)
                 except:
                     pass
