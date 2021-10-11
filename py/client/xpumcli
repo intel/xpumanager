@@ -1114,7 +1114,7 @@ def get_device_standbys(deviceId):
         if d["onSubdevice"] == True :
             subDeviceId = d["subdeviceId"]
         else:
-            subDeviceId =' '
+            subDeviceId = 0
         #print( d["standbyType"],search_standbys_enum_type(d["standbyType"]))
         #print( d["mode"],search_standbys_enum_mode(d["mode"]))
         standbyConfig.append((subDeviceId,d["mode"]))
@@ -1268,7 +1268,7 @@ def get_device_schedulers(deviceId):
         if d["onSubdevice"] == True :
             subDeviceId = d["subdeviceId"]
         else:
-            subDeviceId =' '
+            subDeviceId = 0
         #engineType = d["engineType"],search_engine_type_enum(d["engineType"])
         mode =subDeviceId, d["mode"]
         schedulerArray.append(mode)
@@ -1317,7 +1317,8 @@ def display_device_all_config(deviceId, deviceTileId):
     else:
         numTile = 1
         tileList = [deviceTileId]
-    #print(tileList)
+    if not tileList:
+        tileList =[0]
     powerLimit = []
     burstLimit = []
     for tileId in tileList :
