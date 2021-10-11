@@ -40,8 +40,90 @@ void GPUDeviceStub::init() {
   ze_result_t ret = zeInit(0);
   if ( ret != ZE_RESULT_SUCCESS){
     XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
+    checkInitDependency();
     throw BaseException("zeInit error");
   }
+}
+
+void GPUDeviceStub::checkInitDependency() {
+  XPUM_LOG_INFO("GPUDeviceStub::checkInitDependancy start");
+  std::string details;
+
+  std::vector<std::string> checkEnvVaribles = {"ZES_ENABLE_SYSMAN", "ZET_ENABLE_METRICS"};      
+  bool findEnvVaribles = true;
+  for (auto it = checkEnvVaribles.begin(); it != checkEnvVaribles.end(); it++) {
+    if (getenv((*it).c_str()) == nullptr) {
+      findEnvVaribles = false;
+      details = (*it);
+      break;
+    }
+  }
+  if (findEnvVaribles) {
+    XPUM_LOG_INFO("Environment variables check pass");
+  } else {
+    XPUM_LOG_ERROR("Environment variables check failed. " + details + " is missing.");
+  }
+
+  std::vector<std::string> libs = {"libze_loader.so.1", "libze_intel_gpu.so.1"};
+  bool findLibs = true;
+  for (auto it = libs.begin(); it != libs.end(); it++) {
+    void *handle = dlopen((*it).c_str(), RTLD_NOW);
+    if (!handle) {
+      findLibs = false;
+      details = (*it);
+      break;
+    }
+  }
+
+  if (findLibs) {
+    XPUM_LOG_INFO("Libraries check pass.");
+  } else {
+    XPUM_LOG_ERROR("Libraries check failed. " + details + " is missing.");
+  }
+
+  std::string dirName = "/dev/dri";
+  DIR *dir = opendir(dirName.c_str());
+  struct dirent *ent;
+  if (nullptr != dir) {
+    bool hasPermission = true;
+    ent = readdir(dir);
+    while (nullptr != ent) {
+      std::string entryName = ent->d_name;
+      if (isDevEntry(entryName)) {
+        std::stringstream ss;
+        ss << dirName << "/" << entryName;
+        int ret = access(ss.str().c_str(), 4);
+        if (ret != 0) {
+          hasPermission = false;
+          details = ss.str();
+          break;
+        }
+      }
+      ent = readdir(dir);
+    }
+    closedir(dir);
+
+    if (hasPermission) {
+      XPUM_LOG_INFO("Permission check pass.");
+    } else {
+      XPUM_LOG_ERROR("Permission check failed. Access " + details + " failed.");
+    }
+  } else {
+    XPUM_LOG_ERROR("Permission check failed.");
+  }
+
+  XPUM_LOG_INFO("GPUDeviceStub::checkXPUMInitDependancy done");
+}
+
+bool GPUDeviceStub::isDevEntry(const std::string &entryName) {
+  if (entryName.compare(0, 7, "renderD") == 0) {
+    for (std::size_t i = 7; i < entryName.size(); i++) {
+      if (!isdigit(entryName.at(i)))
+        return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 void GPUDeviceStub::discoverDevices(Callback_t callback) {

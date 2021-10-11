@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <dlfcn.h>
+#include <dirent.h>
 #include "infrastructure/const.h"
 #include "device/device.h"
 #include "infrastructure/measurement_data.h"
@@ -146,6 +148,10 @@ private:
 
   static void addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities);
 
+  static void checkInitDependency();
+
+  static bool isDevEntry(const std::string &entryName);
+  
  private:
   std::unique_ptr<ThreadPool>  p_thread_pool;
   
