@@ -10,11 +10,13 @@ void ComletDiscovery::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
 
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    // auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
-    *json = {
-        {"device", this->opts->deviceId},
-        {"a", this->opts->a}};
+    auto json = this->coreStub->getDeviceList();
+
+    // *json = {
+    //     {"device", this->opts->deviceId},
+    //     {"a", this->opts->a}};
 
     return json;
 }

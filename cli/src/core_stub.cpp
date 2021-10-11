@@ -51,6 +51,37 @@ std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
+
+    assert(this->stub != nullptr);
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    grpc::ClientContext context;
+    XpumDeviceBasicInfoArray response;
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> deviceJsonList;
+            for (int i{0}; i < response.info_size(); ++i) {
+                auto deviceJson = nlohmann::json();
+                auto &deviceInfo = response.info(i);
+                deviceJson["deviceId"] = deviceInfo.id().id();
+                deviceJson["type"] = deviceInfo.type().value();
+                deviceJson["uuid"] = deviceInfo.uuid();
+                deviceJson["deviceName"] = deviceInfo.devicename();
+                deviceJson["pcieDeviceId"] = deviceInfo.pciedeviceid();
+                deviceJson["subDeviceId"] = deviceInfo.subdeviceid();
+                deviceJson["pciBdfAddress"] = deviceInfo.pcibdfaddress();
+                deviceJson["vendorName"] = deviceInfo.vendorname();
+                deviceJsonList.push_back(deviceJson);
+            }
+            (*json)["deviceList"] = deviceJsonList;
+        }
+    }
+
+    return json;
+}
 
 std::unique_ptr<nlohmann::json> CoreStub::getTopology(DeviceId deviceId) {
     assert(this->stub != nullptr);
