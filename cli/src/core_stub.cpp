@@ -123,10 +123,16 @@ std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
             (*json)["xpum_affinity_localcpulist"] = response.cpuaffinity().localcpulist();
             (*json)["xpum_affinity_localcpus"] = response.cpuaffinity().localcpus();
             (*json)["xpum_parent_switch_count"] = response.switchcount();
+
+            std::vector<nlohmann::json> switchJsonList;            
             for (int i{0}; i < response.switchinfo_size(); ++i) {
-                std::string switchIdx = std::string("xpum_switch_") + std::to_string(i);
-                (*json)[switchIdx] = response.switchinfo(i).switchdevicepath();
+                auto switchJson = nlohmann::json();
+                switchJson["xpum_device_patch"] = response.switchinfo(i).switchdevicepath();
+                //std::string switchIdx = std::string("xpum_switch_") + std::to_string(i);
+                //(*json)[switchIdx] = response.switchinfo(i).switchdevicepath();
+                switchJsonList.push_back(switchJson);
             }
+            (*json)["xpum_switch_list"] = switchJsonList;
         }
     }
 
@@ -166,21 +172,18 @@ std::unique_ptr<nlohmann::json> CoreStub::groupListAll(){
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     GroupIdArray response;
-    bool empty = true;
+    
     grpc::Status status = stub->getAllGroupIds(&context, google::protobuf::Empty(), &response);
     if (status.ok()) {
         if(response.errormsg().length() == 0) {            
-            std::string g = "";
+            std::vector<nlohmann::json> groupJsonList;
             for (int i{0}; i < response.grouplist_size(); ++i){
-                if(!empty){
-                    g += ", ";
-                }
-                
-                g += std::to_string(response.grouplist(i).id());
-                empty = false;
+                auto groupJson = nlohmann::json();
+                groupJson["group_id"] = response.grouplist(i).id();
+                groupJsonList.push_back(groupJson);                
             }
 
-            (*json)["groups"] = g;
+            (*json)["group_list"] = groupJsonList;
         }
     }
     return json;
@@ -196,21 +199,20 @@ std::unique_ptr<nlohmann::json> CoreStub::groupList(int groupId){
     grpc::Status status = stub->groupGetInfo(&context, id, &response);
     if (status.ok()) {
         if(response.errormsg().length() == 0){
-            bool empty = true;
+            
             (*json)["group_id"] = response.id();
             (*json)["group_name"] = response.groupname();
             (*json)["device_count"] = response.count();
 
-            std::string g = "";
+            std::vector<nlohmann::json> deviceJsonList;           
+
             for (int i{0}; i < response.devicelist_size(); ++i){
-                if(!empty){
-                    g += ", ";
-                }                
-                g += std::to_string(response.devicelist(i).id());
-                empty = false;
+                auto deviceJson = nlohmann::json();
+                deviceJson["device_id"] = response.devicelist(i).id();
+                deviceJsonList.push_back(deviceJson);
             }
 
-            (*json)["devices"] = g;
+            (*json)["device_list"] = deviceJsonList;
         }
     }
     return json;
