@@ -593,6 +593,42 @@ class DGMCore:
             data["TileLevel"] = tileLevelStatsDataList
         return 0, "OK", data
 
+    def getMetrics(self, deviceId):
+        count = c_int(5)
+        deviceStats = (XpumDeviceStats * count.value)()
+        res = self.lib.xpumGetMetrics(c_int32(deviceId), byref(deviceStats), byref(count))
+        if res != 0:
+            return res, "Fail to get metricsc", None
+        data = dict()
+        data['DeviceId'] = deviceId
+        deviceLevelStatsDataList = []
+        tileLevelStatsDataList = []
+        for device in deviceStats[:count.value]:
+            dataList=[]
+            for d in device.dataList[:device.count]:
+                try:
+                    tmp = dict()
+                    metricsType = XpumStatsType(d.metricsType).name
+                    tmp["metricsType"] = metricsType
+                    tmp["value"] = d.value
+                    if not d.isCounter:
+                        tmp["min"] = d.min
+                        tmp["avg"] = d.avg
+                        tmp["max"] = d.max
+                    dataList.append(tmp)
+                except:
+                    pass
+            # data["dataList"] = dataList
+            if device.isTileData:
+                tmp = dict(tileId=device.tileId,dataList=dataList)
+                tileLevelStatsDataList.append(tmp)
+            else:
+                deviceLevelStatsDataList=dataList
+        data["DeviceLevel"] = deviceLevelStatsDataList
+        if tileLevelStatsDataList:
+            data["TileLevel"] = tileLevelStatsDataList
+        return 0, "OK", data
+
     def getStatisticsByGroup(self, groupId):
         count = c_int(32*5)
         groupDeviceStats = (XpumDeviceStats * count.value)()

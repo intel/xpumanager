@@ -43,7 +43,7 @@ def get_metrics(core, pod_resources):
         resp = b''
 
         for dev in data:
-            stat_code, _, stat_data = core.getStatistics(dev.get('DeviceId'))
+            stat_code, _, stat_data = core.getMetrics(dev.get('DeviceId'))
 
             if stat_code != 0:
                 continue
