@@ -44,6 +44,8 @@ public:
 
   virtual MeasurementData getLatestData(std::string &device_id) noexcept;
 
+  virtual MeasurementData getLatestStatistics(std::string &device_id) noexcept;
+
 protected:
 
   void resetStatistics(std::string &device_id);

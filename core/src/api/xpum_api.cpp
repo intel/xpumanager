@@ -257,6 +257,14 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
     return xpum_result_t::XPUM_OK;
 }
 
+xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
+                            xpum_device_stats_t dataList[],
+                            int *count)
+{
+    Core::instance().getDataLogic()->getLatestMetrics(deviceId,dataList,count);
+    return xpum_result_t::XPUM_OK;
+}
+
 xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
                                                  xpum_stats_type_t metricsTypeList[],
                                                  int count,

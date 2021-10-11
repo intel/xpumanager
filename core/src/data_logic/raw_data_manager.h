@@ -51,6 +51,8 @@ class RawDataManager {
     std::map<std::string, MeasurementData>& datas
     ) noexcept;
 
+ MeasurementData getLatestStatistics(MeasurementType type, std::string& device_id) noexcept;
+
  uint32_t startRawDataCollectionTask(std::string& device_id, std::vector<MeasurementType>& types);
 
  void stopRawDataCollectionTask(uint32_t task_id);

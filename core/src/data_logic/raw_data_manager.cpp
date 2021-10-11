@@ -162,6 +162,15 @@ MeasurementData RawDataManager::getLatestData (
     : p_handler->getLatestData(device_id);
 }
 
+MeasurementData RawDataManager::getLatestStatistics(MeasurementType type, std::string& device_id) noexcept {
+  std::unique_lock<std::mutex> lock(mutex);
+  auto& p_handler = data_handlers[type];
+  lock.unlock();
+
+  return p_handler == nullptr ? MeasurementData() 
+    : p_handler->getLatestStatistics(device_id);
+}
+
 void RawDataManager::getLatestData(
   MeasurementType type,
   std::map<std::string, MeasurementData>& datas) noexcept {

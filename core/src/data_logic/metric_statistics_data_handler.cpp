@@ -71,6 +71,20 @@ MeasurementData MetricStatisticsDataHandler::getLatestData(std::string& device_i
   }
 
   auto datas = p_latestData->getData();
+  if (datas.find(device_id) != datas.end()) {
+    return datas[device_id];
+  } else {
+    return MeasurementData();
+  }
+}
+
+MeasurementData MetricStatisticsDataHandler::getLatestStatistics(std::string& device_id) noexcept {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  if (p_latestData == nullptr) {
+    return MeasurementData();
+  }
+
+  auto datas = p_latestData->getData();
   std::map<std::string, Statistics_data>::iterator iter = statistics_datas.find(device_id);
   if (iter != statistics_datas.end()) {
     datas[device_id].setAvg(iter->second.avg);
