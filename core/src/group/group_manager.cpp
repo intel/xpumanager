@@ -8,12 +8,12 @@
 #include "infrastructure/device_property.h"
 #include "topology/pci_database.h"
 
-#define BUILD_IN_GROUP_MASK 0x10000000
+#define BUILD_IN_GROUP_MASK 0x80000000
 
 GroupManager::GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                             std::shared_ptr<DataLogicInterface>& p_data_logic) 
     : p_devicemanager(p_device_manager), p_datalogic(p_data_logic),
-    groupSequence(0), internalSequence(0)  {
+    groupSequence(1), internalSequence(1)  {
     XPUM_LOG_INFO("GroupManager()");
 }
 
@@ -29,6 +29,7 @@ xpum_result_t GroupManager::createGroup(const char *pGroupName, xpum_group_id_t 
     xpum_group_id_t groupId;
     GroupInfo* pGroupInfo;    
     std::string name = pGroupName;
+    std::size_t buildInCount = internalSequence-1;
 
     XPUM_LOG_INFO("GroupManager::createGroup");
 
@@ -42,14 +43,15 @@ xpum_result_t GroupManager::createGroup(const char *pGroupName, xpum_group_id_t 
         return ret;
     }
 
-    if(groupMap.size() >= XPUM_MAX_NUM_GROUPS){
-        XPUM_LOG_ERROR("GroupManager::createGroup-group number exceed XPUM_MAX_NUM_GROUPS.");
+    if(groupMap.size() - buildInCount >= XPUM_MAX_NUM_GROUPS){
+        XPUM_LOG_ERROR("GroupManager::createGroup-group number exceed XPUM_MAX_NUM_GROUPS. all_groups[{}] build_in_groups[{}]",
+        groupMap.size(), buildInCount);
         return ret;
     }
     if(buildIn){
         groupId = internalSequence++;
         if(groupId<0){
-        XPUM_LOG_ERROR("GroupManager::createGroup-exceed max group id.");
+            XPUM_LOG_ERROR("GroupManager::createGroup-exceed max group id.");
             return ret;
         }
         name = name + std::to_string(groupId);
@@ -81,6 +83,11 @@ xpum_result_t GroupManager::destroyGroup(xpum_group_id_t groupId){
 
     XPUM_LOG_INFO("GroupManager::destroyGroup");
 
+    if((groupId & BUILD_IN_GROUP_MASK) == BUILD_IN_GROUP_MASK){
+        XPUM_LOG_ERROR("GroupManager::destroyGroup- can not destory build-in group {}", groupId);
+        return ret;
+    }
+
     GroupMap::iterator groupIterator = groupMap.find(groupId);
     if(groupIterator == groupMap.end()) {
         XPUM_LOG_ERROR("GroupManager::destroyGroup-not able to find the group {}", groupId);
@@ -107,6 +114,11 @@ xpum_result_t GroupManager::addDeviceToGroup(xpum_group_id_t groupId, xpum_devic
     std::unique_lock<std::mutex> lock(this->mutex);
     xpum_result_t ret = XPUM_GENERIC_ERROR;
 
+    if((groupId & BUILD_IN_GROUP_MASK) == BUILD_IN_GROUP_MASK){
+        XPUM_LOG_ERROR("GroupManager::addDeviceToGroup- can not add to build-in group {}", groupId);
+        return ret;
+    }
+
     GroupInfo * pGroupInfo = getGroupById(groupId);
     if(pGroupInfo == nullptr) {
         XPUM_LOG_ERROR("GroupManager::addDeviceToGroup-invalid group {}", groupId);
@@ -125,6 +137,11 @@ xpum_result_t GroupManager::removeDeviceFromGroup(xpum_group_id_t groupId, xpum_
 {
     std::unique_lock<std::mutex> lock(this->mutex);
     xpum_result_t ret = XPUM_GENERIC_ERROR;
+
+    if((groupId & BUILD_IN_GROUP_MASK) == BUILD_IN_GROUP_MASK){
+        XPUM_LOG_ERROR("GroupManager::removeDeviceFromGroup- can not remove from build-in group {}", groupId);
+        return ret;
+    }
 
     GroupInfo * pGroupInfo = getGroupById(groupId);
     if(pGroupInfo == nullptr) {
@@ -192,17 +209,21 @@ GroupInfo * GroupManager::getGroupById(xpum_group_id_t groupId)
 }
 
 bool deviceInGroup(std::string bdfAddress, GroupInfo * pGroupInfo) {
-    return true;
+    std::vector<zes_pci_address_t> pcieTop;
+    Topology::getPcieTopo(bdfAddress, pcieTop);
+    return pGroupInfo->deviceInGroup(pcieTop);
 }
 
-void GroupManager::createBuildInGroup(bool bBuildInDevice, int vendorId, int deviceId, std::string devID, std::string bdfAddress){
-    std::unique_lock<std::mutex> lock(this->mutex);
-    GroupMap::iterator iterator;
-    
+void GroupManager::createBuildInGroup(bool bBuildInDevice, int vendorId, int deviceId, std::string devID, std::string bdfAddress){    
+    GroupMap::iterator iterator;    
     if(bBuildInDevice) {
+        //std::unique_lock<std::mutex> lock(this->mutex);
         for(iterator=groupMap.begin(); iterator!=groupMap.end(); iterator++){
             GroupInfo * pGroupInfo = iterator->second;
             if(pGroupInfo == nullptr) {
+                continue;
+            }
+            if((pGroupInfo->getId() & BUILD_IN_GROUP_MASK) != BUILD_IN_GROUP_MASK){
                 continue;
             }
 
@@ -214,18 +235,23 @@ void GroupManager::createBuildInGroup(bool bBuildInDevice, int vendorId, int dev
     }    
 
     xpum_group_id_t groupId;
-    if(XPUM_OK != createGroup("card", &groupId, true)){
+    if(XPUM_OK != createGroup("card-", &groupId, true)){
         XPUM_LOG_ERROR("GroupManager::createBuildInGroup error");
         return;
     }
 
+    GroupInfo * pInfo = getGroupById(groupId);
+    if(pInfo == nullptr){
+        XPUM_LOG_ERROR("GroupManager::createBuildInGroup error");
+        return;
+    }
+    pInfo->addDevice(std::stoi(devID));
+
     if(bBuildInDevice) {
         std::vector<zes_pci_address_t> pcieTop;
         Topology::getPcieTopo(bdfAddress, pcieTop);
-        GroupInfo * pInfo = getGroupById(groupId);
-        if(pInfo != nullptr){
-           // pInfo->setPcieTopo(pcieTop);
-        }        
+        
+        pInfo->setPcieTopo(pcieTop);
     }
 }
 
@@ -284,7 +310,7 @@ void GroupManager::createBuildInGroup(){
 }
 
 void GroupManager::init() {
-    //createBuildInGroup();
+    createBuildInGroup();
 }
 
 void GroupManager::close() {

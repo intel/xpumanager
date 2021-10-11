@@ -60,11 +60,44 @@ message XpumTopologyInfo {
     string errorMsg = 5;    
 }
 
+message GroupId {
+    uint32 id = 1;
+}
+
+message GroupName {
+    string name = 1;
+}
+
+message GroupInfo {
+    uint32 id = 1;
+    string groupName = 2;
+    uint32 count = 3;    
+    repeated DeviceId deviceList = 4;
+    string errorMsg = 5;
+}
+
+message GroupIdArray{
+    uint32 count = 1;
+    repeated GroupId groupList = 2;
+    string errorMsg = 3;
+}
+
+message GroupAddRemoveDevice{
+    uint32 groupId = 1;
+    uint32 deviceId = 2;
+    string errorMsg = 3;
+}
+
 /* services */
-service XpumCoreService {
-    
+service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
     rpc getDeviceList( google.protobuf.Empty ) returns ( XpumDeviceBasicInfoArray );
     rpc getDeviceProperties( DeviceId ) returns ( XpumDeviceProperties );
     rpc getTopology(  DeviceId ) returns ( XpumTopologyInfo );
+    rpc groupCreate( GroupName ) returns ( GroupInfo );
+    rpc groupDestory( GroupId ) returns ( GroupInfo );
+    rpc groupAddDevice( GroupAddRemoveDevice ) returns ( GroupInfo );
+    rpc groupRemoveDevice( GroupAddRemoveDevice ) returns ( GroupInfo );
+    rpc groupGetInfo( GroupId ) returns ( GroupInfo );
+    rpc getAllGroupIds( google.protobuf.Empty ) returns ( GroupIdArray );
 }

@@ -1,8 +1,8 @@
 #include "infrastructure/logger.h"
 #include "group_info.h"
 
-GroupInfo::GroupInfo(std::string groupname, xpum_group_id_t groupId)
-{
+GroupInfo::GroupInfo(std::string groupname, xpum_group_id_t groupId) 
+    : topoLevel(0) {
     XPUM_LOG_INFO("GroupInfo");
     name = groupname;
     id = groupId;
@@ -72,4 +72,34 @@ xpum_result_t GroupInfo::removeDevice(const std::shared_ptr<DeviceManagerInterfa
                 + std::string(" not in the group.") );
     
     return ret;
+}
+
+void GroupInfo::setPcieTopo(std::vector<zes_pci_address_t> & pcieTop){
+    std::copy(pcieTop.begin(), pcieTop.end(), std::back_inserter(pcieTopology));    
+}
+
+bool GroupInfo::deviceInGroup(std::vector<zes_pci_address_t> & pcieTop){
+    if(topoLevel != 0) {
+        if(pcieTop.size() > topoLevel){
+            if( pcieTop.at(topoLevel).domain == pcieTopology.at(topoLevel).domain &&
+                pcieTop.at(topoLevel).bus == pcieTopology.at(topoLevel).bus &&
+                pcieTop.at(topoLevel).device != pcieTopology.at(topoLevel).device ) {
+                    return true;
+            }
+        }
+    } else {
+        if(pcieTop.size() != pcieTopology.size()) {
+            return false;
+        }
+
+        for(std::size_t i=0; i<pcieTop.size(); i++) {
+            if( pcieTop.at(i).domain == pcieTopology.at(i).domain &&
+                pcieTop.at(i).bus == pcieTopology.at(i).bus &&
+                pcieTop.at(i).device != pcieTopology.at(i).device ) {
+                    topoLevel = i;
+                    return true;
+            }
+        }
+    }
+    return false;
 }

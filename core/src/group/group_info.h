@@ -22,8 +22,13 @@ class GroupInfo
         xpum_result_t removeDevice(const std::shared_ptr<DeviceManagerInterface>& p_devicemanager,
             xpum_group_id_t groupId, xpum_device_id_t deviceId);
 
+        void setPcieTopo(std::vector<zes_pci_address_t> & pcieTop);
+        bool deviceInGroup(std::vector<zes_pci_address_t> & pcieTop);
+
     private:
         xpum_group_id_t id;
         std::string name;
         std::vector<xpum_device_id_t> deviceList;
+        std::vector<zes_pci_address_t> pcieTopology;
+        std::size_t topoLevel;
 };

@@ -92,6 +92,9 @@ bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t
                 addr.device = parentObj->attr->pcidev.dev;
                 addr.function = parentObj->attr->pcidev.func;
                 pcieAdds.emplace_back(addr);
+                parentObj = parentObj->parent;
+            } else {
+                break;
             }
         }
         

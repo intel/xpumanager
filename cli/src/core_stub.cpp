@@ -106,16 +106,18 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getTopology(DeviceId deviceId) {
+std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
     assert(this->stub != nullptr);
+    DeviceId device_id;
 
+    device_id.set_id(deviceId);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
-    (*json)["deviceId"] = deviceId.id();
+    (*json)["device_id"] = deviceId;
 
     grpc::ClientContext context;
     XpumTopologyInfo response;
-    grpc::Status status = stub->getTopology(&context, deviceId, &response);
+    grpc::Status status = stub->getTopology(&context, device_id, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["xpum_affinity_localcpulist"] = response.cpuaffinity().localcpulist();
@@ -128,5 +130,124 @@ std::unique_ptr<nlohmann::json> CoreStub::getTopology(DeviceId deviceId) {
         }
     }
 
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName){
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GroupInfo response;
+    GroupName name;
+    name.set_name(groupName);
+    grpc::Status status = stub->groupCreate(&context, name, &response);
+    if (status.ok() && response.errormsg().length() == 0) {
+        (*json)["group_id"] = response.id();
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::groupDelete(int groupId){
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GroupInfo response;
+    GroupId id;
+    id.set_id(groupId);
+    grpc::Status status = stub->groupDestory(&context, id, &response);
+    if (status.ok() && response.errormsg().length() == 0) {
+        (*json)["group_id"] = response.id();
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::groupListAll(){
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GroupIdArray response;
+    bool empty = true;
+    grpc::Status status = stub->getAllGroupIds(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0) {            
+            std::string g = "";
+            for (int i{0}; i < response.grouplist_size(); ++i){
+                if(!empty){
+                    g += ", ";
+                }
+                
+                g += std::to_string(response.grouplist(i).id());
+                empty = false;
+            }
+
+            (*json)["groups"] = g;
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::groupList(int groupId){
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GroupInfo response;
+    GroupId id;
+    id.set_id(groupId);
+    grpc::Status status = stub->groupGetInfo(&context, id, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            bool empty = true;
+            (*json)["group_id"] = response.id();
+            (*json)["group_name"] = response.groupname();
+            (*json)["device_count"] = response.count();
+
+            std::string g = "";
+            for (int i{0}; i < response.devicelist_size(); ++i){
+                if(!empty){
+                    g += ", ";
+                }                
+                g += std::to_string(response.devicelist(i).id());
+                empty = false;
+            }
+
+            (*json)["devices"] = g;
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int deviceId){
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GroupInfo response;
+    GroupAddRemoveDevice groupAR;
+    groupAR.set_groupid(groupId);
+    groupAR.set_deviceid(deviceId);
+    grpc::Status status = stub->groupAddDevice(&context, groupAR, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            (*json)["group_id"] = groupId;
+            (*json)["device_id"] = deviceId;
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int deviceId){
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GroupInfo response;
+    GroupAddRemoveDevice groupAR;
+    groupAR.set_groupid(groupId);
+    groupAR.set_deviceid(deviceId);
+    grpc::Status status = stub->groupRemoveDevice(&context, groupAR, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            (*json)["group_id"] = groupId;
+            (*json)["device_id"] = deviceId;
+        }
+    }
     return json;
 }

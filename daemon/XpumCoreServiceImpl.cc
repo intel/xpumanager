@@ -110,3 +110,104 @@ grpc::Status XpumCoreServiceImpl::getTopology( grpc::ServerContext* context, con
     topo = nullptr;
     return grpc::Status::OK;
 }
+
+::grpc::Status XpumCoreServiceImpl::groupCreate(::grpc::ServerContext* context, const ::GroupName* request, 
+                ::GroupInfo* response) {
+    std::cout << "call group create" << std::endl;
+    xpum_group_id_t id;
+    xpum_result_t res = xpumGroupCreate(request->name().c_str(), &id);
+    if ( res == XPUM_OK ) {
+        response->set_id(id);
+        response->set_groupname(request->name());
+        response->set_count(0);
+    } else {
+        response->set_errormsg( "Error" );
+    }
+
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::groupDestory(::grpc::ServerContext* context, const ::GroupId* request, 
+                ::GroupInfo* response) {
+    std::cout << "call group destory" << std::endl;
+    xpum_result_t res = xpumGroupDestroy(request->id());
+
+    if ( res == XPUM_OK ) {
+        response->set_id(request->id());
+    } else {
+        response->set_errormsg( "Error" );
+    }
+
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::groupAddDevice(::grpc::ServerContext* context, const ::GroupAddRemoveDevice* request,
+                ::GroupInfo* response)  {
+    std::cout << "call group add device" << std::endl;
+
+    xpum_result_t res = xpumGroupAddDevice(request->groupid(), request->deviceid());
+    if ( res == XPUM_OK ) {
+        response->set_id(request->groupid());
+    } else {
+        response->set_errormsg( "Error" );
+    }
+
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::groupRemoveDevice(::grpc::ServerContext* context, const ::GroupAddRemoveDevice* request, 
+                ::GroupInfo* response)  {
+    std::cout << "call group remove device" << std::endl;
+
+    xpum_result_t res = xpumGroupRemoveDevice(request->groupid(), request->deviceid());
+    if ( res == XPUM_OK ) {
+        response->set_id(request->groupid());
+    } else {
+        response->set_errormsg( "Error" );
+    }
+
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::groupGetInfo(::grpc::ServerContext* context, const ::GroupId* request, 
+                ::GroupInfo* response)  {
+    std::cout << "call group get info" << std::endl;
+
+    xpum_group_info_t info;
+    xpum_result_t res = xpumGroupGetInfo(request->id(), &info);
+    if ( res == XPUM_OK ) {
+        response->set_id(request->id());
+        response->set_groupname(info.groupName);
+        response->set_count(info.count);
+
+        for(int i{0}; i<info.count; i++){
+            DeviceId * deviceid = response->add_devicelist();
+            deviceid->set_id(info.deviceList[i]);
+        }
+    } else {
+        response->set_errormsg( "Error" );
+    }
+
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getAllGroupIds(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                ::GroupIdArray* response)  {
+    std::cout << "call get all group id" << std::endl;
+
+    xpum_group_id_t groups[XPUM_MAX_NUM_GROUPS];
+    int count = XPUM_MAX_NUM_GROUPS;
+    xpum_result_t res = xpumGetAllGroupIds(groups, &count);
+    if ( res == XPUM_OK ) {
+        response->set_count(count);
+
+        for(int i{0}; i<count; i++){
+            GroupId * groupid = response->add_grouplist();
+            groupid->set_id(groups[i]);
+        }
+    } else {
+        response->set_errormsg( "Error" );
+    }
+
+    return grpc::Status::OK;
+}

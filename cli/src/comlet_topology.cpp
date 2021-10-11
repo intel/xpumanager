@@ -5,12 +5,9 @@ void ComletTopology::setupOptions() {
     addOption("-d,--device", this->opts->deviceId, "device id");
 }
 
-std::unique_ptr<nlohmann::json> ComletTopology::run() {
-    //auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    DeviceId device_id;
-    device_id.set_id(this->opts->deviceId);
+std::unique_ptr<nlohmann::json> ComletTopology::run() {    
 
-    auto json = this->coreStub->getTopology(device_id);
+    auto json = this->coreStub->getTopology(this->opts->deviceId);
 
     return json;
 }

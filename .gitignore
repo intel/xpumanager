@@ -13,7 +13,10 @@ core/config/pci.ids
 pci.ids.upgrade
 core/libs/hwloc/install/
 core/test/xpumd
-
+daemon/core.grpc.pb.cc
+daemon/core.grpc.pb.h
+daemon/core.pb.cc
+daemon/core.pb.h
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
