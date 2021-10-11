@@ -34,17 +34,6 @@ void MonitorManager::close() {
 }
 
 void MonitorManager::createMonitorTasks() {
-  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::POWER, 
-    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
-  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::FREQUENCY, 
-    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
-  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::TEMPERATURE, 
-    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
-  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::MEMORY, 
-    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
-  tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::ENGINE_UTILIZATION, 
-    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic));
-
   tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_TEMPERATURE, 
     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
   tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_FREQUENCY, 
