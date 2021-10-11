@@ -25,6 +25,8 @@ public:
 
   virtual void getLatestData(std::map<std::string, MeasurementData> &datas) noexcept;
 
+  virtual MeasurementData getLatestStatistics(std::string &device_id) noexcept;
+
 protected:
   std::mutex mutex;
 

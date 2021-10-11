@@ -50,6 +50,13 @@ void DataLogic::getLatestData(MeasurementType type,
   return p_raw_data_manager->getLatestData(type, datas);
 }
 
+MeasurementData DataLogic::getLatestStatistics(MeasurementType type, std::string& device_id) {
+  if (p_raw_data_manager == nullptr) {
+    throw IlegalStateException("initialization is not done!");
+  }
+  return p_raw_data_manager->getLatestStatistics(type, device_id);
+}
+
 void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                                      xpum_device_stats_t dataList[],
                                      int *count,
@@ -69,7 +76,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     uint32_t num_subdevice = 0;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
-        MeasurementData m_data = getLatestData(*metric_types_iter, device_id);
+        MeasurementData m_data = getLatestStatistics(*metric_types_iter, device_id);
         hasDataOnDevice = hasDataOnDevice || m_data.hasDataOnDevice();
         num_subdevice = num_subdevice < m_data.getSubdeviceDatas().size() ? m_data.getSubdeviceDatas().size() : num_subdevice;
         m_datas.insert(std::make_pair(*metric_types_iter, m_data));
@@ -130,6 +137,76 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                     stats_data.max = datas_iter->second.getSubdeviceDataMax(i);
                     stats_data.value = datas_iter->second.getSubdeviceDataCurrent(i);
                 }
+                subdevice_stats.dataList[subdevice_stats.count++] = stats_data;
+            }
+            ++datas_iter;
+        }
+        dataList[(*count)++] = subdevice_stats;
+    }
+}
+
+void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
+                                 xpum_device_stats_t dataList[],
+                                 int *count) {
+    if (dataList == nullptr) {
+        return;
+    }
+    *count = 0;
+    std::vector<MeasurementType> metric_types;
+    std::map<MeasurementType, MeasurementData> m_datas;
+    Utility::getMetricsTypes(metric_types);
+    std::vector<MeasurementType>::iterator metric_types_iter = metric_types.begin();
+    bool hasDataOnDevice = false;
+    uint32_t num_subdevice = 0;
+    std::string device_id = std::to_string(deviceId);
+    while (metric_types_iter != metric_types.end()) {
+        MeasurementData m_data = getLatestData(*metric_types_iter, device_id);
+        hasDataOnDevice = hasDataOnDevice || m_data.hasDataOnDevice();
+        num_subdevice = num_subdevice < m_data.getSubdeviceDatas().size() ? m_data.getSubdeviceDatas().size() : num_subdevice;
+        m_datas.insert(std::make_pair(*metric_types_iter, m_data));
+        ++metric_types_iter;
+    }
+
+    std::map<MeasurementType, MeasurementData>::iterator datas_iter = m_datas.begin();
+    if (hasDataOnDevice) {
+        xpum_device_stats_t device_stats;
+        device_stats.deviceId = deviceId;
+        device_stats.isTileData = false;
+        device_stats.count = 0;
+        while (datas_iter != m_datas.end()) {
+            if (datas_iter->second.hasDataOnDevice()) {
+                xpum_device_stats_data_t stats_data;
+                MeasurementType type = datas_iter->first;
+                stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+                stats_data.isCounter = Utility::isCounterMetric(type)?true:false;
+                stats_data.avg = -1;
+                stats_data.min = -1;
+                stats_data.max = -1;
+                stats_data.value = datas_iter->second.getCurrent();
+                device_stats.dataList[device_stats.count++] = stats_data;
+            }
+            ++datas_iter;
+        }
+        dataList[(*count)++] = device_stats;
+    }
+
+    for (uint32_t i = 0; i < num_subdevice; i++) {
+        xpum_device_stats_t subdevice_stats;
+        subdevice_stats.deviceId = deviceId;
+        subdevice_stats.tileId = i;
+        subdevice_stats.isTileData = true;
+        subdevice_stats.count = 0;
+        datas_iter = m_datas.begin();
+        while (datas_iter != m_datas.end()) {
+            if (datas_iter->second.hasSubdeviceData()) {
+                xpum_device_stats_data_t stats_data;
+                MeasurementType type = datas_iter->first;
+                stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+                stats_data.isCounter = Utility::isCounterMetric(type)?true:false;
+                stats_data.avg = -1;
+                stats_data.min = -1;
+                stats_data.max = -1;
+                stats_data.value = datas_iter->second.getSubdeviceDataCurrent(i);
                 subdevice_stats.dataList[subdevice_stats.count++] = stats_data;
             }
             ++datas_iter;
