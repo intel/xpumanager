@@ -4,32 +4,32 @@ import os
 import traceback
 
 metrics_map = {
-    'XPUM_STATS_GPU_UTILIZATION': 'xpum_gpu_ratio',
-    'XPUM_STATS_OCCUPATION': 'xpum_occupation_ratio',
-    'XPUM_STATS_ISSUE_EFFICIENCY': 'xpum_issue_efficiency_ratio',
-    'XPUM_STATS_EXECUTION_EFFICIENCY': 'xpum_execution_efficiency_ratio',
-    'XPUM_STATS_NON_OCCUPATION': 'xpum_non_occupation_ratio',
-    'XPUM_STATS_POWER': 'xpum_power_watts',
-    'XPUM_STATS_ENERGY': 'xpum_energy_joules',
-    'XPUM_STATS_GPU_FREQUENCY': 'xpum_gpu_frequency_mhz',
-    'XPUM_STATS_GPU_TEMEPERATURE': 'xpum_gpu_temeperature_celsius',
-    'XPUM_STATS_MEMORY_USED': 'xpum_memory_used_bytes',
-    'XPUM_STATS_MEMORY_UTILIZATION': 'xpum_memory_ratio',
-    'XPUM_STATS_MEMORY_BANDWIDTH': 'xpum_memory_bandwidth_ratio',
-    'XPUM_STATS_MEMORY_READ': 'xpum_memory_read_bytes',
-    'XPUM_STATS_MEMORY_WRITE': 'xpum_memory_write_bytes',
-    'XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION': 'xpum_engine_group_compute_all_ratio',
-    'XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION': 'xpum_engine_group_media_all_ratio',
-    'XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION': 'xpum_engine_group_copy_all_ratio',
-    'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': 'xpum_engine_group_render_all_ratio',
-    'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': 'xpum_engine_group_3d_all_ratio',
-    'XPUM_STATS_RAS_ERROR_CAT_RESET': 'xpum_resets',
-    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': 'xpum_programming_errors',
-    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': 'xpum_driver_errors',
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': 'xpum_cache_errors_correctable',
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': 'xpum_cache_errors_uncorrectable',
-    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE': 'xpum_display_errors_correctable',
-    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE': 'xpum_display_errors_uncorrectable'
+    'XPUM_STATS_GPU_UTILIZATION': {'name': 'xpum_gpu_ratio', 'scale': 1},
+    'XPUM_STATS_OCCUPATION': {'name': 'xpum_occupation_ratio', 'scale': 1},
+    'XPUM_STATS_ISSUE_EFFICIENCY': {'name': 'xpum_issue_efficiency_ratio', 'scale': 1},
+    'XPUM_STATS_EXECUTION_EFFICIENCY': {'name': 'xpum_execution_efficiency_ratio', 'scale': 1},
+    'XPUM_STATS_NON_OCCUPATION': {'name': 'xpum_non_occupation_ratio', 'scale': 1},
+    'XPUM_STATS_POWER': {'name': 'xpum_power_watts', 'scale': 1},
+    'XPUM_STATS_ENERGY': {'name': 'xpum_energy_joules', 'scale': 0.001},
+    'XPUM_STATS_GPU_FREQUENCY': {'name': 'xpum_gpu_frequency_mhz', 'scale': 1},
+    'XPUM_STATS_GPU_TEMEPERATURE': {'name': 'xpum_gpu_temeperature_celsius', 'scale': 1},
+    'XPUM_STATS_MEMORY_USED': {'name': 'xpum_memory_used_bytes', 'scale': 1},
+    'XPUM_STATS_MEMORY_UTILIZATION': {'name': 'xpum_memory_ratio', 'scale': 1},
+    'XPUM_STATS_MEMORY_BANDWIDTH': {'name': 'xpum_memory_bandwidth_ratio', 'scale': 1},
+    'XPUM_STATS_MEMORY_READ': {'name': 'xpum_memory_read_bytes', 'scale': 1},
+    'XPUM_STATS_MEMORY_WRITE': {'name': 'xpum_memory_write_bytes', 'scale': 1},
+    'XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION': {'name': 'xpum_engine_group_compute_all_ratio', 'scale': 1},
+    'XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION': {'name': 'xpum_engine_group_media_all_ratio', 'scale': 1},
+    'XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION': {'name': 'xpum_engine_group_copy_all_ratio', 'scale': 1},
+    'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': {'name': 'xpum_engine_group_render_all_ratio', 'scale': 1},
+    'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': {'name': 'xpum_engine_group_3d_all_ratio', 'scale': 1},
+    'XPUM_STATS_RAS_ERROR_CAT_RESET': {'name': 'xpum_resets', 'scale': 1},
+    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': {'name': 'xpum_programming_errors', 'scale': 1},
+    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': {'name': 'xpum_driver_errors', 'scale': 1},
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': {'name': 'xpum_cache_errors_correctable', 'scale': 1},
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': {'name': 'xpum_cache_errors_uncorrectable', 'scale': 1},
+    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE': {'name': 'xpum_display_errors_correctable', 'scale': 1},
+    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE': {'name': 'xpum_display_errors_uncorrectable', 'scale': 1}
 }
 
 
@@ -89,17 +89,19 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
         metrics_type = metrics_map.get(stat.get('metricsType'))
         if metrics_type is None:
             continue
+        metrics_name = metrics_type['name']
+        scale = metrics_type['scale']
         value = stat.get('value')
         avg = stat.get('avg')
-        if metrics_type not in metrics:
+        if metrics_name not in metrics:
             if avg is not None:
-                metrics[metrics_type] = Gauge(
-                    metrics_type, f'{metrics_type}_DESCRIPTION', labelnames=labels, registry=registry)
-                metrics[metrics_type].labels(*label_values).set(avg)
+                metrics[metrics_name] = Gauge(
+                    metrics_name, f'{metrics_name}_DESCRIPTION', labelnames=labels, registry=registry)
+                metrics[metrics_name].labels(*label_values).set(avg * scale)
             else:
-                metrics[metrics_type] = Counter(
-                    metrics_type, f'{metrics_type}_DESCRIPTION', labelnames=labels, registry=registry)
-                metrics[metrics_type].labels(*label_values).inc(value)
+                metrics[metrics_name] = Counter(
+                    metrics_name, f'{metrics_name}_DESCRIPTION', labelnames=labels, registry=registry)
+                metrics[metrics_name].labels(*label_values).inc(value * scale)
 
     return generate_latest(registry)
 
