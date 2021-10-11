@@ -913,7 +913,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
   ze_result_t ret;
-  long double gflops, timed;
+  long double gflops = 0, timed;
   std::size_t flops_per_work_item = 4096;
   struct ZeWorkGroups workgroup_info;
   float input_value = 1.3f;
@@ -1050,6 +1050,8 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   gflops = std::max(gflops, current);
   XPUM_LOG_INFO("compute sp vector width 1 done");
 
+  // disable these kernel functions to be compatible with ATS-M
+  /* 
   timed = 0;
   // Vector width 2
   timed = runKernel(command_queue, command_list, compute_sp_v2, workgroup_info);
@@ -1077,6 +1079,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
   gflops = std::max(gflops, current);
   XPUM_LOG_INFO("compute sp vector width 16 done");
+  */
 
   if (gflops < Configuration::SINGLE_PRECISION_MIN_GFLOPS) {
     computeCheckPass = false;
@@ -1250,7 +1253,7 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
     
     std::chrono::high_resolution_clock::time_point time_start, time_end;
     time_start = std::chrono::high_resolution_clock::now();
-    for (uint32_t i = 0; i < 50; i++) {
+    for (uint32_t i = 0; i < 30; i++) {
         ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
         if (ret != ZE_RESULT_SUCCESS) {
           throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
