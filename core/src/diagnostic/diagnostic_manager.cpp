@@ -128,6 +128,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t& ze_devi
     }
     updateMessage(p_task_info->message, errorDetails);
   }
+  XPUM_LOG_INFO("all diagnostics done");
 }
 
 void DiagnosticManager::doDeviceDiagnosticSoftware(const zes_device_handle_t& device, std::shared_ptr<xpum_diag_task_info_t> p_task_info, int gpu_total_count) {
@@ -1047,30 +1048,35 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info);
   current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
   gflops = std::max(gflops, current);
+  XPUM_LOG_INFO("compute sp vector width 1 done");
 
   timed = 0;
   // Vector width 2
   timed = runKernel(command_queue, command_list, compute_sp_v2, workgroup_info);
   current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
   gflops = std::max(gflops, current);
+  XPUM_LOG_INFO("compute sp vector width 2 done");
 
   timed = 0;
   // Vector width 4
   timed = runKernel(command_queue, command_list, compute_sp_v4, workgroup_info);
   current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
   gflops = std::max(gflops, current);
+  XPUM_LOG_INFO("compute sp vector width 4 done");
 
   timed = 0;
   // Vector width 8
   timed = runKernel(command_queue, command_list, compute_sp_v8, workgroup_info);
   current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
   gflops = std::max(gflops, current);
+  XPUM_LOG_INFO("compute sp vector width 8 done");
 
   timed = 0;
   // Vector width 16
   timed = runKernel(command_queue, command_list, compute_sp_v16, workgroup_info);
   current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
   gflops = std::max(gflops, current);
+  XPUM_LOG_INFO("compute sp vector width 16 done");
 
   if (gflops < Configuration::SINGLE_PRECISION_MIN_GFLOPS) {
     computeCheckPass = false;
