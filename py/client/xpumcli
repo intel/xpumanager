@@ -1524,7 +1524,7 @@ def get_device_topology(deviceId):
     Device ID: {deviceId}
     Local CPU List: {localCPUList}
     Local CPUs: {localCPUs}
-    Switch Count:{switchCount} 
+    PCIe Switch Count:{switchCount} 
     '''
     deviceId = data['DeviceId']
     localCPUList = data['localCPUList']
