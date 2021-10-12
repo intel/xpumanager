@@ -3,7 +3,7 @@
 #include "comlet_base.h"
 
 struct ComletGroupOptions {
-    int groupId = 0;
+    uint32_t groupId = 0;
     int deviceId = -1;
     std::string name = "";
     bool create = false;

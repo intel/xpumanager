@@ -26,6 +26,7 @@ std::unique_ptr<nlohmann::json> ComletGroup::run() {
     if(this->opts->remove) flags++;
 
     if(flags != 1){
+        (*json)["error"] = "Too many operation flags";
         return json;
     }
 

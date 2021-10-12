@@ -55,7 +55,7 @@ extern "C" {
 
 typedef int32_t xpum_device_id_t;
 
-typedef int32_t xpum_group_id_t;
+typedef uint32_t xpum_group_id_t;
 
 typedef int32_t xpum_event_id_t;
 

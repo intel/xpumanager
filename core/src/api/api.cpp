@@ -407,13 +407,13 @@ void setDeviceSchedulerExclusiveMode(const char* device_id,
   return;
 }
 
-void createGroup(const char *groupName, void (*callback)(int*), Api_result_t* api_result)
+void createGroup(const char *groupName, void (*callback)(xpum_group_id_t*), Api_result_t* api_result)
 {
   if (!validPrerequisite((void*)callback, api_result)) {
     return ;
   }
 
-  int groupId;
+  xpum_group_id_t groupId;
   xpum_result_t result = Core::instance().getGroupManager()->createGroup(groupName, &groupId);
   if(result == XPUM_OK) {
     callback(&groupId);
