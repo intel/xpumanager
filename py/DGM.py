@@ -1,8 +1,13 @@
 #!/usr/bin/python3
+import configparser
+import os
+import sys
+import hashlib
 
 from flask import Flask, json, jsonify
 from flask import render_template
 from flask import request, Response
+from flask_httpauth import HTTPBasicAuth
 from requests import NullHandler
 
 # from DGMCore import DGMCore
@@ -12,6 +17,12 @@ from prometheus_exporter import get_metrics
 
 app = Flask(__name__)
 
+auth = HTTPBasicAuth()
+user = str()
+salt = str()
+pwHash = str()
+disableAuth = False
+
 core = DGMCore()
 
 @app.route('/metrics', methods=['GET'])
@@ -19,6 +30,7 @@ def export_metrics():
     return get_metrics(core, get_pod_resources())
 
 @app.route('/rest/v1/version', methods=['GET'])
+@auth.login_required
 def get_version():
     code, message, data = core.getVersion()
     if code == 0:
@@ -28,6 +40,7 @@ def get_version():
 
 
 @app.route('/rest/v1/devices', methods=['GET'])
+@auth.login_required
 def get_devices():
     code, message, data = core.getDeviceList()
     if code == 0:
@@ -37,6 +50,7 @@ def get_devices():
 
 
 @app.route('/rest/v1/devices/<int:deviceId>', methods=['GET'])
+@auth.login_required
 def get_device_properties(deviceId):
     try:
         code, message, data = core.getDeviceProperties(int(deviceId))
@@ -50,6 +64,7 @@ def get_device_properties(deviceId):
 
 
 @app.route('/rest/v1/groups', methods=['POST', 'GET'])
+@auth.login_required
 def groups():
     try:
         if request.method == 'POST':
@@ -74,6 +89,7 @@ def groups():
 
 
 @app.route('/rest/v1/groups/<int:groupId>', methods=['GET', 'POST', 'DELETE'])
+@auth.login_required
 def group_detail(groupId):
     if request.method == 'GET':
         # get group info
@@ -112,6 +128,7 @@ def group_detail(groupId):
 
 
 @app.route('/rest/v1/globalSettings', methods=['GET', 'POST'])
+@auth.login_required
 def agent_setting():
     if request.method == 'GET':
         code, message, data = core.getAllAgentConfig()
@@ -134,6 +151,7 @@ def agent_setting():
 
 
 @app.route('/rest/v1/devices/<int:deviceId>/stats', methods=['GET'])
+@auth.login_required
 def get_statistics(deviceId):
     code, message, data = core.getStatistics(deviceId)
     if code != 0:
@@ -143,6 +161,7 @@ def get_statistics(deviceId):
 
 
 @app.route('/rest/v1/groups/<int:groupId>/stats', methods=['GET'])
+@auth.login_required
 def get_group_statistics(groupId):
     code, message, data = core.getStatisticsByGroup(groupId)
     if code != 0:
@@ -152,6 +171,7 @@ def get_group_statistics(groupId):
 
 
 @app.route('/rest/v1/devices/<int:deviceId>/firmwareUpgrade', methods=['POST'])
+@auth.login_required
 def run_firmware_flash(deviceId):
     firmwareType = request.form.get('type', type=int, default=0)
     filePath = request.form.get('file', type=str, default='')
@@ -161,6 +181,7 @@ def run_firmware_flash(deviceId):
 
 
 @app.route('/rest/v1/devices/<int:deviceId>/firmware', methods=['GET'])
+@auth.login_required
 def get_firmware_flash_result(deviceId):
     firmwareType = request.args.get('type', type=int, default=0)
 
@@ -170,6 +191,7 @@ def get_firmware_flash_result(deviceId):
 
 
 @app.route('/rest/v1/devices/<int:deviceId>/health', methods=['GET'])
+@auth.login_required
 def get_health_all(deviceId):
     code, message, data = core.getHealth(deviceId, "All")
     if code != 0:
@@ -179,6 +201,7 @@ def get_health_all(deviceId):
 
 
 @app.route('/rest/v1/groups/<int:groupId>/health', methods=['GET'])
+@auth.login_required
 def get_group_health_all(groupId):
     code, message, data = core.getHealthByGroup(groupId, "All")
     if code != 0:
@@ -188,6 +211,7 @@ def get_group_health_all(groupId):
 
 
 @app.route('/rest/v1/devices/<int:deviceId>/health/<healthType>', methods=['GET'])
+@auth.login_required
 def get_health(deviceId, healthType):
     if healthType not in ["temperature", "power", "memory", "fabricPort"]:
         return
@@ -200,6 +224,7 @@ def get_health(deviceId, healthType):
 
 
 @app.route('/rest/v1/groups/<int:groupId>/health/<healthType>', methods=['GET'])
+@auth.login_required
 def get_group_health(groupId, healthType):
     if healthType not in ["temperature", "power", "memory", "fabricPort"]:
         return
@@ -212,6 +237,7 @@ def get_group_health(groupId, healthType):
 
 
 @app.route('/rest/v1/devices/<int:deviceId>/health/<healthType>', methods=['PUT'])
+@auth.login_required
 def set_health_config(deviceId, healthType):
     if healthType not in ["temperature", "power"]:
         return
@@ -226,6 +252,7 @@ def set_health_config(deviceId, healthType):
 
 
 @app.route('/rest/v1/groups/<int:groupId>/health/<healthType>', methods=['PUT'])
+@auth.login_required
 def set_group_health_config(groupId, healthType):
     if healthType not in ["temperature", "power"]:
         return
@@ -241,6 +268,7 @@ def set_group_health_config(groupId, healthType):
 
 
 @app.route('/rest/v1/devices/<int:deviceId>/diagnostics', methods=['POST'])
+@auth.login_required
 def run_diagnostics(deviceId):
     req = request.get_json()
     level = req["DiagnosticsLevel"]
@@ -252,6 +280,7 @@ def run_diagnostics(deviceId):
 
 
 @app.route('/rest/v1/groups/<int:groupId>/diagnostics', methods=['POST'])
+@auth.login_required
 def run_group_diagnostics(groupId):
     req = request.get_json()
     level = req["DiagnosticsLevel"]
@@ -263,6 +292,7 @@ def run_group_diagnostics(groupId):
 
 
 @app.route('/rest/v1/devices/<int:deviceId>/diagnostics', methods=['GET'])
+@auth.login_required
 def get_diagnostics_result(deviceId):
     code, message, data = core.getDiagnosticsResult(deviceId)
     if code != 0:
@@ -272,6 +302,7 @@ def get_diagnostics_result(deviceId):
 
 
 @app.route('/rest/v1/groups/<int:groupId>/diagnostics', methods=['GET'])
+@auth.login_required
 def get_group_diagnostics_result(groupId):
     code, message, data = core.getDiagnosticsResultByGroup(groupId)
     if code != 0:
@@ -280,6 +311,7 @@ def get_group_diagnostics_result(groupId):
     return jsonify(data)
 
 @app.route('/rest/v1/devices/<int:deviceId>/standbys', methods=['GET','POST'])
+@auth.login_required
 def operate_device_standbys_result(deviceId):
     if request.method == 'GET':
         code, message, data = core.getDeviceStandbys(deviceId)
@@ -297,6 +329,7 @@ def operate_device_standbys_result(deviceId):
     return jsonify(data)
 
 @app.route('/rest/v1/devices/<int:deviceId>/powerLimits', methods=['GET','POST'])
+@auth.login_required
 def operate_device_powerlimits_result(deviceId):
     req = request.get_json()
     subDeviceId = req["subDeviceId"]
@@ -328,6 +361,7 @@ def operate_device_powerlimits_result(deviceId):
     return jsonify(data)
 
 @app.route('/rest/v1/devices/<int:deviceId>/frequencyRanges', methods=['GET','POST'])
+@auth.login_required
 def operate_device_frequencyranges_result(deviceId):
     if request.method == 'GET':
         code, message, data = core.getDeviceFrequencyRanges(deviceId)
@@ -346,6 +380,7 @@ def operate_device_frequencyranges_result(deviceId):
     return jsonify(data)
 
 @app.route('/rest/v1/devices/<int:deviceId>/schedulers', methods=['GET','POST'])
+@auth.login_required
 def operate_device_schedulers_result(deviceId):
     if request.method == 'GET':
         code, message, data = core.getDeviceSchedulers(deviceId)
@@ -371,6 +406,7 @@ def operate_device_schedulers_result(deviceId):
     return jsonify(data)
 
 @app.route('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'])
+@auth.login_required
 def operate_device_reset(deviceId):
     if request.method == 'POST':
         code, message, data = core.resetDevice(deviceId)
@@ -383,6 +419,7 @@ def operate_device_reset(deviceId):
 
 
 @app.route('/rest/v1/metricsRawDataTask', methods=['POST'])
+@auth.login_required
 def start_metrics_raw_data_collect_task():
     reqData = request.get_json()
     metricsTypeList = reqData['metricsTypeList']
@@ -401,6 +438,7 @@ def start_metrics_raw_data_collect_task():
 
 
 @app.route('/rest/v1/metricsRawDataTask/<int:taskId>', methods=['POST', 'GET'])
+@auth.login_required
 def metrics_raw_data_collect_task(taskId):
     if request.method == 'POST':
         code, message, data = core.stopCollectMetricsRawDataTask(taskId)
@@ -416,6 +454,7 @@ def metrics_raw_data_collect_task(taskId):
         return data
 
 @app.route('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'])
+@auth.login_required
 def get_topology(deviceId):
     code, message, data = core.getTopology(deviceId)
     if code == 0:
@@ -423,7 +462,36 @@ def get_topology(deviceId):
     else:
         return message, 500
 
+@auth.verify_password
+def verify_password( username, password ):
+    if not disableAuth:
+        tmpHash = hashlib.sha512( ( salt + password ).encode( 'ASCII' ) ).hexdigest()
+        if username == user and tmpHash == pwHash :
+            return True 
+        else:
+            return False 
+    else:
+        return True
+
+def readConfig( path ):
+    file = path + '/rest.conf'
+    config = configparser.ConfigParser()
+    if config.read( file ):
+        global user, salt, pwHash, disableAuth
+        user = config['default']['username']
+        salt = config['default']['salt']
+        pwHash = config['default']['password']
+
+        if config['default'].get( 'disableAuth' ):
+            if config['default']['disableAuth'].upper() == 'TRUE':
+                disableAuth = True
+    else:
+        print( 'No rest.conf found, must run restConfig.sh first!' )
+        sys.exit( 1 )
+
 if __name__ == '__main__':
+    readConfig( os.path.dirname( os.path.realpath( __file__ ) ) )
+
     app.debug = True
 #   app.run()
     app.run(host='0.0.0.0', port=30000, use_reloader=False)
