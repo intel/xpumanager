@@ -26,6 +26,7 @@ disableAuth = False
 core = DGMCore()
 
 @app.route('/metrics', methods=['GET'])
+@auth.login_required
 def export_metrics():
     return get_metrics(core, get_pod_resources())
 
