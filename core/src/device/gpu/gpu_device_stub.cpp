@@ -416,7 +416,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
         p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
         p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
         p_gpu->addProperty(Property(DeviceProperty::DRIVER_VERSION,std::to_string(driver_prop.driverVersion)));
-        p_gpu->addProperty(Property(DeviceProperty::NUM_SUB_DEVICES,std::to_string(props.numSubdevices)));
         p_gpu->addProperty(Property(DeviceProperty::SERIAL_NUMBER,std::string(props.serialNumber)));
         p_gpu->addProperty(Property(DeviceProperty::VENDOR_NAME,std::string(props.vendorName)));
         p_gpu->addProperty(Property(DeviceProperty::CORE_CLOCK_RATE,std::to_string(props.core.coreClockRate)));
@@ -436,6 +435,9 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
         p_gpu->addProperty(Property(DeviceProperty::VENDOR_ID,to_hex_string(props.core.vendorId)));
         p_gpu->addProperty(Property(DeviceProperty::KERNEL_TIMESTAMP_VALID_BITS,std::to_string(props.core.kernelTimestampValidBits)));
         p_gpu->addProperty(Property(DeviceProperty::FLAGS,std::to_string(props.core.flags)));
+
+        uint32_t tileCount = props.numSubdevices == 0 ? 1 : props.numSubdevices;
+        p_gpu->addProperty(Property(DeviceProperty::NUM_SUB_DEVICES, std::to_string(tileCount)));
 
         zes_pci_properties_t pci_props;
         res = zesDevicePciGetProperties(device, &pci_props);
