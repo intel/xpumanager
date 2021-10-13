@@ -75,7 +75,7 @@ target_include_directories(
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
           ${CMAKE_CURRENT_LIST_DIR}/libs/hwloc/install/include/
-          ${CMAKE_CURRENT_LIST_DIR}/src)
+          ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 target_sources(
   DGMCore
   PRIVATE ${API_SRC}
