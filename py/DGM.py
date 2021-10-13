@@ -18,10 +18,6 @@ from prometheus_exporter import get_metrics
 app = Flask(__name__)
 
 auth = HTTPBasicAuth()
-user = str()
-salt = str()
-pwHash = str()
-disableAuth = False
 
 core = DGMCore()
 
@@ -478,21 +474,24 @@ def readConfig( path ):
     file = path + '/rest.conf'
     config = configparser.ConfigParser()
     if config.read( file ):
-        global user, salt, pwHash, disableAuth
         user = config['default']['username']
         salt = config['default']['salt']
         pwHash = config['default']['password']
 
+        disableAuth = False
+
         if config['default'].get( 'disableAuth' ):
             if config['default']['disableAuth'].upper() == 'TRUE':
                 disableAuth = True
+
+        return user, salt, pwHash, disableAuth
     else:
         print( 'No rest.conf found, must run restConfig.py first!' )
         sys.exit( 1 )
 
-if __name__ == '__main__':
-    readConfig( os.path.dirname( os.path.realpath( __file__ ) ) )
+user, salt, pwHash, disableAuth = readConfig( os.path.dirname( os.path.realpath( __file__ ) ) )
 
+if __name__ == '__main__':
     app.debug = True
 #   app.run()
     app.run(host='0.0.0.0', port=30000, use_reloader=False)
