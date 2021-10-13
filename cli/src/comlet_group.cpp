@@ -1,5 +1,12 @@
 #include "comlet_group.h"
+
+#include "core.pb.h"
+#include "core_stub.h"
+
 #include <iostream>
+#include <map>
+#include <nlohmann/json.hpp>
+#include <stdexcept>
 
 void ComletGroup::setupOptions() {
     this->opts = std::unique_ptr<ComletGroupOptions>(new ComletGroupOptions());

@@ -2,6 +2,8 @@
 
 #include "comlet_base.h"
 
+#include <memory>
+#include <nlohmann/json.hpp>
 #include <string>
 
 struct ComletVersionOptions {

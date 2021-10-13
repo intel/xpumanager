@@ -1,11 +1,15 @@
+#include "CLI/App.hpp"
 #include "cli_wrapper.h"
 #include "comlet_discovery.h"
-#include "comlet_version.h"
-#include "comlet_topology.h"
 #include "comlet_group.h"
-#include <CLI/CLI.hpp>
+#include "comlet_topology.h"
+#include "comlet_version.h"
 
 #include <iostream>
+#include <memory>
+#include <string>
+
+class ComletBase;
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<ComletBase>(std::make_shared<comlet_type>()))
 

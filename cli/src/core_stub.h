@@ -1,7 +1,10 @@
 #pragma once
 
 #include "core.grpc.pb.h"
+
+#include <memory>
 #include <nlohmann/json.hpp>
+#include <string>
 
 class CoreStub {
   public:

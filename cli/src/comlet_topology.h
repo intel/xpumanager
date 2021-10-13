@@ -2,6 +2,9 @@
 
 #include "comlet_base.h"
 
+#include <memory>
+#include <string>
+
 struct ComletTopologyOptions {
     int deviceId = -1;
 };
