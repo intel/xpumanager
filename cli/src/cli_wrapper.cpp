@@ -1,5 +1,13 @@
 #include "cli_wrapper.h"
 
+#include "CLI/App.hpp"
+#include "comlet_base.h"
+#include "core_stub.h"
+
+#include <nlohmann/json.hpp>
+#include <stdexcept>
+#include <utility>
+
 CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
     cliApp.add_flag("--pretty", this->opts->pretty, "Enable pretty-printing");

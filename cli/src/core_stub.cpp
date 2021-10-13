@@ -1,10 +1,14 @@
 #include "core_stub.h"
 
 #include "core.grpc.pb.h"
+#include "core.pb.h"
 #include "xpum_structs.h"
 
 #include <cassert>
 #include <grpc++/grpc++.h>
+#include <map>
+#include <nlohmann/json.hpp>
+#include <vector>
 
 CoreStub::CoreStub() {
     std::string unixSockName{"/tmp/xpum.sock"};

@@ -1,0 +1,13 @@
+[Unit]
+Description=XPUM daemon
+After=basic.taget
+
+[Service]
+Type=simple
+Environment="LD_LIBRARY_PATH=/usr/local/lib:/$LD_LIBRARY_PATH"
+ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/xpumd --conf_file /etc/xpum/daemon.conf --pid_file /var/xpum_daemon.pid
+ExecStop=/bin/kill -TERM $MAINPID
+User=root
+
+[Install]
+WantedBy=multi-user.target

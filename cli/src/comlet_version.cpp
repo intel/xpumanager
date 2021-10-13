@@ -1,6 +1,10 @@
 #include "comlet_version.h"
 
 #include "config.h"
+#include "core_stub.h"
+
+#include <map>
+#include <nlohmann/json.hpp>
 
 void ComletVersion::setupOptions() {
     this->opts = std::unique_ptr<ComletVersionOptions>(new ComletVersionOptions());

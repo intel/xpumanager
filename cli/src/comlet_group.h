@@ -2,6 +2,11 @@
 
 #include "comlet_base.h"
 
+#include <memory>
+#include <nlohmann/json.hpp>
+#include <stdint.h>
+#include <string>
+
 struct ComletGroupOptions {
     uint32_t groupId = 0;
     int deviceId = -1;

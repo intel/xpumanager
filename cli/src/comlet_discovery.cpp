@@ -1,6 +1,9 @@
 #include "comlet_discovery.h"
 
-#include <cassert>
+#include "core_stub.h"
+
+#include <map>
+#include <nlohmann/json.hpp>
 
 void ComletDiscovery::setupOptions() {
     this->opts = std::unique_ptr<ComletDiscoveryOptions>(new ComletDiscoveryOptions());

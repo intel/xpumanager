@@ -2,6 +2,10 @@
 
 #include "comlet_base.h"
 
+#include <memory>
+#include <nlohmann/json.hpp>
+#include <string>
+
 struct ComletDiscoveryOptions {
     int deviceId = -1;
     int a = 0;
