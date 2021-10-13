@@ -1,4 +1,4 @@
 if [ -f /usr/lib/systemd/system/xpum.service ]; then
   systemctl daemon-reload
-  systemctl enable xpum.service
+  systemctl enable xpum
 fi
