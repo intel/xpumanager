@@ -3,7 +3,6 @@
 #include "gpu_device.h"
 #include "infrastructure/device_property.h"
 
-#include "api/api_types.h"
 #include "unistd.h"
 #include "stdio.h"
 #include <fstream>

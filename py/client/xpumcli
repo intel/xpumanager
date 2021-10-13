@@ -1081,7 +1081,8 @@ def flash_firmware(deviceId, firmwareName, imagePath):
         print("Error occurs: fail to flash firmware")
     while True:
         time.sleep(0.5)
-        res = requests.get(host+"/rest/v1/devices/0/firmware",params={"type":firmwareType})
+        res = requests.get(
+            host+"/rest/v1/devices/{}/firmware".format(deviceId), params={"type": firmwareType})
         data = res.json()
         result = data["result"]
         if result == "OK":

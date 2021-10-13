@@ -778,7 +778,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
  * @return
  *      - \ref XPUM_OK                  if query successfully
  */
-xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topology, std::size_t *memSize);
+xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topology, long unsigned int *memSize);
 
 
 /**
