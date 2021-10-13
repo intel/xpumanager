@@ -7,6 +7,8 @@
 
 #include "xpum_structs.h"
 
+#include <cstddef>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
