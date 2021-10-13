@@ -35,8 +35,13 @@ project (XPUManager VERSION ${PROJECT_VERSION})
 
 set(CPACK_SET_DESTDIR OFF)
 set(CPACK_RPM_PACKAGE_RELOCATABLE ON)
-#set(CPACK_INSTALL_PREFIX "/usr/local/xpum")
-set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local/xpum")
+
+set(CPACK_INLCUDE_INSTALL_DIR "/usr/local/xpum")
+set(CPACK_LIB_INSTALL_DIR "/usr/local/lib")
+set(CPACK_CONF_INSTALL_DIR "/etc/xpum")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/intel/xpum")
+set(SYSTEMD_CONFIG_DIR "/lib/systemd/system")
+set(SYSTEMD_UNIT_NAME "${CMAKE_CURRENT_LIST_DIR}/daemon/xpum.service")
 
 set(CMAKE_PROJECT_VERSION "${PROJECT_VERSION}")
 add_definitions(-DLOADER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR})
@@ -51,6 +56,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}")
 
 add_subdirectory(core)
 add_subdirectory(py)
@@ -113,21 +119,30 @@ endif()
 
 INCLUDE(CPack)
 
+set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/post-in")
+set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/post-un")
+set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/pre-un")
+
 install(
     FILES 
 		core/include/xpum_structs.h
 		core/include/xpum_api.h
-    DESTINATION 
-		include
+    DESTINATION ${CPACK_INLCUDE_INSTALL_DIR}
 )
 
 install(
     FILES 
 		core/config/pci.ids
 		core/config/pci.switch
-    DESTINATION 
-		config
+    DESTINATION ${CPACK_CONF_INSTALL_DIR}
 )
+
+
+install(TARGETS DGMCore xpumcli xpumd
+	LIBRARY DESTINATION ${CPACK_LIB_INSTALL_DIR}
+	RUNTIME DESTINATION bin
+	ARCHIVE DESTINATION .
+  )
 
 install(
     FILES
@@ -138,7 +153,6 @@ install(
 	    bin
 )
 
-install(TARGETS DGMCore xpumcli xpumd
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION .)
+install(FILES
+	"${SYSTEMD_UNIT_NAME}"
+	DESTINATION ${SYSTEMD_CONFIG_DIR})

@@ -1,0 +1,3 @@
+systemctl stop xpum > /dev/null 2>&1 || true
+systemctl disable xpum > /dev/null 2>&1 || true
+rm - f /usr/lib/systemd/system/xpum.service
