@@ -487,7 +487,7 @@ def readConfig( path ):
             if config['default']['disableAuth'].upper() == 'TRUE':
                 disableAuth = True
     else:
-        print( 'No rest.conf found, must run restConfig.sh first!' )
+        print( 'No rest.conf found, must run restConfig.py first!' )
         sys.exit( 1 )
 
 if __name__ == '__main__':
