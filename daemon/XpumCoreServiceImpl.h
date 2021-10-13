@@ -37,5 +37,24 @@ public:
                 ::GroupInfo* response) override;
     virtual ::grpc::Status getAllGroupIds(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                 ::GroupIdArray* response) override;
-
+    virtual ::grpc::Status runDiagnostics(::grpc::ServerContext* context, const ::RunDiagnosticsRequest* request,
+                ::DiagnosticsTaskInfo* response) override;
+    virtual ::grpc::Status runDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunDiagnosticsByGroupRequest* request,
+                ::DiagnosticsGroupTaskInfo* response) override;
+    virtual ::grpc::Status getDiagnosticsResult(::grpc::ServerContext* context, const ::DeviceId* request,
+                ::DiagnosticsTaskInfo* response) override;
+    virtual ::grpc::Status getDiagnosticsResultByGroup(::grpc::ServerContext* context, const ::GroupId* request,
+                ::DiagnosticsGroupTaskInfo* response) override;
+    virtual ::grpc::Status getHealth(::grpc::ServerContext* context, const ::HealthDataRequest* request,
+                ::HealthData* response) override;
+    virtual ::grpc::Status getHealthByGroup(::grpc::ServerContext* context, const ::HealthDataByGroupRequest* request,
+                ::HealthDataByGroup* response) override;
+    virtual ::grpc::Status getHealthConfig(::grpc::ServerContext* context, const ::HealthConfigRequest* request,
+                ::HealthConfigInfo* response) override;
+    virtual ::grpc::Status getHealthConfigByGroup(::grpc::ServerContext* context, const ::HealthConfigByGroupRequest* request,
+                ::HealthConfigByGroupInfo* response) override;
+    virtual ::grpc::Status setHealthConfig(::grpc::ServerContext* context, const ::HealthConfigRequest* request,
+                ::HealthConfigInfo* response) override;
+    virtual ::grpc::Status setHealthConfigByGroup(::grpc::ServerContext* context, const ::HealthConfigByGroupRequest* request,
+                ::HealthConfigByGroupInfo* response) override;
 };

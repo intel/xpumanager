@@ -88,6 +88,132 @@ message GroupAddRemoveDevice{
     string errorMsg = 3;
 }
 
+message RunDiagnosticsRequest{
+    uint32 deviceId = 1;
+    uint32 level = 2;
+}
+
+message RunDiagnosticsByGroupRequest{
+    uint32 groupId = 1;
+    uint32 level = 2;
+}
+
+message DiagnosticsComponentInfo{
+  enum Type {
+    DIAG_SOFTWARE_ENV_VARIABLES = 0;
+    DIAG_SOFTWARE_LIBRARY = 1;
+    DIAG_SOFTWARE_PERMISSION = 2;
+    DIAG_SOFTWARE_EXCLUSIVE = 3;
+    DIAG_HARDWARE_SYSMAN = 4;
+    DIAG_INTEGRATION_PCIE = 5;
+    DIAG_MEDIA_CODEC = 6;
+    DIAG_PERFORMANCE_COMPUTE = 7;
+    DIAG_PERFORMANCE_POWER = 8;
+    DIAG_PERFORMANCE_MEMORY = 9;
+  }
+  Type type = 1;
+  bool finished = 2;
+  enum Result {
+    DIAG_RESULT_UNKNOWN = 0;
+    DIAG_RESULT_PASS = 1;
+    DIAG_RESULT_WARNING = 2;
+    DIAG_RESULT_CRITICAL = 3;
+  }
+  Result result = 3;
+  string message = 4;
+}
+
+message DiagnosticsTaskInfo{
+    uint32 deviceId = 1;
+    uint32 level = 2;
+    bool finished = 3;
+    repeated DiagnosticsComponentInfo componentInfo = 4;
+    string message = 5;
+    uint32 count = 6;
+    string errorMsg = 7;
+}
+
+message DiagnosticsGroupTaskInfo{
+    uint32 groupId = 1;
+    repeated DiagnosticsTaskInfo taskInfo = 2;
+    uint32 count = 3;
+    string errorMsg = 4;
+}
+
+enum HealthType{
+    HEALTH_THERMAL = 0;
+    HEALTH_POWER = 1;
+    HEALTH_MEMORY = 2;
+    HEALTH_FABRIC_PORT = 3;
+}
+
+enum HealthConfigType{
+    HEALTH_THEARMAL_LIMIT = 0;
+    HEALTH_POWER_LIMIT = 1;
+}
+
+enum HealthStatusType{
+    HEALTH_STATUS_UNKNOWN = 0;
+    HEALTH_STATUS_OK = 1;
+    HEALTH_STATUS_WARNING = 2;
+    HEALTH_STATUS_CRITICAL = 3;
+}
+
+message HealthDataRequest{
+    uint32 deviceId = 1;
+    HealthType type = 2;
+}
+
+message HealthDataByGroupRequest{
+    uint32 groupId = 1;
+    HealthType type = 2;  
+}
+
+message HealthData{
+    uint32 deviceId = 1;
+    HealthType type = 2;
+    HealthStatusType statusType = 3;
+    string description = 4;
+    string errorMsg = 5;
+}
+
+
+message HealthDataByGroup{
+    uint32 groupId = 1;
+    HealthType type = 2;
+    repeated HealthData healthData = 3;
+    uint32 count = 4;
+    string errorMsg = 5;
+}
+
+message HealthConfigRequest{
+    uint32 deviceId = 1;
+    HealthConfigType configType = 2;
+    int32 threshold = 3;  
+}
+
+message HealthConfigByGroupRequest{
+    uint32 groupId = 1;
+    HealthConfigType configType = 2;
+    int32 threshold = 3;  
+}
+
+message HealthConfigInfo{
+    uint32 deviceId = 1;
+    HealthConfigType configType = 2;
+    int32 threshold = 3;
+    string errorMsg = 4;
+}
+
+message HealthConfigByGroupInfo{
+    uint32 groupId = 1;
+    HealthConfigType configType = 2;
+    repeated uint32 deviceId = 3;
+    repeated int32 threshold = 4;
+    uint32 count = 5;
+    string errorMsg = 6;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -100,4 +226,14 @@ service XpumCoreService {
     rpc groupRemoveDevice( GroupAddRemoveDevice ) returns ( GroupInfo );
     rpc groupGetInfo( GroupId ) returns ( GroupInfo );
     rpc getAllGroupIds( google.protobuf.Empty ) returns ( GroupIdArray );
+    rpc runDiagnostics( RunDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
+    rpc runDiagnosticsByGroup( RunDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
+    rpc getDiagnosticsResult ( DeviceId ) returns ( DiagnosticsTaskInfo );
+    rpc getDiagnosticsResultByGroup( GroupId ) returns (DiagnosticsGroupTaskInfo);
+    rpc getHealth( HealthDataRequest ) returns ( HealthData );
+    rpc getHealthByGroup( HealthDataByGroupRequest ) returns ( HealthDataByGroup );
+    rpc getHealthConfig( HealthConfigRequest ) returns ( HealthConfigInfo );
+    rpc getHealthConfigByGroup( HealthConfigByGroupRequest ) returns ( HealthConfigByGroupInfo );
+    rpc setHealthConfig( HealthConfigRequest ) returns ( HealthConfigInfo );
+    rpc setHealthConfigByGroup( HealthConfigByGroupRequest ) returns ( HealthConfigByGroupInfo );
 }

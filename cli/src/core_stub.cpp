@@ -257,3 +257,392 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
     }
     return json;
 }
+
+std::string CoreStub::diagnosticResultEnumToString(DiagnosticsComponentInfo_Result result) {
+    std::string ret;
+    switch (result)
+    {
+    case DiagnosticsComponentInfo_Result_DIAG_RESULT_UNKNOWN:
+        ret = "Unknown"; break;
+    case DiagnosticsComponentInfo_Result_DIAG_RESULT_PASS:
+        ret = "Pass"; break;
+    case DiagnosticsComponentInfo_Result_DIAG_RESULT_WARNING:
+        ret = "Warning"; break;
+    case DiagnosticsComponentInfo_Result_DIAG_RESULT_CRITICAL:
+        ret = "Critical"; break;
+    default:
+        break;
+    }
+    return ret;
+}
+
+std::string CoreStub::diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type) {
+    std::string ret;
+    switch (type)
+    {
+    case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_ENV_VARIABLES:
+        ret = "Env Variables"; break;
+    case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_LIBRARY:
+        ret = "Library"; break;
+    case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_PERMISSION:
+        ret = "Permission"; break;
+    case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE:
+        ret = "Exclusive"; break;
+    case DiagnosticsComponentInfo_Type_DIAG_HARDWARE_SYSMAN:
+        ret = "Hardware Sysman"; break;
+    case DiagnosticsComponentInfo_Type_DIAG_INTEGRATION_PCIE:
+        ret = "Integration PCIe"; break;
+    case DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC:
+        ret = "Media Codec"; break;
+    case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_COMPUTE:
+        ret = "Performance Computation"; break;
+    case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_POWER:
+        ret = "Performance Power"; break;
+    case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY:
+        ret = "Performance Memory"; break;
+    default:
+        break;
+    }
+    return ret; 
+}
+std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    RunDiagnosticsRequest request;
+    request.set_deviceid(deviceId);
+    request.set_level(level);
+    DiagnosticsTaskInfo response;
+    grpc::Status status = stub->runDiagnostics(&context, request, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            json = getDiagnosticsResult(deviceId);
+            while ((*json)["finished"] == false) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
+                json = getDiagnosticsResult(deviceId);
+            }
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceId request;
+    request.set_id(deviceId);
+    DiagnosticsTaskInfo response;
+    grpc::Status status = stub->getDiagnosticsResult(&context, request, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            (*json)["device_id"] = response.deviceid();
+            (*json)["level"] = response.level();
+            (*json)["component_count"] = response.count();
+            (*json)["finished"] = response.finished();
+            (*json)["message"] = response.message();
+            std::vector<nlohmann::json> componentJsonList;           
+            for (int i = 0; i < response.componentinfo_size(); ++i){
+                auto componentJson = nlohmann::json();
+                componentJson["type"] = diagnosticTypeEnumToString(response.componentinfo(i).type());
+                componentJson["finished"] = response.componentinfo(i).finished();
+                componentJson["message"] = response.componentinfo(i).message();
+                componentJson["result"] = diagnosticResultEnumToString(response.componentinfo(i).result());
+                componentJsonList.push_back(componentJson);
+            }
+            (*json)["component_list"] = componentJsonList;
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(int groupId, int level) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    RunDiagnosticsByGroupRequest request;
+    request.set_groupid(groupId);
+    request.set_level(level);
+    DiagnosticsGroupTaskInfo response;
+    grpc::Status status = stub->runDiagnosticsByGroup(&context, request, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            json = getDiagnosticsResultByGroup(groupId);
+            while ((*json)["finished"] == false) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
+                json = getDiagnosticsResultByGroup(groupId);
+            }
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(int groupId) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GroupId request;
+    request.set_id(groupId);
+    DiagnosticsGroupTaskInfo response;
+    grpc::Status status = stub->getDiagnosticsResultByGroup(&context, request, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            bool finished = true;
+            (*json)["group_id"] = response.groupid();
+            (*json)["device_count"] = response.count();
+            std::vector<nlohmann::json> deviceInfoJsonList;
+            for (int i = 0; i < response.taskinfo_size(); i++) {
+                auto deviceInfoJson = nlohmann::json();
+                deviceInfoJson["device_id"] = response.taskinfo(i).deviceid();
+                deviceInfoJson["level"] = response.taskinfo(i).level();
+                deviceInfoJson["component_count"] = response.taskinfo(i).count();
+                deviceInfoJson["finished"] = response.taskinfo(i).finished();
+                finished = finished & response.taskinfo(i).finished();
+                deviceInfoJson["message"] = response.taskinfo(i).message();
+                std::vector<nlohmann::json> componentJsonList;  
+                for (int j = 0; j < response.taskinfo(i).componentinfo_size(); j++) {         
+                    auto componentJson = nlohmann::json();
+                    componentJson["type"] = diagnosticTypeEnumToString(response.taskinfo(i).componentinfo(j).type());
+                    componentJson["finished"] = response.taskinfo(i).componentinfo(j).finished();
+                    componentJson["message"] = response.taskinfo(i).componentinfo(j).message();
+                    componentJson["result"] = diagnosticResultEnumToString(response.taskinfo(i).componentinfo(j).result());
+                    componentJsonList.push_back(componentJson);
+                }
+                deviceInfoJson["component_list"] = componentJsonList;
+                deviceInfoJsonList.push_back(deviceInfoJson);
+            }
+            (*json)["finished"] = finished;
+            (*json)["device_list"] = deviceInfoJsonList;
+        }
+    }
+    return json;
+}
+
+std::string CoreStub::healthStatusEnumToString(HealthStatusType status) {
+    std::string ret;
+    switch (status)
+    {
+    case HEALTH_STATUS_UNKNOWN:
+        ret = "Unknown";
+        break;
+    case HEALTH_STATUS_OK:
+        ret = "OK";
+        break;
+    case HEALTH_STATUS_WARNING:
+        ret = "Warning";
+        break;
+    case HEALTH_STATUS_CRITICAL:
+        ret = "Critical";
+        break;
+    default:
+        break;
+    }
+    return ret;
+}
+
+std::string CoreStub::healthTypeEnumToString(HealthType type) {
+    std::string ret;
+    switch (type)
+    {
+    case HEALTH_THERMAL:
+        ret = "Temperature";
+        break;
+    case HEALTH_POWER:
+        ret = "Power";
+        break;
+    case HEALTH_MEMORY:
+        ret = "Memory";
+        break;
+    case HEALTH_FABRIC_PORT:
+        ret = "Fabric Port";
+        break;
+    default:
+        break;
+    }
+    return ret;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getAllHealth() {
+    assert(this->stub != nullptr);
+    grpc::ClientContext context;
+    XpumDeviceBasicInfoArray response;
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> healthJsonList;
+            for (int i = 0; i < response.info_size(); i++) {
+                auto healthJson = (*getHealth(response.info(i).id().id()));
+                healthJsonList.push_back(healthJson);
+            }
+            (*json)["all_health_list"] = healthJsonList;
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    HealthDataRequest request;
+    request.set_deviceid(deviceId);
+    HealthData response;
+    (*json)["device_id"] = deviceId;
+    grpc::Status status = grpc::Status::OK;
+    std::vector<HealthType> types = {HEALTH_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    for (auto& type: types) {
+        auto componentJson = (*getHealth(deviceId, type));
+        std::string currentHealthType = healthTypeEnumToString(type);
+        (*json)[currentHealthType]["status"] = componentJson["status"];
+        (*json)[currentHealthType]["description"] = componentJson["description"];
+        if (componentJson.contains("threshold")) {
+            (*json)[currentHealthType]["threshold"] = componentJson["threshold"];
+        }        
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId, HealthType type) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    HealthDataRequest request;
+    request.set_deviceid(deviceId);
+    request.set_type(type);
+    HealthData response;
+    grpc::Status status = stub->getHealth(&context, request, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            (*json)["type"] = healthTypeEnumToString(response.type());
+            (*json)["status"] = healthStatusEnumToString(response.statustype());
+            (*json)["description"] = response.description();
+            if (response.type() == HEALTH_POWER) {
+                (*json)["threshold"] = getHealthConfig(deviceId, HEALTH_POWER_LIMIT);
+            }
+            if (response.type() == HEALTH_THERMAL) {
+                (*json)["threshold"] = getHealthConfig(deviceId, HEALTH_THEARMAL_LIMIT);
+            }
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setHealthConfig(int deviceId, HealthConfigType cfgtype, int threshold) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    HealthConfigRequest request;
+    request.set_deviceid(deviceId);
+    request.set_configtype(cfgtype);
+    request.set_threshold(threshold);
+    HealthConfigInfo response;
+    grpc::Status status = stub->setHealthConfig(&context, request, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(int groupId) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    (*json)["group_id"] = groupId;
+    HealthDataByGroupRequest request;
+    request.set_groupid(groupId);
+    HealthDataByGroup response;
+    std::vector<nlohmann::json> deviceJsonList;
+    std::vector<HealthType> types = {HEALTH_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    for (auto& type : types) {
+        auto deviceHealthTypeJsons = (*getHealthByGroup(groupId, type));
+        std::string currentHealthType = healthTypeEnumToString(type);
+        for(auto& component: deviceHealthTypeJsons[currentHealthType]) {
+            std::size_t targetDeviceIndex = deviceJsonList.size();
+            for (std::size_t i = 0; i < deviceJsonList.size(); i++) {
+                if (deviceJsonList[i]["device_id"] == component["device_id"]) {
+                    targetDeviceIndex = i;
+                }
+            }
+            if (targetDeviceIndex == deviceJsonList.size()) {
+                auto deviceJson = nlohmann::json();
+                deviceJson["device_id"] = component["device_id"];
+                deviceJsonList.push_back(deviceJson);
+            }
+            deviceJsonList[targetDeviceIndex][currentHealthType]["status"] = component["status"];
+            deviceJsonList[targetDeviceIndex][currentHealthType]["description"] = component["description"];
+            if (component.contains("threshold")) {
+                deviceJsonList[targetDeviceIndex][currentHealthType]["threshold"] = component["threshold"];
+            }
+        }
+    }
+    (*json)["device_count"] = deviceJsonList.size();
+    (*json)["device_list"] = deviceJsonList;
+    return json;    
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(int groupId, HealthType type) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    HealthDataByGroupRequest request;
+    request.set_groupid(groupId);
+    request.set_type(type);
+    HealthDataByGroup response;
+    std::vector<nlohmann::json> componentJsonList;
+    grpc::Status status = stub->getHealthByGroup(&context, request, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            for (int i = 0; i < response.healthdata_size(); i++) {
+                auto component = nlohmann::json();
+                component["device_id"] = response.healthdata(i).deviceid();
+                component["status"] = healthStatusEnumToString(response.healthdata(i).statustype());
+                component["description"] = response.healthdata(i).description();
+                if (response.healthdata(i).type() == HEALTH_POWER) {
+                    component["threshold"] = getHealthConfig(response.healthdata(i).deviceid(), HEALTH_POWER_LIMIT);
+                }
+                if (response.healthdata(i).type() == HEALTH_THERMAL) {
+                    component["threshold"] = getHealthConfig(response.healthdata(i).deviceid(), HEALTH_THEARMAL_LIMIT);
+                }
+                componentJsonList.push_back(component);
+            }
+        }
+    }
+    (*json)[healthTypeEnumToString(type)] = componentJsonList;
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setHealthConfigByGroup(int groupId, HealthConfigType cfgtype, int threshold) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    HealthConfigByGroupRequest request;
+    request.set_groupid(groupId);
+    request.set_configtype(cfgtype);
+    request.set_threshold(threshold);
+    HealthConfigByGroupInfo response;
+    grpc::Status status = stub->setHealthConfigByGroup(&context, request, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+        }
+    }
+    return json;    
+}
+
+int CoreStub::getHealthConfig(int deviceId, HealthConfigType cfgtype) {
+    int threshold = -1;
+    grpc::ClientContext context;
+    HealthConfigRequest request;
+    request.set_deviceid(deviceId);
+    request.set_configtype(cfgtype);
+    HealthConfigInfo response;
+    grpc::Status status = stub->getHealthConfig(&context, request, &response);
+    if (status.ok()) {
+        if(response.errormsg().length() == 0) {
+            threshold = response.threshold();
+        }
+    }
+    return threshold;
+}

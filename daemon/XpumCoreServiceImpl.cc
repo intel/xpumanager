@@ -211,3 +211,166 @@ grpc::Status XpumCoreServiceImpl::getTopology( grpc::ServerContext* context, con
 
     return grpc::Status::OK;
 }
+
+::grpc::Status XpumCoreServiceImpl::runDiagnostics(::grpc::ServerContext* context, const ::RunDiagnosticsRequest* request,
+            ::DiagnosticsTaskInfo* response) {
+    xpum_result_t res = xpumRunDiagnostics(request->deviceid(), static_cast<xpum_diag_level_t>(request->level()));
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+::grpc::Status XpumCoreServiceImpl::runDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunDiagnosticsByGroupRequest* request,
+            ::DiagnosticsGroupTaskInfo* response) {
+    xpum_result_t res = xpumRunDiagnosticsByGroup(request->groupid(), static_cast<xpum_diag_level_t>(request->level()));
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getDiagnosticsResult(::grpc::ServerContext* context, const ::DeviceId* request,
+            ::DiagnosticsTaskInfo* response) {
+    xpum_diag_task_info_t task_info;
+    xpum_result_t res = xpumGetDiagnosticsResult(request->id(), &task_info);
+    if (res == XPUM_OK) {
+        response->set_deviceid(task_info.deviceId);
+        response->set_level(task_info.level);
+        response->set_finished(task_info.finished);
+        response->set_message(task_info.message);
+        response->set_count(task_info.count);
+        for (int i = 0; i < task_info.count; i++) {
+            DiagnosticsComponentInfo * component = response->add_componentinfo();
+            component->set_type(static_cast<DiagnosticsComponentInfo_Type>(task_info.componentList[i].type));
+            component->set_finished(task_info.componentList[i].finished);
+            component->set_result(static_cast<DiagnosticsComponentInfo_Result>(task_info.componentList[i].result));
+            component->set_message(task_info.componentList[i].message);
+        }
+    } else {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getDiagnosticsResultByGroup(::grpc::ServerContext* context, const ::GroupId* request,
+            ::DiagnosticsGroupTaskInfo* response) {
+    int count = XPUM_MAX_NUM_DEVICES;
+    xpum_diag_task_info_t taskInfos[XPUM_MAX_NUM_DEVICES];
+    xpum_result_t res = xpumGetDiagnosticsResultByGroup(request->id(), taskInfos, &count);
+    if (res == XPUM_OK) {
+        response->set_groupid(request->id());
+        response->set_count(count);
+        for (int i = 0; i < count; i++) {
+            DiagnosticsTaskInfo* taskInfo = response->add_taskinfo();
+            taskInfo->set_deviceid(taskInfos[i].deviceId);
+            taskInfo->set_level(taskInfos[i].level);
+            taskInfo->set_finished(taskInfos[i].finished);
+            taskInfo->set_message(taskInfos[i].message);
+            taskInfo->set_count(taskInfos[i].count);
+            for (int j = 0; j < taskInfos[i].count; j++) {
+                DiagnosticsComponentInfo * component = taskInfo->add_componentinfo();
+                component->set_type(static_cast<DiagnosticsComponentInfo_Type>(taskInfos[i].componentList[j].type));
+                component->set_finished(taskInfos[i].componentList[j].finished);
+                component->set_result(static_cast<DiagnosticsComponentInfo_Result>(taskInfos[i].componentList[j].result));
+                component->set_message(taskInfos[i].componentList[j].message);
+            }
+        }
+    } else {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getHealth(::grpc::ServerContext* context, const ::HealthDataRequest* request,
+            ::HealthData* response) {
+    xpum_health_data_t data;
+    xpum_result_t res = xpumGetHealth(request->deviceid(), static_cast<xpum_health_type_t>(request->type()), &data);
+    if (res == XPUM_OK) {
+        response->set_deviceid(request->deviceid());
+        response->set_type(request->type());
+        response->set_statustype(static_cast<HealthStatusType>(data.status));
+        response->set_description(data.description);
+    } else {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getHealthByGroup(::grpc::ServerContext* context, const ::HealthDataByGroupRequest* request,
+            ::HealthDataByGroup* response) {
+    int count = XPUM_MAX_NUM_DEVICES;
+    xpum_health_data_t healthDatas[XPUM_MAX_NUM_DEVICES];
+    xpum_result_t res = xpumGetHealthByGroup(request->groupid(), static_cast<xpum_health_type_t>(request->type()), healthDatas, &count);
+    if (res == XPUM_OK) {
+        response->set_groupid(request->groupid());
+        response->set_type(request->type());
+        response->set_count(count);
+        for (int i = 0; i < count; i++) {
+            HealthData* data = response->add_healthdata();
+            data->set_deviceid(healthDatas[i].deviceId);
+            data->set_type(static_cast<HealthType>(healthDatas[i].type));
+            data->set_statustype(static_cast<HealthStatusType>(healthDatas[i].status));
+            data->set_description(healthDatas[i].description);
+        }
+    } else {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getHealthConfig(::grpc::ServerContext* context, const ::HealthConfigRequest* request,
+            ::HealthConfigInfo* response) {
+    int threshold = 0;
+    xpum_result_t res = xpumGetHealthConfig(request->deviceid(), static_cast<xpum_health_config_type_t>(request->configtype()), &threshold);
+    if (res == XPUM_OK) {
+        response->set_deviceid(request->deviceid());
+        response->set_configtype(request->configtype());
+        response->set_threshold(threshold);
+    } else {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getHealthConfigByGroup(::grpc::ServerContext* context, const ::HealthConfigByGroupRequest* request,
+            ::HealthConfigByGroupInfo* response) {
+    int count = XPUM_MAX_NUM_DEVICES;
+    xpum_device_id_t deviceIdList[XPUM_MAX_NUM_DEVICES];
+    void* thresholds_ptrs[XPUM_MAX_NUM_DEVICES];
+    int threshold_vals[XPUM_MAX_NUM_DEVICES];
+    for (int i = 0; i < XPUM_MAX_NUM_DEVICES; i++)
+        thresholds_ptrs[i] = &threshold_vals[i];
+    xpum_result_t res = xpumGetHealthConfigByGroup(request->groupid(), static_cast<xpum_health_config_type_t>(request->configtype()), deviceIdList, thresholds_ptrs, &count);
+    if (res == XPUM_OK) {
+        response->set_groupid(request->groupid());
+        response->set_configtype(request->configtype());
+        response->set_count(count);
+        for (int i = 0; i < count; i++) {
+            response->add_deviceid(deviceIdList[i]);
+            response->add_threshold(threshold_vals[i]);
+        }
+    } else {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::setHealthConfig(::grpc::ServerContext* context, const ::HealthConfigRequest* request,
+            ::HealthConfigInfo* response) {
+    int threshold = request->threshold();
+    xpum_result_t res = xpumSetHealthConfig(request->deviceid(), static_cast<xpum_health_config_type_t>(request->configtype()), &threshold);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::setHealthConfigByGroup(::grpc::ServerContext* context, const ::HealthConfigByGroupRequest* request,
+            ::HealthConfigByGroupInfo* response) {
+    int threshold = request->threshold();
+    xpum_result_t res = xpumSetHealthConfigByGroup(request->groupid(), static_cast<xpum_health_config_type_t>(request->configtype()), &threshold);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
