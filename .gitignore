@@ -26,3 +26,14 @@ daemon/core.pb.h
 daemon/xpum.service
 daemon/config/pci.ids
 daemon/config/pci.switch
+daemon/kernels/LICENSE
+daemon/kernels/test_multiple_memory_allocations.cl
+daemon/kernels/test_multiple_memory_allocations.spv
+daemon/kernels/ze_dp_compute.cl
+daemon/kernels/ze_dp_compute.spv
+daemon/kernels/ze_sp_compute.cl
+daemon/kernels/ze_sp_compute.spv
+daemon/mediadata/LICENSE
+daemon/mediadata/test_stream_176x96.yuv
+daemon/mediadata/test_stream_coder.h264
+daemon/mediadata/test_stream.264
