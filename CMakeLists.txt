@@ -105,6 +105,8 @@ if(CPACK_GENERATOR MATCHES "RPM")
 	  /usr/local/lib64
 	  /usr/local/bin
 	  /usr/local/include
+		/lib
+		/usr/lib
 	)
 
 	set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/postinst")
@@ -120,8 +122,7 @@ if(CPACK_GENERATOR MATCHES "DEB")
   set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 
 	#set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12), python2.6, libboost-program-options1.40.0 (>= 1.40.0)")
-	set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_LIST_DIR}/postinst;${CMAKE_SOURCE_DIR}/prerm;")
-	set(CPACK_SET_DESTDIR "ON")
+	set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_LIST_DIR}/postinst;${CMAKE_SOURCE_DIR}/prerm;")	
 endif()
 
 INCLUDE(CPack)
