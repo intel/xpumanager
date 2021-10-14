@@ -102,7 +102,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
         if (response.errormsg().length() == 0) {
             for (int i{0}; i < response.properties_size(); ++i) {
                 auto &p = response.properties(i);
-                (*json)[p.name()] = p.value();
+                std::string name = p.name();
+                std::transform(name.begin(), name.end(), name.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
+                (*json)[name] = p.value();
             }
         }
     }

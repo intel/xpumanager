@@ -352,8 +352,8 @@ void addPCIeProperties(ze_device_handle_t &device,std::shared_ptr<GPUDevice> p_g
   zes_pci_properties_t data;
   auto res = zesDevicePciGetProperties(device, &data);
   if(res == ZE_RESULT_SUCCESS){
-    p_gpu->addProperty(Property(DeviceProperty::PCIE_GEN,std::to_string(data.maxSpeed.gen)));
-    p_gpu->addProperty(Property(DeviceProperty::PCIE_MAX_LINK_WIDTH,std::to_string(data.maxSpeed.width)));
+    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCIE_GENERATION,std::to_string(data.maxSpeed.gen)));
+    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH,std::to_string(data.maxSpeed.width)));
   }
 }
 
@@ -411,41 +411,47 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
       if (props.core.type == ZE_DEVICE_TYPE_GPU) {
         addEgnineCapabilities(device, capabilities);
         auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
-        p_gpu->addProperty(Property(DeviceProperty::TYPE,std::string("GPU")));
-        p_gpu->addProperty(Property(DeviceProperty::DEVICE_ID,to_hex_string(props.core.deviceId)));
-        p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
-        p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
-        p_gpu->addProperty(Property(DeviceProperty::DRIVER_VERSION,std::to_string(driver_prop.driverVersion)));
-        p_gpu->addProperty(Property(DeviceProperty::SERIAL_NUMBER,std::string(props.serialNumber)));
-        p_gpu->addProperty(Property(DeviceProperty::VENDOR_NAME,std::string(props.vendorName)));
-        p_gpu->addProperty(Property(DeviceProperty::CORE_CLOCK_RATE,std::to_string(props.core.coreClockRate)));
-        p_gpu->addProperty(Property(DeviceProperty::MAX_MEM_ALLOC_SIZE,std::to_string(props.core.maxMemAllocSize)));
-        p_gpu->addProperty(Property(DeviceProperty::MAX_HARDWARE_CONTEXTS,std::to_string(props.core.maxHardwareContexts)));
-        p_gpu->addProperty(Property(DeviceProperty::MAX_COMMAND_QUEUE_PRIORITY,std::to_string(props.core.maxCommandQueuePriority)));
-        p_gpu->addProperty(Property(DeviceProperty::DEVICE_NAME,std::string(props.core.name)));
-        p_gpu->addProperty(Property(DeviceProperty::NUM_EUS_PER_SUB_SLICE,std::to_string(props.core.numEUsPerSubslice)));
-        p_gpu->addProperty(Property(DeviceProperty::NUM_SUB_SLICES_PER_SLICE,std::to_string(props.core.numSubslicesPerSlice)));
-        p_gpu->addProperty(Property(DeviceProperty::NUM_SLICES,std::to_string(props.core.numSlices)));
-        p_gpu->addProperty(Property(DeviceProperty::NUM_THREADS_PER_EU,std::to_string(props.core.numThreadsPerEU)));
-        p_gpu->addProperty(Property(DeviceProperty::PYSICAL_EU_SIMD_WIDTH,std::to_string(props.core.physicalEUSimdWidth)));
-        p_gpu->addProperty(Property(DeviceProperty::SUB_DEVICE_ID,to_hex_string(props.core.subdeviceId)));
-        p_gpu->addProperty(Property(DeviceProperty::TIMER_RESOLUTION,std::to_string(props.core.timerResolution)));
-        p_gpu->addProperty(Property(DeviceProperty::TIMESTAMP_VALID_BITS,std::to_string(props.core.timestampValidBits)));
-        p_gpu->addProperty(Property(DeviceProperty::UUID,to_string(props.core.uuid)));
-        p_gpu->addProperty(Property(DeviceProperty::VENDOR_ID,to_hex_string(props.core.vendorId)));
-        p_gpu->addProperty(Property(DeviceProperty::KERNEL_TIMESTAMP_VALID_BITS,std::to_string(props.core.kernelTimestampValidBits)));
-        p_gpu->addProperty(Property(DeviceProperty::FLAGS,std::to_string(props.core.flags)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_DEVICE_TYPE,std::string("GPU")));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID,to_hex_string(props.core.deviceId)));
+        // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
+        // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_DRIVER_VERSION,std::to_string(driver_prop.driverVersion)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_SERIAL_NUMBER,std::string(props.serialNumber)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_VENDOR_NAME,std::string(props.vendorName)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ,std::to_string(props.core.coreClockRate)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_MAX_MEM_ALLOC_SIZE_BYTE,std::to_string(props.core.maxMemAllocSize)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_MAX_HARDWARE_CONTEXTS,std::to_string(props.core.maxHardwareContexts)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY,std::to_string(props.core.maxCommandQueuePriority)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_DEVICE_NAME,std::string(props.core.name)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE,std::to_string(props.core.numEUsPerSubslice)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_SUB_SLICES_PER_SLICE,std::to_string(props.core.numSubslicesPerSlice)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES,std::to_string(props.core.numSlices)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU,std::to_string(props.core.numThreadsPerEU)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH,std::to_string(props.core.physicalEUSimdWidth)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID,to_hex_string(props.core.subdeviceId)));
+        // p_gpu->addProperty(Property(DeviceProperty::TIMER_RESOLUTION,std::to_string(props.core.timerResolution)));
+        // p_gpu->addProperty(Property(DeviceProperty::TIMESTAMP_VALID_BITS,std::to_string(props.core.timestampValidBits)));
+        auto &uuidBuf = props.core.uuid.id;
+        char uuidStr[37] = {};
+        sprintf(uuidStr,
+                "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                uuidBuf[15], uuidBuf[14], uuidBuf[13], uuidBuf[12], uuidBuf[11], uuidBuf[10], uuidBuf[9], uuidBuf[8],
+                uuidBuf[7], uuidBuf[6], uuidBuf[5], uuidBuf[4], uuidBuf[3], uuidBuf[2], uuidBuf[1], uuidBuf[0]);
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_UUID,std::string(uuidStr)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID,to_hex_string(props.core.vendorId)));
+        // p_gpu->addProperty(Property(DeviceProperty::KERNEL_TIMESTAMP_VALID_BITS,std::to_string(props.core.kernelTimestampValidBits)));
+        // p_gpu->addProperty(Property(DeviceProperty::FLAGS,std::to_string(props.core.flags)));
 
         uint32_t tileCount = props.numSubdevices == 0 ? 1 : props.numSubdevices;
-        p_gpu->addProperty(Property(DeviceProperty::NUM_SUB_DEVICES, std::to_string(tileCount)));
+        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES, std::to_string(tileCount)));
 
         zes_pci_properties_t pci_props;
         res = zesDevicePciGetProperties(device, &pci_props);
         if (res == ZE_RESULT_SUCCESS) {
-          p_gpu->addProperty(Property(DeviceProperty::BDF_ADDRESS,to_string(pci_props.address)));
+          p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS,to_string(pci_props.address)));
 		  
           std::string bdf_regex = to_regex_string(pci_props.address);
-          p_gpu->addProperty(Property(DeviceProperty::PCI_SLOT,getPciSlot(bdf_regex)));
+          p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_SLOT,getPciSlot(bdf_regex)));
 				}
 
 
@@ -466,8 +472,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
               mem_module_physical_size = props.physicalSize;
               int32_t mem_bus_width = props.busWidth;
               int32_t mem_channel_num = props.numChannels;
-              p_gpu->addProperty(Property(DeviceProperty::MEM_BUS_WIDTH,std::to_string(mem_bus_width)));
-              p_gpu->addProperty(Property(DeviceProperty::MEM_CHANNEL_NUM,std::to_string(mem_channel_num)));
+              p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_MEMORY_BUS_WIDTH,std::to_string(mem_bus_width)));
+              p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_MEMORY_CHANNELS,std::to_string(mem_channel_num)));
             }
             
             zes_mem_state_t sysman_memory_state = {};
@@ -484,9 +490,9 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
               }
             }
           }
-          p_gpu->addProperty(Property(DeviceProperty::MEMORY_PHYSICAL_SIZE,std::to_string(physical_size)));
-          p_gpu->addProperty(Property(DeviceProperty::MEMORY_FREE_SIZE,std::to_string(free_size)));
-          p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(memory_health)));
+          p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE,std::to_string(physical_size)));
+          p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_MEMORY_FREE_SIZE_BYTE,std::to_string(free_size)));
+          // p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(memory_health)));
         }
 
         uint32_t firmware_count = 0;
@@ -497,8 +503,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
            for (auto firmware:firmwares) {
              zes_firmware_properties_t prop;
              res = zesFirmwareGetProperties(firmware,&prop);
-             p_gpu->addProperty(Property(DeviceProperty::FIRMWARE_NAME,std::string(prop.name)));
-             p_gpu->addProperty(Property(DeviceProperty::FIRMWARE_VERSION,std::string(prop.version)));
+             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FIRMWARE_NAME,std::string(prop.name)));
+             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION,std::string(prop.version)));
            }
         }
 
