@@ -1,6 +1,7 @@
 [Unit]
 Description=XPUM daemon
-After=basic.taget
+
+After=syslog.target
 
 [Service]
 Type=simple

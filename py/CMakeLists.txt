@@ -9,13 +9,17 @@ install(
     prometheus_exporter.py
     README.md
     requirements.txt
-    DESTINATION 
-      py
+    DESTINATION ${CPACK_PACKAGING_INSTALL_PREFIX}/py
 )
 
 install(
     FILES 
 		client/xpumcli
-    DESTINATION 
-      py/client
+    DESTINATION ${CPACK_PACKAGING_INSTALL_PREFIX}py/client
+)
+
+install(
+    FILES 
+		xpum-rest.service
+    DESTINATION ${CPACK_PACKAGING_INSTALL_PREFIX}
 )

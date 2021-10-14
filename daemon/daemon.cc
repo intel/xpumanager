@@ -73,50 +73,6 @@ void runRPCServer() {
     server->Wait();    
 }
 
-void daemonProcess(){
-    pid_t pid, sid;
-    int fd;
-    
-    pid = fork();
-    if(pid < 0) {
-        syslog(LOG_ERR, "XPUM: An error occurred fork %d.", pid);
-        exit(EXIT_FAILURE);
-    } else if(pid > 0) {
-        exit(EXIT_SUCCESS);
-    }
-    // let the child process becomes session leader
-    sid = setsid();
-    if(sid < 0){
-        syslog(LOG_ERR, "XPUM: An error occurred setsid %d.", sid);
-        exit(EXIT_FAILURE);
-    }
-
-    // Ignore signal sent from child to parent process
-    signal(SIGCHLD, SIG_IGN);
-
-    // second time
-    pid = fork();
-    if(pid < 0) {
-        syslog(LOG_ERR, "XPUM: An error occurred fork %d.", pid);
-        exit(EXIT_FAILURE);
-    } else if(pid > 0) {
-        exit(EXIT_SUCCESS);
-    }
-
-    //umask(22);
-    chdir("/");
-    
-    for (fd = sysconf(_SC_OPEN_MAX); fd > 0; fd--) {
-		close(fd);
-	}
-    /* Reopen stdin (fd = 0), stdout (fd = 1), stderr (fd = 2) */
-	stdin = fopen("/dev/null", "r");
-	stdout = fopen("/dev/null", "w+");
-	stderr = fopen("/dev/null", "w+");
-	
-    syslog(LOG_INFO, "XPUM: XPUM daemon started.");
-}
-
 void writePID() {
 	if (pid_file_name != nullptr)
 	{

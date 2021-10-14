@@ -1,0 +1,9 @@
+#!/bin/bash
+
+LOG_FILE="/dev/null"
+
+if [ -f /usr/lib/systemd/system/xpum.service ]; then
+  echo "Install xpum daemon..."
+  systemctl daemon-reload >> LOG_FILE 2>&1 
+  systemctl enable xpum >> LOG_FILE 2>&1 
+fi

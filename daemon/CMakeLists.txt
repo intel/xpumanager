@@ -54,8 +54,6 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR} XPUM_DAEMON_SRC)
 set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
              ${core_proto_hdrs})
 
-link_directories(${CMAKE_CURRENT_LIST_DIR}/../core/build)
-
 add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cc)
 
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
@@ -69,13 +67,15 @@ if (NOT DEFINED WORK_PATH)
     ${CMAKE_CURRENT_LIST_DIR}/../core/build
     ${CMAKE_CURRENT_LIST_DIR}/../build/core
     )
+  
+  message(STATUS "DGM_LIB=${DGM_LIB}")
   target_link_libraries(xpumd PRIVATE ${DGM_LIB} ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
   
-  string(REPLACE "/libDGMCore.so" "/" LIB_PATH ${DGM_LIB})
   add_custom_command( TARGET xpumd 
-    PRE_BUILD
-    COMMAND /bin/sh -c "if [ ! -d ${LIB_PATH}../config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/config ${LIB_PATH}../\; fi\;")
+      PRE_BUILD
+      COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/config ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;")
+  
 else()
   target_link_libraries(xpumd PRIVATE DGMCore ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})

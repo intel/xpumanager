@@ -30,35 +30,11 @@ PciDatabase &PciDatabase::instance() {
     return instance;
 }
 
-
-std::string GetSelfPath()
-{
-    std::string selfPath;
-    Dl_info di;
-    dladdr((void*)GetSelfPath, &di);
-    selfPath = di.dli_fname;
-    std::size_t mPos = selfPath.find("/");
-    if (mPos == std::string::npos) 
-    {
-        char exePath[XPUM_MAX_PATH_LEN];
-        ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
-        exePath[len] = '\0';
-        selfPath = exePath;
-    }  
-    return selfPath;
-}
-
 bool PciDatabase::init() {
     std::ifstream infile;
     std::string fileName, folder;
-    std::string currentFile = GetSelfPath();
 
-    if (currentFile.length() <= 0) {
-        folder = std::string(PCI_IDS_DIR_BAK);
-    } else {
-        folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../" + std::string(PCI_IDS_DIR);
-    }        
-
+    folder = std::string(XPUM_CONFIG_DIR);
     fileName = folder + std::string(PCI_IDS_FILE);
 
     infile.open(fileName.data());
@@ -70,6 +46,22 @@ bool PciDatabase::init() {
         infile.close();     
     } else {
         XPUM_LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
+        char exePath[XPUM_MAX_PATH_LEN];
+        ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+        exePath[len] = '\0';
+        std::string currentFile = exePath;
+        
+        folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../config/";
+        fileName = folder + std::string(PCI_IDS_FILE);
+        infile.open(fileName.data());
+        if (!infile.is_open()){
+            XPUM_LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
+        } else {
+            if (!parse_pci_device(infile)) {
+                XPUM_LOG_ERROR("PciDatabase::init()- parse_pci_device error.");
+            }   
+            infile.close();  
+        }
     }
 
     fileName = folder + std::string(PCI_IDS_CONFIG);
