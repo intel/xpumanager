@@ -41,6 +41,7 @@ class MeasurementData {
   }
 
   MeasurementData(const MeasurementData& other) {
+    device_id = other.device_id;
     avg = other.avg;
     min = other.min;
     max = other.max;
