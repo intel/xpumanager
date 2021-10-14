@@ -1,4 +1,0 @@
-#!/bin/bash
-source ./xpumvenv/bin/activate
-supervisorctl -c supervisord.conf $@
-deactivate

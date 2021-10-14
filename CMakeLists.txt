@@ -59,7 +59,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}")
 
 add_subdirectory(core)
-add_subdirectory(py)
 add_subdirectory(cli)
 add_subdirectory(daemon)
 
@@ -99,14 +98,15 @@ if(CPACK_GENERATOR MATCHES "RPM")
 	set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
 	set(CPACK_RPM_COMPONENT_INSTALL ON)
 	set(CPACK_RPM_PACKAGE_NAME "${PROJECT_NAME}")
-	set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
-	  /etc/ld.so.conf.d
-	  /usr/local
-	  /usr/local/lib64
-	  /usr/local/bin
-	  /usr/local/include
-		/lib
-		/usr/lib
+	list(APPEND CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
+	  "/etc/ld.so.conf.d"
+	  "/usr/local"
+	  "/usr/local/lib64"
+	  "/usr/local/bin"
+	  "/usr/local/include"
+		"/lib"
+		"/usr/lib"
+		"/usr/local/lib"
 	)
 
 	set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/postinst")
@@ -127,33 +127,33 @@ endif()
 
 INCLUDE(CPack)
 
-install(
-    FILES 
-		core/include/xpum_structs.h
-		core/include/xpum_api.h
+install(DIRECTORY	core/include/
     DESTINATION ${CPACK_INLCUDE_INSTALL_DIR}
 )
 
-install(
-    FILES 
-		core/config/pci.ids
-		core/config/pci.switch
+install(DIRECTORY	core/config/
     DESTINATION ${CPACK_CONF_INSTALL_DIR}
 )
 
+install(DIRECTORY	
+		core/kernels
+		core/mediadata
+		rest
+	DESTINATION .
+)
 
 install(TARGETS DGMCore xpumcli xpumd
 	LIBRARY DESTINATION ${CPACK_LIB_INSTALL_DIR}
-	RUNTIME DESTINATION ${CPACK_PACKAGING_INSTALL_PREFIX}/bin
-	ARCHIVE DESTINATION ${CPACK_PACKAGING_INSTALL_PREFIX}
-  )
+	RUNTIME DESTINATION bin
+	ARCHIVE DESTINATION .
+)
 
 install(
     FILES
 		tools/fwUpgrade/GfxFwFPT
     PERMISSIONS
 		OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-    DESTINATION ${CPACK_PACKAGING_INSTALL_PREFIX}/bin
+    DESTINATION bin
 )
 
 install(FILES

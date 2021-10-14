@@ -1,7 +1,23 @@
 #!/bin/bash
 
 LOG_FILE="/dev/null"
-echo "Remove xpum daemon..."
-systemctl stop xpum >> LOG_FILE 2>&1 
-systemctl disable xpum >> LOG_FILE 2>&1 
-systemctl daemon-reload >> LOG_FILE 2>&1 
+
+function RemoveUser()
+{
+	find /tmp -type d -user $1 -exec rm -fr {} \; >> ${LOG_FILE} 2>&1
+	
+  mypids=$( userdel -r $1 2>&1| grep "by process" |awk 'NF>1{print $NF}' )    
+  while [ -n "$mypids" ]
+	do
+	 	kill -9 $( userdel -r $1  2>&1| grep "by process" |awk 'NF>1{print $NF}' ) >> ${LOG_FILE}  2>&1
+	  mypids=$( userdel -r $1  2>&1| grep "by process" |awk 'NF>1{print $NF}' ) 
+	done
+}
+
+echo "Stop xpum service..."
+systemctl stop xpum >> ${LOG_FILE} 2>&1 
+echo "Remove xpum service..."
+systemctl disable xpum >> ${LOG_FILE} 2>&1 
+systemctl daemon-reload >> ${LOG_FILE} 2>&1 
+echo "Remove user xpum"
+RemoveUser xpum

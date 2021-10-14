@@ -1,4 +1,0 @@
-#!/bin/bash
-source ./xpumvenv/bin/activate
-python py/xpumcli $@
-deactivate

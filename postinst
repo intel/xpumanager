@@ -2,8 +2,21 @@
 
 LOG_FILE="/dev/null"
 
+function CreateUser()
+{
+  useradd "$1" -s /bin/sh >> ${LOG_FILE} 2>&1
+  if [ $? -ne 0 ]; then
+   	echo "CreateUser $1 failed!"
+  fi
+}
+
+echo "Create user xpum"
+CreateUser xpum
+
 if [ -f /usr/lib/systemd/system/xpum.service ]; then
-  echo "Install xpum daemon..."
-  systemctl daemon-reload >> LOG_FILE 2>&1 
-  systemctl enable xpum >> LOG_FILE 2>&1 
+  echo "Install xpum service..."
+  systemctl daemon-reload >> ${LOG_FILE} 2>&1 
+  systemctl enable xpum >> ${LOG_FILE} 2>&1 
+  echo "Start xpum service..."
+  systemctl start xpum
 fi
