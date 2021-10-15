@@ -23,7 +23,7 @@ if __name__ == '__main__':
     config['default']['password'] = pwHash
     
     path = os.path.dirname( os.path.realpath( __file__ ) )
-    with open( path + '/py/rest.conf', 'w' ) as configFile:
+    with open( path + '/rest/rest.conf', 'w' ) as configFile:
         config.write( configFile )
 
     print( 'rest.conf has been generated succefully' )
