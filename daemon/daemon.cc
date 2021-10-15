@@ -9,6 +9,8 @@
 #include <syslog.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <grpc/grpc.h>
 #include <grpc++/grpc++.h>
@@ -32,12 +34,12 @@ using std::unique_ptr;
 using std::cout;
 using std::endl;
 
-static const string unixSockName { "/tmp/xpum.sock" };
+static const string defaultSockName { "/tmp/xpum.sock" };
 
 unique_ptr<grpc::Server> server;
 int pidFilehandle = -1;
 char *pid_file_name = nullptr;
-char *cfg_file_name = nullptr;
+char *sock_file_name = nullptr;
 
 void print_help(const char * app_name)
 {
@@ -45,11 +47,19 @@ void print_help(const char * app_name)
 	printf("  Options:\n");
 	printf("   -h --help                 Print this help\n");
 	printf("   -p --pid_file  filename   PID file used by daemonized app\n");
+    printf("   -s --socket_file  filename   socket file used by daemonized app\n");
 	printf("\n");
 }
 
 void runRPCServer() {
     syslog(LOG_INFO, "XPUM: start RPC server ...");
+    string unixSockName;
+    
+    if(sock_file_name != nullptr){
+        unixSockName = sock_file_name;
+    } else {
+        unixSockName = defaultSockName;
+    }
     unlink( unixSockName.c_str() );
 
     string serverAddr( "unix://" + unixSockName );
@@ -63,12 +73,9 @@ void runRPCServer() {
 
     server = builder.BuildAndStart();
     syslog(LOG_INFO, "XPUM: RPC server is listening");
-
-    /*
-    passwd* pwd = getpwnam( "xpum_user" );
-    int uid = pwd->pw_uid;
-    chown( serverAddr, uid, -1 );
-    */
+    
+    passwd* pwd = getpwnam( "xpum" );
+    chown( unixSockName.c_str(), pwd->pw_uid, pwd->pw_gid );    
 
     server->Wait();    
 }
@@ -76,7 +83,7 @@ void runRPCServer() {
 void writePID() {
 	if (pid_file_name != nullptr)
 	{
-		char str[256];
+		char str[32];
 		pidFilehandle = open(pid_file_name, O_RDWR|O_CREAT, 0600);
 		if (pidFilehandle < 0) {
             syslog(LOG_ERR, "XPUM: Could not open PID file %s.", pid_file_name);
@@ -87,7 +94,7 @@ void writePID() {
 			exit(EXIT_FAILURE);
 		}
 		sprintf(str, "%d\n", getpid());
-		//Write PID to lockfile 
+		
 		write(pidFilehandle, str, strlen(str));
 	}
 }
@@ -101,14 +108,14 @@ void signalHandler(int sig){
             syslog(LOG_WARNING, "XPUM: recieved SIGTERM signal %d, service shutdown.", sig);
             break;        
         default: 
-            syslog(LOG_INFO, "XPUM: recieved unhandled signal %d", sig);
+            syslog(LOG_INFO, "XPUM: recieved unhandled signal %d.", sig);
             break;
     }
 }
 
 int main( int argc, char* argv[] ) {
     static struct option long_options[] = {
-		{"conf_file", required_argument, 0, 'c'},
+		{"socket_file", required_argument, 0, 's'},
 		{"help", no_argument, 0, 'h'},
 		{"pid_file", required_argument, 0, 'p'},
 		{NULL, 0, 0, 0}
@@ -117,8 +124,8 @@ int main( int argc, char* argv[] ) {
 
 	while ((value = getopt_long(argc, argv, "c:p:h", long_options, &option_index)) != -1) {
 		switch (value) {
-			case 'c':
-				cfg_file_name = strdup(optarg);
+			case 's':
+				sock_file_name = strdup(optarg);
 				break;
             case 'p':
                 pid_file_name = strdup(optarg);
@@ -133,6 +140,9 @@ int main( int argc, char* argv[] ) {
 				break;
 		}
 	}
+    
+    umask(S_IXUSR | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
+
     writePID();
     signal(SIGINT, signalHandler);
     signal(SIGKILL, signalHandler);
@@ -153,6 +163,7 @@ int main( int argc, char* argv[] ) {
     syslog(LOG_INFO, "XPUM: xpum service is closed.");
     if(pidFilehandle != -1) {
         close(pidFilehandle);
+        unlink(pid_file_name);
     }
     return 0;
 }
