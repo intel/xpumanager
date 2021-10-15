@@ -2,9 +2,6 @@
 
 LOG_FILE="/dev/null"
 
-echo "install=${CPACK_PACKAGING_INSTALL_PREFIX}"
-#export
-#read -p "debug..."
 function CreateUser()
 {
   useradd "$1" -s /bin/sh >> ${LOG_FILE} 2>&1
@@ -17,11 +14,19 @@ echo "Create user xpum"
 CreateUser xpum
 chown -R xpum /opt/intel/xpum
 chmod +x /opt/intel/xpum/rest/xpum_rest.sh
+chmod +x /opt/intel/xpum/keytool.sh
 
-if [ -f /usr/lib/systemd/system/xpum.service ]; then
-  echo "Install xpum service..."
-  systemctl daemon-reload >> ${LOG_FILE} 2>&1 
-  systemctl enable xpum >> ${LOG_FILE} 2>&1 
-  echo "Start xpum service..."
-  systemctl start xpum
+if [ -n ${RPM_INSTALL_PREFIX} ]; then
+  echo "Config xpum service ... "
+  sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" /usr/lib/systemd/system/xpum.service > /usr/lib/systemd/system/xpum.service.n
+  mv -f /usr/lib/systemd/system/xpum.service.n /usr/lib/systemd/system/xpum.service
+
+  sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" /usr/lib/systemd/system/xpum-rest.service > /usr/lib/systemd/system/xpum-rest.service.n
+  mv -f /usr/lib/systemd/system/xpum-rest.service.n /usr/lib/systemd/system/xpum-rest.service
 fi
+
+echo "Install xpum service..."
+systemctl daemon-reload >> ${LOG_FILE} 2>&1 
+systemctl enable xpum >> ${LOG_FILE} 2>&1 
+echo "Start xpum service..."
+systemctl start xpum
