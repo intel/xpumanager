@@ -4,7 +4,7 @@
  1. install python3
  2. install pip3
  3. install flask
- 4. install flask-auth
+ 4. install flask_httpauth
  5. install gunicorn[gevent]
  
 ##Run Script

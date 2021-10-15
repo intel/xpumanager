@@ -75,7 +75,9 @@ void runRPCServer() {
     syslog(LOG_INFO, "XPUM: RPC server is listening");
     
     passwd* pwd = getpwnam( "xpum" );
-    chown( unixSockName.c_str(), pwd->pw_uid, pwd->pw_gid );    
+    if(pwd != nullptr){
+        chown( unixSockName.c_str(), pwd->pw_uid, pwd->pw_gid ); 
+    }       
 
     server->Wait();    
 }

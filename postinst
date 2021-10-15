@@ -2,6 +2,9 @@
 
 LOG_FILE="/dev/null"
 
+echo "install=${CPACK_PACKAGING_INSTALL_PREFIX}"
+#export
+#read -p "debug..."
 function CreateUser()
 {
   useradd "$1" -s /bin/sh >> ${LOG_FILE} 2>&1
@@ -12,6 +15,8 @@ function CreateUser()
 
 echo "Create user xpum"
 CreateUser xpum
+chown -R xpum /opt/intel/xpum
+chmod +x /opt/intel/xpum/rest/xpum_rest.sh
 
 if [ -f /usr/lib/systemd/system/xpum.service ]; then
   echo "Install xpum service..."

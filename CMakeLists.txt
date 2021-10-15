@@ -38,7 +38,6 @@ set(CPACK_RPM_PACKAGE_RELOCATABLE ON)
 
 set(CPACK_XPUM_INSTALL_DIR "/usr/local/xpum")
 set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/intel/xpum")
-set(SYSTEMD_CONFIG_DIR "/lib/systemd/system")
 set(SYSTEMD_UNIT_NAME "${CMAKE_CURRENT_LIST_DIR}/daemon/xpum.service")
 
 set(XPUM_CONFIG_DIR "${CPACK_PACKAGING_INSTALL_PREFIX}/config")
@@ -56,11 +55,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}")
-
 add_subdirectory(core)
 add_subdirectory(cli)
 add_subdirectory(daemon)
+add_subdirectory(rest)
 
 if(NOT DEFINED CPACK_GENERATOR)
 	if(EXISTS "/etc/debian_version")
@@ -84,6 +82,9 @@ set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${BUILD_TIMESTAMP}")
 
 if(CPACK_GENERATOR MATCHES "RPM")
+	configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" COPYONLY)
+	configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/xpum-rest.service" COPYONLY)
+
 	file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}.rpm")
 	set(CPACK_RPM_SPEC_MORE_DEFINE "%global __os_install_post %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')")
 	set(CPACK_RPM_PACKAGE_NAME "${PROJECT_NAME}.${PROJECT_VERSION}.${GIT_COMMIT}")
@@ -113,7 +114,10 @@ if(CPACK_GENERATOR MATCHES "RPM")
 	set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/prerm")
 endif()
 
-if(CPACK_GENERATOR MATCHES "DEB")
+if(CPACK_GENERATOR MATCHES "DEB")	
+	configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" @ONLY)
+	configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/xpum-rest.service" @ONLY)
+
 	file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}.deb")
 	set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 	set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
@@ -135,7 +139,7 @@ install(DIRECTORY
 		core/kernels
 		core/mediadata
 		core/config
-		rest
+		tools/rest/		
 	DESTINATION .
 )
 
@@ -155,4 +159,5 @@ install(
 
 install(FILES
 	"${SYSTEMD_UNIT_NAME}"
-	DESTINATION ${SYSTEMD_CONFIG_DIR})
+	"${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service"
+	DESTINATION "/lib/systemd/system")
