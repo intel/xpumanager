@@ -7,9 +7,9 @@ After=xpum.target
 Type=oneshot
 RemainAfterExit=yes
 
-ExecStart=/opt/intel/xpum/rest/xpum_rest.sh start
-ExecStop=/opt/intel/xpum/rest/xpum_rest.sh stop
-ExecReload=/opt/intel/xpum/rest/xpum_rest.sh reload
+ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/xpum_rest.sh start
+ExecStop=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/xpum_rest.sh stop
+ExecReload=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/xpum_rest.sh reload
 
 [Install]
 WantedBy=multi-user.target

@@ -10,7 +10,7 @@ Environment="LD_LIBRARY_PATH=/usr/local/xpum:/$LD_LIBRARY_PATH"
 
 #ExecStartPre=rm -rf /tmp/xpum.sock
 
-ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/xpumd  --pid_file /var/xpum_daemon.pid --socket_file /tmp/xpum.sock
+ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/xpumd  --pid_file /var/xpum_daemon.pid
 
 ExecStop=/bin/kill -TERM $MAINPID
 

@@ -15,6 +15,7 @@ install(DIRECTORY
 ${CMAKE_CURRENT_LIST_DIR}
 DESTINATION .
 PATTERN "xpum-rest.service" EXCLUDE
+PATTERN "xpum-rest.service.in" EXCLUDE
 PATTERN ".gitignore" EXCLUDE
 PATTERN "CMakeLists.txt" EXCLUDE
 PATTERN "ifwi_fake" EXCLUDE

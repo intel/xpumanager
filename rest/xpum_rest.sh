@@ -38,7 +38,6 @@ case "$1" in
 
         Start
         ;;
-  		;;
   status)
 		Status
 	;;
