@@ -5,6 +5,8 @@ export HOME=`cd ${WORK} && pwd`
 
 function Start()
 {
+  echo "REST_HOME=${HOME}"
+  cd ${HOME}
   gunicorn --certfile=cert.pem --keyfile=key.pem --ssl-version TLSv1_2 --bind=0.0.0.0:30000 --worker-class=gevent --worker-connections=1000 -w 3 DGM:app
 }
 

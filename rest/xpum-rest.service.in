@@ -11,5 +11,7 @@ ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/xpum_rest.sh start
 ExecStop=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/xpum_rest.sh stop
 ExecReload=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/xpum_rest.sh reload
 
+User=xpum
+
 [Install]
 WantedBy=multi-user.target
