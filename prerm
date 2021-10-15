@@ -4,7 +4,7 @@ LOG_FILE="/dev/null"
 
 function RemoveUser()
 {
-	find /tmp -type d -user $1 -exec rm -fr {} \; >> ${LOG_FILE} 2>&1
+	#find /tmp -type d -user $1 -exec rm -fr {} \; >> ${LOG_FILE} 2>&1
 	
   mypids=$( userdel -r $1 2>&1| grep "by process" |awk 'NF>1{print $NF}' )    
   while [ -n "$mypids" ]

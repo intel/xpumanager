@@ -8,32 +8,32 @@ class Property {
  public:
   Property() {}
 
-  Property(const std::string& name, const std::string& value) : name(name), value(value){
+  Property(xpum_device_property_name_t name, const std::string& value) : name(name), value(value){
   }
 
-  Property(const std::string& name, int value) : name(name) {
+  Property(xpum_device_property_name_t name, int value) : name(name) {
     this->value = std::to_string(value);
   }
 
-  Property(const std::string& name, long value) : name(name) {
+  Property(xpum_device_property_name_t name, long value) : name(name) {
     this->value = std::to_string(value);
   }
 
-  Property(const std::string& name, bool value) : name(name) {
+  Property(xpum_device_property_name_t name, bool value) : name(name) {
     int int_value = value ? 1 : 0;
     this->value = std::to_string(int_value);
   }
 
-  Property(const std::string& name, float value) : name(name) {
+  Property(xpum_device_property_name_t name, float value) : name(name) {
     this->value = std::to_string(value);
   }
 
-  Property(const std::string& name, double value) : name(name) {
+  Property(xpum_device_property_name_t name, double value) : name(name) {
     this->value = std::to_string(value);
   }
 
  public:
-  std::string& getName() {
+  xpum_device_property_name_t getName() {
     return name;
   } 
 
@@ -61,7 +61,7 @@ class Property {
     return std::stod(value);
   }
 
-  void setName(const std::string& name) {
+  void setName(xpum_device_property_name_t name) {
     this->name = name;
   }
 
@@ -87,7 +87,7 @@ class Property {
   }
 
  private:
-  std::string name;
+  xpum_device_property_name_t name;
 
   std::string value;
 

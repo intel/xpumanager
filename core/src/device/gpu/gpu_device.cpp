@@ -132,7 +132,7 @@ void GPUDevice::getEngineGroupUtilization(Callback_t callback, zes_engine_group_
 
 bool GPUDevice::runFirmwareFlash( const char* filePath, const std::string& toolPath ) noexcept {
     Property pcieAddrProp;
-    bool res = getProperty( DeviceProperty::BDF_ADDRESS, pcieAddrProp );
+    bool res = getProperty( XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS, pcieAddrProp );
     if ( !res ) {
         return false;
     }

@@ -93,6 +93,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t& ze_devi
       if (p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING) {
         p_task_info->finished = true;
         updateMessage(p_task_info->message, std::string("Aborted! Other GPU processes are running"));
+        XPUM_LOG_ERROR("aborted! other GPU processes are running");
         return;
       }
 
@@ -246,7 +247,7 @@ void DiagnosticManager::doDeviceDiagnosticSoftware(const zes_device_handle_t& de
   uint32_t process_count = 0;
   ze_result_t ret = zesDeviceProcessesGetState(device, &process_count, nullptr);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_SOFTWARE_EXCLUSIVE: zesDeviceProcessesGetState()");
+    throw BaseException("Error in XPUM_DIAG_SOFTWARE_EXCLUSIVE: zesDeviceProcessesGetState()");
   }
   // relax exclusive process count
   if (process_count > 2) {
@@ -319,7 +320,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t& 
   zes_pci_properties_t pci_props;
   ret = zesDevicePciGetProperties(device, &pci_props);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_MEDIA_CODEC: zesDevicePciGetProperties()");
+    throw BaseException("Error in XPUM_DIAG_MEDIA_CODEC: zesDevicePciGetProperties()");
   }
   uint32_t pcie_bus = pci_props.address.bus;
   uint32_t pcie_device = pci_props.address.device;
@@ -353,11 +354,11 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t& 
     closedir(dir);
     if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
       std::string commandDecode = Configuration::MEDIA_CODER_TOOLS_PATH + "sample_decode h264 -device " + device_path + 
-          " -hw -i mediadata/" + Configuration::MEDIA_CODER_TOOLS_DECODE_FILE + " 2>&1";
+          " -hw -i ../mediadata/" + Configuration::MEDIA_CODER_TOOLS_DECODE_FILE + " 2>&1";
       std::string resultDecode = getCommandResult(commandDecode);
 
       std::string commandEncode = Configuration::MEDIA_CODER_TOOLS_PATH + "sample_encode h264 -device " + device_path + 
-          " -hw -i mediadata/" + Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE + " -w 176 -h 96 -u quality -cqp -qpi 32 -qpp 32 -qpb 32 -async 1 -vaapi -o mediadata/test_stream_coder.h264 2>&1";
+          " -hw -i ../mediadata/" + Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE + " -w 176 -h 96 -u quality -cqp -qpi 32 -qpp 32 -qpb 32 -async 1 -vaapi -o mediadata/test_stream_coder.h264 2>&1";
       std::string resultEncode = getCommandResult(commandEncode);
 
       if (resultDecode.find("Decoding finished") == std::string::npos
@@ -411,7 +412,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t& 
   context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
   ret = zeContextCreate(ze_driver, &context_desc, &context);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeContextCreate()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeContextCreate()");
   }
 
   ze_command_queue_handle_t command_queue;
@@ -422,7 +423,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t& 
   command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
   ret = zeCommandQueueCreate(context, ze_device, &command_queue_description, &command_queue);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueCreate()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueCreate()");
   }
 
   ze_command_list_handle_t command_list;
@@ -431,7 +432,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t& 
   command_list_description.pNext = nullptr;
   ret = zeCommandListCreate(context, ze_device, &command_list_description, &command_list);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeCommandListCreate()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandListCreate()");
   }
   long double total_bandwidth = 0.0;
   long double total_latency = 0.0;
@@ -448,7 +449,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t& 
   device_desc.flags = 0;
   ret = zeMemAllocDevice(context, &device_desc, size, 1, ze_device, &device_buffer);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeMemAllocDevice()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeMemAllocDevice()");
   }
 
   ze_host_mem_alloc_desc_t host_desc;
@@ -457,7 +458,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t& 
   host_desc.flags = 0;
   ret = zeMemAllocHost(context, &host_desc, size, 1, &host_buffer);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeMemAllocHost()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeMemAllocHost()");
   }
 
   uint32_t number_iterations = 500;
@@ -466,22 +467,22 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t& 
   std::size_t buffer_size = element_size * size;
   ret = zeCommandListAppendMemoryCopy(command_list, device_buffer, host_buffer, buffer_size, nullptr, 0, nullptr);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeCommandListAppendMemoryCopy()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandListAppendMemoryCopy()");
   }
   ret = zeCommandListClose(command_list);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeCommandListClose()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandListClose()");
   }
   std::chrono::high_resolution_clock::time_point time_start, time_end;
   time_start = std::chrono::high_resolution_clock::now();
   for (uint32_t i = 0; i < number_iterations; i++) {
     ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueExecuteCommandLists()");
+      throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueExecuteCommandLists()");
     }    
     ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueSynchronize()");
+      throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueSynchronize()");
     }
   }
   time_end = std::chrono::high_resolution_clock::now();
@@ -489,23 +490,23 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t& 
   
   ret = zeCommandListDestroy(command_list);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeCommandListDestroy()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandListDestroy()");
   }
   ret = zeCommandQueueDestroy(command_queue);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueDestroy()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueDestroy()");
   }
   ret = zeMemFree(context, const_cast<void *>(device_buffer));
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeMemFree()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeMemFree()");
   }
   ret = zeMemFree(context, const_cast<void *>(host_buffer));
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeMemFree()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeMemFree()");
   }
   ret = zeContextDestroy(context);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_INTEGRATION_PCIE: zeContextDestroy()");
+    throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeContextDestroy()");
   }
   calculateBandwidthLatency(total_time_nsec, static_cast<long double>(size * number_iterations), total_bandwidth, total_latency, number_iterations);
   //showResultsHost2device(size, total_bandwidth, total_latency);
@@ -572,14 +573,14 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
         ze_context_handle_t context;
         ret = zeContextCreate(ze_driver, &context_desc, &context);
         if (ret != ZE_RESULT_SUCCESS) {
-          throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeContextCreate()");
+          throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeContextCreate()");
         }
         ze_device_properties_t device_properties;
         device_properties.pNext = nullptr;
         device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
         ret = zeDeviceGetProperties(ze_device, &device_properties);
         if (ret != ZE_RESULT_SUCCESS) {
-          throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeDeviceGetProperties()");
+          throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeDeviceGetProperties()");
         }
         uint64_t max_allocation_size = workgroup_size_x_ * (device_properties.maxMemAllocSize / workgroup_size_x_) * memory_use;
         uint64_t one_case_requested_allocation_size = allocate_size * number_of_kernel_args_;
@@ -607,7 +608,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
             void *memory_input = nullptr;
             ret = zeMemAllocHost(context, &host_desc_input, one_case_allocation_count, 8, &memory_input);
             if (ret != ZE_RESULT_SUCCESS) {
-              throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocHost()");
+              throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocHost()");
             }
             input_allocation = (uint8_t *)memory_input;
 
@@ -618,7 +619,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
             void *memory_output = nullptr;
             ret = zeMemAllocHost(context, &host_desc_output, one_case_allocation_count, 8, &memory_output);
             if (ret != ZE_RESULT_SUCCESS) {
-              throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocHost()");
+              throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocHost()");
             }
             output_allocation = (uint8_t *)memory_output;
 
@@ -631,7 +632,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
             device_desc_input.pNext = nullptr;
             ret = zeMemAllocDevice(context, &device_desc_input, one_case_allocation_count, 8, ze_device, &memory_input);
             if (ret != ZE_RESULT_SUCCESS) {
-              throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocDevice()");
+              throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocDevice()");
             }
             input_allocation = (uint8_t *)memory_input;
 
@@ -643,7 +644,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
             device_desc_output.pNext = nullptr; 
             ret = zeMemAllocDevice(context, &device_desc_output, one_case_allocation_count, 8, ze_device, &memory_output);
             if (ret != ZE_RESULT_SUCCESS) {
-              throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocDevice()");
+              throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocDevice()");
             }
             output_allocation = (uint8_t *)memory_output;
           } else {
@@ -660,7 +661,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
               host_desc_input.pNext = nullptr;
               ret = zeMemAllocShared(context, &device_desc_input, &host_desc_input, one_case_allocation_count, 8, ze_device, &memory_input);
               if (ret != ZE_RESULT_SUCCESS) {
-                throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocShared()");
+                throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocShared()");
               }
               input_allocation = (uint8_t *)memory_input;
 
@@ -678,7 +679,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
               ret = zeMemAllocShared(context, &device_desc_output, &host_desc_output, one_case_allocation_count, 8, ze_device, &memory_output);
               output_allocation = (uint8_t *)memory_output;
               if (ret != ZE_RESULT_SUCCESS) {
-                throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocShared()");
+                throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemAllocShared()");
               }
 
           }
@@ -703,30 +704,30 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
         ze_module_handle_t module_handle = nullptr;
         ret = zeModuleCreate(context, ze_device, &module_description, &module_handle, nullptr);
         if (ret != ZE_RESULT_SUCCESS) {
-          throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeModuleCreate()");
+          throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeModuleCreate()");
         }
         dispatchKernelsForMemoryTest(ze_device, module_handle, input_allocations, output_allocations, 
                             data_out_vector, test_kernel_names, number_of_dispatch, one_case_allocation_count, context);
         for (auto each_allocation : input_allocations) {
           ret = zeMemFree(context, each_allocation);
           if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemFree()");
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemFree()");
           }
         }
         for (auto each_allocation : output_allocations) {
           ret = zeMemFree(context, each_allocation);
           if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemFree()");
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeMemFree()");
           }
         }
 
         ret = zeModuleDestroy(module_handle);
         if (ret != ZE_RESULT_SUCCESS) {
-          throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeModuleDestroy()");
+          throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeModuleDestroy()");
         }
         ret = zeContextDestroy(context);
         if (ret != ZE_RESULT_SUCCESS) {
-          throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeContextDestroy()");
+          throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeContextDestroy()");
         }
         for (auto each_data_out : data_out_vector) {
           for (uint32_t i = 0; i < one_case_allocation_count; i++) {
@@ -752,7 +753,7 @@ std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_p
   std::vector<uint8_t> binary_file;
 
   if (!stream.good()) {
-    throw BaseException("Errors in load kernel file.");
+    throw BaseException("Error in load kernel file.");
   }
 
   std::size_t length = 0;
@@ -786,7 +787,7 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
     ze_command_list_handle_t command_list = nullptr;
     ret = zeCommandListCreate(context, device, &command_list_description, &command_list);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListCreate()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListCreate()");
     }
     for (uint64_t dispatch_id = 0; dispatch_id < number_of_dispatch; dispatch_id++) {
       uint8_t *src_allocation = src_allocations[dispatch_id];
@@ -801,19 +802,19 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
 
       ret = zeKernelCreate(module, &test_function_description, &test_function);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelCreate()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelCreate()");
       }
       ret = zeKernelSetGroupSize(test_function, workgroup_size_x_, 1, 1);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelSetGroupSize()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelSetGroupSize()");
       }
       ret = zeKernelSetArgumentValue(test_function, 0, sizeof(src_allocation), &src_allocation);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelSetArgumentValue()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelSetArgumentValue()");
       }
       ret = zeKernelSetArgumentValue(test_function, 1, sizeof(dst_allocation), &dst_allocation);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelSetArgumentValue()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelSetArgumentValue()");
       }
       uint32_t group_count_x = one_case_allocation_count / workgroup_size_x_;
       ze_group_count_t thread_group_dimensions = {group_count_x, 1, 1};
@@ -824,7 +825,7 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
                                                   sizeof(uint8_t),
                                               nullptr, 0, nullptr);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendMemoryFill()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendMemoryFill()");
       }
       ret = zeCommandListAppendMemoryFill(command_list, dst_allocation,
                                               &init_value_3_, sizeof(uint8_t),
@@ -832,39 +833,39 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
                                                   sizeof(uint8_t),
                                               nullptr, 0, nullptr);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendMemoryFill()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendMemoryFill()");
       }
       ret = zeCommandListAppendLaunchKernel(command_list, test_function, &thread_group_dimensions, nullptr, 0, nullptr);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendLaunchKernel()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendLaunchKernel()");
       }
       ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendBarrier()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendBarrier()");
       }
       ret = zeCommandListAppendLaunchKernel(command_list, test_function, &thread_group_dimensions, nullptr, 0, nullptr);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendLaunchKernel()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendLaunchKernel()");
       }
       ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendBarrier()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendBarrier()");
       }
       ret = zeCommandListAppendMemoryCopy(command_list, data_out[dispatch_id].data(), dst_allocation, 
       data_out[dispatch_id].size() * sizeof(uint8_t), nullptr, 0, nullptr);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendMemoryCopy()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendMemoryCopy()");
       }
       
       ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendBarrier()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListAppendBarrier()");
       }
       test_functions.push_back(test_function);
     }
     ret = zeCommandListClose(command_list);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListClose()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListClose()");
     }
     ze_command_queue_handle_t command_queue;
     ze_command_queue_desc_t command_queue_description = {};
@@ -875,28 +876,28 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
     command_queue_description.flags = 0;    
     ret = zeCommandQueueCreate(context, device, &command_queue_description, &command_queue);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueCreate()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueCreate()");
     }
     ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueExecuteCommandLists()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueExecuteCommandLists()");
     }
     ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueSynchronize()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueSynchronize()");
     }
     ret = zeCommandQueueDestroy(command_queue);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueDestroy()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueDestroy()");
     }
     ret = zeCommandListDestroy(command_list);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListDestroy()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandListDestroy()");
     }
     for (uint64_t dispatch_id = 0; dispatch_id < test_functions.size(); dispatch_id++) {
       ret = zeKernelDestroy(test_functions[dispatch_id]);
       if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelDestroy()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeKernelDestroy()");
       }
     }
 }
@@ -923,11 +924,11 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
   ret = zeContextCreate(ze_driver, &context_desc, &context);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeContextCreate()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeContextCreate()");
   }
   ze_module_handle_t module_handle;
   ze_module_desc_t module_description = {};
-  std::vector<uint8_t> binary_file = loadBinaryFile("kernels/ze_sp_compute.spv");
+  std::vector<uint8_t> binary_file = loadBinaryFile("../kernels/ze_sp_compute.spv");
   module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
   module_description.pNext = nullptr;
   module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
@@ -936,19 +937,19 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   module_description.pBuildFlags = nullptr;
   ret = zeModuleCreate(context, ze_device, &module_description, &module_handle, nullptr);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeModuleCreate()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeModuleCreate()");
   }
   ze_device_properties_t device_properties;
   device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
   ret = zeDeviceGetProperties(ze_device, &device_properties);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetProperties()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetProperties()");
   }
   ze_device_compute_properties_t device_compute_properties;
   device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
   ret = zeDeviceGetComputeProperties(ze_device, &device_compute_properties);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetComputeProperties()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetComputeProperties()");
   }
   uint64_t max_work_items = device_properties.numSlices * 
                   device_properties.numSubslicesPerSlice *
@@ -967,7 +968,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   in_device_desc.flags = 0;
   ret = zeMemAllocDevice(context, &in_device_desc, sizeof(float), 1, ze_device, &device_input_value);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemAllocDevice()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemAllocDevice()");
   }
   void *device_output_buffer;
   ze_device_mem_alloc_desc_t out_device_desc = {};
@@ -978,7 +979,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   ret = zeMemAllocDevice(context, &out_device_desc, static_cast<std::size_t>((number_of_work_items * sizeof(float))),
                             1, ze_device, &device_output_buffer);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemAllocDevice()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemAllocDevice()");
   }
   ze_command_list_handle_t command_list;
   ze_command_list_desc_t command_list_description{};
@@ -998,35 +999,35 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
 
   ret = zeCommandListCreate(context, ze_device, &command_list_description, &command_list);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListCreate()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListCreate()");
   }
   ret = zeCommandQueueCreate(context, ze_device, &command_queue_description, &command_queue);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueCreate()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueCreate()");
   }
   ret = zeCommandListAppendMemoryCopy(command_list, device_input_value, &input_value, sizeof(float), nullptr, 0, nullptr);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendMemoryCopy()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendMemoryCopy()");
   }
   ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendBarrier()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendBarrier()");
   }
   ret = zeCommandListClose(command_list);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListClose()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListClose()");
   }
   ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
   }
   ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
   }
   ret = zeCommandListReset(command_list);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListReset()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListReset()");
   }
   ze_kernel_handle_t compute_sp_v1;
   ze_kernel_handle_t compute_sp_v2;
@@ -1096,39 +1097,39 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
 
   ret = zeKernelDestroy(compute_sp_v1);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
   }
   ret = zeKernelDestroy(compute_sp_v2);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
   }
   ret = zeKernelDestroy(compute_sp_v4);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
   }
   ret = zeKernelDestroy(compute_sp_v8);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
   }
   ret = zeKernelDestroy(compute_sp_v16);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
   }
   ret = zeMemFree(context, device_input_value);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemFree()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemFree()");
   }
   ret = zeMemFree(context, device_output_buffer);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemFree()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemFree()");
   }
   ret = zeModuleDestroy(module_handle);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeModuleDestroy()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeModuleDestroy()");
   }
   ret = zeContextDestroy(context);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeContextDestroy()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeContextDestroy()");
   }
   if (computeCheckPass) {
     compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
@@ -1204,15 +1205,15 @@ void DiagnosticManager::setupFunction(ze_module_handle_t &module_handle, ze_kern
   function_description.pKernelName = name;
   ret = zeKernelCreate(module_handle, &function_description, &function);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelCreate()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelCreate()");
   }
   ret = zeKernelSetArgumentValue(function, 0, sizeof(input), &input);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelSetArgumentValue()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelSetArgumentValue()");
   }
   ret = zeKernelSetArgumentValue(function, 1, sizeof(output), &output);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelSetArgumentValue()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelSetArgumentValue()");
   }
 }
 
@@ -1224,7 +1225,7 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
 
     ret = zeKernelSetGroupSize(function, workgroup_info.group_size_x, workgroup_info.group_size_y, workgroup_info.group_size_z);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelSetGroupSize()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelSetGroupSize()");
     }
     ze_group_count_t thread_group_dimensions;
     thread_group_dimensions.groupCountX = workgroup_info.groupCountX;
@@ -1232,23 +1233,23 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
     thread_group_dimensions.groupCountZ = workgroup_info.groupCountZ;
     ret = zeCommandListAppendLaunchKernel(command_list, function, &thread_group_dimensions, nullptr, 0, nullptr);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendLaunchKernel()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendLaunchKernel()");
     }  
     ret = zeCommandListClose(command_list);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListClose()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListClose()");
     }  
 
     for (uint32_t i = 0; i < 10; i++) {
         ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
         if (ret != ZE_RESULT_SUCCESS) {
-          throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
+          throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
         }  
     }
 
     ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
     }
     
     std::chrono::high_resolution_clock::time_point time_start, time_end;
@@ -1256,14 +1257,14 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
     for (uint32_t i = 0; i < 30; i++) {
         ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
         if (ret != ZE_RESULT_SUCCESS) {
-          throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
+          throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
         }
     }
 
     ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
 
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
     }
     time_end = std::chrono::high_resolution_clock::now();
     timed = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
@@ -1281,23 +1282,23 @@ bool DiagnosticManager::powerReachStress(ze_device_handle_t ze_device, int limit
   std::uint32_t power_domain_count = 0;
   ret = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
   if (ret != ZE_RESULT_SUCCESS) {
-    throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_POWER: zesDeviceEnumPowerDomains()");
+    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_POWER: zesDeviceEnumPowerDomains()");
   }
   std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
   ret = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()); 
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_POWER: zesDeviceEnumPowerDomains()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_POWER: zesDeviceEnumPowerDomains()");
     }
   for (auto &power : power_handles) {
     zes_power_energy_counter_t snap1, snap2;
     ret = zesPowerGetEnergyCounter(power, &snap1);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_POWER: zesPowerGetEnergyCounter()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_POWER: zesPowerGetEnergyCounter()");
     } 
     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
     ret = zesPowerGetEnergyCounter(power, &snap2);
     if (ret != ZE_RESULT_SUCCESS) {
-      throw BaseException("Errors in XPUM_DIAG_PERFORMANCE_POWER: zesPowerGetEnergyCounter()");
+      throw BaseException("Error in XPUM_DIAG_PERFORMANCE_POWER: zesPowerGetEnergyCounter()");
     }
     power_value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
     if (power_value < limit) 

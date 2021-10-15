@@ -36,12 +36,12 @@ project (XPUManager VERSION ${PROJECT_VERSION})
 set(CPACK_SET_DESTDIR OFF)
 set(CPACK_RPM_PACKAGE_RELOCATABLE ON)
 
-set(CPACK_INLCUDE_INSTALL_DIR "/usr/local/xpum")
-set(CPACK_LIB_INSTALL_DIR "/usr/local/lib")
-set(CPACK_CONF_INSTALL_DIR "/etc/xpum")
+set(CPACK_XPUM_INSTALL_DIR "/usr/local/xpum")
 set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/intel/xpum")
 set(SYSTEMD_CONFIG_DIR "/lib/systemd/system")
 set(SYSTEMD_UNIT_NAME "${CMAKE_CURRENT_LIST_DIR}/daemon/xpum.service")
+
+set(XPUM_CONFIG_DIR "${CPACK_PACKAGING_INSTALL_PREFIX}/config")
 
 set(CMAKE_PROJECT_VERSION "${PROJECT_VERSION}")
 add_definitions(-DLOADER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR})
@@ -127,23 +127,20 @@ endif()
 
 INCLUDE(CPack)
 
-install(DIRECTORY	core/include/
-    DESTINATION ${CPACK_INLCUDE_INSTALL_DIR}
-)
-
-install(DIRECTORY	core/config/
-    DESTINATION ${CPACK_CONF_INSTALL_DIR}
+install(DIRECTORY	core/include
+    DESTINATION ${CPACK_XPUM_INSTALL_DIR}
 )
 
 install(DIRECTORY	
 		core/kernels
 		core/mediadata
+		core/config
 		rest
 	DESTINATION .
 )
 
 install(TARGETS DGMCore xpumcli xpumd
-	LIBRARY DESTINATION ${CPACK_LIB_INSTALL_DIR}
+	LIBRARY DESTINATION ${CPACK_XPUM_INSTALL_DIR}
 	RUNTIME DESTINATION bin
 	ARCHIVE DESTINATION .
 )

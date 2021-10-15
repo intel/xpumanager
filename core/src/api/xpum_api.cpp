@@ -15,6 +15,71 @@
 #include <memory>
 #include <vector>
 
+extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
+    switch (name) {
+    case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
+        return "DEVICE_TYPE";
+    case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
+        return "DEVICE_NAME";
+    case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
+        return "VENDOR_NAME";
+    case XPUM_DEVICE_PROPERTY_UUID:
+        return "UUID";
+    case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
+        return "PCI_DEVICE_ID";
+    case XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID:
+        return "PCI_SUB_DEVICE_ID";
+    case XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID:
+        return "PCI_VENDOR_ID";
+    case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
+        return "PCI_BDF_ADDRESS";
+    case XPUM_DEVICE_PROPERTY_PCI_SLOT:
+        return "PCI_SLOT";
+    case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
+        return "PCIE_GENERATION";
+    case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
+        return "PCIE_MAX_LINK_WIDTH";
+    case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
+        return "DRIVER_VERSION";
+    case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
+        return "FIRMWARE_NAME";
+    case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
+        return "FIRMWARE_VERSION";
+    case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
+        return "SERIAL_NUMBER";
+    case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
+        return "CORE_CLOCK_RATE_MHZ";
+    case XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE:
+        return "MEMORY_PHYSICAL_SIZE_BYTE";
+    case XPUM_DEVICE_PROPERTY_MEMORY_FREE_SIZE_BYTE:
+        return "MEMORY_FREE_SIZE_BYTE";
+    case XPUM_DEVICE_PROPERTY_MAX_MEM_ALLOC_SIZE_BYTE:
+        return "MAX_MEM_ALLOC_SIZE_BYTE";
+    case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEMORY_CHANNELS:
+        return "NUMBER_OF_MEMORY_CHANNELS";
+    case XPUM_DEVICE_PROPERTY_MEMORY_BUS_WIDTH:
+        return "MEMORY_BUS_WIDTH";
+    case XPUM_DEVICE_PROPERTY_MAX_HARDWARE_CONTEXTS:
+        return "MAX_HARDWARE_CONTEXTS";
+    case XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY:
+        return "MAX_COMMAND_QUEUE_PRIORITY";
+    case XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES:
+        return "NUMBER_OF_TILES";
+    case XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES:
+        return "NUMBER_OF_SLICES";
+    case XPUM_DEVICE_PROPERTY_NUMBER_OF_SUB_SLICES_PER_SLICE:
+        return "NUMBER_OF_SUB_SLICES_PER_SLICE";
+    case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE:
+        return "NUMBER_OF_EUS_PER_SUB_SLICE";
+    case XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU:
+        return "NUMBER_OF_THREADS_PER_EU";
+    case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
+        return "PHYSICAL_EU_SIMD_WIDTH";
+    default:
+        return "";
+    }
+}
+
 xpum_result_t xpumInit() {
 
     try {
@@ -70,9 +135,7 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 
     Core::instance().getDeviceManager()->getDeviceList(devices);
 
-    // vector<xpum_device_basic_info> deviceInfoList(devices.size());
-
-    for (int i = 0; i < devices.size(); i++) {
+    for (size_t i = 0; i < devices.size(); i++) {
 
         auto &p_device = devices[i];
 
@@ -88,42 +151,36 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 
         for (Property &prop : properties) {
 
-            std::string name = prop.getName();
+            auto name = prop.getName();
+            
             std::string value = prop.getValue();
 
-            if (name.compare("UUID") == 0) {
+            switch (name) {
+            case XPUM_DEVICE_PROPERTY_UUID:
                 value.copy(info.uuid, value.size());
-                continue;
-            }
-
-            if (name.compare("DEVICE_NAME") == 0) {
+                break;
+            case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
                 value.copy(info.deviceName, value.size());
                 info.deviceName[value.size()] = 0;
-                continue;
-            }
-
-            if (name.compare("DEVICE_ID") == 0) {
+                break;
+            case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
                 value.copy(info.PCIDeviceId, value.size());
                 info.PCIDeviceId[value.size()] = 0;
-                continue;
-            }
-
-            if (name.compare("SUB_DEVICE_ID") == 0) {
+                break;
+            case XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID:
                 value.copy(info.SubDeviceId, value.size());
                 info.SubDeviceId[value.size()] = 0;
-                continue;
-            }
-
-            if (name.compare("BDF ADDRESS") == 0) {
+                break;
+            case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
                 value.copy(info.PCIBDFAddress, value.size());
                 info.PCIBDFAddress[value.size()] = 0;
-                continue;
-            }
-
-            if (name.compare("VENDOR_NAME") == 0) {
+                break;
+            case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
                 value.copy(info.VendorName, value.size());
                 info.VendorName[value.size()] = 0;
-                continue;
+                break;
+            default:
+                break;
             }
         }
     }
@@ -196,13 +253,14 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
 
             pXpumProperties->propertyLen = properties.size();
 
-            for (int i = 0; i < properties.size(); i++) {
+            for (size_t i = 0; i < properties.size(); i++) {
                 auto &prop = properties[i];
-                std::string name = prop.getName();
+                xpum_device_property_name_t name = prop.getName();
                 std::string value = prop.getValue();
                 auto &copy = pXpumProperties->properties[i];
-                name.copy(copy.name, name.size());
-                copy.name[name.size()] = 0;
+                // name.copy(copy.name, name.size());
+                // copy.name[name.size()] = 0;
+                copy.name = name;
                 value.copy(copy.value, value.size());
                 copy.value[value.size()] = 0;
             }
@@ -259,7 +317,7 @@ xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
                                                  int count,
                                                  xpum_dump_task_id_t *taskId) {
     std::vector<MeasurementType> types;
-    for (size_t i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i) {
         types.push_back(Utility::measurementTypeFromXpumStatsType(metricsTypeList[i]));
     }
     uint32_t id = Core::instance().getDataLogic()->startRawDataCollectionTask(deviceId, types);
@@ -759,7 +817,7 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
     xpum_topology_t *topo = nullptr;
     std::string bdfAddress;
     Property prop;
-    if (!device->getProperty(DeviceProperty::BDF_ADDRESS, prop)) {
+    if (!device->getProperty(XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS, prop)) {
         return XPUM_GENERIC_ERROR;
     }
     bdfAddress = prop.getValue();

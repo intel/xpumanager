@@ -49,7 +49,7 @@ grpc::Status XpumCoreServiceImpl::getDeviceList( grpc::ServerContext* context, c
             XpumDeviceBasicInfoArray_XpumDeviceBasicInfo* device = response->add_info();
             device->mutable_id()->set_id( devices[i].deviceId );
             device->mutable_type()->set_value( devices[i].type );
-            device->set_uuid( std::string(devices[i].uuid,sizeof(devices[i].uuid)) );
+            device->set_uuid( devices[i].uuid );
             device->set_devicename( devices[i].deviceName );
             device->set_pciedeviceid( devices[i].PCIDeviceId );
             device->set_subdeviceid( devices[i].SubDeviceId );
@@ -71,7 +71,7 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties( grpc::ServerContext* cont
         for (int i = 0; i < data.propertyLen; i++) {
             auto &prop = data.properties[i];
             auto propRpc = response->add_properties();
-            propRpc->set_name(prop.name);
+            propRpc->set_name(getXpumDevicePropertyNameString(prop.name));
             propRpc->set_value(prop.value);
         }
     } else {

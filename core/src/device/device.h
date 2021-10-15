@@ -23,7 +23,7 @@ class Device {
 
   void getProperties(std::vector<Property>& properties) noexcept;
 
-  bool getProperty(const std::string& name, Property& ret) noexcept;
+  bool getProperty(xpum_device_property_name_t name, Property& ret) noexcept;
 
   virtual void getPower(Callback_t callback) noexcept = 0;
   
@@ -57,7 +57,7 @@ class Device {
 
   void addProperty(Property prop);
 
-  void removeProperty(const std::string& name);
+  void removeProperty(xpum_device_property_name_t name);
 
   zes_device_handle_t getDeviceHandle();
 

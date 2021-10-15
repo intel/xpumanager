@@ -3,7 +3,7 @@
 #define  XPUM_VERSION "@XPUM_VERSION_STRING@"
 #define  XPUM_VERSION_GIT "@GIT_COMMIT@"
 
-#define  XPUM_CONFIG_DIR "/etc/xpum/"
+#define  XPUM_CONFIG_DIR "@XPUM_CONFIG_DIR@/"
 
 #define  PCI_IDS_FILE "pci.ids"
 #define  PCI_IDS_CONFIG "pci.switch"

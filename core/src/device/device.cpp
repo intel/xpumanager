@@ -32,7 +32,7 @@ void Device::getProperties(std::vector<Property>& properties) noexcept {
   }
 }
 
-bool Device::getProperty(const std::string& name, Property& ret) noexcept {
+bool Device::getProperty(xpum_device_property_name_t name, Property& ret) noexcept {
   std::unique_lock<std::mutex> lock(this->mutex);
   for (auto& prop : this->properties) {
     if (prop.getName() == name) {
@@ -77,7 +77,7 @@ void Device::addProperty(Property prop) {
   this->properties.push_back(prop);
 }
 
-void Device::removeProperty(const std::string& name) {
+void Device::removeProperty(xpum_device_property_name_t name) {
   std::unique_lock<std::mutex> lock(this->mutex);
   for (auto it = properties.begin(); it != properties.end(); ++it) {
     if (it->getName() == name) {
