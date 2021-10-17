@@ -38,3 +38,4 @@ daemon/mediadata/test_stream_176x96.yuv
 daemon/mediadata/test_stream_coder.h264
 daemon/mediadata/test_stream.264
 rest/xpum-rest.service
+py/

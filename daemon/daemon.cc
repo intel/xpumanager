@@ -17,6 +17,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
+#include <condition_variable>
 
 #include "xpum_api.h"
 #include "xpum_structs.h"
@@ -40,6 +41,11 @@ unique_ptr<grpc::Server> server;
 int pidFilehandle = -1;
 char *pid_file_name = nullptr;
 char *sock_file_name = nullptr;
+
+std::mutex  xpummutex;
+std::atomic_bool stop(false);
+std::unique_lock<std::mutex> lock(xpummutex);
+std::condition_variable cv;
 
 void print_help(const char * app_name)
 {
@@ -77,9 +83,23 @@ void runRPCServer() {
     passwd* pwd = getpwnam( "xpum" );
     if(pwd != nullptr){
         chown( unixSockName.c_str(), pwd->pw_uid, pwd->pw_gid ); 
-    }       
+    }     
 
-    server->Wait();    
+    // start a background thread for the server.
+    std::thread grpc_server_thread(
+        [](::grpc::Server* grpc_server_ptr) {
+            grpc_server_ptr->Wait();
+        },
+        server.get());
+
+    while (!stop) {
+        // Wait for the stop signal and then shut the server.
+        cv.wait(lock);
+    }
+
+    // Shut down server.
+    server->Shutdown();
+    grpc_server_thread.join();  
 }
 
 void writePID() {
@@ -106,7 +126,8 @@ void signalHandler(int sig){
         case SIGINT:
         case SIGTERM:
         case SIGKILL:
-            server->Shutdown();
+            stop = true;
+            cv.notify_all();
             syslog(LOG_WARNING, "XPUM: recieved SIGTERM signal %d, service shutdown.", sig);
             break;        
         default: 
@@ -150,17 +171,17 @@ int main( int argc, char* argv[] ) {
     signal(SIGKILL, signalHandler);
     signal(SIGTERM, signalHandler);
 
-    syslog(LOG_INFO, "XPUM: Load DGMCore library");
+    syslog(LOG_INFO, "XPUM: Init xpum library");
     xpum_result_t res = xpumInit();
     if(res != XPUM_OK){
-        syslog(LOG_ERR, "XPUM: Load DGMCore failed! %d", res);
+        syslog(LOG_ERR, "XPUM: Load xpum library failed! %d", res);
         return 1;
     }
     
     syslog(LOG_INFO, "XPUM: start XPUM RPC Server.");
     runRPCServer();
 
-    syslog(LOG_INFO, "XPUM: Shut down DGMCore.");
+    syslog(LOG_INFO, "XPUM: Shut down.");
     res = xpumShutdown();
     syslog(LOG_INFO, "XPUM: xpum service is closed.");
     if(pidFilehandle != -1) {

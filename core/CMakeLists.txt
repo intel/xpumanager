@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(../.cmake/xpum_version.cmake)
+
 # Build test or not
 option(BUILD_TEST "build application instead of lib for test" OFF)
 
@@ -97,6 +99,12 @@ target_sources(
 add_subdirectory(./libs/spdlog)
 add_subdirectory(./libs/hwloc)
 
+#set_target_properties（DGMCore PROPERTIES SUFFIX ".so.${PROJECT_VERSION_MAJOR}")
+message(STATUS "version ${PROJECT_VERSION}") 
+message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")
+
+set_target_properties(DGMCore PROPERTIES  SOVERSION ${PROJECT_VERSION_MAJOR})
+
 add_dependencies(DGMCore lib_hwloc)
 
 if(HAVE_PCIACCESS_H)
@@ -107,3 +115,4 @@ else()
 endif()
 
 unset(BUILD_TEST CACHE)
+

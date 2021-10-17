@@ -4,6 +4,7 @@ cmake_policy(SET CMP0077 OLD)
 project(XPUMCLI)
 
 include(../.cmake/grpc_common.cmake)
+include(../.cmake/xpum_version.cmake)
 
 # Set compilation options
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread -fPIC")

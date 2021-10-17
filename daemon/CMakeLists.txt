@@ -4,6 +4,7 @@ cmake_policy(SET CMP0077 OLD)
 project(XPUMDAEMON)
 
 include(../.cmake/grpc_common.cmake)
+include(../.cmake/xpum_version.cmake)
 # Set compilation options
 set(CMAKE_CXX_FLAGS
     "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread -lprotobuf -lgrpc++ -fPIC")
@@ -16,6 +17,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
+
+list(APPEND CMAKE_INSTALL_RPATH 
+	"${CMAKE_CURRENT_BINARY_DIR}"
+	"${CMAKE_CURRENT_BINARY_DIR}/../core"
+)
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/config.h @ONLY)
@@ -82,3 +88,4 @@ else()
   target_link_libraries(xpumd PRIVATE DGMCore ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
 endif()
+

@@ -6,7 +6,7 @@ After=syslog.target
 [Service]
 Type=simple
 
-Environment="LD_LIBRARY_PATH=/usr/local/xpum:/$LD_LIBRARY_PATH"
+Environment="LD_LIBRARY_PATH=/usr/local/xpum/lib:/$LD_LIBRARY_PATH"
 
 #ExecStartPre=rm -rf /tmp/xpum.sock
 

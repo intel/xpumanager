@@ -14,10 +14,8 @@ function RemoveUser()
 	done
 }
 
-echo "Stop xpum service..."
 systemctl stop xpum >> ${LOG_FILE} 2>&1 
-echo "Remove xpum service..."
 systemctl disable xpum >> ${LOG_FILE} 2>&1 
 systemctl daemon-reload >> ${LOG_FILE} 2>&1 
-echo "Remove user xpum"
 RemoveUser xpum
+rm -rf /lib/libDGMCore.so >> ${LOG_FILE}  2>&1

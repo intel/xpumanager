@@ -1,35 +1,11 @@
 cmake_minimum_required (VERSION 3.2.0)
 
-SET(PROJECT_VERSION_MAJOR 1)
-SET(PROJECT_VERSION_MINOR 0)
-
-if (NOT DEFINED BUILD_TIMESTAMP)	
-	execute_process(
-		COMMAND date "+%Y%m%d"
-		OUTPUT_VARIABLE BUILD_DATE
-		OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
-	message(STATUS "build date=${BUILD_DATE}")
-	SET(BUILD_TIMESTAMP "${BUILD_DATE}")
-endif()
-
-if (NOT DEFINED GIT_COMMIT)	
-	execute_process(
-		COMMAND git rev-parse HEAD
-		OUTPUT_VARIABLE BUILD_HASH
-		OUTPUT_STRIP_TRAILING_WHITESPACE
-	)	
-	string(SUBSTRING ${BUILD_HASH} 0 8 GIT_COMMIT)
-	message(STATUS "git hash=${GIT_COMMIT}")
-endif()
-
 
 if (NOT DEFINED WORK_PATH)	
 	set(WORK_PATH ${CMAKE_CURRENT_BINARY_DIR})	
 endif()
 
-set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${BUILD_TIMESTAMP}")
-set(XPUM_VERSION_STRING ${PROJECT_VERSION})
+include(.cmake/xpum_version.cmake)
 
 project (XPUManager VERSION ${PROJECT_VERSION})
 
@@ -119,14 +95,16 @@ if(CPACK_GENERATOR MATCHES "DEB")
 	configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service" @ONLY)
 
 	file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}.deb")
-	set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+
 	set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+	#set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12), python3.8
+
+	set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 	set(CPACK_DEBIAN_XPUM_PACKAGE_NAME "${PROJECT_NAME}")
   set(CPACK_DEB_COMPONENT_INSTALL ON)
   set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
-
-	#set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12), python2.6, libboost-program-options1.40.0 (>= 1.40.0)")
-	set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_LIST_DIR}/postinst;${CMAKE_SOURCE_DIR}/prerm;")	
+	
+	set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_LIST_DIR}/postinst;${CMAKE_CURRENT_LIST_DIR}/prerm;")	
 endif()
 
 INCLUDE(CPack)
@@ -138,15 +116,19 @@ install(DIRECTORY	core/include
 install(DIRECTORY	
 		core/kernels
 		core/mediadata
-		core/config
 		tools/rest/		
 	DESTINATION .
 )
 
 install(TARGETS DGMCore xpumcli xpumd
-	LIBRARY DESTINATION ${CPACK_XPUM_INSTALL_DIR}
+	LIBRARY DESTINATION ${CPACK_XPUM_INSTALL_DIR}/lib
 	RUNTIME DESTINATION bin
 	ARCHIVE DESTINATION .
+)
+
+install(DIRECTORY	
+		core/config
+	DESTINATION ${CPACK_XPUM_INSTALL_DIR}
 )
 
 install(
@@ -161,3 +143,10 @@ install(FILES
 	"${SYSTEMD_UNIT_NAME}"
 	"${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service"
 	DESTINATION "/lib/systemd/system")
+
+#install(CODE "execute_process(
+#    COMMAND bash -c \"set -e
+#    cd ${CPACK_XPUM_INSTALL_DIR}/lib
+#    echo -n .. Installing: 
+#    sudo ln -sv libDGMCore.so.${PROJECT_VERSION_MAJOR} /lib/libDGMCore.so.${PROJECT_VERSION_MAJOR}
+#    \")")

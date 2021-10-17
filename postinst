@@ -10,23 +10,22 @@ function CreateUser()
   fi
 }
 
-echo "Create user xpum"
 CreateUser xpum
 chown -R xpum /opt/intel/xpum
 chmod +x /opt/intel/xpum/rest/xpum_rest.sh
 chmod +x /opt/intel/xpum/keytool.sh
 
 if [ -n ${RPM_INSTALL_PREFIX} ]; then
-  echo "Config xpum service ... "
   sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" /usr/lib/systemd/system/xpum.service > /usr/lib/systemd/system/xpum.service.n
   mv -f /usr/lib/systemd/system/xpum.service.n /usr/lib/systemd/system/xpum.service
 
   sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" /usr/lib/systemd/system/xpum-rest.service > /usr/lib/systemd/system/xpum-rest.service.n
-  mv -f /usr/lib/systemd/system/xpum-rest.service.n /usr/lib/systemd/system/xpum-rest.service
+  mv -f /usr/lib/systemd/system/xpum-rest.service.n /usr/lib/systemd/system/xpum-rest.service 
 fi
 
-echo "Install xpum service..."
+cd /usr/local/xpum/lib
+ln -sv libDGMCore.so.1 /lib/libDGMCore.so >> ${LOG_FILE}  2>&1
+
 systemctl daemon-reload >> ${LOG_FILE} 2>&1 
 systemctl enable xpum >> ${LOG_FILE} 2>&1 
-echo "Start xpum service..."
 systemctl start xpum
