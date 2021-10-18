@@ -8,7 +8,7 @@ Type=simple
 
 Environment="LD_LIBRARY_PATH=/usr/local/xpum/lib:/$LD_LIBRARY_PATH"
 
-#ExecStartPre=rm -rf /tmp/xpum.sock
+ExecStartPre=/bin/sh -c "ulimit -c unlimited"
 
 ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/xpumd  --pid_file /var/xpum_daemon.pid
 

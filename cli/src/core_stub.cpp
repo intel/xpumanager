@@ -141,6 +141,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
             }
             (*json)["xpum_switch_list"] = switchJsonList;
         }
+    } else {
+        (*json)["error code"] = status.error_code();
+        (*json)["error message"] = status.error_message();
     }
 
     return json;
@@ -156,6 +159,9 @@ std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName){
     grpc::Status status = stub->groupCreate(&context, name, &response);
     if (status.ok() && response.errormsg().length() == 0) {
         (*json)["group_id"] = response.id();
+    } else {
+        (*json)["error code"] = status.error_code();
+        (*json)["error message"] = status.error_message();
     }
     return json;
 }
@@ -170,6 +176,9 @@ std::unique_ptr<nlohmann::json> CoreStub::groupDelete(int groupId){
     grpc::Status status = stub->groupDestory(&context, id, &response);
     if (status.ok() && response.errormsg().length() == 0) {
         (*json)["group_id"] = response.id();
+    } else {
+        (*json)["error code"] = status.error_code();
+        (*json)["error message"] = status.error_message();
     }
     return json;
 }
@@ -192,6 +201,9 @@ std::unique_ptr<nlohmann::json> CoreStub::groupListAll(){
 
             (*json)["group_list"] = groupJsonList;
         }
+    } else {
+        (*json)["error code"] = status.error_code();
+        (*json)["error message"] = status.error_message();
     }
     return json;
 }
@@ -221,6 +233,9 @@ std::unique_ptr<nlohmann::json> CoreStub::groupList(int groupId){
 
             (*json)["device_list"] = deviceJsonList;
         }
+    } else {
+        (*json)["error code"] = status.error_code();
+        (*json)["error message"] = status.error_message();
     }
     return json;
 }
@@ -239,6 +254,9 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
             (*json)["group_id"] = groupId;
             (*json)["device_id"] = deviceId;
         }
+    } else {
+        (*json)["error code"] = status.error_code();
+        (*json)["error message"] = status.error_message();
     }
     return json;
 }
@@ -257,6 +275,9 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
             (*json)["group_id"] = groupId;
             (*json)["device_id"] = deviceId;
         }
+    } else {
+        (*json)["error code"] = status.error_code();
+        (*json)["error message"] = status.error_message();
     }
     return json;
 }

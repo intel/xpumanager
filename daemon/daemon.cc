@@ -37,7 +37,6 @@ using std::endl;
 
 static const string defaultSockName { "/tmp/xpum.sock" };
 
-unique_ptr<grpc::Server> server;
 int pidFilehandle = -1;
 char *pid_file_name = nullptr;
 char *sock_file_name = nullptr;
@@ -77,7 +76,7 @@ void runRPCServer() {
     //TODO: limit thread pool size
     builder.RegisterService( &service );
 
-    server = builder.BuildAndStart();
+    unique_ptr<grpc::Server> server = builder.BuildAndStart();
     syslog(LOG_INFO, "XPUM: RPC server is listening");
     
     passwd* pwd = getpwnam( "xpum" );
