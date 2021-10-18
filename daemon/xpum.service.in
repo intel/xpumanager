@@ -6,7 +6,9 @@ After=syslog.target
 [Service]
 Type=simple
 
-Environment="LD_LIBRARY_PATH=/usr/local/xpum/lib:/$LD_LIBRARY_PATH"
+RuntimeDirectory=xpum
+
+Environment="LD_LIBRARY_PATH=@CPACK_XPUM_LIB_INSTALL_DIR@:/$LD_LIBRARY_PATH"
 
 ExecStartPre=/bin/sh -c "ulimit -c unlimited"
 

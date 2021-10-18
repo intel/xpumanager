@@ -51,7 +51,7 @@ bool PciDatabase::init() {
         exePath[len] = '\0';
         std::string currentFile = exePath;
         
-        folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../config/";
+        folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../resources/config/";
         fileName = folder + std::string(PCI_IDS_FILE);
         infile.open(fileName.data());
         if (!infile.is_open()){
