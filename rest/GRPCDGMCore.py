@@ -304,3 +304,34 @@ class DGMCore:
         if tileLevelStatsDataList:
             data["TileLevel"] = tileLevelStatsDataList
         return 0, "OK", data
+
+    def getMetricsByGroup(self, groupId):
+        resp = self.stub.getMetricsByGroup(core_pb2.GroupId(id=groupId))
+        if len( resp.errorMsg ) != 0:
+            return 1, resp.errorMsg, None
+        data = dict()
+        data["GroupId"] = groupId
+        deviceLevelStatsDataList = []
+        tileLevelStatsDataList = []
+        for stats_info in resp.dataList:
+            dataList=[]
+            for stats_data in stats_info.dataList:
+                try:
+                    tmp = dict()
+                    metricsType = XpumStatsType(stats_data.metricsType.value).name
+                    tmp["metricsType"] = metricsType
+                    tmp["value"] = stats_data.value
+                    if not stats_data.isCounter:
+                        tmp["avg"] = stats_data.value
+                    dataList.append(tmp)
+                except:
+                    pass
+            if stats_info.isTileData:
+                tmp = dict(tileId=stats_info.tileId,dataList=dataList)
+                tileLevelStatsDataList.append(tmp)
+            else:
+                deviceLevelStatsDataList=dataList
+        data["DeviceLevel"] = deviceLevelStatsDataList
+        if tileLevelStatsDataList:
+            data["TileLevel"] = tileLevelStatsDataList
+        return 0, "OK", data

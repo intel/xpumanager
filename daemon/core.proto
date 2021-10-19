@@ -259,4 +259,5 @@ service XpumCoreService {
     rpc setHealthConfig( HealthConfigRequest ) returns ( HealthConfigInfo );
     rpc setHealthConfigByGroup( HealthConfigByGroupRequest ) returns ( HealthConfigByGroupInfo );
     rpc getMetrics( DeviceId ) returns ( DeviceStatsInfoArray );
+    rpc getMetricsByGroup( GroupId ) returns ( DeviceStatsInfoArray );
 }
