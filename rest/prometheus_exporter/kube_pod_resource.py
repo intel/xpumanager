@@ -1,8 +1,8 @@
 import re
 import os
 import grpc
-from . import api_pb2_grpc as apigrpc
-from . import api_pb2 as apipb2
+import api_pb2_grpc as apigrpc
+import api_pb2 as apipb2
 
 import traceback
 
