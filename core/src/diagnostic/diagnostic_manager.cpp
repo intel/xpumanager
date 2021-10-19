@@ -353,13 +353,21 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t& 
     }
     closedir(dir);
     if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
+      char exePath[XPUM_MAX_PATH_LEN];
+      ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+      exePath[len] = '\0';
+      std::string currentFile = exePath;
+      std::string mediaDatafolder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../resources/mediadata/";
+      std::string decodefileName = mediaDatafolder + Configuration::MEDIA_CODER_TOOLS_DECODE_FILE;
       std::string commandDecode = Configuration::MEDIA_CODER_TOOLS_PATH + "sample_decode h264 -device " + device_path + 
-          " -hw -i ../resources/mediadata/" + Configuration::MEDIA_CODER_TOOLS_DECODE_FILE + " 2>&1";
+          " -hw -i " + decodefileName + " 2>&1";
       XPUM_LOG_INFO(commandDecode);
       std::string resultDecode = getCommandResult(commandDecode);
 
+      std::string encodefileName = mediaDatafolder + Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE;
+      std::string encodeOutputfileName = mediaDatafolder + std::string("encode.output");
       std::string commandEncode = Configuration::MEDIA_CODER_TOOLS_PATH + "sample_encode h264 -device " + device_path + 
-          " -hw -i ../resources/mediadata/" + Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE + " -w 176 -h 96 -u quality -cqp -qpi 32 -qpp 32 -qpb 32 -async 1 -vaapi -o ../resources/mediadata/test_stream_coder.h264 2>&1";
+          " -hw -i " + encodefileName + " -w 176 -h 96 -u quality -cqp -qpi 32 -qpp 32 -qpb 32 -async 1 -vaapi -o " + encodeOutputfileName + " 2>&1";
       XPUM_LOG_INFO(commandEncode);
       std::string resultEncode = getCommandResult(commandEncode);
 
@@ -694,7 +702,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
           test_kernel_names.push_back(kernel_name);
         }
         
-        const std::vector<uint8_t> binary_file = loadBinaryFile("../resources/kernels/test_multiple_memory_allocations.spv");
+        const std::vector<uint8_t> binary_file = loadBinaryFile("test_multiple_memory_allocations.spv");
         ze_module_desc_t module_description = {};
         module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
         module_description.pNext = nullptr;
@@ -751,7 +759,13 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
 }
 
 std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_path) {
-  std::ifstream stream(file_path, std::ios::in | std::ios::binary);
+  char exe_path[XPUM_MAX_PATH_LEN];
+  ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+  exe_path[len] = '\0';
+  std::string current_file = exe_path;
+  std::string folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/kernels/";
+  std::string absolute_file_path = folder + file_path;
+  std::ifstream stream(absolute_file_path, std::ios::in | std::ios::binary);
   std::vector<uint8_t> binary_file;
 
   if (!stream.good()) {
@@ -930,7 +944,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   }
   ze_module_handle_t module_handle;
   ze_module_desc_t module_description = {};
-  std::vector<uint8_t> binary_file = loadBinaryFile("../resources/kernels/ze_sp_compute.spv");
+  std::vector<uint8_t> binary_file = loadBinaryFile("ze_sp_compute.spv");
   module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
   module_description.pNext = nullptr;
   module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
