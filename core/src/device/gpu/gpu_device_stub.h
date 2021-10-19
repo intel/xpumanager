@@ -28,6 +28,8 @@ class GPUDeviceStub {
 
   void getActuralFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
+  void getRequestFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
   void getTemperature(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
   void getMemory(const zes_device_handle_t& device, Callback_t callback) noexcept;
@@ -113,6 +115,8 @@ private:
   static std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device);
 
   static std::shared_ptr<MeasurementData> toGetActuralFrequency(const zes_device_handle_t& device);
+
+  static std::shared_ptr<MeasurementData> toGetRequestFrequency(const zes_device_handle_t& device);
 
   static std::shared_ptr<MeasurementData> toGetTemperature(const zes_device_handle_t& device);
 

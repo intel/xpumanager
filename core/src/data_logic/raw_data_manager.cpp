@@ -48,6 +48,10 @@ void RawDataManager::init() {
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_FREQUENCY, p_persistency);    
   data_handlers[MeasurementType::METRIC_FREQUENCY]->init();
 
+  data_handlers[MeasurementType::METRIC_REQUEST_FREQUENCY] = 
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_REQUEST_FREQUENCY, p_persistency);    
+  data_handlers[MeasurementType::METRIC_REQUEST_FREQUENCY]->init();
+
   data_handlers[MeasurementType::METRIC_POWER] = 
     std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_POWER, p_persistency);    
   data_handlers[MeasurementType::METRIC_POWER]->init();

@@ -47,6 +47,8 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
     return MeasurementType::METRIC_TEMPERATURE;
   case DeviceCapability::METRIC_FREQUENCY:
     return MeasurementType::METRIC_FREQUENCY;
+  case DeviceCapability::METRIC_REQUEST_FREQUENCY:
+    return MeasurementType::METRIC_REQUEST_FREQUENCY;
   case DeviceCapability::METRIC_POWER:
     return MeasurementType::METRIC_POWER;
   case DeviceCapability::METRIC_ENERGY:
@@ -118,6 +120,8 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
     return DeviceCapability::METRIC_TEMPERATURE;
   case MeasurementType::METRIC_FREQUENCY:
     return DeviceCapability::METRIC_FREQUENCY;
+  case MeasurementType::METRIC_REQUEST_FREQUENCY:
+    return DeviceCapability::METRIC_REQUEST_FREQUENCY;
   case MeasurementType::METRIC_POWER:
     return DeviceCapability::METRIC_POWER;
   case MeasurementType::METRIC_MEMORY_USED:
@@ -218,8 +222,6 @@ std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capab
       return [p_device](Callback_t callback){ p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_EXECUTION_EFFICIENCY); };
     case DeviceCapability::METRIC_NON_OCCUPATION:
       return [p_device](Callback_t callback){ p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_NON_OCCUPATION); };
-
-    //virtual void getRasError(Callback_t callback,const zes_ras_error_cat_t &rasCat, const zes_ras_error_type_t &rasType) noexcept = 0;
     case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
         return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
     case DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
@@ -234,6 +236,8 @@ std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capab
         return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_DISPLAY_ERRORS,ZES_RAS_ERROR_TYPE_CORRECTABLE); };
     case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
         return [p_device](Callback_t callback) { p_device->getRasError(callback,ZES_RAS_ERROR_CAT_DISPLAY_ERRORS,ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+    case DeviceCapability::METRIC_REQUEST_FREQUENCY:
+      return [p_device](Callback_t callback){ p_device->getRequestFrequency(callback); };
     default:
         break;
     }
@@ -250,7 +254,6 @@ bool Utility::isCounterMetric(MeasurementType type) {
   return type == MeasurementType::METRIC_ENERGY || 
          type == MeasurementType::METRIC_MEMORY_READ ||
          type == MeasurementType::METRIC_MEMORY_WRITE ||
-         //
          type == MeasurementType::METRIC_RAS_ERROR_CAT_RESET ||
          type == MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS ||
          type == MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS ||
@@ -281,8 +284,6 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
   metric_types.push_back(MeasurementType::METRIC_ISSUE_EFFICIENCY);
   metric_types.push_back(MeasurementType::METRIC_EXECUTION_EFFICIENCY);
   metric_types.push_back(MeasurementType::METRIC_NON_OCCUPATION);
-  
-  //METRIC_RAS_ERROR
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_RESET);
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
@@ -290,6 +291,7 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
   metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
+  metric_types.push_back(MeasurementType::METRIC_REQUEST_FREQUENCY);
 }
 
 MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type) {
@@ -338,6 +340,8 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
       return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
   case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
       return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+  case xpum_stats_type_enum::XPUM_STATS_GPU_REQUEST_FREQUENCY:
+    return MeasurementType::METRIC_REQUEST_FREQUENCY;
   default:
     return MeasurementType::METRIC_POWER;
   }
@@ -383,8 +387,6 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
     return xpum_stats_type_enum::XPUM_STATS_EXECUTION_EFFICIENCY;
   case MeasurementType::METRIC_NON_OCCUPATION:
     return xpum_stats_type_enum::XPUM_STATS_NON_OCCUPATION;
-  
-  //
   case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
       return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_RESET;
   case MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
@@ -399,8 +401,8 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
       return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
   case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
       return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
-  
-  //
+  case MeasurementType::METRIC_REQUEST_FREQUENCY:
+    return xpum_stats_type_enum::XPUM_STATS_GPU_REQUEST_FREQUENCY;
   default:
     return xpum_stats_type_enum::XPUM_STATS_POWER;
   }

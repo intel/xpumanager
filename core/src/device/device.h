@@ -29,6 +29,8 @@ class Device {
   
   virtual void getActuralFrequency(Callback_t callback) noexcept = 0;
 
+  virtual void getRequestFrequency(Callback_t callback) noexcept = 0;
+
   virtual void getTemperature(Callback_t callback) noexcept = 0;
 
   virtual void getMemory(Callback_t callback) noexcept = 0;

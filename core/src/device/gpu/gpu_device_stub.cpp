@@ -379,8 +379,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
   capabilities.push_back(DeviceCapability::METRIC_ISSUE_EFFICIENCY);
   capabilities.push_back(DeviceCapability::METRIC_EXECUTION_EFFICIENCY);
   capabilities.push_back(DeviceCapability::METRIC_NON_OCCUPATION);
-
-  //METRIC_RAS_ERROR
   capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
   capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
   capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
@@ -388,6 +386,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
   capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
   capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
   capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
+  capabilities.push_back(DeviceCapability::METRIC_REQUEST_FREQUENCY);
   
   uint32_t driver_count = 0;
   ze_result_t res;
@@ -692,6 +691,44 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
     return ret;
   } else {
     throw BaseException("toGetActuralFrequency error");
+  }
+}
+
+void GPUDeviceStub::getRequestFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept{
+  if (device == nullptr) {
+    return;
+  }
+  p_thread_pool->addTask(callback, toGetRequestFrequency, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_device_handle_t& device) {
+  if (device == nullptr) {
+    throw BaseException("toGetRequestFrequency error");
+  }
+  uint32_t freq_count = 0;
+  bool dataAcquired = false;
+  std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+  ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+  std::vector<zes_freq_handle_t> freq_handles(freq_count);
+  if (res == ZE_RESULT_SUCCESS) {
+    res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+    for (auto &ph_freq : freq_handles) {
+      zes_freq_properties_t props;
+      res = zesFrequencyGetProperties(ph_freq, &props);
+      if (res == ZE_RESULT_SUCCESS) {
+        zes_freq_state_t freq_state;
+        res = zesFrequencyGetState(ph_freq, &freq_state);
+        if (res == ZE_RESULT_SUCCESS) {
+          props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.request) : ret->setCurrent(freq_state.request);
+          dataAcquired = true;
+        }
+      } 
+    }
+  }
+  if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    return ret;
+  } else {
+    throw BaseException("toGetRequestFrequency error");
   }
 }
 
