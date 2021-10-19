@@ -3,7 +3,7 @@
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 
-if [ $(date -r ./core/config/pci.ids +"%Y-%m-%d") == $(date +"%Y-%m-%d") ]; then
+if [ $(date -r ./core/resources/config/pci.ids +"%Y-%m-%d") == $(date +"%Y-%m-%d") ]; then
     echo "pci.ids is up to date."
 else
     rm -rf pci.ids.upgrade

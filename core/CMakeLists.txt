@@ -22,13 +22,6 @@ check_include_file(pciaccess.h HAVE_PCIACCESS_H)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h @ONLY)
 
-# set(BUILD_TEST_API OFF BOOL "build application for api test")
-
-# Set debug file name postfix set(CMAKE_DEBUG_POSTFIX "_d")
-
-# Do something according to build type if(${CMAKE_BUILD_TYPE} == "Debug) else()
-# endif()
-
 # Specifiy link file location
 link_directories(/usr/local/lib)
 link_directories(${CMAKE_CURRENT_LIST_DIR}/libs/hwloc/install/lib)
@@ -100,3 +93,14 @@ endif()
 
 unset(BUILD_TEST CACHE)
 
+install(DIRECTORY	
+		resources
+	DESTINATION .
+  PATTERN "config" EXCLUDE
+)
+
+
+install(DIRECTORY	
+		resources/config
+	DESTINATION .
+)

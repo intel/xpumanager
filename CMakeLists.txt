@@ -116,7 +116,6 @@ install(DIRECTORY	core/include/
 
 install(DIRECTORY	
 		./doc
-		core/resources
 		tools/rest/		
 	DESTINATION .
 )
