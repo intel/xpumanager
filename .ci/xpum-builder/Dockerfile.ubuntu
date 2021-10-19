@@ -17,5 +17,5 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 ADD build_grpc.sh /grpc
 RUN chmod +x /grpc/build_grpc.sh && /grpc/build_grpc.sh
 RUN export DEBIAN_FRONTEND=noninteractive && \
-    apt-get install -y python3-dev
+    apt-get install -y python3-dev liblua5.2-0
 RUN pip3 install grpcio-tools

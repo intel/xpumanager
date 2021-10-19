@@ -1561,6 +1561,36 @@ void GPUDeviceStub::getFrequencyRanges(const zes_device_handle_t& device, std::v
   }
 }
 
+void GPUDeviceStub::getFreqAvailableClocks(const zes_device_handle_t& device, uint32_t subdevice_id, std::vector<double>& clocks){
+  if (device == nullptr) {
+    return;
+  }
+  uint32_t freq_count = 0;
+  ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+  std::vector<zes_freq_handle_t> freq_handles(freq_count);
+  if (res == ZE_RESULT_SUCCESS) {
+    res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+    for (auto &ph_freq : freq_handles) {
+      zes_freq_properties_t prop = {};
+      prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+      if (zesFrequencyGetProperties(ph_freq, &prop) == ZE_RESULT_SUCCESS) {
+        if (prop.type != ZES_FREQ_DOMAIN_GPU || prop.subdeviceId != subdevice_id) {
+          continue;
+        }
+        uint32_t pCount = 0;
+        res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, nullptr);
+        double clockArray [pCount];
+        if (res == ZE_RESULT_SUCCESS) {
+          res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, clockArray);
+          for (int i = 0; i < pCount;i++ ) {
+            clocks.push_back(clockArray[i]);
+          }
+        }
+      }
+    }
+  }
+}
+
 bool GPUDeviceStub::setFrequencyRange(const zes_device_handle_t& device, const Frequency& freq) {
   if (device == nullptr) {
     return false;
