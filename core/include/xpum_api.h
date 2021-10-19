@@ -642,6 +642,22 @@ xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
                              xpum_device_stats_t dataList[], 
                              int *count);
 
+
+/**
+ * @brief Get latest metrics data by group
+ * 
+ * @param groupId       IN: Group id
+ * @param dataList     OUT: The arry to store metrics data for devices in group \a groupId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than the total sum of stats_size of devices in group ( \a groupId ). A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
+ */
+xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId, 
+                                  xpum_device_stats_t dataList[], 
+                                  int *count);                             
+
 /**
  * @brief Get statistics data by group
  * 
