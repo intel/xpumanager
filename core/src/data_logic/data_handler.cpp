@@ -9,6 +9,7 @@ DataHandler::DataHandler(MeasurementType type,
       p_persistency(p_persistency) {
   stop = false;
   p_latestData = nullptr;
+  p_preData = nullptr;
 }
 
 DataHandler::~DataHandler() {
@@ -27,6 +28,7 @@ void DataHandler::init() {
       std::shared_ptr<SharedData> p_data = p_this->q.remove();
 
       std::unique_lock<std::mutex> lock(p_this->mutex);
+      p_this->p_preData = p_this->p_latestData;
       p_this->p_latestData = p_data;
       lock.unlock();
 

@@ -32,6 +32,8 @@ protected:
 
   std::shared_ptr<SharedData> p_latestData;
 
+  std::shared_ptr<SharedData> p_preData;
+
   SharedQueue<std::shared_ptr<SharedData>> q;
 
 private:

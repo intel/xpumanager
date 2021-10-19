@@ -50,6 +50,8 @@ protected:
 
   void resetStatistics(std::string &device_id);
 
+  void updateStatistics(std::shared_ptr<SharedData> &p_data);
+
   std::map<std::string, Statistics_data> statistics_datas;
 
 };

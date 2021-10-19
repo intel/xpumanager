@@ -16,8 +16,7 @@ void MetricStatisticsDataHandler::resetStatistics(std::string& device_id) {
   statistics_datas.erase(device_id);
 }
 
-void MetricStatisticsDataHandler::handleData(std::shared_ptr<SharedData>& p_data) noexcept {
-  q.add(p_data);
+void MetricStatisticsDataHandler::updateStatistics(std::shared_ptr<SharedData>& p_data) {
   std::unique_lock<std::mutex> lock(this->mutex);
   std::map<std::string, MeasurementData>::iterator iter = p_data->getData().begin();
   while (iter != p_data->getData().end()) {
@@ -62,6 +61,11 @@ void MetricStatisticsDataHandler::handleData(std::shared_ptr<SharedData>& p_data
     }
     ++iter;
   }
+}
+
+void MetricStatisticsDataHandler::handleData(std::shared_ptr<SharedData>& p_data) noexcept {
+  q.add(p_data);
+  updateStatistics(p_data);
 }
 
 MeasurementData MetricStatisticsDataHandler::getLatestData(std::string& device_id) noexcept {
