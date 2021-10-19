@@ -60,7 +60,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR} XPUM_DAEMON_SRC)
 set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
              ${core_proto_hdrs})
 
-add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cc)
+add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cpp)
 
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 

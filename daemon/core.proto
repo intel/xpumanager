@@ -214,6 +214,28 @@ message HealthConfigByGroupInfo{
     string errorMsg = 6;
 }
 
+message DeviceStatsData{
+    GeneralEnum metricsType = 1;
+    bool isCounter = 2;
+    uint64 value = 3;
+    uint64 min = 4;
+    uint64 avg = 5;
+    uint64 max = 6;
+}
+
+message DeviceStatsInfo{
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    int32 tileId = 3;
+    int32 count = 4;
+    repeated DeviceStatsData dataList = 5;
+}
+
+message DeviceStatsInfoArray {
+    repeated DeviceStatsInfo dataList = 1;
+    string errorMsg = 2;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -236,4 +258,5 @@ service XpumCoreService {
     rpc getHealthConfigByGroup( HealthConfigByGroupRequest ) returns ( HealthConfigByGroupInfo );
     rpc setHealthConfig( HealthConfigRequest ) returns ( HealthConfigInfo );
     rpc setHealthConfigByGroup( HealthConfigByGroupRequest ) returns ( HealthConfigByGroupInfo );
+    rpc getMetrics( DeviceId ) returns ( DeviceStatsInfoArray );
 }
