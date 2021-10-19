@@ -70,17 +70,17 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
             for (int i{0}; i < response.info_size(); ++i) {
                 auto deviceJson = nlohmann::json();
                 auto &deviceInfo = response.info(i);
-                deviceJson["deviceId"] = deviceInfo.id().id();
-                deviceJson["type"] = deviceInfo.type().value();
+                deviceJson["device_id"] = deviceInfo.id().id();
+                deviceJson["device_type"] = deviceInfo.type().value();
                 deviceJson["uuid"] = deviceInfo.uuid();
-                deviceJson["deviceName"] = deviceInfo.devicename();
-                deviceJson["pcieDeviceId"] = deviceInfo.pciedeviceid();
-                deviceJson["subDeviceId"] = deviceInfo.subdeviceid();
-                deviceJson["pciBdfAddress"] = deviceInfo.pcibdfaddress();
-                deviceJson["vendorName"] = deviceInfo.vendorname();
+                deviceJson["device_name"] = deviceInfo.devicename();
+                deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
+                deviceJson["pci_sub_device_id"] = deviceInfo.subdeviceid();
+                deviceJson["pci_bdf_address"] = deviceInfo.pcibdfaddress();
+                deviceJson["vendor_name"] = deviceInfo.vendorname();
                 deviceJsonList.push_back(deviceJson);
             }
-            (*json)["deviceList"] = deviceJsonList;
+            (*json)["device_list"] = deviceJsonList;
         }
     }
 

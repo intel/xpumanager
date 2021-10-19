@@ -112,8 +112,8 @@ struct xpum_device_basic_info
 
 
 typedef enum xpum_device_property_name_enum {
-    XPUM_DEVICE_PROPERTY_DEVICE_TYPE,
-    XPUM_DEVICE_PROPERTY_DEVICE_NAME,
+    XPUM_DEVICE_PROPERTY_DEVICE_TYPE,       // Device Type
+    XPUM_DEVICE_PROPERTY_DEVICE_NAME,       // Device Name
     XPUM_DEVICE_PROPERTY_VENDOR_NAME,
     XPUM_DEVICE_PROPERTY_UUID,
     XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID,
