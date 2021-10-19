@@ -469,16 +469,16 @@ std::string CoreStub::healthTypeEnumToString(HealthType type) {
     switch (type)
     {
     case HEALTH_THERMAL:
-        ret = "Temperature";
+        ret = "temperature";
         break;
     case HEALTH_POWER:
-        ret = "Power";
+        ret = "power";
         break;
     case HEALTH_MEMORY:
-        ret = "Memory";
+        ret = "memory";
         break;
     case HEALTH_FABRIC_PORT:
-        ret = "Fabric Port";
+        ret = "fabric_port";
         break;
     default:
         break;

@@ -39,10 +39,10 @@ healthStatusEnumToString = {
 }
 
 healthTypeEnumToString = {
-    core_pb2.HEALTH_THERMAL:"Temperature",
-    core_pb2.HEALTH_POWER:"Power",
-    core_pb2.HEALTH_MEMORY:"Memory",
-    core_pb2.HEALTH_FABRIC_PORT:"Fabric Port"
+    core_pb2.HEALTH_THERMAL:"temperature",
+    core_pb2.HEALTH_POWER:"power",
+    core_pb2.HEALTH_MEMORY:"memory",
+    core_pb2.HEALTH_FABRIC_PORT:"fabric_port"
 }
 
 XpumStatsType = Enum("xpum_stats_type_t", (
@@ -136,7 +136,7 @@ class DGMCore:
         else:
             types.append(healthTypes.index(healthType))
         data = dict()
-        data['deviceId'] = deviceId
+        data['device_id'] = deviceId
         
         for t in types:
             resp = self.stub.getHealth(core_pb2.HealthDataRequest(deviceId=deviceId, type=t))
@@ -172,21 +172,21 @@ class DGMCore:
             for healthData in resp.healthData:
                 if healthData.deviceId not in deviceIds:
                     deviceIds.append(healthData.deviceId)
-                    datas.append(dict(deviceId=healthData.deviceId))
+                    datas.append(dict(device_id=healthData.deviceId))
                 
                 for data in datas:
-                    if data['deviceId'] == healthData.deviceId:
+                    if data['device_id'] == healthData.deviceId:
                         key = healthTypeEnumToString[t]
                         data[key] = dict()
                         data[key]['status'] = healthStatusEnumToString[healthData.statusType]
                         data[key]['description'] = healthData.description
                         if t == 0 or t == 1:
-                            resp = self.stub.getHealthConfig(core_pb2.HealthConfigRequest(deviceId=data['deviceId'], configType=t))
+                            resp = self.stub.getHealthConfig(core_pb2.HealthConfigRequest(deviceId=data['device_id'], configType=t))
                             if len( resp.errorMsg ) != 0:
                                 return 1, resp.errorMsg, None
                             data[key]['threshold'] = resp.threshold            
 
-        return 0, "OK", dict(groupId=groupId, deviceCount=len(datas), deviceList=datas)
+        return 0, "OK", dict(group_id=groupId, device_count=len(datas), device_list=datas)
 
     def setHealthConfig(self, deviceId, healthType, threshold):
         healthTypes = ["temperature", "power"]
@@ -226,7 +226,7 @@ class DGMCore:
         data['level'] = resp.level
         data['finished'] = resp.finished
         data['message'] = resp.message
-        data['componentCount'] = resp.count      
+        data['component_count'] = resp.count      
         componentList = []
         i = 0
         for component in resp.componentInfo:
@@ -239,7 +239,7 @@ class DGMCore:
             new_component['result'] = diagnosticResultEnumToString[component.result]
             new_component['message'] = component.message
             componentList.append(new_component)
-        data['componentList'] = componentList
+        data['component_list'] = componentList
 
         return 0, "OK", data
     
@@ -255,7 +255,7 @@ class DGMCore:
             data['level'] = diagTaskInfo.level
             data['finished'] = diagTaskInfo.finished
             data['message'] = diagTaskInfo.message
-            data['componentCount'] = diagTaskInfo.count
+            data['component_count'] = diagTaskInfo.count
             
             componentList = []
             i = 0
@@ -269,10 +269,10 @@ class DGMCore:
                 new_component['result'] = diagnosticResultEnumToString[component.result]
                 new_component['message'] = component.message
                 componentList.append(new_component)
-            data['componentList'] = componentList
+            data['component_list'] = componentList
             datas.append(data)
 
-        return 0, "OK", dict(groupId=groupId, deviceCount=len(datas), deviceList=datas)
+        return 0, "OK", dict(group_id=groupId, device_count=len(datas), device_list=datas)
 
     def getMetrics(self, deviceId):
         resp = self.stub.getMetrics(core_pb2.DeviceId(id=deviceId))
