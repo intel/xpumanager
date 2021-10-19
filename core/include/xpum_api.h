@@ -768,6 +768,8 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
 
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
 
+xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, int *count);
+
 /** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
 
 /**

@@ -67,6 +67,8 @@ class DeviceManagerInterface : public InitCloseInterface {
                                                const SchedulerExclusiveMode& mode) = 0;
 
   virtual bool resetDevice(const std::string& id, bool force) = 0;
+
+  virtual void getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id, std::vector<double>& clocks) = 0;
                                                
   
   virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;

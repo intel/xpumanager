@@ -49,6 +49,8 @@ class DeviceManager : public DeviceManagerInterface,
   
   void getDeviceFrequencyRanges(const std::string& id,
                                 std::vector<Frequency>& frequencies);
+
+  void getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id,std::vector<double>& clocks);
   
   bool setDeviceFrequencyRange(const std::string& id,
                                const Frequency& freq);

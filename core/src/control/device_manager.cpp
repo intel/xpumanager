@@ -198,6 +198,11 @@ bool DeviceManager::setDeviceFrequencyRange(const std::string& id,
   return GPUDeviceStub::instance().setFrequencyRange(getDeviceHandle(id), freq);
 }
 
+void DeviceManager::getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id, std::vector<double>& clocks) {
+  std::unique_lock<std::mutex> lock(this->mutex);
+  GPUDeviceStub::instance().getFreqAvailableClocks(getDeviceHandle(id), subdevice_id, clocks);
+}
+
 bool DeviceManager::setDeviceStandby(const std::string& id,
                                      const Standby& standby) {
   std::unique_lock<std::mutex> lock(this->mutex);
