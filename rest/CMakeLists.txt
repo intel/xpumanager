@@ -21,4 +21,5 @@ PATTERN "CMakeLists.txt" EXCLUDE
 PATTERN "ifwi_fake" EXCLUDE
 PATTERN "genGrpcPyFiles.sh" EXCLUDE
 PATTERN "__pycache__" EXCLUDE
+PATTERN "rest.conf" EXCLUDE
 )

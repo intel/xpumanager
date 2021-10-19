@@ -127,19 +127,19 @@ std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
     grpc::Status status = stub->getTopology(&context, device_id, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
-            (*json)["xpum_affinity_localcpulist"] = response.cpuaffinity().localcpulist();
-            (*json)["xpum_affinity_localcpus"] = response.cpuaffinity().localcpus();
-            (*json)["xpum_parent_switch_count"] = response.switchcount();
+            (*json)["affinity_localcpulist"] = response.cpuaffinity().localcpulist();
+            (*json)["affinity_localcpus"] = response.cpuaffinity().localcpus();
+            (*json)["parent_switch_count"] = response.switchcount();
 
             std::vector<nlohmann::json> switchJsonList;            
             for (int i{0}; i < response.switchinfo_size(); ++i) {
                 auto switchJson = nlohmann::json();
-                switchJson["xpum_device_patch"] = response.switchinfo(i).switchdevicepath();
-                //std::string switchIdx = std::string("xpum_switch_") + std::to_string(i);
+                switchJson["device_patch"] = response.switchinfo(i).switchdevicepath();
+                //std::string switchIdx = std::string("switch_") + std::to_string(i);
                 //(*json)[switchIdx] = response.switchinfo(i).switchdevicepath();
                 switchJsonList.push_back(switchJson);
             }
-            (*json)["xpum_switch_list"] = switchJsonList;
+            (*json)["switch_list"] = switchJsonList;
         }
     } else {
         (*json)["error code"] = status.error_code();
