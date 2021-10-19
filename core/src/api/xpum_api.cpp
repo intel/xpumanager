@@ -312,6 +312,32 @@ xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
     return xpum_result_t::XPUM_OK;
 }
 
+xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId, 
+                                  xpum_device_stats_t dataList[], 
+                                  int *count) {
+    xpum_group_info_t groupInfo;
+    int currentCount = 0, totalCount = 0;
+    xpum_device_stats_t *pStatus = dataList;
+
+    if (Core::instance().getGroupManager()->getGroupInfo(groupId, &groupInfo) != XPUM_OK) {
+        return XPUM_GENERIC_ERROR;
+    }
+
+    for (int i = 0; i < groupInfo.count; i++) {
+        currentCount = *count - totalCount;
+        Core::instance().getDataLogic()->getLatestMetrics(groupInfo.deviceList[i], pStatus,
+                                                              &currentCount);
+        totalCount += currentCount;
+        pStatus += currentCount;
+        if (*count < totalCount) {
+            return XPUM_BUFFER_TOO_SMALL;
+        }
+    }
+
+    *count = totalCount;
+    return XPUM_OK;
+}
+
 xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
                                                  xpum_stats_type_t metricsTypeList[],
                                                  int count,

@@ -76,14 +76,14 @@ class DGMCore:
         data=[]
         for d in resp.info:
             device = dict()
-            device['DeviceId'] = d.id.id
-            device['DeviceType'] = d.type.value
-            device['UUID'] = str(uuid.UUID(d.uuid))
-            device['DeviceName'] = d.deviceName
-            device['PCIDeviceId'] = d.pcieDeviceId
-            device['SubDeviceId'] = d.subDeviceId
-            device['PCIBDFAddress'] = d.pciBdfAddress
-            device['VendorName'] = d.vendorName
+            device['device_id'] = d.id.id
+            device['device_type'] = "GPU" if d.type.value==0 else "Unknown"
+            device['uuid'] = str(uuid.UUID(d.uuid))
+            device['device_name'] = d.deviceName
+            device['pci_device_id'] = d.pcieDeviceId
+            device['pci_sub_device_id'] = d.subDeviceId
+            device['pci_bdf_address'] = d.pciBdfAddress
+            device['vendor_name'] = d.vendorName
             data.append(device)
         return 0, "OK", data
 
@@ -93,7 +93,7 @@ class DGMCore:
             return 1, resp.errorMsg, None
         data = dict()
         for prop in resp.properties:
-            data[prop.name] = prop.value
+            data[prop.name.lower()] = prop.value
         return 0, "OK", data
 
     def getHealth(self, deviceId, healthType):
