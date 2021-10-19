@@ -12,6 +12,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(../.cmake/xpum_version.cmake)
 
+# Build test or not
+option(BUILD_TEST "build application instead of lib for test" OFF)
+
+option(BUILD_TEST_API "build application for api test" OFF)
+
 if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
@@ -46,7 +51,16 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
 
-add_library(xpum SHARED)
+if(BUILD_TEST)
+  if(BUILD_TEST_API)
+    add_executable(xpum ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
+  else()
+    add_executable(xpum ${CMAKE_CURRENT_LIST_DIR}/test/test_main.cpp)
+  endif()
+
+else() 
+  add_library(xpum SHARED)
+endif()
 
 target_include_directories(
   xpum
