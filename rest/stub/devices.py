@@ -1,0 +1,33 @@
+from google.protobuf import empty_pb2
+import uuid
+import core_pb2
+from .grpc_stub import stub
+
+
+def getDeviceList():
+    resp = stub.getDeviceList(empty_pb2.Empty())
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    data = []
+    for d in resp.info:
+        device = dict()
+        device['device_id'] = d.id.id
+        device['device_type'] = "GPU" if d.type.value == 0 else "Unknown"
+        device['uuid'] = str(uuid.UUID(d.uuid))
+        device['device_name'] = d.deviceName
+        device['pci_device_id'] = d.pcieDeviceId
+        device['pci_sub_device_id'] = d.subDeviceId
+        device['pci_bdf_address'] = d.pciBdfAddress
+        device['vendor_name'] = d.vendorName
+        data.append(device)
+    return 0, "OK", data
+
+
+def getDeviceProperties(deviceId):
+    resp = stub.getDeviceProperties(core_pb2.DeviceId(id=deviceId))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    data = dict()
+    for prop in resp.properties:
+        data[prop.name.lower()] = prop.value
+    return 0, "OK", data

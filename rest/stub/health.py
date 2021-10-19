@@ -1,0 +1,102 @@
+from .grpc_stub import stub
+import core_pb2
+
+healthTypeEnumToString = {
+    core_pb2.HEALTH_THERMAL:"temperature",
+    core_pb2.HEALTH_POWER:"power",
+    core_pb2.HEALTH_MEMORY:"memory",
+    core_pb2.HEALTH_FABRIC_PORT:"fabric_port"
+}
+
+healthStatusEnumToString = {
+    core_pb2.HEALTH_STATUS_UNKNOWN: "Unknown",
+    core_pb2.HEALTH_STATUS_OK: "OK",
+    core_pb2.HEALTH_STATUS_WARNING: "Warning",
+    core_pb2.HEALTH_STATUS_CRITICAL: "Critical"
+}
+
+
+def getHealth(deviceId, healthType):
+    types = []
+    healthTypes = ["temperature", "power", "memory", "fabricPort"]
+    if healthType == "All":
+        types = [0, 1, 2, 3]
+    else:
+        types.append(healthTypes.index(healthType))
+    data = dict()
+    data['deviceId'] = deviceId
+
+    for t in types:
+        resp = stub.getHealth(
+            core_pb2.HealthDataRequest(deviceId=deviceId, type=t))
+        if len(resp.errorMsg) != 0:
+            return 1, resp.errorMsg, None
+        key = healthTypeEnumToString[t]
+        data[key] = dict()
+        data[key]['status'] = healthStatusEnumToString[resp.statusType]
+        data[key]['description'] = resp.description
+        if t == 0 or t == 1:
+            resp = stub.getHealthConfig(
+                core_pb2.HealthConfigRequest(deviceId=deviceId, configType=t))
+            if len(resp.errorMsg) != 0:
+                return 1, resp.errorMsg, None
+            data[key]['threshold'] = resp.threshold
+
+    return 0, "OK", data
+
+
+def getHealthByGroup(groupId, healthType):
+    types = []
+    healthTypes = ["temperature", "power", "memory", "fabricPort"]
+    if healthType == "All":
+        types = [0, 1, 2, 3]
+    else:
+        types.append(healthTypes.index(healthType))
+
+    datas = []
+    deviceIds = []
+    for t in types:
+        resp = stub.getHealthByGroup(
+            core_pb2.HealthDataByGroup(groupId=groupId, type=t))
+        if len(resp.errorMsg) != 0:
+            return 1, resp.errorMsg, None
+
+        for healthData in resp.healthData:
+            if healthData.deviceId not in deviceIds:
+                deviceIds.append(healthData.deviceId)
+                datas.append(dict(deviceId=healthData.deviceId))
+
+            for data in datas:
+                if data['deviceId'] == healthData.deviceId:
+                    key = healthTypeEnumToString[t]
+                    data[key] = dict()
+                    data[key]['status'] = healthStatusEnumToString[healthData.statusType]
+                    data[key]['description'] = healthData.description
+                    if t == 0 or t == 1:
+                        resp = stub.getHealthConfig(core_pb2.HealthConfigRequest(
+                            deviceId=data['deviceId'], configType=t))
+                        if len(resp.errorMsg) != 0:
+                            return 1, resp.errorMsg, None
+                        data[key]['threshold'] = resp.threshold
+
+    return 0, "OK", dict(groupId=groupId, deviceCount=len(datas), deviceList=datas)
+
+
+def setHealthConfig(deviceId, healthType, threshold):
+    healthTypes = ["temperature", "power"]
+    t = healthTypes.index(healthType)
+    resp = stub.setHealthConfig(core_pb2.HealthConfigRequest(
+        deviceId=deviceId, configType=t, threshold=threshold))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    return 0, "OK", {"result": "OK"}
+
+
+def setHealthConfigByGroup(groupId, healthType, threshold):
+    healthTypes = ["temperature", "power"]
+    t = healthTypes.index(healthType)
+    resp = stub.setHealthConfigByGroup(core_pb2.HealthConfigByGroupRequest(
+        groupId=groupId, configType=t, threshold=threshold))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    return 0, "OK", {"result": "OK"}

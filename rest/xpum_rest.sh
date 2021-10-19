@@ -6,7 +6,7 @@ export HOME=`cd ${WORK} && pwd`
 function Start()
 {
   cd ${HOME}
-  ( nohup gunicorn --certfile=cert.pem --keyfile=key.pem --ssl-version TLSv1_2 --bind=0.0.0.0:30000 --worker-class=gevent --worker-connections=1000 -w 3 DGM:app & ) >/dev/null 2>&1
+  ( nohup gunicorn --certfile=cert.pem --keyfile=key.pem --ssl-version TLSv1_2 --bind=0.0.0.0:30000 --worker-class=gevent --worker-connections=1000 -w 3 xpum_rest_main:app & ) >/dev/null 2>&1
 }
 
 function Stop()

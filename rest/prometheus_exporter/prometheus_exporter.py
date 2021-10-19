@@ -140,9 +140,10 @@ def attach_tile_labels(labels, label_values, tile_id):
 
 
 if __name__ == '__main__':
-    from DGMCore import DGMCore
+    # from DGMCore import DGMCore
+    import stub as core
     from kube_pod_resource import get_pod_resources
-    core = DGMCore()
+    # core = DGMCore()
     pod_resources = get_pod_resources()
     metrics = get_metrics(core, pod_resources)
     print(metrics)
