@@ -9,3 +9,4 @@
  
 ##Run Script
  1. Run restConfig.py to setup password for REST API user xpumadmin.  
+ 2. Run keytool.sh to generate self-signed certificate and keys.  
