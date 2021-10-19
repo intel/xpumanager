@@ -3,7 +3,7 @@
 #define  XPUM_VERSION "@XPUM_VERSION_STRING@"
 #define  XPUM_VERSION_GIT "@GIT_COMMIT@"
 
-#define  XPUM_CONFIG_DIR "@CPACK_XPUM_INSTALL_DIR@/config/"
+#define  XPUM_CONFIG_DIR "@CPACK_PACKAGING_INSTALL_PREFIX@/config/"
 
 #define  PCI_IDS_FILE "pci.ids"
 #define  PCI_IDS_CONFIG "pci.conf"

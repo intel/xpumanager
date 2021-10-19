@@ -12,10 +12,12 @@ function RemoveUser()
 	 	kill -9 $( userdel -r $1  2>&1| grep "by process" |awk 'NF>1{print $NF}' ) >> ${LOG_FILE}  2>&1
 	  mypids=$( userdel -r $1  2>&1| grep "by process" |awk 'NF>1{print $NF}' ) 
 	done
+	groupdel xpum >> ${LOG_FILE} 2>&1 
 }
 
 systemctl stop xpum >> ${LOG_FILE} 2>&1 
 systemctl disable xpum >> ${LOG_FILE} 2>&1 
+systemctl stop xpum-rest >> ${LOG_FILE} 2>&1 
+systemctl disable xpum-rest >> ${LOG_FILE} 2>&1 
 systemctl daemon-reload >> ${LOG_FILE} 2>&1 
 RemoveUser xpum
-rm -rf /lib/libDGMCore.so >> ${LOG_FILE}  2>&1

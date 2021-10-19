@@ -6,9 +6,11 @@ After=syslog.target
 [Service]
 Type=simple
 
-Environment="LD_LIBRARY_PATH=/usr/local/xpum/lib:/$LD_LIBRARY_PATH"
+RuntimeDirectory=xpum
 
-#ExecStartPre=rm -rf /tmp/xpum.sock
+Environment="LD_LIBRARY_PATH=@CPACK_XPUM_LIB_INSTALL_DIR@:/$LD_LIBRARY_PATH"
+
+ExecStartPre=/bin/sh -c "ulimit -c unlimited"
 
 ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/xpumd  --pid_file /var/xpum_daemon.pid
 

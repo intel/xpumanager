@@ -3,13 +3,13 @@
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 
-if [ $(date -r ./core/config/pci.ids +"%Y-%m-%d") == $(date +"%Y-%m-%d") ]; then
+if [ $(date -r ./core/resources/config/pci.ids +"%Y-%m-%d") == $(date +"%Y-%m-%d") ]; then
     echo "pci.ids is up to date."
 else
     rm -rf pci.ids.upgrade
     curl --proxy http://child-prc.intel.com:912 -o pci.ids.upgrade "https://pci-ids.ucw.cz/v2.2/pci.ids" -S
     if [ $? -eq 0 ]; then    
-        cp -r pci.ids.upgrade ./core/config/pci.ids
+        cp -r pci.ids.upgrade ./core/resources/config/pci.ids
     else
         echo "upgrade pci.ids failed."
         exit 1

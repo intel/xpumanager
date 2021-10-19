@@ -94,6 +94,8 @@ class GPUDeviceStub {
                               int thermal_threshold, int power_threshold, bool global_default_limit);
   
   static bool resetDevice(const zes_device_handle_t& device, ze_bool_t force);
+  
+  static void getFreqAvailableClocks(const zes_device_handle_t& device, uint32_t subdevice_id, std::vector<double>& clocks);
 
 private:
   GPUDeviceStub();

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2.0)
 
-project(DGMCore)
+project(xpum)
 
 # Set compilation options
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread -fPIC")
@@ -12,11 +12,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(../.cmake/xpum_version.cmake)
 
-# Build test or not
-option(BUILD_TEST "build application instead of lib for test" OFF)
-
-option(BUILD_TEST_API "build application for api test" OFF)
-
 if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
@@ -26,13 +21,6 @@ check_include_file(pciaccess.h HAVE_PCIACCESS_H)
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h @ONLY)
-
-# set(BUILD_TEST_API OFF BOOL "build application for api test")
-
-# Set debug file name postfix set(CMAKE_DEBUG_POSTFIX "_d")
-
-# Do something according to build type if(${CMAKE_BUILD_TYPE} == "Debug) else()
-# endif()
 
 # Specifiy link file location
 link_directories(/usr/local/lib)
@@ -58,28 +46,16 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
 
-if(BUILD_TEST)
-
-  if(BUILD_TEST_API)
-    add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
-
-  else()
-    add_executable(DGMCore ${CMAKE_CURRENT_LIST_DIR}/test/test_main.cpp)
-  endif()
-
-else()
-  add_library(DGMCore SHARED)
-
-endif()
+add_library(xpum SHARED)
 
 target_include_directories(
-  DGMCore
+  xpum
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
           ${CMAKE_CURRENT_LIST_DIR}/libs/hwloc/install/include/
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 target_sources(
-  DGMCore
+  xpum
   PRIVATE ${API_SRC}
           ${CONTROL_SRC}
           ${CORE_SRC}
@@ -103,16 +79,28 @@ add_subdirectory(./libs/hwloc)
 message(STATUS "version ${PROJECT_VERSION}") 
 message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")
 
-set_target_properties(DGMCore PROPERTIES  SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties(xpum PROPERTIES 
+    VERSION ${PROJECT_REAL_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
-add_dependencies(DGMCore lib_hwloc)
+add_dependencies(xpum lib_hwloc)
 
 if(HAVE_PCIACCESS_H)
-  target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc stdc++fs
+  target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs
                                         pciaccess)
 else()
-  target_link_libraries(DGMCore PRIVATE ze_loader dl spdlog hwloc stdc++fs)
+  target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs)
 endif()
 
 unset(BUILD_TEST CACHE)
 
+install(DIRECTORY	
+		resources
+	DESTINATION .
+  PATTERN "config" EXCLUDE
+)
+
+
+install(DIRECTORY	
+		resources/config
+	DESTINATION .
+)

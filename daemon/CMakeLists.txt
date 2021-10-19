@@ -68,7 +68,7 @@ target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 if (NOT DEFINED WORK_PATH)
   message(STATUS "WORK_PATH not defined!")
   find_library(DGM_LIB 
-    NAMES libDGMCore.so
+    NAMES libxpum.so
     PATHS 
     ${CMAKE_CURRENT_LIST_DIR}/../core/build
     ${CMAKE_CURRENT_LIST_DIR}/../build/core
@@ -85,7 +85,7 @@ if (NOT DEFINED WORK_PATH)
       COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../mediadata ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/mediadata ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;")
   
 else()
-  target_link_libraries(xpumd PRIVATE DGMCore ${_GRPC_GRPCPP}
+  target_link_libraries(xpumd PRIVATE xpum ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
 endif()
 

@@ -48,19 +48,21 @@ class PolicyManager : public PolicyManagerInterface,public std::enable_shared_fr
   void start();
   void stop();
   void handleForOneCyle();
+  bool isMatchMetricType(xpum_stats_type_t metricsType,xpum_policy_type_t policyType);
   void checkPolicy();
   void savePolicyStatus();
-  uint64_t getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy);
-  void triggerAction(std::shared_ptr<xpum_policy_data> p_policy);
+  xpum_device_stats_data_t* getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy,xpum_device_stats_t dataList[],int count);
+  bool triggerAction(std::shared_ptr<xpum_policy_data> p_policy);
   void triggerNotification(std::shared_ptr<xpum_policy_data> p_policy);  
 
   //
+  xpum_result_t checkPolicyValidation(xpum_policy_t policy);
   xpum_result_t xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds[], int count, xpum_policy_t policy);
   xpum_result_t xpumGetPolicyByDeviceIds(xpum_device_id_t deviceIds[], int count, xpum_policy_t resultList[], int *countRet);
   bool isInDeviceIds(xpum_device_id_t deviceId, xpum_device_id_t deviceIds[], int count);
 
-  void startPolicyThread();
-  void mainForPolicyThread();
+  // void startPolicyThread();
+  // void mainForPolicyThread();
 
 
  private:
@@ -69,7 +71,7 @@ class PolicyManager : public PolicyManagerInterface,public std::enable_shared_fr
   std::shared_ptr<GroupManagerInterface> p_group_manager;
 
   //
-  std::list<std::shared_ptr<xpum_policy_data>>  policyList;
+  std::map<xpum_device_id_t,std::shared_ptr<xpum_policy_data>>  policyMap;
   std::mutex mutex;
 
   //
