@@ -60,7 +60,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR} XPUM_DAEMON_SRC)
 set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
              ${core_proto_hdrs})
 
-add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cc)
+add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cpp)
 
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 
@@ -80,10 +80,9 @@ if (NOT DEFINED WORK_PATH)
   
   add_custom_command( TARGET xpumd 
       PRE_BUILD
-      COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/config ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
-      COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../kernels ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/kernels ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
-      COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../mediadata ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/mediadata ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;")
-  
+      COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources/config ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+      COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+  )
 else()
   target_link_libraries(xpumd PRIVATE xpum ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
