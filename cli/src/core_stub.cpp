@@ -71,7 +71,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
                 auto deviceJson = nlohmann::json();
                 auto &deviceInfo = response.info(i);
                 deviceJson["device_id"] = deviceInfo.id().id();
-                deviceJson["device_type"] = deviceInfo.type().value();
+                deviceJson["device_type"] = deviceInfo.type().value()==0? "GPU": "Unknown";
                 deviceJson["uuid"] = deviceInfo.uuid();
                 deviceJson["device_name"] = deviceInfo.devicename();
                 deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
