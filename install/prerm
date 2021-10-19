@@ -12,7 +12,7 @@ function RemoveUser()
 	 	kill -9 $( userdel -r $1  2>&1| grep "by process" |awk 'NF>1{print $NF}' ) >> ${LOG_FILE}  2>&1
 	  mypids=$( userdel -r $1  2>&1| grep "by process" |awk 'NF>1{print $NF}' ) 
 	done
-	groupdel xpum >> ${LOG_FILE} 2>&1 
+	#groupdel xpum >> ${LOG_FILE} 2>&1 
 }
 
 systemctl stop xpum >> ${LOG_FILE} 2>&1 
