@@ -75,7 +75,6 @@ target_sources(
 add_subdirectory(./libs/spdlog)
 add_subdirectory(./libs/hwloc)
 
-#set_target_properties（DGMCore PROPERTIES SUFFIX ".so.${PROJECT_VERSION_MAJOR}")
 message(STATUS "version ${PROJECT_VERSION}") 
 message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")
 

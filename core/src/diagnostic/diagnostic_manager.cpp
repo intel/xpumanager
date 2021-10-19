@@ -354,11 +354,13 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t& 
     closedir(dir);
     if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
       std::string commandDecode = Configuration::MEDIA_CODER_TOOLS_PATH + "sample_decode h264 -device " + device_path + 
-          " -hw -i ../mediadata/" + Configuration::MEDIA_CODER_TOOLS_DECODE_FILE + " 2>&1";
+          " -hw -i ../resources/mediadata/" + Configuration::MEDIA_CODER_TOOLS_DECODE_FILE + " 2>&1";
+      XPUM_LOG_INFO(commandDecode);
       std::string resultDecode = getCommandResult(commandDecode);
 
       std::string commandEncode = Configuration::MEDIA_CODER_TOOLS_PATH + "sample_encode h264 -device " + device_path + 
-          " -hw -i ../mediadata/" + Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE + " -w 176 -h 96 -u quality -cqp -qpi 32 -qpp 32 -qpb 32 -async 1 -vaapi -o mediadata/test_stream_coder.h264 2>&1";
+          " -hw -i ../resources/mediadata/" + Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE + " -w 176 -h 96 -u quality -cqp -qpi 32 -qpp 32 -qpb 32 -async 1 -vaapi -o ../resources/mediadata/test_stream_coder.h264 2>&1";
+      XPUM_LOG_INFO(commandEncode);
       std::string resultEncode = getCommandResult(commandEncode);
 
       if (resultDecode.find("Decoding finished") == std::string::npos
@@ -692,7 +694,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemory(const ze_device_handl
           test_kernel_names.push_back(kernel_name);
         }
         
-        const std::vector<uint8_t> binary_file = loadBinaryFile("kernels/test_multiple_memory_allocations.spv");
+        const std::vector<uint8_t> binary_file = loadBinaryFile("../resources/kernels/test_multiple_memory_allocations.spv");
         ze_module_desc_t module_description = {};
         module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
         module_description.pNext = nullptr;
@@ -928,7 +930,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
   }
   ze_module_handle_t module_handle;
   ze_module_desc_t module_description = {};
-  std::vector<uint8_t> binary_file = loadBinaryFile("../kernels/ze_sp_compute.spv");
+  std::vector<uint8_t> binary_file = loadBinaryFile("../resources/kernels/ze_sp_compute.spv");
   module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
   module_description.pNext = nullptr;
   module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
