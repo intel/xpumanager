@@ -77,7 +77,7 @@ void RawDataManager::init() {
   data_handlers[MeasurementType::METRIC_MEMORY_WRITE]->init();
   
   data_handlers[MeasurementType::METRIC_COMPUTATION] = 
-    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);    
+    std::make_shared<EngineUtilizationDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);    
   data_handlers[MeasurementType::METRIC_COMPUTATION]->init();
 
   data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION] = 
@@ -146,8 +146,8 @@ void RawDataManager::storeMeasurementData(
 
   if (p_handler != nullptr) {
     auto p_shared_data = std::make_shared<SharedData>(time, datas);
-    updateCaches(type, p_shared_data);
     p_handler->handleData(p_shared_data);
+    updateCaches(type, p_shared_data);
   }
 }
 

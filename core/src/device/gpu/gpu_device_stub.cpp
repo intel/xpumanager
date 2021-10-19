@@ -1250,6 +1250,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
     throw BaseException("toGetEngineUtilization error");
   }
   uint32_t engineCount = 0;
+  bool dataAcquired = false;
   std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
   ze_result_t res = zesDeviceEnumEngineGroups(device, &engineCount, nullptr);
   if (res == ZE_RESULT_SUCCESS) {
@@ -1261,36 +1262,27 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
         zes_engine_properties_t props;
         res = zesEngineGetProperties(engine,&props);
         if (res == ZE_RESULT_SUCCESS) {
-          zes_engine_stats_t snap1 = {};
-          zes_engine_stats_t snap2 = {};
-          res = zesEngineGetActivity(engine, &snap1);
-          if (res == ZE_RESULT_SUCCESS) {
-            std::this_thread::sleep_for(std::chrono::microseconds(Configuration::ENGINE_STATE_MONITOR_INTERNAL_PERIOD));
-            res = zesEngineGetActivity(engine, &snap2);
-            if (res == ZE_RESULT_SUCCESS)
-            {
-              uint64_t val = 100 * (snap2.activeTime - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
-              if (val > 100) {
-                val = 100;
-              }
-              utilizations[(props.onSubdevice?props.subdeviceId:0)].push_back(val);
+          zes_engine_stats_t snap = {};
+          res = zesEngineGetActivity(engine, &snap);
+          if (res == ZE_RESULT_SUCCESS && props.type == ZES_ENGINE_GROUP_ALL) {
+            if (props.onSubdevice) {
+              ret->setSubdeviceRawData(props.subdeviceId, snap.activeTime);
+              ret->setSubdeviceDataRawTimestamp(props.subdeviceId, snap.timestamp);
+            } else {
+              ret->setRawData(snap.activeTime);
+              ret->setRawTimestamp(snap.timestamp);
             }
+            dataAcquired = true;
           }
         }
       }
-      if (utilizations.size() > 1) {
-        std::map<uint32_t,std::vector<uint64_t>>::iterator iter = utilizations.begin();
-        while (iter != utilizations.end()) {
-          ret->setSubdeviceDataCurrent(iter->first,*std::max_element(iter->second.begin(), iter->second.end()));
-          iter++;
-        }
-      } else {
-        ret->setCurrent(*std::max_element(utilizations[0].begin(), utilizations[0].end()));
-      }
-      return ret;
     }
   }
-  throw BaseException("toGetEngineUtilization error");
+  if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+      return ret;
+  } else {
+      throw BaseException("toGetEngineUtilization error");
+  }
 }
 
 void GPUDeviceStub::getEngineGroupUtilization(const zes_device_handle_t& device, Callback_t callback, zes_engine_group_t engine_group_type) noexcept{

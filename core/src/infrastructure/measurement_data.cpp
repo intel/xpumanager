@@ -4,6 +4,14 @@ void MeasurementData::setSubdeviceDataCurrent(uint32_t subdevice_id, uint64_t da
     subdevice_datas[subdevice_id].current = data;
 }
 
+void MeasurementData::setSubdeviceDataRawTimestamp(uint32_t subdevice_id, uint64_t data) {
+    subdevice_datas[subdevice_id].raw_timestamp = data;
+}
+
+void MeasurementData::setSubdeviceRawData(uint32_t subdevice_id, uint64_t data) {
+    subdevice_datas[subdevice_id].raw_data = data;
+}
+
 void MeasurementData::setSubdeviceDataMin(uint32_t subdevice_id, uint64_t data) {
     subdevice_datas[subdevice_id].min = data;
 }
@@ -40,6 +48,20 @@ uint64_t MeasurementData::getSubdeviceDataMax(uint32_t subdevice_id) {
 uint64_t MeasurementData::getSubdeviceDataAvg(uint32_t subdevice_id) {
     if (subdevice_datas.find(subdevice_id) != subdevice_datas.end()) {
         return subdevice_datas[subdevice_id].avg;
+    }
+    return -1;
+}
+
+uint64_t MeasurementData::getSubdeviceDataRawTimestamp(uint32_t subdevice_id) {
+    if (subdevice_datas.find(subdevice_id) != subdevice_datas.end()) {
+        return subdevice_datas[subdevice_id].raw_timestamp;
+    }
+    return -1;
+}
+
+uint64_t MeasurementData::getSubdeviceRawData(uint32_t subdevice_id) {
+    if (subdevice_datas.find(subdevice_id) != subdevice_datas.end()) {
+        return subdevice_datas[subdevice_id].raw_data;
     }
     return -1;
 }

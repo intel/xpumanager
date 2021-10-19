@@ -13,6 +13,8 @@ struct SubdeviceData {
   uint64_t min;
   uint64_t max;
   uint64_t current;
+  uint64_t raw_data;
+  uint64_t raw_timestamp;
 };
 
 class MeasurementData {
@@ -21,23 +23,23 @@ class MeasurementData {
   }
 
   MeasurementData(): avg(-1), min(-1), 
-    max(-1), current(-1), scale(1), bHasDataOnDevice(false) {
+    max(-1), current(-1), raw_data(-1), scale(1), bHasDataOnDevice(false), raw_timestamp(0) {
   }
 
   MeasurementData(uint64_t value): avg(value), 
-    min(value), max(value), current(value), scale(1), bHasDataOnDevice(true) {
+    min(value), max(value), current(value), raw_data(-1), scale(1), bHasDataOnDevice(true), raw_timestamp(0) {
   }  
 
   MeasurementData(uint64_t value, uint64_t scale): avg(value), 
-    min(value), max(value), current(value), scale(scale), bHasDataOnDevice(true) {
+    min(value), max(value), current(value), raw_data(-1), scale(scale), bHasDataOnDevice(true), raw_timestamp(0) {
   }
 
   MeasurementData(uint64_t avg, uint64_t min, uint64_t max): avg(avg), 
-    min(min), max(max), current(-1), scale(1), bHasDataOnDevice(true) {
+    min(min), max(max), current(-1), raw_data(-1), scale(1), bHasDataOnDevice(true), raw_timestamp(0) {
   }
 
   MeasurementData(uint64_t avg, uint64_t min, uint64_t max, uint64_t current, uint64_t scale): 
-    avg(avg), min(min), max(max), current(current), scale(scale), bHasDataOnDevice(true) {
+    avg(avg), min(min), max(max), current(current), raw_data(-1), scale(scale), bHasDataOnDevice(true), raw_timestamp(0) {
   }
 
   MeasurementData(const MeasurementData& other) {
@@ -46,11 +48,13 @@ class MeasurementData {
     min = other.min;
     max = other.max;
     current = other.current;
+    raw_data = other.raw_data;
     scale = other.scale;
     start_time = other.start_time;
     latest_time = other.latest_time;
     bHasDataOnDevice = other.bHasDataOnDevice;
     subdevice_datas = other.subdevice_datas;
+    raw_timestamp = other.raw_timestamp;
   }
 
  public:  
@@ -102,6 +106,10 @@ class MeasurementData {
 
   void setSubdeviceDataAvg(uint32_t subdevice_id, uint64_t data);
 
+  void setSubdeviceDataRawTimestamp(uint32_t subdevice_id, uint64_t data);
+
+  uint64_t getSubdeviceDataRawTimestamp(uint32_t subdevice_id);
+
   const std::map<uint32_t, SubdeviceData>& getSubdeviceDatas();
 
   uint32_t getSubdeviceDataSize();
@@ -111,6 +119,18 @@ class MeasurementData {
   uint32_t subdeviceNum() { return subdevice_datas.size(); }
 
   bool hasDataOnDevice() { return bHasDataOnDevice; }
+
+  uint64_t getRawTimestamp() { return raw_timestamp; }
+
+  void setRawTimestamp(uint64_t raw_time) {this->raw_timestamp = raw_time;}
+
+  uint64_t getRawdata() { return raw_data;}
+
+  void setRawData(uint64_t val) {this->raw_data = val;}
+
+  void setSubdeviceRawData(uint32_t subdevice_id, uint64_t data);
+
+  uint64_t getSubdeviceRawData(uint32_t subdevice_id);
 
  protected:
   std::string device_id;  
@@ -127,9 +147,13 @@ class MeasurementData {
 
   uint64_t current;
 
+  uint64_t raw_data;
+
   int scale;
 
   bool bHasDataOnDevice;
 
   std::map<uint32_t, SubdeviceData> subdevice_datas;
+
+  uint64_t raw_timestamp;
 };
