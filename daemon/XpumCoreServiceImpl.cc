@@ -374,3 +374,32 @@ grpc::Status XpumCoreServiceImpl::getTopology( grpc::ServerContext* context, con
     }
     return grpc::Status::OK;
 }
+
+::grpc::Status XpumCoreServiceImpl::getMetrics(::grpc::ServerContext *context, const ::DeviceId *request, ::DeviceStatsInfoArray *response) {
+    xpum_device_id_t deviceId = request->id();
+    int count = 5;
+    xpum_device_stats_t dataList[count];
+    xpum_result_t res = xpumGetMetrics(deviceId, dataList, &count);
+    if (res != XPUM_OK || count < 0) {
+        response->set_errormsg("Error");
+    }
+    for (int i = 0; i < count; i++) {
+        DeviceStatsInfo *deviceStatsInfo = response->add_datalist();
+        xpum_device_stats_t &stats = dataList[i];
+        deviceStatsInfo->set_deviceid(stats.deviceId);
+        deviceStatsInfo->set_istiledata(stats.isTileData);
+        deviceStatsInfo->set_tileid(stats.tileId);
+        deviceStatsInfo->set_count(stats.count);
+        for (int j = 0; j < stats.count; j++) {
+            xpum_device_stats_data_t &data = stats.dataList[j];
+            DeviceStatsData *deviceStatsData = deviceStatsInfo->add_datalist();
+            deviceStatsData->mutable_metricstype()->set_value(data.metricsType);
+            deviceStatsData->set_iscounter(data.isCounter);
+            deviceStatsData->set_value(data.value);
+            deviceStatsData->set_min(data.min);
+            deviceStatsData->set_avg(data.avg);
+            deviceStatsData->set_max(data.max);
+        }
+    }
+    return grpc::Status::OK;
+}

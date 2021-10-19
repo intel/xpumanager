@@ -57,4 +57,6 @@ public:
                 ::HealthConfigInfo* response) override;
     virtual ::grpc::Status setHealthConfigByGroup(::grpc::ServerContext* context, const ::HealthConfigByGroupRequest* request,
                 ::HealthConfigByGroupInfo* response) override;
+                
+    virtual ::grpc::Status getMetrics(::grpc::ServerContext* context, const ::DeviceId* request, ::DeviceStatsInfoArray* response) override;
 };
