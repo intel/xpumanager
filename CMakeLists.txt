@@ -27,12 +27,16 @@ add_definitions(-DLOADER_VERSION_PATCH=${PROJECT_VERSION_PATCH})
 message(STATUS "CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
 
 # Set compilation options
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread -fPIC")
 set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_subdirectory(third_party/googletest)
+add_subdirectory(third_party/spdlog)
+add_subdirectory(third_party/hwloc)
 
 add_subdirectory(core)
 add_subdirectory(cli)

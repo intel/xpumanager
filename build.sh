@@ -22,7 +22,7 @@ rm -rf build
 mkdir build
 cd build
 cmake ..  $@
-make -j
+make -j4
 cpack    
 
 if [ -f ~/password.sys_dcm ]; then

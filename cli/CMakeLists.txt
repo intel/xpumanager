@@ -53,9 +53,9 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 link_directories(/usr/local/lib)
 include_directories(/usr/local/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
-include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/CLI11/include)
-include_directories(${CMAKE_CURRENT_LIST_DIR}/libs/json/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/CLI11/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/json/include)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # Scan source code files
@@ -68,9 +68,6 @@ add_executable(xpumcli ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 target_sources(xpumcli PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC})
 
 target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
-
-# Test using googletest
-add_subdirectory(libs/googletest)
 
 enable_testing()
 
