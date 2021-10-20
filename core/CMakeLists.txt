@@ -50,16 +50,8 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
 
-if(BUILD_TEST)
-  if(BUILD_TEST_API)
-    add_executable(xpum ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
-  else()
-    add_executable(xpum ${CMAKE_CURRENT_LIST_DIR}/test/test_main.cpp)
-  endif()
-
-else() 
-  add_library(xpum SHARED)
-endif()
+add_executable(test_xpum_api ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
+add_library(xpum SHARED)
 
 target_include_directories(
   xpum
@@ -67,8 +59,34 @@ target_include_directories(
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/include/
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
+
+target_include_directories(
+  test_xpum_api
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
+  PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/include/
+          ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
+
 target_sources(
   xpum
+  PRIVATE ${API_SRC}
+          ${CONTROL_SRC}
+          ${CORE_SRC}
+          ${DATA_LOGIC_SRC}
+          ${DEVICE_SRC}
+          ${GPU_SRC}
+          ${EVENT_SRC}
+          ${INFRAS_SRC}
+          ${EXCEPTION_SRC}
+          ${MONITOR_SRC}
+          ${POLICY_SRC}
+          ${GROUP_SRC}
+          ${HEALTH_SRC}
+          ${DIAGNOSTIC_SRC}
+          ${TOPOLOGY_SRC})
+
+target_sources(
+  test_xpum_api
   PRIVATE ${API_SRC}
           ${CONTROL_SRC}
           ${CORE_SRC}
@@ -92,12 +110,14 @@ set_target_properties(xpum PROPERTIES
     VERSION ${PROJECT_REAL_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
 add_dependencies(xpum lib_hwloc)
+add_dependencies(test_xpum_api lib_hwloc)
 
 if(HAVE_PCIACCESS_H)
-  target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs
-                                        pciaccess)
+  target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
+  target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
 else()
   target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs)
+  target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs)
 endif()
 
 unset(BUILD_TEST CACHE)
