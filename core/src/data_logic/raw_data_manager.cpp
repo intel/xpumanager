@@ -81,7 +81,7 @@ void RawDataManager::init() {
   data_handlers[MeasurementType::METRIC_MEMORY_WRITE]->init();
   
   data_handlers[MeasurementType::METRIC_COMPUTATION] = 
-    std::make_shared<EngineUtilizationDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);    
+    std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);    
   data_handlers[MeasurementType::METRIC_COMPUTATION]->init();
 
   data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION] = 
