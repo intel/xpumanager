@@ -1,0 +1,64 @@
+#include "core_stub.h"
+
+#include "core.grpc.pb.h"
+#include "core.pb.h"
+
+#include <nlohmann/json.hpp>
+
+std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
+
+    assert(this->stub != nullptr);
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    grpc::ClientContext context;
+    XpumDeviceBasicInfoArray response;
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> deviceJsonList;
+            for (int i{0}; i < response.info_size(); ++i) {
+                auto deviceJson = nlohmann::json();
+                auto &deviceInfo = response.info(i);
+                deviceJson["device_id"] = deviceInfo.id().id();
+                deviceJson["device_type"] = deviceInfo.type().value()==0? "GPU": "Unknown";
+                deviceJson["uuid"] = deviceInfo.uuid();
+                deviceJson["device_name"] = deviceInfo.devicename();
+                deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
+                deviceJson["pci_sub_device_id"] = deviceInfo.subdeviceid();
+                deviceJson["pci_bdf_address"] = deviceInfo.pcibdfaddress();
+                deviceJson["vendor_name"] = deviceInfo.vendorname();
+                deviceJsonList.push_back(deviceJson);
+            }
+            (*json)["device_list"] = deviceJsonList;
+        }
+    }
+
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
+
+    assert(this->stub != nullptr);
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    grpc::ClientContext context;
+    XpumDeviceProperties response;
+    DeviceId grpcDeviceId;
+    grpcDeviceId.set_id(deviceId);
+    grpc::Status status = stub->getDeviceProperties(&context, grpcDeviceId, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            for (int i{0}; i < response.properties_size(); ++i) {
+                auto &p = response.properties(i);
+                std::string name = p.name();
+                std::transform(name.begin(), name.end(), name.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
+                (*json)[name] = p.value();
+            }
+        }
+    }
+
+    return json;
+}

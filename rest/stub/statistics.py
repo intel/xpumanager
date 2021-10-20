@@ -14,8 +14,8 @@ def getStatistics(device_id):
 
     beginTimestamp = datetime.datetime.fromtimestamp(resp.begin/1e3)
     endTimestamp = datetime.datetime.fromtimestamp(resp.end/1e3)
-    data['begin'] = beginTimestamp.isoformat(sep=' ', timespec='milliseconds')
-    data['end'] = endTimestamp.isoformat(sep=' ', timespec='milliseconds')
+    data['begin'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
+    data['end'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
 
     deviceLevelStatsDataList = []
     tileLevelStatsDataList = []

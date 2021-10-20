@@ -14,10 +14,14 @@ void ComletStatistics::setupOptions() {
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
 
     if (this->opts->deviceId != -1) {
-        auto json = this->coreStub->getDeviceProperties(this->opts->deviceId);
+        auto json = this->coreStub->getStatistics(this->opts->deviceId);
+        return json;
+    } else if (this->opts->groupId != -1){
+        auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId);
         return json;
     }
-
-    auto json = this->coreStub->getDeviceList();
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    (*json)["error"] = "Unknow operation";
     return json;
+
 }

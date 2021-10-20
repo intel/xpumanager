@@ -70,8 +70,8 @@ if (NOT DEFINED WORK_PATH)
   find_library(DGM_LIB 
     NAMES libxpum.so
     PATHS 
-    ${CMAKE_CURRENT_LIST_DIR}/../core/build
     ${CMAKE_CURRENT_LIST_DIR}/../build/core
+    ${CMAKE_CURRENT_LIST_DIR}/../core/build
     )
   
   message(STATUS "DGM_LIB=${DGM_LIB}")

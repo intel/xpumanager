@@ -49,4 +49,5 @@ class CoreStub {
 
   private:
     std::unique_ptr<XpumCoreService::Stub> stub;
+    static std::string isotimestamp(uint64_t t);
 };

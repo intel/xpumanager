@@ -9,6 +9,7 @@
 #include <map>
 #include <nlohmann/json.hpp>
 #include <vector>
+#include <ctime>
 
 CoreStub::CoreStub() {
     std::string unixSockName{"/tmp/xpum.sock"};
@@ -55,63 +56,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
-
-    assert(this->stub != nullptr);
-
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-
-    grpc::ClientContext context;
-    XpumDeviceBasicInfoArray response;
-    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            std::vector<nlohmann::json> deviceJsonList;
-            for (int i{0}; i < response.info_size(); ++i) {
-                auto deviceJson = nlohmann::json();
-                auto &deviceInfo = response.info(i);
-                deviceJson["device_id"] = deviceInfo.id().id();
-                deviceJson["device_type"] = deviceInfo.type().value()==0? "GPU": "Unknown";
-                deviceJson["uuid"] = deviceInfo.uuid();
-                deviceJson["device_name"] = deviceInfo.devicename();
-                deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
-                deviceJson["pci_sub_device_id"] = deviceInfo.subdeviceid();
-                deviceJson["pci_bdf_address"] = deviceInfo.pcibdfaddress();
-                deviceJson["vendor_name"] = deviceInfo.vendorname();
-                deviceJsonList.push_back(deviceJson);
-            }
-            (*json)["device_list"] = deviceJsonList;
-        }
-    }
-
-    return json;
-}
-
-std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
-
-    assert(this->stub != nullptr);
-
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-
-    grpc::ClientContext context;
-    XpumDeviceProperties response;
-    DeviceId grpcDeviceId;
-    grpcDeviceId.set_id(deviceId);
-    grpc::Status status = stub->getDeviceProperties(&context, grpcDeviceId, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            for (int i{0}; i < response.properties_size(); ++i) {
-                auto &p = response.properties(i);
-                std::string name = p.name();
-                std::transform(name.begin(), name.end(), name.begin(),
-                           [](unsigned char c) { return std::tolower(c); });
-                (*json)[name] = p.value();
-            }
-        }
-    }
-
-    return json;
-}
 
 std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
     assert(this->stub != nullptr);
@@ -671,70 +615,14 @@ int CoreStub::getHealthConfig(int deviceId, HealthConfigType cfgtype) {
     return threshold;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
-
-    assert(this->stub != nullptr);
-
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-
-    grpc::ClientContext context;
-    XpumGetStatsResponse response;
-    DeviceId grpcDeviceId;
-    grpcDeviceId.set_id(deviceId);
-    grpc::Status status = stub->getStatistics(&context, grpcDeviceId, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            std::vector<nlohmann::json> deviceJsonList;
-            uint64_t begin = response.begin();
-            uint64_t end = response.end();
-            // for (int i{0}; i < response.datalist_size(); ++i) {
-            //     auto deviceJson = nlohmann::json();
-            //     auto &deviceInfo = response.info(i);
-            //     deviceJson["device_id"] = deviceInfo.id().id();
-            //     deviceJson["device_type"] = deviceInfo.type().value()==0? "GPU": "Unknown";
-            //     deviceJson["uuid"] = deviceInfo.uuid();
-            //     deviceJson["device_name"] = deviceInfo.devicename();
-            //     deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
-            //     deviceJson["pci_sub_device_id"] = deviceInfo.subdeviceid();
-            //     deviceJson["pci_bdf_address"] = deviceInfo.pcibdfaddress();
-            //     deviceJson["vendor_name"] = deviceInfo.vendorname();
-            //     deviceJsonList.push_back(deviceJson);
-            // }
-            (*json)["device_list"] = deviceJsonList;
-        }
-    }
-
-    return json;
-}
-
-std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
-
-    assert(this->stub != nullptr);
-
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-
-    grpc::ClientContext context;
-    XpumDeviceBasicInfoArray response;
-    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            std::vector<nlohmann::json> deviceJsonList;
-            // for (int i{0}; i < response.info_size(); ++i) {
-            //     auto deviceJson = nlohmann::json();
-            //     auto &deviceInfo = response.info(i);
-            //     deviceJson["device_id"] = deviceInfo.id().id();
-            //     deviceJson["device_type"] = deviceInfo.type().value()==0? "GPU": "Unknown";
-            //     deviceJson["uuid"] = deviceInfo.uuid();
-            //     deviceJson["device_name"] = deviceInfo.devicename();
-            //     deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
-            //     deviceJson["pci_sub_device_id"] = deviceInfo.subdeviceid();
-            //     deviceJson["pci_bdf_address"] = deviceInfo.pcibdfaddress();
-            //     deviceJson["vendor_name"] = deviceInfo.vendorname();
-            //     deviceJsonList.push_back(deviceJson);
-            // }
-            (*json)["device_list"] = deviceJsonList;
-        }
-    }
-
-    return json;
+std::string CoreStub::isotimestamp(uint64_t t) {
+    time_t seconds = (long)t / 1000;
+    int milli_seconds = t % 1000;
+    tm *tm_p = gmtime(&seconds);
+    // tm *tm_p = localtime(&seconds);
+    char buf[50];
+    strftime(buf, sizeof(buf), "%FT%T", tm_p);
+    char milli_buf[10];
+    sprintf(milli_buf, "%03d", milli_seconds);
+    return std::string(buf) + "." + std::string(milli_buf)+"Z";
 }
