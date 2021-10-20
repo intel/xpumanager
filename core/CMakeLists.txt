@@ -28,8 +28,7 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h @ONLY)
 
 # Specifiy link file location
-link_directories(/usr/local/lib)
-link_directories(${CMAKE_CURRENT_LIST_DIR}/libs/hwloc/install/lib)
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/lib)
 
 # Specifiy header file location
 
@@ -66,7 +65,7 @@ target_include_directories(
   xpum
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
-          ${CMAKE_CURRENT_LIST_DIR}/libs/hwloc/install/include/
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/include/
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 target_sources(
   xpum
@@ -85,9 +84,6 @@ target_sources(
           ${HEALTH_SRC}
           ${DIAGNOSTIC_SRC}
           ${TOPOLOGY_SRC})
-
-add_subdirectory(./libs/spdlog)
-add_subdirectory(./libs/hwloc)
 
 message(STATUS "version ${PROJECT_VERSION}") 
 message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")

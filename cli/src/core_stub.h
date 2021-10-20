@@ -44,6 +44,9 @@ class CoreStub {
     std::string healthStatusEnumToString(HealthStatusType status);
     std::string healthTypeEnumToString(HealthType type);
 
+    std::unique_ptr<nlohmann::json> getStatistics(int deviceId);
+    std::unique_ptr<nlohmann::json> getStatisticsByGroup(int groupId);
+
   private:
     std::unique_ptr<XpumCoreService::Stub> stub;
 };
