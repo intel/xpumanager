@@ -15,6 +15,13 @@
 #include "data_logic/data_logic_interface.h"
 #include "diagnostic_data_type.h"
 
+/**
+ * The class is responsible for GPU diagnostics. Three levels are currently supported. It will check 
+ * environment variables, libraries, permission, PCIe, media encoder and performance. And each task 
+ * will be assigned a thread.
+ *
+ */
+
 class DiagnosticManager : public DiagnosticManagerInterface {
  public:
   DiagnosticManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,

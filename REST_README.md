@@ -4,7 +4,7 @@
  1. install python3, may need to soft link python if your python package doesn't auto generate one.
  2. install pip3.
  3. install python packages as root for all user.  
-    `umake 022`  
+    `umask 022`  
     `pip3 install flask flask_httpauth gunicorn[gevent]`
  
 ##Run Script

@@ -5,6 +5,13 @@
 #include "data_logic/data_logic_interface.h"
 #include "health_data_type.h"
 
+/**
+ * The class is responsible for GPU health check in real time. Four components are currently supported: 
+ * power, temperature, memory and fabric port. In addition, users can set reasonable thresholds for power
+ * and temperature to suit their needs.
+ *
+ */
+
 class HealthManager : public HealthManagerInterface {
  public:
   HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,

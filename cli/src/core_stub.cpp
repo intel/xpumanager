@@ -670,3 +670,71 @@ int CoreStub::getHealthConfig(int deviceId, HealthConfigType cfgtype) {
     }
     return threshold;
 }
+
+std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
+
+    assert(this->stub != nullptr);
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    grpc::ClientContext context;
+    XpumGetStatsResponse response;
+    DeviceId grpcDeviceId;
+    grpcDeviceId.set_id(deviceId);
+    grpc::Status status = stub->getStatistics(&context, grpcDeviceId, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> deviceJsonList;
+            uint64_t begin = response.begin();
+            uint64_t end = response.end();
+            // for (int i{0}; i < response.datalist_size(); ++i) {
+            //     auto deviceJson = nlohmann::json();
+            //     auto &deviceInfo = response.info(i);
+            //     deviceJson["device_id"] = deviceInfo.id().id();
+            //     deviceJson["device_type"] = deviceInfo.type().value()==0? "GPU": "Unknown";
+            //     deviceJson["uuid"] = deviceInfo.uuid();
+            //     deviceJson["device_name"] = deviceInfo.devicename();
+            //     deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
+            //     deviceJson["pci_sub_device_id"] = deviceInfo.subdeviceid();
+            //     deviceJson["pci_bdf_address"] = deviceInfo.pcibdfaddress();
+            //     deviceJson["vendor_name"] = deviceInfo.vendorname();
+            //     deviceJsonList.push_back(deviceJson);
+            // }
+            (*json)["device_list"] = deviceJsonList;
+        }
+    }
+
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
+
+    assert(this->stub != nullptr);
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    grpc::ClientContext context;
+    XpumDeviceBasicInfoArray response;
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> deviceJsonList;
+            // for (int i{0}; i < response.info_size(); ++i) {
+            //     auto deviceJson = nlohmann::json();
+            //     auto &deviceInfo = response.info(i);
+            //     deviceJson["device_id"] = deviceInfo.id().id();
+            //     deviceJson["device_type"] = deviceInfo.type().value()==0? "GPU": "Unknown";
+            //     deviceJson["uuid"] = deviceInfo.uuid();
+            //     deviceJson["device_name"] = deviceInfo.devicename();
+            //     deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
+            //     deviceJson["pci_sub_device_id"] = deviceInfo.subdeviceid();
+            //     deviceJson["pci_bdf_address"] = deviceInfo.pcibdfaddress();
+            //     deviceJson["vendor_name"] = deviceInfo.vendorname();
+            //     deviceJsonList.push_back(deviceJson);
+            // }
+            (*json)["device_list"] = deviceJsonList;
+        }
+    }
+
+    return json;
+}
