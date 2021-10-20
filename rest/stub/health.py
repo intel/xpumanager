@@ -24,7 +24,7 @@ def getHealth(deviceId, healthType):
     else:
         types.append(healthTypes.index(healthType))
     data = dict()
-    data['deviceId'] = deviceId
+    data['device_id'] = deviceId
 
     for t in types:
         resp = stub.getHealth(
@@ -64,22 +64,22 @@ def getHealthByGroup(groupId, healthType):
         for healthData in resp.healthData:
             if healthData.deviceId not in deviceIds:
                 deviceIds.append(healthData.deviceId)
-                datas.append(dict(deviceId=healthData.deviceId))
+                datas.append(dict(device_id=healthData.deviceId))
 
             for data in datas:
-                if data['deviceId'] == healthData.deviceId:
+                if data['device_id'] == healthData.deviceId:
                     key = healthTypeEnumToString[t]
                     data[key] = dict()
                     data[key]['status'] = healthStatusEnumToString[healthData.statusType]
                     data[key]['description'] = healthData.description
                     if t == 0 or t == 1:
                         resp = stub.getHealthConfig(core_pb2.HealthConfigRequest(
-                            deviceId=data['deviceId'], configType=t))
+                            deviceId=data['device_id'], configType=t))
                         if len(resp.errorMsg) != 0:
                             return 1, resp.errorMsg, None
                         data[key]['threshold'] = resp.threshold
 
-    return 0, "OK", dict(groupId=groupId, deviceCount=len(datas), deviceList=datas)
+    return 0, "OK", dict(group_id=groupId, device_count=len(datas), device_list=datas)
 
 
 def setHealthConfig(deviceId, healthType, threshold):

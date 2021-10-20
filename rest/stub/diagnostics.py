@@ -48,7 +48,7 @@ def getDiagnosticsResult(deviceId):
     data['level'] = resp.level
     data['finished'] = resp.finished
     data['message'] = resp.message
-    data['componentCount'] = resp.count
+    data['component_count'] = resp.count
     componentList = []
     i = 0
     for component in resp.componentInfo:
@@ -61,7 +61,7 @@ def getDiagnosticsResult(deviceId):
         new_component['result'] = diagnosticResultEnumToString[component.result]
         new_component['message'] = component.message
         componentList.append(new_component)
-    data['componentList'] = componentList
+    data['component_list'] = componentList
 
     return 0, "OK", data
 
@@ -78,7 +78,7 @@ def getDiagnosticsResultByGroup(groupId):
         data['level'] = diagTaskInfo.level
         data['finished'] = diagTaskInfo.finished
         data['message'] = diagTaskInfo.message
-        data['componentCount'] = diagTaskInfo.count
+        data['component_count'] = diagTaskInfo.count
 
         componentList = []
         i = 0
@@ -92,7 +92,7 @@ def getDiagnosticsResultByGroup(groupId):
             new_component['result'] = diagnosticResultEnumToString[component.result]
             new_component['message'] = component.message
             componentList.append(new_component)
-        data['componentList'] = componentList
+        data['component_list'] = componentList
         datas.append(data)
 
-    return 0, "OK", dict(groupId=groupId, deviceCount=len(datas), deviceList=datas)
+    return 0, "OK", dict(group_id=groupId, device_count=len(datas), device_list=datas)
