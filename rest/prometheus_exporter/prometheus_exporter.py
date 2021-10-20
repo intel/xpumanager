@@ -3,33 +3,117 @@ from prometheus_client import CollectorRegistry, Gauge, Counter, generate_latest
 import os
 import traceback
 
+from enum import Enum, unique
+
+
+@unique
+class PromMetric(Enum):
+
+    # Engine utilization
+    xpum_engine_ratio = (
+        'xpum_engine_ratio', 'Max utilization among all engine groups (in %), per GPU tile')
+    xpum_engine_group_ratio = (
+        'xpum_engine_group_ratio', 'Avg utilization of engine group (in %), per GPU tile', ['type'])
+
+    # Power/Energy/Temperature
+    xpum_power_watts = ('xpum_power_watts',
+                        'Avg GPU power (in watts), per GPU and per card')
+    xpum_energy_joules = (
+        'xpum_energy_joules', 'Total GPU energy consumption since boot (in Joules), per GPU')
+    xpum_temeperature_celsius = (
+        'xpum_temeperature_celsius', 'Avg GPU temperature (in Celsius degree), per tile', ['location'])
+
+    # Frequency
+    xpum_frequency_mhz = ('xpum_frequency_mhz',
+                          'Avg (GPU) frequency (in MHz), per GPU tile', ['location', 'type'])
+    xpum_frequency_throttling_ratio = (
+        'xpum_frequency_throttling_ratio', 'Avg frequency throttle ratio (in %), per GPU tile', ['location'])
+
+    # Memory
+    xpum_memory_used_bytes = ('xpum_memory_used_bytes',
+                              'Used GPU memory (in bytes), per GPU tile')
+    xpum_memory_ratio = (
+        'xpum_memory_ratio', 'Used GPU memory / Total used GPU memory (in %), per GPU tile')
+    xpum_memory_bandwidth_ratio = (
+        'xpum_memory_bandwidth_ratio', 'Avg memory throughput / max memory bandwidth (in %), per GPU tile')
+    xpum_memory_read_bytes = ('xpum_memory_read_bytes',
+                              'Total memory read bytes (in bytes), per GPU tile')
+    xpum_memory_write_bytes = (
+        'xpum_memory_write_bytes', 'Total memory write bytes (in bytes), per GPU tile')
+
+    # Errors
+    xpum_resets = (
+        'xpum_resets', 'Total number of GPU reset since boot, per GPU')
+    xpum_programming_errors = (
+        'xpum_programming_errors', 'Total number of GPU programming errors since boot, per GPU')
+    xpum_driver_errors = (
+        'xpum_driver_errors', 'Total number of GPU driver errors since boot, per GPU')
+    xpum_cache_errors = (
+        'xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])
+    xpum_display_errors = (
+        'xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type', 'kkk'])
+
+    # Occupation
+    xpum_occupation_ratio = ('xpum_occupation_ratio')
+    xpum_non_occupation_ratio = ('xpum_non_occupation_ratio')
+    xpum_issue_efficiency_ratio = ('xpum_issue_efficiency_ratio')
+    xpum_execution_efficiency_ratio = ('xpum_execution_efficiency_ratio')
+
+    def __new__(cls, name, desc=None, ext_labelnames=[]):
+        obj = object.__new__(cls)
+        obj._value_ = name
+        obj.desc = f'{name}_desc' if desc is None else desc
+        obj.ext_labelnames = ext_labelnames
+        return obj
+
+
+class Metric:
+    def __init__(self, prom_metric: PromMetric, scale: float = 1, ext_labels: dict = {}) -> None:
+        self.prom_metric = prom_metric
+        self.scale = scale
+        self.ext_labels = ext_labels
+
+
 metrics_map = {
-    'XPUM_STATS_GPU_UTILIZATION': {'name': 'xpum_gpu_ratio', 'scale': 1},
-    'XPUM_STATS_OCCUPATION': {'name': 'xpum_occupation_ratio', 'scale': 1},
-    'XPUM_STATS_ISSUE_EFFICIENCY': {'name': 'xpum_issue_efficiency_ratio', 'scale': 1},
-    'XPUM_STATS_EXECUTION_EFFICIENCY': {'name': 'xpum_execution_efficiency_ratio', 'scale': 1},
-    'XPUM_STATS_NON_OCCUPATION': {'name': 'xpum_non_occupation_ratio', 'scale': 1},
-    'XPUM_STATS_POWER': {'name': 'xpum_power_watts', 'scale': 1},
-    'XPUM_STATS_ENERGY': {'name': 'xpum_energy_joules', 'scale': 0.001},
-    'XPUM_STATS_GPU_FREQUENCY': {'name': 'xpum_gpu_frequency_mhz', 'scale': 1},
-    'XPUM_STATS_GPU_TEMEPERATURE': {'name': 'xpum_gpu_temeperature_celsius', 'scale': 1},
-    'XPUM_STATS_MEMORY_USED': {'name': 'xpum_memory_used_bytes', 'scale': 1},
-    'XPUM_STATS_MEMORY_UTILIZATION': {'name': 'xpum_memory_ratio', 'scale': 1},
-    'XPUM_STATS_MEMORY_BANDWIDTH': {'name': 'xpum_memory_bandwidth_ratio', 'scale': 1},
-    'XPUM_STATS_MEMORY_READ': {'name': 'xpum_memory_read_bytes', 'scale': 1},
-    'XPUM_STATS_MEMORY_WRITE': {'name': 'xpum_memory_write_bytes', 'scale': 1},
-    'XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION': {'name': 'xpum_engine_group_compute_all_ratio', 'scale': 1},
-    'XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION': {'name': 'xpum_engine_group_media_all_ratio', 'scale': 1},
-    'XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION': {'name': 'xpum_engine_group_copy_all_ratio', 'scale': 1},
-    'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': {'name': 'xpum_engine_group_render_all_ratio', 'scale': 1},
-    'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': {'name': 'xpum_engine_group_3d_all_ratio', 'scale': 1},
-    'XPUM_STATS_RAS_ERROR_CAT_RESET': {'name': 'xpum_resets', 'scale': 1},
-    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': {'name': 'xpum_programming_errors', 'scale': 1},
-    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': {'name': 'xpum_driver_errors', 'scale': 1},
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': {'name': 'xpum_cache_errors_correctable', 'scale': 1},
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': {'name': 'xpum_cache_errors_uncorrectable', 'scale': 1},
-    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE': {'name': 'xpum_display_errors_correctable', 'scale': 1},
-    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE': {'name': 'xpum_display_errors_uncorrectable', 'scale': 1}
+    # Engine utilization
+    'XPUM_STATS_GPU_UTILIZATION': Metric(PromMetric.xpum_engine_ratio),
+    'XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': 'compute'}),
+    'XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': 'media'}),
+    'XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': 'copy'}),
+    'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': 'render'}),
+    'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': '3d'}),
+
+    # Occupation
+    'XPUM_STATS_OCCUPATION': Metric(PromMetric.xpum_occupation_ratio),
+    'XPUM_STATS_ISSUE_EFFICIENCY': Metric(PromMetric.xpum_issue_efficiency_ratio),
+    'XPUM_STATS_EXECUTION_EFFICIENCY': Metric(PromMetric.xpum_execution_efficiency_ratio),
+    'XPUM_STATS_NON_OCCUPATION': Metric(PromMetric.xpum_non_occupation_ratio),
+
+    # Power/Energy/Temperature
+    'XPUM_STATS_POWER': Metric(PromMetric.xpum_power_watts),
+    'XPUM_STATS_ENERGY': Metric(PromMetric.xpum_energy_joules, scale=0.001),
+    'XPUM_STATS_GPU_TEMEPERATURE': Metric(PromMetric.xpum_temeperature_celsius, ext_labels={'location': 'gpu'}),
+
+    # Frequency
+    'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),
+    'XPUM_STATS_REQUEST_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'request'}),
+    'XPUM_STATS_GPU_FREQUENCY_THROTTLE_RATIO': Metric(PromMetric.xpum_frequency_throttling_ratio, ext_labels={'location': 'gpu'}),
+
+    # Memory
+    'XPUM_STATS_MEMORY_USED': Metric(PromMetric.xpum_memory_used_bytes),
+    'XPUM_STATS_MEMORY_UTILIZATION': Metric(PromMetric.xpum_memory_ratio),
+    'XPUM_STATS_MEMORY_BANDWIDTH': Metric(PromMetric.xpum_memory_bandwidth_ratio),
+    'XPUM_STATS_MEMORY_READ': Metric(PromMetric.xpum_memory_read_bytes),
+    'XPUM_STATS_MEMORY_WRITE': Metric(PromMetric.xpum_memory_write_bytes),
+
+    # Errors
+    'XPUM_STATS_RAS_ERROR_CAT_RESET': Metric(PromMetric.xpum_resets),
+    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': Metric(PromMetric.xpum_programming_errors),
+    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': Metric(PromMetric.xpum_driver_errors),
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_cache_errors, ext_labels={'type': 'correctable'}),
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_cache_errors, ext_labels={'type': 'uncorrectable'}),
+    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_display_errors, ext_labels={'type': 'correctable'}),
+    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_display_errors, ext_labels={'type': 'uncorrectable'}),
 }
 
 
@@ -43,7 +127,7 @@ def get_metrics(core, pod_resources):
         resp = b''
 
         for dev in data:
-            stat_code, _, stat_data = core.getMetrics(dev.get('DeviceId'))
+            stat_code, _, stat_data = core.getMetrics(dev.get('device_id'))
 
             if stat_code != 0:
                 continue
@@ -86,22 +170,33 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
     metrics = {}
 
     for stat in datalist:
-        metrics_type = metrics_map.get(stat.get('metricsType'))
-        if metrics_type is None:
+        metric = metrics_map.get(stat.get('metricsType'))
+        if metric is None:
             continue
-        metrics_name = metrics_type['name']
-        scale = metrics_type['scale']
+        metric_name = metric.prom_metric.name
+        scale = metric.scale
         value = stat.get('value')
         avg = stat.get('avg')
-        if metrics_name not in metrics:
+
+        all_labelnames, all_labelvalues = attach_ext_labels(
+            labels, label_values, metric.prom_metric.ext_labelnames, metric.ext_labels)
+
+        if metric_name not in metrics:
             if avg is not None:
-                metrics[metrics_name] = Gauge(
-                    metrics_name, f'{metrics_name}_DESCRIPTION', labelnames=labels, registry=registry)
-                metrics[metrics_name].labels(*label_values).set(avg * scale)
+                metrics[metric_name] = Gauge(
+                    metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
+                metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
             else:
-                metrics[metrics_name] = Counter(
-                    metrics_name, f'{metrics_name}_DESCRIPTION', labelnames=labels, registry=registry)
-                metrics[metrics_name].labels(*label_values).inc(value * scale)
+                metrics[metric_name] = Counter(
+                    metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
+                metrics[metric_name].labels(
+                    *all_labelvalues).inc(value * scale)
+        else:
+            if avg is not None:
+                metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
+            else:
+                metrics[metric_name].labels(
+                    *all_labelvalues).inc(value * scale)
 
     return generate_latest(registry)
 
@@ -109,13 +204,13 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
 def build_basic_labels(dev):
     labels = ['uuid', 'dev_name', 'pci_dev', 'vendor', 'pci_bdf']
     label_values = [dev.get(key, '') for key in [
-        'UUID', 'DeviceName', 'PCIDeviceId', 'VendorName', 'PCIBDFAddress']]
+        'uuid', 'device_name', 'pci_device_id', 'vendor_name', 'pci_bdf_address']]
 
     return labels, label_values
 
 
 def attach_kube_labels(dev, labels, label_values, pod_resources):
-    bdf = dev.get('PCIBDFAddress', '')
+    bdf = dev.get('pci_bdf_address', '')
     pod_resource = pod_resources.get(bdf, {})
     if 'pod' in pod_resource:
         labels.append('kube_pod')
@@ -139,11 +234,18 @@ def attach_tile_labels(labels, label_values, tile_id):
         label_values.append(tile_id)
 
 
+def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels):
+    if ext_labelnames is not None and len(ext_labelnames) > 0:
+        all_labelnames = labels + ext_labelnames
+        all_labelvalues = label_values + \
+            [ext_labels.get(key, 'n/a') for key in ext_labelnames]
+        return all_labelnames, all_labelvalues
+    return labels, label_values
+
+
 if __name__ == '__main__':
-    # from DGMCore import DGMCore
     import stub as core
     from kube_pod_resource import get_pod_resources
-    # core = DGMCore()
     pod_resources = get_pod_resources()
     metrics = get_metrics(core, pod_resources)
     print(metrics)
