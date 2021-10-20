@@ -1,5 +1,7 @@
 import configparser
 import os
+import pwd
+import grp
 import sys
 import hashlib
 
@@ -23,8 +25,10 @@ if __name__ == '__main__':
     config['default']['password'] = pwHash
     
     path = os.path.dirname( os.path.realpath( __file__ ) )
+    os.umask( 0o007 )
     with open( path + '/rest/rest.conf', 'w' ) as configFile:
         config.write( configFile )
+    os.chown( path + '/rest/rest.conf', pwd.getpwnam( 'xpum' ).pw_uid, grp.getgrnam( 'xpum' ).gr_gid )
 
     print( 'rest.conf has been generated succefully' )
     print( 'If you forget the password, just re-run this script again' )

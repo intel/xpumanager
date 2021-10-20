@@ -11,9 +11,11 @@ def getVersion():
     for version in resp.versions:
         # print( version.versionString )
         versionStr = version.versionString
-        versionType = version.version
+        versionType = version.version.value
         if versionType == 0:
-            data['Version'] = versionStr
+            data['XPUM version'] = versionStr
         elif versionType == 1:
-            data['LevelZeroVersion'] = versionStr
+            data['XPUM GIT version'] = versionStr
+        elif versionType == 2:
+            data['level zero version'] = versionStr
     return 0, "OK", data
