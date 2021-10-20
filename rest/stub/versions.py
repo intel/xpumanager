@@ -13,9 +13,9 @@ def getVersion():
         versionStr = version.versionString
         versionType = version.version.value
         if versionType == 0:
-            data['XPUM version'] = versionStr
+            data['xpum_version'] = versionStr
         elif versionType == 1:
-            data['XPUM GIT version'] = versionStr
+            data['xpum_version_git'] = versionStr
         elif versionType == 2:
-            data['level zero version'] = versionStr
+            data['level_zero_version'] = versionStr
     return 0, "OK", data
