@@ -6,6 +6,7 @@
 #include "comlet_version.h"
 #include "comlet_diagnostic.h"
 #include "comlet_health.h"
+#include "comlet_statistics.h"
 
 #include <iostream>
 #include <memory>
@@ -27,7 +28,8 @@ int main(int argc, char **argv) {
         .addComlet(MAKE_COMLET_PTR(ComletTopology))
         .addComlet(MAKE_COMLET_PTR(ComletGroup))
         .addComlet(MAKE_COMLET_PTR(ComletDiagnostic))
-        .addComlet(MAKE_COMLET_PTR(ComletHealth));
+        .addComlet(MAKE_COMLET_PTR(ComletHealth))
+        .addComlet(MAKE_COMLET_PTR(ComletStatistics));
 
     app.require_subcommand();
 

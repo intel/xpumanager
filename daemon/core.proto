@@ -236,6 +236,13 @@ message DeviceStatsInfoArray {
     string errorMsg = 2;
 }
 
+message XpumGetStatsResponse {
+    repeated DeviceStatsInfo dataList = 1;
+    uint64 begin=2;
+    uint64 end=3;
+    string errorMsg = 4;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -260,4 +267,6 @@ service XpumCoreService {
     rpc setHealthConfigByGroup( HealthConfigByGroupRequest ) returns ( HealthConfigByGroupInfo );
     rpc getMetrics( DeviceId ) returns ( DeviceStatsInfoArray );
     rpc getMetricsByGroup( GroupId ) returns ( DeviceStatsInfoArray );
+    rpc getStatistics( DeviceId ) returns ( XpumGetStatsResponse );
+    rpc getStatisticsByGroup( GroupId ) returns ( XpumGetStatsResponse );
 }

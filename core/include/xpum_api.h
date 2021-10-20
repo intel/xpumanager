@@ -628,6 +628,25 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
                            uint64_t *end);
 
 /**
+ * @brief Get statistics data by group
+ * 
+ * @param groupId       IN: Group id
+ * @param dataList     OUT: The arry to store statistics data for devices in group \a groupId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than the total sum of stats_size of devices in group ( \a groupId ). A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
+ * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
+ */
+xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, 
+                                  xpum_device_stats_t dataList[], 
+                                  int *count,
+                                  uint64_t *begin,
+                                  uint64_t *end);
+
+/**
  * @brief Get latest metrics data by device
  * 
  * @param deviceId      IN: Device id
@@ -657,25 +676,6 @@ xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
 xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId, 
                                   xpum_device_stats_t dataList[], 
                                   int *count);                             
-
-/**
- * @brief Get statistics data by group
- * 
- * @param groupId       IN: Group id
- * @param dataList     OUT: The arry to store statistics data for devices in group \a groupId.
- * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than the total sum of stats_size of devices in group ( \a groupId ). A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
- *                          When return, \a count will store the actual number of entries stored in \a dataList.
- * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
- * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
- * @return xpum_result_t 
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
- */
-xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, 
-                                  xpum_device_stats_t dataList[], 
-                                  int *count,
-                                  uint64_t *begin,
-                                  uint64_t *end);
 
 
 /** @} */ // Closing for STATISTICS_API
