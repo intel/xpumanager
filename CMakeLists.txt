@@ -66,7 +66,7 @@ set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
 if(CPACK_GENERATOR MATCHES "RPM")
 	configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" COPYONLY)
-	configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service" COPYONLY)
+	configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service" COPYONLY)
 
 	file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}.rpm")
 	set(CPACK_RPM_SPEC_MORE_DEFINE "%global __os_install_post %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')")
@@ -99,7 +99,7 @@ endif()
 
 if(CPACK_GENERATOR MATCHES "DEB")	
 	configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" @ONLY)
-	configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service" @ONLY)
+	configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service" @ONLY)
 
 	file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}.deb")
 
@@ -142,7 +142,7 @@ install(
 
 install(FILES
 	"${SYSTEMD_UNIT_NAME}"
-	"${CMAKE_CURRENT_LIST_DIR}/rest/xpum-rest.service"
+	"${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service"
 	DESTINATION "/lib/systemd/system")
 
 #install(CODE "execute_process(

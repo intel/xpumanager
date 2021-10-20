@@ -16,8 +16,8 @@ if [ -n "${RPM_INSTALL_PREFIX}" ]; then
   sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" /usr/lib/systemd/system/xpum.service > /usr/lib/systemd/system/xpum.service.n
   mv -f /usr/lib/systemd/system/xpum.service.n /usr/lib/systemd/system/xpum.service
 
-  sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" /usr/lib/systemd/system/xpum-rest.service > /usr/lib/systemd/system/xpum-rest.service.n
-  mv -f /usr/lib/systemd/system/xpum-rest.service.n /usr/lib/systemd/system/xpum-rest.service 
+  sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" /usr/lib/systemd/system/xpum_rest.service > /usr/lib/systemd/system/xpum_rest.service.n
+  mv -f /usr/lib/systemd/system/xpum_rest.service.n /usr/lib/systemd/system/xpum_rest.service 
 
   chown -R xpum ${RPM_INSTALL_PREFIX}
   chmod +x ${RPM_INSTALL_PREFIX}/rest/xpum_rest.sh

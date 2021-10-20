@@ -1,5 +1,5 @@
 [Unit]
-Description=XPUM-Rest daemon
+Description=XPUM_Rest daemon
 
 After=xpum.target
 

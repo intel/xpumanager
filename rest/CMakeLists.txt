@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.2.0)
 
-configure_file("${CMAKE_CURRENT_LIST_DIR}/xpum-rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/xpum-rest.service")
+#configure_file("${CMAKE_CURRENT_LIST_DIR}/xpum_rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/xpum_rest.service")
 
 
 add_custom_target(rest ALL)
@@ -14,8 +14,8 @@ add_custom_command(TARGET rest
 install(DIRECTORY	
 ${CMAKE_CURRENT_LIST_DIR}
 DESTINATION .
-PATTERN "xpum-rest.service" EXCLUDE
-PATTERN "xpum-rest.service.in" EXCLUDE
+PATTERN "xpum_rest.service" EXCLUDE
+PATTERN "xpum_rest.service.in" EXCLUDE
 PATTERN ".gitignore" EXCLUDE
 PATTERN "CMakeLists.txt" EXCLUDE
 PATTERN "ifwi_fake" EXCLUDE
