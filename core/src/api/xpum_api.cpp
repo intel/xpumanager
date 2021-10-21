@@ -85,10 +85,10 @@ xpum_result_t xpumInit() {
     try {
         Core::instance().init();
     } catch (BaseException &e) {
-        XPUM_LOG_ERROR("Failed to init DCM Core: {}", e.what());
+        XPUM_LOG_ERROR("Failed to init xpum core: {}", e.what());
         return XPUM_GENERIC_ERROR;
     } catch (std::exception &e) {
-        XPUM_LOG_ERROR("Failed to init DCM Core: {}", e.what());
+        XPUM_LOG_ERROR("Failed to init xpum core: {}", e.what());
         return XPUM_GENERIC_ERROR;
     }
     return XPUM_OK;

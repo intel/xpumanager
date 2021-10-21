@@ -2,6 +2,7 @@ from prometheus_client import CollectorRegistry, Gauge, Counter, generate_latest
 
 import os
 import traceback
+import sys
 
 from enum import Enum, unique
 
@@ -244,6 +245,8 @@ def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels):
 
 
 if __name__ == '__main__':
+    rest_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(1, rest_folder)
     import stub as core
     from kube_pod_resource import get_pod_resources
     pod_resources = get_pod_resources()
