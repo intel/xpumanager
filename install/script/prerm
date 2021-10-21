@@ -4,15 +4,10 @@ LOG_FILE="/dev/null"
 
 function RemoveUser()
 {
-	#find /tmp -type d -user $1 -exec rm -fr {} \; >> ${LOG_FILE} 2>&1
-	
-  mypids=$( userdel -r $1 2>&1| grep "by process" |awk 'NF>1{print $NF}' )    
-  while [ -n "$mypids" ]
-	do
-	 	kill -9 $( userdel -r $1  2>&1| grep "by process" |awk 'NF>1{print $NF}' ) >> ${LOG_FILE}  2>&1
-	  mypids=$( userdel -r $1  2>&1| grep "by process" |awk 'NF>1{print $NF}' ) 
-	done
-	#groupdel xpum -f >> ${LOG_FILE} 2>&1 
+  group=$( userdel -rf ${1} 2>&1 | grep "group ${1} not removed" )    
+  if [ -n "$group" ]; then
+	 	groupdel xpum -f >> ${LOG_FILE} 2>&1	
+	fi
 }
 
 systemctl stop xpum >> ${LOG_FILE} 2>&1 
