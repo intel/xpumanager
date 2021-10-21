@@ -741,49 +741,183 @@ xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId);
  */
 xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count);
 
-
+/**
+ * @brief Get device standby mode
+ * @details This function is used to get the standby mode of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray                
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
                                     xpum_standby_data_t* dataArray, int* count);
-
+/**
+ * @brief Set device standby mode
+ * @details This function is used to set the standby mode of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param standby           IN: The standby mode need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
                                  const xpum_standby_data_t& standby);
-
+/**
+ * @brief Get device power limit
+ * @details This function is used to get the power limit of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param dataArray         IN/OUT: The detailed power limit data.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
                                        int32_t subDeviceId,
                                        xpum_power_limits_t* dataArray); 
-
+/**
+ * @brief Set device sustained power limit
+ * @details This function is used to set the sustained power limit of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param sustained_limit   IN: The sustained power limit need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
                                                 int32_t subDeviceId,
                                                 const xpum_power_sustained_limit_t& sustained_limit);
-
+/**
+ * @brief Set device burst power limit
+ * @details This function is used to set the burst power limit of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param burst_limit       IN: The burstr power limit need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
                                             int32_t subDeviceId,
                                             const xpum_power_burst_limit_t& burst_limit);
-
+/**
+ * @brief Set device peak power limit
+ * @details This function is used to set the peak power limit of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param peak_limit       IN: The peak power limit need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
                                            int32_t subDeviceId,
                                            const xpum_power_peak_limit_t& peak_limit);
-
+/**
+ * @brief Get device frequency ranges
+ * @details This function is used to get the frequency ranges
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
                                            xpum_frequency_range_t* dataArray, int* count );
-
+/**
+ * @brief Set device frequency ranges
+ * @details This function is used to set the frequency ranges
+ *
+ * @param deviceId          IN: The device Id
+ * @param frequency         IN: The frequency ranges need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
                                         const xpum_frequency_range_t& t);
-
+/**
+ * @brief Get device scheduler mode
+ * @details This function is used to get the scheduler mode
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
                                       xpum_scheduler_data_t* dataArray, int* count );
-
+/**
+ * @brief Set device the scheduler(timeout) mode
+ * @details This function is used to set the scheduler (timeout) mode
+ *
+ * @param deviceId          IN: The device Id
+ * @param sched_timeout     IN: The scheduler timeout mode need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
                                               const xpum_scheduler_timeout_t& sched_timeout);
-
+/**
+ * @brief Set device the scheduler(time slice) mode
+ * @details This function is used to set the scheduler (time slice) mode
+ *
+ * @param deviceId          IN: The device Id
+ * @param sched_timeout     IN: The scheduler time slice mode need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
                                                 const xpum_scheduler_timeslice_t& sched_timeslice);
-
+/**
+ * @brief Set device the scheduler(exclusive) mode
+ * @details This function is used to set the scheduler (exclusive) mode
+ *
+ * @param deviceId          IN: The device Id
+ * @param sched_timeout     IN: The scheduler time slice mode need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                                                 const xpum_scheduler_exclusive_t& sched_exclusive);
-
+/**
+ * @brief Reset device
+ *
+ * @param deviceId          IN: The device Id
+ * @param force             IN: Reset the device forcibly
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
-
+/**
+ * @brief Get device available frequency clocks
+ * @details This function is used to get available frequency clocks
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
 xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, int *count);
 
 /** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
