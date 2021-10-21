@@ -29,4 +29,3 @@ rest/xpum_rest.service
 core/test/config/
 rest/key.pem
 rest/cert.pem
-third_party/hwloc/install/
