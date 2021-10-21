@@ -4,14 +4,16 @@ Description=XPUM_Rest daemon
 After=xpum.target
 
 [Service]
-Type=oneshot
+Type=simple
 RemainAfterExit=yes
 
 RuntimeDirectory=xpum
 
-ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/xpum_rest.sh start
-ExecStop=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/xpum_rest.sh stop
-ExecReload=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/xpum_rest.sh reload
+WorkingDirectory=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/
+
+ExecStart=gunicorn --certfile=cert.pem --keyfile=key.pem --ssl-version TLSv1_2 --bind=0.0.0.0:34567 --worker-class=gevent --worker-connections=1000 -w 3 xpum_rest_main:app
+ExecStop=/bin/kill -s TERM $MAINPID
+ExecReload=/bin/kill -s HUP $MAINPID
 
 User=xpum
 
