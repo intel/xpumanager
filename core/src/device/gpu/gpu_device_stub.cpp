@@ -1295,7 +1295,7 @@ uint32_t getAverage(std::vector<uint32_t>& datas) {
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes_device_handle_t& device) {
-if (device == nullptr) {
+  if (device == nullptr) {
     throw BaseException("toGetEngineUtilization error");
   }
   bool dataAcquired = false;
@@ -1319,6 +1319,7 @@ if (device == nullptr) {
       for (auto &engine : engines) {
         threads.emplace_back(std::thread([&]() {
           zes_engine_properties_t props;
+          props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
           res = zesEngineGetProperties(engine,&props);
           if (res == ZE_RESULT_SUCCESS) {
             zes_engine_stats_t snap1 = {};
@@ -1373,7 +1374,8 @@ if (device == nullptr) {
       res = zesDeviceGetProperties(device, &props);
       if (res == ZE_RESULT_SUCCESS) {
         std::map<uint32_t,std::vector<uint64_t>> utilizations;
-        for (uint32_t i = 0; i < props.numSubdevices; ++i) {
+        uint32_t i = 0;
+        do {
           utilizations[i].push_back(getAverage(compute_utilizations[i]));
           utilizations[i].push_back(getAverage(render_utilizations[i]));
           utilizations[i].push_back(getAverage(decode_utilizations[i]));
@@ -1381,7 +1383,8 @@ if (device == nullptr) {
           utilizations[i].push_back(getAverage(copy_utilizations[i]));
           utilizations[i].push_back(getAverage(media_enhancement_utilizations[i]));
           utilizations[i].push_back(getAverage(three_d_utilizations[i]));
-        }
+          i++;
+        } while(i < props.numSubdevices);
         if (props.numSubdevices != 0) {
           for (uint32_t i = 0; i < props.numSubdevices; ++i) {
             ret->setSubdeviceDataCurrent(i,*std::max_element(utilizations[i].begin(), utilizations[i].end()));
@@ -1408,45 +1411,108 @@ void GPUDeviceStub::getEngineGroupUtilization(const zes_device_handle_t& device,
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(const zes_device_handle_t& device, zes_engine_group_t engine_group_type) {
-  if (device == nullptr) {
+if (device == nullptr) {
     throw BaseException("toGetEngineGroupUtilization error");
   }
   bool dataAcquired = false;
-  uint32_t engineCount = 0;
+  uint32_t engine_count = 0;
+  int sampling_period = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 0.8;
   std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-  ze_result_t res = zesDeviceEnumEngineGroups(device, &engineCount, nullptr);
+  ze_result_t res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr);
   if (res == ZE_RESULT_SUCCESS) {
-    std::vector<zes_engine_handle_t> engines(engineCount);
-    res = zesDeviceEnumEngineGroups(device, &engineCount, engines.data());
+    std::vector<zes_engine_handle_t> engines(engine_count);
+    std::map<uint32_t, std::vector<uint32_t>> group_utilizations;
+    std::vector<std::thread> threads;
+    std::mutex mutex;
+    res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data());
     if (res == ZE_RESULT_SUCCESS) {
       for (auto &engine : engines) {
         zes_engine_properties_t props;
+        props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
         res = zesEngineGetProperties(engine,&props);
-        if (res == ZE_RESULT_SUCCESS && props.type == engine_group_type) {
-          zes_engine_stats_t snap1 = {};
-          zes_engine_stats_t snap2 = {};
-          res = zesEngineGetActivity(engine, &snap1);
-          if (res == ZE_RESULT_SUCCESS) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::ENGINE_STATE_MONITOR_INTERNAL_PERIOD));
-            res = zesEngineGetActivity(engine, &snap2);
-            if (res == ZE_RESULT_SUCCESS)
-            {
-              uint64_t val = 100 * (snap2.activeTime - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
-              if (val > 100) {
-                val = 100;
-              }
-              props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, val) : ret->setCurrent(val);
-              dataAcquired = true;
+        if (res == ZE_RESULT_SUCCESS) {
+          switch (engine_group_type) {
+          case ZES_ENGINE_GROUP_COMPUTE_ALL:
+            if (props.type != ZES_ENGINE_GROUP_COMPUTE_SINGLE) {
+              continue;
             }
+            break;
+          case ZES_ENGINE_GROUP_RENDER_ALL:
+            if (props.type != ZES_ENGINE_GROUP_RENDER_SINGLE) {
+              continue;
+            }
+            break;
+          case ZES_ENGINE_GROUP_MEDIA_ALL:
+            if (!(props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE)) {
+              continue;
+            }
+            break;
+          case ZES_ENGINE_GROUP_COPY_ALL:
+            if (props.type != ZES_ENGINE_GROUP_COPY_SINGLE) {
+              continue;
+            }
+            break;
+          case ZES_ENGINE_GROUP_3D_ALL:
+            if (props.type != ZES_ENGINE_GROUP_3D_SINGLE) {
+              continue;
+            }
+            break;
+          default:
+            break;
           }
         }
+        threads.emplace_back(std::thread([&]() {
+          zes_engine_properties_t props;
+          props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+          res = zesEngineGetProperties(engine,&props);
+          if (res == ZE_RESULT_SUCCESS) {
+            zes_engine_stats_t snap1 = {};
+            zes_engine_stats_t snap2 = {};
+            res = zesEngineGetActivity(engine, &snap1);
+            if (res == ZE_RESULT_SUCCESS) {
+              std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
+              res = zesEngineGetActivity(engine, &snap2);
+              if (res == ZE_RESULT_SUCCESS) {
+                uint64_t val = 100 * (snap2.activeTime - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
+                if (val > 100) {
+                  val = 100;
+                }
+                mutex.lock();
+                group_utilizations[(props.onSubdevice?props.subdeviceId:0)].push_back(val);
+                mutex.unlock();
+              }
+            }
+          }
+        }));
+      }
+      for (auto &thread : threads) {
+          thread.join();
+      }
+      zes_device_properties_t props = {};
+      props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+      res = zesDeviceGetProperties(device, &props);
+      if (res == ZE_RESULT_SUCCESS) {
+        std::map<uint32_t,std::vector<uint64_t>> utilizations;
+        uint32_t i = 0;
+        do {
+          utilizations[i].push_back(getAverage(group_utilizations[i]));
+          ++i;
+        } while(i < props.numSubdevices);
+        if (props.numSubdevices != 0) {
+          for (uint32_t i = 0; i < props.numSubdevices; ++i) {
+            ret->setSubdeviceDataCurrent(i,*std::max_element(utilizations[i].begin(), utilizations[i].end()));
+          }
+        } else {
+          ret->setCurrent(*std::max_element(utilizations[0].begin(), utilizations[0].end()));
+        }
+        dataAcquired = true;
       }
     }
   }
   if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-      return ret;
+    return ret;
   } else {
-      throw BaseException("toGetEngineGroupUtilization error. Engine group type " + std::to_string(engine_group_type));
+    throw BaseException("toGetEngineGroupUtilization error. Engine group type " + std::to_string(engine_group_type));
   }
 }
 
