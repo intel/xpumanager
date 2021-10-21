@@ -57,14 +57,14 @@ target_include_directories(
   xpum
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
-          ${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/include/
+          ${CMAKE_BINARY_DIR}/install/include/
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 
 target_include_directories(
   test_xpum_api
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
-          ${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/include/
+          ${CMAKE_BINARY_DIR}/install/include/
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 
 target_sources(
