@@ -22,18 +22,18 @@ def getStatistics(device_id):
     for stats_info in resp.dataList:
         dataList=[]
         for stats_data in stats_info.dataList:
+            tmp = dict()
             try:
-                tmp = dict()
                 metricsType = XpumStatsType(stats_data.metricsType.value).name
-                tmp["metrics_type"] = metricsType
-                tmp["value"] = stats_data.value
-                if not stats_data.isCounter:
-                    tmp["avg"] = stats_data.avg
-                    tmp["min"] = stats_data.min
-                    tmp["max"] = stats_data.max
-                dataList.append(tmp)
             except:
-                pass
+                metricsType = stats_data.metricsType.value
+            tmp["metrics_type"] = metricsType
+            tmp["value"] = stats_data.value
+            if not stats_data.isCounter:
+                tmp["avg"] = stats_data.avg
+                tmp["min"] = stats_data.min
+                tmp["max"] = stats_data.max
+            dataList.append(tmp)
         if stats_info.isTileData:
             tmp = dict(tile_id=stats_info.tileId,data_list=dataList)
             tileLevelStatsDataList.append(tmp)
@@ -46,7 +46,7 @@ def getStatistics(device_id):
 
 
 def getStatisticsByGroup(group_id):
-    resp = stub.getStatistics(core_pb2.GroupId(id=group_id))
+    resp = stub.getStatisticsByGroup(core_pb2.GroupId(id=group_id))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
 
@@ -61,9 +61,9 @@ def getStatisticsByGroup(group_id):
             }
         dataList = []
 
-        for d in deviceStats.dataList[:deviceStats.count]:
+        for d in deviceStats.dataList:
             tmp = dict()
-            metricsType = XpumStatsType(d.metricsType).name
+            metricsType = XpumStatsType(d.metricsType.value).name
             tmp["metrics_type"] = metricsType
             tmp["value"] = d.value
             if not d.isCounter:
@@ -85,8 +85,8 @@ def getStatisticsByGroup(group_id):
     for deviceId in deviceMap:
         data = dict()
         data['device_id'] = deviceId
-        data['begin'] = str(beginTimestamp)
-        data['end'] = str(endTimestamp)
+        data['begin'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
+        data['end'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
         data["device_level"] = deviceMap[deviceId]["device_level"]
         data["tile_level"] = deviceMap[deviceId]["tile_level"]
         datas.append(data)
