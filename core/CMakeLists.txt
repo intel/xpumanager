@@ -28,7 +28,7 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h @ONLY)
 
 # Specifiy link file location
-link_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/lib)
+link_directories(${CMAKE_BINARY_DIR}/install/lib)
 
 # Specifiy header file location
 
