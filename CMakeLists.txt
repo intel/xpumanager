@@ -93,8 +93,8 @@ if(CPACK_GENERATOR MATCHES "RPM")
 		"/usr/local/lib"
 	)
 
-	set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/install/postinst")
-	set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/install/prerm")
+	set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/install/script/postinst")
+	set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE "${CMAKE_CURRENT_LIST_DIR}/install/script/prerm")
 endif()
 
 if(CPACK_GENERATOR MATCHES "DEB")	
@@ -122,7 +122,7 @@ install(DIRECTORY	core/include/
 
 install(DIRECTORY	
 		./doc
-		tools/rest/		
+		install/tools/rest/		
 	DESTINATION .
 )
 
@@ -134,7 +134,7 @@ install(TARGETS xpum xpumcli xpumd
 
 install(
     FILES
-		tools/fwUpgrade/GfxFwFPT
+		install/tools/fwUpgrade/GfxFwFPT
     PERMISSIONS
 		OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
     DESTINATION bin

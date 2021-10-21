@@ -29,4 +29,5 @@ rest/xpum_rest.service
 core/test/config/
 core/resources/config/pci.ids
 third_party/hwloc/install/
-
+rest/key.pem
+rest/cert.pem

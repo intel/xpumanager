@@ -3,18 +3,18 @@
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 
-if [ $(date -r ./core/resources/config/pci.ids +"%Y-%m-%d") == $(date +"%Y-%m-%d") ]; then
-    echo "pci.ids is up to date."
-else
-    rm -rf pci.ids.upgrade
-    curl --proxy http://child-prc.intel.com:912 -o pci.ids.upgrade "https://pci-ids.ucw.cz/v2.2/pci.ids" -S
-    if [ $? -eq 0 ]; then    
-        cp -r pci.ids.upgrade ./core/resources/config/pci.ids
-    else
-        echo "upgrade pci.ids failed."
-        exit 1
-    fi
-fi
+# if [ $(date -r ./core/resources/config/pci.ids +"%Y-%m-%d") == $(date +"%Y-%m-%d") ]; then
+#     echo "pci.ids is up to date."
+# else
+#     rm -rf pci.ids.upgrade
+#     curl --proxy http://child-prc.intel.com:912 -o pci.ids.upgrade "https://pci-ids.ucw.cz/v2.2/pci.ids" -S
+#     if [ $? -eq 0 ]; then    
+#         cp -r pci.ids.upgrade ./core/resources/config/pci.ids
+#     else
+#         echo "upgrade pci.ids failed."
+#         exit 1
+#     fi
+# fi
 
 echo "build distribution package"
 cd ${WORK_DIR}
@@ -30,5 +30,5 @@ if [ -f ~/password.sys_dcm ]; then
     CSUser="ccr\\sys_dcm"
     CSPwd=$(cat ~/password.sys_dcm)
     echo "SignFile:${PackageName}" 
-    "${WORK_DIR}"/tools/signfile/SignFile -vv -u "${CSUser}" -p "${CSPwd}" -s cl -cf ${PackageName}.sig ${PackageName}
+    "${WORK_DIR}"/install/tools/signfile/SignFile -vv -u "${CSUser}" -p "${CSPwd}" -s cl -cf ${PackageName}.sig ${PackageName}
 fi
