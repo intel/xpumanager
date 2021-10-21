@@ -20,11 +20,9 @@ if [ -n "${RPM_INSTALL_PREFIX}" ]; then
   mv -f /usr/lib/systemd/system/xpum_rest.service.n /usr/lib/systemd/system/xpum_rest.service 
 
   chown -R xpum ${RPM_INSTALL_PREFIX}
-  chmod +x ${RPM_INSTALL_PREFIX}/rest/xpum_rest.sh
   chmod +x ${RPM_INSTALL_PREFIX}/keytool.sh
 else
   chown -R xpum /opt/xpum
-  chmod +x /opt/xpum/rest/xpum_rest.sh
   chmod +x /opt/xpum/keytool.sh
 fi
 
