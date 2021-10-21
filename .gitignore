@@ -10,7 +10,6 @@ cli/src/config.h
 daemon/config.h
 lib/
 pci.ids.upgrade
-third_party/hwloc/install/
 core/test/xpumd
 daemon/core.grpc.pb.cc
 daemon/core.grpc.pb.h
