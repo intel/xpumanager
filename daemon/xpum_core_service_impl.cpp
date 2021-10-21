@@ -147,7 +147,17 @@ grpc::Status XpumCoreServiceImpl::getTopology( grpc::ServerContext* context, con
 
     xpum_result_t res = xpumGroupAddDevice(request->groupid(), request->deviceid());
     if ( res == XPUM_OK ) {
+        xpum_group_info_t info;
+        res = xpumGroupGetInfo(request->groupid(), &info);
         response->set_id(request->groupid());
+        if ( res == XPUM_OK ) {
+            response->set_groupname(info.groupName);
+            response->set_count(info.count);
+            for(int i{0}; i<info.count; i++){
+                DeviceId * deviceid = response->add_devicelist();
+                deviceid->set_id(info.deviceList[i]);
+            }
+        }  
     } else {
         response->set_errormsg( "Error" );
     }
@@ -161,7 +171,18 @@ grpc::Status XpumCoreServiceImpl::getTopology( grpc::ServerContext* context, con
 
     xpum_result_t res = xpumGroupRemoveDevice(request->groupid(), request->deviceid());
     if ( res == XPUM_OK ) {
+        xpum_group_info_t info;
+        res = xpumGroupGetInfo(request->groupid(), &info);
         response->set_id(request->groupid());
+        if ( res == XPUM_OK ) {
+            response->set_groupname(info.groupName);
+            response->set_count(info.count);
+            for(int i{0}; i<info.count; i++){
+                DeviceId * deviceid = response->add_devicelist();
+                deviceid->set_id(info.deviceList[i]);
+            }
+        }        
+
     } else {
         response->set_errormsg( "Error" );
     }
