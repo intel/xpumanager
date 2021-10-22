@@ -87,7 +87,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
 
     return json;
@@ -105,7 +105,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName){
         (*json)["group_id"] = response.id();
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -123,7 +123,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupDelete(int groupId){
         
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -148,7 +148,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupListAll(){
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -180,7 +180,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupList(int groupId){
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -212,7 +212,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -244,7 +244,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
