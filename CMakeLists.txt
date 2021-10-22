@@ -144,10 +144,3 @@ install(FILES
 	"${SYSTEMD_UNIT_NAME}"
 	"${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service"
 	DESTINATION "/lib/systemd/system")
-
-#install(CODE "execute_process(
-#    COMMAND bash -c \"set -e
-#    cd ${CPACK_XPUM_INSTALL_DIR}/lib
-#    echo -n .. Installing: 
-#    sudo ln -sv libDGMCore.so.${PROJECT_VERSION_MAJOR} /lib/libDGMCore.so.${PROJECT_VERSION_MAJOR}
-#    \")")

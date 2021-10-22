@@ -28,7 +28,7 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h @ONLY)
 
 # Specifiy link file location
-link_directories(${CMAKE_BINARY_DIR}/install/lib)
+link_directories(${CMAKE_BINARY_DIR}/hwloc/lib)
 
 # Specifiy header file location
 
@@ -57,14 +57,14 @@ target_include_directories(
   xpum
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
-          ${CMAKE_BINARY_DIR}/install/include/
+          ${CMAKE_BINARY_DIR}/hwloc/include/
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 
 target_include_directories(
   test_xpum_api
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
-          ${CMAKE_BINARY_DIR}/install/include/
+          ${CMAKE_BINARY_DIR}/hwloc/include/
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 
 target_sources(

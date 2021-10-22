@@ -5,7 +5,7 @@
 #include "../include/xpum_structs.h"
 #include "control/device_manager_interface.h"
 
-class GroupInfo
+class GroupInfo : public std::enable_shared_from_this<GroupInfo>
 {
     public:
         GroupInfo(std::string groupname, xpum_group_id_t groupId);
