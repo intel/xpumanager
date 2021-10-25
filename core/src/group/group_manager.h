@@ -2,7 +2,7 @@
 
 #include "data_logic/data_logic_interface.h"
 #include "control/device_manager_interface.h"
-#include "group_info.h"
+#include "group_unit.h"
 #include "group_manager_interface.h"
 
 #include "../include/xpum_structs.h"
@@ -35,7 +35,7 @@ class GroupManager : public GroupManagerInterface,
     void close() override;
 
   private:
-    GroupInfo *getGroupById(xpum_group_id_t groupId);
+    std::shared_ptr<GroupUnit> getGroupById(xpum_group_id_t groupId);
 
     GroupManager() = default;
 
@@ -52,6 +52,6 @@ class GroupManager : public GroupManagerInterface,
     std::mutex mutex;
     std::atomic_int groupSequence;
     std::atomic_int internalSequence;
-    typedef std::map<xpum_group_id_t, GroupInfo *> GroupMap;
+    typedef std::map<xpum_group_id_t, std::shared_ptr<GroupUnit>> GroupMap;
     GroupMap groupMap;
 };

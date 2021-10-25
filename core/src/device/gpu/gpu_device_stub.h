@@ -17,6 +17,10 @@
 #include "health/health_data_type.h"
 #include "topology/topology.h"
 
+/*
+  GPUDeviceStub class provides various capabilities to communicate with GPU devices.
+*/
+
 class GPUDeviceStub {
  public:
   static GPUDeviceStub& instance();

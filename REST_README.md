@@ -8,5 +8,5 @@
     `pip3 install flask flask_httpauth gunicorn[gevent]`
  
 ##Run Script
- 1. Run restConfig.py to setup password for REST API user xpumadmin.  
+ 1. Run rest_config.py to setup password for REST API user xpumadmin.  
  2. Run keytool.sh to generate self-signed certificate and keys.  

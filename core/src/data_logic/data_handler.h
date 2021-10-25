@@ -9,6 +9,10 @@
 #include "persistency.h"
 #include "infrastructure/measurement_type.h"
 
+/*
+  DataHandler class handles the monitoring data.
+*/
+
 class DataHandler : public std::enable_shared_from_this<DataHandler> {
 public:
   DataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);

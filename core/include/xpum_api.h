@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 /**************************************************************************/
-/** @defgroup BASIC_API
+/** @defgroup BASIC_API Basic API
  * XPUM Basic APIs
  * @{
  */
@@ -53,7 +53,7 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count);
 /** @} */ // Closing for BASIC_API
 
 /**************************************************************************/
-/** @brief DEVICE_API
+/** @defgroup DEVICE_API Device API
  * These APIs are for device
  * @{
  */
@@ -65,7 +65,7 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count);
  * The identifier represents device id corresponding to each device on the system and is immutable 
  * during the lifespan of the engine. The list should be queried again if the engine is restarted.
  * 
- * @param deviceIdList      OUT: The array to store device infos
+ * @param deviceList      OUT: The array to store device infos
  * @param count             OUT: The count of device
  * @return \ref xpum_result_t 
  */
@@ -83,7 +83,7 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
 /** @} */ // Closing for DEVICE_API
 
 /**************************************************************************/
-/** @brief GROUP_MANAGEMENT_API
+/** @defgroup GROUP_MANAGEMENT_API Group management
  * These APIs are for group management
  * @{
  */
@@ -147,46 +147,9 @@ xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], 
 
 /** @} */ // Closing for GROUP_MANAGEMENT_API
 
-/**************************************************************************/
-/** @defgroup TELEMETRY_API
- * These APIs are for telemetries
- * @{
- */
-/**************************************************************************/
-
-/**
- * @brief Get telemetry for single device
- * 
- * @param deviceId           IN: Device id
- * @param type               IN: Telemetry type to get
- * @param data              OUT: Pointer to struct to store telemetry info
- * @return xpum_result_t 
- */
-xpum_result_t xpumGetTelemetries(xpum_device_id_t deviceId, xpum_telemetry_type_t type, xpumTelemetryData_t* data);
-
-
-/**
- * @brief Get telemetry for a group of device 
- * 
- * @param groupId            IN: Group id 
- * @param type               IN: Telemetry type to get         
- * @param dataList          OUT: Array of struct to store telemetry info, the array length should
- *                               equal to or larger than device count of the group ( \a groupid ).
- * @param count          IN/OUT: The number of entries that \a data array can store; 
- *                               when return, the \a count will store real number of entries returned by \a data
- * @return  
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
- */
-xpum_result_t xpumGetTelemetriesByGroup(xpum_group_id_t groupId, 
-                                       xpum_telemetry_type_t type, 
-                                       xpumTelemetryData_t dataList[],
-                                       int *count);
-
-/** @} */ // Closing for TELEMETRY_API
 
 /**************************************************************************/
-/** @defgroup HEALTH_API
+/** @defgroup HEALTH_API Device health
  * These APIs are for health
  * @{
  */
@@ -282,7 +245,7 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
 /** @} */ // Closing for HEALTH_API
 
 /**************************************************************************/
-/** @defgroup EVENT_API
+/** @defgroup EVENT_API Events
  * These APIs are for event
  * @{
  */
@@ -304,7 +267,7 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events
  */
-xpum_result_t xpumGetEvent(xpumEventEntry_t eventList[], int *count);
+xpum_result_t xpumGetEvent(xpum_event_entry_t eventList[], int *count);
 
 /**
  * @brief Get events by device id
@@ -323,7 +286,7 @@ xpum_result_t xpumGetEvent(xpumEventEntry_t eventList[], int *count);
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events 
  */
-xpum_result_t xpumGetEventByDevice(xpum_device_id_t deviceId, xpumEventEntry_t eventList[], int *count);
+xpum_result_t xpumGetEventByDevice(xpum_device_id_t deviceId, xpum_event_entry_t eventList[], int *count);
 
 /**
  * @brief Get events by group id
@@ -342,7 +305,7 @@ xpum_result_t xpumGetEventByDevice(xpum_device_id_t deviceId, xpumEventEntry_t e
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events 
  */
-xpum_result_t xpumGetEventByGroup(xpum_group_id_t groupId, xpumEventEntry_t eventList[], int *count);
+xpum_result_t xpumGetEventByGroup(xpum_group_id_t groupId, xpum_event_entry_t eventList[], int *count);
 
 /**
  * @brief Remove events by event ids
@@ -363,7 +326,7 @@ xpum_result_t xpumClearAllEvents();
 /** @} */ // Closing for EVENT_API
 
 /**************************************************************************/
-/** @defgroup CONFIGURATION_API
+/** @defgroup CONFIGURATION_API Device configurations
  * These APIs are for configuration
  * @{
  */
@@ -406,10 +369,8 @@ xpum_result_t xpumGetDeviceConfig(xpum_device_id_t deviceId, xpum_device_config_
  * @param key                   IN: Configuration key to get      
  * @param deviceIdList      IN/OUT: Array of device ids in this group      
  * @param valueList         IN/OUT: Array to store configuration values for devices' \a key in \a deviceIdList    
- * @param count             IN/OUT: The number of entries that \a deviceIdList and \a valueList array can store, 
- *                                  count should equal to or larger than device count of the group ( \a groupid ); 
- *                                  when return, the \a count will store real number of entries returned by   
- *                                  \a deviceIdList and \a valueList
+ * @param count             IN/OUT: The number of entries that \a deviceIdList and \a valueList array can store, count should equal to or larger than device count of the group ( \a groupid ); 
+ *                                  when return, the \a count will store real number of entries returned by \a deviceIdList and \a valueList
  * @return
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group 
@@ -420,10 +381,189 @@ xpum_result_t xpumGetDeviceConfigByGroup(xpum_group_id_t groupId,
                                         void *valueList[],
                                         int *count);
 
+/**
+ * @brief Get device standby mode
+ * @details This function is used to get the standby mode of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray                
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
+                                    xpum_standby_data_t* dataArray, int* count);
+/**
+ * @brief Set device standby mode
+ * @details This function is used to set the standby mode of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param standby           IN: The standby mode need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
+                                 const xpum_standby_data_t& standby);
+/**
+ * @brief Get device power limit
+ * @details This function is used to get the power limit of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param dataArray         IN/OUT: The detailed power limit data.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
+                                       int32_t subDeviceId,
+                                       xpum_power_limits_t* dataArray); 
+/**
+ * @brief Set device sustained power limit
+ * @details This function is used to set the sustained power limit of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param sustained_limit   IN: The sustained power limit need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
+                                                int32_t subDeviceId,
+                                                const xpum_power_sustained_limit_t& sustained_limit);
+/**
+ * @brief Set device burst power limit
+ * @details This function is used to set the burst power limit of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param burst_limit       IN: The burstr power limit need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
+                                            int32_t subDeviceId,
+                                            const xpum_power_burst_limit_t& burst_limit);
+/**
+ * @brief Set device peak power limit
+ * @details This function is used to set the peak power limit of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param peak_limit       IN: The peak power limit need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
+                                           int32_t subDeviceId,
+                                           const xpum_power_peak_limit_t& peak_limit);
+/**
+ * @brief Get device frequency ranges
+ * @details This function is used to get the frequency ranges
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
+                                           xpum_frequency_range_t* dataArray, int* count );
+/**
+ * @brief Set device frequency ranges
+ * @details This function is used to set the frequency ranges
+ *
+ * @param deviceId          IN: The device Id
+ * @param frequency         IN: The frequency ranges need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
+                                        const xpum_frequency_range_t& t);
+/**
+ * @brief Get device scheduler mode
+ * @details This function is used to get the scheduler mode
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
+                                      xpum_scheduler_data_t* dataArray, int* count );
+/**
+ * @brief Set device the scheduler(timeout) mode
+ * @details This function is used to set the scheduler (timeout) mode
+ *
+ * @param deviceId          IN: The device Id
+ * @param sched_timeout     IN: The scheduler timeout mode need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
+                                              const xpum_scheduler_timeout_t& sched_timeout);
+/**
+ * @brief Set device the scheduler(time slice) mode
+ * @details This function is used to set the scheduler (time slice) mode
+ *
+ * @param deviceId          IN: The device Id
+ * @param sched_timeout     IN: The scheduler time slice mode need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
+                                                const xpum_scheduler_timeslice_t& sched_timeslice);
+/**
+ * @brief Set device the scheduler(exclusive) mode
+ * @details This function is used to set the scheduler (exclusive) mode
+ *
+ * @param deviceId          IN: The device Id
+ * @param sched_timeout     IN: The scheduler time slice mode need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
+                                                const xpum_scheduler_exclusive_t& sched_exclusive);
+/**
+ * @brief Reset device
+ *
+ * @param deviceId          IN: The device Id
+ * @param force             IN: Reset the device forcibly
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
+/**
+ * @brief Get device available frequency clocks
+ * @details This function is used to get available frequency clocks
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId            IN: The tile Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, int *count);
+
 /** @} */ // Closing for CONFIGURATION_API
 
 /**************************************************************************/
-/** @defgroup FIRMWARE_UPDATE_API
+/** @defgroup FIRMWARE_UPDATE_API Firmware flash
  *  APIs are for firmware update
  *  @{
  */
@@ -516,7 +656,7 @@ xpum_result_t xpumGetFirmwareFlashResultByGroup(xpum_group_id_t groupId,
 /** @} */ // Closing for FIRMWARE_UPDATE_API
 
 /**************************************************************************/
-/** @defgroup DIAGNOSTICS_API
+/** @defgroup DIAGNOSTICS_API Diagnostics
  * These APIs are for diagnostics
  * @{
  */
@@ -573,7 +713,7 @@ xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
 /** @} */ // Closing for DIAGNOSTICS_API
 
 /**************************************************************************/
-/** @defgroup AGENT_SETTING_API
+/** @defgroup AGENT_SETTING_API Agent settings
  * These APIs are for agent setting
  * @{
  */
@@ -602,7 +742,7 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
 /** @} */ // Closing for AGENT_SETTING_API
 
 /**************************************************************************/
-/** @defgroup STATISTICS_API
+/** @defgroup STATISTICS_API Device statistics
  * These APIs are for statistics
  * @{
  */
@@ -646,6 +786,15 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   uint64_t *begin,
                                   uint64_t *end);
 
+/** @} */ // Closing for STATISTICS_API
+
+/**************************************************************************/
+/** @defgroup METRICS_API Get metrics data
+ * These APIs are for collecting metrics data
+ * @{
+ */
+/**************************************************************************/
+
 /**
  * @brief Get latest metrics data by device
  * 
@@ -678,10 +827,10 @@ xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
                                   int *count);                             
 
 
-/** @} */ // Closing for STATISTICS_API
+/** @} */ // Closing for METRICS_API
 
 /**************************************************************************/
-/** @defgroup COLLECT_METRICS_RAW_DATA_API
+/** @defgroup COLLECT_METRICS_RAW_DATA_API Dump metrics raw data
  * These APIs are for collecting metrics raw data
  * @{
  */
@@ -741,63 +890,35 @@ xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId);
  */
 xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count);
 
-
-xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
-                                    xpum_standby_data_t* dataArray, int* count);
-
-xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
-                                 const xpum_standby_data_t& standby);
-
-xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
-                                       int32_t subDeviceId,
-                                       xpum_power_limits_t* dataArray); 
-
-xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
-                                                int32_t subDeviceId,
-                                                const xpum_power_sustained_limit_t& sustained_limit);
-
-xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
-                                            int32_t subDeviceId,
-                                            const xpum_power_burst_limit_t& burst_limit);
-
-xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
-                                           int32_t subDeviceId,
-                                           const xpum_power_peak_limit_t& peak_limit);
-
-xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
-                                           xpum_frequency_range_t* dataArray, int* count );
-
-xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
-                                        const xpum_frequency_range_t& t);
-
-xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
-                                      xpum_scheduler_data_t* dataArray, int* count );
-
-xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
-                                              const xpum_scheduler_timeout_t& sched_timeout);
-
-xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
-                                                const xpum_scheduler_timeslice_t& sched_timeslice);
-
-xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
-                                                const xpum_scheduler_exclusive_t& sched_exclusive);
-
-xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
-
-xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, int *count);
-
 /** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
+
+
+/**************************************************************************/
+/** @defgroup TOPOLOGY_API Topologies
+ * These APIs are for 
+ * @{
+ */
+/**************************************************************************/
 
 /**
  * @brief Get topology by device
  * 
  * @param deviceId           IN: The device id to query policy
- * @param topology        OUT: The topology on device with \a deviceId
+ * @param topology          OUT: The topology on device with \a deviceId
+ * @param memSize           
  * @return
  *      - \ref XPUM_OK                  if query successfully
  */
 xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topology, long unsigned int *memSize);
 
+/** @} */ // Closing for TOPOLOGY_API
+
+/**************************************************************************/
+/** @defgroup POLICY_API Policy management
+ * These APIs are for policy management
+ * @{
+ */
+/**************************************************************************/
 
 /**
  * @brief Set a policy on a device. One device only have one policy for one policy type. So if set a policy with same policy type on a devcie, the old policy will be overwritten.
@@ -839,6 +960,8 @@ xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[
  *      - \ref XPUM_OK                  if query successfully
  */
 xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int *count);
+
+/** @} */ // Closing for POLICY_API
 
 #if defined(__cplusplus)
 } // extern "C"

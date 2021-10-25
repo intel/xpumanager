@@ -18,9 +18,22 @@ WORK_DIR=`cd ${WORK} && pwd`
 
 echo "build distribution package"
 cd ${WORK_DIR}
-rm -rf build
-mkdir build
+if [ -d build ]; then
+    for f in $( ls -a build )
+    do
+        if [ x"$f" != x"." ] && [ x"$f" != x".." ] \
+            && [ x"$f" != x"hwloc" ] \
+            && [ x"$f" != x"third_party" ] \
+            && [ x"$f" != x"lib" ]; then
+            rm -rf build/$f
+        fi
+    done
+    echo "build folder exist."
+else
+    mkdir build
+fi
 cd build
+
 cmake ..  $@
 make -j
 cpack    

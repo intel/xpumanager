@@ -28,7 +28,8 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h @ONLY)
 
 # Specifiy link file location
-link_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/lib)
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/lib)
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/spdlog)
 
 # Specifiy header file location
 
@@ -57,14 +58,16 @@ target_include_directories(
   xpum
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
-          ${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/include/
+          ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 
 target_include_directories(
   test_xpum_api
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
-          ${CMAKE_CURRENT_LIST_DIR}/../third_party/hwloc/install/include/
+          ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/ 
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 
 target_sources(
@@ -112,12 +115,22 @@ set_target_properties(xpum PROPERTIES
 add_dependencies(xpum lib_hwloc)
 add_dependencies(test_xpum_api lib_hwloc)
 
-if(HAVE_PCIACCESS_H)
-  target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
-  target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  if(HAVE_PCIACCESS_H)
+    target_link_libraries(xpum PRIVATE ze_loader dl spdlogd hwloc stdc++fs pciaccess)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlogd hwloc stdc++fs pciaccess)
+  else()
+    target_link_libraries(xpum PRIVATE ze_loader dl spdlogd hwloc stdc++fs)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlogd hwloc stdc++fs)
+  endif()
 else()
-  target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs)
-  target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs)
+  if(HAVE_PCIACCESS_H)
+    target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
+  else()
+    target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs)
+  endif()
 endif()
 
 unset(BUILD_TEST CACHE)

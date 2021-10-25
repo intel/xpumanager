@@ -486,7 +486,7 @@ def readConfig( path ):
 
         return user, salt, pwHash, disableAuth
     else:
-        print( 'No rest.conf found, must run restConfig.py first!' )
+        print( 'No rest.conf found, must run rest_config.py first!' )
         sys.exit( 1 )
 
 user, salt, pwHash, disableAuth = readConfig( os.path.dirname( os.path.realpath( __file__ ) ) )

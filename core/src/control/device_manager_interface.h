@@ -13,6 +13,10 @@
 #include "device/power.h"
 #include "device/frequency.h"
 
+/* 
+  DeviceManagerInterface class defines various interfaces for managing devices.
+*/
+
 class DeviceManagerInterface : public InitCloseInterface {
  public:
   virtual ~DeviceManagerInterface() {}

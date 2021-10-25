@@ -6,6 +6,10 @@
 #include "data_logic_interface.h"
 #include "../include/xpum_structs.h"
 
+/*
+  DataLogic provides various interfaces to obtain various monitoring data.
+*/
+
 class DataLogic : public DataLogicInterface {
  public:
   DataLogic();

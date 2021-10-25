@@ -47,74 +47,82 @@ extern "C" {
 #define XPUM_MAX_CACHED_METRICS_TASK_NUM  16
 
 
-/**************************************************************************/
 /**
- * Basic Definitions
+ * Device id
  */
-/**************************************************************************/
-
 typedef int32_t xpum_device_id_t;
 
+/**
+ * Group id
+ */
 typedef uint32_t xpum_group_id_t;
 
+/**
+ * Event id
+ */
 typedef int32_t xpum_event_id_t;
 
+/**
+ * Task id
+ */
 typedef int32_t xpum_dump_task_id_t;
 
+/**
+ * API call results
+ */
 typedef enum xpum_result_enum {
-    XPUM_OK = 0,
-    XPUM_GENERIC_ERROR,
-    XPUM_BUFFER_TOO_SMALL,    
+    XPUM_OK = 0, ///< Ok
+    XPUM_GENERIC_ERROR, ///< Function return with unknown errors
+    XPUM_BUFFER_TOO_SMALL,    ///< The buffer pass to function is too small
     XPUM_RESULT_DEVICE_NOT_FOUND,
     XPUM_RESULT_GROUP_NOT_FOUND,
     XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
-    GPU = 0
+    GPU = 0, ///< GPU
 } xpum_device_type_t;
 
-const char *errorString(xpum_result_t result);
 
-/**************************************************************************/
 /**
- * Definitions for version info
+ * XPUM version types
  */
-/**************************************************************************/
-
 typedef enum xpum_version_enum {
-    XPUM_VERSION = 0,
-    XPUM_VERSION_GIT,
-    XPUM_VERSION_LEVEL_ZERO
+    XPUM_VERSION = 0,   ///< XPUM version
+    XPUM_VERSION_GIT,   ///< The git commit hash of this build
+    XPUM_VERSION_LEVEL_ZERO     ///< Underlying level-zero lib version
 } xpum_version_t;
 
+/**
+ * XPUM version info
+ */
 struct xpum_version_info {
-    xpum_version_t version;
-    char versionString[XPUM_MAX_VERSION_STR_LENGTH];
+    xpum_version_t version;     ///< XPUM version types
+    char versionString[XPUM_MAX_VERSION_STR_LENGTH];    ///< Version strings
 };
 
-/**************************************************************************/
-/**
- * Definitions for device
- */
-/**************************************************************************/
 
+/**
+ * Device basic info
+ */
 struct xpum_device_basic_info
 {
-    xpum_device_id_t deviceId;
-    xpum_device_type_t type;
-    char uuid[XPUM_MAX_STR_LENGTH];
-    char deviceName[XPUM_MAX_STR_LENGTH];
-    char PCIDeviceId[XPUM_MAX_STR_LENGTH];
-    char SubDeviceId[XPUM_MAX_STR_LENGTH];
-    char PCIBDFAddress[XPUM_MAX_STR_LENGTH];
-    char VendorName[XPUM_MAX_STR_LENGTH];
+    xpum_device_id_t deviceId;  ///< Device id
+    xpum_device_type_t type;    ///< Device type
+    char uuid[XPUM_MAX_STR_LENGTH];     ///< Device uuid
+    char deviceName[XPUM_MAX_STR_LENGTH];   ///< Device name
+    char PCIDeviceId[XPUM_MAX_STR_LENGTH];  ///< Device PCI device id
+    char SubDeviceId[XPUM_MAX_STR_LENGTH];  ///< Device PCI sub device id
+    char PCIBDFAddress[XPUM_MAX_STR_LENGTH];    ///< Device PCI bdf address
+    char VendorName[XPUM_MAX_STR_LENGTH];   ///< Device vendor name
 };
 
-
+/**
+ * Device property types
+ */
 typedef enum xpum_device_property_name_enum {
-    XPUM_DEVICE_PROPERTY_DEVICE_TYPE,       // Device Type
-    XPUM_DEVICE_PROPERTY_DEVICE_NAME,       // Device Name
+    XPUM_DEVICE_PROPERTY_DEVICE_TYPE,       ///< Device Type
+    XPUM_DEVICE_PROPERTY_DEVICE_NAME,       ///< Device Name
     XPUM_DEVICE_PROPERTY_VENDOR_NAME,
     XPUM_DEVICE_PROPERTY_UUID,
     XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID,
@@ -251,7 +259,7 @@ typedef enum xpum_event_component_enum {
     XPUM_EVENT_COMPONENT_THERMAL,
 } xpum_event_component_t;
 
-struct xpumEventEntry_t {
+struct xpum_event_entry_t {
     xpum_event_id_t eventId;
     xpum_event_severity_t severity;
     xpum_event_type_t eventType;
