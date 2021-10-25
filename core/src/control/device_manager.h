@@ -7,6 +7,10 @@
 #include "device_manager_interface.h"
 #include "device/scheduler.h"
 
+/* 
+  DeviceManager class provides various interfaces for managing all devices.
+*/
+
 class DeviceManager : public DeviceManagerInterface,
                       public std::enable_shared_from_this<DeviceManager> {
  public:

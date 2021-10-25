@@ -13,6 +13,10 @@
 #include "level_zero/zet_api.h"
 #include "../include/xpum_structs.h"
 
+/*
+  Device class defines various interfaces for communication with devices.
+*/
+
 class Device {
  public:
   std::string getId() noexcept;

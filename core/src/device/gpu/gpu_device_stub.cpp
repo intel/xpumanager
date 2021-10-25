@@ -1201,7 +1201,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasError(const zes_device_h
     }
     uint32_t numRasErrorSets = 0;
     ze_result_t res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, nullptr);
-    if (res == ZE_RESULT_SUCCESS) {
+    if (res == ZE_RESULT_SUCCESS && numRasErrorSets > 0) {
         std::vector<zes_ras_handle_t> phRasErrorSets(numRasErrorSets);
         res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, phRasErrorSets.data());
         if (res == ZE_RESULT_SUCCESS) {

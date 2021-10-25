@@ -518,3 +518,42 @@ grpc::Status XpumCoreServiceImpl::getTopology( grpc::ServerContext* context, con
     }
     return grpc::Status::OK;
 }
+
+
+::grpc::Status XpumCoreServiceImpl::getPolicy(::grpc::ServerContext *context, const ::GetPolicyRequest *request, ::XpumPolicyDataArray *response) {
+    // return grpc::Status::OK;
+    xpum_device_id_t groupId = request->id();
+    int count;    
+    xpum_result_t res = xpumGetPolicy(groupId, nullptr, &count);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    if (count <= 0) {
+        response->set_errormsg("There is no data");
+        return grpc::Status::OK;
+    }
+
+    //
+    xpum_policy_t dataList[count]; 
+    res = xpumGetPolicy(groupId, dataList, &count);
+    if (res != XPUM_OK || count < 0) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }       
+
+    //output
+    for (int i = 0; i < count; i++) {
+        XpumPolicyData *output = response->add_policylist();
+        xpum_policy_t &input = dataList[i];
+        output->set_type(static_cast<XpumPolicyType>(input.type));
+        output->mutable_condition()->set_type(static_cast<XpumPolicyConditionType>(input.condition.type));
+        output->mutable_condition()->set_threshold(input.condition.threshold);
+        output->mutable_action()->set_type(static_cast<XpumPolicyActionType>(input.action.type));
+        output->mutable_action()->set_throttle_device_frequency_max(input.action.throttle_device_frequency_max);
+        output->mutable_action()->set_throttle_device_frequency_min(input.action.throttle_device_frequency_min);
+        output->set_deviceid(input.deviceId);
+        output->set_isdeletepolicy(false);
+    }
+    return grpc::Status::OK;
+}

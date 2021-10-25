@@ -14,12 +14,12 @@ PolicyManager::PolicyManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
     : p_device_manager(p_device_manager)
     , p_data_logic(p_data_logic)
     , p_group_manager(p_group_manager) {    
-  XPUM_LOG_INFO("PolicyManager()");
+  //XPUM_LOG_INFO("PolicyManager()");
   this->freq = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
 }
 
 PolicyManager::~PolicyManager() {
-  XPUM_LOG_INFO("~PolicyManager()");
+  //XPUM_LOG_INFO("~PolicyManager()");
 }
 
 void PolicyManager::init() {
@@ -40,7 +40,7 @@ void PolicyManager::start() {
   std::weak_ptr<PolicyManager> this_weak_ptr = shared_from_this();
 
   timer.scheduleAtFixedRate(delay, freq, [delay, this_weak_ptr]() {
-    XPUM_LOG_INFO("---PolicyManager::scheduleAtFixedRate()---1--");
+    //XPUM_LOG_INFO("---PolicyManager::scheduleAtFixedRate()---1--");
     auto p_this = this_weak_ptr.lock();
     if (p_this == nullptr) {
       return ;
@@ -206,12 +206,12 @@ bool PolicyManager::isInDeviceIds(xpum_device_id_t deviceId, xpum_device_id_t de
 }
 
 xpum_result_t PolicyManager::xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy){
-  XPUM_LOG_INFO("---PolicyManager::xpumSetPolicy()---1--");
+  //XPUM_LOG_INFO("---PolicyManager::xpumSetPolicy()---1--");
   xpum_device_id_t deviceList[] = {deviceId};
   return xpumSetPolicyByDeviceIds(deviceList,1,policy);  
 }
 xpum_result_t PolicyManager::xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t policy){
-  XPUM_LOG_INFO("---PolicyManager::xpumSetPolicyByGroup()---1--");
+  //XPUM_LOG_INFO("---PolicyManager::xpumSetPolicyByGroup()---1--");
   xpum_result_t res;
   xpum_group_info_t info;
   res = p_group_manager->getGroupInfo(groupId, &info);
@@ -222,7 +222,7 @@ xpum_result_t PolicyManager::xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_
 }
 
 xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds[],int count, xpum_policy_t policy){
-  XPUM_LOG_INFO("---PolicyManager::xpumSetPolicyByDeviceIds()---1--");
+  //XPUM_LOG_INFO("---PolicyManager::xpumSetPolicyByDeviceIds()---1--");
   if(policy.isDeletePolicy){
     //Delete policy
     std::unique_lock<std::mutex> lock(this->mutex);
@@ -277,12 +277,12 @@ xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy){
 }
 
 xpum_result_t PolicyManager::xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[], int *count){
-  XPUM_LOG_INFO("---PolicyManager::xpumGetPolicy()---1--");
+  //XPUM_LOG_INFO("---PolicyManager::xpumGetPolicy()---1--");
   xpum_device_id_t deviceList[] = {deviceId};
   return xpumGetPolicyByDeviceIds(deviceList,1,resultList,count);  
 }
 xpum_result_t PolicyManager::xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int *count){
-  XPUM_LOG_INFO("---PolicyManager::xpumGetPolicyByGroup()---1--");
+  //XPUM_LOG_INFO("---PolicyManager::xpumGetPolicyByGroup()---1--");
   xpum_result_t res;
   xpum_group_info_t info;
   res = p_group_manager->getGroupInfo(groupId, &info);
@@ -293,7 +293,7 @@ xpum_result_t PolicyManager::xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_
 }
 
 xpum_result_t PolicyManager::xpumGetPolicyByDeviceIds(xpum_device_id_t deviceIds[], int count, xpum_policy_t resultList[], int *countRet){
-  XPUM_LOG_INFO("---PolicyManager::xpumGetPolicyByDeviceIds()---1--");
+  //XPUM_LOG_INFO("---PolicyManager::xpumGetPolicyByDeviceIds()---1--");
   std::unique_lock<std::mutex> lock(this->mutex);
   //filter
   std::list<std::shared_ptr<xpum_policy_data>>  policyMapRet;

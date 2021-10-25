@@ -64,4 +64,7 @@ public:
 
     virtual ::grpc::Status getStatistics(::grpc::ServerContext *context, const ::DeviceId *request, ::XpumGetStatsResponse *response) override;
     virtual ::grpc::Status getStatisticsByGroup(::grpc::ServerContext *context, const ::GroupId *request, ::XpumGetStatsResponse *response) override;
+
+    virtual ::grpc::Status getPolicy(::grpc::ServerContext *context, const ::GetPolicyRequest *request, ::XpumPolicyDataArray *response) override;
+
 };

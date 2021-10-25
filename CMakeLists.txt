@@ -42,6 +42,7 @@ add_subdirectory(core)
 add_subdirectory(cli)
 add_subdirectory(daemon)
 add_subdirectory(rest)
+#add_subdirectory(doc)
 
 if(NOT DEFINED CPACK_GENERATOR)
 	if(EXISTS "/etc/debian_version")
@@ -104,7 +105,6 @@ if(CPACK_GENERATOR MATCHES "DEB")
 	file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}.deb")
 
 	set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
-	#set(CPACK_DEBIAN_PACKAGE_DEPENDS "liblua5.2-0")
 
 	set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
 	set(CPACK_DEBIAN_XPUM_PACKAGE_NAME "${PROJECT_NAME}")
@@ -121,7 +121,6 @@ install(DIRECTORY	core/include/
 )
 
 install(DIRECTORY	
-		./doc
 		install/tools/rest/		
 	DESTINATION .
 )
