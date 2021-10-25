@@ -5,3 +5,4 @@ from .health import getHealth, getHealthByGroup, setHealthConfig, setHealthConfi
 from .diagnostics import runDiagnostics, runDiagnosticsByGroup, getDiagnosticsResult, getDiagnosticsResultByGroup
 from .statistics import getStatistics, getStatisticsByGroup
 from .groups import createGroup, getAllGroupIds, getGroupInfo, destroyGroup, addDeviceToGroup, removeDeviceFromGroup
+from .firmwares import runFirmwareFlash, getFirmwareFlashResult
