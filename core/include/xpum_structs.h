@@ -155,7 +155,7 @@ typedef enum xpum_device_property_name_enum {
 extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name);
 
 /**
- * @brief Device property struct
+ * @brief Struct for one device property
  */
 struct xpum_device_property_t {
     xpum_device_property_name_t name;   ///< Device property name
@@ -163,7 +163,7 @@ struct xpum_device_property_t {
 };
 
 /**
- * @brief 
+ * @brief Struct stores all properties of a device
  * 
  */
 struct xpum_device_properties_t{
@@ -173,16 +173,14 @@ struct xpum_device_properties_t{
 };
 
 
-/**************************************************************************/
 /**
- * Definitions for group management
+ * @brief Struct for group info
+ * 
  */
-/**************************************************************************/
-
 struct xpum_group_info_t {
-    int count;
-    char groupName[XPUM_MAX_STR_LENGTH];                       
-    xpum_device_id_t deviceList[XPUM_MAX_NUM_DEVICES]; 
+    int count;  ///< The count of devices in this group
+    char groupName[XPUM_MAX_STR_LENGTH];    ///< The name of this group                       
+    xpum_device_id_t deviceList[XPUM_MAX_NUM_DEVICES];  ///< The array of device id belongs to this group 
 };
 
 
@@ -246,33 +244,43 @@ typedef enum xpum_device_config_type_enum {
  */
 /**************************************************************************/
 
+/**
+ * @brief Firmware types
+ * 
+ */
 typedef enum xpum_firmware_type_enum {
-    XPUM_DEVICE_FIRMWARE_GSC = 0,
+    XPUM_DEVICE_FIRMWARE_GSC = 0,   ///< GSC firmware
 } xpum_firmware_type_t;
 
+/**
+ * @brief Firmware flash states
+ * 
+ */
 typedef enum xpum_firmware_flash_result_enum {
-    XPUM_DEVICE_FIRMWARE_FLASH_OK = 0,
-    XPUM_DEVICE_FIRMWARE_FLASH_ERROR,
-    XPUM_DEVICE_FIRMWARE_FLASH_ONGOING,
+    XPUM_DEVICE_FIRMWARE_FLASH_OK = 0,  ///< Firmware flash successfully
+    XPUM_DEVICE_FIRMWARE_FLASH_ERROR,   ///< Firmware flash in error
+    XPUM_DEVICE_FIRMWARE_FLASH_ONGOING, ///< Firmware flash is on going
 } xpum_firmware_flash_result_t;
 
+/**
+ * @brief Firmware flash job
+ * 
+ */
 struct xpum_firmware_flash_job {
-    xpum_firmware_type_t type;
-    char *filePath;
+    xpum_firmware_type_t type;  ///< The firmware type to flash
+    char *filePath; ///< The path of firmware binary file to flash
 };
 
+/**
+ * @brief The struct stores the firmware flash states
+ * 
+ */
 struct xpum_firmware_flash_task_result_t {
-    xpum_device_id_t deviceId;
-    xpum_firmware_type_t type;
-    xpum_firmware_flash_result_t result;
-    char description[XPUM_MAX_STR_LENGTH];
-    char version[XPUM_MAX_STR_LENGTH];
-};
-
-struct xpum_firmware_properties {
-    xpum_firmware_type_t type;
-    char version[XPUM_MAX_STR_LENGTH];
-    bool updateRunning;
+    xpum_device_id_t deviceId;  ///< The id of the device to flash firmware
+    xpum_firmware_type_t type;  ///< The firmware type to flash
+    xpum_firmware_flash_result_t result;    ///< Which state the firmware flash job is in
+    char description[XPUM_MAX_STR_LENGTH];  ///< The description of this result
+    char version[XPUM_MAX_STR_LENGTH];  ///< Current firmware version
 };
 
 
@@ -336,9 +344,12 @@ struct xpum_diag_task_info_t {
  */
 /**************************************************************************/
 
+/**
+ * @brief Agent setting types
+ * 
+ */
 typedef enum xpum_agent_config_enum {
-    XPUM_AGENT_CONFIG_EVENT_LIMIT = 0,
-    XPUM_AGENT_CONFIG_SAMPLE_INTERVAL
+    XPUM_AGENT_CONFIG_SAMPLE_INTERVAL=0 ///< Agent sample interval, in milliseconds, options are [100, 200, 500, 1000],default is 1000
 } xpum_agent_config_t;
 
 
@@ -348,28 +359,32 @@ typedef enum xpum_agent_config_enum {
  */
 /**************************************************************************/
 
+/**
+ * @brief Statistics and metrics types
+ * 
+ */
 typedef enum xpum_stats_type_enum {
-    XPUM_STATS_GPU_UTILIZATION = 0,
-    XPUM_STATS_OCCUPATION,
-    XPUM_STATS_ISSUE_EFFICIENCY,
-    XPUM_STATS_EXECUTION_EFFICIENCY,
-    XPUM_STATS_NON_OCCUPATION,
-    XPUM_STATS_POWER,
-    XPUM_STATS_ENERGY,
-    XPUM_STATS_GPU_FREQUENCY,
-    XPUM_STATS_GPU_TEMEPERATURE,
-    XPUM_STATS_MEMORY_USED,
-    XPUM_STATS_MEMORY_UTILIZATION,
-    XPUM_STATS_MEMORY_BANDWIDTH,
-    XPUM_STATS_MEMORY_READ,
-    XPUM_STATS_MEMORY_WRITE,
-    XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION,
-    XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION,
-    XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,
-    XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION,
-    XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION,
-    XPUM_STATS_PCIRX,
-    XPUM_STATS_PCITX,
+    XPUM_STATS_GPU_UTILIZATION = 0, ///< GPU Utilization
+    XPUM_STATS_OCCUPATION,  ///< GPU Occupation
+    XPUM_STATS_ISSUE_EFFICIENCY, ///< Issue Efficiency 
+    XPUM_STATS_EXECUTION_EFFICIENCY, ///< Execution Efficiency
+    XPUM_STATS_NON_OCCUPATION, ///< Non Occupation
+    XPUM_STATS_POWER, ///< Power
+    XPUM_STATS_ENERGY, ///< Energy
+    XPUM_STATS_GPU_FREQUENCY, ///< Gpu Frequency
+    XPUM_STATS_GPU_TEMEPERATURE, ///< Gpu Temeperature
+    XPUM_STATS_MEMORY_USED, ///< Memory Used
+    XPUM_STATS_MEMORY_UTILIZATION, ///< Memory Utilization
+    XPUM_STATS_MEMORY_BANDWIDTH, ///< Memory Bandwidth
+    XPUM_STATS_MEMORY_READ, ///< Memory Read
+    XPUM_STATS_MEMORY_WRITE, ///< Memory Write
+    XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, ///< Engine Group Compute All Utilization
+    XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION, ///< Engine Group Media All Utilization
+    XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION, ///< Engine Group Copy All Utilization
+    XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION, ///< Engine Group Render All Utilization
+    XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION, ///< Engine Group 3d All Utilization
+    XPUM_STATS_PCIRX, ///< PCIRX
+    XPUM_STATS_PCITX, ///< PCITX
     XPUM_STATS_RAS_ERROR_CAT_RESET,
     XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
     XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS,
@@ -381,30 +396,42 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
+/**
+ * @brief Struct to store statistics data for different metric types
+ * 
+ */
 struct xpum_device_stats_data_t {
-    xpum_stats_type_t metricsType;
-    bool isCounter;
-    uint64_t value;
-    uint64_t min;
-    uint64_t avg;
-    uint64_t max;
+    xpum_stats_type_t metricsType;  ///< Metric type
+    bool isCounter; ///< If this metric is a counter
+    uint64_t value; ///< The value of this metric type
+    uint64_t min;   ///< The min value since last call, only valid if isCounter is false
+    uint64_t avg;   ///< The average value since last call, only valid if isCounter is false
+    uint64_t max;   ///< The max value since last call, only valid if isCounter is false
 };
 
+/**
+ * @brief Struct to store device statistics data
+ * 
+ */
 struct xpum_device_stats_t {
-    xpum_device_id_t deviceId;
-    bool isTileData;
-    int32_t tileId;
-    int32_t count;
+    xpum_device_id_t deviceId;  ///< Device id
+    bool isTileData;    ///< If this statistics data is tile level
+    int32_t tileId; ///< The tile id, only valid if isTileData is true
+    int32_t count;  ///< The count of data stored in dataList array
     xpum_device_stats_data_t dataList[XPUM_STATS_MAX];
 };
 
+/**
+ * @brief Struct to store raw statistics data, not aggregated yet
+ * 
+ */
 struct xpum_metrics_raw_data_t {
-    xpum_device_id_t deviceId;
-    bool isTileData;
-    int32_t tileId;
-    uint64_t timestamp;
-    xpum_stats_type_t metricsType;
-    uint64_t value;
+    xpum_device_id_t deviceId;  ///< Device id
+    bool isTileData;    ///< If this statistics data is tile level
+    int32_t tileId; ///< The tile id, only valid if isTileData is true
+    uint64_t timestamp; ///< The timestamp this value is telemetried
+    xpum_stats_type_t metricsType;  ///< Metric type
+    uint64_t value; ///< The instant value of the metricsType at the timestamp
 };
 
 enum xpum_engine_type_flags_t {
