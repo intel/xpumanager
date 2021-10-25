@@ -1,14 +1,14 @@
 #pragma once
 namespace xpum {
 enum ErrorCode {
-  OK = 0,
+    OK = 0,
 
-  UNKNOWN =  0x00000001,
+    UNKNOWN = 0x00000001,
 
-  ILEGAL_PARAM = 0x00000002,
-  
-  CORE_NOT_INITIALIZED = 0x00000003,
+    ILEGAL_PARAM = 0x00000002,
 
-  OPERATION_FAILED = 0x00000004
+    CORE_NOT_INITIALIZED = 0x00000003,
+
+    OPERATION_FAILED = 0x00000004
 };
 } // end namespace xpum

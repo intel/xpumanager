@@ -5,23 +5,23 @@ namespace xpum {
 SharedData::SharedData(
     Timestamp_t time,
     std::map<std::string, std::shared_ptr<MeasurementData>>& datas) {
-  for (auto it = datas.begin(); it != datas.end(); it++) {
-    this->datas[it->first] = *(it->second);
-  }
+    for (auto it = datas.begin(); it != datas.end(); it++) {
+        this->datas[it->first] = *(it->second);
+    }
 
-  this->time = time;
+    this->time = time;
 }
 
 SharedData::~SharedData() {
-  datas.clear();
+    datas.clear();
 }
 
 std::map<std::string, MeasurementData>& SharedData::getData() noexcept {
-  return this->datas;
+    return this->datas;
 }
-  
+
 Timestamp_t SharedData::getTime() noexcept {
-  return this->time;
+    return this->time;
 }
 
 } // end namespace xpum

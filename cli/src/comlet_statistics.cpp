@@ -1,9 +1,9 @@
 #include "comlet_statistics.h"
 
-#include "core_stub.h"
-
 #include <map>
 #include <nlohmann/json.hpp>
+
+#include "core_stub.h"
 
 namespace xpum::cli {
 
@@ -14,17 +14,15 @@ void ComletStatistics::setupOptions() {
 }
 
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
-
     if (this->opts->deviceId != -1) {
         auto json = this->coreStub->getStatistics(this->opts->deviceId);
         return json;
-    } else if (this->opts->groupId != -1){
+    } else if (this->opts->groupId != -1) {
         auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId);
         return json;
     }
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     (*json)["error"] = "Unknow operation";
     return json;
-
 }
 } // end namespace xpum::cli

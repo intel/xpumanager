@@ -8,28 +8,27 @@
 namespace xpum {
 
 class Timer {
- public:
-  Timer();  
+   public:
+    Timer();
 
-  ~Timer();
+    ~Timer();
 
-  void scheduleAtFixedRate(long delay, int interval, std::function<void()> task);
+    void scheduleAtFixedRate(long delay, int interval, std::function<void()> task);
 
-  void schedule(int delay, std::function<void()> task);
+    void schedule(int delay, std::function<void()> task);
 
-  void cancel() noexcept;
- 
- private:
+    void cancel() noexcept;
+
+   private:
     Timer(const Timer& timer);
 
- private:
-  std::atomic<bool> canceled;
+   private:
+    std::atomic<bool> canceled;
 
-  std::atomic<bool> to_cancel;
+    std::atomic<bool> to_cancel;
 
-  std::mutex mutex;
+    std::mutex mutex;
 
-  std::condition_variable cancel_condition;
-  
+    std::condition_variable cancel_condition;
 };
 } // end namespace xpum

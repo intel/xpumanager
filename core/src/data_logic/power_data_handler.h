@@ -3,9 +3,9 @@
 namespace xpum {
 
 class PowerDataHandler : public StatisticsDataHandler {
-public:
-  PowerDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
+   public:
+    PowerDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 
-  virtual ~PowerDataHandler();
+    virtual ~PowerDataHandler();
 };
 } // end namespace xpum

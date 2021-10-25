@@ -1,23 +1,20 @@
-#include "CLI/App.hpp"
-#include "cli_wrapper.h"
-#include "comlet_discovery.h"
-#include "comlet_group.h"
-#include "comlet_topology.h"
-#include "comlet_version.h"
-#include "comlet_diagnostic.h"
-#include "comlet_health.h"
-#include "comlet_statistics.h"
-
 #include <iostream>
 #include <memory>
 #include <string>
 
-
+#include "CLI/App.hpp"
+#include "cli_wrapper.h"
+#include "comlet_diagnostic.h"
+#include "comlet_discovery.h"
+#include "comlet_group.h"
+#include "comlet_health.h"
+#include "comlet_statistics.h"
+#include "comlet_topology.h"
+#include "comlet_version.h"
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
 
 int main(int argc, char **argv) {
-
     CLI::App app{"Intel XPU Manager Command Line Interface"};
 
     xpum::cli::CLIWrapper wrapper(app);

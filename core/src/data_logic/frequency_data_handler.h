@@ -3,9 +3,9 @@
 namespace xpum {
 
 class FrequencyDataHandler : public StatisticsDataHandler {
-public:
-  FrequencyDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
+   public:
+    FrequencyDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 
-  virtual ~FrequencyDataHandler();
+    virtual ~FrequencyDataHandler();
 };
 } // end namespace xpum

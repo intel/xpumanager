@@ -5,7 +5,7 @@
 namespace xpum {
 
 class DeviceProperty {
- public:
+   public:
     static const std::string TYPE;
 
     static const std::string VENDOR_ID;
@@ -37,9 +37,9 @@ class DeviceProperty {
     static const std::string TIMESTAMP_VALID_BITS;
 
     static const std::string KERNEL_TIMESTAMP_VALID_BITS;
-    
+
     static const std::string UUID;
-    
+
     static const std::string DEVICE_NAME;
 
     static const std::string VENDOR_NAME;
@@ -55,7 +55,7 @@ class DeviceProperty {
     static const std::string NUM_SUB_DEVICES;
 
     static const std::string DRIVER_VERSION;
-    
+
     static const std::string FLAGS;
 
     static const std::string MEMORY_PHYSICAL_SIZE;
@@ -81,7 +81,6 @@ class DeviceProperty {
     static const std::string MEM_BUS_WIDTH;
 
     static const std::string MEM_CHANNEL_NUM;
-
 };
 
 } // end namespace xpum

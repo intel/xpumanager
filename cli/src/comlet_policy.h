@@ -1,9 +1,9 @@
 #pragma once
 
-#include "comlet_base.h"
-
 #include <nlohmann/json.hpp>
 #include <string>
+
+#include "comlet_base.h"
 
 namespace xpum::cli {
 
@@ -16,15 +16,14 @@ struct ComletPolicyOptions {
 };
 
 class ComletPolicy : public ComletBase {
-
-  public:
+   public:
     ComletPolicy() : ComletBase("policy", "Policy of the device") {}
     virtual ~ComletPolicy() {}
 
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
-  private:
+   private:
     std::unique_ptr<ComletPolicyOptions> opts;
 };
 } // end namespace xpum::cli

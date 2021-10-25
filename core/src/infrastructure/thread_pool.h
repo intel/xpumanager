@@ -1,7 +1,7 @@
 #pragma once
 
-#include <tuple> 
 #include <thread>
+#include <tuple>
 
 #include "const.h"
 #include "infrastructure/exception/base_exception.h"
@@ -11,51 +11,51 @@
 namespace xpum {
 
 class ThreadPool {
- public:
-  ThreadPool(unsigned int size);
+   public:
+    ThreadPool(unsigned int size);
 
-  ~ThreadPool();
+    ~ThreadPool();
 
-  template <class F, class... Args>
-  void addTask(Callback_t callback, F &&f, Args &&...args) {
-    if (stop) {
-      throw BaseException("add task to a stopped ThreadPool");
+    template <class F, class... Args>
+    void addTask(Callback_t callback, F &&f, Args &&... args) {
+        if (stop) {
+            throw BaseException("add task to a stopped ThreadPool");
+        }
+
+        auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+        auto taskInfo = std::make_tuple(task, callback);
+
+        tasks.add([taskInfo]() {
+            try {
+                auto ret = (std::get<0>(taskInfo))();
+                (std::get<1>(taskInfo))(std::static_pointer_cast<void>(ret), nullptr);
+            } catch (std::exception &e) {
+                std::string error = "Failed to execute task in thread pool:";
+                error += e.what();
+                XPUM_LOG_ERROR(error);
+                (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(e.what()));
+            } catch (...) {
+                std::string error =
+                    "Failed to execute task in thread pool: unexpected exception";
+                XPUM_LOG_ERROR(error);
+                (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(error));
+            }
+        });
     }
 
-    auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
-    auto taskInfo = std::make_tuple(task, callback);
+   private:
+    void init();
 
-    tasks.add([taskInfo]() {
-      try {
-        auto ret = (std::get<0>(taskInfo))();
-        (std::get<1>(taskInfo))(std::static_pointer_cast<void>(ret), nullptr);
-      } catch (std::exception &e) {
-        std::string error = "Failed to execute task in thread pool:";
-        error += e.what();
-        XPUM_LOG_ERROR(error);
-        (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(e.what()));
-      } catch (...) {
-        std::string error =
-            "Failed to execute task in thread pool: unexpected exception";
-        XPUM_LOG_ERROR(error);
-        (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(error));
-      }
-    });
-  }
+    void close();
 
- private:
-  void init();
+   private:
+    std::vector<std::thread> workers;
 
-  void close();
+    SharedQueue<std::function<void()>> tasks;
 
- private:
-  std::vector<std::thread> workers;
+    std::atomic<bool> stop;
 
-  SharedQueue<std::function<void()>> tasks;
-
-  std::atomic<bool> stop;
-
-  unsigned int size;
+    unsigned int size;
 };
 
 } // end namespace xpum

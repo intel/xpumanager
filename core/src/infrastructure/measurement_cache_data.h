@@ -1,36 +1,36 @@
 #pragma once
 
-#include "const.h"
-#include "logger.h"
-#include "measurement_type.h"
-#include "utility.h"
-
 #include <chrono>
 #include <ctime>
 #include <map>
 #include <string>
 
+#include "const.h"
+#include "logger.h"
+#include "measurement_type.h"
+#include "utility.h"
+
 namespace xpum {
 
 class MeasurementCacheData {
-  public:
-    MeasurementCacheData(const std::string& deviceId, MeasurementType metricType, uint64_t value, long long timeStamp, bool onSubdevice, uint32_t subdeviceID) 
-    : device_id(deviceId), type(metricType), data(value), time(timeStamp), on_subdevice(onSubdevice), subdevice_id(subdeviceID) {
+   public:
+    MeasurementCacheData(const std::string& deviceId, MeasurementType metricType, uint64_t value, long long timeStamp, bool onSubdevice, uint32_t subdeviceID)
+        : device_id(deviceId), type(metricType), data(value), time(timeStamp), on_subdevice(onSubdevice), subdevice_id(subdeviceID) {
     }
 
     MeasurementCacheData(const MeasurementCacheData& other) {
-      time = other.time;
-      data = other.data;
-      type = other.type;
-      on_subdevice = other.on_subdevice;
-      subdevice_id = other.subdevice_id;
-      device_id = other.device_id;
+        time = other.time;
+        data = other.data;
+        type = other.type;
+        on_subdevice = other.on_subdevice;
+        subdevice_id = other.subdevice_id;
+        device_id = other.device_id;
     }
 
     virtual ~MeasurementCacheData() {
     }
 
-  public:
+   public:
     Timestamp_t getTime() { return this->time; }
 
     uint64_t getData() { return this->data; }
@@ -43,7 +43,7 @@ class MeasurementCacheData {
 
     std::string getDeviceId() { return this->device_id; }
 
-  protected:
+   protected:
     std::string device_id;
 
     MeasurementType type;

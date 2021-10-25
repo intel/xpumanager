@@ -1,5 +1,11 @@
 #include "xpum_api.h"
 
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <vector>
+
 #include "api_types.h"
 #include "core/core.h"
 #include "device/device.h"
@@ -9,81 +15,74 @@
 #include "infrastructure/version.h"
 #include "topology/topology.h"
 
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <vector>
-
 namespace xpum {
 
 extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
     switch (name) {
-    case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
-        return "DEVICE_TYPE";
-    case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
-        return "DEVICE_NAME";
-    case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
-        return "VENDOR_NAME";
-    case XPUM_DEVICE_PROPERTY_UUID:
-        return "UUID";
-    case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
-        return "PCI_DEVICE_ID";
-    case XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID:
-        return "PCI_SUB_DEVICE_ID";
-    case XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID:
-        return "PCI_VENDOR_ID";
-    case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
-        return "PCI_BDF_ADDRESS";
-    case XPUM_DEVICE_PROPERTY_PCI_SLOT:
-        return "PCI_SLOT";
-    case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
-        return "PCIE_GENERATION";
-    case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
-        return "PCIE_MAX_LINK_WIDTH";
-    case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
-        return "DRIVER_VERSION";
-    case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
-        return "FIRMWARE_NAME";
-    case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
-        return "FIRMWARE_VERSION";
-    case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
-        return "SERIAL_NUMBER";
-    case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
-        return "CORE_CLOCK_RATE_MHZ";
-    case XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE:
-        return "MEMORY_PHYSICAL_SIZE_BYTE";
-    case XPUM_DEVICE_PROPERTY_MEMORY_FREE_SIZE_BYTE:
-        return "MEMORY_FREE_SIZE_BYTE";
-    case XPUM_DEVICE_PROPERTY_MAX_MEM_ALLOC_SIZE_BYTE:
-        return "MAX_MEM_ALLOC_SIZE_BYTE";
-    case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEMORY_CHANNELS:
-        return "NUMBER_OF_MEMORY_CHANNELS";
-    case XPUM_DEVICE_PROPERTY_MEMORY_BUS_WIDTH:
-        return "MEMORY_BUS_WIDTH";
-    case XPUM_DEVICE_PROPERTY_MAX_HARDWARE_CONTEXTS:
-        return "MAX_HARDWARE_CONTEXTS";
-    case XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY:
-        return "MAX_COMMAND_QUEUE_PRIORITY";
-    case XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES:
-        return "NUMBER_OF_TILES";
-    case XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES:
-        return "NUMBER_OF_SLICES";
-    case XPUM_DEVICE_PROPERTY_NUMBER_OF_SUB_SLICES_PER_SLICE:
-        return "NUMBER_OF_SUB_SLICES_PER_SLICE";
-    case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE:
-        return "NUMBER_OF_EUS_PER_SUB_SLICE";
-    case XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU:
-        return "NUMBER_OF_THREADS_PER_EU";
-    case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
-        return "PHYSICAL_EU_SIMD_WIDTH";
-    default:
-        return "";
+        case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
+            return "DEVICE_TYPE";
+        case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
+            return "DEVICE_NAME";
+        case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
+            return "VENDOR_NAME";
+        case XPUM_DEVICE_PROPERTY_UUID:
+            return "UUID";
+        case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
+            return "PCI_DEVICE_ID";
+        case XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID:
+            return "PCI_SUB_DEVICE_ID";
+        case XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID:
+            return "PCI_VENDOR_ID";
+        case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
+            return "PCI_BDF_ADDRESS";
+        case XPUM_DEVICE_PROPERTY_PCI_SLOT:
+            return "PCI_SLOT";
+        case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
+            return "PCIE_GENERATION";
+        case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
+            return "PCIE_MAX_LINK_WIDTH";
+        case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
+            return "DRIVER_VERSION";
+        case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
+            return "FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
+            return "FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
+            return "SERIAL_NUMBER";
+        case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
+            return "CORE_CLOCK_RATE_MHZ";
+        case XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE:
+            return "MEMORY_PHYSICAL_SIZE_BYTE";
+        case XPUM_DEVICE_PROPERTY_MEMORY_FREE_SIZE_BYTE:
+            return "MEMORY_FREE_SIZE_BYTE";
+        case XPUM_DEVICE_PROPERTY_MAX_MEM_ALLOC_SIZE_BYTE:
+            return "MAX_MEM_ALLOC_SIZE_BYTE";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEMORY_CHANNELS:
+            return "NUMBER_OF_MEMORY_CHANNELS";
+        case XPUM_DEVICE_PROPERTY_MEMORY_BUS_WIDTH:
+            return "MEMORY_BUS_WIDTH";
+        case XPUM_DEVICE_PROPERTY_MAX_HARDWARE_CONTEXTS:
+            return "MAX_HARDWARE_CONTEXTS";
+        case XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY:
+            return "MAX_COMMAND_QUEUE_PRIORITY";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES:
+            return "NUMBER_OF_TILES";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES:
+            return "NUMBER_OF_SLICES";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_SUB_SLICES_PER_SLICE:
+            return "NUMBER_OF_SUB_SLICES_PER_SLICE";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE:
+            return "NUMBER_OF_EUS_PER_SUB_SLICE";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU:
+            return "NUMBER_OF_THREADS_PER_EU";
+        case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
+            return "PHYSICAL_EU_SIMD_WIDTH";
+        default:
+            return "";
     }
 }
 
 xpum_result_t xpumInit() {
-
     try {
         Core::instance().init();
     } catch (BaseException &e) {
@@ -132,13 +131,11 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count) {
 }
 
 xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_DEVICES], int *count) {
-
     std::vector<std::shared_ptr<Device>> devices;
 
     Core::instance().getDeviceManager()->getDeviceList(devices);
 
     for (size_t i = 0; i < devices.size(); i++) {
-
         auto &p_device = devices[i];
 
         auto &info = deviceList[i];
@@ -152,37 +149,36 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
         p_device->getProperties(properties);
 
         for (Property &prop : properties) {
-
             auto name = prop.getName();
-            
+
             std::string value = prop.getValue();
 
             switch (name) {
-            case XPUM_DEVICE_PROPERTY_UUID:
-                value.copy(info.uuid, value.size());
-                break;
-            case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
-                value.copy(info.deviceName, value.size());
-                info.deviceName[value.size()] = 0;
-                break;
-            case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
-                value.copy(info.PCIDeviceId, value.size());
-                info.PCIDeviceId[value.size()] = 0;
-                break;
-            case XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID:
-                value.copy(info.SubDeviceId, value.size());
-                info.SubDeviceId[value.size()] = 0;
-                break;
-            case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
-                value.copy(info.PCIBDFAddress, value.size());
-                info.PCIBDFAddress[value.size()] = 0;
-                break;
-            case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
-                value.copy(info.VendorName, value.size());
-                info.VendorName[value.size()] = 0;
-                break;
-            default:
-                break;
+                case XPUM_DEVICE_PROPERTY_UUID:
+                    value.copy(info.uuid, value.size());
+                    break;
+                case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
+                    value.copy(info.deviceName, value.size());
+                    info.deviceName[value.size()] = 0;
+                    break;
+                case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
+                    value.copy(info.PCIDeviceId, value.size());
+                    info.PCIDeviceId[value.size()] = 0;
+                    break;
+                case XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID:
+                    value.copy(info.SubDeviceId, value.size());
+                    info.SubDeviceId[value.size()] = 0;
+                    break;
+                case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
+                    value.copy(info.PCIBDFAddress, value.size());
+                    info.PCIBDFAddress[value.size()] = 0;
+                    break;
+                case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
+                    value.copy(info.VendorName, value.size());
+                    info.VendorName[value.size()] = 0;
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -240,7 +236,6 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
 }
 
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties) {
-
     std::vector<std::shared_ptr<Device>> devices;
 
     Core::instance().getDeviceManager()->getDeviceList(devices);
@@ -314,9 +309,9 @@ xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
     return xpum_result_t::XPUM_OK;
 }
 
-xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId, 
-                                  xpum_device_stats_t dataList[], 
-                                  int *count) {
+xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
+                                    xpum_device_stats_t dataList[],
+                                    int *count) {
     xpum_group_info_t groupInfo;
     int currentCount = 0, totalCount = 0;
     xpum_device_stats_t *pStatus = dataList;
@@ -328,7 +323,7 @@ xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
     for (int i = 0; i < groupInfo.count; i++) {
         currentCount = *count - totalCount;
         Core::instance().getDataLogic()->getLatestMetrics(groupInfo.deviceList[i], pStatus,
-                                                              &currentCount);
+                                                          &currentCount);
         totalCount += currentCount;
         pStatus += currentCount;
         if (*count < totalCount) {
@@ -423,22 +418,22 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
 
 xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
     switch (key) {
-    case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
-        Core::instance().getMonitorManager()->resetMetricTasksFrequency(*(int *)value);
-        return XPUM_OK;
-    default:
-        break;
+        case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
+            Core::instance().getMonitorManager()->resetMetricTasksFrequency(*(int *)value);
+            return XPUM_OK;
+        default:
+            break;
     }
     return XPUM_GENERIC_ERROR;
 }
 
 xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value) {
     switch (key) {
-    case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
-        *(int *)value = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
-        return XPUM_OK;
-    default:
-        break;
+        case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
+            *(int *)value = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+            return XPUM_OK;
+        default:
+            break;
     }
     return XPUM_GENERIC_ERROR;
 }
@@ -665,7 +660,6 @@ xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
 xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
                                                 int32_t subDeviceId,
                                                 const xpum_power_sustained_limit_t &sustained_limit) {
-
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;

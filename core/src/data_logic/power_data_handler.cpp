@@ -3,11 +3,11 @@
 namespace xpum {
 
 PowerDataHandler::PowerDataHandler(MeasurementType type,
-                         std::shared_ptr<Persistency>& p_persistency)
-    : StatisticsDataHandler(type,p_persistency) {
+                                   std::shared_ptr<Persistency>& p_persistency)
+    : StatisticsDataHandler(type, p_persistency) {
 }
 
 PowerDataHandler::~PowerDataHandler() {
-  close();
+    close();
 }
 } // end namespace xpum

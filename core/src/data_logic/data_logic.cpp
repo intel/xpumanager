@@ -1,69 +1,71 @@
+#include "data_logic.h"
+
+#include <iostream>
+
+#include "db_persistency.h"
 #include "infrastructure/const.h"
 #include "infrastructure/exception/ilegal_state_exception.h"
-#include "db_persistency.h"
-#include "data_logic.h"
 #include "infrastructure/utility.h"
-#include <iostream>
 
 namespace xpum {
 
-DataLogic::DataLogic() : p_raw_data_manager(nullptr), 
-  p_persistency(nullptr) {
-  XPUM_LOG_INFO("DataLogic()");    
+DataLogic::DataLogic() : p_raw_data_manager(nullptr),
+                         p_persistency(nullptr) {
+    XPUM_LOG_INFO("DataLogic()");
 }
 
 DataLogic::~DataLogic() {
-  XPUM_LOG_INFO("~DataLogic()");
+    XPUM_LOG_INFO("~DataLogic()");
 }
 
-void DataLogic::init() {  
-  p_persistency = std::make_shared<DBPersistency>();
-  p_raw_data_manager = make_unique<RawDataManager>(p_persistency);
-  p_raw_data_manager->init();
+void DataLogic::init() {
+    p_persistency = std::make_shared<DBPersistency>();
+    p_raw_data_manager = make_unique<RawDataManager>(p_persistency);
+    p_raw_data_manager->init();
 }
 
 void DataLogic::close() {
-  if (p_raw_data_manager != nullptr) {
-    p_raw_data_manager->close();
-  }
+    if (p_raw_data_manager != nullptr) {
+        p_raw_data_manager->close();
+    }
 }
 
 void DataLogic::storeMeasurementData(MeasurementType type, Timestamp_t time,
-                          std::map<std::string, std::shared_ptr<MeasurementData>>& datas) {
-  if (p_raw_data_manager == nullptr) {
-    throw IlegalStateException("initialization is not done!");
-  }
-  p_raw_data_manager->storeMeasurementData(type, time, datas);
+                                     std::map<std::string, std::shared_ptr<MeasurementData>>& datas) {
+    if (p_raw_data_manager == nullptr) {
+        throw IlegalStateException("initialization is not done!");
+    }
+    p_raw_data_manager->storeMeasurementData(type, time, datas);
 }
 
 MeasurementData DataLogic::getLatestData(MeasurementType type,
-                              std::string& device_id) {
-  if (p_raw_data_manager == nullptr) {
-    throw IlegalStateException("initialization is not done!");
-  }
-  return p_raw_data_manager->getLatestData(type, device_id);
+                                         std::string& device_id) {
+    if (p_raw_data_manager == nullptr) {
+        throw IlegalStateException("initialization is not done!");
+    }
+    return p_raw_data_manager->getLatestData(type, device_id);
 }
 
 void DataLogic::getLatestData(MeasurementType type,
-                   std::map<std::string, MeasurementData>& datas) {
-  if (p_raw_data_manager == nullptr) {
-    throw IlegalStateException("initialization is not done!");
-  }                     
-  return p_raw_data_manager->getLatestData(type, datas);
+                              std::map<std::string, MeasurementData>& datas) {
+    if (p_raw_data_manager == nullptr) {
+        throw IlegalStateException("initialization is not done!");
+    }
+    return p_raw_data_manager->getLatestData(type, datas);
 }
 
 MeasurementData DataLogic::getLatestStatistics(MeasurementType type, std::string& device_id) {
-  if (p_raw_data_manager == nullptr) {
-    throw IlegalStateException("initialization is not done!");
-  }
-  return p_raw_data_manager->getLatestStatistics(type, device_id);
+    if (p_raw_data_manager == nullptr) {
+        throw IlegalStateException("initialization is not done!");
+    }
+    return p_raw_data_manager->getLatestStatistics(type, device_id);
 }
 
 void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                                      xpum_device_stats_t dataList[],
-                                     int *count,
-                                     uint64_t *begin,
-                                     uint64_t *end) {
+                                     int* count,
+                                     uint64_t* begin,
+                                     uint64_t* end) {
     if (dataList == nullptr) {
         return;
     }
@@ -149,7 +151,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
 
 void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
                                  xpum_device_stats_t dataList[],
-                                 int *count) {
+                                 int* count) {
     if (dataList == nullptr) {
         return;
     }
@@ -180,7 +182,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
                 xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                stats_data.isCounter = Utility::isCounterMetric(type)?true:false;
+                stats_data.isCounter = Utility::isCounterMetric(type) ? true : false;
                 stats_data.avg = -1;
                 stats_data.min = -1;
                 stats_data.max = -1;
@@ -204,7 +206,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
                 xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                stats_data.isCounter = Utility::isCounterMetric(type)?true:false;
+                stats_data.isCounter = Utility::isCounterMetric(type) ? true : false;
                 stats_data.avg = -1;
                 stats_data.min = -1;
                 stats_data.max = -1;

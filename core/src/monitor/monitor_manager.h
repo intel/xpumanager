@@ -8,34 +8,34 @@
 namespace xpum {
 
 class MonitorManager : public MonitorManagerInterface {
- public:
-  MonitorManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
-                 std::shared_ptr<DataLogicInterface>& p_data_logic);
+   public:
+    MonitorManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
+                   std::shared_ptr<DataLogicInterface>& p_data_logic);
 
-  virtual ~MonitorManager();
+    virtual ~MonitorManager();
 
- public:
-  void init() override;
+   public:
+    void init() override;
 
-  void close() override;
+    void close() override;
 
-  void addMetricTask(MeasurementType type, int freq);
+    void addMetricTask(MeasurementType type, int freq);
 
-  void removeMetricTask(MeasurementType type);
+    void removeMetricTask(MeasurementType type);
 
-  void resetMetricTasksFrequency(int freq);
+    void resetMetricTasksFrequency(int freq);
 
- private:
-  void createMonitorTasks();
+   private:
+    void createMonitorTasks();
 
- private:
-  std::shared_ptr<DeviceManagerInterface> p_device_manager;
+   private:
+    std::shared_ptr<DeviceManagerInterface> p_device_manager;
 
-  std::shared_ptr<DataLogicInterface> p_data_logic;
+    std::shared_ptr<DataLogicInterface> p_data_logic;
 
-  std::vector<std::shared_ptr<MonitorTask>> tasks;
-  
-  std::mutex mutex;
+    std::vector<std::shared_ptr<MonitorTask>> tasks;
+
+    std::mutex mutex;
 };
 
 } // end namespace xpum

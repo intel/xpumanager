@@ -8,6 +8,6 @@ TemperatureDataHandler::TemperatureDataHandler(MeasurementType type,
 }
 
 TemperatureDataHandler::~TemperatureDataHandler() {
-  close();
+    close();
 }
 } // end namespace xpum

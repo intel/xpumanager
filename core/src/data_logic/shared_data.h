@@ -8,21 +8,20 @@
 namespace xpum {
 
 class SharedData {
- public: 
-  SharedData(Timestamp_t time, std::map<std::string, std::shared_ptr<MeasurementData>>& datas);
+   public:
+    SharedData(Timestamp_t time, std::map<std::string, std::shared_ptr<MeasurementData>>& datas);
 
-  virtual ~SharedData();
+    virtual ~SharedData();
 
- public:
-  std::map<std::string, MeasurementData>& getData() noexcept;
+   public:
+    std::map<std::string, MeasurementData>& getData() noexcept;
 
-  Timestamp_t getTime() noexcept;
+    Timestamp_t getTime() noexcept;
 
- private:
-  Timestamp_t time;
+   private:
+    Timestamp_t time;
 
-  std::map<std::string, MeasurementData> datas;  
-
+    std::map<std::string, MeasurementData> datas;
 };
 
 } // end namespace xpum

@@ -1,8 +1,8 @@
 #include "comlet_policy.h"
 
-#include "core_stub.h"
-
 #include <nlohmann/json.hpp>
+
+#include "core_stub.h"
 
 namespace xpum::cli {
 

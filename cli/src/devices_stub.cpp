@@ -1,14 +1,12 @@
-#include "core_stub.h"
+#include <nlohmann/json.hpp>
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
-
-#include <nlohmann/json.hpp>
+#include "core_stub.h"
 
 namespace xpum::cli {
 
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
-
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -23,7 +21,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
                 auto deviceJson = nlohmann::json();
                 auto &deviceInfo = response.info(i);
                 deviceJson["device_id"] = deviceInfo.id().id();
-                deviceJson["device_type"] = deviceInfo.type().value()==0? "GPU": "Unknown";
+                deviceJson["device_type"] = deviceInfo.type().value() == 0 ? "GPU" : "Unknown";
                 deviceJson["uuid"] = deviceInfo.uuid();
                 deviceJson["device_name"] = deviceInfo.devicename();
                 deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
@@ -40,7 +38,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
 }
 
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
-
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -56,7 +53,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
                 auto &p = response.properties(i);
                 std::string name = p.name();
                 std::transform(name.begin(), name.end(), name.begin(),
-                           [](unsigned char c) { return std::tolower(c); });
+                               [](unsigned char c) { return std::tolower(c); });
                 (*json)[name] = p.value();
             }
         }

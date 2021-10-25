@@ -2,7 +2,7 @@
 
 namespace xpum {
 
-const std::string DeviceProperty::TYPE = "TYPE"; 
+const std::string DeviceProperty::TYPE = "TYPE";
 const std::string DeviceProperty::VENDOR_ID = "VENDOR_ID";
 const std::string DeviceProperty::DEVICE_ID = "DEVICE_ID";
 const std::string DeviceProperty::SUB_DEVICE_ID = "SUB_DEVICE_ID";

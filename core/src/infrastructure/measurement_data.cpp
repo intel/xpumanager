@@ -72,7 +72,7 @@ const std::map<uint32_t, SubdeviceData>& MeasurementData::getSubdeviceDatas() {
     return subdevice_datas;
 }
 
-uint32_t MeasurementData::getSubdeviceDataSize(){
+uint32_t MeasurementData::getSubdeviceDataSize() {
     return subdevice_datas.size();
 }
 

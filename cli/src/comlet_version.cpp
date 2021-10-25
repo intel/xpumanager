@@ -1,10 +1,10 @@
 #include "comlet_version.h"
 
-#include "config.h"
-#include "core_stub.h"
-
 #include <map>
 #include <nlohmann/json.hpp>
+
+#include "config.h"
+#include "core_stub.h"
 
 namespace xpum::cli {
 

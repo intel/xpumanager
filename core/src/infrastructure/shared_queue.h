@@ -11,49 +11,49 @@ namespace xpum {
 
 template <class T>
 class SharedQueue {
- public:
-  SharedQueue() : stop(false) {}
+   public:
+    SharedQueue() : stop(false) {}
 
-  virtual ~SharedQueue() { close(); }
+    virtual ~SharedQueue() { close(); }
 
-  void add(T msg) {
-    if (stop) {
-      throw BaseException("add task to a stopped shared queue");
+    void add(T msg) {
+        if (stop) {
+            throw BaseException("add task to a stopped shared queue");
+        }
+
+        std::unique_lock<std::mutex> lock(q_mutex);
+        q.push(msg);
+        cv.notify_one();
     }
 
-    std::unique_lock<std::mutex> lock(q_mutex);
-    q.push(msg);
-    cv.notify_one();
-  }
+    T remove() {
+        std::unique_lock<std::mutex> lock(q_mutex);
+        while (q.empty() && !stop) {
+            cv.wait(lock);
+        }
 
-  T remove() {
-    std::unique_lock<std::mutex> lock(q_mutex);
-    while (q.empty() && !stop) {
-      cv.wait(lock);
+        if (stop && q.empty()) {
+            return nullptr;
+        }
+
+        T msg = std::move(this->q.front());
+        q.pop();
+        return msg;
     }
 
-    if (stop && q.empty()) {
-      return nullptr;
+    void close() {
+        stop = true;
+        cv.notify_all();
     }
 
-    T msg = std::move(this->q.front());
-    q.pop();
-    return msg;
-  }
+   private:
+    std::queue<T> q;
 
-  void close() { 
-    stop = true; 
-    cv.notify_all();
-  }
+    std::mutex q_mutex;
 
- private:
-  std::queue<T> q;
+    std::condition_variable cv;
 
-  std::mutex q_mutex;
-
-  std::condition_variable cv;
-
-  std::atomic<bool> stop;
+    std::atomic<bool> stop;
 };
 
 } // end namespace xpum

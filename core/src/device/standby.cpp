@@ -1,5 +1,6 @@
-#include "infrastructure/logger.h"
 #include "standby.h"
+
+#include "infrastructure/logger.h"
 
 namespace xpum {
 

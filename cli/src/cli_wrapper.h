@@ -5,9 +5,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-namespace CLI
-{
-   class App;
+namespace CLI {
+class App;
 }
 
 namespace xpum::cli {
@@ -20,13 +19,12 @@ struct CLIWrapperOptions {
 };
 
 class CLIWrapper {
-
-  public:
+   public:
     CLIWrapper(CLI::App &cliApp);
     CLIWrapper &addComlet(const std::shared_ptr<ComletBase> &comlet);
     std::string getResult();
 
-  private:
+   private:
     CLI::App &cliApp;
     std::unique_ptr<CLIWrapperOptions> opts;
     std::unique_ptr<nlohmann::json> jsonResult;

@@ -1,35 +1,36 @@
 #pragma once
 
-#include <vector>
 #include <mutex>
 #include <string>
+#include <vector>
+
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 
 namespace xpum {
 
 class Standby {
-public:
-  Standby(zes_standby_type_t type, bool on_subdevice, uint32_t subdevice_id, zes_standby_promo_mode_t mode);
-  
-  virtual ~Standby();
+   public:
+    Standby(zes_standby_type_t type, bool on_subdevice, uint32_t subdevice_id, zes_standby_promo_mode_t mode);
 
-  zes_standby_type_t getType() const;
+    virtual ~Standby();
 
-  bool onSubdevice() const;
+    zes_standby_type_t getType() const;
 
-  uint32_t getSubdeviceId() const;
+    bool onSubdevice() const;
 
-  zes_standby_promo_mode_t getMode() const;
+    uint32_t getSubdeviceId() const;
 
-private:
-  zes_standby_type_t type;
+    zes_standby_promo_mode_t getMode() const;
 
-  bool on_subdevice;
+   private:
+    zes_standby_type_t type;
 
-  uint32_t subdevice_id;
+    bool on_subdevice;
 
-  zes_standby_promo_mode_t mode;
+    uint32_t subdevice_id;
+
+    zes_standby_promo_mode_t mode;
 };
 
 } // end namespace xpum

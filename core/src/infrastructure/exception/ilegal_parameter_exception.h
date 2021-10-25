@@ -3,13 +3,11 @@
 namespace xpum {
 
 class IlegalParameterException : public BaseException {
- public:
-  IlegalParameterException(const std::string& msg): BaseException(msg) {
+   public:
+    IlegalParameterException(const std::string& msg) : BaseException(msg) {
+    }
 
-  }
-
-  IlegalParameterException(ErrorCode code, const std::string& msg): BaseException(code, msg) {
-
-  }  
+    IlegalParameterException(ErrorCode code, const std::string& msg) : BaseException(code, msg) {
+    }
 };
 } // end namespace xpum

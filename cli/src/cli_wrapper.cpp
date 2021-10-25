@@ -1,12 +1,12 @@
 #include "cli_wrapper.h"
 
-#include "CLI/App.hpp"
-#include "comlet_base.h"
-#include "core_stub.h"
-
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 #include <utility>
+
+#include "CLI/App.hpp"
+#include "comlet_base.h"
+#include "core_stub.h"
 
 namespace xpum::cli {
 
