@@ -2,6 +2,8 @@
 
 #include "data_handler.h"
 
+namespace xpum {
+
 class StatisticsDataHandler : public DataHandler {
 public:
   StatisticsDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
@@ -19,3 +21,4 @@ public:
 protected:
   std::deque<std::shared_ptr<SharedData>> cache;
 };
+} // end namespace xpum

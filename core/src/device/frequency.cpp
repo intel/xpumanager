@@ -1,5 +1,7 @@
 #include "frequency.h"
 
+namespace xpum {
+
 Frequency::Frequency(zes_freq_domain_t type, 
                      bool on_subdevice, 
                      uint32_t subdevice_id, 
@@ -60,3 +62,5 @@ double Frequency::getMax() const {
   return max;
 }
 
+
+} // end namespace xpum

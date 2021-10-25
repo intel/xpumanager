@@ -13,6 +13,8 @@
 #include "level_zero/zet_api.h"
 #include "../include/xpum_structs.h"
 
+namespace xpum {
+
 /*
   Device class defines various interfaces for communication with devices.
 */
@@ -95,3 +97,5 @@ class Device {
   std::vector<Property> properties;
 
 };
+
+} // end namespace xpum

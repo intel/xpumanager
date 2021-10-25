@@ -3,6 +3,8 @@
 #include "infrastructure/init_close_interface.h"
 #include "../include/xpum_structs.h"
 
+namespace xpum {
+
 class GroupManagerInterface : public InitCloseInterface {
     public:
         virtual ~GroupManagerInterface() {}
@@ -19,3 +21,4 @@ class GroupManagerInterface : public InitCloseInterface {
 
         virtual xpum_result_t getAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count) = 0; 
 };
+} // end namespace xpum

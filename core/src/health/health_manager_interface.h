@@ -6,6 +6,8 @@
 #include "infrastructure/init_close_interface.h"
 #include "health_data_type.h"
 
+namespace xpum {
+
 class HealthManagerInterface : public InitCloseInterface {
  public:
   virtual ~HealthManagerInterface() {}
@@ -17,3 +19,4 @@ class HealthManagerInterface : public InitCloseInterface {
   virtual xpum_result_t getHealth(xpum_device_id_t deviceId, xpum_health_type_t type, xpum_health_data_t *data) = 0;
   
 };
+} // end namespace xpum

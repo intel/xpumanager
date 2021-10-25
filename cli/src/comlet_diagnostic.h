@@ -5,6 +5,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace xpum::cli {
+
 struct ComletDiagnosticOptions {
     int deviceId = -1;
     int groupId = -1;
@@ -23,3 +25,4 @@ class ComletDiagnostic : public ComletBase {
   private:
     std::unique_ptr<ComletDiagnosticOptions> opts;
 };
+} // end namespace xpum::cli

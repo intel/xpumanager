@@ -8,6 +8,8 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 
+namespace xpum::cli {
+
 void ComletGroup::setupOptions() {
     this->opts = std::unique_ptr<ComletGroupOptions>(new ComletGroupOptions());
     addOption("-g,--group", this->opts->groupId, "group id");
@@ -78,3 +80,4 @@ std::unique_ptr<nlohmann::json> ComletGroup::run() {
 
     return json;
 }
+} // end namespace xpum::cli

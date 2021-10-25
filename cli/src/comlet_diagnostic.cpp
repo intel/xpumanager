@@ -4,6 +4,8 @@
 
 #include <nlohmann/json.hpp>
 
+namespace xpum::cli {
+
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
     addOption("-d,--device", this->opts->deviceId, "device id");
@@ -21,3 +23,4 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
     return json;
 }
+} // end namespace xpum::cli

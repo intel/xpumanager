@@ -4,6 +4,8 @@
 
 #include <nlohmann/json.hpp>
 
+namespace xpum::cli {
+
 void ComletHealth::setupOptions() {
     this->opts = std::unique_ptr<ComletHealthOptions>(new ComletHealthOptions());
     addFlag("-l,--list", this->opts->listAll, "list all devices");
@@ -46,3 +48,4 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
     }
     return json;
 }
+} // end namespace xpum::cli

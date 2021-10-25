@@ -9,6 +9,8 @@
 #include "infrastructure/configuration.h"
 #include <algorithm>
 
+namespace xpum {
+
 RawDataManager::RawDataManager(std::shared_ptr<Persistency>& persistency) 
   : p_persistency(persistency) {
 
@@ -283,3 +285,4 @@ void RawDataManager::updateCaches(MeasurementType type, std::shared_ptr<SharedDa
         ++iter;
     }
 }
+} // end namespace xpum

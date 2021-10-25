@@ -6,6 +6,8 @@
 #include <algorithm>
 #include "infrastructure/utility.h"
 
+namespace xpum {
+
 MonitorManager::MonitorManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {    
@@ -129,3 +131,5 @@ void MonitorManager::resetMetricTasksFrequency(int freq) {
     addMetricTask(*iter++, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE);
   }
 }
+
+} // end namespace xpum

@@ -3,6 +3,8 @@
 #include "infrastructure/logger.h"
 #include "data_handler.h"
 
+namespace xpum {
+
 DataHandler::DataHandler(MeasurementType type,
                          std::shared_ptr<Persistency>& p_persistency)
     : type(type),
@@ -89,3 +91,5 @@ void DataHandler::getLatestData(std::map<std::string, MeasurementData>& datas) n
   }
 }
 
+
+} // end namespace xpum

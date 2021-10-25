@@ -5,6 +5,8 @@
 #include "infrastructure/utility.h"
 #include <iostream>
 
+namespace xpum {
+
 DataLogic::DataLogic() : p_raw_data_manager(nullptr), 
   p_persistency(nullptr) {
   XPUM_LOG_INFO("DataLogic()");    
@@ -243,3 +245,5 @@ std::vector<std::deque<MeasurementCacheData>> DataLogic::getCachedRawData(uint32
     }
     return p_raw_data_manager->getCachedRawData(task_id);
 }
+
+} // end namespace xpum

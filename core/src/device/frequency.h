@@ -6,6 +6,8 @@
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 
+namespace xpum {
+
 class Frequency {
 public:
   Frequency(zes_freq_domain_t type, bool on_subdevice, uint32_t subdevice_id, bool can_control, bool is_throttle_event_supported, double min, double max);
@@ -45,3 +47,4 @@ private:
   
   double max;
 };
+} // end namespace xpum

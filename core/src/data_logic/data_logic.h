@@ -6,6 +6,8 @@
 #include "data_logic_interface.h"
 #include "../include/xpum_structs.h"
 
+namespace xpum {
+
 /*
   DataLogic provides various interfaces to obtain various monitoring data.
 */
@@ -64,3 +66,5 @@ private:
 };
 
 
+
+} // end namespace xpum

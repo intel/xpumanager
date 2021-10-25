@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <utility>
 
+namespace xpum::cli {
+
 CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
     cliApp.add_flag("--pretty", this->opts->pretty, "Enable pretty-printing");
@@ -39,3 +41,4 @@ std::string CLIWrapper::getResult() {
         return this->jsonResult->dump();
     }
 }
+} // end namespace xpum::cli

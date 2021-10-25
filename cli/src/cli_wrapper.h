@@ -5,11 +5,15 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace CLI
+{
+   class App;
+}
+
+namespace xpum::cli {
+
 class ComletBase;
 class CoreStub;
-namespace CLI {
-class App;
-} // namespace CLI
 
 struct CLIWrapperOptions {
     bool pretty;
@@ -28,3 +32,4 @@ class CLIWrapper {
     std::unique_ptr<nlohmann::json> jsonResult;
     std::shared_ptr<CoreStub> coreStub;
 };
+} // end namespace xpum::cli

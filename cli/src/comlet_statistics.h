@@ -6,6 +6,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace xpum::cli {
+
 struct ComletStatisticsOptions {
     int deviceId = -1;
     int groupId = -1;
@@ -23,3 +25,4 @@ class ComletStatistics : public ComletBase {
   private:
     std::unique_ptr<ComletStatisticsOptions> opts;
 };
+} // end namespace xpum::cli

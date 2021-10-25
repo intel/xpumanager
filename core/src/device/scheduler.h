@@ -6,6 +6,8 @@
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 
+namespace xpum {
+
 struct SchedulerTimeoutMode {
   uint32_t subdevice_Id;
   zes_sched_timeout_properties_t mode_setting;
@@ -52,3 +54,5 @@ private:
   bool can_control;
 
 };
+
+} // end namespace xpum

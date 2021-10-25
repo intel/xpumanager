@@ -10,6 +10,8 @@
 #include <map>
 #include <string>
 
+namespace xpum {
+
 class MeasurementCacheData {
   public:
     MeasurementCacheData(const std::string& deviceId, MeasurementType metricType, uint64_t value, long long timeStamp, bool onSubdevice, uint32_t subdeviceID) 
@@ -54,3 +56,5 @@ class MeasurementCacheData {
 
     int32_t subdevice_id;
 };
+
+} // end namespace xpum

@@ -5,6 +5,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace xpum::cli {
+
 struct ComletPolicyOptions {
     bool listAll = false;
     int deviceId = -1;
@@ -25,3 +27,4 @@ class ComletPolicy : public ComletBase {
   private:
     std::unique_ptr<ComletPolicyOptions> opts;
 };
+} // end namespace xpum::cli

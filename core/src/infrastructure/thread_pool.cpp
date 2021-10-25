@@ -4,6 +4,8 @@
 #include "infrastructure/exception/ilegal_state_exception.h"
 #include "thread_pool.h"
 
+namespace xpum {
+
 ThreadPool::ThreadPool(unsigned int size) : stop(false), size(size) {
   XPUM_LOG_INFO("ThreadPool()");
   init();
@@ -56,3 +58,5 @@ void ThreadPool::close() {
   }
   workers.clear();
 }
+
+} // end namespace xpum

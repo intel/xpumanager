@@ -1,5 +1,7 @@
 #include "device_property.h"
 
+namespace xpum {
+
 const std::string DeviceProperty::TYPE = "TYPE"; 
 const std::string DeviceProperty::VENDOR_ID = "VENDOR_ID";
 const std::string DeviceProperty::DEVICE_ID = "DEVICE_ID";
@@ -38,3 +40,5 @@ const std::string DeviceProperty::PCIE_GEN = "PCIE_GEN";
 const std::string DeviceProperty::PCIE_MAX_LINK_WIDTH = "PCIE_MAX_LINK_WIDTH";
 const std::string DeviceProperty::MEM_BUS_WIDTH = "MEM_BUS_WIDTH";
 const std::string DeviceProperty::MEM_CHANNEL_NUM = "MEM_CHANNEL_NUM";
+
+} // end namespace xpum

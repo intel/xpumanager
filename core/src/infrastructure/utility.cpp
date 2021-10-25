@@ -5,6 +5,8 @@
 #include "../include/xpum_structs.h"
 #include <algorithm>
 
+namespace xpum {
+
 long long Utility::getCurrentMillisecond() {
   return std::chrono::duration_cast<std::chrono::milliseconds>(
     std::chrono::system_clock::now().time_since_epoch()).count();  
@@ -408,3 +410,5 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
   }
 }
 
+
+} // end namespace xpum

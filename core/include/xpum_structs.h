@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #if defined(__cplusplus)
+namespace xpum {
 extern "C" {
 #endif
 
@@ -620,6 +621,7 @@ struct xpum_policy_t {
 
 #if defined(__cplusplus)
 } // extern "C"
+} // end namespace xpum
 #endif
 
 #endif // _XPUM_STRUCTS_H

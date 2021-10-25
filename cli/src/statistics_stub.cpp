@@ -6,6 +6,8 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
+namespace xpum::cli {
+
 static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
     switch (metricsType) {
     case XPUM_STATS_GPU_UTILIZATION:
@@ -217,3 +219,4 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
 
     return json;
 }
+} // end namespace xpum::cli

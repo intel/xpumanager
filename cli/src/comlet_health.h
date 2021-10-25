@@ -5,6 +5,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace xpum::cli {
+
 struct ComletHealthOptions {
     bool listAll = false;
     int deviceId = -1;
@@ -25,3 +27,4 @@ class ComletHealth : public ComletBase {
   private:
     std::unique_ptr<ComletHealthOptions> opts;
 };
+} // end namespace xpum::cli

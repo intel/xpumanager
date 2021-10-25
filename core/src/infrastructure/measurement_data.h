@@ -8,6 +8,8 @@
 #include "logger.h"
 #include "utility.h"
 
+namespace xpum {
+
 struct SubdeviceData {
   uint64_t avg;
   uint64_t min;
@@ -157,3 +159,5 @@ class MeasurementData {
 
   uint64_t raw_timestamp;
 };
+
+} // end namespace xpum

@@ -5,6 +5,8 @@
 #include "stdio.h"
 #include <mutex>
 
+namespace xpum {
+
 /*
   GPUDevice class defines various interfaces for communication with GPU devices.
 */
@@ -49,3 +51,5 @@ class GPUDevice : public Device {
   static const unsigned int BUFFERSIZE = 64 * 1024;
   static const std::string logFilePath;
 };
+
+} // end namespace xpum

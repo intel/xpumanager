@@ -12,6 +12,8 @@
 #include "diagnostic/diagnostic_manager_interface.h"
 #include "policy/policy_manager_interface.h"
 
+namespace xpum {
+
 /*
   The top controller of xpum
 */
@@ -70,3 +72,5 @@ class Core : public InitCloseInterface {
 
     std::mutex mutex;
 };
+
+} // end namespace xpum

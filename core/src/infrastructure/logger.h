@@ -3,6 +3,8 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/cfg/env.h"
 
+namespace xpum {
+
 #define XPUM_LOG_INFO(...) spdlog::info(__VA_ARGS__)
 #define XPUM_LOG_WARN(...) spdlog::warn(__VA_ARGS__)
 #define XPUM_LOG_ERROR(...) spdlog::error(__VA_ARGS__)
@@ -15,3 +17,4 @@ class Logger {
      spdlog::cfg::load_env_levels();
    }
 };
+} // end namespace xpum

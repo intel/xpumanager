@@ -3,6 +3,8 @@
 #include "infrastructure/exception/ilegal_parameter_exception.h"
 #include "device.h"
 
+namespace xpum {
+
 std::string Device::getId() noexcept {
   std::unique_lock<std::mutex> lock(this->mutex);
   return id;
@@ -113,3 +115,5 @@ ze_driver_handle_t Device::getDriverHandle() {
 bool Device::isUpgradingFw( void ) noexcept {
   return false;
 }
+
+} // end namespace xpum

@@ -8,6 +8,8 @@
 #include "infrastructure/measurement_type.h"
 #include "infrastructure/measurement_cache_data.h"
 
+namespace xpum {
+
 struct RawDataCollectionTask {
   std::string device_id;
   std::vector<MeasurementType> types;
@@ -78,3 +80,5 @@ class RawDataManager {
   std::mutex  mutex;
 
 };
+
+} // end namespace xpum

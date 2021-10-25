@@ -3,6 +3,8 @@
 #include "infrastructure/measurement_type.h"
 #include "device/power.h"
 
+namespace xpum {
+
 extern "C" {
 
 #ifndef API_EXPORT
@@ -131,3 +133,4 @@ struct Device_t {
 
 
 }
+} // end namespace xpum

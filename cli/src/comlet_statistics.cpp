@@ -5,6 +5,8 @@
 #include <map>
 #include <nlohmann/json.hpp>
 
+namespace xpum::cli {
+
 void ComletStatistics::setupOptions() {
     this->opts = std::unique_ptr<ComletStatisticsOptions>(new ComletStatisticsOptions());
     addOption("-d,--device", this->opts->deviceId, "The device id to query");
@@ -25,3 +27,4 @@ std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     return json;
 
 }
+} // end namespace xpum::cli

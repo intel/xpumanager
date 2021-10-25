@@ -1,5 +1,7 @@
 #include "measurement_data.h"
 
+namespace xpum {
+
 void MeasurementData::setSubdeviceDataCurrent(uint32_t subdevice_id, uint64_t data) {
     subdevice_datas[subdevice_id].current = data;
 }
@@ -77,3 +79,4 @@ uint32_t MeasurementData::getSubdeviceDataSize(){
 bool MeasurementData::hasSubdeviceData() {
     return subdevice_datas.size() >= 1;
 }
+} // end namespace xpum

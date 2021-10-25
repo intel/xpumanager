@@ -7,6 +7,8 @@
 #include "device_manager_interface.h"
 #include "device/scheduler.h"
 
+namespace xpum {
+
 /* 
   DeviceManager class provides various interfaces for managing all devices.
 */
@@ -92,3 +94,5 @@ class DeviceManager : public DeviceManagerInterface,
 
   std::mutex mutex;
 };
+
+} // end namespace xpum

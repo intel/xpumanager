@@ -6,6 +6,8 @@
 #include <link.h>
 #include <unistd.h>
 
+namespace xpum {
+
 std::string Version::getVersion() {
     return std::string(XPUM_VERSION);
 }
@@ -47,3 +49,4 @@ std::string Version::getZeLibVersion() {
 
     return zeLibVersion;
 }
+} // end namespace xpum

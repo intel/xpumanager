@@ -1,6 +1,8 @@
 #include "infrastructure/logger.h"
 #include "group_unit.h"
 
+namespace xpum {
+
 GroupUnit::GroupUnit(std::string groupname, xpum_group_id_t groupId) 
     : topoLevel(0) {
     XPUM_LOG_INFO("GroupUnit");
@@ -103,3 +105,5 @@ bool GroupUnit::deviceInGroup(std::vector<zes_pci_address_t> & pcieTop){
     }
     return false;
 }
+
+} // end namespace xpum

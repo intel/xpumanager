@@ -1,6 +1,8 @@
 #include "statistics_data_handler.h"
 #include "infrastructure/configuration.h"
 
+namespace xpum {
+
 StatisticsDataHandler::StatisticsDataHandler(MeasurementType type,
                          std::shared_ptr<Persistency>& p_persistency)
     : DataHandler(type,p_persistency) {
@@ -88,3 +90,4 @@ void StatisticsDataHandler::getLatestData(std::map<std::string, MeasurementData>
     datas[device_id].setAvg(avg);
   }
 }
+} // end namespace xpum

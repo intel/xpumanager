@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+namespace xpum::daemon {
+
 XpumCoreServiceImpl::XpumCoreServiceImpl( void ) : XpumCoreService::Service() {
 }
 
@@ -584,3 +586,5 @@ grpc::Status XpumCoreServiceImpl::getTopology( grpc::ServerContext* context, con
     }
     return grpc::Status::OK;
 }
+
+} // end namespace xpum::daemon

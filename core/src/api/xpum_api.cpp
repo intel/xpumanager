@@ -15,6 +15,8 @@
 #include <memory>
 #include <vector>
 
+namespace xpum {
+
 extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
     switch (name) {
     case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
@@ -902,3 +904,5 @@ xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t result
     return Core::instance().getPolicyManager()->xpumGetPolicyByGroup(groupId, resultList, count);
 }
 ///////////////////Policy//////////////////////
+
+} // end namespace xpum

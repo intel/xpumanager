@@ -5,6 +5,8 @@
 #include "control/device_manager_interface.h"
 #include "data_logic/data_logic_interface.h"
 
+namespace xpum {
+
 enum MonitorTaskType {
   DEFAULT_TELEMETRY         = 0,
   GPU_METRICS               = 1,
@@ -58,3 +60,5 @@ class MonitorTask : public std::enable_shared_from_this<MonitorTask> {
 
 };
 
+
+} // end namespace xpum

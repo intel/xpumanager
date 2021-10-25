@@ -7,6 +7,8 @@
 
 #include "../include/xpum_structs.h"
 
+namespace xpum {
+
 #define BUILD_IN_GROUP      0
 #define BUILD_IN_DEVICE     1
 
@@ -55,3 +57,4 @@ class GroupManager : public GroupManagerInterface,
     typedef std::map<xpum_group_id_t, std::shared_ptr<GroupUnit>> GroupMap;
     GroupMap groupMap;
 };
+} // end namespace xpum

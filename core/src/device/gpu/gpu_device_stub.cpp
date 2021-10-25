@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <iostream>
 
+namespace xpum {
+
 GPUDeviceStub::GPUDeviceStub() : p_thread_pool(nullptr), initialized(false) {
   XPUM_LOG_INFO("GPUDeviceStub()");
 }
@@ -2067,3 +2069,5 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
   }
   data->description[index] = 0;
 }
+
+} // end namespace xpum

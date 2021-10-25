@@ -15,6 +15,8 @@
 #include "data_logic/data_logic_interface.h"
 #include "diagnostic_data_type.h"
 
+namespace xpum {
+
 /**
  * The class is responsible for GPU diagnostics. Three levels are currently supported. It will check 
  * environment variables, libraries, permission, PCIe, media coder and performance. And each task 
@@ -110,3 +112,5 @@ class DiagnosticManager : public DiagnosticManagerInterface {
   
   std::mutex mutex;
 };
+
+} // end namespace xpum

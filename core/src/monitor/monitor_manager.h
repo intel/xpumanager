@@ -5,6 +5,8 @@
 #include "monitor_manager_interface.h"
 #include "monitor_task.h"
 
+namespace xpum {
+
 class MonitorManager : public MonitorManagerInterface {
  public:
   MonitorManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
@@ -35,3 +37,5 @@ class MonitorManager : public MonitorManagerInterface {
   
   std::mutex mutex;
 };
+
+} // end namespace xpum

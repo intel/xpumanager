@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 
+namespace xpum {
+
 class Configuration {
  public:
   static int TELEMETRY_DATA_MONITOR_FREQUENCE;
@@ -31,3 +33,5 @@ class Configuration {
   } 
   
 };
+
+} // end namespace xpum

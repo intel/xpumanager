@@ -16,6 +16,8 @@
 #include "group/group_manager_interface.h"
 #include "infrastructure/timer.h"
 
+namespace xpum {
+
 struct xpum_policy_data {
     xpum_policy_type_t type;
     xpum_policy_condition_t condition;
@@ -78,3 +80,5 @@ class PolicyManager : public PolicyManagerInterface,public std::enable_shared_fr
   int freq;
   Timer timer;
 };
+
+} // end namespace xpum

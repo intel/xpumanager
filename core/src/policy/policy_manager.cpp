@@ -6,6 +6,8 @@
 #include <mutex>
 #include <thread>
 
+namespace xpum {
+
 #define NOVALUE -10000
 
 PolicyManager::PolicyManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
@@ -319,3 +321,4 @@ xpum_result_t PolicyManager::xpumGetPolicyByDeviceIds(xpum_device_id_t deviceIds
   }
   return XPUM_OK;
 }
+} // end namespace xpum

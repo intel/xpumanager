@@ -9,6 +9,8 @@
 #include "infrastructure/exception/ilegal_state_exception.h"
 #include "infrastructure/exception/ilegal_parameter_exception.h"
 
+namespace xpum {
+
 Timer::Timer() : canceled(true), to_cancel(false) {
 
 }
@@ -80,3 +82,5 @@ void Timer::cancel() noexcept {
     this->to_cancel = false;
   }
 }
+
+} // end namespace xpum

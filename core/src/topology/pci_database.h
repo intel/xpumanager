@@ -4,6 +4,8 @@
 #include <mutex>
 #include <string>
 
+namespace xpum {
+
 enum DeviceType{
   DV_UNKNOW = 0,
   DV_SWITCH = 1,
@@ -67,3 +69,4 @@ class PciDatabase {
 
     device_map devices;
 };
+} // end namespace xpum

@@ -5,6 +5,8 @@
 #include <functional>
 #include <mutex>
 
+namespace xpum {
+
 class Timer {
  public:
   Timer();  
@@ -30,3 +32,4 @@ class Timer {
   std::condition_variable cancel_condition;
   
 };
+} // end namespace xpum

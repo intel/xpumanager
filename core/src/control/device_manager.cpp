@@ -8,6 +8,8 @@
 #include "infrastructure/utility.h"
 #include "device_manager.h"
 
+namespace xpum {
+
 DeviceManager::DeviceManager(std::shared_ptr<DataLogicInterface>& p_data_logic) 
   : p_data_logic(p_data_logic) {
   XPUM_LOG_INFO("DeviceManager()");
@@ -230,3 +232,4 @@ bool DeviceManager::resetDevice(const std::string& id, bool force) {
   std::unique_lock<std::mutex> lock(this->mutex);
   return GPUDeviceStub::instance().resetDevice(getDeviceHandle(id),(ze_bool_t)force);
 }
+} // end namespace xpum

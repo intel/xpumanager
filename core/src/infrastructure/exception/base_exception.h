@@ -6,6 +6,8 @@
 
 #include "infrastructure/error_code.h"
 
+namespace xpum {
+
 class BaseException : public std::exception {
  public: 
   BaseException(const std::string& msg) : error_code(ErrorCode::OK) { 
@@ -48,3 +50,5 @@ class BaseException : public std::exception {
   std::string msg;
 
 };
+
+} // end namespace xpum

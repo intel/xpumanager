@@ -5,6 +5,8 @@
 #include "infrastructure/const.h"
 #include "infrastructure/measurement_data.h"
 
+namespace xpum {
+
 class SharedData {
  public: 
   SharedData(Timestamp_t time, std::map<std::string, std::shared_ptr<MeasurementData>>& datas);
@@ -22,3 +24,5 @@ class SharedData {
   std::map<std::string, MeasurementData> datas;  
 
 };
+
+} // end namespace xpum

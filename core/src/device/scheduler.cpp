@@ -1,6 +1,8 @@
 #include "infrastructure/logger.h"
 #include "scheduler.h"
 
+namespace xpum {
+
 Scheduler::Scheduler(bool on_subdevice, 
                      uint32_t subdevice_id, 
                      bool can_control, 
@@ -41,3 +43,4 @@ uint32_t Scheduler::getSubdeviceId() const {
 bool Scheduler::canControl() const {
   return can_control;
 }
+} // end namespace xpum

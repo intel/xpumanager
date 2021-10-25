@@ -3,6 +3,8 @@
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 
+namespace xpum {
+
 HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {    
@@ -100,3 +102,4 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
   
   return XPUM_OK;
 }
+} // end namespace xpum

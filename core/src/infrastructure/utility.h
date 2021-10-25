@@ -8,6 +8,8 @@
 #include "device/device.h"
 #include "../include/xpum_structs.h"
 
+namespace xpum {
+
 class Utility {
  public:
   static long long getCurrentMillisecond();
@@ -34,3 +36,5 @@ class Utility {
 
   static void getMetricsTypes(std::vector<MeasurementType>& metrics);
 };
+
+} // end namespace xpum

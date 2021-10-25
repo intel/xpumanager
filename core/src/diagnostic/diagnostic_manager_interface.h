@@ -7,6 +7,8 @@
 #include "diagnostic_data_type.h"
 #include "../include/xpum_structs.h"
 
+namespace xpum {
+
 class DiagnosticManagerInterface : public InitCloseInterface {
  public:
   virtual ~DiagnosticManagerInterface() {}
@@ -16,3 +18,4 @@ class DiagnosticManagerInterface : public InitCloseInterface {
   virtual xpum_result_t getDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result) = 0;
 
 };
+} // end namespace xpum

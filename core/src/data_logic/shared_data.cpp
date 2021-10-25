@@ -1,5 +1,7 @@
 #include "shared_data.h"
 
+namespace xpum {
+
 SharedData::SharedData(
     Timestamp_t time,
     std::map<std::string, std::shared_ptr<MeasurementData>>& datas) {
@@ -21,3 +23,5 @@ std::map<std::string, MeasurementData>& SharedData::getData() noexcept {
 Timestamp_t SharedData::getTime() noexcept {
   return this->time;
 }
+
+} // end namespace xpum

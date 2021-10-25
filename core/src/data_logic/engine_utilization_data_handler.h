@@ -1,5 +1,7 @@
 #include "metric_statistics_data_handler.h"
 
+namespace xpum {
+
 class EngineUtilizationDataHandler : public MetricStatisticsDataHandler {
 public:
   EngineUtilizationDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
@@ -11,3 +13,4 @@ public:
   void calculateData(std::shared_ptr<SharedData> &p_data);
 
 };
+} // end namespace xpum

@@ -8,6 +8,8 @@
 #include "infrastructure/device_property.h"
 #include "topology/pci_database.h"
 
+namespace xpum {
+
 #define BUILD_IN_GROUP_MASK 0x80000000
 
 GroupManager::GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
@@ -305,3 +307,4 @@ void GroupManager::init() {
 void GroupManager::close() {
 
 }
+} // end namespace xpum

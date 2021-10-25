@@ -1,5 +1,7 @@
 #include "base_exception.h"
 
+namespace xpum {
+
 class IlegalStateException : public BaseException {
  public:
   IlegalStateException(const std::string& msg): BaseException(msg) {
@@ -10,3 +12,4 @@ class IlegalStateException : public BaseException {
 
   }
 };
+} // end namespace xpum

@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <string>
 
+namespace xpum::cli {
+
 struct ComletGroupOptions {
     uint32_t groupId = 0;
     int deviceId = -1;
@@ -30,3 +32,4 @@ class ComletGroup : public ComletBase {
   private:
     std::unique_ptr<ComletGroupOptions> opts;
 };
+} // end namespace xpum::cli

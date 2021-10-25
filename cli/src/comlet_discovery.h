@@ -6,6 +6,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace xpum::cli {
+
 struct ComletDiscoveryOptions {
     int deviceId = -1;
     int a = 0;
@@ -23,3 +25,4 @@ class ComletDiscovery : public ComletBase {
   private:
     std::unique_ptr<ComletDiscoveryOptions> opts;
 };
+} // end namespace xpum::cli

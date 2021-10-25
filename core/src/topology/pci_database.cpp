@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include "dlfcn.h"
 
+namespace xpum {
+
 PciDatabase::PciDatabase() {
     XPUM_LOG_INFO("PciDatabase()");
 }
@@ -345,3 +347,5 @@ const PcieDevice* PciDatabase::getDevice(int32_t vendor_id, int32_t device_id)
     
     return nullptr;
 }
+
+} // end namespace xpum

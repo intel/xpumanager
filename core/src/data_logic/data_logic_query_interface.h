@@ -7,6 +7,8 @@
 #include "../include/xpum_structs.h"
 #include "infrastructure/measurement_cache_data.h"
 
+namespace xpum {
+
 class DataLogicQueryInterface {
  public:
   virtual ~DataLogicQueryInterface() {};
@@ -37,3 +39,4 @@ class DataLogicQueryInterface {
 
   virtual std::vector<std::deque<MeasurementCacheData>> getCachedRawData(uint32_t task_id) = 0;
 };
+} // end namespace xpum

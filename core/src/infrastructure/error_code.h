@@ -1,5 +1,5 @@
 #pragma once
-
+namespace xpum {
 enum ErrorCode {
   OK = 0,
 
@@ -11,3 +11,4 @@ enum ErrorCode {
 
   OPERATION_FAILED = 0x00000004
 };
+} // end namespace xpum

@@ -17,6 +17,8 @@
 #include "health/health_data_type.h"
 #include "topology/topology.h"
 
+namespace xpum {
+
 /*
   GPUDeviceStub class provides various capabilities to communicate with GPU devices.
 */
@@ -175,3 +177,5 @@ private:
   
   static std::map<ze_device_handle_t, zet_metric_streamer_handle_t> target_metric_streamers;
 };
+
+} // end namespace xpum

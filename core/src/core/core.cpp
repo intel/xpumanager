@@ -10,6 +10,8 @@
 #include "core.h"
 #include "group/group_manager.h"
 
+namespace xpum {
+
 Core::Core()
     : p_device_manager(nullptr),
       p_data_logic(nullptr),
@@ -149,3 +151,5 @@ bool Core::isInitialized() {
   return this->initialized;  
 }
 
+
+} // end namespace xpum

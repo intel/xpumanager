@@ -7,6 +7,8 @@
 #include "infrastructure/logger.h"
 #include "control/device_manager.h"
 
+namespace xpum {
+
 MonitorTask::MonitorTask(
     DeviceCapability capability, int freq,
     std::shared_ptr<DeviceManagerInterface>& p_device_manager,
@@ -106,3 +108,5 @@ MonitorTaskType MonitorTask::getType() {
   return type;
 }
 
+
+} // end namespace xpum

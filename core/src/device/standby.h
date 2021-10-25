@@ -6,6 +6,8 @@
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 
+namespace xpum {
+
 class Standby {
 public:
   Standby(zes_standby_type_t type, bool on_subdevice, uint32_t subdevice_id, zes_standby_promo_mode_t mode);
@@ -29,3 +31,5 @@ private:
 
   zes_standby_promo_mode_t mode;
 };
+
+} // end namespace xpum

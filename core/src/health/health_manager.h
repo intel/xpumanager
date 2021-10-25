@@ -5,6 +5,8 @@
 #include "data_logic/data_logic_interface.h"
 #include "health_data_type.h"
 
+namespace xpum {
+
 /**
  * The class is responsible for GPU health check in real time. Four components are currently supported: 
  * power, temperature, memory and fabric port. In addition, users can set reasonable thresholds for power
@@ -41,3 +43,5 @@ class HealthManager : public HealthManagerInterface {
   
   std::mutex mutex;
 };
+
+} // end namespace xpum

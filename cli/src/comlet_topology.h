@@ -5,6 +5,8 @@
 #include <memory>
 #include <string>
 
+namespace xpum::cli {
+
 struct ComletTopologyOptions {
     int deviceId = -1;
 };
@@ -21,3 +23,4 @@ class ComletTopology : public ComletBase {
   private:
     std::unique_ptr<ComletTopologyOptions> opts;
 };
+} // end namespace xpum::cli

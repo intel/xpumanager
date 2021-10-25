@@ -9,6 +9,8 @@
 #include "persistency.h"
 #include "infrastructure/measurement_type.h"
 
+namespace xpum {
+
 /*
   DataHandler class handles the monitoring data.
 */
@@ -47,3 +49,5 @@ private:
 
   std::shared_ptr<Persistency> p_persistency;
 };
+
+} // end namespace xpum

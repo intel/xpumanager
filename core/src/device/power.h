@@ -6,6 +6,8 @@
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 
+namespace xpum {
+
 struct Power_sustained_limit_t {
   bool enabled;
 
@@ -76,3 +78,5 @@ private:
   Power_peak_limit_t peak_limit; 
 
 };
+
+} // end namespace xpum

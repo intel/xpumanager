@@ -5,6 +5,8 @@
 #include <map>
 #include <nlohmann/json.hpp>
 
+namespace xpum::cli {
+
 void ComletDiscovery::setupOptions() {
     this->opts = std::unique_ptr<ComletDiscoveryOptions>(new ComletDiscoveryOptions());
     addOption("-d,--device", this->opts->deviceId, "device id");
@@ -20,3 +22,4 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     auto json = this->coreStub->getDeviceList();
     return json;
 }
+} // end namespace xpum::cli

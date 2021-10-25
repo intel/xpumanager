@@ -11,6 +11,8 @@
 #include <vector>
 #include <ctime>
 
+namespace xpum::cli {
+
 CoreStub::CoreStub() {
     std::string unixSockName{"/home/ggeng1/tmpsockect.file"};
     std::string serverAddr{"unix://" + unixSockName};
@@ -770,3 +772,4 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(int deviceId) {
     (*json)["policy_list"] = componentJsonList;
     return json;
 }
+} // end namespace xpum::cli

@@ -4,6 +4,8 @@
 
 #include "infrastructure/init_close_interface.h"
 
+namespace xpum {
+
 class MonitorManagerInterface : public InitCloseInterface {
  public:
   virtual ~MonitorManagerInterface() {};
@@ -11,3 +13,5 @@ class MonitorManagerInterface : public InitCloseInterface {
   virtual void removeMetricTask(MeasurementType type) = 0;
   virtual void resetMetricTasksFrequency(int freq) = 0;
 };
+
+} // end namespace xpum

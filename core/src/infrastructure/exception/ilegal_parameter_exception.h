@@ -1,5 +1,7 @@
 #include "base_exception.h"
 
+namespace xpum {
+
 class IlegalParameterException : public BaseException {
  public:
   IlegalParameterException(const std::string& msg): BaseException(msg) {
@@ -10,3 +12,4 @@ class IlegalParameterException : public BaseException {
 
   }  
 };
+} // end namespace xpum

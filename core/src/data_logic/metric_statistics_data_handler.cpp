@@ -3,6 +3,8 @@
 #include <iostream>
 #include "infrastructure/utility.h"
 
+namespace xpum {
+
 MetricStatisticsDataHandler::MetricStatisticsDataHandler(MeasurementType type,
                          std::shared_ptr<Persistency>& p_persistency)
     : DataHandler(type,p_persistency) {
@@ -109,3 +111,4 @@ MeasurementData MetricStatisticsDataHandler::getLatestStatistics(std::string& de
     return MeasurementData();
   }
 }
+} // end namespace xpum

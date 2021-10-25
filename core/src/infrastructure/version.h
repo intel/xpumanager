@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace xpum {
+
 class Version
 {
     public:
@@ -9,3 +11,4 @@ class Version
         static std::string getVersionGit();    
         static std::string getZeLibVersion();
 };
+} // end namespace xpum

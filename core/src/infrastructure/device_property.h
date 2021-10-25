@@ -2,6 +2,8 @@
 
 #include <string>
 
+namespace xpum {
+
 class DeviceProperty {
  public:
     static const std::string TYPE;
@@ -81,3 +83,5 @@ class DeviceProperty {
     static const std::string MEM_CHANNEL_NUM;
 
 };
+
+} // end namespace xpum

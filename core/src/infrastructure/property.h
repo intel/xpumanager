@@ -4,6 +4,8 @@
 
 #include "../include/xpum_structs.h"
 
+namespace xpum {
+
 class Property {
  public:
   Property() {}
@@ -92,3 +94,5 @@ class Property {
   std::string value;
 
 };
+
+} // end namespace xpum

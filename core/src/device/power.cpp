@@ -1,6 +1,8 @@
 #include "infrastructure/logger.h"
 #include "power.h"
 
+namespace xpum {
+
 Power::Power(bool on_subdevice, uint32_t subdevice_id, bool can_control, bool is_energy_threshold_supported, int32_t default_limit, int32_t min_limit, int32_t max_limit) {
     this->on_subdevice = on_subdevice;
     this->subdevice_id = subdevice_id;
@@ -57,3 +59,5 @@ void Power::setPowerLimits(const Power_sustained_limit_t& sustained_limit,
   this->burst_limit = burst_limit;
   this->peak_limit = peak_limit;
 }
+
+} // end namespace xpum

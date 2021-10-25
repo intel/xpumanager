@@ -6,6 +6,8 @@
 #include "infrastructure/init_close_interface.h"
 #include "../include/xpum_structs.h"
 
+namespace xpum {
+
 class PolicyManagerInterface : public InitCloseInterface {
  public:
   virtual ~PolicyManagerInterface() {}
@@ -15,3 +17,4 @@ class PolicyManagerInterface : public InitCloseInterface {
   virtual xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[], int *count) = 0;
   virtual xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int *count) = 0;
 };
+} // end namespace xpum

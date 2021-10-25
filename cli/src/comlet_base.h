@@ -7,6 +7,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace xpum::cli {
+
 class CoreStub;
 
 class ComletBase {
@@ -43,3 +45,4 @@ class ComletBase {
     const std::string description;
     CLI::App *subCLIApp;
 };
+} // end namespace xpum::cli

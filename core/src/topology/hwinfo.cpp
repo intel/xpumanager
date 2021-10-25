@@ -1,6 +1,8 @@
 #include "hwinfo.h"
 #include <experimental/filesystem>
 
+namespace xpum {
+
 std::string HWInfo::getDevicePath(const std::string& bdf_address) {
 	std::string devicePath = "/sys/devices";
 	std::string result;
@@ -19,3 +21,4 @@ std::string HWInfo::getDevicePath(const std::string& bdf_address) {
 
 	return result;
 }
+} // end namespace xpum

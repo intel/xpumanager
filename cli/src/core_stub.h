@@ -7,6 +7,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace xpum::cli {
+
 class CoreStub {
   public:
     CoreStub();
@@ -56,3 +58,4 @@ class CoreStub {
     std::unique_ptr<XpumCoreService::Stub> stub;
     static std::string isotimestamp(uint64_t t);
 };
+} // end namespace xpum::cli

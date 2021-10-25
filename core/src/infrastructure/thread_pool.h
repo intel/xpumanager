@@ -8,6 +8,8 @@
 #include "logger.h"
 #include "shared_queue.h"
 
+namespace xpum {
+
 class ThreadPool {
  public:
   ThreadPool(unsigned int size);
@@ -55,3 +57,5 @@ class ThreadPool {
 
   unsigned int size;
 };
+
+} // end namespace xpum

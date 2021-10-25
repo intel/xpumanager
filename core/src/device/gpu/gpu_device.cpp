@@ -7,6 +7,8 @@
 #include "stdio.h"
 #include <fstream>
 
+namespace xpum {
+
 GPUDevice::GPUDevice() : commandExec( nullptr ) {
   XPUM_LOG_INFO("GPUDevice()");
 }
@@ -246,3 +248,5 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult() noexcept {
 bool GPUDevice::isUpgradingFw( void ) noexcept {
   return commandExec != nullptr;
 }
+
+} // end namespace xpum

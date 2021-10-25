@@ -13,6 +13,8 @@
 #include "device/power.h"
 #include "device/frequency.h"
 
+namespace xpum {
+
 /* 
   DeviceManagerInterface class defines various interfaces for managing devices.
 */
@@ -77,3 +79,5 @@ class DeviceManagerInterface : public InitCloseInterface {
   
   virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
 };
+
+} // end namespace xpum

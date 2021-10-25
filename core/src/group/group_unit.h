@@ -5,6 +5,8 @@
 #include "../include/xpum_structs.h"
 #include "control/device_manager_interface.h"
 
+namespace xpum {
+
 class GroupUnit : public std::enable_shared_from_this<GroupUnit>
 {
     public:
@@ -32,3 +34,4 @@ class GroupUnit : public std::enable_shared_from_this<GroupUnit>
         std::vector<zes_pci_address_t> pcieTopology;
         std::size_t topoLevel;
 };
+} // end namespace xpum

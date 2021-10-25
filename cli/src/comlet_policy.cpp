@@ -4,6 +4,8 @@
 
 #include <nlohmann/json.hpp>
 
+namespace xpum::cli {
+
 void ComletPolicy::setupOptions() {
     this->opts = std::unique_ptr<ComletPolicyOptions>(new ComletPolicyOptions());
     addFlag("-l,--list", this->opts->listAll, "list all devices");
@@ -46,3 +48,4 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
     }
     return json;
 }
+} // end namespace xpum::cli

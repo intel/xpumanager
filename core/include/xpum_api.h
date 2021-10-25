@@ -8,6 +8,7 @@
 #include "xpum_structs.h"
 
 #if defined(__cplusplus)
+namespace xpum {
 extern "C" {
 #endif
 
@@ -827,6 +828,7 @@ xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t result
 
 #if defined(__cplusplus)
 } // extern "C"
+} // end namespace xpum
 #endif
 
 #endif // _XPUM_API_H

@@ -4,6 +4,8 @@
 #include <string>
 #include "../include/xpum_structs.h"
 
+namespace xpum {
+
 class Topology {
   private:    
     Topology();
@@ -20,3 +22,4 @@ class Topology {
     static void get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch * pSwitch);
     static std::string pci2RegxString(hwloc_obj_t obj);
 };
+} // end namespace xpum

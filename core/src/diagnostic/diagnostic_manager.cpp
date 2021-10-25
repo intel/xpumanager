@@ -3,6 +3,8 @@
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 
+namespace xpum {
+
 DiagnosticManager::DiagnosticManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {    
@@ -1339,3 +1341,4 @@ std::string DiagnosticManager::roundDouble(double r,int precision) {
   buffer << std::fixed << std::setprecision(precision) << r;
   return buffer.str();
 }
+} // end namespace xpum

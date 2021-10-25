@@ -2,6 +2,8 @@
 
 #include "data_handler.h"
 
+namespace xpum {
+
 struct Statistics_subdevice_data {
   uint64_t count;
   uint64_t avg;
@@ -55,3 +57,4 @@ protected:
   std::map<std::string, Statistics_data> statistics_datas;
 
 };
+} // end namespace xpum

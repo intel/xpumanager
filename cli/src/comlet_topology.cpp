@@ -5,6 +5,8 @@
 #include <map>
 #include <nlohmann/json.hpp>
 
+namespace xpum::cli {
+
 void ComletTopology::setupOptions() {
     this->opts = std::unique_ptr<ComletTopologyOptions>(new ComletTopologyOptions());
     addOption("-d,--device", this->opts->deviceId, "device id");
@@ -16,3 +18,4 @@ std::unique_ptr<nlohmann::json> ComletTopology::run() {
 
     return json;
 }
+} // end namespace xpum::cli

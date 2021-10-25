@@ -6,6 +6,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace xpum::cli {
+
 struct ComletVersionOptions {
     bool verbose = false;
     std::string argA = "";
@@ -25,3 +27,4 @@ class ComletVersion : public ComletBase {
   private:
     std::unique_ptr<ComletVersionOptions> opts;
 };
+} // end namespace xpum::cli

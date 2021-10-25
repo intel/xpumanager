@@ -2,6 +2,8 @@
 
 #include <vector>
 
+namespace xpum {
+
 class InitCloseInterface {
  public:
   virtual ~InitCloseInterface() {};
@@ -11,3 +13,5 @@ class InitCloseInterface {
   virtual void close() = 0;
 
 };
+
+} // end namespace xpum

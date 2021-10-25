@@ -12,6 +12,8 @@
 #include "pci_database.h"
 #include "hwinfo.h"
 
+namespace xpum {
+
 Topology::Topology()    {
     XPUM_LOG_INFO("Topology()");
 }
@@ -274,3 +276,4 @@ void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch * pSwitc
         obj = obj->parent;
     }
 }
+} // end namespace xpum

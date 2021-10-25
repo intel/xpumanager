@@ -7,6 +7,8 @@
 
 #include "infrastructure/exception/base_exception.h"
 
+namespace xpum {
+
 template <class T>
 class SharedQueue {
  public:
@@ -53,3 +55,5 @@ class SharedQueue {
 
   std::atomic<bool> stop;
 };
+
+} // end namespace xpum

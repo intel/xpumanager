@@ -25,6 +25,8 @@
 
 #pragma GCC diagnostic ignored "-Wunused-result"
 
+namespace xpum::daemon {
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -135,6 +137,10 @@ void signalHandler(int sig){
     }
 }
 
+} // end namespace xpum::daemon
+
+using namespace xpum::daemon;
+
 int main( int argc, char* argv[] ) {
     static struct option long_options[] = {
 		{"socket_file", required_argument, 0, 's'},
@@ -171,8 +177,8 @@ int main( int argc, char* argv[] ) {
     signal(SIGTERM, signalHandler);
 
     syslog(LOG_INFO, "XPUM: Init xpum library");
-    xpum_result_t res = xpumInit();
-    if(res != XPUM_OK){
+    xpum::xpum_result_t res = xpum::xpumInit();
+    if(res != xpum::XPUM_OK){
         syslog(LOG_ERR, "XPUM: Load xpum library failed! %d", res);
         return 1;
     }
@@ -181,7 +187,7 @@ int main( int argc, char* argv[] ) {
     runRPCServer();
 
     syslog(LOG_INFO, "XPUM: Shut down.");
-    res = xpumShutdown();
+    res = xpum::xpumShutdown();
     syslog(LOG_INFO, "XPUM: xpum service is closed.");
     if(pidFilehandle != -1) {
         close(pidFilehandle);

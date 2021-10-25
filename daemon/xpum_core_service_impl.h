@@ -9,6 +9,8 @@
 #include "core.pb.h"
 #include "core.grpc.pb.h"
 
+namespace xpum::daemon {
+
 class XpumCoreServiceImpl final : public XpumCoreService::Service {
 public:
     XpumCoreServiceImpl( void );
@@ -70,3 +72,5 @@ public:
     virtual ::grpc::Status getPolicy(::grpc::ServerContext *context, const ::GetPolicyRequest *request, ::XpumPolicyDataArray *response) override;
 
 };
+
+} // end namespace xpum::daemon

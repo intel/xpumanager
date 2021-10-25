@@ -5,6 +5,8 @@
 
 #include <nlohmann/json.hpp>
 
+namespace xpum::cli {
+
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
 
     assert(this->stub != nullptr);
@@ -62,3 +64,4 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
 
     return json;
 }
+} // end namespace xpum::cli

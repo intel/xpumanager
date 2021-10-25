@@ -5,6 +5,8 @@
 #include "infrastructure/measurement_type.h"
 #include "infrastructure/measurement_data.h"
 
+namespace xpum {
+
 class Persistency {
  public:
   virtual ~Persistency() {};
@@ -15,3 +17,5 @@ class Persistency {
       std::map<std::string, MeasurementData>& datas) = 0;
       
 };
+
+} // end namespace xpum
