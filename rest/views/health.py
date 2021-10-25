@@ -2,6 +2,7 @@ import stub
 from flask import request
 from flask import jsonify
 
+
 def get_health_all(deviceId):
     code, message, data = stub.getHealth(deviceId, "All")
     if code != 0:

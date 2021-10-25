@@ -38,14 +38,14 @@ XpumStatsType = Enum("xpum_stats_type_t", (
 
 def getMetrics(deviceId):
     resp = stub.getMetrics(core_pb2.DeviceId(id=deviceId))
-    if len( resp.errorMsg ) != 0:
+    if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     data = dict()
     data["DeviceId"] = deviceId
     deviceLevelStatsDataList = []
     tileLevelStatsDataList = []
     for stats_info in resp.dataList:
-        dataList=[]
+        dataList = []
         for stats_data in stats_info.dataList:
             try:
                 tmp = dict()
@@ -58,10 +58,10 @@ def getMetrics(deviceId):
             except:
                 pass
         if stats_info.isTileData:
-            tmp = dict(tileId=stats_info.tileId,dataList=dataList)
+            tmp = dict(tileId=stats_info.tileId, dataList=dataList)
             tileLevelStatsDataList.append(tmp)
         else:
-            deviceLevelStatsDataList=dataList
+            deviceLevelStatsDataList = dataList
     data["DeviceLevel"] = deviceLevelStatsDataList
     if tileLevelStatsDataList:
         data["TileLevel"] = tileLevelStatsDataList

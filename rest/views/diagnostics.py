@@ -2,6 +2,7 @@ import stub
 from flask import request
 from flask import jsonify
 
+
 def run_diagnostics(deviceId):
     req = request.get_json()
     level = req["DiagnosticsLevel"]

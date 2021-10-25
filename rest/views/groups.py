@@ -2,6 +2,7 @@ from flask import request, jsonify
 import stub
 from marshmallow import Schema, fields
 
+
 class CreateGroupSchema(Schema):
     GroupName = fields.Str()
 

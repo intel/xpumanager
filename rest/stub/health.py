@@ -2,10 +2,10 @@ from .grpc_stub import stub
 import core_pb2
 
 healthTypeEnumToString = {
-    core_pb2.HEALTH_THERMAL:"temperature",
-    core_pb2.HEALTH_POWER:"power",
-    core_pb2.HEALTH_MEMORY:"memory",
-    core_pb2.HEALTH_FABRIC_PORT:"fabric_port"
+    core_pb2.HEALTH_THERMAL: "temperature",
+    core_pb2.HEALTH_POWER: "power",
+    core_pb2.HEALTH_MEMORY: "memory",
+    core_pb2.HEALTH_FABRIC_PORT: "fabric_port"
 }
 
 healthStatusEnumToString = {

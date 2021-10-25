@@ -3,15 +3,15 @@ import stub
 
 
 def run_firmware_flash(deviceId):
-    req = request.get_json();
-    firmwareType = req.get('type');
+    req = request.get_json()
+    firmwareType = req.get('type')
     if not firmwareType:
         firmwareType = 0
 
-    filePath = req.get('file');
+    filePath = req.get('file')
     if not filePath:
         return jsonify({'error': 'missing arguments'})
-    
+
     rc = stub.runFirmwareFlash(deviceId, firmwareType, filePath)
     return jsonify({'result': rc})
 

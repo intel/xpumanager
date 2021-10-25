@@ -17,15 +17,15 @@ class PodResourcesListerStub(object):
             channel: A grpc.Channel.
         """
         self.List = channel.unary_unary(
-                '/v1.PodResourcesLister/List',
-                request_serializer=api__pb2.ListPodResourcesRequest.SerializeToString,
-                response_deserializer=api__pb2.ListPodResourcesResponse.FromString,
-                )
+            '/v1.PodResourcesLister/List',
+            request_serializer=api__pb2.ListPodResourcesRequest.SerializeToString,
+            response_deserializer=api__pb2.ListPodResourcesResponse.FromString,
+        )
         self.GetAllocatableResources = channel.unary_unary(
-                '/v1.PodResourcesLister/GetAllocatableResources',
-                request_serializer=api__pb2.AllocatableResourcesRequest.SerializeToString,
-                response_deserializer=api__pb2.AllocatableResourcesResponse.FromString,
-                )
+            '/v1.PodResourcesLister/GetAllocatableResources',
+            request_serializer=api__pb2.AllocatableResourcesRequest.SerializeToString,
+            response_deserializer=api__pb2.AllocatableResourcesResponse.FromString,
+        )
 
 
 class PodResourcesListerServicer(object):
@@ -48,23 +48,24 @@ class PodResourcesListerServicer(object):
 
 def add_PodResourcesListerServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'List': grpc.unary_unary_rpc_method_handler(
-                    servicer.List,
-                    request_deserializer=api__pb2.ListPodResourcesRequest.FromString,
-                    response_serializer=api__pb2.ListPodResourcesResponse.SerializeToString,
-            ),
-            'GetAllocatableResources': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetAllocatableResources,
-                    request_deserializer=api__pb2.AllocatableResourcesRequest.FromString,
-                    response_serializer=api__pb2.AllocatableResourcesResponse.SerializeToString,
-            ),
+        'List': grpc.unary_unary_rpc_method_handler(
+            servicer.List,
+            request_deserializer=api__pb2.ListPodResourcesRequest.FromString,
+            response_serializer=api__pb2.ListPodResourcesResponse.SerializeToString,
+        ),
+        'GetAllocatableResources': grpc.unary_unary_rpc_method_handler(
+            servicer.GetAllocatableResources,
+            request_deserializer=api__pb2.AllocatableResourcesRequest.FromString,
+            response_serializer=api__pb2.AllocatableResourcesResponse.SerializeToString,
+        ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'v1.PodResourcesLister', rpc_method_handlers)
+        'v1.PodResourcesLister', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
-
  # This class is part of an EXPERIMENTAL API.
+
+
 class PodResourcesLister(object):
     """PodResourcesLister is a service provided by the kubelet that provides information about the
     node resources consumed by pods and containers on the node
@@ -72,34 +73,34 @@ class PodResourcesLister(object):
 
     @staticmethod
     def List(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
+             target,
+             options=(),
+             channel_credentials=None,
+             call_credentials=None,
+             insecure=False,
+             compression=None,
+             wait_for_ready=None,
+             timeout=None,
+             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/v1.PodResourcesLister/List',
-            api__pb2.ListPodResourcesRequest.SerializeToString,
-            api__pb2.ListPodResourcesResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             api__pb2.ListPodResourcesRequest.SerializeToString,
+                                             api__pb2.ListPodResourcesResponse.FromString,
+                                             options, channel_credentials,
+                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def GetAllocatableResources(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
+                                target,
+                                options=(),
+                                channel_credentials=None,
+                                call_credentials=None,
+                                insecure=False,
+                                compression=None,
+                                wait_for_ready=None,
+                                timeout=None,
+                                metadata=None):
         return grpc.experimental.unary_unary(request, target, '/v1.PodResourcesLister/GetAllocatableResources',
-            api__pb2.AllocatableResourcesRequest.SerializeToString,
-            api__pb2.AllocatableResourcesResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             api__pb2.AllocatableResourcesRequest.SerializeToString,
+                                             api__pb2.AllocatableResourcesResponse.FromString,
+                                             options, channel_credentials,
+                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

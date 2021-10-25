@@ -72,17 +72,27 @@ class DevicePropertiesSchema(Schema):
         metadata={"description": "Device physical memory size, in bytes"})
     memory_free_size_byte = fields.Str(
         metadata={"description": "The free memory, in bytes"})
-    max_mem_alloc_size_byte = fields.Str(metadata={"description": "The total allocatable memory, in bytes"})
-    number_of_memory_channels = fields.Str(metadata={"description": "Number of memory channels"})
+    max_mem_alloc_size_byte = fields.Str(
+        metadata={"description": "The total allocatable memory, in bytes"})
+    number_of_memory_channels = fields.Str(
+        metadata={"description": "Number of memory channels"})
     memory_bus_width = fields.Str(metadata={"description": "Memory bus width"})
-    max_hardware_contexts = fields.Str(metadata={"description": "Maximum number of logical hardware contexts"})
-    max_command_queue_priority = fields.Str(metadata={"description": "Maximum priority for command queues. Higher value is higher priority"})
-    number_of_tiles = fields.Str(metadata={"description": "The number of tiles"})
-    number_of_slices = fields.Str(metadata={"description": "Maximum number of slices"})
-    number_of_sub_slices_per_slice = fields.Str(metadata={"description": "Maximum number of sub-slices per slice"})
-    number_of_eus_per_sub_slice = fields.Str(metadata={"description": "Maximum number of EUs per sub-slice"})
-    number_of_threads_per_eu = fields.Str(metadata={"description": "Maximum number of threads per EU"})
-    physical_eu_simd_width = fields.Str(metadata={"description": "The physical EU simd width"})
+    max_hardware_contexts = fields.Str(
+        metadata={"description": "Maximum number of logical hardware contexts"})
+    max_command_queue_priority = fields.Str(metadata={
+                                            "description": "Maximum priority for command queues. Higher value is higher priority"})
+    number_of_tiles = fields.Str(
+        metadata={"description": "The number of tiles"})
+    number_of_slices = fields.Str(
+        metadata={"description": "Maximum number of slices"})
+    number_of_sub_slices_per_slice = fields.Str(
+        metadata={"description": "Maximum number of sub-slices per slice"})
+    number_of_eus_per_sub_slice = fields.Str(
+        metadata={"description": "Maximum number of EUs per sub-slice"})
+    number_of_threads_per_eu = fields.Str(
+        metadata={"description": "Maximum number of threads per EU"})
+    physical_eu_simd_width = fields.Str(
+        metadata={"description": "The physical EU simd width"})
 
 
 def get_device_properties(deviceId):
