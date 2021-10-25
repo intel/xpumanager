@@ -19,8 +19,15 @@ $DOXYREST_FOLDER/bin/doxyrest \
     -F $DOXYREST_FOLDER/share/doxyrest/frame/cfamily \
     -F $DOXYREST_FOLDER/share/doxyrest/frame/common \
     -o build/rst/index.rst \
+    -D SORT_GROUPS_BY="originalIdx" \
+    -D INDEX_TITLE="Core Library API" \
     build/doxygen-output/xml/index.xml
 
 cd ${WORK_DIR}
+
+cp index.rst introduction.rst restful.rst build/
+
+python3 ../rest/gen_doc.py > build/schema.json
+
 # build rst to html by sphinx
-sphinx-build -c sphinxconf/ build/rst/ build/html
+sphinx-build -c sphinxconf/ build/ build/html

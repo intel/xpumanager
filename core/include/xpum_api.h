@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 /**************************************************************************/
-/** @defgroup BASIC_API
+/** @defgroup BASIC_API Basic API
  * XPUM Basic APIs
  * @{
  */
@@ -53,7 +53,7 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count);
 /** @} */ // Closing for BASIC_API
 
 /**************************************************************************/
-/** @brief DEVICE_API
+/** @defgroup DEVICE_API Device API
  * These APIs are for device
  * @{
  */
@@ -65,7 +65,7 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count);
  * The identifier represents device id corresponding to each device on the system and is immutable 
  * during the lifespan of the engine. The list should be queried again if the engine is restarted.
  * 
- * @param deviceIdList      OUT: The array to store device infos
+ * @param deviceList      OUT: The array to store device infos
  * @param count             OUT: The count of device
  * @return \ref xpum_result_t 
  */
@@ -83,7 +83,7 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
 /** @} */ // Closing for DEVICE_API
 
 /**************************************************************************/
-/** @brief GROUP_MANAGEMENT_API
+/** @defgroup GROUP_MANAGEMENT_API Group management
  * These APIs are for group management
  * @{
  */
@@ -147,46 +147,9 @@ xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], 
 
 /** @} */ // Closing for GROUP_MANAGEMENT_API
 
-/**************************************************************************/
-/** @defgroup TELEMETRY_API
- * These APIs are for telemetries
- * @{
- */
-/**************************************************************************/
-
-/**
- * @brief Get telemetry for single device
- * 
- * @param deviceId           IN: Device id
- * @param type               IN: Telemetry type to get
- * @param data              OUT: Pointer to struct to store telemetry info
- * @return xpum_result_t 
- */
-xpum_result_t xpumGetTelemetries(xpum_device_id_t deviceId, xpum_telemetry_type_t type, xpumTelemetryData_t* data);
-
-
-/**
- * @brief Get telemetry for a group of device 
- * 
- * @param groupId            IN: Group id 
- * @param type               IN: Telemetry type to get         
- * @param dataList          OUT: Array of struct to store telemetry info, the array length should
- *                               equal to or larger than device count of the group ( \a groupid ).
- * @param count          IN/OUT: The number of entries that \a data array can store; 
- *                               when return, the \a count will store real number of entries returned by \a data
- * @return  
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
- */
-xpum_result_t xpumGetTelemetriesByGroup(xpum_group_id_t groupId, 
-                                       xpum_telemetry_type_t type, 
-                                       xpumTelemetryData_t dataList[],
-                                       int *count);
-
-/** @} */ // Closing for TELEMETRY_API
 
 /**************************************************************************/
-/** @defgroup HEALTH_API
+/** @defgroup HEALTH_API Device health
  * These APIs are for health
  * @{
  */
@@ -282,7 +245,7 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
 /** @} */ // Closing for HEALTH_API
 
 /**************************************************************************/
-/** @defgroup EVENT_API
+/** @defgroup EVENT_API Events
  * These APIs are for event
  * @{
  */
@@ -304,7 +267,7 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events
  */
-xpum_result_t xpumGetEvent(xpumEventEntry_t eventList[], int *count);
+xpum_result_t xpumGetEvent(xpum_event_entry_t eventList[], int *count);
 
 /**
  * @brief Get events by device id
@@ -323,7 +286,7 @@ xpum_result_t xpumGetEvent(xpumEventEntry_t eventList[], int *count);
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events 
  */
-xpum_result_t xpumGetEventByDevice(xpum_device_id_t deviceId, xpumEventEntry_t eventList[], int *count);
+xpum_result_t xpumGetEventByDevice(xpum_device_id_t deviceId, xpum_event_entry_t eventList[], int *count);
 
 /**
  * @brief Get events by group id
@@ -342,7 +305,7 @@ xpum_result_t xpumGetEventByDevice(xpum_device_id_t deviceId, xpumEventEntry_t e
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events 
  */
-xpum_result_t xpumGetEventByGroup(xpum_group_id_t groupId, xpumEventEntry_t eventList[], int *count);
+xpum_result_t xpumGetEventByGroup(xpum_group_id_t groupId, xpum_event_entry_t eventList[], int *count);
 
 /**
  * @brief Remove events by event ids
@@ -363,7 +326,7 @@ xpum_result_t xpumClearAllEvents();
 /** @} */ // Closing for EVENT_API
 
 /**************************************************************************/
-/** @defgroup CONFIGURATION_API
+/** @defgroup CONFIGURATION_API Device configurations
  * These APIs are for configuration
  * @{
  */
@@ -406,10 +369,8 @@ xpum_result_t xpumGetDeviceConfig(xpum_device_id_t deviceId, xpum_device_config_
  * @param key                   IN: Configuration key to get      
  * @param deviceIdList      IN/OUT: Array of device ids in this group      
  * @param valueList         IN/OUT: Array to store configuration values for devices' \a key in \a deviceIdList    
- * @param count             IN/OUT: The number of entries that \a deviceIdList and \a valueList array can store, 
- *                                  count should equal to or larger than device count of the group ( \a groupid ); 
- *                                  when return, the \a count will store real number of entries returned by   
- *                                  \a deviceIdList and \a valueList
+ * @param count             IN/OUT: The number of entries that \a deviceIdList and \a valueList array can store, count should equal to or larger than device count of the group ( \a groupid ); 
+ *                                  when return, the \a count will store real number of entries returned by \a deviceIdList and \a valueList
  * @return
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group 
@@ -419,327 +380,6 @@ xpum_result_t xpumGetDeviceConfigByGroup(xpum_group_id_t groupId,
                                         xpum_device_id_t deviceIdList[], 
                                         void *valueList[],
                                         int *count);
-
-/** @} */ // Closing for CONFIGURATION_API
-
-/**************************************************************************/
-/** @defgroup FIRMWARE_UPDATE_API
- *  APIs are for firmware update
- *  @{
- */
-/**************************************************************************/
-
-/**
- * @brief Get firmware properties
- * 
- * @param deviceId             IN: Device id   
- * @param type                 IN: The type of firmware to get   
- * @param props               OUT: Pointer to struct used to store firmware properties
- * @return xpum_result_t 
- */
-xpum_result_t xpumGetFirmwareProperties(xpum_device_id_t deviceId, xpum_firmware_type_t type, xpum_firmware_properties *props);
-
-/**
- * @brief Get firmware properties by group
- * 
- * @param groupId          IN: Group id   
- * @param type             IN: The type of firmware to get         
- * @param propsList       OUT: Array of struct used to store firmware properties
- * @param count        IN/OUT: The number of entries that \a propsList array can store, 
- *                             count should equal to or larger than device count of the group ( \a groupid ); 
- *                             when return, the \a count will store real number of entries returned by   
- *                             \a propsList
- * @return xpum_result_t 
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events
- */
-xpum_result_t xpumGetFirmwarePropertiesByGroup(xpum_group_id_t groupId, 
-                                              xpum_firmware_type_t type, 
-                                              xpum_firmware_properties propsList[],
-                                              int *count);
-
-/**
- * @brief Run firmware flashing by device
- * @details This function will return immediately. To query the firmware flash job status, call \ref xpumGetFirmwareFlashResult
- * 
- * @param deviceId      IN: Device id
- * @param job           IN: The job description for firmware flash
- * @return xpum_result_t 
- */
-xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job);
-
-/**
- * @brief Run firmware flashing by group
- * @details This function will return immediately. To query the firmware flash job status, call \ref xpumGetFirmwareFlashResultByGroup
- * 
- * @param groupId       IN: Group id
- * @param job           IN: The job description for firmware flash
- * @return xpum_result_t 
- */
-xpum_result_t xpumRunFirmwareFlashByGroup(xpum_group_id_t groupId, xpum_firmware_flash_job *job);
-
-/**
- * @brief Get the status of firmware flash job
- * @details This function will return immediately. Caller may have to call this function multiple times until \a result indicates
- * firmware flash job is finished.
- * 
- * @param deviceId          IN: Device id
- * @param firmwareType      IN: The firmware type to query status
- * @param result           OUT: The result of the job 
- * @return xpum_result_t
- */
-xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId, 
-                                         xpum_firmware_type_t firmwareType, 
-                                         xpum_firmware_flash_task_result_t *result);
-
-/**
- * @brief Get the status of firmware flash job by group
- * This function will return immediately. Caller may have to call this function multiple times until \a resultList indicates
- * firmware flash job is finished.
- * 
- * @param groupId           IN: Group id
- * @param firmwareType      IN: The firmware type to query status
- * @param resultList       OUT: Array of struct to store firmware flash results
- * @param count         IN/OUT: The number of entries that \a resultList array can store, 
- *                              count should equal to or larger than device count of the group ( \a groupid );     
- *                              when return, the \a count will store real number of entries returned by   
- *                              \a resultList
- * @return
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group 
- */
-xpum_result_t xpumGetFirmwareFlashResultByGroup(xpum_group_id_t groupId, 
-                                                xpum_firmware_type_t firmwareType,
-                                                xpum_firmware_flash_task_result_t resultList[], 
-                                                int *count);
-
-/** @} */ // Closing for FIRMWARE_UPDATE_API
-
-/**************************************************************************/
-/** @defgroup DIAGNOSTICS_API
- * These APIs are for diagnostics
- * @{
- */
-/**************************************************************************/
-
-/**
- * @brief Run diagnostics on single device 
- * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResult
- * 
- * @param deviceId          IN: Device id
- * @param level             IN: The diagnostics level to run
- * @return xpum_result_t 
- */
-xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level);
-
-/**
- * @brief Run diagnostics on a group of devices
- * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResultByGroup
- * 
- * @param groupId           IN: Group id
- * @param level             IN: The diagnostics level to run
- * @return xpum_result_t 
- */
-xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level);
-
-/**
- * @brief Get diagnostics result
- * This function will return immediately. Caller may have to call this function multiple times until \a result indicates
- * diagnostics job is finished.
- * 
- * @param deviceId          IN: The device id to query diagnostics status
- * @param result           OUT: The status of diagnostics task run on device with \a deviceId
- * @return xpum_result_t 
- */
-xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result);
-
-/**
- * @brief Get diagnostics result by group
- * 
- * @param groupId           IN: The group id to query diagnostics status
- * @param resultList       OUT: The status of diagnostics task run on device of group with \a groupId
- * @param count         IN/OUT: The number of entries that \a resultList array can store, 
- *                              count should equal to or larger than device count of the group ( \a groupid );
- *                              when return, the \a count will store real number of entries returned by
- *                              \a resultList
- * @return
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
- */
-xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
-                                              xpum_diag_task_info_t resultList[],
-                                              int *count);
-
-/** @} */ // Closing for DIAGNOSTICS_API
-
-/**************************************************************************/
-/** @defgroup AGENT_SETTING_API
- * These APIs are for agent setting
- * @{
- */
-/**************************************************************************/
-
-/**
- * @brief Set agent config
- * 
- * @param key           IN: The agent configuration key to set
- * @param value         IN: The value to set.
- *                          The type of \a value should be determined by doc
- * @return xpum_result_t 
- */
-xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value);
-
-/**
- * @brief Get agent config
- * 
- * @param key           IN: The agent configuration key to get
- * @param value        OUT: The value to get.
- *                          The type of \a value should be determined by doc
- * @return xpum_result_t 
- */
-xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
-
-/** @} */ // Closing for AGENT_SETTING_API
-
-/**************************************************************************/
-/** @defgroup STATISTICS_API
- * These APIs are for statistics
- * @{
- */
-/**************************************************************************/
-
-/**
- * @brief Get statistics data by device
- * 
- * @param deviceId      IN: Device id
- * @param dataList     OUT: The arry to store statistics data for device \a deviceId.
- * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats_size of this device. A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
- *                          When return, \a count will store the actual number of entries stored in \a dataList.
- * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
- * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- */
-xpum_result_t xpumGetStats(xpum_device_id_t deviceId, 
-                           xpum_device_stats_t dataList[], 
-                           int *count,
-                           uint64_t *begin,
-                           uint64_t *end);
-
-/**
- * @brief Get statistics data by group
- * 
- * @param groupId       IN: Group id
- * @param dataList     OUT: The arry to store statistics data for devices in group \a groupId.
- * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than the total sum of stats_size of devices in group ( \a groupId ). A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
- *                          When return, \a count will store the actual number of entries stored in \a dataList.
- * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
- * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
- * @return xpum_result_t 
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
- */
-xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, 
-                                  xpum_device_stats_t dataList[], 
-                                  int *count,
-                                  uint64_t *begin,
-                                  uint64_t *end);
-
-/**
- * @brief Get latest metrics data by device
- * 
- * @param deviceId      IN: Device id
- * @param dataList     OUT: The arry to store metrics data for device \a deviceId.
- * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats_size of this device. A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
- *                          When return, \a count will store the actual number of entries stored in \a dataList.
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- */
-xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId, 
-                             xpum_device_stats_t dataList[], 
-                             int *count);
-
-
-/**
- * @brief Get latest metrics data by group
- * 
- * @param groupId       IN: Group id
- * @param dataList     OUT: The arry to store metrics data for devices in group \a groupId.
- * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than the total sum of stats_size of devices in group ( \a groupId ). A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
- *                          When return, \a count will store the actual number of entries stored in \a dataList.
- * @return xpum_result_t 
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
- */
-xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId, 
-                                  xpum_device_stats_t dataList[], 
-                                  int *count);                             
-
-
-/** @} */ // Closing for STATISTICS_API
-
-/**************************************************************************/
-/** @defgroup COLLECT_METRICS_RAW_DATA_API
- * These APIs are for collecting metrics raw data
- * @{
- */
-/**************************************************************************/
-
-/**
- * @brief Start a task to collect metrics raw data by device
- * @details This function is used to start a task to collect metrics raw data on specific device.
- *          You can specify the metrics you want to collect, and return a task id, by which you can
- *          stop the collect task and query the result data.
- * 
- * @param deviceId                  IN: The device to collect raw metrics data
- * @param metricsTypeList           IN: The metrics to collect
- * @param count                     IN: The count of entries in \a metricsTypeList
- * @param taskId                   OUT: The id for task created to collect data
- * @return xpum_result_t 
- */
-xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId, 
-                                                 xpum_stats_type_t metricsTypeList[], 
-                                                 int count,
-                                                 xpum_dump_task_id_t *taskId);
-
-/**
- * @brief Start a task to collect metrics raw data by group
- * @details This function is used to start a task to collect metrics raw data on specific group.
- *          You can specify the metrics you want to collect, and return a task id, by which you can
- *          stop the collect task and query the result data.
- * 
- * @param groupId                   IN: The group to collect raw metrics data
- * @param metricsTypeList           IN: The metrics to collect
- * @param count                     IN: The count of entries in \a metricsTypeList
- * @param taskId                   OUT: The id for task created to collect data
- * @return xpum_result_t 
- */
-xpum_result_t xpumStartCollectMetricsRawDataTaskByGroup(xpum_group_id_t groupId, 
-                                                        xpum_stats_type_t metricsTypeList[], 
-                                                        int count,
-                                                        xpum_dump_task_id_t *taskId);
-
-/**
- * @brief Stop a metrics raw data collect task
- * 
- * @param taskId                IN: The task id to query
- * @return xpum_result_t 
- */
-xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId);
-
-/**
- * @brief Get metrics raw data 
- * 
- * @param taskId                IN: The task id to query
- * @param dataList          IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.                          
- * @param count             IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList                
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed 
- */
-xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count);
 
 /**
  * @brief Get device standby mode
@@ -920,18 +560,365 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
  */
 xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, int *count);
 
+/** @} */ // Closing for CONFIGURATION_API
+
+/**************************************************************************/
+/** @defgroup FIRMWARE_UPDATE_API Firmware flash
+ *  APIs are for firmware update
+ *  @{
+ */
+/**************************************************************************/
+
+/**
+ * @brief Get firmware properties
+ * 
+ * @param deviceId             IN: Device id   
+ * @param type                 IN: The type of firmware to get   
+ * @param props               OUT: Pointer to struct used to store firmware properties
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumGetFirmwareProperties(xpum_device_id_t deviceId, xpum_firmware_type_t type, xpum_firmware_properties *props);
+
+/**
+ * @brief Get firmware properties by group
+ * 
+ * @param groupId          IN: Group id   
+ * @param type             IN: The type of firmware to get         
+ * @param propsList       OUT: Array of struct used to store firmware properties
+ * @param count        IN/OUT: The number of entries that \a propsList array can store, 
+ *                             count should equal to or larger than device count of the group ( \a groupid ); 
+ *                             when return, the \a count will store real number of entries returned by   
+ *                             \a propsList
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events
+ */
+xpum_result_t xpumGetFirmwarePropertiesByGroup(xpum_group_id_t groupId, 
+                                              xpum_firmware_type_t type, 
+                                              xpum_firmware_properties propsList[],
+                                              int *count);
+
+/**
+ * @brief Run firmware flashing by device
+ * @details This function will return immediately. To query the firmware flash job status, call \ref xpumGetFirmwareFlashResult
+ * 
+ * @param deviceId      IN: Device id
+ * @param job           IN: The job description for firmware flash
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job);
+
+/**
+ * @brief Run firmware flashing by group
+ * @details This function will return immediately. To query the firmware flash job status, call \ref xpumGetFirmwareFlashResultByGroup
+ * 
+ * @param groupId       IN: Group id
+ * @param job           IN: The job description for firmware flash
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRunFirmwareFlashByGroup(xpum_group_id_t groupId, xpum_firmware_flash_job *job);
+
+/**
+ * @brief Get the status of firmware flash job
+ * @details This function will return immediately. Caller may have to call this function multiple times until \a result indicates
+ * firmware flash job is finished.
+ * 
+ * @param deviceId          IN: Device id
+ * @param firmwareType      IN: The firmware type to query status
+ * @param result           OUT: The result of the job 
+ * @return xpum_result_t
+ */
+xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId, 
+                                         xpum_firmware_type_t firmwareType, 
+                                         xpum_firmware_flash_task_result_t *result);
+
+/**
+ * @brief Get the status of firmware flash job by group
+ * This function will return immediately. Caller may have to call this function multiple times until \a resultList indicates
+ * firmware flash job is finished.
+ * 
+ * @param groupId           IN: Group id
+ * @param firmwareType      IN: The firmware type to query status
+ * @param resultList       OUT: Array of struct to store firmware flash results
+ * @param count         IN/OUT: The number of entries that \a resultList array can store, 
+ *                              count should equal to or larger than device count of the group ( \a groupid );     
+ *                              when return, the \a count will store real number of entries returned by   
+ *                              \a resultList
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group 
+ */
+xpum_result_t xpumGetFirmwareFlashResultByGroup(xpum_group_id_t groupId, 
+                                                xpum_firmware_type_t firmwareType,
+                                                xpum_firmware_flash_task_result_t resultList[], 
+                                                int *count);
+
+/** @} */ // Closing for FIRMWARE_UPDATE_API
+
+/**************************************************************************/
+/** @defgroup DIAGNOSTICS_API Diagnostics
+ * These APIs are for diagnostics
+ * @{
+ */
+/**************************************************************************/
+
+/**
+ * @brief Run diagnostics on single device 
+ * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResult
+ * 
+ * @param deviceId          IN: Device id
+ * @param level             IN: The diagnostics level to run
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level);
+
+/**
+ * @brief Run diagnostics on a group of devices
+ * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResultByGroup
+ * 
+ * @param groupId           IN: Group id
+ * @param level             IN: The diagnostics level to run
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level);
+
+/**
+ * @brief Get diagnostics result
+ * This function will return immediately. Caller may have to call this function multiple times until \a result indicates
+ * diagnostics job is finished.
+ * 
+ * @param deviceId          IN: The device id to query diagnostics status
+ * @param result           OUT: The status of diagnostics task run on device with \a deviceId
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result);
+
+/**
+ * @brief Get diagnostics result by group
+ * 
+ * @param groupId           IN: The group id to query diagnostics status
+ * @param resultList       OUT: The status of diagnostics task run on device of group with \a groupId
+ * @param count         IN/OUT: The number of entries that \a resultList array can store, 
+ *                              count should equal to or larger than device count of the group ( \a groupid );
+ *                              when return, the \a count will store real number of entries returned by
+ *                              \a resultList
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
+ */
+xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
+                                              xpum_diag_task_info_t resultList[],
+                                              int *count);
+
+/** @} */ // Closing for DIAGNOSTICS_API
+
+/**************************************************************************/
+/** @defgroup AGENT_SETTING_API Agent settings
+ * These APIs are for agent setting
+ * @{
+ */
+/**************************************************************************/
+
+/**
+ * @brief Set agent config
+ * 
+ * @param key           IN: The agent configuration key to set
+ * @param value         IN: The value to set.
+ *                          The type of \a value should be determined by doc
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value);
+
+/**
+ * @brief Get agent config
+ * 
+ * @param key           IN: The agent configuration key to get
+ * @param value        OUT: The value to get.
+ *                          The type of \a value should be determined by doc
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
+
+/** @} */ // Closing for AGENT_SETTING_API
+
+/**************************************************************************/
+/** @defgroup STATISTICS_API Device statistics
+ * These APIs are for statistics
+ * @{
+ */
+/**************************************************************************/
+
+/**
+ * @brief Get statistics data by device
+ * 
+ * @param deviceId      IN: Device id
+ * @param dataList     OUT: The arry to store statistics data for device \a deviceId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats_size of this device. A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
+ * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetStats(xpum_device_id_t deviceId, 
+                           xpum_device_stats_t dataList[], 
+                           int *count,
+                           uint64_t *begin,
+                           uint64_t *end);
+
+/**
+ * @brief Get statistics data by group
+ * 
+ * @param groupId       IN: Group id
+ * @param dataList     OUT: The arry to store statistics data for devices in group \a groupId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than the total sum of stats_size of devices in group ( \a groupId ). A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
+ * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
+ */
+xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId, 
+                                  xpum_device_stats_t dataList[], 
+                                  int *count,
+                                  uint64_t *begin,
+                                  uint64_t *end);
+
+/** @} */ // Closing for STATISTICS_API
+
+/**************************************************************************/
+/** @defgroup METRICS_API Get metrics data
+ * These APIs are for collecting metrics data
+ * @{
+ */
+/**************************************************************************/
+
+/**
+ * @brief Get latest metrics data by device
+ * 
+ * @param deviceId      IN: Device id
+ * @param dataList     OUT: The arry to store metrics data for device \a deviceId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats_size of this device. A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId, 
+                             xpum_device_stats_t dataList[], 
+                             int *count);
+
+
+/**
+ * @brief Get latest metrics data by group
+ * 
+ * @param groupId       IN: Group id
+ * @param dataList     OUT: The arry to store metrics data for devices in group \a groupId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than the total sum of stats_size of devices in group ( \a groupId ). A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
+ */
+xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId, 
+                                  xpum_device_stats_t dataList[], 
+                                  int *count);                             
+
+
+/** @} */ // Closing for METRICS_API
+
+/**************************************************************************/
+/** @defgroup COLLECT_METRICS_RAW_DATA_API Dump metrics raw data
+ * These APIs are for collecting metrics raw data
+ * @{
+ */
+/**************************************************************************/
+
+/**
+ * @brief Start a task to collect metrics raw data by device
+ * @details This function is used to start a task to collect metrics raw data on specific device.
+ *          You can specify the metrics you want to collect, and return a task id, by which you can
+ *          stop the collect task and query the result data.
+ * 
+ * @param deviceId                  IN: The device to collect raw metrics data
+ * @param metricsTypeList           IN: The metrics to collect
+ * @param count                     IN: The count of entries in \a metricsTypeList
+ * @param taskId                   OUT: The id for task created to collect data
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId, 
+                                                 xpum_stats_type_t metricsTypeList[], 
+                                                 int count,
+                                                 xpum_dump_task_id_t *taskId);
+
+/**
+ * @brief Start a task to collect metrics raw data by group
+ * @details This function is used to start a task to collect metrics raw data on specific group.
+ *          You can specify the metrics you want to collect, and return a task id, by which you can
+ *          stop the collect task and query the result data.
+ * 
+ * @param groupId                   IN: The group to collect raw metrics data
+ * @param metricsTypeList           IN: The metrics to collect
+ * @param count                     IN: The count of entries in \a metricsTypeList
+ * @param taskId                   OUT: The id for task created to collect data
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumStartCollectMetricsRawDataTaskByGroup(xpum_group_id_t groupId, 
+                                                        xpum_stats_type_t metricsTypeList[], 
+                                                        int count,
+                                                        xpum_dump_task_id_t *taskId);
+
+/**
+ * @brief Stop a metrics raw data collect task
+ * 
+ * @param taskId                IN: The task id to query
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId);
+
+/**
+ * @brief Get metrics raw data 
+ * 
+ * @param taskId                IN: The task id to query
+ * @param dataList          IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.                          
+ * @param count             IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList                
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed 
+ */
+xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count);
+
 /** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
+
+
+/**************************************************************************/
+/** @defgroup TOPOLOGY_API Topologies
+ * These APIs are for 
+ * @{
+ */
+/**************************************************************************/
 
 /**
  * @brief Get topology by device
  * 
  * @param deviceId           IN: The device id to query policy
- * @param topology        OUT: The topology on device with \a deviceId
+ * @param topology          OUT: The topology on device with \a deviceId
+ * @param memSize           
  * @return
  *      - \ref XPUM_OK                  if query successfully
  */
 xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t * topology, long unsigned int *memSize);
 
+/** @} */ // Closing for TOPOLOGY_API
+
+/**************************************************************************/
+/** @defgroup POLICY_API Policy management
+ * These APIs are for policy management
+ * @{
+ */
+/**************************************************************************/
 
 /**
  * @brief Set a policy on a device. One device only have one policy for one policy type. So if set a policy with same policy type on a devcie, the old policy will be overwritten.
@@ -973,6 +960,8 @@ xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[
  *      - \ref XPUM_OK                  if query successfully
  */
 xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int *count);
+
+/** @} */ // Closing for POLICY_API
 
 #if defined(__cplusplus)
 } // extern "C"
