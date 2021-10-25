@@ -243,6 +243,25 @@ message XpumGetStatsResponse {
     string errorMsg = 4;
 }
 
+message XpumFirmwareFlashJob {
+    DeviceId id = 1;
+    GeneralEnum type = 2;
+    string path = 3;
+}
+
+message XpumFirmwareFlashTaskRequest {
+    DeviceId id = 1;
+    GeneralEnum type = 2;
+}
+
+message XpumFirmwareFlashTaskResult {
+    DeviceId id = 1;
+    GeneralEnum type = 2;
+    GeneralEnum result = 3;
+    string desc = 4;
+    string version = 5;
+    string errorMsg = 6;
+}
 enum XpumPolicyConditionType {  
     POLICY_CONDITION_TYPE_GREATER=0;
     POLICY_CONDITION_TYPE_LESS=1;
@@ -319,6 +338,8 @@ service XpumCoreService {
     rpc getMetricsByGroup( GroupId ) returns ( DeviceStatsInfoArray );
     rpc getStatistics( DeviceId ) returns ( XpumGetStatsResponse );
     rpc getStatisticsByGroup( GroupId ) returns ( XpumGetStatsResponse );
+    rpc runFirmwareFlash( XpumFirmwareFlashJob ) returns ( GeneralEnum );
+    rpc getFirmwareFlashResult( XpumFirmwareFlashTaskRequest ) returns ( XpumFirmwareFlashTaskResult );
     rpc getPolicy( GetPolicyRequest ) returns ( XpumPolicyDataArray );
     
 }

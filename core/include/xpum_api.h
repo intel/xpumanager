@@ -490,35 +490,6 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t sub
 /**************************************************************************/
 
 /**
- * @brief Get firmware properties
- * 
- * @param deviceId             IN: Device id   
- * @param type                 IN: The type of firmware to get   
- * @param props               OUT: Pointer to struct used to store firmware properties
- * @return xpum_result_t 
- */
-xpum_result_t xpumGetFirmwareProperties(xpum_device_id_t deviceId, xpum_firmware_type_t type, xpum_firmware_properties *props);
-
-/**
- * @brief Get firmware properties by group
- * 
- * @param groupId          IN: Group id   
- * @param type             IN: The type of firmware to get         
- * @param propsList       OUT: Array of struct used to store firmware properties
- * @param count        IN/OUT: The number of entries that \a propsList array can store, 
- *                             count should equal to or larger than device count of the group ( \a groupid ); 
- *                             when return, the \a count will store real number of entries returned by   
- *                             \a propsList
- * @return xpum_result_t 
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the number of available events
- */
-xpum_result_t xpumGetFirmwarePropertiesByGroup(xpum_group_id_t groupId, 
-                                              xpum_firmware_type_t type, 
-                                              xpum_firmware_properties propsList[],
-                                              int *count);
-
-/**
  * @brief Run firmware flashing by device
  * @details This function will return immediately. To query the firmware flash job status, call \ref xpumGetFirmwareFlashResult
  * 
@@ -528,15 +499,6 @@ xpum_result_t xpumGetFirmwarePropertiesByGroup(xpum_group_id_t groupId,
  */
 xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job);
 
-/**
- * @brief Run firmware flashing by group
- * @details This function will return immediately. To query the firmware flash job status, call \ref xpumGetFirmwareFlashResultByGroup
- * 
- * @param groupId       IN: Group id
- * @param job           IN: The job description for firmware flash
- * @return xpum_result_t 
- */
-xpum_result_t xpumRunFirmwareFlashByGroup(xpum_group_id_t groupId, xpum_firmware_flash_job *job);
 
 /**
  * @brief Get the status of firmware flash job
@@ -552,26 +514,6 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
                                          xpum_firmware_type_t firmwareType, 
                                          xpum_firmware_flash_task_result_t *result);
 
-/**
- * @brief Get the status of firmware flash job by group
- * This function will return immediately. Caller may have to call this function multiple times until \a resultList indicates
- * firmware flash job is finished.
- * 
- * @param groupId           IN: Group id
- * @param firmwareType      IN: The firmware type to query status
- * @param resultList       OUT: Array of struct to store firmware flash results
- * @param count         IN/OUT: The number of entries that \a resultList array can store, 
- *                              count should equal to or larger than device count of the group ( \a groupid );     
- *                              when return, the \a count will store real number of entries returned by   
- *                              \a resultList
- * @return
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group 
- */
-xpum_result_t xpumGetFirmwareFlashResultByGroup(xpum_group_id_t groupId, 
-                                                xpum_firmware_type_t firmwareType,
-                                                xpum_firmware_flash_task_result_t resultList[], 
-                                                int *count);
 
 /** @} */ // Closing for FIRMWARE_UPDATE_API
 
