@@ -300,7 +300,7 @@ typedef enum xpum_firmware_flash_result_enum {
 
 struct xpum_firmware_flash_job {
     xpum_firmware_type_t type;
-    char *filePath;
+    const char *filePath;
 };
 
 struct xpum_firmware_flash_task_result_t {
