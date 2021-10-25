@@ -42,7 +42,7 @@ add_subdirectory(core)
 add_subdirectory(cli)
 add_subdirectory(daemon)
 add_subdirectory(rest)
-add_subdirectory(doc)
+#add_subdirectory(doc)
 
 if(NOT DEFINED CPACK_GENERATOR)
 	if(EXISTS "/etc/debian_version")
