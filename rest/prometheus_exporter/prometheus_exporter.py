@@ -52,7 +52,7 @@ class PromMetric(Enum):
     xpum_cache_errors = (
         'xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])
     xpum_display_errors = (
-        'xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type', 'kkk'])
+        'xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])
 
     # Occupation
     xpum_occupation_ratio = ('xpum_occupation_ratio')
@@ -145,8 +145,8 @@ def get_metrics(core, pod_resources):
 
         return tidy_response(resp)
     except Exception as e:
-        print(e)
         traceback.print_exc()
+        return "#NODATA due to unexpected failure"
 
 
 def tidy_response(resp):
