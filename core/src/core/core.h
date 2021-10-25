@@ -12,6 +12,10 @@
 #include "diagnostic/diagnostic_manager_interface.h"
 #include "policy/policy_manager_interface.h"
 
+/*
+  The top controller of xpum
+*/
+
 class Core : public InitCloseInterface {
   public:
     static Core &instance();

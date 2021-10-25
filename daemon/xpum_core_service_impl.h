@@ -67,4 +67,6 @@ public:
 
     virtual ::grpc::Status runFirmwareFlash( ::grpc::ServerContext* context, const ::XpumFirmwareFlashJob* request, ::GeneralEnum* response ) override;
     virtual ::grpc::Status getFirmwareFlashResult( ::grpc::ServerContext* context, const ::XpumFirmwareFlashTaskRequest* request, ::XpumFirmwareFlashTaskResult* response ) override;
+    virtual ::grpc::Status getPolicy(::grpc::ServerContext *context, const ::GetPolicyRequest *request, ::XpumPolicyDataArray *response) override;
+
 };

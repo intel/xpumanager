@@ -26,6 +26,9 @@ else
   chmod +x /opt/xpum/keytool.sh
 fi
 
-systemctl daemon-reload >> ${LOG_FILE} 2>&1 
-systemctl enable xpum >> ${LOG_FILE} 2>&1 
-systemctl start xpum
+# Start xpum service when systemctl is available
+if [ -x "$(command -v systemctl)" ]; then
+  systemctl daemon-reload >> ${LOG_FILE} 2>&1
+  systemctl enable xpum >> ${LOG_FILE} 2>&1 
+  systemctl start xpum
+fi

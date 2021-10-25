@@ -3,11 +3,11 @@
 <!-- pip install breathe -->
 
 <!-- pip install exhale -->
-```
-apt install doxygen
-
-pip install Sphinx sphinx_rtd_theme 
-
-apt install liblua5.2-dev
-```
 <!-- sphinx-quickstart -->
+
+```
+apt install doxygen liblua5.2-dev
+
+pip install Sphinx sphinx_rtd_theme sphinxcontrib-openapi  apispec-webframeworks
+
+```

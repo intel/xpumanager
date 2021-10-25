@@ -52,7 +52,7 @@ class PromMetric(Enum):
     xpum_cache_errors = (
         'xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])
     xpum_display_errors = (
-        'xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type', 'kkk'])
+        'xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])
 
     # Occupation
     xpum_occupation_ratio = ('xpum_occupation_ratio')
@@ -97,7 +97,7 @@ metrics_map = {
 
     # Frequency
     'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),
-    'XPUM_STATS_REQUEST_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'request'}),
+    'XPUM_STATS_GPU_REQUEST_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'request'}),
     'XPUM_STATS_GPU_FREQUENCY_THROTTLE_RATIO': Metric(PromMetric.xpum_frequency_throttling_ratio, ext_labels={'location': 'gpu'}),
 
     # Memory
@@ -145,8 +145,8 @@ def get_metrics(core, pod_resources):
 
         return tidy_response(resp)
     except Exception as e:
-        print(e)
         traceback.print_exc()
+        return "#NODATA due to unexpected failure"
 
 
 def tidy_response(resp):

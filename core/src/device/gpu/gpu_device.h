@@ -5,6 +5,10 @@
 #include "stdio.h"
 #include <mutex>
 
+/*
+  GPUDevice class defines various interfaces for communication with GPU devices.
+*/
+
 class GPUDevice : public Device {
  public:
   GPUDevice();

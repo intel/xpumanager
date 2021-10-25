@@ -12,7 +12,7 @@
 #include <ctime>
 
 CoreStub::CoreStub() {
-    std::string unixSockName{"/tmp/xpum.sock"};
+    std::string unixSockName{"/home/ggeng1/tmpsockect.file"};
     std::string serverAddr{"unix://" + unixSockName};
     auto channel = grpc::CreateChannel(serverAddr, grpc::InsecureChannelCredentials());
     this->stub = XpumCoreService::NewStub(channel);
@@ -87,7 +87,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
 
     return json;
@@ -105,7 +105,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName){
         (*json)["group_id"] = response.id();
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -120,9 +120,10 @@ std::unique_ptr<nlohmann::json> CoreStub::groupDelete(int groupId){
     grpc::Status status = stub->groupDestory(&context, id, &response);
     if (status.ok() && response.errormsg().length() == 0) {
         (*json)["group_id"] = response.id();
+        
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -147,7 +148,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupListAll(){
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -179,7 +180,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupList(int groupId){
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -195,12 +196,23 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
     grpc::Status status = stub->groupAddDevice(&context, groupAR, &response);
     if (status.ok()) {
         if(response.errormsg().length() == 0){
-            (*json)["group_id"] = groupId;
-            (*json)["device_id"] = deviceId;
+            (*json)["group_id"] = response.id();
+            (*json)["group_name"] = response.groupname();
+            (*json)["device_count"] = response.count();
+
+            std::vector<nlohmann::json> deviceJsonList;           
+
+            for (int i{0}; i < response.devicelist_size(); ++i){
+                auto deviceJson = nlohmann::json();
+                deviceJson["device_id"] = response.devicelist(i).id();
+                deviceJsonList.push_back(deviceJson);
+            }
+
+            (*json)["device_list"] = deviceJsonList;
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -216,12 +228,23 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
     grpc::Status status = stub->groupRemoveDevice(&context, groupAR, &response);
     if (status.ok()) {
         if(response.errormsg().length() == 0){
-            (*json)["group_id"] = groupId;
-            (*json)["device_id"] = deviceId;
+            (*json)["group_id"] = response.id();
+            (*json)["group_name"] = response.groupname();
+            (*json)["device_count"] = response.count();
+
+            std::vector<nlohmann::json> deviceJsonList;           
+
+            for (int i{0}; i < response.devicelist_size(); ++i){
+                auto deviceJson = nlohmann::json();
+                deviceJson["device_id"] = response.devicelist(i).id();
+                deviceJsonList.push_back(deviceJson);
+            }
+
+            (*json)["device_list"] = deviceJsonList;
         }
     } else {
         (*json)["error code"] = status.error_code();
-        (*json)["error message"] = status.error_message();
+        (*json)["error message"] = response.errormsg();
     }
     return json;
 }
@@ -625,4 +648,125 @@ std::string CoreStub::isotimestamp(uint64_t t) {
     char milli_buf[10];
     sprintf(milli_buf, "%03d", milli_seconds);
     return std::string(buf) + "." + std::string(milli_buf)+"Z";
+}
+
+
+std::string CoreStub::policyTypeEnumToString(XpumPolicyType type) {
+    std::string ret = "POLICY_TYPE_MAX";
+    switch (type)
+    {
+    case POLICY_TYPE_GPU_TEMPERATURE:
+        ret = "POLICY_TYPE_GPU_TEMPERATURE";
+        break;
+    case POLICY_TYPE_GPU_MEMORY_TEMPERATURE:
+        ret = "POLICY_TYPE_GPU_MEMORY_TEMPERATURE";
+        break;
+    case POLICY_TYPE_GPU_POWER:
+        ret = "POLICY_TYPE_GPU_POWER";
+        break;
+    case POLICY_TYPE_RAS_ERROR_CAT_RESET:
+        ret = "POLICY_TYPE_RAS_ERROR_CAT_RESET";
+        break;
+    case POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+        ret = "POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS";
+        break;
+    case POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS:
+        ret = "POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS";
+        break;
+    case POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+        ret = "POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE";
+        break;
+    case POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+        ret = "POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE";
+        break;
+    case POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+        ret = "POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE";
+        break;
+    case POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+        ret = "POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE";
+        break;
+    default:
+        break;
+    }
+    return ret;
+}
+
+std::string CoreStub::policyConditionTypeEnumToString(XpumPolicyConditionType type) {
+    std::string ret = "POLICY_CONDITION_TYPE_GREATER";
+    switch (type)
+    {
+    case POLICY_CONDITION_TYPE_GREATER:
+        ret = "POLICY_CONDITION_TYPE_GREATER";
+        break;
+    case POLICY_CONDITION_TYPE_LESS:
+        ret = "POLICY_CONDITION_TYPE_LESS";
+        break;
+    case POLICY_CONDITION_TYPE_WHEN_INCREASE:
+        ret = "POLICY_CONDITION_TYPE_WHEN_INCREASE";
+        break;
+    default:
+        break;
+    }
+    return ret;
+}
+
+std::string CoreStub::policyActionTypeEnumToString(XpumPolicyActionType type) {
+    std::string ret = "POLICY_ACTION_TYPE_NULL";
+    switch (type)
+    {
+    case POLICY_ACTION_TYPE_NULL:
+        ret = "POLICY_ACTION_TYPE_NULL";
+        break;
+    case POLICY_ACTION_TYPE_THROTTLE_DEVICE:
+        ret = "POLICY_ACTION_TYPE_THROTTLE_DEVICE";
+        break;
+    case POLICY_ACTION_TYPE_RESET_DEVICE:
+        ret = "POLICY_ACTION_TYPE_RESET_DEVICE";
+        break;
+    default:
+        break;
+    }
+    return ret;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getPolicy(int deviceId) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GetPolicyRequest request;
+    request.set_id(deviceId);
+    XpumPolicyDataArray response;
+    grpc::Status status = stub->getPolicy(&context, request, &response);
+    std::vector<nlohmann::json> componentJsonList;
+    if (status.ok()) {
+        if(response.errormsg().length() == 0){
+            for (int i = 0; i < response.policylist_size(); i++) {
+                auto component = nlohmann::json();
+                component["device_id"] = response.policylist(i).deviceid();
+                component["type"] = policyTypeEnumToString(response.policylist(i).type());
+                
+                //
+                auto condition = nlohmann::json();
+                XpumPolicyConditionType ctype = response.policylist(i).condition().type();
+                condition["type"] = policyConditionTypeEnumToString(ctype);
+                if(ctype != XpumPolicyConditionType::POLICY_CONDITION_TYPE_WHEN_INCREASE){
+                    condition["threshold"] = response.policylist(i).condition().threshold();
+                }
+                component["condition"] = condition;
+
+                //
+                auto action = nlohmann::json();
+                XpumPolicyActionType atype = response.policylist(i).action().type();
+                action["type"] = policyActionTypeEnumToString(atype);
+                if(atype == XpumPolicyActionType::POLICY_ACTION_TYPE_THROTTLE_DEVICE){
+                    action["throttle_device_frequency_max"] = response.policylist(i).action().throttle_device_frequency_max();
+                    action["throttle_device_frequency_min"] = response.policylist(i).action().throttle_device_frequency_min();
+                }
+                component["action"] = action;                
+                componentJsonList.push_back(component);
+            }
+        }
+    }
+    (*json)["policy_list"] = componentJsonList;
+    return json;
 }

@@ -47,6 +47,11 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getStatistics(int deviceId);
     std::unique_ptr<nlohmann::json> getStatisticsByGroup(int groupId);
 
+    std::string policyTypeEnumToString(XpumPolicyType type);
+    std::string policyConditionTypeEnumToString(XpumPolicyConditionType type);
+    std::string policyActionTypeEnumToString(XpumPolicyActionType type);
+    std::unique_ptr<nlohmann::json> getPolicy(int deviceId);
+
   private:
     std::unique_ptr<XpumCoreService::Stub> stub;
     static std::string isotimestamp(uint64_t t);

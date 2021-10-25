@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import configparser
 import os
@@ -135,7 +135,7 @@ def readConfig(path):
 
         return user, salt, pwHash, disableAuth
     else:
-        print('No rest.conf found, must run restConfig.py first!')
+        print('No rest.conf found, must run rest_config.py first!')
         sys.exit(1)
 
 

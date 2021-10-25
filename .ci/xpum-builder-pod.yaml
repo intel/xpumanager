@@ -93,7 +93,7 @@ spec:
         - name: "JENKINS_AGENT_WORKDIR"
           value: "/home/jenkins/agent"
         - name: "JENKINS_URL"
-          value: "http://sh1sdev002.sh.intel.com:30346/"
+          value: "http://10.239.43.86:30346/"
       image: "jenkins/inbound-agent:4.3-4"
       name: "jnlp"
       resources:
