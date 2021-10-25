@@ -34,10 +34,7 @@ def get_devices():
     """
     code, message, data = stub.getDeviceList()
     if code == 0:
-        # return jsonify(data)
-        schema = DeviceBasicInfoSchema()
-        data = schema.jsonify(data)
-        return data
+        return jsonify(data)
     else:
         return message, 500
 
