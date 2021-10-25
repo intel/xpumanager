@@ -154,15 +154,22 @@ typedef enum xpum_device_property_name_enum {
 
 extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name);
 
+/**
+ * @brief Device property struct
+ */
 struct xpum_device_property_t {
-    xpum_device_property_name_t name;
-    char value[XPUM_MAX_STR_LENGTH];
+    xpum_device_property_name_t name;   ///< Device property name
+    char value[XPUM_MAX_STR_LENGTH];    ///< Device property value strings
 };
 
+/**
+ * @brief 
+ * 
+ */
 struct xpum_device_properties_t{
-    xpum_device_id_t deviceId;
+    xpum_device_id_t deviceId;  ///< Device id
     xpum_device_property_t properties[XPUM_MAX_NUM_PROPERTIES];
-    int propertyLen;
+    int propertyLen;    ///< The property numbers stored in properties
 };
 
 
@@ -176,32 +183,6 @@ struct xpum_group_info_t {
     int count;
     char groupName[XPUM_MAX_STR_LENGTH];                       
     xpum_device_id_t deviceList[XPUM_MAX_NUM_DEVICES]; 
-};
-
-/**************************************************************************/
-/**
- * Definitions for telemetry
- */
-/**************************************************************************/
-
-typedef enum xpum_telemetry_type_enum {
-    XPUM_TELEMETRY_POWER = 0,
-    XPUM_TELEMETRY_FREQUENCY,
-    XPUM_TELEMETRY_THERMAL,
-    XPUM_TELEMETRY_MEMORY_USED,
-    XPUM_TELEMETRY_ENGINE_UTIL,
-    XPUM_TELEMETRY_FABRIC_PORT_SPEED,
-    XPUM_TELEMETRY_END,
-} xpum_telemetry_type_t;
-
-struct xpumTelemetryData_t {
-    xpum_device_id_t deviceId;
-    xpum_telemetry_type_t type;
-    bool realtime;
-    float min;
-    float avg;
-    float max;
-    float current;
 };
 
 
@@ -237,37 +218,6 @@ struct xpum_health_data_t {
     char description[XPUM_MAX_STR_LENGTH];
 };
 
-/**************************************************************************/
-/**
- * Definitions for events
- */
-/**************************************************************************/
-
-typedef enum xpum_event_severity_enum {
-    XPUM_EVENT_SEVERITY_NORMAL=0,
-    XPUM_EVENT_SEVERITY_WARNING,
-    XPUM_EVENT_SEVERITY_CRITICAL
-} xpum_event_severity_t;
-
-typedef enum xpum_event_type_enum {
-    XPUM_EVENT_TYPE_THERMAL_OVER_THLD = 0,
-    XPUM_EVENT_TYPE_OFF_THE_BUS
-} xpum_event_type_t;
-
-typedef enum xpum_event_component_enum {
-    XPUM_EVENT_COMPONENT_SYSTEM = 0,
-    XPUM_EVENT_COMPONENT_THERMAL,
-} xpum_event_component_t;
-
-struct xpum_event_entry_t {
-    xpum_event_id_t eventId;
-    xpum_event_severity_t severity;
-    xpum_event_type_t eventType;
-    xpum_event_component_t component;
-    xpum_device_id_t deviceId;
-    uint64_t timestamp;
-    char message[XPUM_MAX_STR_LENGTH];
-};
 
 /**************************************************************************/
 /**
