@@ -529,14 +529,18 @@ struct xpum_scheduler_exclusive_t {
 struct parent_switch {
     char switchDevicePath[XPUM_MAX_PATH_LEN];
 };
+/**
+ * @brief Struct to store topology data
+ * 
+ */
 struct xpum_topology_t {
-    xpum_device_id_t deviceId;
+    xpum_device_id_t deviceId; ///< Device id
     struct {
-        char localCPUList[XPUM_MAX_CPU_LIST_LEN];
-        char localCPUs[XPUM_MAX_CPU_S_LEN];
+        char localCPUList[XPUM_MAX_CPU_LIST_LEN]; ///< CPU affinity, local CPU list
+        char localCPUs[XPUM_MAX_CPU_S_LEN]; ///< CPU affinity, local CPUs
     } cpuAffinity;
-    uint32_t switchCount;
-    parent_switch switches[];
+    uint32_t switchCount;   ///< the count of parent switch
+    parent_switch switches[]; ///< device path of parent switch
 };
 
 typedef enum xpum_ras_type_enum {
