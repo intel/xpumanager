@@ -88,7 +88,9 @@ void MonitorTask::start() {
                     std::string error = std::string("Monitor:") + std::to_string((int)(p_this->capability)) + " is expired!";
                     XPUM_LOG_WARN(error);
                 }
-                break;
+                // TODO: the 'break' following is temperorily commented out to avoid memory corruption due to callback after task expiration. 
+                // need to redesign the timeout processing properly.
+                // break;
             }
         }
 
