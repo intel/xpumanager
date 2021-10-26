@@ -44,7 +44,7 @@ def getDiagnosticsResult(deviceId):
         return 1, resp.errorMsg, None
 
     data = dict()
-    data['deviceId'] = deviceId
+    data['device_id'] = deviceId
     data['level'] = resp.level
     data['finished'] = resp.finished
     data['message'] = resp.message
@@ -56,7 +56,7 @@ def getDiagnosticsResult(deviceId):
             break
         i = i + 1
         new_component = dict()
-        new_component['type'] = diagnosticTypeEnumToString[component.type]
+        new_component['component_type'] = diagnosticTypeEnumToString[component.type]
         new_component['finished'] = component.finished
         new_component['result'] = diagnosticResultEnumToString[component.result]
         new_component['message'] = component.message
@@ -74,7 +74,7 @@ def getDiagnosticsResultByGroup(groupId):
     datas = []
     for diagTaskInfo in resp.taskInfo:
         data = dict()
-        data['deviceId'] = diagTaskInfo.deviceId
+        data['device_id'] = diagTaskInfo.deviceId
         data['level'] = diagTaskInfo.level
         data['finished'] = diagTaskInfo.finished
         data['message'] = diagTaskInfo.message
@@ -87,7 +87,7 @@ def getDiagnosticsResultByGroup(groupId):
                 break
             i = i + 1
             new_component = dict()
-            new_component['type'] = diagnosticTypeEnumToString[component.type]
+            new_component['component_type'] = diagnosticTypeEnumToString[component.type]
             new_component['finished'] = component.finished
             new_component['result'] = diagnosticResultEnumToString[component.result]
             new_component['message'] = component.message

@@ -18,7 +18,7 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     if (this->opts->level >= 1 && this->opts->level <= 3) {
         if (this->opts->deviceId >= 0)
             json = this->coreStub->runDiagnostics(this->opts->deviceId, this->opts->level);
-        if (this->opts->groupId >= 0)
+        else if (this->opts->groupId >= 0)
             json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level);
     }
     return json;

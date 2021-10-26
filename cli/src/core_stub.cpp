@@ -347,7 +347,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
             std::vector<nlohmann::json> componentJsonList;
             for (int i = 0; i < response.componentinfo_size(); ++i) {
                 auto componentJson = nlohmann::json();
-                componentJson["type"] = diagnosticTypeEnumToString(response.componentinfo(i).type());
+                componentJson["component_type"] = diagnosticTypeEnumToString(response.componentinfo(i).type());
                 componentJson["finished"] = response.componentinfo(i).finished();
                 componentJson["message"] = response.componentinfo(i).message();
                 componentJson["result"] = diagnosticResultEnumToString(response.componentinfo(i).result());
@@ -405,7 +405,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(int groupI
                 std::vector<nlohmann::json> componentJsonList;
                 for (int j = 0; j < response.taskinfo(i).componentinfo_size(); j++) {
                     auto componentJson = nlohmann::json();
-                    componentJson["type"] = diagnosticTypeEnumToString(response.taskinfo(i).componentinfo(j).type());
+                    componentJson["component_type"] = diagnosticTypeEnumToString(response.taskinfo(i).componentinfo(j).type());
                     componentJson["finished"] = response.taskinfo(i).componentinfo(j).finished();
                     componentJson["message"] = response.taskinfo(i).componentinfo(j).message();
                     componentJson["result"] = diagnosticResultEnumToString(response.taskinfo(i).componentinfo(j).result());
