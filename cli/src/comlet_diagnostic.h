@@ -9,7 +9,7 @@ namespace xpum::cli {
 
 struct ComletDiagnosticOptions {
     int deviceId = -1;
-    uint32_t groupId = 0;
+    uint32_t groupId = -1;
     int level = -1;
 };
 
