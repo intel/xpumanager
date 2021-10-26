@@ -4,14 +4,54 @@ from marshmallow import Schema, fields
 
 
 class CreateGroupSchema(Schema):
-    GroupName = fields.Str()
+    group_name = fields.Str(
+        metadata={"description": "The name for the group to be created"})
 
 
 class GroupInfoSchema(Schema):
-    pass
+    group_name = fields.Str(metadata={"description": "The name of the group"})
+    group_id = fields.Str(metadata={"description": "The id of the group"})
+    device_id_list = fields.List(fields.Int(metadata={
+                                 "description": "The id of devices belong to this group"}) )
 
 
 def groups():
+    """
+    Create group / Get all group ids
+    ---
+    post:
+        description: Create a new group
+        consumes:
+            - application/json
+        parameters:
+            - 
+                name: group info
+                in: body
+                description: Information needed to create a group
+                schema: CreateGroupSchema
+        produces: 
+            - application/json
+        responses:
+            200:
+                description: OK
+                schema: GroupInfoSchema
+            500:
+                description: Error
+    get:
+        description: Get all group ids
+        produces: 
+            - application/json
+        responses:
+            200:
+                description: OK
+                schema: 
+                    type: array
+                    items: 
+                        type: integer
+                        description: The id of groups
+            500:
+                description: Error
+    """
     try:
         if request.method == 'POST':
             # create group
@@ -34,7 +74,59 @@ def groups():
         return "Internal error", 500
 
 
+class ModifyGroupDeviceSchema(Schema):
+    DeviceIdToAdd = fields.List(fields.Int(metadata={
+                                 "description": "The id of devices add to this group"}))
+    DeviceIdToRemove = fields.List(fields.Int(metadata={
+                                 "description": "The id of devices remove from this group"}))
+
 def group_detail(groupId):
+    """
+    Get group info / Modify group / Delete group
+    ---
+    get:
+        description: Get information of a group
+        parameters:
+            - 
+                name: groupId
+                in: path
+                description: Group id
+                type: integer
+        produces: 
+            - application/json
+        responses:
+            200:
+                description: OK
+                schema: GroupInfoSchema
+            400:
+                description: Error
+    post:
+        description: Modify a group
+        parameters:
+            - 
+                name: modify info
+                in: body
+                description: Device ids to add to or remove from a group
+                schema: ModifyGroupDeviceSchema
+            -
+                name: groupId
+                in: path
+                description: Group id
+                type: integer
+        responses:
+            200:
+                description: OK
+                schema: GroupInfoSchema
+            400:
+                description: Error
+    delete:
+        description: Delete a group
+        responses:
+            200:
+                description: OK
+            400:
+                description: Error
+    """
     if request.method == 'GET':
         # get group info
         code, message, data = stub.getGroupInfo(groupId)
