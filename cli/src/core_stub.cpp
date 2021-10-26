@@ -15,7 +15,7 @@
 namespace xpum::cli {
 
 CoreStub::CoreStub() {
-    std::string unixSockName{"/home/ggeng1/tmpsockect.file"};
+    std::string unixSockName{"/tmp/xpum.sock"};    
     std::string serverAddr{"unix://" + unixSockName};
     auto channel = grpc::CreateChannel(serverAddr, grpc::InsecureChannelCredentials());
     this->stub = XpumCoreService::NewStub(channel);
