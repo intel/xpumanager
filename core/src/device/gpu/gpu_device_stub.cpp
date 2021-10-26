@@ -304,6 +304,251 @@ static std::string getPciSlot(const std::string& bdf_regex) {
     return res;
 }
 
+void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities) {
+  bool has_exception = false;
+  try {
+    toGetPower(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_POWER);
+  }
+
+  has_exception = false;
+  try {
+    toGetActuralFrequency(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_FREQUENCY);
+  }
+
+  has_exception = false;
+  try {
+    toGetRequestFrequency(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_REQUEST_FREQUENCY);
+  }
+
+  has_exception = false;
+  try {
+    toGetTemperature(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
+  }
+
+  has_exception = false;
+  try {
+    toGetMemory(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_MEMORY_USED);
+  }
+
+  has_exception = false;
+  try {
+    toGetMemoryUtilization(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_MEMORY_UTILIZATION);
+  }
+
+  has_exception = false;
+  try {
+    toGetMemoryBandwidth(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_MEMORY_BANDWIDTH);
+  }
+
+  has_exception = false;
+  try {
+    toGetMemoryRead(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ);
+  }
+
+  has_exception = false;
+  try {
+    toGetMemoryWrite(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE);
+  }
+
+  has_exception = false;
+  try {
+    toGetEngineUtilization(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
+  }
+
+  has_exception = false;
+  try {
+    toGetEnergy(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_ENERGY);
+  }
+
+  has_exception = false;
+  try {
+    toGetEnergy(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_ENERGY);
+  }
+
+  has_exception = false;
+  try {
+    toGetEnergy(device);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_ENERGY);
+  }
+
+  has_exception = false;
+  try {
+    toGetRasError(device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
+  }
+
+  has_exception = false;
+  try {
+    toGetRasError(device, ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
+  }
+
+  has_exception = false;
+  try {
+    toGetRasError(device, ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
+  }
+
+  has_exception = false;
+  try {
+    toGetRasError(device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
+  }
+
+  has_exception = false;
+  try {
+    toGetRasError(device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
+  }
+
+  has_exception = false;
+  try {
+    toGetRasError(device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
+  }
+
+  has_exception = false;
+  try {
+    toGetRasError(device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
+  }
+
+}
+
+void GPUDeviceStub::addOccupationEfficiencyCapabilities(zes_device_handle_t device,  ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
+  bool has_exception = false;
+  try {
+    toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_OCCUPATION);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_OCCUPATION);
+  }
+
+  has_exception = false;
+  try {
+    toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_ISSUE_EFFICIENCY);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_ISSUE_EFFICIENCY);
+  }
+
+  has_exception = false;
+  try {
+    toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_EXECUTION_EFFICIENCY);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_EXECUTION_EFFICIENCY);
+  }
+
+  has_exception = false;
+  try {
+    toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_NON_OCCUPATION);
+  } catch (BaseException& e) {
+    has_exception = true;
+  }
+  if (!has_exception) {
+    capabilities.push_back(DeviceCapability::METRIC_NON_OCCUPATION);
+  }
+}
+
 void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities) {
     ze_result_t res;
     uint32_t engine_grp_count = 0;
@@ -363,36 +608,8 @@ void addPCIeProperties(ze_device_handle_t& device, std::shared_ptr<GPUDevice> p_
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover() {
-    std::vector<DeviceCapability> capabilities;
+    
     auto p_devices = std::make_shared<std::vector<std::shared_ptr<Device>>>();
-    capabilities.push_back(DeviceCapability::POWER);
-    capabilities.push_back(DeviceCapability::FREQUENCY);
-    capabilities.push_back(DeviceCapability::TEMPERATURE);
-    capabilities.push_back(DeviceCapability::MEMORY);
-    capabilities.push_back(DeviceCapability::ENGINE_UTILIZATION);
-    capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
-    capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-    capabilities.push_back(DeviceCapability::METRIC_FREQUENCY);
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ);
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_USED);
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_UTILIZATION);
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_BANDWIDTH);
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE);
-    capabilities.push_back(DeviceCapability::METRIC_POWER);
-    capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
-    capabilities.push_back(DeviceCapability::METRIC_OCCUPATION);
-    capabilities.push_back(DeviceCapability::METRIC_ISSUE_EFFICIENCY);
-    capabilities.push_back(DeviceCapability::METRIC_EXECUTION_EFFICIENCY);
-    capabilities.push_back(DeviceCapability::METRIC_NON_OCCUPATION);
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
-    capabilities.push_back(DeviceCapability::METRIC_REQUEST_FREQUENCY);
-
     uint32_t driver_count = 0;
     ze_result_t res;
     zeDriverGet(&driver_count, nullptr);
@@ -408,12 +625,15 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
         zeDriverGetProperties(p_driver, &driver_prop);
 
         for (auto& device : devices) {
+          std::vector<DeviceCapability> capabilities;
             zes_device_handle_t zes_device = (zes_device_handle_t)device;
             zes_device_properties_t props = {};
             props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
             zesDeviceGetProperties(zes_device, &props);
             if (props.core.type == ZE_DEVICE_TYPE_GPU) {
+                addCapabilities(device, capabilities);
                 addEgnineCapabilities(device, capabilities);
+                addOccupationEfficiencyCapabilities(device, p_driver, capabilities);
                 auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_DEVICE_TYPE, std::string("GPU")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));
