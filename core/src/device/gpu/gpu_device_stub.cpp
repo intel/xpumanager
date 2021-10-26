@@ -681,7 +681,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 uint64_t physical_size = 0;
                 uint64_t free_size = 0;
                 uint32_t mem_module_count = 0;
-                zes_mem_health_t memory_health = ZES_MEM_HEALTH_OK;
+                //zes_mem_health_t memory_health = ZES_MEM_HEALTH_OK;
                 res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
                 std::vector<zes_mem_handle_t> mems(mem_module_count);
                 res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
@@ -709,7 +709,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             physical_size += mem_module_physical_size;
                             free_size += sysman_memory_state.free;
                             if (sysman_memory_state.health != zes_mem_health_t::ZES_MEM_HEALTH_OK) {
-                                memory_health = sysman_memory_state.health;
+                                //memory_health = sysman_memory_state.health;
                             }
                         }
                     }
@@ -1977,7 +1977,7 @@ void GPUDeviceStub::getFreqAvailableClocks(const zes_device_handle_t& device, ui
                 double clockArray[pCount];
                 if (res == ZE_RESULT_SUCCESS) {
                     res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, clockArray);
-                    for (int i = 0; i < pCount; i++) {
+                    for (uint32_t i = 0; i < pCount; i++) {
                         clocks.push_back(clockArray[i]);
                     }
                 }

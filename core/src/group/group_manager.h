@@ -7,9 +7,15 @@
 #include "group_unit.h"
 
 namespace xpum {
+/**
+ * The class is responsible for GROUP manager. Two kinds of group are currently supported. 
+ * 1. normal group, group id starts from 1
+ * 2. build-in group, group id mask with BUILD_IN_GROUP_MASK
+ */  
 
 #define BUILD_IN_GROUP 0
 #define BUILD_IN_DEVICE 1
+#define BUILD_IN_GROUP_MASK 0x80000000
 
 class GroupManager : public GroupManagerInterface,
                      public std::enable_shared_from_this<GroupManager> {

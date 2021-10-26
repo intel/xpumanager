@@ -98,7 +98,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->mutable_cpuaffinity()->set_localcpulist(topo->cpuAffinity.localCPUList);
         response->mutable_cpuaffinity()->set_localcpus(topo->cpuAffinity.localCPUs);
         response->set_switchcount(topo->switchCount);
-        for (uint32_t i{0}; i < topo->switchCount; ++i) {
+        for (int i{0}; i < topo->switchCount; ++i) {
             XpumTopologyInfo_XpumSwitchInfo* parentSwitch = response->add_switchinfo();
             parentSwitch->set_switchdevicepath(topo->switches[i].switchDevicePath);
         }

@@ -10,7 +10,7 @@ namespace xpum::cli {
 
 struct ComletStatisticsOptions {
     int deviceId = -1;
-    int groupId = -1;
+    uint32_t groupId = 0 ;
 };
 
 class ComletStatistics : public ComletBase {

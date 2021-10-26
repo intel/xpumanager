@@ -10,8 +10,6 @@
 
 namespace xpum {
 
-#define BUILD_IN_GROUP_MASK 0x80000000
-
 GroupManager::GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                            std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_devicemanager(p_device_manager), p_datalogic(p_data_logic), groupSequence(1), internalSequence(1) {

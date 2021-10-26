@@ -6,6 +6,11 @@
 
 namespace xpum {
 
+/**
+ * Class to parse "pci.ids" and "pci.conf" file, save pcie switch and build-in device info.
+ * 
+ */
+
 enum DeviceType {
     DV_UNKNOW = 0,
     DV_SWITCH = 1,

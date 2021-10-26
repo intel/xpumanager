@@ -8,6 +8,10 @@
 
 namespace xpum {
 
+/**
+ * Class used to get CPU-ffinity/topology of a device 
+ */
+
 class Topology {
    private:
     Topology();

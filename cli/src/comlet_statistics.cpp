@@ -17,7 +17,7 @@ std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     if (this->opts->deviceId != -1) {
         auto json = this->coreStub->getStatistics(this->opts->deviceId);
         return json;
-    } else if (this->opts->groupId != -1) {
+    } else if (this->opts->groupId != 0) {
         auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId);
         return json;
     }

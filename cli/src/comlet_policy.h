@@ -10,7 +10,7 @@ namespace xpum::cli {
 struct ComletPolicyOptions {
     bool listAll = false;
     int deviceId = -1;
-    int groupId = -1;
+    uint32_t groupId = 0;
     int powerThreshold = -2;
     int thermalThreshold = -2;
 };
