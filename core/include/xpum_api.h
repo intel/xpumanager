@@ -761,9 +761,15 @@ xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metri
  * 
  * @param deviceId           IN: The device id to query policy
  * @param topology          OUT: The topology on device with \a deviceId
- * @param memSize           
+ * @param memSize        IN/OUT: When \a topology is NULL,  \a memSize will be filled with the size of needed by
+ *                               \a topology data struct, and return.
+ *                               When \a topology is not NULL, \a memSize denotes the size of \a topology,
+ *                               \a memsize should be equal to or large than the size of \a topology data struct,
+ *                               when return, the \a memSize will store real size of xpum_topology_t data struct
+ *                               returned by \a topology
  * @return
  *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a memSize is smaller real memory size of \a topology
  */
 xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topology, long unsigned int *memSize);
 
