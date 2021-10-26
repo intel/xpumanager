@@ -20,6 +20,8 @@ def groups():
     Create group / Get all group ids
     ---
     post:
+        tags:
+            - "Group Management"
         description: Create a new group
         consumes:
             - application/json
@@ -38,6 +40,8 @@ def groups():
             500:
                 description: Error
     get:
+        tags:
+            - "Group Management"
         description: Get all group ids
         produces: 
             - application/json
@@ -85,6 +89,8 @@ def group_detail(groupId):
     Get group info / Modify group / Delete group
     ---
     get:
+        tags:
+            - "Group Management"
         description: Get information of a group
         parameters:
             - 
@@ -101,6 +107,8 @@ def group_detail(groupId):
             400:
                 description: Error
     post:
+        tags:
+            - "Group Management"
         description: Modify a group
         parameters:
             - 
@@ -120,6 +128,8 @@ def group_detail(groupId):
             400:
                 description: Error
     delete:
+        tags:
+            - "Group Management"
         description: Delete a group
         responses:
             200:

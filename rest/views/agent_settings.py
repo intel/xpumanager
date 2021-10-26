@@ -1,8 +1,50 @@
 from flask import request, jsonify
 import stub
+from marshmallow import Schema, fields
+
+
+class AgentSettingInfoSchema(Schema):
+    sample_interval = fields.Int(metadata={
+                                 "description": "Agent sample interval, in milliseconds, options are [100, 200, 500, 1000]"})
+
 
 
 def agent_setting():
+    """ Agent settings
+    ---
+    get:
+        tags:
+            - "Agent Setting"
+        description: Get XPUM settings
+        produces: 
+            - application/json
+        responses:
+            200:
+                description: OK
+                schema: AgentSettingInfoSchema
+            400:
+                description: Error
+    post:
+        tags:
+            - "Agent Setting"
+        description: Modify XPUM settings
+        consumes:
+            - application/json
+        parameters:
+            - 
+                name: modify info
+                in: body
+                description: 
+                schema: AgentSettingInfoSchema
+        produces: 
+            - application/json
+        responses:
+            200:
+                description: OK
+                schema: AgentSettingInfoSchema
+            400:
+                description: Error
+    """
     if request.method == 'GET':
         code, message, data = stub.getAllAgentConfig()
         if code != 0:
