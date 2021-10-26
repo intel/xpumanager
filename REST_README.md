@@ -5,8 +5,13 @@
  2. install pip3.
  3. install python packages as root for all user.  
     `umask 022`  
-    `pip3 install flask flask_httpauth gunicorn[gevent]`
+    `pip3 install grpcio prometheus-client flask flask_httpauth gunicorn[gevent]`
  
 ##Run Script
  1. Run rest_config.py to setup password for REST API user xpumadmin.  
  2. Run keytool.sh to generate self-signed certificate and keys.  
+
+##Start Service
+ 1. systemctl start xpum_rest.service
+ 2. systemctl enable xpum_rest.service
+
