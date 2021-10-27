@@ -45,9 +45,6 @@ void StatisticsDataHandler::getCacheMinMaxAvg(std::string& device_id, int& min, 
 }
 
 void StatisticsDataHandler::handleData(std::shared_ptr<SharedData>& p_data) noexcept {
-
-    DataHandler::handleData(p_data);
-    
     std::unique_lock<std::mutex> lock(this->mutex);
     cache.push_back(p_data);
     std::shared_ptr<SharedData>& q_data = cache.front();

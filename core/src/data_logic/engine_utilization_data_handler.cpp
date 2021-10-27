@@ -48,9 +48,6 @@ void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_
 }
 
 void EngineUtilizationDataHandler::handleData(std::shared_ptr<SharedData>& p_data) noexcept {
-
-    DataHandler::handleData(p_data);
-
     if (p_preData == nullptr) {
         return;
     }

@@ -26,7 +26,7 @@ void DataHandler::close() {
     stop = true;
 }
 
-void DataHandler::handleData(std::shared_ptr<SharedData>& p_data) noexcept {
+void DataHandler::preHandleData(std::shared_ptr<SharedData>& p_data) noexcept {
 
     // handle data in the caller thread directly, don't put any time consuming task here
 
