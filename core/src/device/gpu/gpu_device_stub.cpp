@@ -990,7 +990,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
         }
       } 
       */
-            if (res == ZE_RESULT_SUCCESS && props.onSubdevice) {
+            if (res == ZE_RESULT_SUCCESS && props.onSubdevice && props.type == ZES_TEMP_SENSORS_GPU) {
                 double temp_val = 0;
                 res = zesTemperatureGetState(temp, &temp_val);
                 if (res == ZE_RESULT_SUCCESS) {

@@ -127,7 +127,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         subdevice_stats.count = 0;
         datas_iter = m_datas.begin();
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second.hasSubdeviceData()) {
+            if (datas_iter->second.hasSubdeviceData() && datas_iter->second.getSubdeviceDatas().find(i) != datas_iter->second.getSubdeviceDatas().end()) {
                 xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
@@ -202,7 +202,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
         subdevice_stats.count = 0;
         datas_iter = m_datas.begin();
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second.hasSubdeviceData()) {
+            if (datas_iter->second.hasSubdeviceData() && datas_iter->second.getSubdeviceDatas().find(i) != datas_iter->second.getSubdeviceDatas().end()) {
                 xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
