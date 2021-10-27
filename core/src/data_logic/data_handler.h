@@ -25,7 +25,9 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
 
     void close();
 
-    virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
+    void preHandleData(std::shared_ptr<SharedData>& p_data) noexcept;
+
+    virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept = 0;
 
     virtual MeasurementData getLatestData(std::string &device_id) noexcept;
 

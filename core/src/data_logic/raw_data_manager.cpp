@@ -154,6 +154,7 @@ void RawDataManager::storeMeasurementData(
 
     if (p_handler != nullptr) {
         auto p_shared_data = std::make_shared<SharedData>(time, datas);
+        p_handler->preHandleData(p_shared_data);
         p_handler->handleData(p_shared_data);
         updateCaches(type, p_shared_data);
     }
