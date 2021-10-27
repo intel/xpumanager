@@ -20,44 +20,33 @@ DataHandler::~DataHandler() {
 }
 
 void DataHandler::init() {
-    std::weak_ptr<DataHandler> this_weak_ptr = shared_from_this();
-    std::thread([this_weak_ptr]() {
-        auto p_this = this_weak_ptr.lock();
-        if (p_this == nullptr) {
-            return;
-        }
-
-        while (!p_this->stop) {
-            std::shared_ptr<SharedData> p_data = p_this->q.remove();
-
-            std::unique_lock<std::mutex> lock(p_this->mutex);
-            p_this->p_preData = p_this->p_latestData;
-            p_this->p_latestData = p_data;
-            lock.unlock();
-
-            if (p_data != nullptr) {
-                try {
-                    p_this->p_persistency->storeMeasurementData(p_this->type, p_data->getTime(), p_data->getData());
-                } catch (std::exception& e) {
-                    std::string error = "Failed to persist measurement data";
-                    error += e.what();
-                    XPUM_LOG_ERROR(error);
-                } catch (...) {
-                    std::string error = "Failed to persist measurement data: unexpected exception";
-                    XPUM_LOG_ERROR(error);
-                }
-            }
-        }
-    }).detach();
 }
 
 void DataHandler::close() {
     stop = true;
-    q.close();
 }
 
 void DataHandler::handleData(std::shared_ptr<SharedData>& p_data) noexcept {
-    q.add(p_data);
+
+    // handle data in the caller thread directly, don't put any time consuming task here
+
+    std::unique_lock<std::mutex> lock(this->mutex);
+    this->p_preData = this->p_latestData;
+    this->p_latestData = p_data;
+    lock.unlock();
+
+    if (p_data != nullptr) {
+        try {
+            this->p_persistency->storeMeasurementData(this->type, p_data->getTime(), p_data->getData());
+        } catch (std::exception& e) {
+            std::string error = "Failed to persist measurement data:";
+            error += e.what();
+            XPUM_LOG_ERROR(error);
+        } catch (...) {
+            std::string error = "Failed to persist measurement data: unexpected exception";
+            XPUM_LOG_ERROR(error);
+        }
+    }
 }
 
 MeasurementData DataHandler::getLatestData(std::string& device_id) noexcept {
