@@ -7,7 +7,7 @@ endif()
 
 include(.cmake/xpum_version.cmake)
 
-project (XPUManager VERSION ${PROJECT_VERSION})
+project (xpumanager VERSION ${PROJECT_VERSION})
 
 set(CPACK_SET_DESTDIR OFF)
 set(CPACK_RPM_PACKAGE_RELOCATABLE ON)

@@ -139,7 +139,7 @@ xpum_result_t GroupManager::getGroupInfo(xpum_group_id_t groupId, xpum_group_inf
 
     std::shared_ptr<GroupUnit> p_GroupInfo = getGroupById(groupId);
     if (p_GroupInfo == nullptr) {
-        XPUM_LOG_ERROR("GroupManager::removeDeviceFromGroup-invalid group {}", groupId);
+        XPUM_LOG_ERROR("GroupManager::getGroupInfo-invalid group {}", groupId);
         return ret;
     }
 

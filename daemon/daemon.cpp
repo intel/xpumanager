@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
         {NULL, 0, 0, 0}};
     int value, option_index = 0;
 
-    while ((value = getopt_long(argc, argv, "c:p:h", long_options, &option_index)) != -1) {
+    while ((value = getopt_long(argc, argv, "s:p:h", long_options, &option_index)) != -1) {
         switch (value) {
             case 's':
                 sock_file_name = strdup(optarg);
