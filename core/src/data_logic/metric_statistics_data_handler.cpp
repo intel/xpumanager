@@ -67,7 +67,7 @@ void MetricStatisticsDataHandler::updateStatistics(std::shared_ptr<SharedData>& 
 }
 
 void MetricStatisticsDataHandler::handleData(std::shared_ptr<SharedData>& p_data) noexcept {
-    q.add(p_data);
+    DataHandler::handleData(p_data);
     updateStatistics(p_data);
 }
 

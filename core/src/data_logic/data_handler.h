@@ -40,8 +40,6 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
 
     std::shared_ptr<SharedData> p_preData;
 
-    SharedQueue<std::shared_ptr<SharedData>> q;
-
    private:
     MeasurementType type;
 
