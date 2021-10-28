@@ -10,7 +10,7 @@
 
 CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
-    cliApp.add_flag("--pretty", this->opts->pretty, "Enable pretty-printing");
+    cliApp.add_flag("--raw", this->opts->raw, "Enable raw printing");
     cliApp.fallthrough(true);
 
     this->coreStub = std::make_shared<CoreStub>();
@@ -33,9 +33,9 @@ CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
 }
 
 std::string CLIWrapper::getResult() {
-    if (this->opts->pretty) {
-        return this->jsonResult->dump(4);
-    } else {
+    if (this->opts->raw) {
         return this->jsonResult->dump();
+    } else {
+        return this->jsonResult->dump(4);
     }
 }

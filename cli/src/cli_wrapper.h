@@ -12,7 +12,7 @@ class App;
 } // namespace CLI
 
 struct CLIWrapperOptions {
-    bool pretty;
+    bool raw;
 };
 
 class CLIWrapper {
