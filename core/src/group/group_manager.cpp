@@ -13,11 +13,11 @@ namespace xpum {
 GroupManager::GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                            std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_devicemanager(p_device_manager), p_datalogic(p_data_logic), groupSequence(1), internalSequence(1) {
-    XPUM_LOG_INFO("GroupManager()");
+    XPUM_LOG_DEBUG("GroupManager()");
 }
 
 GroupManager::~GroupManager() {
-    XPUM_LOG_INFO("~GroupManager()");
+    XPUM_LOG_DEBUG("~GroupManager()");
     groupMap.clear();
 }
 

@@ -19,11 +19,11 @@
 namespace xpum {
 
 GPUDeviceStub::GPUDeviceStub() : p_thread_pool(nullptr), initialized(false) {
-    XPUM_LOG_INFO("GPUDeviceStub()");
+    XPUM_LOG_DEBUG("GPUDeviceStub()");
 }
 
 GPUDeviceStub::~GPUDeviceStub() {
-    XPUM_LOG_INFO("~GPUDeviceStub()");
+    XPUM_LOG_DEBUG("~GPUDeviceStub()");
 }
 
 GPUDeviceStub& GPUDeviceStub::instance() {

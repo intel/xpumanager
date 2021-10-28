@@ -92,6 +92,7 @@ xpum_result_t xpumInit() {
         XPUM_LOG_ERROR("Failed to init xpum core: {}", e.what());
         return XPUM_GENERIC_ERROR;
     }
+    XPUM_LOG_INFO("xpumd is providing services");
     return XPUM_OK;
 }
 

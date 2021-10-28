@@ -13,11 +13,11 @@
 namespace xpum {
 
 PciDatabase::PciDatabase() {
-    XPUM_LOG_INFO("PciDatabase()");
+    XPUM_LOG_DEBUG("PciDatabase()");
 }
 
 PciDatabase::~PciDatabase() {
-    XPUM_LOG_INFO("~PciDatabase()");
+    XPUM_LOG_DEBUG("~PciDatabase()");
     devices.clear();
 }
 
