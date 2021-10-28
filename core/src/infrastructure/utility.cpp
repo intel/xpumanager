@@ -28,8 +28,8 @@ std::string Utility::getTimeString(long long milliseconds) {
     const std::chrono::time_point<std::chrono::system_clock> time_point(duration_since_epoch);
     time_t time = std::chrono::system_clock::to_time_t(time_point);
     struct tm* p_tm = std::localtime(&time);
-    char date[32] = {0};
-    sprintf(date, "%d-%02d-%02d %02d:%02d:%02d.%03d %s", p_tm->tm_year + 1900,
+    char date[128] = {0};
+    snprintf(date, 128, "%d-%02d-%02d %02d:%02d:%02d.%03d %s", p_tm->tm_year + 1900,
             (int)p_tm->tm_mon + 1, (int)p_tm->tm_mday, (int)p_tm->tm_hour,
             (int)p_tm->tm_min, (int)p_tm->tm_sec, (int)(milliseconds % 1000),
             p_tm->tm_zone);
