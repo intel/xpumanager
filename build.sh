@@ -33,10 +33,11 @@ else
     mkdir build
 fi
 cd build
-
-cmake ..  $@
+cmake ..  $@ 
 make -j
-cpack    
+
+echo "---------Create installation package-----------"
+cpack   
 
 if [ -f ~/password.sys_dcm ]; then
     PackageName=$(cat package_file_name)
