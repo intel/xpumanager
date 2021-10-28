@@ -320,11 +320,21 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             json = getDiagnosticsResult(deviceId);
+            if ((*json).contains("error")) {
+                return json;
+            }
             while ((*json)["finished"] == false) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
                 json = getDiagnosticsResult(deviceId);
+                if ((*json).contains("error")) {
+                    return json;
+                }
             }
+        } else {
+            (*json)["error"] = response.errormsg();     
         }
+    } else {
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -354,7 +364,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
                 componentJsonList.push_back(componentJson);
             }
             (*json)["component_list"] = componentJsonList;
+        } else {
+            (*json)["error"] = response.errormsg();
         }
+    } else {
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -371,11 +385,21 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(int groupId, int
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             json = getDiagnosticsResultByGroup(groupId);
+            if ((*json).contains("error")) {
+                return json;
+            }
             while ((*json)["finished"] == false) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
                 json = getDiagnosticsResultByGroup(groupId);
+                if ((*json).contains("error")) {
+                    return json;
+                }
             }
+        } else {
+            (*json)["error"] = response.errormsg();
         }
+    } else {
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -416,7 +440,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(int groupI
             }
             (*json)["finished"] = finished;
             (*json)["device_list"] = deviceInfoJsonList;
+        } else {
+            (*json)["error"] = response.errormsg();
         }
+    } else {
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -477,7 +505,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllHealth() {
                 healthJsonList.push_back(healthJson);
             }
             (*json)["all_health_list"] = healthJsonList;
+        } else {
+            (*json)["error"] = response.errormsg();
         }
+    } else {
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -494,6 +526,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId) {
     std::vector<HealthType> types = {HEALTH_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
     for (auto& type : types) {
         auto componentJson = (*getHealth(deviceId, type));
+        if (componentJson.contains("error")) {
+            auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+            (*errorJson)["error"] = componentJson["error"];
+            return errorJson;
+        }
         std::string currentHealthType = healthTypeEnumToString(type);
         (*json)[currentHealthType]["status"] = componentJson["status"];
         (*json)[currentHealthType]["description"] = componentJson["description"];
@@ -524,7 +561,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId, HealthType typ
             if (response.type() == HEALTH_THERMAL) {
                 (*json)["threshold"] = getHealthConfig(deviceId, HEALTH_THEARMAL_LIMIT);
             }
+        } else {
+            (*json)["error"] = response.errormsg();
         }
+    } else {
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -542,7 +583,11 @@ std::unique_ptr<nlohmann::json> CoreStub::setHealthConfig(int deviceId, HealthCo
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
+        } else {
+            (*json)["error"] = response.errormsg();        
         }
+    } else {
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -559,6 +604,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(int groupId) {
     std::vector<HealthType> types = {HEALTH_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
     for (auto& type : types) {
         auto deviceHealthTypeJsons = (*getHealthByGroup(groupId, type));
+        if (deviceHealthTypeJsons.contains("error")) {
+            auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+            (*errorJson)["error"] = deviceHealthTypeJsons["error"];
+            return errorJson;
+        }
         std::string currentHealthType = healthTypeEnumToString(type);
         for (auto& component : deviceHealthTypeJsons[currentHealthType]) {
             std::size_t targetDeviceIndex = deviceJsonList.size();
@@ -608,7 +658,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(int groupId, HealthTy
                 }
                 componentJsonList.push_back(component);
             }
+        } else {
+            (*json)["error"] = response.errormsg();
         }
+    } else {
+        (*json)["error"] = status.error_message();
     }
     (*json)[healthTypeEnumToString(type)] = componentJsonList;
     return json;
@@ -627,7 +681,11 @@ std::unique_ptr<nlohmann::json> CoreStub::setHealthConfigByGroup(int groupId, He
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
+        } else {
+            (*json)["error"] = response.errormsg();        
         }
+    } else {
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
