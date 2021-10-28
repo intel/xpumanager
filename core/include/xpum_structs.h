@@ -374,8 +374,6 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,    ///< Engine Group Copy All Utilization
     XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION,  ///< Engine Group Render All Utilization
     XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION,      ///< Engine Group 3d All Utilization
-    XPUM_STATS_PCIRX,                                ///< PCIRX
-    XPUM_STATS_PCITX,                                ///< PCITX
     XPUM_STATS_RAS_ERROR_CAT_RESET,
     XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
     XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS,

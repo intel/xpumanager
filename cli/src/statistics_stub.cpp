@@ -48,10 +48,6 @@ static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
             return "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION";
         case XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION:
             return "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION";
-        case XPUM_STATS_PCIRX:
-            return "XPUM_STATS_PCIRX";
-        case XPUM_STATS_PCITX:
-            return "XPUM_STATS_PCITX";
         case XPUM_STATS_RAS_ERROR_CAT_RESET:
             return "XPUM_STATS_RAS_ERROR_CAT_RESET";
         case XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
