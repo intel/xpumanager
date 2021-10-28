@@ -98,6 +98,7 @@ xpum_result_t xpumInit() {
 
 xpum_result_t xpumShutdown() {
     Core::instance().close();
+    XPUM_LOG_INFO("xpumd stopped");
     return XPUM_OK;
 }
 
