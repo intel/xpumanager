@@ -86,7 +86,7 @@ void MonitorTask::start() {
                 std::cv_status::timeout) {
                 if (count > 0) {
                     std::string error = std::string("Monitor:") + std::to_string((int)(p_this->capability)) + " is expired!";
-                    XPUM_LOG_WARN(error);
+                    XPUM_LOG_DEBUG(error);
                 }
                 // TODO: the 'break' following is temperorily commented out to avoid memory corruption due to callback after task expiration. 
                 // need to redesign the timeout processing properly.
