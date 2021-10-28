@@ -1,8 +1,10 @@
 #include "comlet_diagnostic.h"
 
+#include <nlohmann/json.hpp>
+
 #include "core_stub.h"
 
-#include <nlohmann/json.hpp>
+namespace xpum::cli {
 
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
@@ -16,8 +18,9 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     if (this->opts->level >= 1 && this->opts->level <= 3) {
         if (this->opts->deviceId >= 0)
             json = this->coreStub->runDiagnostics(this->opts->deviceId, this->opts->level);
-        if (this->opts->groupId >= 0)
+        else if (this->opts->groupId >= 0)
             json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level);
     }
     return json;
 }
+} // end namespace xpum::cli

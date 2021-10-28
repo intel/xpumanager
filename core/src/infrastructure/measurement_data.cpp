@@ -1,5 +1,7 @@
 #include "measurement_data.h"
 
+namespace xpum {
+
 void MeasurementData::setSubdeviceDataCurrent(uint32_t subdevice_id, uint64_t data) {
     subdevice_datas[subdevice_id].current = data;
 }
@@ -70,10 +72,11 @@ const std::map<uint32_t, SubdeviceData>& MeasurementData::getSubdeviceDatas() {
     return subdevice_datas;
 }
 
-uint32_t MeasurementData::getSubdeviceDataSize(){
+uint32_t MeasurementData::getSubdeviceDataSize() {
     return subdevice_datas.size();
 }
 
 bool MeasurementData::hasSubdeviceData() {
     return subdevice_datas.size() >= 1;
 }
+} // end namespace xpum

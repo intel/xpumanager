@@ -2,48 +2,52 @@
 
 #include <atomic>
 
-#include "infrastructure/exception/base_exception.h"
 #include "infrastructure/const.h"
-#include "shared_data.h"
+#include "infrastructure/exception/base_exception.h"
+#include "infrastructure/measurement_type.h"
 #include "infrastructure/shared_queue.h"
 #include "persistency.h"
-#include "infrastructure/measurement_type.h"
+#include "shared_data.h"
+
+namespace xpum {
 
 /*
   DataHandler class handles the monitoring data.
 */
 
 class DataHandler : public std::enable_shared_from_this<DataHandler> {
-public:
-  DataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
+   public:
+    DataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 
-  virtual ~DataHandler();
+    virtual ~DataHandler();
 
-  void init();
+    void init();
 
-  void close();
+    void close();
 
-  virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
+    void preHandleData(std::shared_ptr<SharedData>& p_data) noexcept;
 
-  virtual MeasurementData getLatestData(std::string &device_id) noexcept;
+    virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept = 0;
 
-  virtual void getLatestData(std::map<std::string, MeasurementData> &datas) noexcept;
+    virtual MeasurementData getLatestData(std::string &device_id) noexcept;
 
-  virtual MeasurementData getLatestStatistics(std::string &device_id) noexcept;
+    virtual void getLatestData(std::map<std::string, MeasurementData> &datas) noexcept;
 
-protected:
-  std::mutex mutex;
+    virtual MeasurementData getLatestStatistics(std::string &device_id) noexcept;
 
-  std::shared_ptr<SharedData> p_latestData;
+   protected:
+    std::mutex mutex;
 
-  std::shared_ptr<SharedData> p_preData;
+    std::shared_ptr<SharedData> p_latestData;
 
-  SharedQueue<std::shared_ptr<SharedData>> q;
+    std::shared_ptr<SharedData> p_preData;
 
-private:
-  MeasurementType type;
+   private:
+    MeasurementType type;
 
-  std::atomic<bool> stop;
+    std::atomic<bool> stop;
 
-  std::shared_ptr<Persistency> p_persistency;
+    std::shared_ptr<Persistency> p_persistency;
 };
+
+} // end namespace xpum

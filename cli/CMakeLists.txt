@@ -56,6 +56,7 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/CLI11/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/json/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/googletest/googletest/include)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 # Scan source code files

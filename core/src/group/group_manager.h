@@ -1,24 +1,31 @@
 #pragma once
 
-#include "data_logic/data_logic_interface.h"
-#include "control/device_manager_interface.h"
-#include "group_unit.h"
-#include "group_manager_interface.h"
-
 #include "../include/xpum_structs.h"
+#include "control/device_manager_interface.h"
+#include "data_logic/data_logic_interface.h"
+#include "group_manager_interface.h"
+#include "group_unit.h"
 
-#define BUILD_IN_GROUP      0
-#define BUILD_IN_DEVICE     1
+namespace xpum {
+/**
+ * The class is responsible for GROUP manager. Two kinds of group are currently supported. 
+ * 1. normal group, group id starts from 1
+ * 2. build-in group, group id mask with BUILD_IN_GROUP_MASK
+ */  
+
+#define BUILD_IN_GROUP 0
+#define BUILD_IN_DEVICE 1
+#define BUILD_IN_GROUP_MASK 0x80000000
 
 class GroupManager : public GroupManagerInterface,
                      public std::enable_shared_from_this<GroupManager> {
-  public:
+   public:
     GroupManager(std::shared_ptr<DeviceManagerInterface> &p_device_manager,
                  std::shared_ptr<DataLogicInterface> &p_data_logic);
 
     virtual ~GroupManager();
 
-    xpum_result_t createGroup(const char *pGroupName, xpum_group_id_t *pGroupId, bool buildIn=false) override;
+    xpum_result_t createGroup(const char *pGroupName, xpum_group_id_t *pGroupId, bool buildIn = false) override;
 
     xpum_result_t destroyGroup(xpum_group_id_t groupId) override;
 
@@ -34,7 +41,7 @@ class GroupManager : public GroupManagerInterface,
 
     void close() override;
 
-  private:
+   private:
     std::shared_ptr<GroupUnit> getGroupById(xpum_group_id_t groupId);
 
     GroupManager() = default;
@@ -46,7 +53,7 @@ class GroupManager : public GroupManagerInterface,
     void createBuildInGroup();
     void createBuildInGroup(bool bBuildInDevice, int vendorId, int deviceId, std::string devID, std::string bdfAddress);
 
-  private:
+   private:
     std::shared_ptr<DeviceManagerInterface> p_devicemanager;
     std::shared_ptr<DataLogicInterface> p_datalogic;
     std::mutex mutex;
@@ -55,3 +62,4 @@ class GroupManager : public GroupManagerInterface,
     typedef std::map<xpum_group_id_t, std::shared_ptr<GroupUnit>> GroupMap;
     GroupMap groupMap;
 };
+} // end namespace xpum

@@ -1,8 +1,10 @@
 #include "comlet_health.h"
 
+#include <nlohmann/json.hpp>
+
 #include "core_stub.h"
 
-#include <nlohmann/json.hpp>
+namespace xpum::cli {
 
 void ComletHealth::setupOptions() {
     this->opts = std::unique_ptr<ComletHealthOptions>(new ComletHealthOptions());
@@ -46,3 +48,4 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
     }
     return json;
 }
+} // end namespace xpum::cli

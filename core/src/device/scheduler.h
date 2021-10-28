@@ -1,54 +1,58 @@
 #pragma once
 
-#include <vector>
 #include <mutex>
 #include <string>
+#include <vector>
+
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 
+namespace xpum {
+
 struct SchedulerTimeoutMode {
-  uint32_t subdevice_Id;
-  zes_sched_timeout_properties_t mode_setting;
+    uint32_t subdevice_Id;
+    zes_sched_timeout_properties_t mode_setting;
 };
 
 struct SchedulerTimesliceMode {
-  uint32_t subdevice_Id;
-  zes_sched_timeslice_properties_t mode_setting;
+    uint32_t subdevice_Id;
+    zes_sched_timeslice_properties_t mode_setting;
 };
 
 struct SchedulerExclusiveMode {
-  uint32_t subdevice_Id;
+    uint32_t subdevice_Id;
 };
 
 class Scheduler {
-public:  
-  Scheduler(bool on_subdevice, uint32_t subdevice_id, bool can_control, zes_engine_type_flags_t engines, uint32_t supportedModes, zes_sched_mode_t mode);
-  
-  virtual ~Scheduler();
+   public:
+    Scheduler(bool on_subdevice, uint32_t subdevice_id, bool can_control, zes_engine_type_flags_t engines, uint32_t supportedModes, zes_sched_mode_t mode);
 
-  zes_engine_type_flags_t getEngineTypes();
+    virtual ~Scheduler();
 
-  uint32_t getSupportedModes();
+    zes_engine_type_flags_t getEngineTypes();
 
-  zes_sched_mode_t getCurrentMode();
+    uint32_t getSupportedModes();
 
-  bool onSubdevice() const;
+    zes_sched_mode_t getCurrentMode();
 
-  uint32_t getSubdeviceId() const;
+    bool onSubdevice() const;
 
-  bool canControl() const;
+    uint32_t getSubdeviceId() const;
 
-private:
-  zes_engine_type_flags_t engine_types;
+    bool canControl() const;
 
-  uint32_t supported_modes;
+   private:
+    zes_engine_type_flags_t engine_types;
 
-  zes_sched_mode_t mode;
+    uint32_t supported_modes;
 
-  bool on_subdevice;
+    zes_sched_mode_t mode;
 
-  uint32_t subdevice_id;
+    bool on_subdevice;
 
-  bool can_control;
+    uint32_t subdevice_id;
 
+    bool can_control;
 };
+
+} // end namespace xpum

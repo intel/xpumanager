@@ -1,12 +1,14 @@
 #include "cli_wrapper.h"
 
+#include <nlohmann/json.hpp>
+#include <stdexcept>
+#include <utility>
+
 #include "CLI/App.hpp"
 #include "comlet_base.h"
 #include "core_stub.h"
 
-#include <nlohmann/json.hpp>
-#include <stdexcept>
-#include <utility>
+namespace xpum::cli {
 
 CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
@@ -39,3 +41,4 @@ std::string CLIWrapper::getResult() {
         return this->jsonResult->dump(4);
     }
 }
+} // end namespace xpum::cli

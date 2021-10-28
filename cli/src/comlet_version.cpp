@@ -1,10 +1,12 @@
 #include "comlet_version.h"
 
+#include <map>
+#include <nlohmann/json.hpp>
+
 #include "config.h"
 #include "core_stub.h"
 
-#include <map>
-#include <nlohmann/json.hpp>
+namespace xpum::cli {
 
 void ComletVersion::setupOptions() {
     this->opts = std::unique_ptr<ComletVersionOptions>(new ComletVersionOptions());
@@ -16,3 +18,4 @@ std::unique_ptr<nlohmann::json> ComletVersion::run() {
     (*json)["cli_version_git"] = CLI_VERSION_GIT_COMMIT;
     return json;
 }
+} // end namespace xpum::cli

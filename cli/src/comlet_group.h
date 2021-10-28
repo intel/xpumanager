@@ -1,11 +1,14 @@
 #pragma once
 
-#include "comlet_base.h"
+#include <stdint.h>
 
 #include <memory>
 #include <nlohmann/json.hpp>
-#include <stdint.h>
 #include <string>
+
+#include "comlet_base.h"
+
+namespace xpum::cli {
 
 struct ComletGroupOptions {
     uint32_t groupId = 0;
@@ -19,14 +22,14 @@ struct ComletGroupOptions {
 };
 
 class ComletGroup : public ComletBase {
-
-  public:
+   public:
     ComletGroup() : ComletBase("group", "Group management") {}
     virtual ~ComletGroup() {}
 
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
-  private:
+   private:
     std::unique_ptr<ComletGroupOptions> opts;
 };
+} // end namespace xpum::cli

@@ -5,9 +5,10 @@ import datetime
 
 from .exporter import XpumStatsType
 
+
 def getStatistics(device_id):
     resp = stub.getStatistics(core_pb2.DeviceId(id=device_id))
-    if len( resp.errorMsg ) != 0:
+    if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     data = dict()
     data["device_id"] = device_id
@@ -20,7 +21,7 @@ def getStatistics(device_id):
     deviceLevelStatsDataList = []
     tileLevelStatsDataList = []
     for stats_info in resp.dataList:
-        dataList=[]
+        dataList = []
         for stats_data in stats_info.dataList:
             tmp = dict()
             try:
@@ -35,10 +36,10 @@ def getStatistics(device_id):
                 tmp["max"] = stats_data.max
             dataList.append(tmp)
         if stats_info.isTileData:
-            tmp = dict(tile_id=stats_info.tileId,data_list=dataList)
+            tmp = dict(tile_id=stats_info.tileId, data_list=dataList)
             tileLevelStatsDataList.append(tmp)
         else:
-            deviceLevelStatsDataList=dataList
+            deviceLevelStatsDataList = dataList
     data["device_level"] = deviceLevelStatsDataList
     if tileLevelStatsDataList:
         data["tile_level"] = tileLevelStatsDataList

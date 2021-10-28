@@ -35,8 +35,10 @@ def get_pod_resources():
                                         'container': container.name,
                                         'device_id': device_id
                                     }
-    except:
-        traceback.print_exc()
+    except grpc._channel._InactiveRpcError as e:
+        print('grpc channel is inactive')
+    except Exception as e:
+        print('failed to get pod resource list due to: ', e)
     return ret
 
 

@@ -1,35 +1,32 @@
-#include "CLI/App.hpp"
-#include "cli_wrapper.h"
-#include "comlet_discovery.h"
-#include "comlet_group.h"
-#include "comlet_topology.h"
-#include "comlet_version.h"
-#include "comlet_diagnostic.h"
-#include "comlet_health.h"
-#include "comlet_statistics.h"
-
 #include <iostream>
 #include <memory>
 #include <string>
 
-class ComletBase;
+#include "CLI/App.hpp"
+#include "cli_wrapper.h"
+#include "comlet_diagnostic.h"
+#include "comlet_discovery.h"
+#include "comlet_group.h"
+#include "comlet_health.h"
+#include "comlet_statistics.h"
+#include "comlet_topology.h"
+#include "comlet_version.h"
 
-#define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<ComletBase>(std::make_shared<comlet_type>()))
+#define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
 
 int main(int argc, char **argv) {
-
     CLI::App app{"Intel XPU Manager Command Line Interface"};
 
-    CLIWrapper wrapper(app);
+    xpum::cli::CLIWrapper wrapper(app);
 
     wrapper
-        .addComlet(MAKE_COMLET_PTR(ComletVersion))
-        .addComlet(MAKE_COMLET_PTR(ComletDiscovery))
-        .addComlet(MAKE_COMLET_PTR(ComletTopology))
-        .addComlet(MAKE_COMLET_PTR(ComletGroup))
-        .addComlet(MAKE_COMLET_PTR(ComletDiagnostic))
-        .addComlet(MAKE_COMLET_PTR(ComletHealth))
-        .addComlet(MAKE_COMLET_PTR(ComletStatistics));
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletVersion))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiscovery))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTopology))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletGroup))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiagnostic))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletHealth))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics));
 
     app.require_subcommand();
 

@@ -1,8 +1,10 @@
 #include "comlet_policy.h"
 
+#include <nlohmann/json.hpp>
+
 #include "core_stub.h"
 
-#include <nlohmann/json.hpp>
+namespace xpum::cli {
 
 void ComletPolicy::setupOptions() {
     this->opts = std::unique_ptr<ComletPolicyOptions>(new ComletPolicyOptions());
@@ -46,3 +48,4 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
     }
     return json;
 }
+} // end namespace xpum::cli

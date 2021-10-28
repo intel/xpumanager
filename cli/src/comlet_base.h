@@ -1,26 +1,27 @@
 #pragma once
 
-#include "cli_wrapper.h"
 #include <CLI/CLI.hpp>
-
 #include <cassert>
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "cli_wrapper.h"
+
+namespace xpum::cli {
+
 class CoreStub;
 
 class ComletBase {
-
     friend class CLIWrapper;
 
-  public:
+   public:
     ComletBase(std::string command, std::string description) : command(command), description(description) {}
     virtual ~ComletBase() {}
 
     virtual void setupOptions() = 0;
     virtual std::unique_ptr<nlohmann::json> run() = 0;
 
-  protected:
+   protected:
     template <typename T>
     void addOption(std::string optName, T &variable, std::string optDescription = "", bool required = false) {
         assert(subCLIApp != nullptr);
@@ -38,8 +39,9 @@ class ComletBase {
 
     std::shared_ptr<CoreStub> coreStub;
 
-  private:
+   private:
     const std::string command;
     const std::string description;
     CLI::App *subCLIApp;
 };
+} // end namespace xpum::cli

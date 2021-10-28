@@ -1,13 +1,15 @@
 #include "metric_statistics_data_handler.h"
 
+namespace xpum {
+
 class EngineUtilizationDataHandler : public MetricStatisticsDataHandler {
-public:
-  EngineUtilizationDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
+   public:
+    EngineUtilizationDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 
-  virtual ~EngineUtilizationDataHandler();
+    virtual ~EngineUtilizationDataHandler();
 
-  virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
+    virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
 
-  void calculateData(std::shared_ptr<SharedData> &p_data);
-
+    void calculateData(std::shared_ptr<SharedData> &p_data);
 };
+} // end namespace xpum

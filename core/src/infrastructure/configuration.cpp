@@ -1,5 +1,6 @@
 #include "configuration.h"
 
+namespace xpum {
 
 int Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = 1000;
 int Configuration::POWER_MONITOR_INTERNAL_PERIOD = 80;
@@ -22,3 +23,4 @@ int Configuration::OCCUPATION_EFFICIENCY_STREAMER_SAMPLING_PERIOD = 20000000;
 std::string Configuration::MEDIA_CODER_TOOLS_PATH = "/usr/share/mfx/samples/";
 std::string Configuration::MEDIA_CODER_TOOLS_DECODE_FILE = "test_stream.264";
 std::string Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE = "test_stream_176x96.yuv";
+} // end namespace xpum

@@ -1,5 +1,7 @@
 #pragma once
 
+namespace xpum {
+
 enum MeasurementType {
     POWER = 0,
     FREQUENCY,
@@ -34,3 +36,5 @@ enum MeasurementType {
     METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     METRIC_REQUEST_FREQUENCY,
 };
+
+} // end namespace xpum

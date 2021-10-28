@@ -1,78 +1,82 @@
 #pragma once
 
-#include <vector>
 #include <mutex>
 #include <string>
+#include <vector>
+
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 
+namespace xpum {
+
 struct Power_sustained_limit_t {
-  bool enabled;
+    bool enabled;
 
-  int32_t power;
+    int32_t power;
 
-  int32_t interval;
+    int32_t interval;
 };
 
 struct Power_burst_limit_t {
-  bool enabled;
+    bool enabled;
 
-  int32_t power;
+    int32_t power;
 };
 
 struct Power_peak_limit_t {
-  int32_t power_AC;
+    int32_t power_AC;
 
-  int32_t power_DC;
+    int32_t power_DC;
 };
 
 class Power {
-public:
-  Power(bool on_subdevice, uint32_t subdevice_id, bool can_control, bool is_energy_threshold_supported, int32_t default_limit, int32_t min_limit, int32_t max_limit);
-  
-  virtual ~Power();
+   public:
+    Power(bool on_subdevice, uint32_t subdevice_id, bool can_control, bool is_energy_threshold_supported, int32_t default_limit, int32_t min_limit, int32_t max_limit);
 
-  bool onSubdevice();
+    virtual ~Power();
 
-  uint32_t getSubdeviceId();
+    bool onSubdevice();
 
-  bool canControl();
+    uint32_t getSubdeviceId();
 
-  bool isEnergyThresholdSupported();
+    bool canControl();
 
-  int32_t getDefaultLimit();
+    bool isEnergyThresholdSupported();
 
-  int32_t getMinLimit();
+    int32_t getDefaultLimit();
 
-  int32_t getMaxLimit();
+    int32_t getMinLimit();
 
-  void getPowerLimits(Power_sustained_limit_t& sustained_limit,
-                      Power_burst_limit_t& burst_limit,
-                      Power_peak_limit_t& peak_limit);
+    int32_t getMaxLimit();
 
-  void setPowerLimits(const Power_sustained_limit_t& sustained_limit,
-                      const Power_burst_limit_t& burst_limit,
-                      const Power_peak_limit_t& peak_limit);
+    void getPowerLimits(Power_sustained_limit_t& sustained_limit,
+                        Power_burst_limit_t& burst_limit,
+                        Power_peak_limit_t& peak_limit);
 
-private:
-  bool on_subdevice;
+    void setPowerLimits(const Power_sustained_limit_t& sustained_limit,
+                        const Power_burst_limit_t& burst_limit,
+                        const Power_peak_limit_t& peak_limit);
 
-  uint32_t subdevice_id;
+   private:
+    bool on_subdevice;
 
-  bool can_control;
+    uint32_t subdevice_id;
 
-  bool is_energy_threshold_supported;
+    bool can_control;
 
-  int32_t default_limit;
+    bool is_energy_threshold_supported;
 
-  int32_t min_limit;
-  
-  int32_t max_limit;
+    int32_t default_limit;
 
-  Power_sustained_limit_t sustained_limit;
+    int32_t min_limit;
 
-  Power_burst_limit_t burst_limit;
+    int32_t max_limit;
 
-  Power_peak_limit_t peak_limit; 
+    Power_sustained_limit_t sustained_limit;
 
+    Power_burst_limit_t burst_limit;
+
+    Power_peak_limit_t peak_limit;
 };
+
+} // end namespace xpum

@@ -1,14 +1,16 @@
 #pragma once
 
-#include "core.grpc.pb.h"
-
 #include <memory>
-#include <thread>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <thread>
+
+#include "core.grpc.pb.h"
+
+namespace xpum::cli {
 
 class CoreStub {
-  public:
+   public:
     CoreStub();
 
     std::unique_ptr<nlohmann::json> getVersion();
@@ -52,7 +54,8 @@ class CoreStub {
     std::string policyActionTypeEnumToString(XpumPolicyActionType type);
     std::unique_ptr<nlohmann::json> getPolicy(int deviceId);
 
-  private:
+   private:
     std::unique_ptr<XpumCoreService::Stub> stub;
     static std::string isotimestamp(uint64_t t);
 };
+} // end namespace xpum::cli

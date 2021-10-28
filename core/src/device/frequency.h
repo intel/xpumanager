@@ -1,47 +1,51 @@
 #pragma once
 
-#include <vector>
 #include <mutex>
 #include <string>
+#include <vector>
+
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 
+namespace xpum {
+
 class Frequency {
-public:
-  Frequency(zes_freq_domain_t type, bool on_subdevice, uint32_t subdevice_id, bool can_control, bool is_throttle_event_supported, double min, double max);
+   public:
+    Frequency(zes_freq_domain_t type, bool on_subdevice, uint32_t subdevice_id, bool can_control, bool is_throttle_event_supported, double min, double max);
 
-  Frequency(zes_freq_domain_t type, uint32_t subdevice_id, double min, double max);
-  
-  virtual ~Frequency();
+    Frequency(zes_freq_domain_t type, uint32_t subdevice_id, double min, double max);
 
-  zes_freq_domain_t getType() const;
+    virtual ~Frequency();
 
-  int32_t getTypeValue() const;
+    zes_freq_domain_t getType() const;
 
-  bool onSubdevice() const;
+    int32_t getTypeValue() const;
 
-  uint32_t getSubdeviceId() const;
+    bool onSubdevice() const;
 
-  bool canControl() const;
+    uint32_t getSubdeviceId() const;
 
-  bool isThrottleEventSupported() const;
+    bool canControl() const;
 
-  double getMin() const;
+    bool isThrottleEventSupported() const;
 
-  double getMax() const;
+    double getMin() const;
 
-private:
-  zes_freq_domain_t type;
+    double getMax() const;
 
-  bool on_subdevice;
+   private:
+    zes_freq_domain_t type;
 
-  uint32_t subdevice_id;
+    bool on_subdevice;
 
-  bool can_control;
+    uint32_t subdevice_id;
 
-  bool is_throttle_event_supported;
-  
-  double min;
-  
-  double max;
+    bool can_control;
+
+    bool is_throttle_event_supported;
+
+    double min;
+
+    double max;
 };
+} // end namespace xpum

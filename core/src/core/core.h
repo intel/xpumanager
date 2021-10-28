@@ -2,22 +2,23 @@
 
 #include <string>
 
-#include "infrastructure/init_close_interface.h"
-
-#include "data_logic/data_logic_interface.h"
 #include "control/device_manager_interface.h"
-#include "monitor/monitor_manager_interface.h"
-#include "health/health_manager_interface.h"
-#include "group/group_manager_interface.h"
+#include "data_logic/data_logic_interface.h"
 #include "diagnostic/diagnostic_manager_interface.h"
+#include "group/group_manager_interface.h"
+#include "health/health_manager_interface.h"
+#include "infrastructure/init_close_interface.h"
+#include "monitor/monitor_manager_interface.h"
 #include "policy/policy_manager_interface.h"
+
+namespace xpum {
 
 /*
   The top controller of xpum
 */
 
 class Core : public InitCloseInterface {
-  public:
+   public:
     static Core &instance();
 
     void init() override;
@@ -40,7 +41,7 @@ class Core : public InitCloseInterface {
 
     std::shared_ptr<PolicyManagerInterface> getPolicyManager();
 
-  private:
+   private:
     Core();
 
     Core &operator=(const Core &) = delete;
@@ -51,7 +52,7 @@ class Core : public InitCloseInterface {
 
     void close(const std::shared_ptr<InitCloseInterface> &p_init_close_interface, const std::string &p_msgPrix);
 
-  private:
+   private:
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
 
     std::shared_ptr<DataLogicInterface> p_data_logic;
@@ -70,3 +71,5 @@ class Core : public InitCloseInterface {
 
     std::mutex mutex;
 };
+
+} // end namespace xpum

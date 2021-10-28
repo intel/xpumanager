@@ -1,79 +1,80 @@
+#include <nlohmann/json.hpp>
+#include <vector>
+
 #include "core.grpc.pb.h"
 #include "core.pb.h"
 #include "core_stub.h"
 #include "xpum_structs.h"
 
-#include <nlohmann/json.hpp>
-#include <vector>
+namespace xpum::cli {
 
 static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
     switch (metricsType) {
-    case XPUM_STATS_GPU_UTILIZATION:
-        return "XPUM_STATS_GPU_UTILIZATION";
-    case XPUM_STATS_OCCUPATION:
-        return "XPUM_STATS_OCCUPATION";
-    case XPUM_STATS_ISSUE_EFFICIENCY:
-        return "XPUM_STATS_ISSUE_EFFICIENCY";
-    case XPUM_STATS_EXECUTION_EFFICIENCY:
-        return "XPUM_STATS_EXECUTION_EFFICIENCY";
-    case XPUM_STATS_NON_OCCUPATION:
-        return "XPUM_STATS_NON_OCCUPATION";
-    case XPUM_STATS_POWER:
-        return "XPUM_STATS_POWER";
-    case XPUM_STATS_ENERGY:
-        return "XPUM_STATS_ENERGY";
-    case XPUM_STATS_GPU_FREQUENCY:
-        return "XPUM_STATS_GPU_FREQUENCY";
-    case XPUM_STATS_GPU_TEMEPERATURE:
-        return "XPUM_STATS_GPU_TEMEPERATURE";
-    case XPUM_STATS_MEMORY_USED:
-        return "XPUM_STATS_MEMORY_USED";
-    case XPUM_STATS_MEMORY_UTILIZATION:
-        return "XPUM_STATS_MEMORY_UTILIZATION";
-    case XPUM_STATS_MEMORY_BANDWIDTH:
-        return "XPUM_STATS_MEMORY_BANDWIDTH";
-    case XPUM_STATS_MEMORY_READ:
-        return "XPUM_STATS_MEMORY_READ";
-    case XPUM_STATS_MEMORY_WRITE:
-        return "XPUM_STATS_MEMORY_WRITE";
-    case XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
-        return "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION";
-    case XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
-        return "XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION";
-    case XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION:
-        return "XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION";
-    case XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
-        return "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION";
-    case XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION:
-        return "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION";
-    case XPUM_STATS_PCIRX:
-        return "XPUM_STATS_PCIRX";
-    case XPUM_STATS_PCITX:
-        return "XPUM_STATS_PCITX";
-    case XPUM_STATS_RAS_ERROR_CAT_RESET:
-        return "XPUM_STATS_RAS_ERROR_CAT_RESET";
-    case XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
-        return "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS";
-    case XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS:
-        return "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS";
-    case XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
-        return "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE";
-    case XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
-        return "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE";
-    case XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
-        return "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE";
-    case XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
-        return "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE";
-    case XPUM_STATS_GPU_REQUEST_FREQUENCY:
-        return "XPUM_STATS_GPU_REQUEST_FREQUENCY";
-    default:
-        break;
+        case XPUM_STATS_GPU_UTILIZATION:
+            return "XPUM_STATS_GPU_UTILIZATION";
+        case XPUM_STATS_OCCUPATION:
+            return "XPUM_STATS_OCCUPATION";
+        case XPUM_STATS_ISSUE_EFFICIENCY:
+            return "XPUM_STATS_ISSUE_EFFICIENCY";
+        case XPUM_STATS_EXECUTION_EFFICIENCY:
+            return "XPUM_STATS_EXECUTION_EFFICIENCY";
+        case XPUM_STATS_NON_OCCUPATION:
+            return "XPUM_STATS_NON_OCCUPATION";
+        case XPUM_STATS_POWER:
+            return "XPUM_STATS_POWER";
+        case XPUM_STATS_ENERGY:
+            return "XPUM_STATS_ENERGY";
+        case XPUM_STATS_GPU_FREQUENCY:
+            return "XPUM_STATS_GPU_FREQUENCY";
+        case XPUM_STATS_GPU_TEMEPERATURE:
+            return "XPUM_STATS_GPU_TEMEPERATURE";
+        case XPUM_STATS_MEMORY_USED:
+            return "XPUM_STATS_MEMORY_USED";
+        case XPUM_STATS_MEMORY_UTILIZATION:
+            return "XPUM_STATS_MEMORY_UTILIZATION";
+        case XPUM_STATS_MEMORY_BANDWIDTH:
+            return "XPUM_STATS_MEMORY_BANDWIDTH";
+        case XPUM_STATS_MEMORY_READ:
+            return "XPUM_STATS_MEMORY_READ";
+        case XPUM_STATS_MEMORY_WRITE:
+            return "XPUM_STATS_MEMORY_WRITE";
+        case XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+            return "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION";
+        case XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+            return "XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION";
+        case XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+            return "XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION";
+        case XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+            return "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION";
+        case XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION:
+            return "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION";
+        case XPUM_STATS_PCIRX:
+            return "XPUM_STATS_PCIRX";
+        case XPUM_STATS_PCITX:
+            return "XPUM_STATS_PCITX";
+        case XPUM_STATS_RAS_ERROR_CAT_RESET:
+            return "XPUM_STATS_RAS_ERROR_CAT_RESET";
+        case XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+            return "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS";
+        case XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS:
+            return "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS";
+        case XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+            return "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE";
+        case XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+            return "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE";
+        case XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+            return "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE";
+        case XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+            return "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE";
+        case XPUM_STATS_GPU_REQUEST_FREQUENCY:
+            return "XPUM_STATS_GPU_REQUEST_FREQUENCY";
+        default:
+            break;
     }
     return std::to_string(metricsType);
 }
 
 std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
-
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -135,7 +136,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
 }
 
 std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
-
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -217,3 +217,4 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
 
     return json;
 }
+} // end namespace xpum::cli

@@ -1,10 +1,12 @@
 #pragma once
 
-#include "comlet_base.h"
-
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
+
+#include "comlet_base.h"
+
+namespace xpum::cli {
 
 struct ComletDiscoveryOptions {
     int deviceId = -1;
@@ -12,14 +14,14 @@ struct ComletDiscoveryOptions {
 };
 
 class ComletDiscovery : public ComletBase {
-
-  public:
+   public:
     ComletDiscovery() : ComletBase("discovery", "Discover devices on the system") {}
     virtual ~ComletDiscovery() {}
 
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
-  private:
+   private:
     std::unique_ptr<ComletDiscoveryOptions> opts;
 };
+} // end namespace xpum::cli

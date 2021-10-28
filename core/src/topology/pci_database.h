@@ -4,10 +4,17 @@
 #include <mutex>
 #include <string>
 
-enum DeviceType{
-  DV_UNKNOW = 0,
-  DV_SWITCH = 1,
-  DV_GRAPHIC = 2
+namespace xpum {
+
+/**
+ * Class to parse "pci.ids" and "pci.conf" file, save pcie switch and build-in device info.
+ * 
+ */
+
+enum DeviceType {
+    DV_UNKNOW = 0,
+    DV_SWITCH = 1,
+    DV_GRAPHIC = 2
 };
 
 struct PcieDevice {
@@ -17,10 +24,7 @@ struct PcieDevice {
     int32_t sub_v_id;
     int32_t sub_d_id;
     std::string tostring() {
-        return std::string("verdor_id:") + std::to_string(vendor_id) 
-               + std::string(" device_id:") + std::to_string(device_id) 
-               + std::string(" sub_vendor_id:") + std::to_string(sub_v_id) 
-               + std::string(" sub_device_id:") + std::to_string(sub_d_id);
+        return std::string("verdor_id:") + std::to_string(vendor_id) + std::string(" device_id:") + std::to_string(device_id) + std::string(" sub_vendor_id:") + std::to_string(sub_v_id) + std::string(" sub_device_id:") + std::to_string(sub_d_id);
     }
 };
 
@@ -33,12 +37,12 @@ enum id_type {
 };
 
 class PciDatabase {
-  public:
+   public:
     static PciDatabase &instance();
 
-    const PcieDevice* getDevice(int32_t vendor_id, int32_t device_id);
+    const PcieDevice *getDevice(int32_t vendor_id, int32_t device_id);
 
-  private:
+   private:
     PciDatabase();
     ~PciDatabase();
 
@@ -67,3 +71,4 @@ class PciDatabase {
 
     device_map devices;
 };
+} // end namespace xpum

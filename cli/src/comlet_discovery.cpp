@@ -1,9 +1,11 @@
 #include "comlet_discovery.h"
 
-#include "core_stub.h"
-
 #include <map>
 #include <nlohmann/json.hpp>
+
+#include "core_stub.h"
+
+namespace xpum::cli {
 
 void ComletDiscovery::setupOptions() {
     this->opts = std::unique_ptr<ComletDiscoveryOptions>(new ComletDiscoveryOptions());
@@ -11,7 +13,6 @@ void ComletDiscovery::setupOptions() {
 }
 
 std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
-
     if (this->opts->deviceId != -1) {
         auto json = this->coreStub->getDeviceProperties(this->opts->deviceId);
         return json;
@@ -20,3 +21,4 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     auto json = this->coreStub->getDeviceList();
     return json;
 }
+} // end namespace xpum::cli

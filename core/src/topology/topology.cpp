@@ -1,18 +1,22 @@
-#include <iomanip>
-#include <sstream>
-#include <algorithm>
-#include <iostream>
+#include "topology.h"
+
 #include <assert.h>
+
+#include <algorithm>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <vector>
 
-#include "topology.h"
+#include "hwinfo.h"
 #include "infrastructure/device_property.h"
 #include "infrastructure/logger.h"
 #include "pci_database.h"
-#include "hwinfo.h"
 
-Topology::Topology()    {
+namespace xpum {
+
+Topology::Topology() {
     XPUM_LOG_INFO("Topology()");
 }
 
@@ -29,12 +33,12 @@ std::string Topology::getLocalCpus(std::string address) {
     if (infile.is_open()) {
         std::getline(infile, affinity);
     }
-    
+
     infile.close();
     return affinity;
 }
 
-std::string  Topology::getLocalCpusList(std::string address) {
+std::string Topology::getLocalCpusList(std::string address) {
     std::string affinity;
     std::ifstream infile;
     std::string file = std::string("/sys/bus/pci/devices/") + address + std::string("/local_cpulist");
@@ -43,16 +47,16 @@ std::string  Topology::getLocalCpusList(std::string address) {
     if (infile.is_open()) {
         std::getline(infile, affinity);
     }
-    
+
     infile.close();
 
     return affinity;
 }
 
-bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds){
+bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds) {
     hwloc_topology_t hwtopology;
     hwloc_obj_t obj = nullptr;
-    const PcieDevice * pDevice = nullptr;
+    const PcieDevice* pDevice = nullptr;
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
     hwloc_topology_load(hwtopology);
@@ -71,22 +75,19 @@ bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t
 
     while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
         assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
-        if( obj->attr->pcidev.domain == domain 
-            && obj->attr->pcidev.bus == bus 
-            && obj->attr->pcidev.dev == device 
-            && obj->attr->pcidev.func == function ){
+        if (obj->attr->pcidev.domain == domain && obj->attr->pcidev.bus == bus && obj->attr->pcidev.dev == device && obj->attr->pcidev.func == function) {
             pDevice = PciDatabase::instance().getDevice(
-                    obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
-            
+                obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
+
             break;
         }
     }
 
-    if(pDevice != nullptr && pDevice->type == DV_GRAPHIC && obj != nullptr) {
+    if (pDevice != nullptr && pDevice->type == DV_GRAPHIC && obj != nullptr) {
         hwloc_obj_t parentObj = obj->parent;
-        while(parentObj != nullptr) {
+        while (parentObj != nullptr) {
             zes_pci_address_t addr;
-            if(parentObj->type == HWLOC_OBJ_BRIDGE){
+            if (parentObj->type == HWLOC_OBJ_BRIDGE) {
                 addr.bus = parentObj->attr->pcidev.bus;
                 addr.domain = parentObj->attr->pcidev.domain;
                 addr.device = parentObj->attr->pcidev.dev;
@@ -97,15 +98,13 @@ bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t
                 break;
             }
         }
-        
     }
 
     hwloc_topology_destroy(hwtopology);
     return true;
 }
 
-xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t * topology, std::size_t *memSize)
-{
+xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t* topology, std::size_t* memSize) {
     hwloc_topology_t hwtopology;
     hwloc_obj_t obj = nullptr;
     int switchCount;
@@ -126,25 +125,22 @@ xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t * 
     start += pos + 1;
     pos = 0;
     int32_t function = std::stoi(bdfAddress.substr(start), &pos, 16);
-    
+
     while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
         assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
-        if( obj->attr->pcidev.domain == domain 
-            && obj->attr->pcidev.bus == bus 
-            && obj->attr->pcidev.dev == device 
-            && obj->attr->pcidev.func == function ){
+        if (obj->attr->pcidev.domain == domain && obj->attr->pcidev.bus == bus && obj->attr->pcidev.dev == device && obj->attr->pcidev.func == function) {
             switchCount = get_p_switch_count(obj);
-            if(switchCount>0) {                
+            if (switchCount > 0) {
                 std::size_t size = sizeof(xpum_topology_t) + switchCount * sizeof(parent_switch);
-                if(*memSize < size) {
+                if (*memSize < size) {
                     *memSize = size;
                     return XPUM_BUFFER_TOO_SMALL;
                 }
                 topology->switchCount = switchCount;
-                parent_switch * pSwitch = topology->switches;
+                parent_switch* pSwitch = topology->switches;
                 get_p_switch_dev_path(obj, pSwitch);
             }
-            
+
             break;
         }
     }
@@ -152,7 +148,6 @@ xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t * 
     hwloc_topology_destroy(hwtopology);
     return XPUM_OK;
 }
-
 
 bool Topology::hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, int32_t device, int32_t function) {
     hwloc_obj_t objChild = obj->io_first_child;
@@ -162,11 +157,7 @@ bool Topology::hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, i
     }
     while (objChild != nullptr) {
         if (objChild->type == HWLOC_OBJ_PCI_DEVICE) {
-
-            if ( (objChild->attr->pcidev.domain == domain) 
-                 && (objChild->attr->pcidev.bus == bus) 
-                 && (objChild->attr->pcidev.dev == device) 
-                 && (objChild->attr->pcidev.func == function) ) {
+            if ((objChild->attr->pcidev.domain == domain) && (objChild->attr->pcidev.bus == bus) && (objChild->attr->pcidev.dev == device) && (objChild->attr->pcidev.func == function)) {
                 return true;
             }
         }
@@ -176,34 +167,31 @@ bool Topology::hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, i
     return false;
 }
 
-bool Topology::isSwitchDevice(hwloc_obj_t obj)
-{
+bool Topology::isSwitchDevice(hwloc_obj_t obj) {
     int verdor_id = obj->attr->pcidev.vendor_id;
     int device_id = obj->attr->pcidev.device_id;
     const PcieDevice* pDevice = PciDatabase::instance().getDevice(verdor_id, device_id);
     return (pDevice != nullptr);
 }
 
-std::string Topology::pci2RegxString(hwloc_obj_t obj)
-{    
-  std::ostringstream os;
-  os << std::setfill('0') << std::setw(4) << std::hex
-     << (uint32_t)obj->attr->pcidev.domain << std::string(":")
-     << std::setw(2)
-     << (uint32_t)obj->attr->pcidev.bus << std::string(":")
-	 << std::setw(2)
-     << (uint32_t)obj->attr->pcidev.dev << std::string(".")
-     << (uint32_t)obj->attr->pcidev.func;
-  return os.str();
+std::string Topology::pci2RegxString(hwloc_obj_t obj) {
+    std::ostringstream os;
+    os << std::setfill('0') << std::setw(4) << std::hex
+       << (uint32_t)obj->attr->pcidev.domain << std::string(":")
+       << std::setw(2)
+       << (uint32_t)obj->attr->pcidev.bus << std::string(":")
+       << std::setw(2)
+       << (uint32_t)obj->attr->pcidev.dev << std::string(".")
+       << (uint32_t)obj->attr->pcidev.func;
+    return os.str();
 }
 
-int Topology::get_p_switch_count(hwloc_obj_t chi_obj)
-{
+int Topology::get_p_switch_count(hwloc_obj_t chi_obj) {
     hwloc_obj_t obj = chi_obj->parent;
-    int count=0;
-    uint32_t preVendorId=-1, preDeviceId=-1;
-    while(obj != nullptr){
-        if(obj->type == HWLOC_OBJ_BRIDGE) {
+    int count = 0;
+    uint32_t preVendorId = -1, preDeviceId = -1;
+    while (obj != nullptr) {
+        if (obj->type == HWLOC_OBJ_BRIDGE) {
             /* only host->pci and pci->pci bridge supported so far */
             if (obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_HOST) {
                 assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
@@ -212,13 +200,13 @@ int Topology::get_p_switch_count(hwloc_obj_t chi_obj)
             } else {
                 assert(obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI);
                 assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
-                
-                if(preVendorId == obj->attr->bridge.upstream.pci.vendor_id &&
-                   preDeviceId == obj->attr->bridge.upstream.pci.device_id) {
+
+                if (preVendorId == obj->attr->bridge.upstream.pci.vendor_id &&
+                    preDeviceId == obj->attr->bridge.upstream.pci.device_id) {
                     obj = obj->parent;
                     continue;
                 }
-                if(isSwitchDevice(obj)) {                   
+                if (isSwitchDevice(obj)) {
                     preVendorId = obj->attr->bridge.upstream.pci.vendor_id;
                     preDeviceId = obj->attr->bridge.upstream.pci.device_id;
                     count++;
@@ -233,13 +221,12 @@ int Topology::get_p_switch_count(hwloc_obj_t chi_obj)
     return count;
 }
 
-void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch * pSwitch)
-{
+void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch* pSwitch) {
     hwloc_obj_t obj = par_obj->parent;
-    int count=0;
-    uint32_t preVendorId=-1, preDeviceId=-1;
-    while(obj != nullptr){
-        if(obj->type == HWLOC_OBJ_BRIDGE) {
+    int count = 0;
+    uint32_t preVendorId = -1, preDeviceId = -1;
+    while (obj != nullptr) {
+        if (obj->type == HWLOC_OBJ_BRIDGE) {
             /* only host->pci and pci->pci bridge supported so far */
             if (obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_HOST) {
                 assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
@@ -248,19 +235,18 @@ void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch * pSwitc
             } else {
                 assert(obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI);
                 assert(obj->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI);
-                if(preVendorId == obj->attr->bridge.upstream.pci.vendor_id &&
+                if (preVendorId == obj->attr->bridge.upstream.pci.vendor_id &&
                     preDeviceId == obj->attr->bridge.upstream.pci.device_id) {
                     obj = obj->parent;
                     continue;
                 }
-                if(isSwitchDevice(obj)) {
-                    
+                if (isSwitchDevice(obj)) {
                     preVendorId = obj->attr->bridge.upstream.pci.vendor_id;
                     preDeviceId = obj->attr->bridge.upstream.pci.device_id;
                     std::string address = pci2RegxString(obj);
-                    if(address.length() > 0){
+                    if (address.length() > 0) {
                         std::string path = HWInfo::getDevicePath(address);
-                        if(path.length()>0){
+                        if (path.length() > 0) {
                             std::size_t len = path.copy(pSwitch[count].switchDevicePath, XPUM_MAX_PATH_LEN);
                             pSwitch[count].switchDevicePath[len] = '\0';
                         }
@@ -274,3 +260,4 @@ void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch * pSwitc
         obj = obj->parent;
     }
 }
+} // end namespace xpum

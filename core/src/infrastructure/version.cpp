@@ -1,10 +1,12 @@
 
 #include "version.h"
 
-#include "xpum_config.h"
-
 #include <link.h>
 #include <unistd.h>
+
+#include "xpum_config.h"
+
+namespace xpum {
 
 std::string Version::getVersion() {
     return std::string(XPUM_VERSION);
@@ -15,7 +17,6 @@ std::string Version::getVersionGit() {
 }
 
 std::string Version::getZeLibVersion() {
-
     static std::string zeLibVersion;
 
     dl_iterate_phdr([](struct dl_phdr_info *info, std::size_t size, void *data) -> int {
@@ -47,3 +48,4 @@ std::string Version::getZeLibVersion() {
 
     return zeLibVersion;
 }
+} // end namespace xpum
