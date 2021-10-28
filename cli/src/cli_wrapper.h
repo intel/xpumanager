@@ -15,7 +15,7 @@ class ComletBase;
 class CoreStub;
 
 struct CLIWrapperOptions {
-    bool pretty;
+    bool raw;
 };
 
 class CLIWrapper {

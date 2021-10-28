@@ -34,7 +34,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         return json;
     }
 
-    if (this->opts->groupId >= 0) {
+    if (this->opts->groupId > 0) {
         if (this->opts->powerThreshold >= -1) {
             json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_POWER_LIMIT, this->opts->powerThreshold);
             return json;
@@ -46,6 +46,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         json = this->coreStub->getHealthByGroup(this->opts->groupId);
         return json;
     }
+    (*json)["error"] = "Unknown operation or wrong arguments";
     return json;
 }
 } // end namespace xpum::cli

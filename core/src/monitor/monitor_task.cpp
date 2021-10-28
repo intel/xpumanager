@@ -19,7 +19,7 @@ MonitorTask::MonitorTask(
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(MonitorTaskType::DEFAULT_TELEMETRY) {
-    XPUM_LOG_INFO("MonitorTask()");
+    XPUM_LOG_DEBUG("MonitorTask()");
 }
 
 MonitorTask::MonitorTask(
@@ -32,11 +32,11 @@ MonitorTask::MonitorTask(
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(type) {
-    XPUM_LOG_INFO("MonitorTask()");
+    XPUM_LOG_DEBUG("MonitorTask()");
 }
 
 MonitorTask::~MonitorTask() {
-    XPUM_LOG_INFO("~MonitorTask()");
+    XPUM_LOG_DEBUG("~MonitorTask()");
 }
 
 void MonitorTask::start() {

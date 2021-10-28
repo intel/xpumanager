@@ -312,7 +312,7 @@ xpum_result_t xpumGetDeviceConfigByGroup(xpum_group_id_t groupId,
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
-                                    xpum_standby_data_t *dataArray, int *count);
+                                    xpum_standby_data_t *dataArray, uint32_t *count);
 /**
  * @brief Set device standby mode
  * @details This function is used to set the standby mode of device
@@ -393,7 +393,7 @@ xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
-                                           xpum_frequency_range_t *dataArray, int *count);
+                                           xpum_frequency_range_t *dataArray, uint32_t *count);
 /**
  * @brief Set device frequency ranges
  * @details This function is used to set the frequency ranges
@@ -418,7 +418,7 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
-                                      xpum_scheduler_data_t *dataArray, int *count);
+                                      xpum_scheduler_data_t *dataArray, uint32_t *count);
 /**
  * @brief Set device the scheduler(timeout) mode
  * @details This function is used to set the scheduler (timeout) mode
@@ -477,7 +477,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, int *count);
+xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, uint32_t *count);
 
 /** @} */ // Closing for CONFIGURATION_API
 

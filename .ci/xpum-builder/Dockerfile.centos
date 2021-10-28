@@ -1,11 +1,11 @@
 FROM centos:8.3.2011
-ADD level-zero-1.5.tar.gz /
+ADD level-zero-1.5.4.tar.gz /
 RUN dnf update -y && \
     dnf clean all && \
     dnf install -y rpm-build gcc gcc-c++ cmake make python3 libtool dnf-plugins-core && \
     dnf config-manager --set-enabled powertools && \
     dnf install -y glibc-static
-RUN cd /level-zero-1.5 && \
+RUN cd /level-zero-1.5.4 && \
     mkdir build && \
     cd build && \
     cmake .. && \

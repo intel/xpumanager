@@ -13,11 +13,11 @@
 namespace xpum {
 
 PciDatabase::PciDatabase() {
-    XPUM_LOG_INFO("PciDatabase()");
+    XPUM_LOG_DEBUG("PciDatabase()");
 }
 
 PciDatabase::~PciDatabase() {
-    XPUM_LOG_INFO("~PciDatabase()");
+    XPUM_LOG_DEBUG("~PciDatabase()");
     devices.clear();
 }
 
@@ -45,11 +45,11 @@ bool PciDatabase::init() {
 
     if (infile.is_open()) {
         if (!parse_pci_device(infile)) {
-            XPUM_LOG_ERROR("PciDatabase::init()- parse_pci_device error.");
+            XPUM_LOG_DEBUG("PciDatabase::init()- parse_pci_device error.");
         }
         infile.close();
     } else {
-        XPUM_LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
+        XPUM_LOG_DEBUG("PciDatabase::init()- open file {} error.", fileName);
         char exePath[XPUM_MAX_PATH_LEN];
         ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
         exePath[len] = '\0';
@@ -59,10 +59,10 @@ bool PciDatabase::init() {
         fileName = folder + std::string(PCI_IDS_FILE);
         infile.open(fileName.data());
         if (!infile.is_open()) {
-            XPUM_LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
+            XPUM_LOG_DEBUG("PciDatabase::init()- open file {} error.", fileName);
         } else {
             if (!parse_pci_device(infile)) {
-                XPUM_LOG_ERROR("PciDatabase::init()- parse_pci_device error.");
+                XPUM_LOG_DEBUG("PciDatabase::init()- parse_pci_device error.");
             }
             infile.close();
         }
@@ -75,7 +75,7 @@ bool PciDatabase::init() {
         parse_switch_config(infile);
         infile.close();
     } else {
-        XPUM_LOG_ERROR("PciDatabase::init()- open file {} error.", fileName);
+        XPUM_LOG_DEBUG("PciDatabase::init()- open file {} error.", fileName);
     }
 
     return true;
@@ -250,7 +250,7 @@ bool PciDatabase::parse_level_2(const std::string &info, int len, id_type *type,
             }
         } break;
         case ID_VENDOR: {
-            XPUM_LOG_ERROR("PciDatabase::parse_level_2() error- unknow device.");
+            XPUM_LOG_DEBUG("PciDatabase::parse_level_2() error- unknow device.");
             bResult = true;
         } break;
     }
@@ -308,7 +308,7 @@ void PciDatabase::parse_switch_config(std::ifstream &fstream) {
                     device.type = DV_GRAPHIC;
                     devices[std::make_pair(vendor_id, device_id)] = device;
                 } else {
-                    XPUM_LOG_ERROR("PciDatabase::parse_switch_config() error- unknow value.");
+                    XPUM_LOG_DEBUG("PciDatabase::parse_switch_config() error- unknow value.");
                 }
             }
         }
@@ -332,7 +332,7 @@ void PciDatabase::add_switch_device(int32_t vendor_id, int32_t device_id, std::s
             devices[std::make_pair(vendor_id, device_id)] = device;
         }
     } else {
-        XPUM_LOG_ERROR("PciDatabase::add_switch_device() error- unknow device {}.", device.tostring());
+        XPUM_LOG_DEBUG("PciDatabase::add_switch_device() error- unknow device {}.", device.tostring());
     }
 }
 

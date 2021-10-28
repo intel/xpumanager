@@ -12,7 +12,6 @@
 namespace xpum {
 
 GPUDevice::GPUDevice() : commandExec(nullptr) {
-    XPUM_LOG_INFO("GPUDevice()");
 }
 
 GPUDevice::GPUDevice(const std::string& id,
@@ -40,7 +39,6 @@ GPUDevice::GPUDevice(const std::string& id,
 }
 
 GPUDevice::~GPUDevice() {
-    XPUM_LOG_INFO("~GPUDevice()");
 }
 
 void GPUDevice::getPower(Callback_t callback) noexcept {

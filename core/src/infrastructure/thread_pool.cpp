@@ -8,12 +8,12 @@
 namespace xpum {
 
 ThreadPool::ThreadPool(unsigned int size) : stop(false), size(size) {
-    XPUM_LOG_INFO("ThreadPool()");
+    XPUM_LOG_DEBUG("ThreadPool()");
     init();
 }
 
 ThreadPool::~ThreadPool() {
-    XPUM_LOG_INFO("~ThreadPool()");
+    XPUM_LOG_DEBUG("~ThreadPool()");
     close();
 }
 
