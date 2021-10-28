@@ -59,7 +59,7 @@ void MonitorTask::start() {
         }
 
         std::atomic<int> count(devices.size());
-        std::map<std::string, std::shared_ptr<MeasurementData>> datas;
+        auto datas = std::make_shared<std::map<std::string, std::shared_ptr<MeasurementData>>>();
 
         for (auto& p_device : devices) {
             auto method = Utility::getDeviceMethod(p_this->capability, p_device.get());
@@ -70,7 +70,7 @@ void MonitorTask::start() {
                     return;
                 }
                 if (e == nullptr && ret != nullptr) {
-                    datas[p_device->getId()] = std::static_pointer_cast<MeasurementData>(ret);
+                    (*datas)[p_device->getId()] = std::static_pointer_cast<MeasurementData>(ret);
                 }
 
                 count--;
@@ -95,7 +95,7 @@ void MonitorTask::start() {
         }
 
         MeasurementType measurmentType = Utility::measurementTypeFromCapability(p_this->capability);
-        p_this->p_data_logic->storeMeasurementData(measurmentType, now, datas);
+        p_this->p_data_logic->storeMeasurementData(measurmentType, now, (*datas));
     });
 }
 
