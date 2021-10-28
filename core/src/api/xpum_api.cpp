@@ -344,7 +344,7 @@ xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
         types.push_back(Utility::measurementTypeFromXpumStatsType(metricsTypeList[i]));
     }
     uint32_t id = Core::instance().getDataLogic()->startRawDataCollectionTask(deviceId, types);
-    if (id == -1) {
+    if (id == Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX) {
         return xpum_result_t::XPUM_GENERIC_ERROR;
     } else {
         *taskId = id;
@@ -591,7 +591,7 @@ void convertScheduleData(Scheduler &src, xpum_scheduler_data_t *des) {
 }
 
 xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
-                                    xpum_standby_data_t *dataArray, int *count) {
+                                    xpum_standby_data_t *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -707,7 +707,7 @@ xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
 }
 
 xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
-                                           xpum_frequency_range_t *dataArray, int *count) {
+                                           xpum_frequency_range_t *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -745,7 +745,7 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
 }
 
 xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
-                                      xpum_scheduler_data_t *dataArray, int *count) {
+                                      xpum_scheduler_data_t *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -863,7 +863,7 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
     return Topology::getSwitchTopo(bdfAddress, topo, memSize);
 }
 
-xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, int *count) {
+xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
