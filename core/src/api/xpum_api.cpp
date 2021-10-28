@@ -156,6 +156,7 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
             switch (name) {
                 case XPUM_DEVICE_PROPERTY_UUID:
                     value.copy(info.uuid, value.size());
+                    info.uuid[value.size()] = 0;
                     break;
                 case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
                     value.copy(info.deviceName, value.size());
