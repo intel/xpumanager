@@ -43,9 +43,8 @@ char* pid_file_name = nullptr;
 char* sock_file_name = nullptr;
 
 std::mutex xpummutex;
-std::atomic_bool stop(false);
 std::unique_lock<std::mutex> lock(xpummutex);
-std::condition_variable cv;
+static unique_ptr<grpc::Server> server;
 
 void print_help(const char* app_name) {
     printf("\n Usage: %s [OPTIONS]\n\n", app_name);
@@ -76,7 +75,7 @@ void runRPCServer() {
     //TODO: limit thread pool size
     builder.RegisterService(&service);
 
-    unique_ptr<grpc::Server> server = builder.BuildAndStart();
+    server = builder.BuildAndStart();
     syslog(LOG_INFO, "XPUM: RPC server is listening");
 
     passwd* pwd = getpwnam("xpum");
@@ -84,21 +83,7 @@ void runRPCServer() {
         chown(unixSockName.c_str(), pwd->pw_uid, pwd->pw_gid);
     }
 
-    // start a background thread for the server.
-    std::thread grpc_server_thread(
-        [](::grpc::Server* grpc_server_ptr) {
-            grpc_server_ptr->Wait();
-        },
-        server.get());
-
-    while (!stop) {
-        // Wait for the stop signal and then shut the server.
-        cv.wait(lock);
-    }
-
-    // Shut down server.
-    server->Shutdown();
-    grpc_server_thread.join();
+    server->Wait();
 }
 
 void writePID() {
@@ -124,8 +109,10 @@ void signalHandler(int sig) {
         case SIGINT:
         case SIGTERM:
         case SIGKILL:
-            stop = true;
-            cv.notify_all();
+            if ( server != nullptr ) {
+                server->Shutdown();
+            }
+
             syslog(LOG_WARNING, "XPUM: recieved SIGTERM signal %d, service shutdown.", sig);
             break;
         default:
