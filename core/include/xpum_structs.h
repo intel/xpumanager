@@ -363,7 +363,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_POWER,                                ///< Power
     XPUM_STATS_ENERGY,                               ///< Energy
     XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Frequency
-    XPUM_STATS_GPU_TEMEPERATURE,                     ///< Gpu Temeperature
+    XPUM_STATS_GPU_TEMPERATURE,                     ///< Gpu Temeperature
     XPUM_STATS_MEMORY_USED,                          ///< Memory Used
     XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization
     XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth

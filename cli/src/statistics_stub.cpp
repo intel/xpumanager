@@ -26,8 +26,8 @@ static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
             return "XPUM_STATS_ENERGY";
         case XPUM_STATS_GPU_FREQUENCY:
             return "XPUM_STATS_GPU_FREQUENCY";
-        case XPUM_STATS_GPU_TEMEPERATURE:
-            return "XPUM_STATS_GPU_TEMEPERATURE";
+        case XPUM_STATS_GPU_TEMPERATURE:
+            return "XPUM_STATS_GPU_TEMPERATURE";
         case XPUM_STATS_MEMORY_USED:
             return "XPUM_STATS_MEMORY_USED";
         case XPUM_STATS_MEMORY_UTILIZATION:
