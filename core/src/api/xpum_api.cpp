@@ -84,6 +84,9 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
 
 xpum_result_t xpumInit() {
     try {
+        XPUM_LOG_INFO("XPU Manager:\t" + Version::getVersion());
+        XPUM_LOG_INFO("Build:\t\t" + Version::getVersionGit());
+        XPUM_LOG_INFO("Level Zero:\t" + Version::getZeLibVersion());
         Core::instance().init();
     } catch (BaseException &e) {
         XPUM_LOG_ERROR("Failed to init xpum core: {}", e.what());
