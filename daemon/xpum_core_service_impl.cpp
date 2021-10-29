@@ -83,31 +83,27 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
 grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, const DeviceId* request,
                                               XpumTopologyInfo* response) {
     std::cout << "call get topology" << std::endl;
-    xpum_topology_t* topo = (xpum_topology_t*)malloc(sizeof(xpum_topology_t));
-    std::size_t size = sizeof(xpum_topology_t);
-    xpum_result_t res = xpumGetTopology(request->id(), topo, &size);
+    //xpum_topology_t* topo = (xpum_topology_t*)malloc(sizeof(xpum_topology_t));
+    xpum_topology_t topo;
 
-    if (res == XPUM_BUFFER_TOO_SMALL) {
-        free(topo);
-        topo = (xpum_topology_t*)malloc(size);
-        res = xpumGetTopology(request->id(), topo, &size);
-    }
+    std::size_t size = sizeof(xpum_topology_t);
+    xpum_result_t res = xpumGetTopology(request->id(), &topo, &size);
 
     if (res == XPUM_OK) {
-        response->mutable_id()->set_id(topo->deviceId);
-        response->mutable_cpuaffinity()->set_localcpulist(topo->cpuAffinity.localCPUList);
-        response->mutable_cpuaffinity()->set_localcpus(topo->cpuAffinity.localCPUs);
-        response->set_switchcount(topo->switchCount);
-        for (int i{0}; i < topo->switchCount; ++i) {
+        response->mutable_id()->set_id(topo.deviceId);
+        response->mutable_cpuaffinity()->set_localcpulist(topo.cpuAffinity.localCPUList);
+        response->mutable_cpuaffinity()->set_localcpus(topo.cpuAffinity.localCPUs);
+        response->set_switchcount(topo.switchCount);
+        for (int i{0}; i < topo.switchCount; ++i) {
             XpumTopologyInfo_XpumSwitchInfo* parentSwitch = response->add_switchinfo();
-            parentSwitch->set_switchdevicepath(topo->switches[i].switchDevicePath);
+            parentSwitch->set_switchdevicepath(topo.switches[i].switchDevicePath);
         }
     } else {
         response->set_errormsg("Error");
     }
 
-    free(topo);
-    topo = nullptr;
+    //free(topo);
+    //topo = nullptr;
     return grpc::Status::OK;
 }
 
@@ -212,8 +208,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getAllGroupIds(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
-                                                   ::GroupIdArray* response) {
+::grpc::Status XpumCoreServiceImpl::getAllGroups(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                                                   ::GroupArray* response) {
     std::cout << "call get all group id" << std::endl;
 
     xpum_group_id_t groups[XPUM_MAX_NUM_GROUPS];
@@ -223,8 +219,18 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_count(count);
 
         for (int i{0}; i < count; i++) {
-            GroupId* groupid = response->add_grouplist();
-            groupid->set_id(groups[i]);
+            xpum_group_info_t info;
+            xpum_result_t res = xpumGroupGetInfo(groups[i], &info);
+            if (res == XPUM_OK) {
+                GroupInfo* groupinfo = response->add_grouplist();
+                groupinfo->set_id(groups[i]);
+                groupinfo->set_groupname(info.groupName);
+                groupinfo->set_count(info.count);
+                for (int i{0}; i < info.count; i++) {
+                    DeviceId* deviceid = groupinfo->add_devicelist();
+                    deviceid->set_id(info.deviceList[i]);
+                }
+            }
         }
     } else {
         response->set_errormsg("Error");
