@@ -67,6 +67,7 @@ class MeasurementData {
     }
 
     MeasurementData(const MeasurementData& other) {
+        device_id = other.device_id;
         avg = other.avg;
         min = other.min;
         max = other.max;
@@ -154,7 +155,13 @@ class MeasurementData {
 
     uint64_t getSubdeviceRawData(uint32_t subdevice_id);
 
+    void setDeviceId(const std::string device_id) { this->device_id = device_id; }
+
+    std::string getDeviceId() { return this->device_id; }
+
    protected:
+
+    std::string device_id;
 
     Timestamp_t start_time;
 
