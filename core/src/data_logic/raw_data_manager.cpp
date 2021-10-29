@@ -147,7 +147,7 @@ void RawDataManager::close() {
 void RawDataManager::storeMeasurementData(
     MeasurementType type,
     Timestamp_t time,
-    std::map<std::string, std::shared_ptr<MeasurementData>>& datas) {
+    std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas) {
     std::unique_lock<std::mutex> lock(mutex);
     auto& p_handler = data_handlers[type];
     lock.unlock();
@@ -263,8 +263,8 @@ void RawDataManager::updateCaches(MeasurementType type, std::shared_ptr<SharedDa
                             caches[iter->task_id][type].push_back(data);
                             added = true;
                         }
-                        std::map<uint32_t, SubdeviceData>::const_iterator iter_p_data_sub = iter_p_data->second.getSubdeviceDatas().begin();
-                        while (iter_p_data_sub != iter_p_data->second.getSubdeviceDatas().end()) {
+                        std::map<uint32_t, SubdeviceData>::const_iterator iter_p_data_sub = iter_p_data->second.getSubdeviceDatas()->begin();
+                        while (iter_p_data_sub != iter_p_data->second.getSubdeviceDatas()->end()) {
                             MeasurementCacheData data(iter_p_data->first, type, iter_p_data_sub->second.current, p_data->getTime(), true, iter_p_data_sub->first);
                             caches[iter->task_id][type].push_back(data);
                             added = true;

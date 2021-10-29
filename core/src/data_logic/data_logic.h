@@ -25,7 +25,7 @@ class DataLogic : public DataLogicInterface {
     void storeMeasurementData(
         MeasurementType type,
         Timestamp_t time,
-        std::map<std::string, std::shared_ptr<MeasurementData>>& datas) override;
+        std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas) override;
 
     MeasurementData getLatestData(
         MeasurementType type,

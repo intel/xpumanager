@@ -9,7 +9,7 @@ namespace xpum {
 
 class SharedData {
    public:
-    SharedData(Timestamp_t time, std::map<std::string, std::shared_ptr<MeasurementData>>& datas);
+    SharedData(Timestamp_t time, std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas);
 
     virtual ~SharedData();
 

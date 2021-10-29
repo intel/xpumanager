@@ -29,8 +29,8 @@ void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_
             }
             iter->second.setCurrent(val);
         } else {
-            std::map<uint32_t, SubdeviceData>::const_iterator iter_subdevice = iter->second.getSubdeviceDatas().begin();
-            while (iter_subdevice != iter->second.getSubdeviceDatas().end()) {
+            std::map<uint32_t, SubdeviceData>::const_iterator iter_subdevice = iter->second.getSubdeviceDatas()->begin();
+            while (iter_subdevice != iter->second.getSubdeviceDatas()->end()) {
                 uint64_t pre_active = pre_datas[iter->first].getSubdeviceRawData(iter_subdevice->first);
                 uint64_t pre_timestamp = pre_datas[iter->first].getSubdeviceDataRawTimestamp(iter_subdevice->first);
                 uint64_t cur_active = iter->second.getSubdeviceRawData(iter_subdevice->first);
