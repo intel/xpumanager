@@ -26,8 +26,8 @@ static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
             return "XPUM_STATS_ENERGY";
         case XPUM_STATS_GPU_FREQUENCY:
             return "XPUM_STATS_GPU_FREQUENCY";
-        case XPUM_STATS_GPU_TEMEPERATURE:
-            return "XPUM_STATS_GPU_TEMEPERATURE";
+        case XPUM_STATS_GPU_TEMPERATURE:
+            return "XPUM_STATS_GPU_TEMPERATURE";
         case XPUM_STATS_MEMORY_USED:
             return "XPUM_STATS_MEMORY_USED";
         case XPUM_STATS_MEMORY_UTILIZATION:
@@ -48,10 +48,6 @@ static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
             return "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION";
         case XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION:
             return "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION";
-        case XPUM_STATS_PCIRX:
-            return "XPUM_STATS_PCIRX";
-        case XPUM_STATS_PCITX:
-            return "XPUM_STATS_PCITX";
         case XPUM_STATS_RAS_ERROR_CAT_RESET:
             return "XPUM_STATS_RAS_ERROR_CAT_RESET";
         case XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS:

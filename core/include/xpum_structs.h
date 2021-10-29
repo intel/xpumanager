@@ -363,7 +363,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_POWER,                                ///< Power
     XPUM_STATS_ENERGY,                               ///< Energy
     XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Frequency
-    XPUM_STATS_GPU_TEMEPERATURE,                     ///< Gpu Temeperature
+    XPUM_STATS_GPU_TEMPERATURE,                     ///< Gpu Temeperature
     XPUM_STATS_MEMORY_USED,                          ///< Memory Used
     XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization
     XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth
@@ -374,8 +374,6 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,    ///< Engine Group Copy All Utilization
     XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION,  ///< Engine Group Render All Utilization
     XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION,      ///< Engine Group 3d All Utilization
-    XPUM_STATS_PCIRX,                                ///< PCIRX
-    XPUM_STATS_PCITX,                                ///< PCITX
     XPUM_STATS_RAS_ERROR_CAT_RESET,
     XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
     XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS,

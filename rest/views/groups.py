@@ -4,7 +4,7 @@ from marshmallow import Schema, fields
 
 
 class CreateGroupSchema(Schema):
-    group_name = fields.Str(
+    GroupName = fields.Str(
         metadata={"description": "The name for the group to be created"})
 
 

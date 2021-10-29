@@ -1,2 +1,0 @@
-#https://blog.csdn.net/u010947832/article/details/119052453
-sudo /usr/bin/gdb "$@"

@@ -93,7 +93,7 @@ metrics_map = {
     # Power/Energy/Temperature
     'XPUM_STATS_POWER': Metric(PromMetric.xpum_power_watts),
     'XPUM_STATS_ENERGY': Metric(PromMetric.xpum_energy_joules, scale=0.001),
-    'XPUM_STATS_GPU_TEMEPERATURE': Metric(PromMetric.xpum_temeperature_celsius, ext_labels={'location': 'gpu'}),
+    'XPUM_STATS_GPU_TEMPERATURE': Metric(PromMetric.xpum_temeperature_celsius, ext_labels={'location': 'gpu'}),
 
     # Frequency
     'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),

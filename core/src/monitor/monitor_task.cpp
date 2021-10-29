@@ -19,7 +19,7 @@ MonitorTask::MonitorTask(
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(MonitorTaskType::DEFAULT_TELEMETRY) {
-    XPUM_LOG_INFO("MonitorTask()");
+    XPUM_LOG_DEBUG("MonitorTask()");
 }
 
 MonitorTask::MonitorTask(
@@ -32,11 +32,11 @@ MonitorTask::MonitorTask(
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(type) {
-    XPUM_LOG_INFO("MonitorTask()");
+    XPUM_LOG_DEBUG("MonitorTask()");
 }
 
 MonitorTask::~MonitorTask() {
-    XPUM_LOG_INFO("~MonitorTask()");
+    XPUM_LOG_DEBUG("~MonitorTask()");
 }
 
 void MonitorTask::start() {
@@ -59,7 +59,7 @@ void MonitorTask::start() {
         }
 
         std::atomic<int> count(devices.size());
-        std::map<std::string, std::shared_ptr<MeasurementData>> datas;
+        auto datas = std::make_shared<std::map<std::string, std::shared_ptr<MeasurementData>>>();
 
         for (auto& p_device : devices) {
             auto method = Utility::getDeviceMethod(p_this->capability, p_device.get());
@@ -70,7 +70,7 @@ void MonitorTask::start() {
                     return;
                 }
                 if (e == nullptr && ret != nullptr) {
-                    datas[p_device->getId()] = std::static_pointer_cast<MeasurementData>(ret);
+                    (*datas)[p_device->getId()] = std::static_pointer_cast<MeasurementData>(ret);
                 }
 
                 count--;
@@ -86,7 +86,7 @@ void MonitorTask::start() {
                 std::cv_status::timeout) {
                 if (count > 0) {
                     std::string error = std::string("Monitor:") + std::to_string((int)(p_this->capability)) + " is expired!";
-                    XPUM_LOG_WARN(error);
+                    XPUM_LOG_DEBUG(error);
                 }
                 // TODO: the 'break' following is temperorily commented out to avoid memory corruption due to callback after task expiration. 
                 // need to redesign the timeout processing properly.
@@ -95,7 +95,7 @@ void MonitorTask::start() {
         }
 
         MeasurementType measurmentType = Utility::measurementTypeFromCapability(p_this->capability);
-        p_this->p_data_logic->storeMeasurementData(measurmentType, now, datas);
+        p_this->p_data_logic->storeMeasurementData(measurmentType, now, (*datas));
     });
 }
 

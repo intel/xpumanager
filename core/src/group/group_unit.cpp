@@ -6,13 +6,13 @@ namespace xpum {
 
 GroupUnit::GroupUnit(std::string groupname, xpum_group_id_t groupId)
     : topoLevel(0) {
-    XPUM_LOG_INFO("GroupUnit");
+    XPUM_LOG_DEBUG("GroupUnit");
     name = groupname;
     id = groupId;
 }
 
 GroupUnit::~GroupUnit() {
-    XPUM_LOG_INFO("~GroupUnit");
+    XPUM_LOG_DEBUG("~GroupUnit");
     deviceList.clear();
 }
 
@@ -36,7 +36,7 @@ void GroupUnit::getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES]
 }
 
 xpum_result_t GroupUnit::addDevice(xpum_device_id_t deviceId) {
-    XPUM_LOG_INFO("GroupUnit::addDevice");
+    XPUM_LOG_DEBUG("GroupUnit::addDevice");
     xpum_result_t ret = XPUM_GENERIC_ERROR;
 
     for (unsigned int i = 0; i < deviceList.size(); i++) {
@@ -53,7 +53,7 @@ xpum_result_t GroupUnit::addDevice(xpum_device_id_t deviceId) {
 
 xpum_result_t GroupUnit::removeDevice(const std::shared_ptr<DeviceManagerInterface>& p_devicemanager,
                                       xpum_group_id_t groupId, xpum_device_id_t deviceId) {
-    XPUM_LOG_INFO("GroupUnit::removeDevice");
+    XPUM_LOG_DEBUG("GroupUnit::removeDevice");
     xpum_result_t ret = XPUM_GENERIC_ERROR;
 
     for (unsigned int i = 0; i < deviceList.size(); i++) {

@@ -22,11 +22,11 @@ Core::Core()
       p_policy_manager(nullptr),
       initialized(false) {
     Logger::init();
-    XPUM_LOG_INFO("core()");
+    XPUM_LOG_DEBUG("core()");
 }
 
 Core::~Core() {
-    XPUM_LOG_INFO("~core()");
+    XPUM_LOG_DEBUG("~core()");
     close();
 }
 
@@ -76,6 +76,8 @@ void Core::init() {
         return;
     }
 
+    XPUM_LOG_INFO("xpumd core starts to initialize");
+
     XPUM_LOG_INFO("initialize configuration");
     Configuration::init();
 
@@ -107,6 +109,7 @@ void Core::init() {
     p_policy_manager = std::make_shared<PolicyManager>(p_device_manager, p_data_logic, p_group_manager);
     p_policy_manager->init();
 
+    XPUM_LOG_INFO("xpumd core initialization completed");
     initialized = true;
 }
 

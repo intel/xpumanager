@@ -44,7 +44,7 @@ void Timer::scheduleAtFixedRate(long delay, int interval,
             if (interval >= spent) {
                 wait = interval - spent;
             } else {
-                XPUM_LOG_WARN("The timer interval will not be accurate");
+                XPUM_LOG_DEBUG("The timer interval will not be accurate");
                 wait = 0;
             }
         }

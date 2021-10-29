@@ -11,11 +11,11 @@ namespace xpum {
 
 DataLogic::DataLogic() : p_raw_data_manager(nullptr),
                          p_persistency(nullptr) {
-    XPUM_LOG_INFO("DataLogic()");
+    XPUM_LOG_DEBUG("DataLogic()");
 }
 
 DataLogic::~DataLogic() {
-    XPUM_LOG_INFO("~DataLogic()");
+    XPUM_LOG_DEBUG("~DataLogic()");
 }
 
 void DataLogic::init() {

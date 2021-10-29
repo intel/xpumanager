@@ -32,12 +32,12 @@ class ThreadPool {
             } catch (std::exception &e) {
                 std::string error = "Failed to execute task in thread pool:";
                 error += e.what();
-                XPUM_LOG_ERROR(error);
+                XPUM_LOG_DEBUG(error);
                 (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(e.what()));
             } catch (...) {
                 std::string error =
                     "Failed to execute task in thread pool: unexpected exception";
-                XPUM_LOG_ERROR(error);
+                XPUM_LOG_DEBUG(error);
                 (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(error));
             }
         });

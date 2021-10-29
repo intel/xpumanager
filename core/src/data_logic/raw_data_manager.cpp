@@ -154,6 +154,7 @@ void RawDataManager::storeMeasurementData(
 
     if (p_handler != nullptr) {
         auto p_shared_data = std::make_shared<SharedData>(time, datas);
+        p_handler->preHandleData(p_shared_data);
         p_handler->handleData(p_shared_data);
         updateCaches(type, p_shared_data);
     }
@@ -217,7 +218,7 @@ std::vector<std::deque<MeasurementCacheData>> RawDataManager::getCachedRawData(u
 
 uint32_t RawDataManager::startRawDataCollectionTask(std::string& device_id, std::vector<MeasurementType>& types) {
     std::unique_lock<std::mutex> lock(mutex);
-    uint32_t task_id = -1;
+    uint32_t task_id = Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX;
     if (raw_data_collection_tasks.size() < Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX) {
         task_id = raw_data_collection_tasks.size();
         RawDataCollectionTask task(device_id, types, task_id);

@@ -14,11 +14,11 @@ namespace xpum {
 MonitorManager::MonitorManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                                std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {
-    XPUM_LOG_INFO("MonitorManager()");
+    XPUM_LOG_DEBUG("MonitorManager()");
 }
 
 MonitorManager::~MonitorManager() {
-    XPUM_LOG_INFO("~MonitorManager()");
+    XPUM_LOG_DEBUG("~MonitorManager()");
 }
 
 void MonitorManager::init() {

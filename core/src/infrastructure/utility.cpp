@@ -28,8 +28,8 @@ std::string Utility::getTimeString(long long milliseconds) {
     const std::chrono::time_point<std::chrono::system_clock> time_point(duration_since_epoch);
     time_t time = std::chrono::system_clock::to_time_t(time_point);
     struct tm* p_tm = std::localtime(&time);
-    char date[32] = {0};
-    sprintf(date, "%d-%02d-%02d %02d:%02d:%02d.%03d %s", p_tm->tm_year + 1900,
+    char date[128] = {0};
+    snprintf(date, 128, "%d-%02d-%02d %02d:%02d:%02d.%03d %s", p_tm->tm_year + 1900,
             (int)p_tm->tm_mon + 1, (int)p_tm->tm_mday, (int)p_tm->tm_hour,
             (int)p_tm->tm_min, (int)p_tm->tm_sec, (int)(milliseconds % 1000),
             p_tm->tm_zone);
@@ -300,7 +300,7 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
 
 MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type) {
     switch (xpum_stats_type) {
-        case xpum_stats_type_enum::XPUM_STATS_GPU_TEMEPERATURE:
+        case xpum_stats_type_enum::XPUM_STATS_GPU_TEMPERATURE:
             return MeasurementType::METRIC_TEMPERATURE;
         case xpum_stats_type_enum::XPUM_STATS_GPU_FREQUENCY:
             return MeasurementType::METRIC_FREQUENCY;
@@ -354,7 +354,7 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
 xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& measurementType) {
     switch (measurementType) {
         case MeasurementType::METRIC_TEMPERATURE:
-            return xpum_stats_type_enum::XPUM_STATS_GPU_TEMEPERATURE;
+            return xpum_stats_type_enum::XPUM_STATS_GPU_TEMPERATURE;
         case MeasurementType::METRIC_FREQUENCY:
             return xpum_stats_type_enum::XPUM_STATS_GPU_FREQUENCY;
         case MeasurementType::METRIC_POWER:
