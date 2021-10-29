@@ -23,6 +23,10 @@ void DiagnosticManager::close() {
 }
 
 xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) {
+    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    
     std::unique_lock<std::mutex> lock(this->mutex);
     if (diagnostic_task_infos.find(deviceId) != diagnostic_task_infos.end() && diagnostic_task_infos.at(deviceId)->finished == false) {
         return XPUM_GENERIC_ERROR;
@@ -58,6 +62,10 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
 }
 
 xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result) {
+    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    
     std::unique_lock<std::mutex> lock(this->mutex);
     if (diagnostic_task_infos.find(deviceId) == diagnostic_task_infos.end()) {
         return XPUM_GENERIC_ERROR;

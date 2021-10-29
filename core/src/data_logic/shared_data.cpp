@@ -4,8 +4,8 @@ namespace xpum {
 
 SharedData::SharedData(
     Timestamp_t time,
-    std::map<std::string, std::shared_ptr<MeasurementData>>& datas) {
-    for (auto it = datas.begin(); it != datas.end(); it++) {
+    std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas) {
+    for (auto it = datas->begin(); it != datas->end(); it++) {
         this->datas[it->first] = *(it->second);
     }
 

@@ -21,8 +21,8 @@ class PromMetric(Enum):
                         'Avg GPU power (in watts), per GPU and per card')
     xpum_energy_joules = (
         'xpum_energy_joules', 'Total GPU energy consumption since boot (in Joules), per GPU')
-    xpum_temeperature_celsius = (
-        'xpum_temeperature_celsius', 'Avg GPU temperature (in Celsius degree), per tile', ['location'])
+    xpum_temperature_celsius = (
+        'xpum_temperature_celsius', 'Avg GPU temperature (in Celsius degree), per tile', ['location'])
 
     # Frequency
     xpum_frequency_mhz = ('xpum_frequency_mhz',
@@ -93,7 +93,7 @@ metrics_map = {
     # Power/Energy/Temperature
     'XPUM_STATS_POWER': Metric(PromMetric.xpum_power_watts),
     'XPUM_STATS_ENERGY': Metric(PromMetric.xpum_energy_joules, scale=0.001),
-    'XPUM_STATS_GPU_TEMPERATURE': Metric(PromMetric.xpum_temeperature_celsius, ext_labels={'location': 'gpu'}),
+    'XPUM_STATS_GPU_TEMPERATURE': Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'gpu'}),
 
     # Frequency
     'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),

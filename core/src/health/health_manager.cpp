@@ -23,6 +23,10 @@ void HealthManager::close() {
 }
 
 xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_health_config_type_t key, void* value) {
+    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    
     std::unique_lock<std::mutex> lock(this->mutex);
     if (value == nullptr || *static_cast<int*>(value) == -1) {
         switch (key) {
@@ -52,6 +56,10 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
 }
 
 xpum_result_t HealthManager::getHealthConfig(xpum_device_id_t deviceId, xpum_health_config_type_t key, void* value) {
+    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
     std::unique_lock<std::mutex> lock(this->mutex);
     if (value == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -76,6 +84,10 @@ xpum_result_t HealthManager::getHealthConfig(xpum_device_id_t deviceId, xpum_hea
 }
 
 xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_type_t type, xpum_health_data_t* data) {
+    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
     std::unique_lock<std::mutex> lock(this->mutex);
     data->deviceId = deviceId;
     data->type = type;

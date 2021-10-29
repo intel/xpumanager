@@ -13,8 +13,9 @@ class DataLogicPersistenceInterface {
     virtual ~DataLogicPersistenceInterface() {}
 
     virtual void storeMeasurementData(
-        MeasurementType type, Timestamp_t time,
-        std::map<std::string, std::shared_ptr<MeasurementData>>& datas) = 0;
+        MeasurementType type,
+        Timestamp_t time,
+        std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas) = 0;
 };
 
 } // end namespace xpum

@@ -40,7 +40,7 @@ class RawDataManager {
     void storeMeasurementData(
         MeasurementType type,
         Timestamp_t time,
-        std::map<std::string, std::shared_ptr<MeasurementData>>& datas);
+        std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas);
 
     MeasurementData getLatestData(
         MeasurementType type,

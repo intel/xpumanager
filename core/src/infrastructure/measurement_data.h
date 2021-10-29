@@ -26,6 +26,7 @@ class MeasurementData {
     }
 
     MeasurementData() : avg(-1), min(-1), max(-1), current(-1), raw_data(-1), scale(1), bHasDataOnDevice(false), raw_timestamp(0) {
+        p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
     }
 
     MeasurementData(uint64_t value) : avg(value),
@@ -36,6 +37,7 @@ class MeasurementData {
                                       scale(1),
                                       bHasDataOnDevice(true),
                                       raw_timestamp(0) {
+                                          p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
     }
 
     MeasurementData(uint64_t value, uint64_t scale) : avg(value),
@@ -46,6 +48,7 @@ class MeasurementData {
                                                       scale(scale),
                                                       bHasDataOnDevice(true),
                                                       raw_timestamp(0) {
+                                                          p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
     }
 
     MeasurementData(uint64_t avg, uint64_t min, uint64_t max) : avg(avg),
@@ -56,13 +59,14 @@ class MeasurementData {
                                                                 scale(1),
                                                                 bHasDataOnDevice(true),
                                                                 raw_timestamp(0) {
+                                                                    p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
     }
 
     MeasurementData(uint64_t avg, uint64_t min, uint64_t max, uint64_t current, uint64_t scale) : avg(avg), min(min), max(max), current(current), raw_data(-1), scale(scale), bHasDataOnDevice(true), raw_timestamp(0) {
+        p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
     }
 
     MeasurementData(const MeasurementData& other) {
-        device_id = other.device_id;
         avg = other.avg;
         min = other.min;
         max = other.max;
@@ -72,7 +76,7 @@ class MeasurementData {
         start_time = other.start_time;
         latest_time = other.latest_time;
         bHasDataOnDevice = other.bHasDataOnDevice;
-        subdevice_datas = other.subdevice_datas;
+        p_subdevice_datas = other.p_subdevice_datas;
         raw_timestamp = other.raw_timestamp;
     }
 
@@ -90,8 +94,6 @@ class MeasurementData {
 
     void setScale(uint64_t scale) { this->scale = scale; }
 
-    void setDeviceId(const std::string& device_id) { this->device_id = scale; }
-
     void setStartTime(long long time) { this->start_time = time; }
 
     void setLatestTime(long long time) { this->latest_time = time; }
@@ -105,8 +107,6 @@ class MeasurementData {
     uint64_t getCurrent() { return this->current; }
 
     uint64_t getScale() { return this->scale; }
-
-    std::string getDeviceId() { return this->device_id; }
 
     long long getStartTime() { return start_time; }
 
@@ -132,13 +132,13 @@ class MeasurementData {
 
     uint64_t getSubdeviceDataRawTimestamp(uint32_t subdevice_id);
 
-    const std::map<uint32_t, SubdeviceData>& getSubdeviceDatas();
+    const std::shared_ptr<std::map<uint32_t, SubdeviceData>> getSubdeviceDatas();
 
     uint32_t getSubdeviceDataSize();
 
     bool hasSubdeviceData();
 
-    uint32_t subdeviceNum() { return subdevice_datas.size(); }
+    uint32_t subdeviceNum() { return p_subdevice_datas->size(); }
 
     bool hasDataOnDevice() { return bHasDataOnDevice; }
 
@@ -155,7 +155,6 @@ class MeasurementData {
     uint64_t getSubdeviceRawData(uint32_t subdevice_id);
 
    protected:
-    std::string device_id;
 
     Timestamp_t start_time;
 
@@ -175,7 +174,7 @@ class MeasurementData {
 
     bool bHasDataOnDevice;
 
-    std::map<uint32_t, SubdeviceData> subdevice_datas;
+    std::shared_ptr<std::map<uint32_t, SubdeviceData>> p_subdevice_datas;
 
     uint64_t raw_timestamp;
 };
