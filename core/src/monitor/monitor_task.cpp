@@ -58,12 +58,11 @@ void MonitorTask::start() {
             return;
         }
 
-        std::atomic<int> count(devices.size());
         auto datas = std::make_shared<std::map<std::string, std::shared_ptr<MeasurementData>>>();
         
         for (auto& p_device : devices) {
             auto method = Utility::getDeviceMethod(p_this->capability, p_device.get());
-            method([p_device, this_weak_ptr, &count, datas](
+            method([p_device, this_weak_ptr, datas](
                        std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                 auto p_this = this_weak_ptr.lock();
                 if (p_this == nullptr) {
@@ -73,28 +72,10 @@ void MonitorTask::start() {
                     std::string id = p_device->getId();
                     (*datas)[id] = std::static_pointer_cast<MeasurementData>(ret);
                 }
-
-                count--;
-                if (count == 0) {
-                    p_this->data_cv.notify_all();
-                }
             });
         }
 
         std::unique_lock<std::mutex> lock(p_this->mutex);
-        while (count > 0) {
-            if (p_this->data_cv.wait_for(lock, std::chrono::milliseconds(p_this->freq)) ==
-                std::cv_status::timeout) {
-                if (count > 0) {
-                    std::string error = std::string("Monitor:") + std::to_string((int)(p_this->capability)) + " is expired!";
-                    XPUM_LOG_DEBUG(error);
-                }
-                // TODO: the 'break' following is temperorily commented out to avoid memory corruption due to callback after task expiration. 
-                // need to redesign the timeout processing properly.
-                // break;
-            }
-        }
-
         MeasurementType measurmentType = Utility::measurementTypeFromCapability(p_this->capability);
         p_this->p_data_logic->storeMeasurementData(measurmentType, now, datas);
     });
