@@ -379,16 +379,16 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
             XPUM_LOG_INFO(commandEncode);
             std::string resultEncode = getCommandResult(commandEncode);
 
-            if (resultDecode.find("Decoding finished") == std::string::npos && resultDecode.find("ERROR") == std::string::npos) {
+            if (resultDecode.find("Decoding finished") != std::string::npos && resultEncode.find("Processing finished") != std::string::npos) {
                 component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
                 updateMessage(component.message, std::string("Media coder check pass"));
             } else {
                 std::string desc = "Media coder check failed.";
-                if (resultDecode.find("Decoding finished") != std::string::npos) {
+                if (resultDecode.find("Decoding finished") == std::string::npos) {
                     desc += " Errors happened when run sample_decode.";
                 }
 
-                if (resultEncode.find("ERROR") != std::string::npos) {
+                if (resultEncode.find("Processing finished") == std::string::npos) {
                     desc += " Errors happened when run sample_encode.";
                 }
                 component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING;
