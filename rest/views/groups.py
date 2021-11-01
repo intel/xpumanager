@@ -74,8 +74,8 @@ def groups():
             error = dict(Status=code, Message=message)
             return jsonify(error), 500
     except Exception as e:
-        print(e)
-        return "Internal error", 500
+        #print(e)
+        return "Internal error: " + e.description, 500
 
 
 class ModifyGroupDeviceSchema(Schema):

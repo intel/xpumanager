@@ -155,6 +155,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         }
     } else if(res == XPUM_RESULT_GROUP_NOT_FOUND) {
         response->set_errormsg("group not found");
+    } else if(res == XPUM_RESULT_DEVICE_NOT_FOUND) {
+        response->set_errormsg("device not found");
     } else {
         response->set_errormsg("Error");
     }
@@ -182,6 +184,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
     } else if(res == XPUM_RESULT_GROUP_NOT_FOUND) {
         response->set_errormsg("group not found");
+    } else if(res == XPUM_RESULT_DEVICE_NOT_FOUND) {
+        response->set_errormsg("device not found in group");
     } else {
         response->set_errormsg("Error");
     }
