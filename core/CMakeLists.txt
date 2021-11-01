@@ -2,13 +2,22 @@ cmake_minimum_required(VERSION 3.2.0)
 
 project(xpum)
 
-# Set compilation options
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread -fPIC")
-set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
-set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Set compilation options
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+if(COMPILER_SUPPORTS_CXX14)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+else()
+  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support.  Please use a different C++ compiler.")
+endif()
+
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -Wall -pthread -fPIC")
+set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
+set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
 
 include(../.cmake/xpum_version.cmake)
 
@@ -112,25 +121,13 @@ message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")
 set_target_properties(xpum PROPERTIES 
     VERSION ${PROJECT_REAL_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
-add_dependencies(xpum lib_hwloc)
-add_dependencies(test_xpum_api lib_hwloc)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  if(HAVE_PCIACCESS_H)
-    target_link_libraries(xpum PRIVATE ze_loader dl spdlogd hwloc stdc++fs pciaccess)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlogd hwloc stdc++fs pciaccess)
-  else()
-    target_link_libraries(xpum PRIVATE ze_loader dl spdlogd hwloc stdc++fs)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlogd hwloc stdc++fs)
-  endif()
-else()
-  if(HAVE_PCIACCESS_H)
+if(HAVE_PCIACCESS_H)
     target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
     target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
-  else()
+else()
     target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs)
     target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs)
-  endif()
 endif()
 
 unset(BUILD_TEST CACHE)

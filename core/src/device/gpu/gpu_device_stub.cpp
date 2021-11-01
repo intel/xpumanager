@@ -36,7 +36,7 @@ GPUDeviceStub& GPUDeviceStub::instance() {
 }
 
 void GPUDeviceStub::init() {
-    p_thread_pool = make_unique<ThreadPool>(Configuration::DEVICE_THREAD_POOL_SIZE);
+    p_thread_pool = std::make_unique<ThreadPool>(Configuration::DEVICE_THREAD_POOL_SIZE);
     initialized = true;
     putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
     putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));

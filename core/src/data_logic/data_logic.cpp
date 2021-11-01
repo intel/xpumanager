@@ -20,7 +20,7 @@ DataLogic::~DataLogic() {
 
 void DataLogic::init() {
     p_persistency = std::make_shared<DBPersistency>();
-    p_raw_data_manager = make_unique<RawDataManager>(p_persistency);
+    p_raw_data_manager = std::make_unique<RawDataManager>(p_persistency);
     p_raw_data_manager->init();
 }
 

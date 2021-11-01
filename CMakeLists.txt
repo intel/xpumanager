@@ -9,6 +9,23 @@ include(.cmake/xpum_version.cmake)
 
 project (xpumanager VERSION ${PROJECT_VERSION})
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Set compilation options
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+if(COMPILER_SUPPORTS_CXX14)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+else()
+  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support.  Please use a different C++ compiler.")
+endif()
+
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -Wall -pthread -fPIC")
+set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
+set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
+
 set(CPACK_SET_DESTDIR OFF)
 set(CPACK_RPM_PACKAGE_RELOCATABLE ON)
 
@@ -26,14 +43,6 @@ add_definitions(-DLOADER_VERSION_PATCH=${PROJECT_VERSION_PATCH})
 
 message(STATUS "CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
 
-# Set compilation options
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -Wall -pthread -fPIC")
-set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
-set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 add_subdirectory(third_party/googletest)
 add_subdirectory(third_party/spdlog)
 add_subdirectory(third_party/hwloc)
@@ -43,6 +52,9 @@ add_subdirectory(cli)
 add_subdirectory(daemon)
 add_subdirectory(rest)
 #add_subdirectory(doc)
+
+add_dependencies(xpum lib_hwloc)
+add_dependencies(test_xpum_api lib_hwloc)
 
 if(NOT DEFINED CPACK_GENERATOR)
 	if(EXISTS "/etc/debian_version")
