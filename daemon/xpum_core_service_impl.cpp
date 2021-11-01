@@ -127,6 +127,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
     if (res == XPUM_OK) {
         response->set_id(request->id());
+    } else if(res == XPUM_RESULT_GROUP_NOT_FOUND) {
+        response->set_errormsg("group not found");
     } else {
         response->set_errormsg("Error");
     }
@@ -151,6 +153,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 deviceid->set_id(info.deviceList[i]);
             }
         }
+    } else if(res == XPUM_RESULT_GROUP_NOT_FOUND) {
+        response->set_errormsg("group not found");
     } else {
         response->set_errormsg("Error");
     }
@@ -176,6 +180,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             }
         }
 
+    } else if(res == XPUM_RESULT_GROUP_NOT_FOUND) {
+        response->set_errormsg("group not found");
     } else {
         response->set_errormsg("Error");
     }
@@ -198,6 +204,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             DeviceId* deviceid = response->add_devicelist();
             deviceid->set_id(info.deviceList[i]);
         }
+    } else if(res == XPUM_RESULT_GROUP_NOT_FOUND) {
+        response->set_errormsg("group not found");
     } else {
         response->set_errormsg("Error");
     }

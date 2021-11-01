@@ -14,8 +14,8 @@ def createGroup(groupName):
     return 0, "OK", data
 
 
-def getAllGroupIds():
-    resp = stub.getAllGroupIds(empty_pb2.Empty())
+def getAllGroups():
+    resp = stub.getAllGroups(empty_pb2.Empty())
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     data = [groupId.id for groupId in resp.groupList]

@@ -14,12 +14,16 @@ add_custom_command(TARGET rest
 install(DIRECTORY	
 ${CMAKE_CURRENT_LIST_DIR}
 DESTINATION .
-PATTERN "xpum_rest.service" EXCLUDE
-PATTERN "xpum_rest.service.in" EXCLUDE
-PATTERN ".gitignore" EXCLUDE
-PATTERN "CMakeLists.txt" EXCLUDE
-PATTERN "ifwi_fake" EXCLUDE
-PATTERN "genGrpcPyFiles.sh" EXCLUDE
+PATTERN "*.py"
+PATTERN "*.txt"
+PATTERN "*.md"
+PATTERN "*.pem" EXCLUDE
 PATTERN "__pycache__" EXCLUDE
-PATTERN "rest.conf" EXCLUDE
+#PATTERN "xpum_rest.service" EXCLUDE
+#PATTERN "xpum_rest.service.in" EXCLUDE
+#PATTERN ".gitignore" EXCLUDE
+PATTERN "CMakeLists.txt" EXCLUDE
+#PATTERN "ifwi_fake" EXCLUDE
+#PATTERN "genGrpcPyFiles.sh" EXCLUDE
+#PATTERN "rest.conf" EXCLUDE
 )

@@ -68,7 +68,7 @@ def groups():
             return jsonify(error), 400
         elif request.method == 'GET':
             # get all group ids
-            code, message, data = stub.getAllGroupIds()
+            code, message, data = stub.getAllGroups()
             if code == 0:
                 return jsonify(data)
             error = dict(Status=code, Message=message)

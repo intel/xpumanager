@@ -50,7 +50,7 @@ std::unique_ptr<nlohmann::json> ComletGroup::run() {
     //std::cout << "Wrong argument or unknow operation\nRun with --help for more information.\n";
     //exit(1);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    (*json)["error"] = "Wrong argument or unknow operation, run with --help for more information.";
+    (*json)["error message"] = "Wrong argument or unknow operation, run with --help for more information.";
     return json;
 }
 
@@ -63,8 +63,6 @@ std::unique_ptr<nlohmann::json> ComletGroup::listGroup(){
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     if(g->count() == 0) {
         json = this->coreStub->groupListAll();
-    }else if (this->opts->groupId == 0) {
-        (*json)["error"] = "Wrong argument: Invalid <groupId> 0";
     } else {
         json = this->coreStub->groupList(this->opts->groupId);
     }
@@ -73,27 +71,25 @@ std::unique_ptr<nlohmann::json> ComletGroup::listGroup(){
 
 std::unique_ptr<nlohmann::json> ComletGroup::addDeviceToGroup(){
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    if (this->opts->groupId == 0) {
-        (*json)["error"] = "Wrong argument: Invalid <groupId> 0";
-    } else {
-        for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
-            auto &id = this->opts->deviceList[i];
-            json = this->coreStub->groupAddDevice(opts->groupId, id);
-        }        
-    }
+    
+    for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
+        auto &id = this->opts->deviceList[i];
+        std::unique_ptr<nlohmann::json> result = this->coreStub->groupAddDevice(opts->groupId, id);
+        (*json)["add device [" + std::to_string(id) + "] to group"] = *result;
+    }        
+    
     return json;
 }
 
 std::unique_ptr<nlohmann::json> ComletGroup::removeDeviceFromGroup(){
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    if (this->opts->groupId == 0) {
-        (*json)["error"] = "Wrong argument: Invalid <groupId> 0";
-    } else {
-        for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
-            auto &id = this->opts->deviceList[i];
-            json = this->coreStub->groupRemoveDevice(opts->groupId, id);
-        } 
-    }
+    
+    for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
+        auto &id = this->opts->deviceList[i];
+        std::unique_ptr<nlohmann::json> result = this->coreStub->groupRemoveDevice(opts->groupId, id);
+        (*json)["remove device [" + std::to_string(id) + "] from group"] = *result;
+    } 
+    
     return json;
 }
 
