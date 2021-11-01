@@ -15,8 +15,10 @@
 #include "infrastructure/logger.h"
 #include "infrastructure/measurement_data.h"
 
-
 namespace xpum {
+
+std::mutex GPUDeviceStub::handle_mutexes_mutex;
+std::map<void*, std::shared_ptr<std::mutex>> GPUDeviceStub::handle_mutexes;
 
 GPUDeviceStub::GPUDeviceStub() : p_thread_pool(nullptr), initialized(false) {
     XPUM_LOG_DEBUG("GPUDeviceStub()");
@@ -305,248 +307,247 @@ static std::string getPciSlot(const std::string& bdf_regex) {
 }
 
 void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities) {
-  bool has_exception = false;
-  try {
-    toGetPower(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_POWER);
-  }
+    bool has_exception = false;
+    try {
+        toGetPower(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_POWER);
+    }
 
-  has_exception = false;
-  try {
-    toGetActuralFrequency(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_FREQUENCY);
-  }
+    has_exception = false;
+    try {
+        toGetActuralFrequency(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_FREQUENCY);
+    }
 
-  has_exception = false;
-  try {
-    toGetRequestFrequency(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_REQUEST_FREQUENCY);
-  }
+    has_exception = false;
+    try {
+        toGetRequestFrequency(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_REQUEST_FREQUENCY);
+    }
 
-  has_exception = false;
-  try {
-    toGetTemperature(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
-  }
+    has_exception = false;
+    try {
+        toGetTemperature(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
+    }
 
-  has_exception = false;
-  try {
-    toGetMemory(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_USED);
-  }
+    has_exception = false;
+    try {
+        toGetMemory(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_USED);
+    }
 
-  has_exception = false;
-  try {
-    toGetMemoryUtilization(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_UTILIZATION);
-  }
+    has_exception = false;
+    try {
+        toGetMemoryUtilization(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_UTILIZATION);
+    }
 
-  has_exception = false;
-  try {
-    toGetMemoryBandwidth(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_BANDWIDTH);
-  }
+    has_exception = false;
+    try {
+        toGetMemoryBandwidth(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_BANDWIDTH);
+    }
 
-  has_exception = false;
-  try {
-    toGetMemoryRead(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ);
-  }
+    has_exception = false;
+    try {
+        toGetMemoryRead(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ);
+    }
 
-  has_exception = false;
-  try {
-    toGetMemoryWrite(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE);
-  }
+    has_exception = false;
+    try {
+        toGetMemoryWrite(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE);
+    }
 
-  has_exception = false;
-  try {
-    toGetEngineUtilization(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
-  }
+    has_exception = false;
+    try {
+        toGetEngineUtilization(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
+    }
 
-  has_exception = false;
-  try {
-    toGetEnergy(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-  }
+    has_exception = false;
+    try {
+        toGetEnergy(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_ENERGY);
+    }
 
-  has_exception = false;
-  try {
-    toGetEnergy(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-  }
+    has_exception = false;
+    try {
+        toGetEnergy(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_ENERGY);
+    }
 
-  has_exception = false;
-  try {
-    toGetEnergy(device);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-  }
+    has_exception = false;
+    try {
+        toGetEnergy(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_ENERGY);
+    }
 
-  has_exception = false;
-  try {
-    toGetRasError(device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
-  }
+    has_exception = false;
+    try {
+        toGetRasError(device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
+    }
 
-  has_exception = false;
-  try {
-    toGetRasError(device, ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
-  }
+    has_exception = false;
+    try {
+        toGetRasError(device, ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
+    }
 
-  has_exception = false;
-  try {
-    toGetRasError(device, ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
-  }
+    has_exception = false;
+    try {
+        toGetRasError(device, ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
+    }
 
-  has_exception = false;
-  try {
-    toGetRasError(device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
-  }
+    has_exception = false;
+    try {
+        toGetRasError(device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
+    }
 
-  has_exception = false;
-  try {
-    toGetRasError(device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
-  }
+    has_exception = false;
+    try {
+        toGetRasError(device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
+    }
 
-  has_exception = false;
-  try {
-    toGetRasError(device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
-  }
+    has_exception = false;
+    try {
+        toGetRasError(device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
+    }
 
-  has_exception = false;
-  try {
-    toGetRasError(device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
-  }
-
+    has_exception = false;
+    try {
+        toGetRasError(device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
+    }
 }
 
-void GPUDeviceStub::addOccupationEfficiencyCapabilities(zes_device_handle_t device,  ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
-  bool has_exception = false;
-  try {
-    toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_OCCUPATION);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_OCCUPATION);
-  }
+void GPUDeviceStub::addOccupationEfficiencyCapabilities(zes_device_handle_t device, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
+    bool has_exception = false;
+    try {
+        toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_OCCUPATION);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_OCCUPATION);
+    }
 
-  has_exception = false;
-  try {
-    toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_ISSUE_EFFICIENCY);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_ISSUE_EFFICIENCY);
-  }
+    has_exception = false;
+    try {
+        toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_ISSUE_EFFICIENCY);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_ISSUE_EFFICIENCY);
+    }
 
-  has_exception = false;
-  try {
-    toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_EXECUTION_EFFICIENCY);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_EXECUTION_EFFICIENCY);
-  }
+    has_exception = false;
+    try {
+        toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_EXECUTION_EFFICIENCY);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_EXECUTION_EFFICIENCY);
+    }
 
-  has_exception = false;
-  try {
-    toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_NON_OCCUPATION);
-  } catch (BaseException& e) {
-    has_exception = true;
-  }
-  if (!has_exception) {
-    capabilities.push_back(DeviceCapability::METRIC_NON_OCCUPATION);
-  }
+    has_exception = false;
+    try {
+        toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_NON_OCCUPATION);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_NON_OCCUPATION);
+    }
 }
 
 void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities) {
@@ -608,7 +609,6 @@ void addPCIeProperties(ze_device_handle_t& device, std::shared_ptr<GPUDevice> p_
 }
 
 std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover() {
-    
     auto p_devices = std::make_shared<std::vector<std::shared_ptr<Device>>>();
     uint32_t driver_count = 0;
     ze_result_t res;
@@ -625,7 +625,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
         zeDriverGetProperties(p_driver, &driver_prop);
 
         for (auto& device : devices) {
-          std::vector<DeviceCapability> capabilities;
+            std::vector<DeviceCapability> capabilities;
             zes_device_handle_t zes_device = (zes_device_handle_t)device;
             zes_device_properties_t props = {};
             props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
@@ -701,7 +701,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
                         zes_mem_state_t sysman_memory_state = {};
                         sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                        res = zesMemoryGetState(mem, &sysman_memory_state);
+                        {
+                            std::lock_guard<std::mutex> lock(*getHandleMutex(mem));
+                            res = zesMemoryGetState(mem, &sysman_memory_state);
+                        }
                         if (res == ZE_RESULT_SUCCESS) {
                             if (props.physicalSize == 0) {
                                 mem_module_physical_size = sysman_memory_state.size;
@@ -903,7 +906,10 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
             res = zesFrequencyGetProperties(ph_freq, &props);
             if (res == ZE_RESULT_SUCCESS) {
                 zes_freq_state_t freq_state;
-                res = zesFrequencyGetState(ph_freq, &freq_state);
+                {
+                    std::lock_guard<std::mutex> lock(*getHandleMutex(ph_freq));
+                    res = zesFrequencyGetState(ph_freq, &freq_state);
+                }
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.actual) : ret->setCurrent(freq_state.actual);
                     dataAcquired = true;
@@ -941,7 +947,10 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_
             res = zesFrequencyGetProperties(ph_freq, &props);
             if (res == ZE_RESULT_SUCCESS) {
                 zes_freq_state_t freq_state;
-                res = zesFrequencyGetState(ph_freq, &freq_state);
+                {
+                    std::lock_guard<std::mutex> lock(*getHandleMutex(ph_freq));
+                    res = zesFrequencyGetState(ph_freq, &freq_state);
+                }
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.request) : ret->setCurrent(freq_state.request);
                     dataAcquired = true;
@@ -992,7 +1001,10 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
       */
             if (res == ZE_RESULT_SUCCESS && props.onSubdevice && props.type == ZES_TEMP_SENSORS_GPU) {
                 double temp_val = 0;
-                res = zesTemperatureGetState(temp, &temp_val);
+                {
+                    std::lock_guard<std::mutex> lock(*getHandleMutex(temp));
+                    res = zesTemperatureGetState(temp, &temp_val);
+                }
                 if (res == ZE_RESULT_SUCCESS) {
                     ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
                     dataAcquired = true;
@@ -1033,7 +1045,10 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_han
                 if (res == ZE_RESULT_SUCCESS) {
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                    res = zesMemoryGetState(mem, &sysman_memory_state);
+                    {
+                        std::lock_guard<std::mutex> lock(*getHandleMutex(mem));
+                        res = zesMemoryGetState(mem, &sysman_memory_state);
+                    }
                     if (res == ZE_RESULT_SUCCESS) {
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, used) : ret->setCurrent(used);
@@ -1076,7 +1091,10 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
                 if (res == ZE_RESULT_SUCCESS) {
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                    res = zesMemoryGetState(mem, &sysman_memory_state);
+                    {
+                        std::lock_guard<std::mutex> lock(*getHandleMutex(mem));
+                        res = zesMemoryGetState(mem, &sysman_memory_state);
+                    }
                     if (res == ZE_RESULT_SUCCESS) {
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
                         uint64_t utilization = used * 100.0 / sysman_memory_state.size;
@@ -1255,7 +1273,10 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t& devi
                 for (auto& metric_group : metricGroups) {
                     zet_metric_group_properties_t metric_group_properties;
                     metric_group_properties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-                    res = zetMetricGroupGetProperties(metric_group, &metric_group_properties);
+                    {
+                        std::lock_guard<std::mutex> lock(*getHandleMutex(zetMetricGroupGetProperties));
+                        res = zetMetricGroupGetProperties(metric_group, &metric_group_properties);
+                    }
                     if (res == ZE_RESULT_SUCCESS) {
                         if (std::strcmp(metric_group_properties.name, "ComputeBasic") == 0 && metric_group_properties.samplingType == ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED) {
                             GPUDeviceStub::target_metric_groups[device] = metric_group;
@@ -1435,7 +1456,10 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasError(const zes_device_h
                     //if (props.supported && props.enabled) {
                     if (props.type == rasType) {
                         zes_ras_state_t errorDetails;
-                        res = zesRasGetState(rasHandle, 0, &errorDetails);
+                        {
+                            std::lock_guard<std::mutex> lock(*getHandleMutex(rasHandle));
+                            res = zesRasGetState(rasHandle, 0, &errorDetails);
+                        }
                         if (res == ZE_RESULT_SUCCESS) {
                             rasCounter += errorDetails.category[rasCat];
                         }
@@ -1473,14 +1497,20 @@ void GPUDeviceStub::getRasError(const zes_device_handle_t& device, uint64_t erro
                 if (res == ZE_RESULT_SUCCESS) {
                     if (props.type == ZES_RAS_ERROR_TYPE_CORRECTABLE) {
                         zes_ras_state_t errorDetails;
-                        res = zesRasGetState(rasHandle, 0, &errorDetails);
+                        {
+                            std::lock_guard<std::mutex> lock(*getHandleMutex(rasHandle));
+                            res = zesRasGetState(rasHandle, 0, &errorDetails);
+                        }
                         if (res == ZE_RESULT_SUCCESS) {
                             errorCategory[XPUM_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE] += errorDetails.category[ZES_RAS_ERROR_CAT_CACHE_ERRORS];
                             errorCategory[XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE] += errorDetails.category[ZES_RAS_ERROR_CAT_DISPLAY_ERRORS];
                         }
                     } else if (props.type == ZES_RAS_ERROR_TYPE_UNCORRECTABLE) {
                         zes_ras_state_t errorDetails;
-                        res = zesRasGetState(rasHandle, 0, &errorDetails);
+                        {
+                            std::lock_guard<std::mutex> lock(*getHandleMutex(rasHandle));
+                            res = zesRasGetState(rasHandle, 0, &errorDetails);
+                        }
                         if (res == ZE_RESULT_SUCCESS) {
                             errorCategory[XPUM_RAS_ERROR_CAT_RESET] += errorDetails.category[ZES_RAS_ERROR_CAT_RESET];
                             errorCategory[XPUM_RAS_ERROR_CAT_PROGRAMMING_ERRORS] += errorDetails.category[ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS];
@@ -2156,7 +2186,10 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                 for (auto& mem : mems) {
                     zes_mem_state_t memory_state = {};
                     memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                    res = zesMemoryGetState(mem, &memory_state);
+                    {
+                        std::lock_guard<std::mutex> lock(*getHandleMutex(mem));
+                        res = zesMemoryGetState(mem, &memory_state);
+                    }
                     if (res == ZE_RESULT_SUCCESS) {
                         if (memory_state.health == ZES_MEM_HEALTH_OK && (int)status < ZES_MEM_HEALTH_OK) {
                             status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
@@ -2230,7 +2263,10 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                     continue;
                 }
                 double temp_val = 0;
-                res = zesTemperatureGetState(temp, &temp_val);
+                {
+                    std::lock_guard<std::mutex> lock(*getHandleMutex(temp));
+                    res = zesTemperatureGetState(temp, &temp_val);
+                }
                 if (res == ZE_RESULT_SUCCESS) {
                     if (temp_val < thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
                         status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
@@ -2254,7 +2290,10 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, fabric_ports.data());
             for (auto& fabric_port : fabric_ports) {
                 zes_fabric_port_state_t fabric_port_state;
-                res = zesFabricPortGetState(fabric_port, &fabric_port_state);
+                {
+                    std::lock_guard<std::mutex> lock(*getHandleMutex(fabric_port));
+                    res = zesFabricPortGetState(fabric_port, &fabric_port_state);
+                }
                 if (res == ZE_RESULT_SUCCESS) {
                     if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_HEALTHY && (int)status < ZES_FABRIC_PORT_STATUS_HEALTHY) {
                         status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
