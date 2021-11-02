@@ -23,8 +23,12 @@ include(../.cmake/xpum_version.cmake)
 
 # Build test or not
 option(BUILD_TEST "build application instead of lib for test" OFF)
-
 option(BUILD_TEST_API "build application for api test" OFF)
+
+OPTION(XPUM_ZE_HANDLE_LOCK_LOG "Log ZE Handle Locks" OFF)
+IF(XPUM_ZE_HANDLE_LOCK_LOG)
+    ADD_DEFINITIONS(-DXPUM_ZE_HANDLE_LOCK_LOG)
+ENDIF(XPUM_ZE_HANDLE_LOCK_LOG)
 
 if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)

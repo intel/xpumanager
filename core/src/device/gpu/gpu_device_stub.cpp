@@ -15,11 +15,26 @@
 #include "infrastructure/logger.h"
 #include "infrastructure/measurement_data.h"
 
+#ifdef XPUM_ZE_HANDLE_LOCK_LOG
+#define XPUM_ZE_HANDLE_LOCK(handle, zefunc)                                                                                                              \
+    {                                                                                                                                                    \
+        using namespace std::chrono;                                                                                                                     \
+        auto t0 = high_resolution_clock::now();                                                                                                          \
+        std::lock_guard<std::mutex> lock(*getHandleMutex((handle)));                                                                                     \
+        auto t1 = high_resolution_clock::now();                                                                                                          \
+        zefunc;                                                                                                                                          \
+        auto t2 = high_resolution_clock::now();                                                                                                          \
+        auto duration1 = duration_cast<microseconds>(t1 - t0);                                                                                           \
+        auto duration2 = duration_cast<microseconds>(t2 - t1);                                                                                           \
+        XPUM_LOG_INFO("{}({}): get lock for {} in {} us, exec in {} us", __FUNCTION__, __LINE__, (void*)(handle), duration1.count(), duration2.count()); \
+    }
+#else
 #define XPUM_ZE_HANDLE_LOCK(handle, zefunc)                          \
     {                                                                \
         std::lock_guard<std::mutex> lock(*getHandleMutex((handle))); \
         zefunc;                                                      \
     }
+#endif
 
 namespace xpum {
 
