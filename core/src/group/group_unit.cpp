@@ -54,7 +54,7 @@ xpum_result_t GroupUnit::addDevice(xpum_device_id_t deviceId) {
 xpum_result_t GroupUnit::removeDevice(const std::shared_ptr<DeviceManagerInterface>& p_devicemanager,
                                       xpum_group_id_t groupId, xpum_device_id_t deviceId) {
     XPUM_LOG_DEBUG("GroupUnit::removeDevice");
-    xpum_result_t ret = XPUM_GENERIC_ERROR;
+    //xpum_result_t ret = XPUM_GENERIC_ERROR;
 
     for (unsigned int i = 0; i < deviceList.size(); i++) {
         if (deviceList[i] == deviceId) {
@@ -65,7 +65,7 @@ xpum_result_t GroupUnit::removeDevice(const std::shared_ptr<DeviceManagerInterfa
 
     XPUM_LOG_ERROR(std::string("GroupUnit::removeDevice- device id ") + std::to_string(deviceId) + std::string(" not in the group."));
 
-    return ret;
+    return XPUM_RESULT_DEVICE_NOT_FOUND;
 }
 
 void GroupUnit::setPcieTopo(std::vector<zes_pci_address_t>& pcieTop) {

@@ -68,14 +68,14 @@ def groups():
             return jsonify(error), 400
         elif request.method == 'GET':
             # get all group ids
-            code, message, data = stub.getAllGroupIds()
+            code, message, data = stub.getAllGroups()
             if code == 0:
                 return jsonify(data)
             error = dict(Status=code, Message=message)
             return jsonify(error), 500
     except Exception as e:
-        print(e)
-        return "Internal error", 500
+        #print(e)
+        return "Internal error: " + e.description, 500
 
 
 class ModifyGroupDeviceSchema(Schema):
@@ -137,37 +137,45 @@ def group_detail(groupId):
             400:
                 description: Error
     """
-    if request.method == 'GET':
-        # get group info
-        code, message, data = stub.getGroupInfo(groupId)
-        if code == 0:
-            return jsonify(data)
-        error = dict(Status=code, Message=message)
-        return jsonify(error), 400
-    elif request.method == 'DELETE':
-        # destroy group
-        code, message, data = stub.destroyGroup(groupId)
-        if code == 0:
-            return "", 200
-        error = dict(Status=code, Message=message)
-        return jsonify(error), 400
-    elif request.method == 'POST':
-        req = request.get_json()
+    try:
+        if request.method == 'GET':
+            # get group info
+            code, message, data = stub.getGroupInfo(groupId)
+            if code == 0:
+                return jsonify(data)
+            error = dict(Status=code, Message=message)
+            return jsonify(error), 400
+        elif request.method == 'DELETE':
+            # destroy group
+            code, message, data = stub.destroyGroup(groupId)
+            if code == 0:
+                return "", 200
+            error = dict(Status=code, Message=message)
+            return jsonify(error), 400
+        elif request.method == 'POST':
+            req = request.get_json()
 
-        # add device to group
-        if "DeviceIdToAdd" in req:
-            deviceIdToAdd = req["DeviceIdToAdd"]
-            code, message, data = stub.addDeviceToGroup(groupId, deviceIdToAdd)
-            if code != 0:
-                error = dict(Status=code, Message=message)
-                return jsonify(error), 400
+            # add device to group
+            if "DeviceIdToAdd" in req:
+                deviceIdToAdd = req["DeviceIdToAdd"]
+                if len(deviceIdToAdd) == 0:
+                    return "requires device id.", 500
+                code, message, data = stub.addDeviceToGroup(groupId, deviceIdToAdd)
+                if code != 0:
+                    error = dict(Status=code, Message=message)
+                    return jsonify(error), 400
 
-        # remove device from group
-        if "DeviceIdToRemove" in req:
-            deviceIdToRemove = req["DeviceIdToRemove"]
-            code, message, data = stub.removeDeviceFromGroup(
-                groupId, deviceIdToRemove)
-            if code != 0:
-                error = dict(Status=code, Message=message)
-                return jsonify(error), 400
-        return jsonify(data), 200
+            # remove device from group
+            if "DeviceIdToRemove" in req:
+                deviceIdToRemove = req["DeviceIdToRemove"]
+                if len(deviceIdToRemove) == 0:
+                    return "requires device id.", 500
+                code, message, data = stub.removeDeviceFromGroup(
+                    groupId, deviceIdToRemove)
+                if code != 0:
+                    error = dict(Status=code, Message=message)
+                    return jsonify(error), 400
+            return jsonify(data), 200
+    except Exception as e:
+        #print(e)
+        return "Internal error: " + e.description, 500

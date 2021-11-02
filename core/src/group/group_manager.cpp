@@ -83,7 +83,7 @@ xpum_result_t GroupManager::destroyGroup(xpum_group_id_t groupId) {
     GroupMap::iterator groupIterator = groupMap.find(groupId);
     if (groupIterator == groupMap.end()) {
         XPUM_LOG_DEBUG("GroupManager::destroyGroup-not able to find the group {}", groupId);
-        return ret;
+        return XPUM_RESULT_GROUP_NOT_FOUND;
     } else {
         groupMap.erase(groupId);
         XPUM_LOG_DEBUG("GroupManager::destroyGroup-group {}", groupId);
@@ -104,12 +104,12 @@ xpum_result_t GroupManager::addDeviceToGroup(xpum_group_id_t groupId, xpum_devic
     std::shared_ptr<GroupUnit> pGroupInfo = getGroupById(groupId);
     if (pGroupInfo == nullptr) {
         XPUM_LOG_DEBUG("GroupManager::addDeviceToGroup-invalid group {}", groupId);
-        return ret;
+        return XPUM_RESULT_GROUP_NOT_FOUND;
     }
 
     if (p_devicemanager->getDevice(std::to_string(deviceId)) == nullptr) {
         XPUM_LOG_DEBUG("GroupInfo::addDevice-invalid device id {}", deviceId);
-        return ret;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     return pGroupInfo->addDevice(deviceId);
@@ -127,7 +127,7 @@ xpum_result_t GroupManager::removeDeviceFromGroup(xpum_group_id_t groupId, xpum_
     std::shared_ptr<GroupUnit> pGroupInfo = getGroupById(groupId);
     if (pGroupInfo == nullptr) {
         XPUM_LOG_DEBUG("GroupManager::removeDeviceFromGroup-invalid group {}", groupId);
-        return ret;
+        return XPUM_RESULT_GROUP_NOT_FOUND;
     }
 
     return pGroupInfo->removeDevice(p_devicemanager, groupId, deviceId);
@@ -135,12 +135,12 @@ xpum_result_t GroupManager::removeDeviceFromGroup(xpum_group_id_t groupId, xpum_
 
 xpum_result_t GroupManager::getGroupInfo(xpum_group_id_t groupId, xpum_group_info_t* pGroupInfo) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    xpum_result_t ret = XPUM_GENERIC_ERROR;
+    //xpum_result_t ret = XPUM_GENERIC_ERROR;
 
     std::shared_ptr<GroupUnit> p_GroupInfo = getGroupById(groupId);
     if (p_GroupInfo == nullptr) {
         XPUM_LOG_DEBUG("GroupManager::getGroupInfo-invalid group {}", groupId);
-        return ret;
+        return XPUM_RESULT_GROUP_NOT_FOUND;
     }
 
     pGroupInfo->count = p_GroupInfo->getDeviceCount();

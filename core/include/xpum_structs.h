@@ -523,6 +523,7 @@ struct xpum_scheduler_exclusive_t {
 #define XPUM_MAX_CPU_LIST_LEN 32
 #define XPUM_MAX_CPU_S_LEN 128
 #define XPUM_MAX_PATH_LEN 512
+#define XPUM_MAX_SWITCH_COUNT 8
 
 struct parent_switch {
     char switchDevicePath[XPUM_MAX_PATH_LEN];
@@ -538,7 +539,7 @@ struct xpum_topology_t {
         char localCPUs[XPUM_MAX_CPU_S_LEN]; ///< CPU affinity, local CPUs
     } cpuAffinity;
     int switchCount;   ///< the count of parent switch
-    parent_switch switches[]; ///< device path of parent switch
+    parent_switch switches[XPUM_MAX_SWITCH_COUNT]; ///< device path of parent switch
 };
 
 typedef enum xpum_ras_type_enum {

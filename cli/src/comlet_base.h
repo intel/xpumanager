@@ -23,18 +23,19 @@ class ComletBase {
 
    protected:
     template <typename T>
-    void addOption(std::string optName, T &variable, std::string optDescription = "", bool required = false) {
+    CLI::Option * addOption(std::string optName, T &variable, std::string optDescription = "", bool required = false) {
         assert(subCLIApp != nullptr);
         auto opt = this->subCLIApp->add_option(optName, variable, optDescription);
         if (required) {
             opt->required();
         }
+        return opt;
     }
 
     template <typename T>
-    void addFlag(std::string optName, T &variable, std::string optDescription = "") {
+    CLI::Option * addFlag(std::string optName, T &variable, std::string optDescription = "") {
         assert(subCLIApp != nullptr);
-        this->subCLIApp->add_flag(optName, variable, optDescription);
+        return this->subCLIApp->add_flag(optName, variable, optDescription);
     };
 
     std::shared_ptr<CoreStub> coreStub;

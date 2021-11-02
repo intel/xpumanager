@@ -5,6 +5,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <vector>
 
 #include "comlet_base.h"
 
@@ -12,7 +13,7 @@ namespace xpum::cli {
 
 struct ComletGroupOptions {
     uint32_t groupId = 0;
-    int deviceId = -1;
+    std::vector<int> deviceList;
     std::string name = "";
     bool create = false;
     bool del = false;
@@ -30,6 +31,13 @@ class ComletGroup : public ComletBase {
     virtual std::unique_ptr<nlohmann::json> run() override;
 
    private:
+    std::unique_ptr<nlohmann::json> destroyGroup();
+    std::unique_ptr<nlohmann::json> listGroup();
+    std::unique_ptr<nlohmann::json> addDeviceToGroup();
+    std::unique_ptr<nlohmann::json> removeDeviceFromGroup();
+
+   private:
     std::unique_ptr<ComletGroupOptions> opts;
+    CLI::Option * g;
 };
 } // end namespace xpum::cli

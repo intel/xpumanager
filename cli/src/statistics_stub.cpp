@@ -108,7 +108,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
             tmp["value"] = stats_data.value();
-            if (stats_data.iscounter()) {
+            if (!stats_data.iscounter()) {
                 tmp["avg"] = stats_data.avg();
                 tmp["min"] = stats_data.min();
                 tmp["max"] = stats_data.max();

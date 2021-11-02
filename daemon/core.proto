@@ -76,9 +76,9 @@ message GroupInfo {
     string errorMsg = 5;
 }
 
-message GroupIdArray{
+message GroupArray{
     uint32 count = 1;
-    repeated GroupId groupList = 2;
+    repeated GroupInfo groupList = 2;
     string errorMsg = 3;
 }
 
@@ -323,7 +323,7 @@ service XpumCoreService {
     rpc groupAddDevice( GroupAddRemoveDevice ) returns ( GroupInfo );
     rpc groupRemoveDevice( GroupAddRemoveDevice ) returns ( GroupInfo );
     rpc groupGetInfo( GroupId ) returns ( GroupInfo );
-    rpc getAllGroupIds( google.protobuf.Empty ) returns ( GroupIdArray );
+    rpc getAllGroups( google.protobuf.Empty ) returns ( GroupArray );
     rpc runDiagnostics( RunDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
     rpc runDiagnosticsByGroup( RunDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
     rpc getDiagnosticsResult ( DeviceId ) returns ( DiagnosticsTaskInfo );

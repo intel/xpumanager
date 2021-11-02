@@ -12,72 +12,85 @@ namespace xpum::cli {
 
 void ComletGroup::setupOptions() {
     this->opts = std::unique_ptr<ComletGroupOptions>(new ComletGroupOptions());
-    addOption("-g,--group", this->opts->groupId, "group id");
-    addOption("-n,--name", this->opts->name, "group name");
-    addOption("-d,--device", this->opts->deviceId, "device id");
-    addFlag("-c,--create", this->opts->create, "create group");
-    addFlag("--delete", this->opts->del, "delete group");
-    addFlag("-l,--list", this->opts->list, "list group");
-    addFlag("-a,--add", this->opts->add, "add device to group");
-    addFlag("-r,--remove", this->opts->remove, "remove device from group");
+    g = addOption("-g,--group", this->opts->groupId, "group id");
+    auto n = addOption("-n,--name", this->opts->name, "group name");
+    auto d = addOption("-d,--device", this->opts->deviceList, "device id");
+    
+    auto c = addFlag("-c,--create", this->opts->create, "create group");
+    auto de = addFlag("-D, --delete", this->opts->del, "delete group");
+    auto l = addFlag("-l,--list", this->opts->list, "list group");
+    auto a =addFlag("-a,--add", this->opts->add, "add device to group");
+    auto r = addFlag("-r,--remove", this->opts->remove, "remove device from group");
+
+    c->needs(n);
+    c->excludes(de);  c->excludes(l); c->excludes(a); c->excludes(r);
+    de->needs(g);
+    de->excludes(c); de->excludes(l); de->excludes(a); de->excludes(r);
+    a->needs(g);
+    a->needs(d);
+    a->excludes(c); a->excludes(de); a->excludes(l); a->excludes(r);
+    r->needs(g);
+    r->needs(d);
+    r->excludes(c); r->excludes(de); r->excludes(l); r->excludes(a);
 }
 
-std::unique_ptr<nlohmann::json> ComletGroup::run() {
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    GroupId group_id;
-    group_id.set_id(this->opts->groupId);
-
-    int flags = 0;
-    if (this->opts->create) flags++;
-    if (this->opts->del) flags++;
-    if (this->opts->list) flags++;
-    if (this->opts->add) flags++;
-    if (this->opts->remove) flags++;
-    if (flags == 0) {
-        (*json)["error"] = "Unknow operation";
-        return json;
-    }
-    if (flags > 1) {
-        (*json)["error"] = "Too many operation flags";
-        return json;
-    }
-
+std::unique_ptr<nlohmann::json> ComletGroup::run() {    
     if (this->opts->create) {
-        if (this->opts->name.length() <= 0) {
-            std::cout << "Wrong argument: <groupName> should be specified by -n option" << std::endl;
-        } else {
-            json = this->coreStub->groupCreate(this->opts->name);
-        }
-    } else if (this->opts->del) {
-        if (this->opts->groupId == 0) {
-            std::cout << "Wrong argument: <groupId> should be specified by -g option" << std::endl;
-        } else {
-            json = this->coreStub->groupDelete(this->opts->groupId);
-        }
-    } else if (this->opts->list) {
-        if (this->opts->groupId == 0) {
-            json = this->coreStub->groupListAll();
-        } else {
-            json = this->coreStub->groupList(this->opts->groupId);
-        }
-    } else if (this->opts->add) {
-        if (this->opts->groupId == 0) {
-            std::cout << "Wrong argument: <groupId> should be specified by -g option" << std::endl;
-        } else if (this->opts->deviceId == -1) {
-            std::cout << "Wrong argument: <deviceId> should be specified by -d option" << std::endl;
-        } else {
-            json = this->coreStub->groupAddDevice(opts->groupId, opts->deviceId);
-        }
-    } else if (this->opts->remove) {
-        if (this->opts->groupId == 0) {
-            std::cout << "Wrong argument: <groupId> should be specified by -g option" << std::endl;
-        } else if (this->opts->deviceId == -1) {
-            std::cout << "Wrong argument: <deviceId> should be specified by -d option" << std::endl;
-        } else {
-            json = this->coreStub->groupRemoveDevice(opts->groupId, opts->deviceId);
-        }
-    }
-
+        return this->coreStub->groupCreate(this->opts->name);
+    } else if(this->opts->list) {
+        return listGroup();
+    } else if(this->opts->del) {
+        return destroyGroup();
+    } else if(this->opts->add) {
+        return addDeviceToGroup();
+    } else if(this->opts->remove) {
+        return removeDeviceFromGroup();
+    } 
+    
+    //std::cout << "Wrong argument or unknow operation\nRun with --help for more information.\n";
+    //exit(1);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    (*json)["error message"] = "Wrong argument or unknow operation, run with --help for more information.";
     return json;
 }
+
+std::unique_ptr<nlohmann::json> ComletGroup::destroyGroup(){
+   
+    return  this->coreStub->groupDelete(this->opts->groupId);
+}
+
+std::unique_ptr<nlohmann::json> ComletGroup::listGroup(){
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if(g->count() == 0) {
+        json = this->coreStub->groupListAll();
+    } else {
+        json = this->coreStub->groupList(this->opts->groupId);
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> ComletGroup::addDeviceToGroup(){
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    
+    for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
+        auto &id = this->opts->deviceList[i];
+        std::unique_ptr<nlohmann::json> result = this->coreStub->groupAddDevice(opts->groupId, id);
+        (*json)["add device [" + std::to_string(id) + "] to group"] = *result;
+    }        
+    
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> ComletGroup::removeDeviceFromGroup(){
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    
+    for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
+        auto &id = this->opts->deviceList[i];
+        std::unique_ptr<nlohmann::json> result = this->coreStub->groupRemoveDevice(opts->groupId, id);
+        (*json)["remove device [" + std::to_string(id) + "] from group"] = *result;
+    } 
+    
+    return json;
+}
+
 } // end namespace xpum::cli

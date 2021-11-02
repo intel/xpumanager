@@ -37,8 +37,8 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
                                              ::GroupInfo* response) override;
     virtual ::grpc::Status groupGetInfo(::grpc::ServerContext* context, const ::GroupId* request,
                                         ::GroupInfo* response) override;
-    virtual ::grpc::Status getAllGroupIds(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
-                                          ::GroupIdArray* response) override;
+    virtual ::grpc::Status getAllGroups(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                                          ::GroupArray* response) override;
     virtual ::grpc::Status runDiagnostics(::grpc::ServerContext* context, const ::RunDiagnosticsRequest* request,
                                           ::DiagnosticsTaskInfo* response) override;
     virtual ::grpc::Status runDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunDiagnosticsByGroupRequest* request,
