@@ -120,7 +120,7 @@ def verify_password(username, password):
 
 
 def readConfig(path):
-    file = path + '/rest.conf'
+    file = path + '/conf/rest.conf'
     config = configparser.ConfigParser()
     if config.read(file):
         user = config['default']['username']

@@ -26,9 +26,9 @@ if __name__ == '__main__':
     
     path = os.path.dirname( os.path.realpath( __file__ ) )
     os.umask( 0o007 )
-    with open( path + '/rest/rest.conf', 'w' ) as configFile:
+    with open( path + '/rest/conf/rest.conf', 'w' ) as configFile:
         config.write( configFile )
-    os.chown( path + '/rest/rest.conf', pwd.getpwnam( 'xpum' ).pw_uid, grp.getgrnam( 'xpum' ).gr_gid )
+    os.chown( path + '/rest/conf/rest.conf', pwd.getpwnam( 'xpum' ).pw_uid, grp.getgrnam( 'xpum' ).gr_gid )
 
     print( 'rest.conf has been generated succefully' )
     print( 'If you forget the password, just re-run this script again' )
