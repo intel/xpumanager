@@ -72,11 +72,13 @@ def getDiagnosticsResultByGroup(groupId):
         return 1, resp.errorMsg, None
 
     datas = []
+    finished = True
     for diagTaskInfo in resp.taskInfo:
         data = dict()
         data['device_id'] = diagTaskInfo.deviceId
         data['level'] = diagTaskInfo.level
         data['finished'] = diagTaskInfo.finished
+        finished = finished & diagTaskInfo.finished
         data['message'] = diagTaskInfo.message
         data['component_count'] = diagTaskInfo.count
 
@@ -95,4 +97,4 @@ def getDiagnosticsResultByGroup(groupId):
         data['component_list'] = componentList
         datas.append(data)
 
-    return 0, "OK", dict(group_id=groupId, device_count=len(datas), device_list=datas)
+    return 0, "OK", dict(group_id=groupId, finished=finished, device_count=len(datas), device_list=datas)
