@@ -159,14 +159,12 @@ std::unique_ptr<nlohmann::json> CoreStub::groupListAll() {
                 groupJson["group_name"] = response.grouplist(i).groupname();
                 groupJson["device_count"] = response.grouplist(i).count();
 
-                std::vector<nlohmann::json> deviceJsonList;
+                std::vector<int32_t> deviceIdList;
                 for (uint32_t j{0}; j < response.grouplist(i).count(); ++j) {
-                    auto deviceJson = nlohmann::json();
-                    deviceJson["device_id"] = response.grouplist(i).devicelist(j).id();
-                    deviceJsonList.push_back(deviceJson);
+                    deviceIdList.push_back(response.grouplist(i).devicelist(j).id());
                 }
 
-                groupJson["device_list"] = deviceJsonList;
+                groupJson["device_id_list"] = deviceIdList;
 
                 groupJsonList.push_back(groupJson);
             }
@@ -195,16 +193,14 @@ std::unique_ptr<nlohmann::json> CoreStub::groupList(int groupId) {
             (*json)["group_id"] = response.id();
             (*json)["group_name"] = response.groupname();
             (*json)["device_count"] = response.count();
-
-            std::vector<nlohmann::json> deviceJsonList;
-
-            for (int i{0}; i < response.devicelist_size(); ++i) {
-                auto deviceJson = nlohmann::json();
-                deviceJson["device_id"] = response.devicelist(i).id();
-                deviceJsonList.push_back(deviceJson);
+            
+            std::vector<int32_t> deviceIdList;
+            for (uint32_t j{0}; j < response.count(); ++j) {
+                deviceIdList.push_back(response.devicelist(j).id());
             }
 
-            (*json)["device_list"] = deviceJsonList;
+            (*json)["device_id_list"] = deviceIdList;
+
         } else {
             (*json)["error message"] = response.errormsg();
         }
@@ -230,15 +226,12 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
             (*json)["group_name"] = response.groupname();
             (*json)["device_count"] = response.count();
 
-            std::vector<nlohmann::json> deviceJsonList;
-
-            for (int i{0}; i < response.devicelist_size(); ++i) {
-                auto deviceJson = nlohmann::json();
-                deviceJson["device_id"] = response.devicelist(i).id();
-                deviceJsonList.push_back(deviceJson);
+            std::vector<int32_t> deviceIdList;
+            for (uint32_t j{0}; j < response.count(); ++j) {
+                deviceIdList.push_back(response.devicelist(j).id());
             }
 
-            (*json)["device_list"] = deviceJsonList;
+            (*json)["device_id_list"] = deviceIdList;
         } else {
             (*json)["error message"] = response.errormsg();
         }
@@ -264,15 +257,12 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
             (*json)["group_name"] = response.groupname();
             (*json)["device_count"] = response.count();
 
-            std::vector<nlohmann::json> deviceJsonList;
-
-            for (int i{0}; i < response.devicelist_size(); ++i) {
-                auto deviceJson = nlohmann::json();
-                deviceJson["device_id"] = response.devicelist(i).id();
-                deviceJsonList.push_back(deviceJson);
+            std::vector<int32_t> deviceIdList;
+            for (uint32_t j{0}; j < response.count(); ++j) {
+                deviceIdList.push_back(response.devicelist(j).id());
             }
 
-            (*json)["device_list"] = deviceJsonList;
+            (*json)["device_id_list"] = deviceIdList;
         } else {
             (*json)["error message"] = response.errormsg();
         }

@@ -38,6 +38,5 @@ class ComletGroup : public ComletBase {
 
    private:
     std::unique_ptr<ComletGroupOptions> opts;
-    CLI::Option * g;
 };
 } // end namespace xpum::cli
