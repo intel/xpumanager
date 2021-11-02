@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <algorithm>
 
 #include "api_types.h"
 #include "core/core.h"
@@ -241,6 +242,11 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
+static bool invalidChar (char c) 
+{  
+    return !(c>=32 && c <128);   
+} 
+
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties) {
     std::vector<std::shared_ptr<Device>> devices;
 
@@ -260,6 +266,11 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 auto &prop = properties[i];
                 xpum_device_property_name_t name = prop.getName();
                 std::string value = prop.getValue();
+
+                if (name == XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION) {
+                    value.erase(remove_if(value.begin(), value.end(), invalidChar), value.end());
+                }
+
                 auto &copy = pXpumProperties->properties[i];
                 // name.copy(copy.name, name.size());
                 // copy.name[name.size()] = 0;
