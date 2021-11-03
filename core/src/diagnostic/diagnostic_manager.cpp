@@ -1311,7 +1311,7 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
     time_end = std::chrono::high_resolution_clock::now();
     timed = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
 
-    return (timed / static_cast<long double>(50));
+    return (timed / static_cast<long double>(30));
 }
 
 long double DiagnosticManager::calculateGbps(long double period, long double total_gbps) {
