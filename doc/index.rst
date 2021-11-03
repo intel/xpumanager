@@ -4,7 +4,6 @@ XPU Manager Documentation
 .. toctree::
 
     introduction
+    infrastructure
     restful
-    rst/index
-
-    
+    build/rst/index

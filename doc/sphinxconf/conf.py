@@ -30,7 +30,7 @@ sys.path.insert(1, os.path.abspath("../doxyrest/share/doxyrest/sphinx"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'doxyrest', 'cpplexer', 'sphinxcontrib.openapi'
+    'doxyrest', 'cpplexer', 'sphinxcontrib.openapi', 'myst_parser'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

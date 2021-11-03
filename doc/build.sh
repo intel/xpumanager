@@ -25,9 +25,11 @@ $DOXYREST_FOLDER/bin/doxyrest \
 
 cd ${WORK_DIR}
 
-cp index.rst introduction.rst restful.rst build/
+# cp *.rst build/
+
+# cp *.md build/
 
 python3 ../rest/gen_doc.py > build/schema.json
 
 # build rst to html by sphinx
-sphinx-build -c sphinxconf/ build/ build/html
+sphinx-build -c sphinxconf/ . build/html

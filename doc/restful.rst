@@ -2,5 +2,5 @@ Restful API
 ===========
 
 
-.. openapi:: schema.json
+.. openapi:: build/schema.json
     :group:
