@@ -381,9 +381,9 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
 
             if (resultDecode.find("Decoding finished") != std::string::npos && resultEncode.find("Processing finished") != std::string::npos) {
                 component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-                updateMessage(component.message, std::string("Media coder check pass"));
+                updateMessage(component.message, std::string("Media codec check pass"));
             } else {
-                std::string desc = "Media coder check failed.";
+                std::string desc = "Media codec check failed.";
                 if (resultDecode.find("Decoding finished") == std::string::npos) {
                     desc += " Errors happened when run sample_decode.";
                 }
@@ -400,7 +400,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
         }
     } else {
         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
-        updateMessage(component.message, std::string("Media encoder/decoder not suppoted"));
+        updateMessage(component.message, std::string("Media codec not suppoted"));
     }
     component.finished = true;
 }
@@ -925,6 +925,7 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
 }
 
 void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
+    std::atomic<bool> computationDone(false);
     xpum_diag_component_info_t &compute_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTE];
     p_task_info->count += 1;
     updateMessage(compute_component.message, std::string("Running"));
@@ -1063,6 +1064,24 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
     setupFunction(module_handle, compute_sp_v8, "compute_sp_v8", device_input_value, device_output_buffer);
     setupFunction(module_handle, compute_sp_v16, "compute_sp_v16", device_input_value, device_output_buffer);
 
+    int power_value = 0;
+    zes_device_handle_t device = (zes_device_handle_t)ze_device;
+    std::thread readPowerTask = std::thread([&computationDone, &power_value, device]() {
+        while (!computationDone.load()) {
+            try {
+                auto raw_power_value = GPUDeviceStub::toGetPower(device);
+                if ((int)raw_power_value->getCurrent() > power_value) {
+                    power_value = raw_power_value->getCurrent();
+                    XPUM_LOG_DEBUG("update peak power value: " + std::to_string(power_value));
+                }
+            } catch (...) {
+                break;
+            }
+            
+            std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+        }
+    });
+
     bool computeCheckPass = true;
     std::string compute_detail;
     timed = 0;
@@ -1107,12 +1126,14 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
     if (gflops < Configuration::SINGLE_PRECISION_MIN_GFLOPS) {
         computeCheckPass = false;
     }
-    compute_detail = "Its Single-precision GFLOPS is " + roundDouble(gflops, 3) + ".";
+    compute_detail = "Its single-precision GFLOPS is " + roundDouble(gflops, 3) + ".";
 
+    computationDone.store(true);
+    readPowerTask.join();
     bool powerCheckPass = true;
     std::string power_detail;
-    int power_value = 0;
-    if (powerReachStress(ze_device, Configuration::POWER_MIN_STRESS, power_value)) {
+    
+    if (power_value < Configuration::POWER_MIN_STRESS) {
         powerCheckPass = false;
     }
     power_detail = "Its stress power is " + std::to_string(power_value) + " W.";
@@ -1290,44 +1311,11 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
     time_end = std::chrono::high_resolution_clock::now();
     timed = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
 
-    return (timed / static_cast<long double>(50));
+    return (timed / static_cast<long double>(30));
 }
 
 long double DiagnosticManager::calculateGbps(long double period, long double total_gbps) {
     return total_gbps / period / 1.0;
-}
-
-bool DiagnosticManager::powerReachStress(ze_device_handle_t ze_device, int limit, int &power_value) {
-    ze_result_t ret;
-    zes_device_handle_t device = (zes_device_handle_t)ze_device;
-    std::uint32_t power_domain_count = 0;
-    ret = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_POWER: zesDeviceEnumPowerDomains()");
-    }
-    std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-    ret = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_POWER: zesDeviceEnumPowerDomains()");
-    }
-    for (auto &power : power_handles) {
-        zes_power_energy_counter_t snap1, snap2;
-        ret = zesPowerGetEnergyCounter(power, &snap1);
-        if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_POWER: zesPowerGetEnergyCounter()");
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
-        ret = zesPowerGetEnergyCounter(power, &snap2);
-        if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_POWER: zesPowerGetEnergyCounter()");
-        }
-        power_value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
-        if (power_value < limit)
-            return false;
-        else
-            return true;
-    }
-    return true;
 }
 
 void DiagnosticManager::updateMessage(char *arr, std::string str) {

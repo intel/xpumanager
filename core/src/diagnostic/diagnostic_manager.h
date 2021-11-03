@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <atomic>
 
 #include "control/device_manager_interface.h"
 #include "data_logic/data_logic_interface.h"
@@ -20,7 +21,7 @@ namespace xpum {
 
 /**
  * The class is responsible for GPU diagnostics. Three levels are currently supported. It will check 
- * environment variables, libraries, permission, PCIe, media coder and performance. And each task 
+ * environment variables, libraries, permission, PCIe, media codec and performance. And each task 
  * will be assigned a thread.
  *
  */
@@ -98,7 +99,6 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static long double calculateGbps(long double period, long double buffer_size);
 
-    static bool powerReachStress(ze_device_handle_t ze_device, int limit, int &power_value);
 
     static void updateMessage(char *arr, std::string str);
 

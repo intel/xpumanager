@@ -107,6 +107,8 @@ class GPUDeviceStub {
 
     static void getFreqAvailableClocks(const zes_device_handle_t& device, uint32_t subdevice_id, std::vector<double>& clocks);
 
+    static std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device);
+
    private:
     GPUDeviceStub();
 
@@ -119,8 +121,6 @@ class GPUDeviceStub {
     void init();
 
     static std::shared_ptr<std::vector<std::shared_ptr<Device>>> toDiscover();
-
-    static std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetActuralFrequency(const zes_device_handle_t& device);
 
