@@ -186,9 +186,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
             auto tmp = nlohmann::json();
             tmp["tile_id"] = stats_info.tileid();
             tmp["data_list"] = dataList;
-            deviceMap[stats_info.deviceid()]["tile_level"].push_back(tmp);
+            deviceMap[key]["tile_level"].push_back(tmp);
         } else {
-            deviceMap[stats_info.deviceid()]["device_level"] = dataList;
+            deviceMap[key]["device_level"] = dataList;
         }
     }
 
