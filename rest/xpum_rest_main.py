@@ -110,7 +110,7 @@ app.add_url_rule('/rest/v1/metricsRawDataTask/<int:taskId>', methods=['POST', 'G
 @auth.verify_password
 def verify_password(username, password):
     if not disableAuth:
-        tmpHash = hashlib.sha512((salt + password).encode('ASCII')).hexdigest()
+        tmpHash = hashlib.pbkdf2_hmac('sha512', password.encode('ASCII'), salt.encode('ASCII'), 10000).hex()
         if username == user and tmpHash == pwHash:
             return True
         else:
