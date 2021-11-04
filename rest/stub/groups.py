@@ -47,26 +47,20 @@ def destroyGroup(groupId):
 
 
 def addDeviceToGroup(groupId, deviceIds):
+    fail_to_add = []
     for deviceId in deviceIds:
         resp = stub.groupAddDevice(core_pb2.GroupAddRemoveDevice(
             groupId=groupId, deviceId=deviceId))
         if len(resp.errorMsg) != 0:
-            return 1, resp.errorMsg, None
-    data = dict()
-    data["group_name"] = resp.groupName
-    data["group_id"] = groupId
-    data["device_id_list"] = [i.id for i in resp.deviceList]
-    return 0, "OK", data
+            fail_to_add.append(dict(device_id=deviceId,error_msg=resp.errorMsg))
+    return fail_to_add
 
 
 def removeDeviceFromGroup(groupId, deviceIds):
+    fail_to_remove = []
     for deviceId in deviceIds:
         resp = stub.groupRemoveDevice(core_pb2.GroupAddRemoveDevice(
             groupId=groupId, deviceId=deviceId))
         if len(resp.errorMsg) != 0:
-            return 1, resp.errorMsg, None
-    data = dict()
-    data["group_name"] = resp.groupName
-    data["group_id"] = groupId
-    data["device_id_list"] = [i.id for i in resp.deviceList]
-    return 0, "OK", data
+            fail_to_remove.append(dict(device_id=deviceId,error_msg=resp.errorMsg))
+    return fail_to_remove

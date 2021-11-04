@@ -84,6 +84,18 @@ class ModifyGroupDeviceSchema(Schema):
     DeviceIdToRemove = fields.List(fields.Int(metadata={
                                  "description": "The id of devices remove from this group"}))
 
+class ModifyGroupErrorSchema(Schema):
+    device_id = fields.Int(metadata={
+        "description": "The id of device failed to be added to or removed from the group"})
+    error_msg = fields.Str(metadata={
+        "description": "Error message"})
+
+
+class ModifyGroupResponseSchema(Schema):
+    fail_to_add = fields.Nested(ModifyGroupErrorSchema(many=True))
+    fail_to_remove = fields.Nested(ModifyGroupErrorSchema(many=True))
+    group_info = fields.Nested(GroupInfoSchema())
+
 def group_detail(groupId):
     """
     Get group info / Modify group / Delete group
@@ -124,7 +136,7 @@ def group_detail(groupId):
         responses:
             200:
                 description: OK
-                schema: GroupInfoSchema
+                schema: ModifyGroupResponseSchema
             400:
                 description: Error
     delete:
@@ -155,26 +167,32 @@ def group_detail(groupId):
         elif request.method == 'POST':
             req = request.get_json()
 
+            data = dict()
+
             # add device to group
             if "DeviceIdToAdd" in req:
                 deviceIdToAdd = req["DeviceIdToAdd"]
                 if len(deviceIdToAdd) == 0:
                     return "requires device id.", 500
-                code, message, data = stub.addDeviceToGroup(groupId, deviceIdToAdd)
-                if code != 0:
-                    error = dict(Status=code, Message=message)
-                    return jsonify(error), 400
+                fail_to_add = stub.addDeviceToGroup(groupId, deviceIdToAdd)
+                if fail_to_add:
+                    data["fail_to_add"] = fail_to_add
 
             # remove device from group
             if "DeviceIdToRemove" in req:
                 deviceIdToRemove = req["DeviceIdToRemove"]
                 if len(deviceIdToRemove) == 0:
                     return "requires device id.", 500
-                code, message, data = stub.removeDeviceFromGroup(
+                fail_to_remove = stub.removeDeviceFromGroup(
                     groupId, deviceIdToRemove)
-                if code != 0:
-                    error = dict(Status=code, Message=message)
-                    return jsonify(error), 400
+                if fail_to_remove:
+                    data["fail_to_remove"] = fail_to_remove
+
+            # get group info
+            code, message, group_info = stub.getGroupInfo(groupId)
+
+            data["group_info"] = group_info
+
             return jsonify(data), 200
     except Exception as e:
         #print(e)
