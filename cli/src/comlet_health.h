@@ -2,6 +2,7 @@
 
 #include <nlohmann/json.hpp>
 #include <string>
+#include <climits>
 
 #include "comlet_base.h"
 
@@ -9,10 +10,10 @@ namespace xpum::cli {
 
 struct ComletHealthOptions {
     bool listAll = false;
-    int deviceId = -1;
-    uint32_t groupId = 0;
-    int powerThreshold = -2;
-    int thermalThreshold = -2;
+    int deviceId = INT_MIN;
+    uint32_t groupId = UINT_MAX;
+    int powerThreshold = INT_MIN;
+    int thermalThreshold = INT_MIN;
 };
 
 class ComletHealth : public ComletBase {

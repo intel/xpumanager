@@ -77,6 +77,7 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_DEVICE_NOT_FOUND,
     XPUM_RESULT_GROUP_NOT_FOUND,
     XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT,
+    XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

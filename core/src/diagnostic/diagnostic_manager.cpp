@@ -29,7 +29,7 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
     
     std::unique_lock<std::mutex> lock(this->mutex);
     if (diagnostic_task_infos.find(deviceId) != diagnostic_task_infos.end() && diagnostic_task_infos.at(deviceId)->finished == false) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
     }
 
     diagnostic_task_infos.erase(deviceId);
@@ -68,7 +68,7 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
     
     std::unique_lock<std::mutex> lock(this->mutex);
     if (diagnostic_task_infos.find(deviceId) == diagnostic_task_infos.end()) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     result->deviceId = deviceId;
@@ -98,12 +98,12 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             doDeviceDiagnosticSoftware(zes_device, p_task_info, gpu_total_count);
         }
 
-        if (p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING) {
-            p_task_info->finished = true;
-            updateMessage(p_task_info->message, std::string("Aborted! Other GPU processes are running"));
-            XPUM_LOG_ERROR("aborted! other GPU processes are running");
-            return;
-        }
+        // if (p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING) {
+        //     p_task_info->finished = true;
+        //     updateMessage(p_task_info->message, std::string("Aborted! Other GPU processes are running"));
+        //     XPUM_LOG_ERROR("aborted! other GPU processes are running");
+        //     return;
+        // }
 
         if (p_task_info->level >= xpum_diag_level_t::XPUM_DIAG_LEVEL_2) {
             XPUM_LOG_INFO("start hardware diagnostic");

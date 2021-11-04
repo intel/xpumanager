@@ -2,15 +2,16 @@
 
 #include <nlohmann/json.hpp>
 #include <string>
+#include <climits>
 
 #include "comlet_base.h"
 
 namespace xpum::cli {
 
 struct ComletDiagnosticOptions {
-    int deviceId = -1;
-    uint32_t groupId = 0;
-    int level = -1;
+    int deviceId = INT_MIN;
+    uint32_t groupId = UINT_MAX;
+    int level = INT_MIN;
 };
 
 class ComletDiagnostic : public ComletBase {
