@@ -104,6 +104,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static std::string roundDouble(double r, int precision);
 
+    static int command_queue_synchronize_maximum_time; // minutes
+
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
 
     std::shared_ptr<DataLogicInterface> p_data_logic;

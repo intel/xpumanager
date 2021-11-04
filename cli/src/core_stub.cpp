@@ -347,11 +347,22 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
             if ((*json).contains("error")) {
                 return json;
             }
+
+            auto startTime = std::chrono::duration_cast<std::chrono::seconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
             while ((*json)["finished"] == false) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
                 json = getDiagnosticsResult(deviceId);
                 if ((*json).contains("error")) {
                     return json;
+                }
+                
+                auto endTime = std::chrono::duration_cast<std::chrono::seconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+                if (endTime - startTime >= 20 * 60) {
+                    auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+                    (*errorJson)["error"] = "time out for unknown reasons";
+                    return errorJson;
                 }
             }
         } else {
@@ -412,11 +423,22 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(int groupId, int
             if ((*json).contains("error")) {
                 return json;
             }
+
+            auto startTime = std::chrono::duration_cast<std::chrono::seconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
             while ((*json)["finished"] == false) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
                 json = getDiagnosticsResultByGroup(groupId);
                 if ((*json).contains("error")) {
                     return json;
+                }
+
+                auto endTime = std::chrono::duration_cast<std::chrono::seconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+                if (endTime - startTime >= 20 * 60) {
+                    auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+                    (*errorJson)["error"] = "time out for unknown reasons";
+                    return errorJson;
                 }
             }
         } else {

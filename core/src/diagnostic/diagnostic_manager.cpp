@@ -415,6 +415,9 @@ std::string DiagnosticManager::getCommandResult(std::string command) {
     pclose(pipe);
     return result;
 }
+
+int DiagnosticManager::command_queue_synchronize_maximum_time = 10; // minutes
+
 void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &ze_device,
                                                       const ze_driver_handle_t &ze_driver,
                                                       std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
@@ -497,9 +500,12 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &
         if (ret != ZE_RESULT_SUCCESS) {
             throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueExecuteCommandLists()");
         }
-        ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
+        ret = zeCommandQueueSynchronize(command_queue, command_queue_synchronize_maximum_time * 60 * 1e9);
         if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueSynchronize()");
+            if (ret == ZE_RESULT_NOT_READY)
+                throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueSynchronize timeout");
+            else
+                throw BaseException("Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueSynchronize()");
         }
     }
     time_end = std::chrono::high_resolution_clock::now();
@@ -904,9 +910,12 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueExecuteCommandLists()");
     }
-    ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
+    ret = zeCommandQueueSynchronize(command_queue, command_queue_synchronize_maximum_time * 60 * 1e9);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueSynchronize()");
+        if (ret == ZE_RESULT_NOT_READY)
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueSynchronize timeout");
+        else
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_MEMORY: zeCommandQueueSynchronize()");
     }
     ret = zeCommandQueueDestroy(command_queue);
     if (ret != ZE_RESULT_SUCCESS) {
@@ -1044,9 +1053,12 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
     }
-    ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
+    ret = zeCommandQueueSynchronize(command_queue, command_queue_synchronize_maximum_time * 60 * 1e9);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
+        if (ret == ZE_RESULT_NOT_READY)
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize timeout");
+        else
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
     }
     ret = zeCommandListReset(command_list);
     if (ret != ZE_RESULT_SUCCESS) {
@@ -1289,9 +1301,12 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
         }
     }
 
-    ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
+    ret = zeCommandQueueSynchronize(command_queue, command_queue_synchronize_maximum_time * 60 * 1e9);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
+        if (ret == ZE_RESULT_NOT_READY)
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize timeout");
+        else
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
     }
 
     std::chrono::high_resolution_clock::time_point time_start, time_end;
@@ -1303,10 +1318,12 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
         }
     }
 
-    ret = zeCommandQueueSynchronize(command_queue, UINT64_MAX);
-
+    ret = zeCommandQueueSynchronize(command_queue, command_queue_synchronize_maximum_time * 60 * 1e9);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
+        if (ret == ZE_RESULT_NOT_READY)
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize timeout");
+        else
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
     }
     time_end = std::chrono::high_resolution_clock::now();
     timed = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
