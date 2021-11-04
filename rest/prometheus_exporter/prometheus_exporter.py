@@ -106,7 +106,7 @@ def get_metrics(core, pod_resources):
     try:
         code, _, data = core.getDeviceList()
         if code != 0:
-            return '#NODATA'
+            return '#NODATA', 500
 
         resp = b''
 
@@ -129,7 +129,7 @@ def get_metrics(core, pod_resources):
         return tidy_response(resp)
     except Exception as e:
         traceback.print_exc()
-        return "#NODATA due to unexpected failure"
+        return "#NODATA due to unexpected failure", 500
 
 
 def tidy_response(resp):
