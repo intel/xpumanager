@@ -338,12 +338,22 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
 
     has_exception = false;
     try {
-        toGetTemperature(device);
+        toGetTemperature(device, ZES_TEMP_SENSORS_GPU);
     } catch (BaseException& e) {
         has_exception = true;
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
+    }
+
+    has_exception = false;
+    try {
+        toGetTemperature(device, ZES_TEMP_SENSORS_MEMORY);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_TEMPERATURE);
     }
 
     has_exception = false;
@@ -956,14 +966,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_
     }
 }
 
-void GPUDeviceStub::getTemperature(const zes_device_handle_t& device, Callback_t callback) noexcept {
+void GPUDeviceStub::getTemperature(const zes_device_handle_t& device, Callback_t callback, zes_temp_sensors_t type) noexcept {
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetTemperature, device);
+    p_thread_pool->addTask(callback, toGetTemperature, device, type);
 }
 
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_device_handle_t& device) {
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_device_handle_t& device, zes_temp_sensors_t type) {
     if (device == nullptr) {
         throw BaseException("toGetTemperature error");
     }
@@ -981,24 +991,50 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
             zes_temp_properties_t props;
             res = zesTemperatureGetProperties(temp, &props);
             /*
-      if (res == ZE_RESULT_SUCCESS && props.type == ZES_TEMP_SENSORS_GLOBAL) {
-        double temp_val = 0;
-        res = zesTemperatureGetState(temp, &temp_val);
-        if (res == ZE_RESULT_SUCCESS) {
-          ret->setCurrent(temp_val);
-          dataAcquired = true;
-        }
-      } 
-      */
-            if (res == ZE_RESULT_SUCCESS && props.onSubdevice && props.type == ZES_TEMP_SENSORS_GPU) {
+            if (res == ZE_RESULT_SUCCESS && props.type == ZES_TEMP_SENSORS_GLOBAL) {
                 double temp_val = 0;
-                XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
+                res = zesTemperatureGetState(temp, &temp_val);
                 if (res == ZE_RESULT_SUCCESS) {
-                    ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                    ret->setCurrent(temp_val);
                     dataAcquired = true;
                 }
             }
-        }
+            */
+            if (res == ZE_RESULT_SUCCESS) {
+                switch (props.type) {
+                    case ZES_TEMP_SENSORS_GPU:
+                        if (type == props.type) {
+                            double temp_val = 0;
+                            XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
+                            if (res == ZE_RESULT_SUCCESS) {
+                                if (props.onSubdevice) {
+                                    ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                                } else {
+                                    ret->setCurrent(temp_val);
+                                }
+                                dataAcquired = true;
+                            }
+                        }
+                        break;
+                    case ZES_TEMP_SENSORS_MEMORY:
+                        if (type == props.type) {
+                            double temp_val = 0;
+                            XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
+                            if (res == ZE_RESULT_SUCCESS) {
+                                if (props.onSubdevice) {
+                                    ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                                } else {
+                                    ret->setCurrent(temp_val);
+                                }
+                                dataAcquired = true;
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        } 
     }
     if (res == ZE_RESULT_SUCCESS && dataAcquired) {
         return ret;
