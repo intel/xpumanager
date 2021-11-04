@@ -54,7 +54,7 @@ class PolicyManager : public PolicyManagerInterface, public std::enable_shared_f
     bool isMatchMetricType(xpum_stats_type_t metricsType, xpum_policy_type_t policyType);
     void checkPolicy();
     void savePolicyStatus();
-    xpum_device_stats_data_t* getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy, xpum_device_stats_t dataList[], int count);
+    xpum_device_metric_data_t* getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy, xpum_device_metrics_t dataList[], int count);
     bool triggerAction(std::shared_ptr<xpum_policy_data> p_policy);
     void triggerNotification(std::shared_ptr<xpum_policy_data> p_policy);
 

@@ -666,7 +666,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
-                             xpum_device_stats_t dataList[],
+                             xpum_device_metrics_t dataList[],
                              int *count);
 
 /**
@@ -681,7 +681,7 @@ xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
  */
 xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
-                                    xpum_device_stats_t dataList[],
+                                    xpum_device_metrics_t dataList[],
                                     int *count);
 
 /** @} */ // Closing for METRICS_API

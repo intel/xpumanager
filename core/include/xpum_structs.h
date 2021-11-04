@@ -424,6 +424,29 @@ struct xpum_metrics_raw_data_t {
     uint64_t value;                ///< The instant value of the metricsType at the timestamp
 };
 
+/**
+ * @brief Struct to store metric data for different metric types
+ * 
+ */
+struct xpum_device_metric_data_t {
+    xpum_stats_type_t metricsType; ///< Metric type
+    bool isCounter;                ///< If this metric is a counter
+    uint64_t value;                ///< The value of this metric type
+    uint64_t timestamp;            ///< The timestamp of this data
+};
+
+/**
+ * @brief Struct to store device metrics data
+ * 
+ */
+struct xpum_device_metrics_t {
+    xpum_device_id_t deviceId; ///< Device id
+    bool isTileData;           ///< If this statistics data is tile level
+    int32_t tileId;            ///< The tile id, only valid if isTileData is true
+    int32_t count;             ///< The count of data stored in dataList array
+    xpum_device_metric_data_t dataList[XPUM_STATS_MAX];
+};
+
 enum xpum_engine_type_flags_t {
     XPUM_UNDEFINED = 1 << 0,
     XPUM_COMPUTE = 1 << 1,

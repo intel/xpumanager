@@ -67,7 +67,7 @@ void PolicyManager::checkPolicy() {
         xpum_device_id_t deviceId = it->first;
         int count;
         p_data_logic->getLatestMetrics(deviceId, nullptr, &count);
-        xpum_device_stats_t dataList[count];
+        xpum_device_metrics_t dataList[count];
         p_data_logic->getLatestMetrics(deviceId, dataList, &count);
 
         //check policy
@@ -76,7 +76,7 @@ void PolicyManager::checkPolicy() {
             std::shared_ptr<xpum_policy_data> p_policy = range.first->second;
 
             //check condition
-            xpum_device_stats_data_t* curData = this->getPolicyCurValue(p_policy, dataList, count);
+            xpum_device_metric_data_t* curData = this->getPolicyCurValue(p_policy, dataList, count);
             //TODO: Need check timestamp
             if (curData == nullptr) {
                 continue;
@@ -119,7 +119,7 @@ void PolicyManager::checkPolicy() {
     }
 }
 
-xpum_device_stats_data_t* PolicyManager::getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy, xpum_device_stats_t dataList[], int count) {
+xpum_device_metric_data_t* PolicyManager::getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy, xpum_device_metrics_t dataList[], int count) {
     // get data from monitor interface
     for (int i = 0; i < count; i++) {
         int cc2 = dataList[i].count;
