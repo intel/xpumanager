@@ -1457,16 +1457,17 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasError(const zes_device_h
         throw BaseException("toGetRasError error");
     }
     uint32_t numRasErrorSets = 0;
-    ze_result_t res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, nullptr));
     if (res == ZE_RESULT_SUCCESS && numRasErrorSets > 0) {
         std::vector<zes_ras_handle_t> phRasErrorSets(numRasErrorSets);
-        res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, phRasErrorSets.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, phRasErrorSets.data()));
         if (res == ZE_RESULT_SUCCESS) {
             uint64_t rasCounter = 0;
             for (auto& rasHandle : phRasErrorSets) {
                 zes_ras_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
-                res = zesRasGetProperties(rasHandle, &props);
+                XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     //if (props.supported && props.enabled) {
                     if (props.type == rasType) {
@@ -1497,15 +1498,16 @@ void GPUDeviceStub::getRasError(const zes_device_handle_t& device, uint64_t erro
 
     //
     uint32_t numRasErrorSets = 0;
-    ze_result_t res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_ras_handle_t> phRasErrorSets(numRasErrorSets);
-        res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, phRasErrorSets.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, phRasErrorSets.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& rasHandle : phRasErrorSets) {
                 zes_ras_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
-                res = zesRasGetProperties(rasHandle, &props);
+                XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (props.type == ZES_RAS_ERROR_TYPE_CORRECTABLE) {
                         zes_ras_state_t errorDetails;

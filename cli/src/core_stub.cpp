@@ -817,13 +817,281 @@ std::string CoreStub::policyActionTypeEnumToString(XpumPolicyActionType type) {
     return ret;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getPolicy(int deviceId) {
+std::unique_ptr<nlohmann::json> CoreStub::getAllPolicy() {
+    assert(this->stub != nullptr);
+    grpc::ClientContext context;
+    XpumDeviceBasicInfoArray response;
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> dataList;
+            for (int i = 0; i < response.info_size(); i++) {
+                auto healthJson = (*getPolicy(true,response.info(i).id().id()));
+                dataList.push_back(healthJson);
+            }
+            (*json)["all_policy_list"] = dataList;
+        }
+    }
+    return json;
+}
+
+// std::unique_ptr<nlohmann::json> CoreStub::getAllPolicyType() {
+//     assert(this->stub != nullptr);
+//     grpc::ClientContext context;
+//     XpumDeviceBasicInfoArray response;
+//     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+//     grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+//     if (status.ok()) {
+//         if (response.errormsg().length() == 0) {
+//             std::vector<nlohmann::json> healthJsonList;
+//             healthJsonList.push_back("POLICY_TYPE_GPU_TEMPERATURE");
+//             healthJsonList.push_back("POLICY_TYPE_GPU_MEMORY_TEMPERATURE");
+//             healthJsonList.push_back("POLICY_TYPE_GPU_POWER");
+//             healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_RESET");
+//             healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS");
+//             healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS");
+//             healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE");
+//             healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE");
+//             healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE");
+//             healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE");
+//             (*json)["all_policy_type"] = healthJsonList;
+//         }
+//     }
+//     return json;
+// }
+
+std::unique_ptr<nlohmann::json> CoreStub::getAllPolicyType() {
+    assert(this->stub != nullptr);
+    grpc::ClientContext context;
+    XpumDeviceBasicInfoArray response;
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            // healthJsonList.push_back("POLICY_CONDITION_TYPE_GREATER");
+            // healthJsonList.push_back("POLICY_CONDITION_TYPE_LESS");
+            // healthJsonList.push_back("POLICY_CONDITION_TYPE_WHEN_INCREASE");
+
+            // healthJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+            // healthJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
+            // healthJsonList.push_back("POLICY_ACTION_TYPE_RESET_DEVICE");
+
+            std::vector<nlohmann::json> healthJsonList;
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_GPU_TEMPERATURE";
+                std::vector<nlohmann::json> conditionJsonList;
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_GREATER");
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_LESS");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                actionJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_GPU_MEMORY_TEMPERATURE";
+                std::vector<nlohmann::json> conditionJsonList;
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_GREATER");
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_LESS");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                //actionJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_GPU_POWER";
+                std::vector<nlohmann::json> conditionJsonList;
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_GREATER");
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_LESS");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                //actionJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_RAS_ERROR_CAT_RESET";
+                std::vector<nlohmann::json> conditionJsonList;                
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_WHEN_INCREASE");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                //actionJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS";
+                std::vector<nlohmann::json> conditionJsonList;                
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_WHEN_INCREASE");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                //actionJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS";
+                std::vector<nlohmann::json> conditionJsonList;                
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_WHEN_INCREASE");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                //actionJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE";
+                std::vector<nlohmann::json> conditionJsonList;                
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_GREATER");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                //actionJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE";
+                std::vector<nlohmann::json> conditionJsonList;                
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_WHEN_INCREASE");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                actionJsonList.push_back("POLICY_ACTION_TYPE_RESET_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE";
+                std::vector<nlohmann::json> conditionJsonList;                
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_GREATER");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                actionJsonList.push_back("POLICY_ACTION_TYPE_RESET_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            {
+                auto component = nlohmann::json();
+                component["policyType"] = "POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE";
+                std::vector<nlohmann::json> conditionJsonList;                
+                conditionJsonList.push_back("POLICY_CONDITION_TYPE_WHEN_INCREASE");
+                component["suppotedConditionType"] = conditionJsonList;
+                std::vector<nlohmann::json> actionJsonList;
+                actionJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+                actionJsonList.push_back("POLICY_ACTION_TYPE_RESET_DEVICE");
+                component["suppotedActionType"] = actionJsonList;
+                healthJsonList.push_back(component);
+            }
+            // healthJsonList.push_back("POLICY_TYPE_GPU_TEMPERATURE");
+            // healthJsonList.push_back("POLICY_TYPE_GPU_MEMORY_TEMPERATURE");
+            // healthJsonList.push_back("POLICY_TYPE_GPU_POWER");
+            // healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_RESET");
+            // healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS");
+            // healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS");
+            // healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE");
+            // healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE");
+            // healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE");
+            // healthJsonList.push_back("POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE");
+            (*json)["all_policy_type"] = healthJsonList;
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getAllPolicyConditionType() {
+    assert(this->stub != nullptr);
+    grpc::ClientContext context;
+    XpumDeviceBasicInfoArray response;
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> healthJsonList;
+            healthJsonList.push_back("POLICY_CONDITION_TYPE_GREATER");
+            healthJsonList.push_back("POLICY_CONDITION_TYPE_LESS");
+            healthJsonList.push_back("POLICY_CONDITION_TYPE_WHEN_INCREASE");
+            (*json)["all_policy_list"] = healthJsonList;
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getAllPolicyActionType() {
+    assert(this->stub != nullptr);
+    grpc::ClientContext context;
+    XpumDeviceBasicInfoArray response;
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> healthJsonList;
+            healthJsonList.push_back("POLICY_ACTION_TYPE_NULL");
+            healthJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
+            healthJsonList.push_back("POLICY_ACTION_TYPE_RESET_DEVICE");
+            (*json)["all_policy_list"] = healthJsonList;
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPolicyData &policy) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    SetPolicyRequest request;
+    request.set_id(id);
+    request.set_isdevcie(isDevcie);
+    //request.set_allocated_policy(&policy);
+    //Answer* ans = detail->mutable_answer();
+    XpumPolicyData* p_policy = request.mutable_policy();
+    p_policy->CopyFrom(policy);
+    SetPolicyResponse response;
+    grpc::Status status = stub->setPolicy(&context, request, &response);
+    /////
+    if(isDevcie){
+        (*json)["deviceId"] = id;
+    }else{
+        (*json)["groupId"] = id;
+    }   
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["status"] = "set policy successfully.";
+        }else{
+            (*json)["status"] = "set policy failed. Error message: "+response.errormsg().length();
+        }
+    }else{
+        (*json)["status"] = "set policy failed. Error message: unknown.";
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie,int id) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     GetPolicyRequest request;
-    request.set_id(deviceId);
-    XpumPolicyDataArray response;
+    request.set_id(id);
+    request.set_isdevcie(isDevcie);
+    GetPolicyResponse response;
     grpc::Status status = stub->getPolicy(&context, request, &response);
     std::vector<nlohmann::json> componentJsonList;
     if (status.ok()) {
@@ -854,7 +1122,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(int deviceId) {
                 componentJsonList.push_back(component);
             }
         }
-    }
+    }    
+    if(isDevcie){
+        (*json)["deviceId"] = id;
+    }else{
+        (*json)["groupId"] = id;
+    }    
     (*json)["policy_list"] = componentJsonList;
     return json;
 }

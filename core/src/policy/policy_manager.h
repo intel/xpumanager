@@ -73,7 +73,7 @@ class PolicyManager : public PolicyManagerInterface, public std::enable_shared_f
     std::shared_ptr<GroupManagerInterface> p_group_manager;
 
     //
-    std::map<xpum_device_id_t, std::shared_ptr<xpum_policy_data>> policyMap;
+    std::map<xpum_device_id_t, std::shared_ptr<std::list<std::shared_ptr<xpum_policy_data>>>> policyMap;
     std::mutex mutex;
 
     //

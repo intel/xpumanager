@@ -52,7 +52,12 @@ class CoreStub {
     std::string policyTypeEnumToString(XpumPolicyType type);
     std::string policyConditionTypeEnumToString(XpumPolicyConditionType type);
     std::string policyActionTypeEnumToString(XpumPolicyActionType type);
-    std::unique_ptr<nlohmann::json> getPolicy(int deviceId);
+    std::unique_ptr<nlohmann::json> getAllPolicyType();
+    std::unique_ptr<nlohmann::json> getAllPolicyConditionType();
+    std::unique_ptr<nlohmann::json> getAllPolicyActionType();
+    std::unique_ptr<nlohmann::json> getAllPolicy();
+	std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie,int id);
+    std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie,int id,XpumPolicyData &policy);
 
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
