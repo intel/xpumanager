@@ -28,7 +28,7 @@ class DataLogicQueryInterface {
                                       uint64_t *end) = 0;
 
     virtual void getLatestMetrics(xpum_device_id_t deviceId,
-                                  xpum_device_stats_t dataList[],
+                                  xpum_device_metrics_t dataList[],
                                   int *count) = 0;
 
     virtual uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types) = 0;

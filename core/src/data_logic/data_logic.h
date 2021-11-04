@@ -44,7 +44,7 @@ class DataLogic : public DataLogicInterface {
                               uint64_t* end);
 
     void getLatestMetrics(xpum_device_id_t deviceId,
-                          xpum_device_stats_t dataList[],
+                          xpum_device_metrics_t dataList[],
                           int* count);
 
     uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types);

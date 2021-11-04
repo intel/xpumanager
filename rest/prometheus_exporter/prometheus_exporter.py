@@ -11,48 +11,31 @@ from enum import Enum, unique
 class PromMetric(Enum):
 
     # Engine utilization
-    xpum_engine_ratio = (
-        'xpum_engine_ratio', 'Max utilization among all engine groups (in %), per GPU tile')
-    xpum_engine_group_ratio = (
-        'xpum_engine_group_ratio', 'Avg utilization of engine group (in %), per GPU tile', ['type'])
+    xpum_engine_ratio = ('xpum_engine_ratio', 'Max utilization among all engine groups (in %), per GPU tile')
+    xpum_engine_group_ratio = ('xpum_engine_group_ratio', 'Avg utilization of engine group (in %), per GPU tile', ['type'])
 
     # Power/Energy/Temperature
-    xpum_power_watts = ('xpum_power_watts',
-                        'Avg GPU power (in watts), per GPU and per card')
-    xpum_energy_joules = (
-        'xpum_energy_joules', 'Total GPU energy consumption since boot (in Joules), per GPU')
-    xpum_temperature_celsius = (
-        'xpum_temperature_celsius', 'Avg GPU temperature (in Celsius degree), per tile', ['location'])
+    xpum_power_watts = ('xpum_power_watts', 'Avg GPU power (in watts), per GPU and per card')
+    xpum_energy_joules = ('xpum_energy_joules', 'Total GPU energy consumption since boot (in Joules), per GPU')
+    xpum_temperature_celsius = ('xpum_temperature_celsius', 'Avg GPU temperature (in Celsius degree), per tile', ['location'])
 
     # Frequency
-    xpum_frequency_mhz = ('xpum_frequency_mhz',
-                          'Avg (GPU) frequency (in MHz), per GPU tile', ['location', 'type'])
-    xpum_frequency_throttling_ratio = (
-        'xpum_frequency_throttling_ratio', 'Avg frequency throttle ratio (in %), per GPU tile', ['location'])
+    xpum_frequency_mhz = ('xpum_frequency_mhz', 'Avg (GPU) frequency (in MHz), per GPU tile', ['location', 'type'])
+    xpum_frequency_throttling_ratio = ('xpum_frequency_throttling_ratio', 'Avg frequency throttle ratio (in %), per GPU tile', ['location'])
 
     # Memory
-    xpum_memory_used_bytes = ('xpum_memory_used_bytes',
-                              'Used GPU memory (in bytes), per GPU tile')
-    xpum_memory_ratio = (
-        'xpum_memory_ratio', 'Used GPU memory / Total used GPU memory (in %), per GPU tile')
-    xpum_memory_bandwidth_ratio = (
-        'xpum_memory_bandwidth_ratio', 'Avg memory throughput / max memory bandwidth (in %), per GPU tile')
-    xpum_memory_read_bytes = ('xpum_memory_read_bytes',
-                              'Total memory read bytes (in bytes), per GPU tile')
-    xpum_memory_write_bytes = (
-        'xpum_memory_write_bytes', 'Total memory write bytes (in bytes), per GPU tile')
+    xpum_memory_used_bytes = ('xpum_memory_used_bytes', 'Used GPU memory (in bytes), per GPU tile')
+    xpum_memory_ratio = ('xpum_memory_ratio', 'Used GPU memory / Total used GPU memory (in %), per GPU tile')
+    xpum_memory_bandwidth_ratio = ('xpum_memory_bandwidth_ratio', 'Avg memory throughput / max memory bandwidth (in %), per GPU tile')
+    xpum_memory_read_bytes = ('xpum_memory_read_bytes', 'Total memory read bytes (in bytes), per GPU tile')
+    xpum_memory_write_bytes = ('xpum_memory_write_bytes', 'Total memory write bytes (in bytes), per GPU tile')
 
     # Errors
-    xpum_resets = (
-        'xpum_resets', 'Total number of GPU reset since boot, per GPU')
-    xpum_programming_errors = (
-        'xpum_programming_errors', 'Total number of GPU programming errors since boot, per GPU')
-    xpum_driver_errors = (
-        'xpum_driver_errors', 'Total number of GPU driver errors since boot, per GPU')
-    xpum_cache_errors = (
-        'xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])
-    xpum_display_errors = (
-        'xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])
+    xpum_resets = ('xpum_resets', 'Total number of GPU reset since boot, per GPU')
+    xpum_programming_errors = ('xpum_programming_errors', 'Total number of GPU programming errors since boot, per GPU')
+    xpum_driver_errors = ('xpum_driver_errors', 'Total number of GPU driver errors since boot, per GPU')
+    xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])
+    xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])
 
     # Occupation
     xpum_occupation_ratio = ('xpum_occupation_ratio')
@@ -123,7 +106,7 @@ def get_metrics(core, pod_resources):
     try:
         code, _, data = core.getDeviceList()
         if code != 0:
-            return '#NODATA'
+            return '#NODATA', 500
 
         resp = b''
 
@@ -146,7 +129,7 @@ def get_metrics(core, pod_resources):
         return tidy_response(resp)
     except Exception as e:
         traceback.print_exc()
-        return "#NODATA due to unexpected failure"
+        return "#NODATA due to unexpected failure", 500
 
 
 def tidy_response(resp):

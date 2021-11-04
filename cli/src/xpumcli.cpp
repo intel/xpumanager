@@ -8,6 +8,7 @@
 #include "comlet_discovery.h"
 #include "comlet_group.h"
 #include "comlet_health.h"
+#include "comlet_policy.h"
 #include "comlet_statistics.h"
 #include "comlet_topology.h"
 #include "comlet_version.h"
@@ -18,7 +19,6 @@ int main(int argc, char **argv) {
     CLI::App app{"Intel XPU Manager Command Line Interface"};
 
     xpum::cli::CLIWrapper wrapper(app);
-
     wrapper
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletVersion))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiscovery))
@@ -26,8 +26,8 @@ int main(int argc, char **argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletGroup))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiagnostic))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletHealth))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletPolicy))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics));
-
     app.require_subcommand();
 
     CLI11_PARSE(app, argc, argv);

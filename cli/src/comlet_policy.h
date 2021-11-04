@@ -4,15 +4,24 @@
 #include <string>
 
 #include "comlet_base.h"
+#include "core.grpc.pb.h"
+#include "core.pb.h"
 
 namespace xpum::cli {
 
 struct ComletPolicyOptions {
     bool listAll = false;
+    bool listAllPolicyType = false;
+    bool create = false;
+    bool remove = false;
     int deviceId = -1;
-    uint32_t groupId = 0;
-    int powerThreshold = -2;
-    int thermalThreshold = -2;
+    int groupId = -1;
+    std::string polictyType = "";
+    std::string polictyConditionType = "";
+    std::string polictyActionType = "";
+    int threshold = -2;
+    double throttleDeviceFrequencyMin=-200000;
+    double throttleDeviceFrequencyMax=-200000;
 };
 
 class ComletPolicy : public ComletBase {
@@ -22,6 +31,10 @@ class ComletPolicy : public ComletBase {
 
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
+
+    XpumPolicyActionType policyActionTypeEnumFromString(std::string& type);
+    XpumPolicyConditionType policyConditionTypeEnumFromString(std::string& type);
+    XpumPolicyType policyTypeEnumFromString(std::string &type);
 
    private:
     std::unique_ptr<ComletPolicyOptions> opts;

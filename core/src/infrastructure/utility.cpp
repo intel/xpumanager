@@ -88,8 +88,6 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_EXECUTION_EFFICIENCY;
         case DeviceCapability::METRIC_NON_OCCUPATION:
             return MeasurementType::METRIC_NON_OCCUPATION;
-
-        //
         case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
             return MeasurementType::METRIC_RAS_ERROR_CAT_RESET;
         case DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
@@ -104,6 +102,8 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
         case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
             return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+        case DeviceCapability::METRIC_MEMORY_TEMPERATURE:
+            return MeasurementType::METRIC_MEMORY_TEMPERATURE;
         default:
             return MeasurementType::POWER;
     }
@@ -161,8 +161,6 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
             return DeviceCapability::METRIC_EXECUTION_EFFICIENCY;
         case MeasurementType::METRIC_NON_OCCUPATION:
             return DeviceCapability::METRIC_NON_OCCUPATION;
-
-        //
         case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
             return DeviceCapability::METRIC_RAS_ERROR_CAT_RESET;
         case MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
@@ -177,6 +175,8 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
             return DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
         case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
             return DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+        case MeasurementType::METRIC_MEMORY_TEMPERATURE:
+            return DeviceCapability::METRIC_MEMORY_TEMPERATURE;
         default:
             return DeviceCapability::POWER;
     }
@@ -192,7 +192,7 @@ std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capab
             return [p_device](Callback_t callback) { p_device->getActuralFrequency(callback); };
         case DeviceCapability::TEMPERATURE:
         case DeviceCapability::METRIC_TEMPERATURE:
-            return [p_device](Callback_t callback) { p_device->getTemperature(callback); };
+            return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_GPU); };
         case DeviceCapability::MEMORY:
         case DeviceCapability::METRIC_MEMORY_USED:
             return [p_device](Callback_t callback) { p_device->getMemory(callback); };
@@ -243,6 +243,8 @@ std::function<void(Callback_t)> Utility::getDeviceMethod(DeviceCapability& capab
             return [p_device](Callback_t callback) { p_device->getRasError(callback, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
         case DeviceCapability::METRIC_REQUEST_FREQUENCY:
             return [p_device](Callback_t callback) { p_device->getRequestFrequency(callback); };
+        case DeviceCapability::METRIC_MEMORY_TEMPERATURE:
+            return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_MEMORY); };
         default:
             break;
     }
@@ -296,6 +298,7 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
     metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
     metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
     metric_types.push_back(MeasurementType::METRIC_REQUEST_FREQUENCY);
+    metric_types.push_back(MeasurementType::METRIC_MEMORY_TEMPERATURE);
 }
 
 MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type) {
@@ -346,6 +349,8 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
             return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
         case xpum_stats_type_enum::XPUM_STATS_GPU_REQUEST_FREQUENCY:
             return MeasurementType::METRIC_REQUEST_FREQUENCY;
+        case xpum_stats_type_enum::XPUM_STATS_MEMORY_TEMPERATURE:
+            return MeasurementType::METRIC_MEMORY_TEMPERATURE;
         default:
             return MeasurementType::METRIC_POWER;
     }
@@ -407,6 +412,8 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
             return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
         case MeasurementType::METRIC_REQUEST_FREQUENCY:
             return xpum_stats_type_enum::XPUM_STATS_GPU_REQUEST_FREQUENCY;
+        case MeasurementType::METRIC_MEMORY_TEMPERATURE:
+            return xpum_stats_type_enum::XPUM_STATS_MEMORY_TEMPERATURE;
         default:
             return xpum_stats_type_enum::XPUM_STATS_POWER;
     }

@@ -33,6 +33,11 @@ void DataHandler::preHandleData(std::shared_ptr<SharedData>& p_data) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     this->p_preData = this->p_latestData;
     this->p_latestData = p_data;
+    auto iter = this->p_latestData->getData().begin();
+    while (iter != this->p_latestData->getData().end()) {
+        iter->second.setTimestamp(p_data->getTime());
+        ++iter;
+    }
     lock.unlock();
 
     if (p_data != nullptr) {

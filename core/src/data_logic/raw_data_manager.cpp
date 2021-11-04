@@ -139,6 +139,10 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE]->init();
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE, p_persistency);
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE]->init();
+
+    data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_TEMPERATURE, p_persistency);
+    data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE]->init();
 }
 
 void RawDataManager::close() {

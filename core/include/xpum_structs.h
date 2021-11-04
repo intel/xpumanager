@@ -363,8 +363,8 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_NON_OCCUPATION,                       ///< Non Occupation
     XPUM_STATS_POWER,                                ///< Power
     XPUM_STATS_ENERGY,                               ///< Energy
-    XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Frequency
-    XPUM_STATS_GPU_TEMPERATURE,                     ///< Gpu Temeperature
+    XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Actual Frequency
+    XPUM_STATS_GPU_TEMPERATURE,                      ///< Gpu Temeperature
     XPUM_STATS_MEMORY_USED,                          ///< Memory Used
     XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization
     XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth
@@ -382,7 +382,8 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
     XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
     XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
-    XPUM_STATS_GPU_REQUEST_FREQUENCY,
+    XPUM_STATS_GPU_REQUEST_FREQUENCY,                ///< Gpu Request Frequency
+    XPUM_STATS_MEMORY_TEMPERATURE,                   ///< Memory Temeperature
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -422,6 +423,29 @@ struct xpum_metrics_raw_data_t {
     uint64_t timestamp;            ///< The timestamp this value is telemetried
     xpum_stats_type_t metricsType; ///< Metric type
     uint64_t value;                ///< The instant value of the metricsType at the timestamp
+};
+
+/**
+ * @brief Struct to store metric data for different metric types
+ * 
+ */
+struct xpum_device_metric_data_t {
+    xpum_stats_type_t metricsType; ///< Metric type
+    bool isCounter;                ///< If this metric is a counter
+    uint64_t value;                ///< The value of this metric type
+    uint64_t timestamp;            ///< The timestamp of this data
+};
+
+/**
+ * @brief Struct to store device metrics data
+ * 
+ */
+struct xpum_device_metrics_t {
+    xpum_device_id_t deviceId; ///< Device id
+    bool isTileData;           ///< If this statistics data is tile level
+    int32_t tileId;            ///< The tile id, only valid if isTileData is true
+    int32_t count;             ///< The count of data stored in dataList array
+    xpum_device_metric_data_t dataList[XPUM_STATS_MAX];
 };
 
 enum xpum_engine_type_flags_t {

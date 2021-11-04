@@ -150,7 +150,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
 }
 
 void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
-                                 xpum_device_stats_t dataList[],
+                                 xpum_device_metrics_t dataList[],
                                  int* count) {
     if (dataList == nullptr) {
         return;
@@ -173,49 +173,45 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
 
     std::map<MeasurementType, MeasurementData>::iterator datas_iter = m_datas.begin();
     if (hasDataOnDevice) {
-        xpum_device_stats_t device_stats;
-        device_stats.deviceId = deviceId;
-        device_stats.isTileData = false;
-        device_stats.count = 0;
+        xpum_device_metrics_t device_metrics;
+        device_metrics.deviceId = deviceId;
+        device_metrics.isTileData = false;
+        device_metrics.count = 0;
         while (datas_iter != m_datas.end()) {
             if (datas_iter->second.hasDataOnDevice()) {
-                xpum_device_stats_data_t stats_data;
+                xpum_device_metric_data_t metric_data;
                 MeasurementType type = datas_iter->first;
-                stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                stats_data.isCounter = Utility::isCounterMetric(type) ? true : false;
-                stats_data.avg = -1;
-                stats_data.min = -1;
-                stats_data.max = -1;
-                stats_data.value = datas_iter->second.getCurrent();
-                device_stats.dataList[device_stats.count++] = stats_data;
+                metric_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+                metric_data.isCounter = Utility::isCounterMetric(type) ? true : false;
+                metric_data.value = datas_iter->second.getCurrent();
+                metric_data.timestamp =  datas_iter->second.getTimestamp();
+                device_metrics.dataList[device_metrics.count++] = metric_data;
             }
             ++datas_iter;
         }
-        dataList[(*count)++] = device_stats;
+        dataList[(*count)++] = device_metrics;
     }
 
     for (uint32_t i = 0; i < num_subdevice; i++) {
-        xpum_device_stats_t subdevice_stats;
-        subdevice_stats.deviceId = deviceId;
-        subdevice_stats.tileId = i;
-        subdevice_stats.isTileData = true;
-        subdevice_stats.count = 0;
+        xpum_device_metrics_t subdevice_metrics;
+        subdevice_metrics.deviceId = deviceId;
+        subdevice_metrics.tileId = i;
+        subdevice_metrics.isTileData = true;
+        subdevice_metrics.count = 0;
         datas_iter = m_datas.begin();
         while (datas_iter != m_datas.end()) {
             if (datas_iter->second.hasSubdeviceData() && datas_iter->second.getSubdeviceDatas()->find(i) != datas_iter->second.getSubdeviceDatas()->end()) {
-                xpum_device_stats_data_t stats_data;
+                xpum_device_metric_data_t metric_data;
                 MeasurementType type = datas_iter->first;
-                stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                stats_data.isCounter = Utility::isCounterMetric(type) ? true : false;
-                stats_data.avg = -1;
-                stats_data.min = -1;
-                stats_data.max = -1;
-                stats_data.value = datas_iter->second.getSubdeviceDataCurrent(i);
-                subdevice_stats.dataList[subdevice_stats.count++] = stats_data;
+                metric_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+                metric_data.isCounter = Utility::isCounterMetric(type) ? true : false;
+                metric_data.value = datas_iter->second.getSubdeviceDataCurrent(i);
+                metric_data.timestamp = datas_iter->second.getTimestamp();
+                subdevice_metrics.dataList[subdevice_metrics.count++] = metric_data;
             }
             ++datas_iter;
         }
-        dataList[(*count)++] = subdevice_stats;
+        dataList[(*count)++] = subdevice_metrics;
     }
 }
 
