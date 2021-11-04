@@ -35,6 +35,7 @@ class GPUDevice : public Device {
     void getEnergy(Callback_t callback) noexcept override;
     void getOccupationEfficiency(Callback_t callback, MeasurementType type) noexcept override;
     void getRasError(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
+    void getRasErrorOnSubdevice(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
 
     virtual bool runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept override;
     virtual xpum_firmware_flash_result_t getFirmwareFlashResult() noexcept override;
