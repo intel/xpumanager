@@ -12,34 +12,12 @@
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_property.h"
 #include "infrastructure/device_type.h"
+#include "infrastructure/handle_lock.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/measurement_data.h"
 
-#ifdef XPUM_ZE_HANDLE_LOCK_LOG
-#define XPUM_ZE_HANDLE_LOCK(handle, zefunc)                                                                                                              \
-    {                                                                                                                                                    \
-        using namespace std::chrono;                                                                                                                     \
-        auto t0 = high_resolution_clock::now();                                                                                                          \
-        std::lock_guard<std::mutex> lock(*getHandleMutex((handle)));                                                                                     \
-        auto t1 = high_resolution_clock::now();                                                                                                          \
-        zefunc;                                                                                                                                          \
-        auto t2 = high_resolution_clock::now();                                                                                                          \
-        auto duration1 = duration_cast<microseconds>(t1 - t0);                                                                                           \
-        auto duration2 = duration_cast<microseconds>(t2 - t1);                                                                                           \
-        XPUM_LOG_INFO("{}({}): get lock for {} in {} us, exec in {} us", __FUNCTION__, __LINE__, (void*)(handle), duration1.count(), duration2.count()); \
-    }
-#else
-#define XPUM_ZE_HANDLE_LOCK(handle, zefunc)                          \
-    {                                                                \
-        std::lock_guard<std::mutex> lock(*getHandleMutex((handle))); \
-        zefunc;                                                      \
-    }
-#endif
 
 namespace xpum {
-
-std::mutex GPUDeviceStub::handle_mutexes_mutex;
-std::map<void*, std::shared_ptr<std::mutex>> GPUDeviceStub::handle_mutexes;
 
 GPUDeviceStub::GPUDeviceStub() : p_thread_pool(nullptr), initialized(false) {
     XPUM_LOG_DEBUG("GPUDeviceStub()");
@@ -1559,20 +1537,20 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
         std::map<uint32_t, std::vector<uint32_t>> three_d_utilizations;
         std::vector<std::thread> threads;
         std::mutex mutex;
-        res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& engine : engines) {
                 threads.emplace_back(std::thread([&]() {
                     zes_engine_properties_t props;
                     props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-                    res = zesEngineGetProperties(engine, &props);
+                    XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                     if (res == ZE_RESULT_SUCCESS) {
                         zes_engine_stats_t snap1 = {};
                         zes_engine_stats_t snap2 = {};
-                        res = zesEngineGetActivity(engine, &snap1);
+                        XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap1));
                         if (res == ZE_RESULT_SUCCESS) {
                             std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
-                            res = zesEngineGetActivity(engine, &snap2);
+                            XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 uint64_t val = 100 * (snap2.activeTime - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
                                 if (val > 100) {
@@ -1615,7 +1593,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
             }
             zes_device_properties_t props = {};
             props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-            res = zesDeviceGetProperties(device, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 std::map<uint32_t, std::vector<uint64_t>> utilizations;
                 uint32_t i = 0;
@@ -1662,18 +1640,19 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
     uint32_t engine_count = 0;
     int sampling_period = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 0.8;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_engine_handle_t> engines(engine_count);
         std::map<uint32_t, std::vector<uint32_t>> group_utilizations;
         std::vector<std::thread> threads;
         std::mutex mutex;
-        res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& engine : engines) {
                 zes_engine_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-                res = zesEngineGetProperties(engine, &props);
+                XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     switch (engine_group_type) {
                         case ZES_ENGINE_GROUP_COMPUTE_ALL:
@@ -1708,14 +1687,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
                 threads.emplace_back(std::thread([&]() {
                     zes_engine_properties_t props;
                     props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-                    res = zesEngineGetProperties(engine, &props);
+                    XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                     if (res == ZE_RESULT_SUCCESS) {
                         zes_engine_stats_t snap1 = {};
                         zes_engine_stats_t snap2 = {};
-                        res = zesEngineGetActivity(engine, &snap1);
+                        XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap1));
                         if (res == ZE_RESULT_SUCCESS) {
                             std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
-                            res = zesEngineGetActivity(engine, &snap2);
+                            XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 uint64_t val = 100 * (snap2.activeTime - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
                                 if (val > 100) {
@@ -1734,7 +1713,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
             }
             zes_device_properties_t props = {};
             props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-            res = zesDeviceGetProperties(device, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 std::map<uint32_t, std::vector<uint64_t>> utilizations;
                 uint32_t i = 0;
@@ -2309,5 +2288,3 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
 }
 
 } // end namespace xpum
-
-#undef XPUM_ZE_HANDLE_LOCK

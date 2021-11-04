@@ -1,9 +1,0 @@
-[Unit]
-Description=XPUM Socket
-PartOf=xpum.service
-
-[Socket]
-ListenStream=/var/run/xpum.socket
-
-[Install]
-WantedBy=sockets.target

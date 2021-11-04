@@ -21,6 +21,27 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         json = this->coreStub->getAllHealth();
         return json;
     }
+
+    if (this->opts->deviceId != INT_MIN && this->opts->deviceId < 0) {
+        (*json)["error"] = "device not found";
+        return json;
+    }
+
+    if (this->opts->groupId == 0) {
+        (*json)["error"] = "group not found";
+        return json;
+    }
+    
+    if (this->opts->powerThreshold != INT_MIN && this->opts->powerThreshold < -1) {
+        (*json)["error"] = "invalid powerThreshold";
+        return json;
+    }
+
+    if (this->opts->thermalThreshold != INT_MIN && this->opts->thermalThreshold < -1) {
+        (*json)["error"] = "invalid thermalThreshold";
+        return json;
+    }
+
     if (this->opts->deviceId >= 0) {
         if (this->opts->powerThreshold >= -1) {
             json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_POWER_LIMIT, this->opts->powerThreshold);
@@ -34,7 +55,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         return json;
     }
 
-    if (this->opts->groupId > 0) {
+    if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
         if (this->opts->powerThreshold >= -1) {
             json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_POWER_LIMIT, this->opts->powerThreshold);
             return json;
@@ -46,7 +67,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         json = this->coreStub->getHealthByGroup(this->opts->groupId);
         return json;
     }
-    (*json)["error"] = "Unknown operation or wrong arguments";
+    (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
     return json;
 }
 } // end namespace xpum::cli

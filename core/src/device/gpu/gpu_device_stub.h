@@ -170,31 +170,12 @@ class GPUDeviceStub {
 
     static bool isDevEntry(const std::string& entryName);
 
-    template <typename T>
-    static std::shared_ptr<std::mutex> getHandleMutex(T& handle) {
-        auto p = (void*)(handle);
-
-        std::lock_guard<std::mutex> lock(handle_mutexes_mutex);
-
-        auto it = handle_mutexes.find(p);
-
-        if (it != handle_mutexes.end()) {
-          return it->second;
-        } else {
-          handle_mutexes[p] = std::make_shared<std::mutex>();
-          return handle_mutexes[p];
-        }
-    }
-
    private:
     std::unique_ptr<ThreadPool> p_thread_pool;
 
     bool initialized;
 
     std::mutex mutex;
-
-    static std::mutex handle_mutexes_mutex;
-    static std::map<void*, std::shared_ptr<std::mutex>> handle_mutexes;
 
     static std::mutex metric_streamer_mutex;
 
