@@ -4,6 +4,7 @@
 
 #include "xpum_api.h"
 #include "xpum_structs.h"
+#include "logger.h"
 
 namespace xpum::daemon {
 
@@ -15,7 +16,7 @@ XpumCoreServiceImpl::~XpumCoreServiceImpl() {
 
 grpc::Status XpumCoreServiceImpl::getVersion(grpc::ServerContext* context, const google::protobuf::Empty* request,
                                              XpumVersionInfoArray* response) {
-    std::cout << "call get version" << std::endl;
+    XPUM_LOG_DEBUG("call get version");
 
     int count{0};
     xpum_result_t res = xpumVersionInfo(nullptr, &count);
@@ -82,7 +83,7 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
 
 grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, const DeviceId* request,
                                               XpumTopologyInfo* response) {
-    std::cout << "call get topology" << std::endl;
+    XPUM_LOG_DEBUG("call get topology");
     std::unique_ptr<xpum_topology_t> topo;
 
     std::size_t size = sizeof(xpum_topology_t);
@@ -106,7 +107,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupCreate(::grpc::ServerContext* context, const ::GroupName* request,
                                                 ::GroupInfo* response) {
-    std::cout << "call group create" << std::endl;
+    XPUM_LOG_DEBUG("call group create");
     xpum_group_id_t id;
     xpum_result_t res = xpumGroupCreate(request->name().c_str(), &id);
     if (res == XPUM_OK) {
@@ -122,7 +123,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupDestory(::grpc::ServerContext* context, const ::GroupId* request,
                                                  ::GroupInfo* response) {
-    std::cout << "call group destory" << std::endl;
+    XPUM_LOG_DEBUG("call group destory");
     xpum_result_t res = xpumGroupDestroy(request->id());
 
     if (res == XPUM_OK) {
@@ -138,7 +139,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupAddDevice(::grpc::ServerContext* context, const ::GroupAddRemoveDevice* request,
                                                    ::GroupInfo* response) {
-    std::cout << "call group add device" << std::endl;
+    XPUM_LOG_DEBUG("call group add device");
 
     xpum_result_t res = xpumGroupAddDevice(request->groupid(), request->deviceid());
     if (res == XPUM_OK) {
@@ -166,7 +167,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupRemoveDevice(::grpc::ServerContext* context, const ::GroupAddRemoveDevice* request,
                                                       ::GroupInfo* response) {
-    std::cout << "call group remove device" << std::endl;
+    XPUM_LOG_DEBUG("call group remove device");
 
     xpum_result_t res = xpumGroupRemoveDevice(request->groupid(), request->deviceid());
     if (res == XPUM_OK) {
@@ -195,7 +196,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupGetInfo(::grpc::ServerContext* context, const ::GroupId* request,
                                                  ::GroupInfo* response) {
-    std::cout << "call group get info" << std::endl;
+    XPUM_LOG_DEBUG("call group get info");
 
     xpum_group_info_t info;
     xpum_result_t res = xpumGroupGetInfo(request->id(), &info);
@@ -219,7 +220,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::getAllGroups(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                                    ::GroupArray* response) {
-    std::cout << "call get all group id" << std::endl;
+    XPUM_LOG_DEBUG("call get all group id");
 
     xpum_group_id_t groups[XPUM_MAX_NUM_GROUPS];
     int count = XPUM_MAX_NUM_GROUPS;

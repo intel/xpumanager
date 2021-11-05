@@ -36,6 +36,8 @@ endif()
 configure_file(${CMAKE_CURRENT_LIST_DIR}/config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/config.h @ONLY)
 
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/spdlog)               
+
 # Proto file
 get_filename_component(core_proto "${CMAKE_CURRENT_LIST_DIR}/core.proto"
                        ABSOLUTE)
@@ -58,19 +60,19 @@ add_custom_command(
     --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}" "${core_proto}"
   DEPENDS "${core_proto}")
 
-# Include generated *.pb.h files
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-# Specifiy header file location
-include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR} XPUM_DAEMON_SRC)
 set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
              ${core_proto_hdrs})
 
 add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cpp)
+
+target_include_directories(
+  xpumd
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../core/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
+)
 
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 
@@ -94,7 +96,7 @@ if (NOT DEFINED WORK_PATH)
       COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
   )
 else()
-  target_link_libraries(xpumd PRIVATE xpum ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF})
+  target_link_libraries(xpumd PRIVATE xpum spdlog
+        ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 endif()
 
