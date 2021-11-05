@@ -1293,15 +1293,15 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t& devi
         hMetricGroup = GPUDeviceStub::target_metric_groups.at(device);
     } else {
         uint32_t metricGroupCount = 0;
-        res = zetMetricGroupGet(device, &metricGroupCount, nullptr);
+        XPUM_ZE_HANDLE_LOCK(device, res = zetMetricGroupGet(device, &metricGroupCount, nullptr));
         if (res == ZE_RESULT_SUCCESS) {
             std::vector<zet_metric_group_handle_t> metricGroups(metricGroupCount);
-            res = zetMetricGroupGet(device, &metricGroupCount, metricGroups.data());
+            XPUM_ZE_HANDLE_LOCK(device, res = zetMetricGroupGet(device, &metricGroupCount, metricGroups.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& metric_group : metricGroups) {
                     zet_metric_group_properties_t metric_group_properties;
                     metric_group_properties.stype = ZET_STRUCTURE_TYPE_METRIC_GROUP_PROPERTIES;
-                    XPUM_ZE_HANDLE_LOCK(metric_group, res = zetMetricGroupGetProperties(metric_group, &metric_group_properties));
+                    res = zetMetricGroupGetProperties(metric_group, &metric_group_properties);
                     if (res == ZE_RESULT_SUCCESS) {
                         if (std::strcmp(metric_group_properties.name, "ComputeBasic") == 0 && metric_group_properties.samplingType == ZET_METRIC_GROUP_SAMPLING_TYPE_FLAG_TIME_BASED) {
                             GPUDeviceStub::target_metric_groups[device] = metric_group;
@@ -1324,18 +1324,18 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t& devi
         ze_context_handle_t hContext;
         ze_context_desc_t context_desc;
         context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-        res = zeContextCreate(driver, &context_desc, &hContext);
+        XPUM_ZE_HANDLE_LOCK(driver, res = zeContextCreate(driver, &context_desc, &hContext));
         if (res != ZE_RESULT_SUCCESS) {
             throw BaseException("toGetOccupationEfficiency - zeContextCreate");
         }
         zet_metric_streamer_desc_t metricStreamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
-        res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup);
+        XPUM_ZE_HANDLE_LOCK(device, res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup));
         if (res != ZE_RESULT_SUCCESS) {
             throw BaseException("toGetOccupationEfficiency - zetContextActivateMetricGroups");
         }
 
         metricStreamerDesc.samplingPeriod = Configuration::OCCUPATION_EFFICIENCY_STREAMER_SAMPLING_PERIOD;
-        res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &metricStreamerDesc, nullptr, &hMetricStreamer);
+        XPUM_ZE_HANDLE_LOCK(device, res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &metricStreamerDesc, nullptr, &hMetricStreamer));
         if (res != ZE_RESULT_SUCCESS) {
             throw BaseException("toGetOccupationEfficiency - zetMetricStreamerOpen");
         }
@@ -1430,19 +1430,19 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetOccupationEfficiency(const 
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     uint32_t sub_device_count = 0;
-    res = zeDeviceGetSubDevices(device, &sub_device_count, nullptr);
+    XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &sub_device_count, nullptr));
     if (res != ZE_RESULT_SUCCESS) {
         throw BaseException("toGetOccupationEfficiency");
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-    res = zeDeviceGetSubDevices(device, &sub_device_count, sub_device_handles.data());
+    XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &sub_device_count, sub_device_handles.data()));
     if (res != ZE_RESULT_SUCCESS) {
         throw BaseException("toGetOccupationEfficiency");
     }
     for (auto& sub_device : sub_device_handles) {
         ze_device_properties_t props = {};
         props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-        res = zeDeviceGetProperties(sub_device, &props);
+        XPUM_ZE_HANDLE_LOCK(sub_device, res = zeDeviceGetProperties(sub_device, &props));
         if (res != ZE_RESULT_SUCCESS) {
             throw BaseException("toGetOccupationEfficiency");
         }
@@ -2251,10 +2251,11 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
     if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY) {
         description = get_health_state_string(zes_mem_health_t::ZES_MEM_HEALTH_UNKNOWN);
         uint32_t mem_module_count = 0;
-        ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+        ze_result_t res;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
         if (res == ZE_RESULT_SUCCESS) {
             std::vector<zes_mem_handle_t> mems(mem_module_count);
-            res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& mem : mems) {
                     zes_mem_state_t memory_state = {};
@@ -2289,17 +2290,18 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
 
         description = "The power health cannot be determined.";
         uint32_t power_domain_count = 0;
-        ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+        ze_result_t res;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
         std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-        res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& power : power_handles) {
                 zes_power_energy_counter_t snap1, snap2;
-                res = zesPowerGetEnergyCounter(power, &snap1);
+                XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
                 if (res == ZE_RESULT_SUCCESS) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
                     int power_val = 0;
-                    res = zesPowerGetEnergyCounter(power, &snap2);
+                    XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
                     if (res == ZE_RESULT_SUCCESS) {
                         power_val = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                         if (power_val < power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
@@ -2322,13 +2324,14 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
 
         description = "The temperature health cannot be determined.";
         uint32_t temp_sensor_count = 0;
-        ze_result_t res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr);
+        ze_result_t res;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
         std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
         if (res == ZE_RESULT_SUCCESS) {
-            res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data());
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
             for (auto& temp : temp_sensors) {
                 zes_temp_properties_t props;
-                res = zesTemperatureGetProperties(temp, &props);
+                XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetProperties(temp, &props));
                 if (res != ZE_RESULT_SUCCESS || props.type != ZES_TEMP_SENSORS_GPU) {
                     continue;
                 }
@@ -2351,10 +2354,11 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
     } else if (type == xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT) {
         description = "All port statuses cannot be determined.";
         uint32_t fabric_ports_count = 0;
-        ze_result_t res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, nullptr);
+        ze_result_t res;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, nullptr));
         std::vector<zes_fabric_port_handle_t> fabric_ports(fabric_ports_count);
         if (res == ZE_RESULT_SUCCESS) {
-            res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, fabric_ports.data());
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, fabric_ports.data()));
             for (auto& fabric_port : fabric_ports) {
                 zes_fabric_port_state_t fabric_port_state;
                 XPUM_ZE_HANDLE_LOCK(fabric_port, res = zesFabricPortGetState(fabric_port, &fabric_port_state));
