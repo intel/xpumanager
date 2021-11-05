@@ -517,6 +517,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end);
     if (res != XPUM_OK || count < 0) {
         response->set_errormsg("Error");
+        return grpc::Status::OK;
     }
     response->set_begin(begin);
     response->set_end(end);
@@ -549,6 +550,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end);
     if (res != XPUM_OK || count < 0) {
         response->set_errormsg("Error");
+        return grpc::Status::OK;
     }
     response->set_begin(begin);
     response->set_end(end);
