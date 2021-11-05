@@ -83,6 +83,8 @@ def getHealthByGroup(groupId, healthType):
 
 
 def setHealthConfig(deviceId, healthType, threshold):
+    if threshold < -1:
+        return 1, "invalid threshold", None
     healthTypes = ["temperature", "power"]
     t = healthTypes.index(healthType)
     resp = stub.setHealthConfig(core_pb2.HealthConfigRequest(
@@ -93,6 +95,8 @@ def setHealthConfig(deviceId, healthType, threshold):
 
 
 def setHealthConfigByGroup(groupId, healthType, threshold):
+    if threshold < -1:
+        return 1, "invalid threshold", None
     healthTypes = ["temperature", "power"]
     t = healthTypes.index(healthType)
     resp = stub.setHealthConfigByGroup(core_pb2.HealthConfigByGroupRequest(

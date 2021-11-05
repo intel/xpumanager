@@ -23,6 +23,8 @@ diagnosticResultEnumToString = {
 
 
 def runDiagnostics(deviceId, level):
+    if level not in [1, 2, 3]:
+        return 1, "invalid level", None
     resp = stub.runDiagnostics(
         core_pb2.RunDiagnosticsRequest(deviceId=deviceId, level=level))
     if len(resp.errorMsg) != 0:
@@ -31,6 +33,8 @@ def runDiagnostics(deviceId, level):
 
 
 def runDiagnosticsByGroup(groupId, level):
+    if level not in [1, 2, 3]:
+        return 1, "invalid level", None
     resp = stub.runDiagnosticsByGroup(
         core_pb2.RunDiagnosticsByGroupRequest(groupId=groupId, level=level))
     if len(resp.errorMsg) != 0:
