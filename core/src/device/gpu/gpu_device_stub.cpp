@@ -823,19 +823,20 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
     uint32_t power_domain_count = 0;
     bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
     std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_properties_t props;
-            res = zesPowerGetProperties(power, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_power_energy_counter_t snap1, snap2;
-                res = zesPowerGetEnergyCounter(power, &snap1);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap1));
                 if (res == ZE_RESULT_SUCCESS) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
-                    res = zesPowerGetEnergyCounter(power, &snap2);
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap2));
                     if (res == ZE_RESULT_SUCCESS) {
                         uint64_t data = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
@@ -866,16 +867,17 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_han
     uint32_t power_domain_count = 0;
     bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
     std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_properties_t props;
-            res = zesPowerGetProperties(power, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_power_energy_counter_t counter;
-                res = zesPowerGetEnergyCounter(power, &counter);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &counter));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, counter.energy * 1.0 / 1000) : ret->setCurrent(counter.energy * 1.0 / 1000);
                     dataAcquired = true;
@@ -904,13 +906,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
     uint32_t freq_count = 0;
     bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
     std::vector<zes_freq_handle_t> freq_handles(freq_count);
     if (res == ZE_RESULT_SUCCESS) {
-        res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
         for (auto& ph_freq : freq_handles) {
             zes_freq_properties_t props;
-            res = zesFrequencyGetProperties(ph_freq, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_freq_state_t freq_state;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
@@ -942,13 +945,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_
     uint32_t freq_count = 0;
     bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
     std::vector<zes_freq_handle_t> freq_handles(freq_count);
     if (res == ZE_RESULT_SUCCESS) {
-        res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
         for (auto& ph_freq : freq_handles) {
             zes_freq_properties_t props;
-            res = zesFrequencyGetProperties(ph_freq, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_freq_state_t freq_state;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
@@ -980,16 +984,17 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
     uint32_t temp_sensor_count = 0;
     bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
     if (res != ZE_RESULT_SUCCESS || temp_sensor_count == 0) {
         throw BaseException("toGetTemperature error");
     }
     std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
     if (res == ZE_RESULT_SUCCESS) {
-        res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
         for (auto& temp : temp_sensors) {
             zes_temp_properties_t props;
-            res = zesTemperatureGetProperties(temp, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetProperties(temp, &props));
             /*
             if (res == ZE_RESULT_SUCCESS && props.type == ZES_TEMP_SENSORS_GLOBAL) {
                 double temp_val = 0;
@@ -1057,15 +1062,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_han
     bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     uint32_t mem_module_count = 0;
-    ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_mem_handle_t> mems(mem_module_count);
-        res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& mem : mems) {
                 zes_mem_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                res = zesMemoryGetProperties(mem, &props);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetProperties(mem, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
@@ -1100,15 +1106,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
     bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     uint32_t mem_module_count = 0;
-    ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_mem_handle_t> mems(mem_module_count);
-        res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& mem : mems) {
                 zes_mem_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                res = zesMemoryGetProperties(mem, &props);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetProperties(mem, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
@@ -1144,24 +1151,25 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
     bool dataAcquired = false;
     uint32_t mem_module_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_mem_handle_t> mems(mem_module_count);
-        res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& mem : mems) {
                 zes_mem_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                res = zesMemoryGetProperties(mem, &props);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetProperties(mem, &props));
                 if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
                     continue;
                 }
 
                 zes_mem_bandwidth_t s1, s2;
-                res = zesMemoryGetBandwidth(mem, &s1);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &s1));
                 if (res == ZE_RESULT_SUCCESS) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
-                    res = zesMemoryGetBandwidth(mem, &s2);
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &s2));
                     if (res == ZE_RESULT_SUCCESS) {
                         uint64_t val = 1000000 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp));
                         if (val > 100) {
@@ -1195,20 +1203,21 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryRead(const zes_device
     bool dataAcquired = false;
     uint32_t mem_module_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_mem_handle_t> mems(mem_module_count);
-        res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& mem : mems) {
                 zes_mem_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                res = zesMemoryGetProperties(mem, &props);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetProperties(mem, &props));
                 if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
                     continue;
                 }
                 zes_mem_bandwidth_t mem_bandwidth;
-                res = zesMemoryGetBandwidth(mem, &mem_bandwidth);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, mem_bandwidth.readCounter) : ret->setCurrent(mem_bandwidth.readCounter);
                     dataAcquired = true;
@@ -1237,20 +1246,21 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_devic
     bool dataAcquired = false;
     uint32_t mem_module_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_mem_handle_t> mems(mem_module_count);
-        res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& mem : mems) {
                 zes_mem_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                res = zesMemoryGetProperties(mem, &props);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetProperties(mem, &props));
                 if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
                     continue;
                 }
                 zes_mem_bandwidth_t mem_bandwidth;
-                res = zesMemoryGetBandwidth(mem, &mem_bandwidth);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, mem_bandwidth.writeCounter) : ret->setCurrent(mem_bandwidth.writeCounter);
                     dataAcquired = true;
@@ -1616,7 +1626,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
     uint32_t engine_count = 0;
     int sampling_period = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 0.8;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_engine_handle_t> engines(engine_count);
         std::map<uint32_t, std::vector<uint32_t>> compute_utilizations;
