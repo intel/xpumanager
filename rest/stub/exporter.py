@@ -64,3 +64,27 @@ def getMetrics(deviceId):
     if tileLevelStatsDataList:
         data["TileLevel"] = tileLevelStatsDataList
     return 0, "OK", data
+
+def getMetricsByGroup(groupId):
+    resp = stub.getMetricsByGroup(core_pb2.GroupId(id=groupId))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    data = dict()
+    data["GroupId"] = groupId
+    deviceLevelStatsDataList = []
+    for stats_info in resp.dataList:
+        dataList = []
+        for stats_data in stats_info.dataList:
+            try:
+                tmp = dict()
+                metricsType = XpumStatsType(stats_data.metricsType.value).name
+                tmp["metricsType"] = metricsType
+                tmp["value"] = stats_data.value
+                if not stats_data.isCounter:
+                    tmp["avg"] = stats_data.value
+                dataList.append(tmp)
+            except:
+                pass
+        deviceLevelStatsDataList.append(dataList)
+    data["DeviceLevel"] = deviceLevelStatsDataList
+    return 0, "OK", data

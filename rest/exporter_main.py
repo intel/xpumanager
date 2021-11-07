@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 from flask import Flask
-from views import exporter
 
 app = Flask(__name__)
-
-# prometheus exporter
-app.add_url_rule('/metrics',
-                 view_func=exporter.export_metrics, methods=['GET'])
 
 if __name__ == '__main__':
 
@@ -36,6 +31,18 @@ if __name__ == '__main__':
     if args.socket_file is not None:
         os.environ['XPUM_SOCKET_FILE'] = args.socket_file
 
+    from views import exporter
+
+    # prometheus exporter
+    app.add_url_rule('/metrics',
+                    view_func=exporter.export_metrics, methods=['GET'])
+
     app.run(host=args.host, port=args.port, use_reloader=False)
 
     logger.info('XPU Manager Prometheus Exporter Exited')
+else:
+    from views import exporter
+
+    # prometheus exporter
+    app.add_url_rule('/metrics',
+                    view_func=exporter.export_metrics, methods=['GET'])

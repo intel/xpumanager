@@ -1,4 +1,4 @@
-from .exporter import getMetrics
+from .exporter import getMetrics, getMetricsByGroup
 from .versions import getVersion
 from .devices import getDeviceList, getDeviceProperties
 from .health import getHealth, getHealthByGroup, setHealthConfig, setHealthConfigByGroup
