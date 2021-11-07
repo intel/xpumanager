@@ -230,6 +230,11 @@ def build_dev_labels(dev):
 
 
 def attach_kube_labels(dev, labels, label_values, pod_resources):
+    nodename = os.getenv('NODE_NAME')
+    if nodename is not None:
+        labels.append('node')
+        label_values.append(nodename)
+        
     if dev is None or pod_resources is None:
         return
     bdf = dev.get('pci_bdf_address', '')
@@ -243,11 +248,6 @@ def attach_kube_labels(dev, labels, label_values, pod_resources):
     if 'container' in pod_resource:
         labels.append('kube_container')
         label_values.append(pod_resource['container'])
-
-    nodename = os.getenv('NODE_NAME')
-    if nodename is not None:
-        labels.append('node')
-        label_values.append(nodename)
 
 
 def attach_tile_labels(labels, label_values, tile_id):
