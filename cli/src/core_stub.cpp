@@ -76,15 +76,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
             (*json)["affinity_localcpus"] = response.cpuaffinity().localcpus();
             (*json)["parent_switch_count"] = response.switchcount();
 
-            std::vector<nlohmann::json> switchJsonList;
+            std::vector<std::string> switchList;
             for (int i{0}; i < response.switchinfo_size(); ++i) {
-                auto switchJson = nlohmann::json();
-                switchJson["device_patch"] = response.switchinfo(i).switchdevicepath();
-                //std::string switchIdx = std::string("switch_") + std::to_string(i);
-                //(*json)[switchIdx] = response.switchinfo(i).switchdevicepath();
-                switchJsonList.push_back(switchJson);
+                switchList.push_back(response.switchinfo(i).switchdevicepath());
             }
-            (*json)["switch_list"] = switchJsonList;
+
+            (*json)["switch_list"] = switchList;
+            
         } else {
             (*json)["error message"] = response.errormsg();
         }
@@ -109,15 +107,13 @@ std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName) {
         (*json)["group_name"] = response.groupname();
         (*json)["device_count"] = response.count();
 
-        std::vector<nlohmann::json> deviceJsonList;
-
-        for (int i{0}; i < response.devicelist_size(); ++i) {
-             auto deviceJson = nlohmann::json();
-            deviceJson["device_id"] = response.devicelist(i).id();
-            deviceJsonList.push_back(deviceJson);
+        std::vector<int32_t> deviceIdList;
+        for (uint32_t j{0}; j < response.count(); ++j) {
+            deviceIdList.push_back(response.devicelist(j).id());
         }
 
-        (*json)["device_list"] = deviceJsonList;
+        (*json)["device_id_list"] = deviceIdList;
+        
     } else {
         (*json)["error code"] = status.error_code();
         (*json)["error message"] = response.errormsg();

@@ -79,15 +79,19 @@ target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 
 if (NOT DEFINED WORK_PATH)
   message(STATUS "WORK_PATH not defined!")
+  message("PATH = $ENV{PATH}")
   find_library(DGM_LIB 
-    NAMES libxpum.so
+    NAMES libxpum.so 
     PATHS 
     ${CMAKE_CURRENT_LIST_DIR}/../build/core
     ${CMAKE_CURRENT_LIST_DIR}/../core/build
+    NO_CMAKE_ENVIRONMENT_PATH
+    NO_DEFAULT_PATH
+    NO_SYSTEM_ENVIRONMENT_PATH
     )
   
   message(STATUS "DGM_LIB=${DGM_LIB}")
-  target_link_libraries(xpumd PRIVATE ${DGM_LIB} ${_GRPC_GRPCPP}
+  target_link_libraries(xpumd PRIVATE spdlog ${DGM_LIB} ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
   
   add_custom_command( TARGET xpumd 

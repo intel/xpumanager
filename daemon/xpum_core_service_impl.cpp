@@ -84,19 +84,26 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
 grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, const DeviceId* request,
                                               XpumTopologyInfo* response) {
     XPUM_LOG_DEBUG("call get topology");
-    std::unique_ptr<xpum_topology_t> topo;
+    std::shared_ptr< xpum_topology_t > topo(static_cast<xpum_topology_t*>(malloc(sizeof(xpum_topology_t))), free);
+    std::shared_ptr< xpum_topology_t > topology = topo;
 
     std::size_t size = sizeof(xpum_topology_t);
-    xpum_result_t res = xpumGetTopology(request->id(), topo.get(), &size);
+    xpum_result_t res = xpumGetTopology(request->id(), topology.get(), &size);
+
+    if (res == XPUM_BUFFER_TOO_SMALL) {
+        std::shared_ptr< xpum_topology_t > newTopo(static_cast<xpum_topology_t*>(malloc(size)), free);
+        topology = newTopo;
+        res = xpumGetTopology(request->id(), topology.get(), &size);
+    } 
 
     if (res == XPUM_OK) {
-        response->mutable_id()->set_id(topo->deviceId);
-        response->mutable_cpuaffinity()->set_localcpulist(topo->cpuAffinity.localCPUList);
-        response->mutable_cpuaffinity()->set_localcpus(topo->cpuAffinity.localCPUs);
-        response->set_switchcount(topo->switchCount);
-        for (int i{0}; i < topo->switchCount; ++i) {
+        response->mutable_id()->set_id(topology->deviceId);
+        response->mutable_cpuaffinity()->set_localcpulist(topology->cpuAffinity.localCPUList);
+        response->mutable_cpuaffinity()->set_localcpus(topology->cpuAffinity.localCPUs);
+        response->set_switchcount(topology->switchCount);
+        for (int i{0}; i < topology->switchCount; ++i) {
             XpumTopologyInfo_XpumSwitchInfo* parentSwitch = response->add_switchinfo();
-            parentSwitch->set_switchdevicepath(topo->switches[i].switchDevicePath);
+            parentSwitch->set_switchdevicepath(topology->switches[i].switchDevicePath);
         }
     } else {
         response->set_errormsg("Error");
