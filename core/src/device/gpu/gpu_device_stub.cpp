@@ -837,7 +837,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
                 if (res == ZE_RESULT_SUCCESS) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
                     XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap2));
-                    if (res == ZE_RESULT_SUCCESS) {
+                    if (res == ZE_RESULT_SUCCESS && (snap2.timestamp - snap1.timestamp) != 0) {
                         uint64_t data = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
                         dataAcquired = true;
@@ -1120,7 +1120,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
-                    if (res == ZE_RESULT_SUCCESS) {
+                    if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
                         uint64_t utilization = used * 100.0 / sysman_memory_state.size;
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, utilization) : ret->setCurrent(utilization);
@@ -1170,7 +1170,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
                 if (res == ZE_RESULT_SUCCESS) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
                     XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &s2));
-                    if (res == ZE_RESULT_SUCCESS) {
+                    if (res == ZE_RESULT_SUCCESS && (s2.maxBandwidth * (s2.timestamp - s1.timestamp)) != 0) {
                         uint64_t val = 1000000 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp));
                         if (val > 100) {
                             val = 100;
