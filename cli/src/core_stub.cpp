@@ -74,7 +74,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
         if (response.errormsg().length() == 0) {
             (*json)["affinity_localcpulist"] = response.cpuaffinity().localcpulist();
             (*json)["affinity_localcpus"] = response.cpuaffinity().localcpus();
-            (*json)["parent_switch_count"] = response.switchcount();
+            (*json)["switch_count"] = response.switchcount();
 
             std::vector<std::string> switchList;
             for (int i{0}; i < response.switchinfo_size(); ++i) {
