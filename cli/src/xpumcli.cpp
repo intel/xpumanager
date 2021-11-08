@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
     CLI11_PARSE(app, argc, argv);
 
-    std::cout << wrapper.getResult() << std::endl;
+    wrapper.printResult();
 
     return 0;
 }

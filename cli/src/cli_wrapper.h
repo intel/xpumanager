@@ -4,6 +4,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <vector>
 
 namespace CLI {
 class App;
@@ -22,12 +23,13 @@ class CLIWrapper {
    public:
     CLIWrapper(CLI::App &cliApp);
     CLIWrapper &addComlet(const std::shared_ptr<ComletBase> &comlet);
-    std::string getResult();
+    void printResult();
 
    private:
     CLI::App &cliApp;
     std::unique_ptr<CLIWrapperOptions> opts;
     std::unique_ptr<nlohmann::json> jsonResult;
     std::shared_ptr<CoreStub> coreStub;
+    std::vector<std::shared_ptr<ComletBase>> comlets;
 };
 } // end namespace xpum::cli
