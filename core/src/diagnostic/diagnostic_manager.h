@@ -99,12 +99,12 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static long double calculateGbps(long double period, long double buffer_size);
 
+    static void waitForCommandQueueSynchronize(ze_command_queue_handle_t command_queue, std::string info);
 
     static void updateMessage(char *arr, std::string str);
 
     static std::string roundDouble(double r, int precision);
 
-    static int command_queue_synchronize_maximum_time; // minutes
 
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
 
