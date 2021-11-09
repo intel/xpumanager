@@ -11,6 +11,7 @@
 #include "comlet_policy.h"
 #include "comlet_statistics.h"
 #include "comlet_topology.h"
+#include "comlet_config.h"
 #include "comlet_version.h"
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
@@ -27,6 +28,7 @@ int main(int argc, char **argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiagnostic))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletHealth))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletPolicy))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletConfig))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics));
     app.require_subcommand();
 
