@@ -4,6 +4,7 @@
 
 #include "xpum_api.h"
 #include "xpum_structs.h"
+#include "logger.h"
 
 namespace xpum::daemon {
 
@@ -15,7 +16,7 @@ XpumCoreServiceImpl::~XpumCoreServiceImpl() {
 
 grpc::Status XpumCoreServiceImpl::getVersion(grpc::ServerContext* context, const google::protobuf::Empty* request,
                                              XpumVersionInfoArray* response) {
-    std::cout << "call get version" << std::endl;
+    XPUM_LOG_DEBUG("call get version");
 
     int count{0};
     xpum_result_t res = xpumVersionInfo(nullptr, &count);
@@ -82,20 +83,27 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
 
 grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, const DeviceId* request,
                                               XpumTopologyInfo* response) {
-    std::cout << "call get topology" << std::endl;
-    std::unique_ptr<xpum_topology_t> topo;
+    XPUM_LOG_DEBUG("call get topology");
+    std::shared_ptr< xpum_topology_t > topo(static_cast<xpum_topology_t*>(malloc(sizeof(xpum_topology_t))), free);
+    std::shared_ptr< xpum_topology_t > topology = topo;
 
     std::size_t size = sizeof(xpum_topology_t);
-    xpum_result_t res = xpumGetTopology(request->id(), topo.get(), &size);
+    xpum_result_t res = xpumGetTopology(request->id(), topology.get(), &size);
+
+    if (res == XPUM_BUFFER_TOO_SMALL) {
+        std::shared_ptr< xpum_topology_t > newTopo(static_cast<xpum_topology_t*>(malloc(size)), free);
+        topology = newTopo;
+        res = xpumGetTopology(request->id(), topology.get(), &size);
+    } 
 
     if (res == XPUM_OK) {
-        response->mutable_id()->set_id(topo->deviceId);
-        response->mutable_cpuaffinity()->set_localcpulist(topo->cpuAffinity.localCPUList);
-        response->mutable_cpuaffinity()->set_localcpus(topo->cpuAffinity.localCPUs);
-        response->set_switchcount(topo->switchCount);
-        for (int i{0}; i < topo->switchCount; ++i) {
+        response->mutable_id()->set_id(topology->deviceId);
+        response->mutable_cpuaffinity()->set_localcpulist(topology->cpuAffinity.localCPUList);
+        response->mutable_cpuaffinity()->set_localcpus(topology->cpuAffinity.localCPUs);
+        response->set_switchcount(topology->switchCount);
+        for (int i{0}; i < topology->switchCount; ++i) {
             XpumTopologyInfo_XpumSwitchInfo* parentSwitch = response->add_switchinfo();
-            parentSwitch->set_switchdevicepath(topo->switches[i].switchDevicePath);
+            parentSwitch->set_switchdevicepath(topology->switches[i].switchDevicePath);
         }
     } else {
         response->set_errormsg("Error");
@@ -106,7 +114,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupCreate(::grpc::ServerContext* context, const ::GroupName* request,
                                                 ::GroupInfo* response) {
-    std::cout << "call group create" << std::endl;
+    XPUM_LOG_DEBUG("call group create");
     xpum_group_id_t id;
     xpum_result_t res = xpumGroupCreate(request->name().c_str(), &id);
     if (res == XPUM_OK) {
@@ -122,7 +130,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupDestory(::grpc::ServerContext* context, const ::GroupId* request,
                                                  ::GroupInfo* response) {
-    std::cout << "call group destory" << std::endl;
+    XPUM_LOG_DEBUG("call group destory");
     xpum_result_t res = xpumGroupDestroy(request->id());
 
     if (res == XPUM_OK) {
@@ -138,7 +146,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupAddDevice(::grpc::ServerContext* context, const ::GroupAddRemoveDevice* request,
                                                    ::GroupInfo* response) {
-    std::cout << "call group add device" << std::endl;
+    XPUM_LOG_DEBUG("call group add device");
 
     xpum_result_t res = xpumGroupAddDevice(request->groupid(), request->deviceid());
     if (res == XPUM_OK) {
@@ -166,7 +174,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupRemoveDevice(::grpc::ServerContext* context, const ::GroupAddRemoveDevice* request,
                                                       ::GroupInfo* response) {
-    std::cout << "call group remove device" << std::endl;
+    XPUM_LOG_DEBUG("call group remove device");
 
     xpum_result_t res = xpumGroupRemoveDevice(request->groupid(), request->deviceid());
     if (res == XPUM_OK) {
@@ -195,7 +203,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupGetInfo(::grpc::ServerContext* context, const ::GroupId* request,
                                                  ::GroupInfo* response) {
-    std::cout << "call group get info" << std::endl;
+    XPUM_LOG_DEBUG("call group get info");
 
     xpum_group_info_t info;
     xpum_result_t res = xpumGroupGetInfo(request->id(), &info);
@@ -219,7 +227,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::getAllGroups(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                                    ::GroupArray* response) {
-    std::cout << "call get all group id" << std::endl;
+    XPUM_LOG_DEBUG("call get all group id");
 
     xpum_group_id_t groups[XPUM_MAX_NUM_GROUPS];
     int count = XPUM_MAX_NUM_GROUPS;
@@ -516,6 +524,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end);
     if (res != XPUM_OK || count < 0) {
         response->set_errormsg("Error");
+        return grpc::Status::OK;
     }
     response->set_begin(begin);
     response->set_end(end);
@@ -548,6 +557,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end);
     if (res != XPUM_OK || count < 0) {
         response->set_errormsg("Error");
+        return grpc::Status::OK;
     }
     response->set_begin(begin);
     response->set_end(end);
@@ -719,4 +729,212 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     }
 }
 
-} // end namespace xpum::daemon
+::grpc::Status XpumCoreServiceImpl::setDeviceSchedulerMode(::grpc::ServerContext* context, const ::ConfigDeviceSchdeulerModeRequest* request,
+                                                    ::ConfigDeviceResultData* response) {
+    xpum_result_t res = XPUM_GENERIC_ERROR;
+    if(!request->istiledata()){
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    XpumSchedulerMode scheduler = request->scheduler();
+    uint32_t val1 = request->val1();
+    uint32_t val2 = request->val2();
+
+    if (scheduler == SCHEDULER_TIMEOUT) {
+        xpum_scheduler_timeout_t sch_timeout;
+        sch_timeout.subdevice_Id = subdevice_Id;
+        sch_timeout.watchdog_timeout = val1;
+        res = xpumSetDeviceSchedulerTimeoutMode(deviceId, sch_timeout);
+    } else if (scheduler == SCHEDULER_TIMESLICE) {
+        xpum_scheduler_timeslice_t sch_timeslice;
+        sch_timeslice.subdevice_Id = subdevice_Id;
+        sch_timeslice.interval = val1;
+        sch_timeslice.yield_timeout = val2;
+        res = xpumSetDeviceSchedulerTimesliceMode( deviceId, sch_timeslice);
+    } else if (scheduler == SCHEDULER_EXCLUSIVE) {
+        xpum_scheduler_exclusive_t sch_exclusive;
+        sch_exclusive.subdevice_Id = subdevice_Id;
+        res = xpumSetDeviceSchedulerExclusiveMode( deviceId, sch_exclusive);
+    } else {
+        response->set_errormsg("Error");
+    }
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::setDevicePowerLimit(::grpc::ServerContext* context, const ::ConfigDevicePowerLimitRequest* request,
+                                                    ::ConfigDeviceResultData* response) {
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t val1 = request->powerlimit();
+    uint32_t val2 = request->intervalwindow();
+    xpum_result_t res;
+    xpum_power_sustained_limit_t sustained_limit;
+
+    sustained_limit.enabled = true;
+    sustained_limit.power = val1;
+    sustained_limit.interval = val2;
+
+    res = xpumSetDevicePowerSustainedLimits( deviceId, 0, sustained_limit);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;                                        
+}
+
+::grpc::Status XpumCoreServiceImpl::setDeviceFrequencyRange(::grpc::ServerContext* context, const ::ConfigDeviceFrequencyRangeRequest* request,
+                                                    ::ConfigDeviceResultData* response) {
+    xpum_result_t res;
+    if(!request->istiledata()){
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    xpum_frequency_range_t freq_range;
+    freq_range.subdevice_Id = subdevice_Id;
+    freq_range.type = XPUM_GPU_FREQUENCY;
+    freq_range.min = request->minfreq();
+    freq_range.max = request->maxfreq();
+
+    res = xpumSetDeviceFrequencyRange(deviceId, freq_range);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;                                        
+}
+
+::grpc::Status XpumCoreServiceImpl::setDeviceStandbyMode(::grpc::ServerContext* context, const ::ConfigDeviceStandbyRequest* request,
+                                                    ::ConfigDeviceResultData* response) {
+    xpum_result_t res;
+    if(!request->istiledata()){
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    xpum_standby_data_t standby;
+    standby.on_subdevice = true;
+    standby.subdevice_Id = subdevice_Id;
+    standby.type = XPUM_GLOBAL;
+    XpumStandbyMode mode =  request->standby();
+    if (mode == STANDBY_DEFAULT) {
+        standby.mode = XPUM_DEFAULT;
+    } else if (mode == STANDBY_NEVER) {
+        standby.mode = XPUM_NEVER;
+    }
+    res =  xpumSetDeviceStandby(deviceId, standby);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;                                        
+}
+
+::grpc::Status XpumCoreServiceImpl::getDeviceConfig(::grpc::ServerContext* context, const ::ConfigDeviceDataRequest* request, ::ConfigDeviceData* response) {
+    xpum_result_t res;    
+    xpum_device_properties_t properties;
+    std::vector<uint32_t> tileList;
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    bool istiledata = request->istiledata();
+    int tileCount = -1;
+
+    res = xpumGetDeviceProperties( deviceId, &properties);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+
+    if (istiledata) {
+        tileList.push_back(subdevice_Id);
+        tileCount = 1;
+    } else {
+        for (int i = 0; i < properties.propertyLen; i++) {
+            auto &prop = properties.properties[i];
+            if (prop.name != XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES) {
+                continue;
+            }
+            tileCount = atoi(prop.value);
+            for(int i = 0; i < tileCount; i++) {
+                tileList.push_back(i); 
+            }
+            break;
+        }
+    }
+
+    xpum_power_limits_t powerLimits;
+    res = xpumGetDevicePowerLimits(deviceId, 0 ,&powerLimits);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    int32_t power = powerLimits.sustained_limit.power/1000;
+    int32_t interval = powerLimits.sustained_limit.interval;
+
+    response->set_deviceid(deviceId);
+    response->set_powerlimit(power);
+    response->set_interval(interval);
+    response->set_tilecount(tileCount);
+
+    xpum_frequency_range_t freqArray[32];
+    xpum_standby_data_t standbyArray[32];
+    xpum_scheduler_data_t schedulerArray[32];
+    uint32_t freqCount = 32;
+    uint32_t standbyCount = 32;
+    uint32_t schedulerCount = 32;
+    res = xpumGetDeviceFrequencyRanges(deviceId, freqArray, &freqCount);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    res = xpumGetDeviceStandbys(deviceId, standbyArray, &standbyCount);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    res = xpumGetDeviceSchedulers(deviceId, schedulerArray, &schedulerCount);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+
+    for (int j{0}; j < tileCount; ++j) {
+        uint32_t tileId = tileList.at(j);
+        ConfigTileData* tileData = response->add_tileconfigdata();
+        tileData->set_tileid(tileId);
+        for (uint32_t i = 0; i < freqCount; i++) {
+            if (freqArray[i].type == XPUM_GPU_FREQUENCY && freqArray[i].subdevice_Id == tileId ) {
+                tileData->set_minfreq(int(freqArray[i].min));
+                tileData->set_maxfreq(int(freqArray[i].max));
+                break;
+            }
+        }
+        for (uint32_t i = 0; i < standbyCount; i++) {
+            if (standbyArray[i].type == XPUM_GLOBAL && standbyArray[i].on_subdevice == true && standbyArray[i].subdevice_Id == tileId ) {
+                if (standbyArray[i].mode == XPUM_DEFAULT) {
+                    tileData->set_standby(STANDBY_DEFAULT);
+                } else {
+                    tileData->set_standby(STANDBY_NEVER);
+                }
+                break;
+            }
+        }
+        for (uint32_t i = 0; i < schedulerCount; i++) {
+            if (schedulerArray[i].on_subdevice == true && schedulerArray[i].subdevice_Id == tileId ) {
+                if (schedulerArray[i].mode == XPUM_TIMEOUT) {
+                    tileData->set_scheduler(SCHEDULER_TIMEOUT);
+                } else if (schedulerArray[i].mode == XPUM_TIMESLICE) {
+                    tileData->set_scheduler(SCHEDULER_TIMESLICE);
+                } else if (schedulerArray[i].mode == XPUM_EXCLUSIVE) {
+                    tileData->set_scheduler(SCHEDULER_EXCLUSIVE);
+                }
+                break;       
+            }
+        }
+    }
+    return grpc::Status::OK;
+}
+}// end namespace xpum::daemon
