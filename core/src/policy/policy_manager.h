@@ -26,8 +26,15 @@ struct xpum_policy_data {
     xpum_notify_callback_ptr_t notifyCallBack;
     xpum_device_id_t deviceId; // Only for get policy api, ignored by set policy api.
     bool isDeletePolicy;
+    std::shared_ptr<std::vector<xpum_device_metrics_t>> pMetricCur;
+    std::shared_ptr<std::vector<xpum_device_metrics_t>> pMetricPre;
+    ////
+    bool isTileData;           ///< If this statistics data is tile level
+    int32_t tileId;            ///< The tile id, only valid if isTileData is true
     uint64_t curValue = 0;
     uint64_t preValue = 0;
+    uint64_t curTimestamp = 0;
+    uint64_t preTimestamp = 0;
 };
 
 class PolicyManager : public PolicyManagerInterface, public std::enable_shared_from_this<PolicyManager> {
@@ -54,9 +61,12 @@ class PolicyManager : public PolicyManagerInterface, public std::enable_shared_f
     bool isMatchMetricType(xpum_stats_type_t metricsType, xpum_policy_type_t policyType);
     void checkPolicy();
     void savePolicyStatus();
-    xpum_device_metric_data_t* getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy, xpum_device_metrics_t dataList[], int count);
+    xpum_device_metric_data_t* getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy, xpum_device_metrics_t &dataList);
     bool triggerAction(std::shared_ptr<xpum_policy_data> p_policy);
     void triggerNotification(std::shared_ptr<xpum_policy_data> p_policy);
+    bool isPerGpuMetric(xpum_policy_type_t type);
+    bool isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_policy);
+    
 
     //
     xpum_result_t checkPolicyValidation(xpum_policy_t policy);

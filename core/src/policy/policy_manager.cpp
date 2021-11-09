@@ -7,6 +7,7 @@
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/logger.h"
+#include "xpum_structs.h"
 
 namespace xpum {
 
@@ -21,6 +22,8 @@ void xpum_policy_triggered_for_trace(xpum_policy_notify_callback_para_t *p_para)
     XPUM_LOG_INFO("Policy Action type: {}", p_para->action.type);
     XPUM_LOG_INFO("Policy timestamp: {}", p_para->timestamp);
     XPUM_LOG_INFO("Policy curValue: {}", p_para->curValue);
+    XPUM_LOG_INFO("Policy isTileData: {}", p_para->isTileData);
+    XPUM_LOG_INFO("Policy tileId: {}", p_para->tileId);
     XPUM_LOG_INFO("------xpum_policy_triggered_for_trace-----end----");
 }
 
@@ -49,6 +52,9 @@ void print_policy_for_demoEx2(const char* tag,std::shared_ptr<xpum_policy_data> 
     //XPUM_LOG_TRACE("Policy timestamp: {}", p_para->timestamp);
     XPUM_LOG_TRACE("Policy curValue: {}", p_para->curValue);
     XPUM_LOG_TRACE("Policy preValue: {}", p_para->preValue);
+    XPUM_LOG_TRACE("Policy curTimestamp: {}", p_para->curTimestamp);
+    XPUM_LOG_TRACE("Policy isTileData: {}", p_para->isTileData);
+    XPUM_LOG_TRACE("Policy tileId: {}", p_para->tileId);
     XPUM_LOG_TRACE("-----------------{}-----------end----",*tag);
 }
 
@@ -108,18 +114,24 @@ void PolicyManager::checkPolicy() {
 
         //Get devcie metric
         xpum_device_id_t deviceId = it->first;
-        // XPUM_LOG_INFO("---PolicyManager::checkPolicy()---2--deviceId={}",deviceId);
+
+        //XPUM_LOG_INFO("---PolicyManager::checkPolicy()---2--deviceId={}",deviceId);
         // int count=-1;
         // p_data_logic->getLatestMetrics(deviceId, nullptr, &count);
         // if(count <=0){
         //     XPUM_LOG_ERROR("PolicyManager::checkPolicy(): failed to getLatestMetrics(deviceId={})--count={}",deviceId,count);
         //     continue;
         // }
+        // int count = 5;
+        // xpum_device_metrics_t dataList[count];
+        // p_data_logic->getLatestMetrics(deviceId, dataList, &count);
+        // getLatestMetricsCount()
 
         // getLatestMetrics
+        // TODO: 
         int count = 5;
-        xpum_device_metrics_t dataList[count];
-        p_data_logic->getLatestMetrics(deviceId, dataList, &count);
+        std::shared_ptr<std::vector<xpum_device_metrics_t>> pMetricCur = std::make_shared<std::vector<xpum_device_metrics_t>>(count);
+        p_data_logic->getLatestMetrics(deviceId, pMetricCur->data(), &count);
         
         //check policy
         bool isResetDevice = false;
@@ -127,42 +139,20 @@ void PolicyManager::checkPolicy() {
             std::shared_ptr<std::list<std::shared_ptr<xpum_policy_data>>> pList = range.first->second;
             for (auto itList = pList->begin(); itList != pList->end(); itList++) {
                 std::shared_ptr<xpum_policy_data> p_policy = *itList;
-                //check condition
-                xpum_device_metric_data_t* curData = this->getPolicyCurValue(p_policy, dataList, count);
-                //TODO: Need check timestamp
-                if (curData == nullptr) {
-                    continue;
-                }
+                p_policy->pMetricCur = pMetricCur;
                 
                 //trace
                 print_policy_for_demoEx2("checkPolicy",p_policy);
-                
+
                 //check condition
-                uint64_t curValue = curData->value;
-                p_policy->curValue = curValue;
                 bool isResetDeviceOne = false;
-                if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER) {
-                    uint64_t threshold = p_policy->condition.threshold;
-                    if (curValue > threshold) {
-                        this->triggerNotification(p_policy);
-                        isResetDeviceOne = this->triggerAction(p_policy);
-                    }
-                } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_LESS) {
-                    uint64_t threshold = p_policy->condition.threshold;
-                    if (curValue < threshold) {
-                        this->triggerNotification(p_policy);
-                        isResetDeviceOne = this->triggerAction(p_policy);
-                    }
-                } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_WHEN_INCREASE) {
-                    uint64_t preValue = p_policy->preValue;
-                    if (curValue > preValue) {
-                        this->triggerNotification(p_policy);
-                        isResetDeviceOne = this->triggerAction(p_policy);
-                    }
-                }
+                if(isPolicyMeetCondition(p_policy)){
+                    this->triggerNotification(p_policy);
+                    isResetDeviceOne = this->triggerAction(p_policy);
+                }    
+                
                 //isResetDevice
                 isResetDevice = isResetDeviceOne ? true : isResetDevice;
-                //XPUM_LOG_INFO("---PolicyManager::checkPolicy()---8--deviceId={}",deviceId);   
             }
             ++range.first;
         }
@@ -176,14 +166,71 @@ void PolicyManager::checkPolicy() {
     }
 }
 
-xpum_device_metric_data_t* PolicyManager::getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy, xpum_device_metrics_t dataList[], int count) {
-    // get data from monitor interface
-    for (int i = 0; i < count; i++) {
-        int cc2 = dataList[i].count;
-        for (int j = 0; j < cc2; j++) {
-            if (this->isMatchMetricType(dataList[i].dataList[j].metricsType, p_policy->type)) {
-                return &(dataList[i].dataList[j]);
+bool PolicyManager::isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_policy) {
+    //std::shared_ptr<std::vector<xpum_device_metrics_t>> pMetricCur = std::make_shared<std::vector<xpum_device_metrics_t>>(count);
+    auto pMetricCur = p_policy->pMetricCur;
+    for (auto itVector = pMetricCur->begin(); itVector != pMetricCur->end(); itVector++) {
+        xpum_device_metric_data_t* curData = this->getPolicyCurValue(p_policy, (*itVector));
+        if(curData == nullptr){
+            continue;
+        }        
+        //check timestamp
+        uint64_t preTimestamp = p_policy->preTimestamp;
+        uint64_t curTimestamp = curData->timestamp;
+        if(preTimestamp > 0){
+            if(curTimestamp <= preTimestamp){
+                continue;
             }
+        }
+
+        //check condition
+        uint64_t curValue = curData->value;
+        if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER) {
+            uint64_t threshold = p_policy->condition.threshold;
+            if (curValue > threshold) {
+                p_policy->curValue = curValue;
+                p_policy->curTimestamp = curTimestamp;
+                p_policy->isTileData = (*itVector).isTileData;
+                p_policy->tileId = (*itVector).tileId;
+                return true;
+            }
+        } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_LESS) {
+            uint64_t threshold = p_policy->condition.threshold;
+            if (curValue < threshold) {
+                p_policy->curValue = curValue;
+                p_policy->curTimestamp = curTimestamp;
+                p_policy->isTileData = (*itVector).isTileData;
+                p_policy->tileId = (*itVector).tileId;
+                return true;
+            }
+        } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_WHEN_INCREASE) {
+            uint64_t preValue = p_policy->preValue;
+            if (curValue > preValue) {
+                p_policy->curValue = curValue;
+                p_policy->curTimestamp = curTimestamp;
+                p_policy->isTileData = (*itVector).isTileData;
+                p_policy->tileId = (*itVector).tileId;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool PolicyManager::isPerGpuMetric(xpum_policy_type_t type) {
+    if(type == XPUM_POLICY_TYPE_GPU_POWER
+        || type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET){
+        return true;
+    }
+    return false;
+}
+
+xpum_device_metric_data_t* PolicyManager::getPolicyCurValue(std::shared_ptr<xpum_policy_data> p_policy, xpum_device_metrics_t &dataList) {
+    // get data from monitor interface
+    int cc2 = dataList.count;
+    for (int j = 0; j < cc2; j++) {
+        if (this->isMatchMetricType(dataList.dataList[j].metricsType, p_policy->type)) {
+            return &(dataList.dataList[j]);
         }
     }
     return nullptr;
@@ -227,7 +274,11 @@ void PolicyManager::savePolicyStatus() {
             std::shared_ptr<xpum_policy_data> p_policy = *itList;
             //check
             p_policy->preValue = p_policy->curValue;
+            p_policy->preTimestamp = p_policy->curTimestamp;
+            p_policy->pMetricPre = p_policy->pMetricCur;
             p_policy->curValue = 0;
+            p_policy->curTimestamp = 0;
+            p_policy->pMetricCur = nullptr;
         }
     }
     //XPUM_LOG_INFO("---PolicyManager::savePolicyStatus()---2--");
@@ -257,6 +308,8 @@ void PolicyManager::triggerNotification(std::shared_ptr<xpum_policy_data> p_poli
     para.action = p_policy->action;
     para.condition = p_policy->condition;
     para.curValue = p_policy->curValue;
+    para.isTileData = p_policy->isTileData;
+    para.tileId = p_policy->tileId;
     para.deviceId = p_policy->deviceId;
     para.timestamp = Utility::getCurrentMillisecond();
     para.type = p_policy->type;
