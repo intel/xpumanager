@@ -7,6 +7,8 @@
 #include <map>
 #include <nlohmann/json.hpp>
 #include <vector>
+#include <thread>
+#include <chrono>
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
@@ -1150,6 +1152,52 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie,int id) {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath ) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+
+    XpumFirmwareFlashJob request;
+    request.mutable_id()->set_id( deviceId );
+    request.mutable_type()->set_value( type );
+    request.set_path( filePath );
+
+    GeneralEnum response;
+    grpc::Status status = stub->runFirmwareFlash( &context, request, &response );
+    if ( status.ok() && response.value() == 0 ) {
+        while ( true ) {
+            std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
+            grpc::ClientContext ct;
+            XpumFirmwareFlashTaskRequest rq;
+            rq.mutable_id()->set_id( deviceId );
+            rq.mutable_type()->set_value( type );
+
+            XpumFirmwareFlashTaskResult res;
+            status = stub->getFirmwareFlashResult( &ct, rq, &res );
+            if ( status.ok() && res.errormsg().length() == 0 ) {
+                if ( res.mutable_result()->value() == 0 ) {
+                    (*json)["firmware_flash_result"] = "OK";
+                    return json;
+                }
+                else if ( res.mutable_result()->value() == 1 ) {
+                    (*json)["firmware_flash_result"] = "FAILED";
+                    return json;
+                }
+                else {
+                    //nothing
+                }
+            }
+            else {
+                (*json)["error"] = "Failed to get firmware reuslt";
+                return json;
+            }
+        }
+    }
+    else {
+        (*json)["error"] = "Failed to run firmware flash";
+        return json;
+    }
+}
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tileId) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

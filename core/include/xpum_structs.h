@@ -620,7 +620,9 @@ struct xpum_policy_notify_callback_para_t {
     xpum_policy_action_t action;
     xpum_device_id_t deviceId;
     uint64_t timestamp;
-    uint64_t curValue;
+    uint64_t curValue;    
+    bool isTileData;
+    int32_t tileId;
 };
 
 typedef void (*xpum_notify_callback_ptr_t)(xpum_policy_notify_callback_para_t *); //return value for policy condtion trigger and action
