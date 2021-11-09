@@ -20,6 +20,20 @@ class ComletBase {
 
     virtual void setupOptions() = 0;
     virtual std::unique_ptr<nlohmann::json> run() = 0;
+    
+    bool parsed() {
+        return this->subCLIApp->parsed();
+    }
+
+    virtual void printResult(bool raw = false) {
+        if (raw) {
+            std::cout << this->run()->dump() << std::endl;
+            return;
+        } else {
+            std::cout << this->run()->dump(4) << std::endl;
+            return;
+        }
+    }
 
    protected:
     template <typename T>

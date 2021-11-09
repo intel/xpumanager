@@ -59,6 +59,7 @@ class Device {
     virtual void getOccupationEfficiency(Callback_t callback, MeasurementType type) noexcept = 0;
 
     virtual void getRasError(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept = 0;
+    virtual void getRasErrorOnSubdevice(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept = 0;
 
     void addCapability(DeviceCapability& capability);
 

@@ -59,6 +59,7 @@ class GPUDeviceStub {
     void getOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type, Callback_t callback) noexcept;
 
     void getRasError(const zes_device_handle_t& device, Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept;
+    void getRasErrorOnSubdevice(const zes_device_handle_t& device, Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept;
 
     void getRasError(const zes_device_handle_t& device, uint64_t errorCategory[XPUM_RAS_ERROR_MAX]) noexcept;
 
@@ -149,6 +150,7 @@ class GPUDeviceStub {
     static void toGetOccupationEfficiencyCore(const ze_device_handle_t& device, int subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data);
 
     static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
+    static std::shared_ptr<MeasurementData> toGetRasErrorOnSubdevice(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
 
     static std::string to_string(ze_device_uuid_t val);
 

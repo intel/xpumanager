@@ -22,23 +22,21 @@ CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
     comlet->subCLIApp = this->cliApp.add_subcommand(comlet->command, comlet->description);
     comlet->setupOptions();
 
-    comlet->subCLIApp->callback([comlet, this] {
-        auto json = comlet->run();
-        this->jsonResult = std::move(json);
-    });
-
     if (comlet->coreStub == nullptr) {
         comlet->coreStub = this->coreStub;
     }
 
+    comlets.push_back(comlet);
+
     return *this;
 }
 
-std::string CLIWrapper::getResult() {
-    if (this->opts->raw) {
-        return this->jsonResult->dump();
-    } else {
-        return this->jsonResult->dump(4);
+void CLIWrapper::printResult() {
+    for (auto comlet : comlets) {
+        if (comlet->parsed()) {
+            comlet->printResult(this->opts->raw);
+            return;
+        }
     }
 }
 } // end namespace xpum::cli

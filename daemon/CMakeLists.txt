@@ -36,6 +36,8 @@ endif()
 configure_file(${CMAKE_CURRENT_LIST_DIR}/config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/config.h @ONLY)
 
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/spdlog)               
+
 # Proto file
 get_filename_component(core_proto "${CMAKE_CURRENT_LIST_DIR}/core.proto"
                        ABSOLUTE)
@@ -58,13 +60,6 @@ add_custom_command(
     --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}" "${core_proto}"
   DEPENDS "${core_proto}")
 
-# Include generated *.pb.h files
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-# Specifiy header file location
-include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR} XPUM_DAEMON_SRC)
 set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
@@ -72,20 +67,31 @@ set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
 
 add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cpp)
 
+target_include_directories(
+  xpumd
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../core/include
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
+)
+
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 
 
 if (NOT DEFINED WORK_PATH)
   message(STATUS "WORK_PATH not defined!")
+  message("PATH = $ENV{PATH}")
   find_library(DGM_LIB 
-    NAMES libxpum.so
+    NAMES libxpum.so 
     PATHS 
     ${CMAKE_CURRENT_LIST_DIR}/../build/core
     ${CMAKE_CURRENT_LIST_DIR}/../core/build
+    NO_CMAKE_ENVIRONMENT_PATH
+    NO_DEFAULT_PATH
+    NO_SYSTEM_ENVIRONMENT_PATH
     )
   
   message(STATUS "DGM_LIB=${DGM_LIB}")
-  target_link_libraries(xpumd PRIVATE ${DGM_LIB} ${_GRPC_GRPCPP}
+  target_link_libraries(xpumd PRIVATE spdlog ${DGM_LIB} ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})
   
   add_custom_command( TARGET xpumd 
@@ -94,7 +100,7 @@ if (NOT DEFINED WORK_PATH)
       COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
   )
 else()
-  target_link_libraries(xpumd PRIVATE xpum ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF})
+  target_link_libraries(xpumd PRIVATE xpum spdlog
+        ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 endif()
 

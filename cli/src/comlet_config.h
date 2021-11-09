@@ -1,0 +1,33 @@
+#pragma once
+
+#include <nlohmann/json.hpp>
+#include <string>
+
+#include "comlet_base.h"
+
+namespace xpum::cli {
+
+struct ComletConfigOptions {
+    int deviceId = -1;
+    uint32_t tileId = -1;
+    std::string schedulerTimeslice ="";
+    std::string schedulerTimeout ="";
+    bool schedulerExclusive = false;
+    std::string powerlimit ="";
+    std::string standby ="";
+    std::string frequencyrange ="";
+};
+
+class ComletConfig : public ComletBase {
+   public:
+    ComletConfig() : ComletBase("config", "get/set configuration of the device") {}
+    virtual ~ComletConfig() {}
+
+    virtual void setupOptions() override;
+    virtual std::unique_ptr<nlohmann::json> run() override;
+
+   private:
+    std::unique_ptr<ComletConfigOptions> opts;
+    std::vector<std::string> split(std::string str, std::string delimiter);
+};
+} // end namespace xpum::cli

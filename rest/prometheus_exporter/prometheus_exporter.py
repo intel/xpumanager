@@ -6,42 +6,44 @@ import sys
 
 from enum import Enum, unique
 
+registries = {}
+
 
 @unique
 class PromMetric(Enum):
 
     # Engine utilization
-    xpum_engine_ratio = ('xpum_engine_ratio', 'Max utilization among all engine groups (in %), per GPU tile')
-    xpum_engine_group_ratio = ('xpum_engine_group_ratio', 'Avg utilization of engine group (in %), per GPU tile', ['type'])
+    xpum_engine_ratio = ('xpum_engine_ratio', 'Max utilization among all engine groups (in %), per GPU tile')  # nopep8
+    xpum_engine_group_ratio = ('xpum_engine_group_ratio', 'Avg utilization of engine group (in %), per GPU tile', ['type'])  # nopep8
 
     # Power/Energy/Temperature
-    xpum_power_watts = ('xpum_power_watts', 'Avg GPU power (in watts), per GPU and per card')
-    xpum_energy_joules = ('xpum_energy_joules', 'Total GPU energy consumption since boot (in Joules), per GPU')
-    xpum_temperature_celsius = ('xpum_temperature_celsius', 'Avg GPU temperature (in Celsius degree), per tile', ['location'])
+    xpum_power_watts = ('xpum_power_watts', 'Avg GPU power (in watts), per GPU and per card')  # nopep8
+    xpum_energy_joules = ('xpum_energy_joules', 'Total GPU energy consumption since boot (in Joules), per GPU')  # nopep8
+    xpum_temperature_celsius = ('xpum_temperature_celsius', 'Avg GPU temperature (in Celsius degree), per tile', ['location'])  # nopep8
 
     # Frequency
-    xpum_frequency_mhz = ('xpum_frequency_mhz', 'Avg (GPU) frequency (in MHz), per GPU tile', ['location', 'type'])
-    xpum_frequency_throttling_ratio = ('xpum_frequency_throttling_ratio', 'Avg frequency throttle ratio (in %), per GPU tile', ['location'])
+    xpum_frequency_mhz = ('xpum_frequency_mhz', 'Avg (GPU) frequency (in MHz), per GPU tile', ['location', 'type'])  # nopep8
+    xpum_frequency_throttling_ratio = ('xpum_frequency_throttling_ratio', 'Avg frequency throttle ratio (in %), per GPU tile', ['location'])  # nopep8
 
     # Memory
-    xpum_memory_used_bytes = ('xpum_memory_used_bytes', 'Used GPU memory (in bytes), per GPU tile')
-    xpum_memory_ratio = ('xpum_memory_ratio', 'Used GPU memory / Total used GPU memory (in %), per GPU tile')
-    xpum_memory_bandwidth_ratio = ('xpum_memory_bandwidth_ratio', 'Avg memory throughput / max memory bandwidth (in %), per GPU tile')
-    xpum_memory_read_bytes = ('xpum_memory_read_bytes', 'Total memory read bytes (in bytes), per GPU tile')
-    xpum_memory_write_bytes = ('xpum_memory_write_bytes', 'Total memory write bytes (in bytes), per GPU tile')
+    xpum_memory_used_bytes = ('xpum_memory_used_bytes', 'Used GPU memory (in bytes), per GPU tile')  # nopep8
+    xpum_memory_ratio = ('xpum_memory_ratio', 'Used GPU memory / Total used GPU memory (in %), per GPU tile')  # nopep8
+    xpum_memory_bandwidth_ratio = ('xpum_memory_bandwidth_ratio', 'Avg memory throughput / max memory bandwidth (in %), per GPU tile')  # nopep8
+    xpum_memory_read_bytes = ('xpum_memory_read_bytes', 'Total memory read bytes (in bytes), per GPU tile')  # nopep8
+    xpum_memory_write_bytes = ('xpum_memory_write_bytes', 'Total memory write bytes (in bytes), per GPU tile')  # nopep8
 
     # Errors
-    xpum_resets = ('xpum_resets', 'Total number of GPU reset since boot, per GPU')
-    xpum_programming_errors = ('xpum_programming_errors', 'Total number of GPU programming errors since boot, per GPU')
-    xpum_driver_errors = ('xpum_driver_errors', 'Total number of GPU driver errors since boot, per GPU')
-    xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])
-    xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])
+    xpum_resets = ('xpum_resets', 'Total number of GPU reset since boot, per GPU')  # nopep8
+    xpum_programming_errors = ('xpum_programming_errors', 'Total number of GPU programming errors since boot, per GPU')  # nopep8
+    xpum_driver_errors = ('xpum_driver_errors', 'Total number of GPU driver errors since boot, per GPU')  # nopep8
+    xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])  # nopep8
+    xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])  # nopep8
 
     # Occupation
-    xpum_occupation_ratio = ('xpum_occupation_ratio')
-    xpum_non_occupation_ratio = ('xpum_non_occupation_ratio')
-    xpum_issue_efficiency_ratio = ('xpum_issue_efficiency_ratio')
-    xpum_execution_efficiency_ratio = ('xpum_execution_efficiency_ratio')
+    xpum_occupation_ratio = ('xpum_occupation_ratio')  # nopep8
+    xpum_non_occupation_ratio = ('xpum_non_occupation_ratio')  # nopep8
+    xpum_issue_efficiency_ratio = ('xpum_issue_efficiency_ratio')  # nopep8
+    xpum_execution_efficiency_ratio = ('xpum_execution_efficiency_ratio')  # nopep8
 
     def __new__(cls, name, desc=None, ext_labelnames=[]):
         obj = object.__new__(cls)
@@ -111,19 +113,49 @@ def get_metrics(core, pod_resources):
         resp = b''
 
         for dev in data:
-            stat_code, _, stat_data = core.getMetrics(dev.get('device_id'))
+
+            device_id = dev.get('device_id')
+            stat_code, _, stat_data = core.getMetrics(device_id)
 
             if stat_code != 0:
                 continue
 
             if 'DeviceLevel' in stat_data:
                 r = convert_to_prometheus_metrics(
-                    pod_resources, dev, stat_data['DeviceLevel'])
+                    pod_resources, dev, stat_data['DeviceLevel'], device_id)
                 resp = resp + r
 
             for tile_data in stat_data.get('TileLevel', []):
                 r = convert_to_prometheus_metrics(
-                    pod_resources, dev, tile_data['dataList'], tile_data['tileId'])
+                    pod_resources, dev, tile_data['dataList'], device_id, tile_data['tileId'])
+                resp = resp + r
+
+        code, _, data = core.getAllGroups()
+        if code != 0:
+            return '#NODATA', 500
+
+        for group in data:
+            group_id = group.get('group_id')
+            # only process built-in groups (i.e., cards) whose group id has 1 as the highest bit
+            if group_id is None or group_id & 0x80000000 != 0x80000000:
+                continue
+
+            stat_code, _, stat_data = core.getMetricsByGroup(group_id)
+            if stat_code != 0:
+                continue
+
+            if 'DeviceLevel' in stat_data:
+                card_power = 0
+                for device_data in stat_data['DeviceLevel']:
+                    for metric in device_data:
+                        if metric['metricsType'] == 'XPUM_STATS_POWER':
+                            card_power = card_power + metric.get('avg')
+
+                card_data = [{'metricsType': 'XPUM_STATS_POWER',
+                              'avg': card_power, 'value': card_power}]
+
+                r = convert_to_prometheus_metrics(
+                    pod_resources, dev=None, datalist=card_data, card_id=group_id)
                 resp = resp + r
 
         return tidy_response(resp)
@@ -144,14 +176,15 @@ def tidy_response(resp):
     return '\n'.join(comments + metrics)
 
 
-def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
-
-    labels, label_values = build_basic_labels(dev)
+def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, tile_id=None, card_id=None):
+    labels, label_values = build_dev_labels(dev)
     attach_kube_labels(dev, labels, label_values, pod_resources)
     attach_tile_labels(labels, label_values, tile_id)
+    attach_card_labels(labels, label_values, card_id)
 
-    registry = CollectorRegistry()
-    metrics = {}
+    metrics_owner = f'card:{card_id}_gpu:{device_id}_tile:{tile_id}'
+    registry, metrics = registries.setdefault(
+        metrics_owner, (CollectorRegistry(), {}))
 
     for stat in datalist:
         metric = metrics_map.get(stat.get('metricsType'))
@@ -185,7 +218,10 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, tile_id=None):
     return generate_latest(registry)
 
 
-def build_basic_labels(dev):
+def build_dev_labels(dev):
+    if dev is None:
+        return [], []
+
     labels = ['uuid', 'dev_name', 'pci_dev', 'vendor', 'pci_bdf']
     label_values = [dev.get(key, '') for key in [
         'uuid', 'device_name', 'pci_device_id', 'vendor_name', 'pci_bdf_address']]
@@ -194,6 +230,13 @@ def build_basic_labels(dev):
 
 
 def attach_kube_labels(dev, labels, label_values, pod_resources):
+    nodename = os.getenv('NODE_NAME')
+    if nodename is not None:
+        labels.append('node')
+        label_values.append(nodename)
+        
+    if dev is None or pod_resources is None:
+        return
     bdf = dev.get('pci_bdf_address', '')
     pod_resource = pod_resources.get(bdf, {})
     if 'pod' in pod_resource:
@@ -206,16 +249,17 @@ def attach_kube_labels(dev, labels, label_values, pod_resources):
         labels.append('kube_container')
         label_values.append(pod_resource['container'])
 
-    nodename = os.getenv('NODE_NAME')
-    if nodename is not None:
-        labels.append('node')
-        label_values.append(nodename)
-
 
 def attach_tile_labels(labels, label_values, tile_id):
     if tile_id is not None:
         labels.append('sub_dev')
         label_values.append(tile_id)
+
+
+def attach_card_labels(labels, label_values, card_id):
+    if card_id is not None:
+        labels.append('card')
+        label_values.append(card_id)
 
 
 def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels):
