@@ -3,7 +3,7 @@
 #include "control/device_manager_interface.h"
 #include "data_logic/data_logic_interface.h"
 #include "infrastructure/device_capability.h"
-#include "infrastructure/timer.h"
+#include "infrastructure/scheduled_thread_pool.h"
 
 namespace xpum {
 
@@ -19,14 +19,16 @@ class MonitorTask : public std::enable_shared_from_this<MonitorTask> {
         DeviceCapability capability,
         int freq,
         std::shared_ptr<DeviceManagerInterface>& p_device_manager,
-        std::shared_ptr<DataLogicInterface>& p_data_logic);
+        std::shared_ptr<DataLogicInterface>& p_data_logic,
+        std::shared_ptr<ScheduledThreadPool>& p_scheduled_thread_pool);
 
     MonitorTask(
         DeviceCapability capability,
         int freq,
         std::shared_ptr<DeviceManagerInterface>& p_device_manager,
         std::shared_ptr<DataLogicInterface>& p_data_logic,
-        MonitorTaskType type);
+        MonitorTaskType type,
+        std::shared_ptr<ScheduledThreadPool>& p_scheduled_thread_pool);
 
     virtual ~MonitorTask();
 
@@ -41,20 +43,14 @@ class MonitorTask : public std::enable_shared_from_this<MonitorTask> {
 
    private:
     DeviceCapability capability;
-
     int freq;
-
-    Timer timer;
-
     std::mutex mutex;
-
     std::condition_variable data_cv;
-
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
-
     std::shared_ptr<DataLogicInterface> p_data_logic;
-
     MonitorTaskType type;
+    std::shared_ptr<ScheduledThreadPool> p_scheduled_thread_pool;
+    std::shared_ptr<ScheduledThreadPoolTask> p_scheduled_task;
 };
 
 } // end namespace xpum

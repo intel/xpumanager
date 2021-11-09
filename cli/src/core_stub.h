@@ -68,6 +68,8 @@ class CoreStub {
 	std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie,int id);
     std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie,int id,XpumPolicyData &policy);
 
+    std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath );
+
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
     static std::string isotimestamp(uint64_t t);
