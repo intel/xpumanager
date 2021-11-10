@@ -729,4 +729,212 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     }
 }
 
-} // end namespace xpum::daemon
+::grpc::Status XpumCoreServiceImpl::setDeviceSchedulerMode(::grpc::ServerContext* context, const ::ConfigDeviceSchdeulerModeRequest* request,
+                                                    ::ConfigDeviceResultData* response) {
+    xpum_result_t res = XPUM_GENERIC_ERROR;
+    if(!request->istiledata()){
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    XpumSchedulerMode scheduler = request->scheduler();
+    uint32_t val1 = request->val1();
+    uint32_t val2 = request->val2();
+
+    if (scheduler == SCHEDULER_TIMEOUT) {
+        xpum_scheduler_timeout_t sch_timeout;
+        sch_timeout.subdevice_Id = subdevice_Id;
+        sch_timeout.watchdog_timeout = val1;
+        res = xpumSetDeviceSchedulerTimeoutMode(deviceId, sch_timeout);
+    } else if (scheduler == SCHEDULER_TIMESLICE) {
+        xpum_scheduler_timeslice_t sch_timeslice;
+        sch_timeslice.subdevice_Id = subdevice_Id;
+        sch_timeslice.interval = val1;
+        sch_timeslice.yield_timeout = val2;
+        res = xpumSetDeviceSchedulerTimesliceMode( deviceId, sch_timeslice);
+    } else if (scheduler == SCHEDULER_EXCLUSIVE) {
+        xpum_scheduler_exclusive_t sch_exclusive;
+        sch_exclusive.subdevice_Id = subdevice_Id;
+        res = xpumSetDeviceSchedulerExclusiveMode( deviceId, sch_exclusive);
+    } else {
+        response->set_errormsg("Error");
+    }
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::setDevicePowerLimit(::grpc::ServerContext* context, const ::ConfigDevicePowerLimitRequest* request,
+                                                    ::ConfigDeviceResultData* response) {
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t val1 = request->powerlimit();
+    uint32_t val2 = request->intervalwindow();
+    xpum_result_t res;
+    xpum_power_sustained_limit_t sustained_limit;
+
+    sustained_limit.enabled = true;
+    sustained_limit.power = val1;
+    sustained_limit.interval = val2;
+
+    res = xpumSetDevicePowerSustainedLimits( deviceId, 0, sustained_limit);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;                                        
+}
+
+::grpc::Status XpumCoreServiceImpl::setDeviceFrequencyRange(::grpc::ServerContext* context, const ::ConfigDeviceFrequencyRangeRequest* request,
+                                                    ::ConfigDeviceResultData* response) {
+    xpum_result_t res;
+    if(!request->istiledata()){
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    xpum_frequency_range_t freq_range;
+    freq_range.subdevice_Id = subdevice_Id;
+    freq_range.type = XPUM_GPU_FREQUENCY;
+    freq_range.min = request->minfreq();
+    freq_range.max = request->maxfreq();
+
+    res = xpumSetDeviceFrequencyRange(deviceId, freq_range);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;                                        
+}
+
+::grpc::Status XpumCoreServiceImpl::setDeviceStandbyMode(::grpc::ServerContext* context, const ::ConfigDeviceStandbyRequest* request,
+                                                    ::ConfigDeviceResultData* response) {
+    xpum_result_t res;
+    if(!request->istiledata()){
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    xpum_standby_data_t standby;
+    standby.on_subdevice = true;
+    standby.subdevice_Id = subdevice_Id;
+    standby.type = XPUM_GLOBAL;
+    XpumStandbyMode mode =  request->standby();
+    if (mode == STANDBY_DEFAULT) {
+        standby.mode = XPUM_DEFAULT;
+    } else if (mode == STANDBY_NEVER) {
+        standby.mode = XPUM_NEVER;
+    }
+    res =  xpumSetDeviceStandby(deviceId, standby);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;                                        
+}
+
+::grpc::Status XpumCoreServiceImpl::getDeviceConfig(::grpc::ServerContext* context, const ::ConfigDeviceDataRequest* request, ::ConfigDeviceData* response) {
+    xpum_result_t res;    
+    xpum_device_properties_t properties;
+    std::vector<uint32_t> tileList;
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    bool istiledata = request->istiledata();
+    int tileCount = -1;
+
+    res = xpumGetDeviceProperties( deviceId, &properties);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+
+    if (istiledata) {
+        tileList.push_back(subdevice_Id);
+        tileCount = 1;
+    } else {
+        for (int i = 0; i < properties.propertyLen; i++) {
+            auto &prop = properties.properties[i];
+            if (prop.name != XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES) {
+                continue;
+            }
+            tileCount = atoi(prop.value);
+            for(int i = 0; i < tileCount; i++) {
+                tileList.push_back(i); 
+            }
+            break;
+        }
+    }
+
+    xpum_power_limits_t powerLimits;
+    res = xpumGetDevicePowerLimits(deviceId, 0 ,&powerLimits);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    int32_t power = powerLimits.sustained_limit.power/1000;
+    int32_t interval = powerLimits.sustained_limit.interval;
+
+    response->set_deviceid(deviceId);
+    response->set_powerlimit(power);
+    response->set_interval(interval);
+    response->set_tilecount(tileCount);
+
+    xpum_frequency_range_t freqArray[32];
+    xpum_standby_data_t standbyArray[32];
+    xpum_scheduler_data_t schedulerArray[32];
+    uint32_t freqCount = 32;
+    uint32_t standbyCount = 32;
+    uint32_t schedulerCount = 32;
+    res = xpumGetDeviceFrequencyRanges(deviceId, freqArray, &freqCount);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    res = xpumGetDeviceStandbys(deviceId, standbyArray, &standbyCount);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    res = xpumGetDeviceSchedulers(deviceId, schedulerArray, &schedulerCount);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+
+    for (int j{0}; j < tileCount; ++j) {
+        uint32_t tileId = tileList.at(j);
+        ConfigTileData* tileData = response->add_tileconfigdata();
+        tileData->set_tileid(tileId);
+        for (uint32_t i = 0; i < freqCount; i++) {
+            if (freqArray[i].type == XPUM_GPU_FREQUENCY && freqArray[i].subdevice_Id == tileId ) {
+                tileData->set_minfreq(int(freqArray[i].min));
+                tileData->set_maxfreq(int(freqArray[i].max));
+                break;
+            }
+        }
+        for (uint32_t i = 0; i < standbyCount; i++) {
+            if (standbyArray[i].type == XPUM_GLOBAL && standbyArray[i].on_subdevice == true && standbyArray[i].subdevice_Id == tileId ) {
+                if (standbyArray[i].mode == XPUM_DEFAULT) {
+                    tileData->set_standby(STANDBY_DEFAULT);
+                } else {
+                    tileData->set_standby(STANDBY_NEVER);
+                }
+                break;
+            }
+        }
+        for (uint32_t i = 0; i < schedulerCount; i++) {
+            if (schedulerArray[i].on_subdevice == true && schedulerArray[i].subdevice_Id == tileId ) {
+                if (schedulerArray[i].mode == XPUM_TIMEOUT) {
+                    tileData->set_scheduler(SCHEDULER_TIMEOUT);
+                } else if (schedulerArray[i].mode == XPUM_TIMESLICE) {
+                    tileData->set_scheduler(SCHEDULER_TIMESLICE);
+                } else if (schedulerArray[i].mode == XPUM_EXCLUSIVE) {
+                    tileData->set_scheduler(SCHEDULER_EXCLUSIVE);
+                }
+                break;       
+            }
+        }
+    }
+    return grpc::Status::OK;
+}
+}// end namespace xpum::daemon

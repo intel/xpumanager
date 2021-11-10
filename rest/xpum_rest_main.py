@@ -85,16 +85,18 @@ app.add_url_rule('/rest/v1/groups/<int:groupId>/stats', methods=['GET'],
                  view_func=auth.login_required(statistics.get_group_statistics))
 
 # device config
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/standbys', methods=['GET', 'POST'],
-                 view_func=auth.login_required(device_config.operate_device_standbys_result))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/powerLimits', methods=['GET', 'POST'],
-                 view_func=auth.login_required(device_config.operate_device_powerlimits_result))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/frequencyRanges', methods=['GET', 'POST'],
-                 view_func=auth.login_required(device_config.operate_device_frequencyranges_result))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/schedulers', methods=['GET', 'POST'],
-                 view_func=auth.login_required(device_config.operate_device_schedulers_result))
+app.add_url_rule('/rest/v1/devices/<int:deviceId>/standby', methods=['PUT'],
+                 view_func=auth.login_required(device_config.set_standby))
+app.add_url_rule('/rest/v1/devices/<int:deviceId>/powerlimit', methods=['PUT'],
+                 view_func=auth.login_required(device_config.set_powerlimit))
+app.add_url_rule('/rest/v1/devices/<int:deviceId>/frequencyrange', methods=['PUT'],
+                 view_func=auth.login_required(device_config.set_frequencyrange))
+app.add_url_rule('/rest/v1/devices/<int:deviceId>/scheduler', methods=['PUT'],
+                 view_func=auth.login_required(device_config.set_scheduler))
+app.add_url_rule('/rest/v1/devices/<int:deviceId>/config', methods=['GET'],
+                 view_func=auth.login_required(device_config.get_config))
 app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
-                 view_func=auth.login_required(device_config.operate_device_reset))
+                 view_func=auth.login_required(device_config.run_reset))
 
 # topology
 app.add_url_rule('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'],

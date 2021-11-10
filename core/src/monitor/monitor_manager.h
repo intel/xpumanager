@@ -33,6 +33,8 @@ class MonitorManager : public MonitorManagerInterface {
 
     std::shared_ptr<DataLogicInterface> p_data_logic;
 
+    std::shared_ptr<ScheduledThreadPool> p_scheduled_thread_pool;
+
     std::vector<std::shared_ptr<MonitorTask>> tasks;
 
     std::mutex mutex;

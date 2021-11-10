@@ -13,12 +13,15 @@ namespace xpum {
 MonitorTask::MonitorTask(
     DeviceCapability capability, int freq,
     std::shared_ptr<DeviceManagerInterface>& p_device_manager,
-    std::shared_ptr<DataLogicInterface>& p_data_logic)
+    std::shared_ptr<DataLogicInterface>& p_data_logic,
+    std::shared_ptr<ScheduledThreadPool>& p_scheduled_thread_pool)
     : capability(capability),
       freq(freq),
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
-      type(MonitorTaskType::DEFAULT_TELEMETRY) {
+      type(MonitorTaskType::DEFAULT_TELEMETRY),
+      p_scheduled_thread_pool(p_scheduled_thread_pool),
+      p_scheduled_task(nullptr) {
     XPUM_LOG_DEBUG("MonitorTask()");
 }
 
@@ -26,12 +29,15 @@ MonitorTask::MonitorTask(
     DeviceCapability capability, int freq,
     std::shared_ptr<DeviceManagerInterface>& p_device_manager,
     std::shared_ptr<DataLogicInterface>& p_data_logic,
-    MonitorTaskType type)
+    MonitorTaskType type,
+    std::shared_ptr<ScheduledThreadPool>& p_scheduled_thread_pool)
     : capability(capability),
       freq(freq),
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
-      type(type) {
+      type(type),
+      p_scheduled_thread_pool(p_scheduled_thread_pool),
+      p_scheduled_task(nullptr) {
     XPUM_LOG_DEBUG("MonitorTask()");
 }
 
@@ -44,9 +50,11 @@ void MonitorTask::start() {
     long delay = freq - now % freq;
     std::weak_ptr<MonitorTask> this_weak_ptr = shared_from_this();
 
-    timer.scheduleAtFixedRate(delay, freq, [delay, this_weak_ptr]() {
+    std::lock_guard<std::mutex> lock(this->mutex);
+    p_scheduled_task = p_scheduled_thread_pool->scheduleAtFixedRate(delay, freq, [this_weak_ptr]() {
         auto p_this = this_weak_ptr.lock();
         if (p_this == nullptr) {
+            XPUM_LOG_WARN("this_weak_ptr is nullptr for monitor data");
             return;
         }
 
@@ -55,6 +63,7 @@ void MonitorTask::start() {
         std::vector<std::shared_ptr<Device>> devices;
         p_this->p_device_manager->getDeviceList(p_this->capability, devices);
         if (devices.size() == 0) {
+            XPUM_LOG_TRACE("no device supports capability: {}", p_this->capability);
             return;
         }
 
@@ -75,14 +84,20 @@ void MonitorTask::start() {
             });
         }
 
-        std::unique_lock<std::mutex> lock(p_this->mutex);
         MeasurementType measurmentType = Utility::measurementTypeFromCapability(p_this->capability);
+        XPUM_LOG_TRACE("Monitor passes data {} to datalogic", p_this->capability);
         p_this->p_data_logic->storeMeasurementData(measurmentType, now, datas);
     });
+
+    XPUM_LOG_TRACE("Monitor task started for {}", this->capability);
 }
 
 void MonitorTask::stop() {
-    timer.cancel();
+    std::lock_guard<std::mutex> lock(this->mutex);
+    if (p_scheduled_task != nullptr) {
+        p_scheduled_task->cancel();
+        p_scheduled_task = nullptr;
+    }
 }
 
 DeviceCapability MonitorTask::getCapability() {

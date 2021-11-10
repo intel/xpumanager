@@ -7,3 +7,4 @@ from .statistics import getStatistics, getStatisticsByGroup
 from .groups import createGroup, getAllGroups, getGroupInfo, destroyGroup, addDeviceToGroup, removeDeviceFromGroup
 from .firmwares import runFirmwareFlash, getFirmwareFlashResult
 from .topology import getTopology
+from .config import setStandby, setPowerLimit, setFrequencyRange, setScheduler, runReset, getConfig

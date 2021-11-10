@@ -276,10 +276,75 @@ enum XpumPolicyActionType {
     POLICY_ACTION_TYPE_THROTTLE_DEVICE=1;
     POLICY_ACTION_TYPE_RESET_DEVICE=2;   
 }
+enum XpumStandbyMode {  
+    STANDBY_DEFAULT=0;
+    STANDBY_NEVER=1;
+}
+enum XpumSchedulerMode {  
+    SCHEDULER_TIMEOUT=0;
+    SCHEDULER_TIMESLICE=1;
+    SCHEDULER_EXCLUSIVE=2;
+    SCHEDULER_DEBUG=3;
+}
+
 message XpumPolicyAction {
     XpumPolicyActionType type = 1;
     double throttle_device_frequency_min = 2;
     double throttle_device_frequency_max = 3;
+}
+
+message ConfigDeviceDataRequest{
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    uint32 tileId = 3;
+}
+message ConfigTileData {
+    uint32 tileId = 1;
+    uint32 minFreq = 2;
+    uint32 maxFreq = 3;
+    XpumStandbyMode standby = 4;
+    XpumSchedulerMode scheduler = 5;
+}
+message ConfigDeviceData{
+    uint32 deviceId = 1;    
+    uint32 powerLimit = 2;
+    uint32 interval = 3;  
+    uint32 tileCount = 4;
+    repeated ConfigTileData tileConfigData = 5;
+    string errorMsg = 6;
+}
+message ConfigDeviceSchdeulerModeRequest{
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    uint32 tileId = 3;
+    XpumSchedulerMode scheduler = 4;
+    uint32 val1 = 5;
+    uint32 val2 = 6;
+}
+message ConfigDevicePowerLimitRequest{
+    uint32 deviceId = 1;
+    uint32 powerLimit = 2;
+    uint32 intervalWindow = 3;
+}
+message ConfigDeviceFrequencyRangeRequest{
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    uint32 tileId = 3;
+    uint32 minFreq = 4;
+    uint32 maxFreq = 5;
+}
+message ConfigDeviceStandbyRequest{
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    uint32 tileId = 3;
+    XpumStandbyMode standby = 4;
+}
+message ConfigDeviceResultData {
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    uint32 tileId = 3;
+    uint32 retCode = 4;
+    string errorMsg = 5;
 }
 enum XpumPolicyType {  
     POLICY_TYPE_GPU_TEMPERATURE=0;
@@ -353,5 +418,9 @@ service XpumCoreService {
     rpc getFirmwareFlashResult( XpumFirmwareFlashTaskRequest ) returns ( XpumFirmwareFlashTaskResult );
     rpc getPolicy( GetPolicyRequest ) returns ( GetPolicyResponse );
     rpc setPolicy( SetPolicyRequest ) returns ( SetPolicyResponse );
-    
+    rpc getDeviceConfig( ConfigDeviceDataRequest ) returns ( ConfigDeviceData );
+    rpc setDeviceSchedulerMode( ConfigDeviceSchdeulerModeRequest ) returns ( ConfigDeviceResultData );
+    rpc setDevicePowerLimit( ConfigDevicePowerLimitRequest ) returns ( ConfigDeviceResultData );
+    rpc setDeviceFrequencyRange( ConfigDeviceFrequencyRangeRequest ) returns ( ConfigDeviceResultData );
+    rpc setDeviceStandbyMode( ConfigDeviceStandbyRequest ) returns ( ConfigDeviceResultData );
 }
