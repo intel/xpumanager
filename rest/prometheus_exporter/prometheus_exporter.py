@@ -62,18 +62,18 @@ class Metric:
 
 metrics_map = {
     # Engine utilization
-    'XPUM_STATS_GPU_UTILIZATION': Metric(PromMetric.xpum_engine_ratio),
-    'XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': 'compute'}),
-    'XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': 'media'}),
-    'XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': 'copy'}),
-    'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': 'render'}),
-    'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, ext_labels={'type': '3d'}),
+    'XPUM_STATS_GPU_UTILIZATION': Metric(PromMetric.xpum_engine_ratio, scale=0.01),
+    'XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'compute'}),
+    'XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'media'}),
+    'XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'copy'}),
+    'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'render'}),
+    'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': '3d'}),
 
     # Occupation
-    'XPUM_STATS_OCCUPATION': Metric(PromMetric.xpum_occupation_ratio),
-    'XPUM_STATS_ISSUE_EFFICIENCY': Metric(PromMetric.xpum_issue_efficiency_ratio),
-    'XPUM_STATS_EXECUTION_EFFICIENCY': Metric(PromMetric.xpum_execution_efficiency_ratio),
-    'XPUM_STATS_NON_OCCUPATION': Metric(PromMetric.xpum_non_occupation_ratio),
+    'XPUM_STATS_OCCUPATION': Metric(PromMetric.xpum_occupation_ratio, scale=0.01),
+    'XPUM_STATS_ISSUE_EFFICIENCY': Metric(PromMetric.xpum_issue_efficiency_ratio, scale=0.01),
+    'XPUM_STATS_EXECUTION_EFFICIENCY': Metric(PromMetric.xpum_execution_efficiency_ratio, scale=0.01),
+    'XPUM_STATS_NON_OCCUPATION': Metric(PromMetric.xpum_non_occupation_ratio, scale=0.01),
 
     # Power/Energy/Temperature
     'XPUM_STATS_POWER': Metric(PromMetric.xpum_power_watts),
@@ -83,12 +83,12 @@ metrics_map = {
     # Frequency
     'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),
     'XPUM_STATS_GPU_REQUEST_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'request'}),
-    'XPUM_STATS_GPU_FREQUENCY_THROTTLE_RATIO': Metric(PromMetric.xpum_frequency_throttling_ratio, ext_labels={'location': 'gpu'}),
+    'XPUM_STATS_GPU_FREQUENCY_THROTTLE_RATIO': Metric(PromMetric.xpum_frequency_throttling_ratio, scale=0.01, ext_labels={'location': 'gpu'}),
 
     # Memory
     'XPUM_STATS_MEMORY_USED': Metric(PromMetric.xpum_memory_used_bytes),
-    'XPUM_STATS_MEMORY_UTILIZATION': Metric(PromMetric.xpum_memory_ratio),
-    'XPUM_STATS_MEMORY_BANDWIDTH': Metric(PromMetric.xpum_memory_bandwidth_ratio),
+    'XPUM_STATS_MEMORY_UTILIZATION': Metric(PromMetric.xpum_memory_ratio, scale=0.01),
+    'XPUM_STATS_MEMORY_BANDWIDTH': Metric(PromMetric.xpum_memory_bandwidth_ratio, scale=0.01),
     'XPUM_STATS_MEMORY_READ': Metric(PromMetric.xpum_memory_read_bytes),
     'XPUM_STATS_MEMORY_WRITE': Metric(PromMetric.xpum_memory_write_bytes),
 
