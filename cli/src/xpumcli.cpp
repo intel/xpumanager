@@ -4,6 +4,7 @@
 
 #include "CLI/App.hpp"
 #include "cli_wrapper.h"
+#include "cli_help_fmter.h"
 #include "comlet_diagnostic.h"
 #include "comlet_discovery.h"
 #include "comlet_group.h"
@@ -21,6 +22,8 @@ int main(int argc, char **argv) {
 
     std::ios_base::sync_with_stdio(false);
     CLI::App app{"Intel XPU Manager Command Line Interface"};
+
+    app.formatter(std::make_shared<HelpFormatter>());
 
     xpum::cli::CLIWrapper wrapper(app);
     wrapper

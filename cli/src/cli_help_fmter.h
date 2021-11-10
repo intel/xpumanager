@@ -1,0 +1,7 @@
+#pragma once
+#include "CLI/Formatter.hpp"
+
+class HelpFormatter : public CLI::Formatter {
+  public:
+    std::string make_option_opts(const CLI::Option *) const override {return "";}
+};
