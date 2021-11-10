@@ -12,18 +12,18 @@ namespace xpum::cli {
 
 void ComletGroup::setupOptions() {
     this->opts = std::unique_ptr<ComletGroupOptions>(new ComletGroupOptions());
-
-    auto g = addOption("-g,--group", this->opts->groupId, "group id")->check(
-        CLI::Range((uint32_t)1, std::numeric_limits<uint32_t>::max(), "unsigned"));
-    auto n = addOption("-n,--name", this->opts->name, "group name");
-    auto d = addOption("-d,--device", this->opts->deviceList, "device id");
     
     auto c = addFlag("-c,--create", this->opts->create, "create group");
     auto de = addFlag("-D, --delete", this->opts->del, "delete group");
-    auto l = addFlag("-l,--list", this->opts->list, "list group");
+    auto l = addFlag("-l,--list", this->opts->list, "list group(s)");
     auto a = addFlag("-a,--add", this->opts->add, "add device to group");
     auto r = addFlag("-r,--remove", this->opts->remove, "remove device from group");
-
+    
+    auto g = addOption("-g,--group", this->opts->groupId, "group id")->check(
+        CLI::Range((uint32_t)1, std::numeric_limits<uint32_t>::max(), "unsigned"));
+    auto n = addOption("-n,--name", this->opts->name, "group name");
+    auto d = addOption("-d,--device", this->opts->deviceList, "device id(s)");
+ 
     c->needs(n);
     c->excludes(de);  c->excludes(l); c->excludes(a); c->excludes(r);
     de->needs(g);

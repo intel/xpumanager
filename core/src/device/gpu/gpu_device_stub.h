@@ -13,7 +13,6 @@
 #include "health/health_data_type.h"
 #include "infrastructure/const.h"
 #include "infrastructure/measurement_data.h"
-#include "infrastructure/thread_pool.h"
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 #include "level_zero/zet_api.h"
@@ -173,8 +172,6 @@ class GPUDeviceStub {
     static bool isDevEntry(const std::string& entryName);
 
    private:
-    std::unique_ptr<ThreadPool> p_thread_pool;
-
     bool initialized;
 
     std::mutex mutex;

@@ -7,8 +7,6 @@
 
 namespace xpum {
 
-typedef std::function<void(std::shared_ptr<void>, std::shared_ptr<BaseException>)> Callback_t;
-
 typedef long long Timestamp_t;
 
 // template <typename T, typename... Args>

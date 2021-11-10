@@ -117,4 +117,73 @@ bool Device::isUpgradingFw(void) noexcept {
     return false;
 }
 
+std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capability, Device* p_device) {
+    switch (capability) {
+        case DeviceCapability::POWER:
+        case DeviceCapability::METRIC_POWER:
+            return [p_device](Callback_t callback) { p_device->getPower(callback); };
+        case DeviceCapability::FREQUENCY:
+        case DeviceCapability::METRIC_FREQUENCY:
+            return [p_device](Callback_t callback) { p_device->getActuralFrequency(callback); };
+        case DeviceCapability::TEMPERATURE:
+        case DeviceCapability::METRIC_TEMPERATURE:
+            return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_GPU); };
+        case DeviceCapability::MEMORY:
+        case DeviceCapability::METRIC_MEMORY_USED:
+            return [p_device](Callback_t callback) { p_device->getMemory(callback); };
+        case DeviceCapability::ENGINE_UTILIZATION:
+        case DeviceCapability::METRIC_COMPUTATION:
+            return [p_device](Callback_t callback) { p_device->getEngineUtilization(callback); };
+        case DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COMPUTE_ALL); };
+        case DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_MEDIA_ALL); };
+        case DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COPY_ALL); };
+        case DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_RENDER_ALL); };
+        case DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
+            return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_3D_ALL); };
+        case DeviceCapability::METRIC_MEMORY_READ:
+            return [p_device](Callback_t callback) { p_device->getMemoryRead(callback); };
+        case DeviceCapability::METRIC_MEMORY_WRITE:
+            return [p_device](Callback_t callback) { p_device->getMemoryWrite(callback); };
+        case DeviceCapability::METRIC_ENERGY:
+            return [p_device](Callback_t callback) { p_device->getEnergy(callback); };
+        case DeviceCapability::METRIC_MEMORY_UTILIZATION:
+            return [p_device](Callback_t callback) { p_device->getMemoryUtilization(callback); };
+        case DeviceCapability::METRIC_MEMORY_BANDWIDTH:
+            return [p_device](Callback_t callback) { p_device->getMemoryBandwidth(callback); };
+        case DeviceCapability::METRIC_OCCUPATION:
+            return [p_device](Callback_t callback) { p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_OCCUPATION); };
+        case DeviceCapability::METRIC_ISSUE_EFFICIENCY:
+            return [p_device](Callback_t callback) { p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_ISSUE_EFFICIENCY); };
+        case DeviceCapability::METRIC_EXECUTION_EFFICIENCY:
+            return [p_device](Callback_t callback) { p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_EXECUTION_EFFICIENCY); };
+        case DeviceCapability::METRIC_NON_OCCUPATION:
+            return [p_device](Callback_t callback) { p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_NON_OCCUPATION); };
+        case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
+            return [p_device](Callback_t callback) { p_device->getRasError(callback, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+        case DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+        case DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS:
+            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+        case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE); };
+        case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+        case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE); };
+        case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+        case DeviceCapability::METRIC_REQUEST_FREQUENCY:
+            return [p_device](Callback_t callback) { p_device->getRequestFrequency(callback); };
+        case DeviceCapability::METRIC_MEMORY_TEMPERATURE:
+            return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_MEMORY); };
+        default:
+            break;
+    }
+    return nullptr;
+}
+
 } // end namespace xpum

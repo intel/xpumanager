@@ -7,13 +7,18 @@
 #include "CLI/App.hpp"
 #include "comlet_base.h"
 #include "core_stub.h"
+#include "cli_help_fmter.h"
 
 namespace xpum::cli {
 
 CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
+
+    cliApp.formatter(std::make_shared<HelpFormatter>());
+    
     cliApp.add_flag("-j,--json", this->opts->json, "Print result in format of json");
     cliApp.add_flag("--raw", this->opts->raw, "Print json output in raw format");
+
     cliApp.fallthrough(true);
 
     this->coreStub = std::make_shared<CoreStub>();

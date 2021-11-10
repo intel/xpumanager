@@ -3,11 +3,13 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <functional>
+#include <memory>
 
 #include "../include/xpum_structs.h"
-#include "infrastructure/const.h"
 #include "infrastructure/device_capability.h"
 #include "infrastructure/measurement_type.h"
+#include "infrastructure/exception/base_exception.h"
 #include "infrastructure/property.h"
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
@@ -19,6 +21,8 @@ namespace xpum {
 /*
   Device class defines various interfaces for communication with devices.
 */
+
+typedef std::function<void(std::shared_ptr<void>, std::shared_ptr<BaseException>)> Callback_t;
 
 class Device {
    public:
@@ -79,6 +83,8 @@ class Device {
     ze_driver_handle_t getDriverHandle();
 
     virtual bool isUpgradingFw(void) noexcept;
+
+    static std::function<void(Callback_t)> getDeviceMethod(DeviceCapability& capability, Device* p_device);
 
    public:
     virtual ~Device() {}

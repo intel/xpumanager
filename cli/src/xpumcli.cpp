@@ -4,6 +4,7 @@
 
 #include "CLI/App.hpp"
 #include "cli_wrapper.h"
+
 #include "comlet_diagnostic.h"
 #include "comlet_discovery.h"
 #include "comlet_group.h"
