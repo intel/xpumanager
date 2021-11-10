@@ -9,7 +9,7 @@
 namespace xpum::cli {
 
 void Table::add_row(std::vector<std::string> row) {
-    assert(row.size() == this->column_num);
+    assert((int)row.size() == this->column_num);
 
     std::vector<std::vector<std::string>> columns(column_num);
 
@@ -53,7 +53,7 @@ void Table::show() {
             for (int i = 0; i < column_num; i++) {
                 int width = width_list[i];
                 auto &column = row[i];
-                if (j < column.size()) {
+                if (j < (int)column.size()) {
                     out << " " << std::left << std::setw(width) << std::setfill(separator) << column[j] << " |";
                 } else {
                     out << " " << std::left << std::setw(width) << std::setfill(separator) <<""<< " |";

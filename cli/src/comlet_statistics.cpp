@@ -30,7 +30,7 @@ std::unique_ptr<nlohmann::json> ComletStatistics::run() {
 static std::string join(std::vector<std::string> strs) {
     if (strs.size() == 0) return "";
     std::string res = strs[0];
-    for (int i = 1; i < strs.size(); i++) {
+    for (std::size_t i = 1; i < strs.size(); i++) {
         res += "\n" + strs[i];
     }
     return res;
@@ -60,10 +60,8 @@ static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, 
             auto tileLevelMetricsList = tile["data_list"];
             auto metricsJson = getMetricsTypeFromList(tileLevelMetricsList, metricsType);
             if (!metricsJson.empty()) {
-                char buf[100]{0};
-                sprintf(buf, "Tile %d: %d", tileId, metricsJson["value"].get<std::uint64_t>());
                 if (res.size() > 0) res += ", ";
-                res += std::string(buf);
+                res += "Tile "+std::to_string(tileId)+": "+std::to_string(metricsJson["value"].get<std::uint64_t>());
             }
         }
     }

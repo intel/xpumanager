@@ -6,13 +6,13 @@
 namespace xpum::cli {
 class Table {
    private:
-    std::vector<int> width_list;
-
-    std::vector<std::vector<std::vector<std::string>>> rows;
-
     int column_num;
 
+    std::vector<int> width_list;
+
     std::ostream &out;
+
+    std::vector<std::vector<std::vector<std::string>>> rows;
 
    public:
     Table(std::ostream &out, int column_num) : column_num(column_num), width_list(column_num), out(out){};

@@ -26,7 +26,7 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
 static std::string join(std::vector<std::string> strs) {
     if (strs.size() == 0) return "";
     std::string res = strs[0];
-    for (int i = 1; i < strs.size(); i++) {
+    for (std::size_t i = 1; i < strs.size(); i++) {
         res += "\n" + strs[i];
     }
     return res;
