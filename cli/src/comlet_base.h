@@ -35,7 +35,9 @@ class ComletBase {
         }
     }
 
-    virtual void getTableResult(std::ostream &out) {}
+    virtual void getTableResult(std::ostream &out) {
+        out << "Only -j/--json option supported for this command" << std::endl;
+    }
 
    protected:
     template <typename T>

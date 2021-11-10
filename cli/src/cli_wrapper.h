@@ -17,7 +17,7 @@ class CoreStub;
 
 struct CLIWrapperOptions {
     bool raw;
-    bool table;
+    bool json;
 };
 
 class CLIWrapper {
