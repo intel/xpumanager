@@ -1,11 +1,15 @@
 #pragma once
+
+#include "CLI/App.hpp"
 #include "CLI/Formatter.hpp"
 
 namespace xpum::cli {
 
 class HelpFormatter : public CLI::Formatter {
   public:
-    std::string make_option_opts(const CLI::Option *) const override {return "";}
+    std::string make_option_opts(const CLI::Option *) const override;
+
+    std::string make_usage(const CLI::App *app, std::string name) const override;
 };
 
 } // namespace xpum::cli
