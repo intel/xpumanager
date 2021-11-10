@@ -7,11 +7,15 @@
 #include "CLI/App.hpp"
 #include "comlet_base.h"
 #include "core_stub.h"
+#include "cli_help_fmter.h"
 
 namespace xpum::cli {
 
 CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
+
+    cliApp.formatter(std::make_shared<HelpFormatter>());
+
     cliApp.add_flag("--raw", this->opts->raw, "Enable raw printing");
     cliApp.add_flag("--table", this->opts->table, "Print in text table instead of json");
     cliApp.fallthrough(true);
