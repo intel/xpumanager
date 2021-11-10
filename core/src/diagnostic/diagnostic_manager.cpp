@@ -1,5 +1,7 @@
 #include "diagnostic_manager.h"
 
+#include <thread>
+
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/logger.h"
