@@ -13,6 +13,7 @@ namespace xpum::cli {
 CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
     cliApp.add_flag("--raw", this->opts->raw, "Enable raw printing");
+    cliApp.add_flag("--table", this->opts->table, "Print in text table instead of json");
     cliApp.fallthrough(true);
 
     this->coreStub = std::make_shared<CoreStub>();
@@ -31,10 +32,14 @@ CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
     return *this;
 }
 
-void CLIWrapper::printResult() {
+void CLIWrapper::printResult(std::ostream &out) {
     for (auto comlet : comlets) {
         if (comlet->parsed()) {
-            comlet->printResult(this->opts->raw);
+            if(this->opts->table){
+                comlet->getTableResult(out);
+                return;
+            }
+            comlet->getJsonResult(out, this->opts->raw);
             return;
         }
     }

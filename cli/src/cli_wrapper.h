@@ -17,13 +17,14 @@ class CoreStub;
 
 struct CLIWrapperOptions {
     bool raw;
+    bool table;
 };
 
 class CLIWrapper {
    public:
     CLIWrapper(CLI::App &cliApp);
     CLIWrapper &addComlet(const std::shared_ptr<ComletBase> &comlet);
-    void printResult();
+    void printResult(std::ostream &out);
 
    private:
     CLI::App &cliApp;

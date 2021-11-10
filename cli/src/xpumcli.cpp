@@ -16,6 +16,8 @@
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
 
 int main(int argc, char **argv) {
+
+    std::ios_base::sync_with_stdio(false);
     CLI::App app{"Intel XPU Manager Command Line Interface"};
 
     xpum::cli::CLIWrapper wrapper(app);
@@ -32,7 +34,7 @@ int main(int argc, char **argv) {
 
     CLI11_PARSE(app, argc, argv);
 
-    wrapper.printResult();
+    wrapper.printResult(std::cout);
 
     return 0;
 }
