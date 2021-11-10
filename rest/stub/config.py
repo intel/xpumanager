@@ -37,7 +37,7 @@ def getConfig(deviceId, tileId):
         data['tileConfigData'].append(tiledata)        
     return 0, "OK", data
 
-def setsetStandby(deviceId, tileId, standby):
+def setStandby(deviceId, tileId, standby):
     resp = stub.setDeviceStandbyMode(core_pb2.ConfigDeviceStandbyRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, standby=standby))
     if len(resp.errorMsg) != 0:
