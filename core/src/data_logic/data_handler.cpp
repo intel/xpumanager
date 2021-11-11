@@ -64,7 +64,7 @@ MeasurementData DataHandler::getLatestData(std::string& device_id) noexcept {
     return datas[device_id];
 }
 
-MeasurementData DataHandler::getLatestStatistics(std::string& device_id) noexcept {
+MeasurementData DataHandler::getLatestStatistics(std::string& device_id, uint64_t session_id) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (p_latestData == nullptr) {
         return MeasurementData();
