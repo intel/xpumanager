@@ -7,7 +7,7 @@
 #include "CLI/App.hpp"
 #include "comlet_base.h"
 #include "core_stub.h"
-#include "cli_help_fmter.h"
+#include "help_formatter.h"
 
 namespace xpum::cli {
 
