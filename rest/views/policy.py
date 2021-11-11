@@ -3,9 +3,6 @@ from flask import request
 from flask import jsonify
 from marshmallow import Schema, fields
 
-class ThresholdSchema(Schema):
-    threshold = fields.Int(
-        metadata={"description": "The threshold for power or temperature"})
 
 class PolicyComponentSchema(Schema):
     description = fields.Str(
@@ -176,7 +173,6 @@ def get_all_policy():
         tags:
             - "Policy"
         description: Get policy for device
-        parameters:               
         responses:
             200:
                 description: OK
