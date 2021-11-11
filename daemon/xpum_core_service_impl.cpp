@@ -598,7 +598,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     if (res == XPUM_OK) {
         response->mutable_id()->set_id(request->id().id());
         response->mutable_type()->set_value(request->type().value());
-        response->mutable_result()->set_value(res);
+        response->mutable_result()->set_value(result.result);
         response->set_desc("");
         response->set_version("");
     } else {
