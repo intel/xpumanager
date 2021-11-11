@@ -521,7 +521,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     int count = 5;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
-    xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end);
+    xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, 0);
     if (res != XPUM_OK || count < 0) {
         response->set_errormsg("Error");
         return grpc::Status::OK;

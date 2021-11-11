@@ -616,6 +616,7 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
  *                          When return, \a count will store the actual number of entries stored in \a dataList.
  * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
  * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @param sessionId     IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
@@ -624,7 +625,8 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
                            xpum_device_stats_t dataList[],
                            int *count,
                            uint64_t *begin,
-                           uint64_t *end);
+                           uint64_t *end,
+                           uint64_t sessionId);
 
 /**
  * @brief Get statistics data by group

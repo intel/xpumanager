@@ -54,18 +54,19 @@ void DataLogic::getLatestData(MeasurementType type,
     return p_raw_data_manager->getLatestData(type, datas);
 }
 
-MeasurementData DataLogic::getLatestStatistics(MeasurementType type, std::string& device_id) {
+MeasurementData DataLogic::getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
     }
-    return p_raw_data_manager->getLatestStatistics(type, device_id);
+    return p_raw_data_manager->getLatestStatistics(type, device_id, session_id);
 }
 
 void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                                      xpum_device_stats_t dataList[],
                                      int* count,
                                      uint64_t* begin,
-                                     uint64_t* end) {
+                                     uint64_t* end,
+                                     uint64_t session_id) {
     if (dataList == nullptr) {
         return;
     }
@@ -80,7 +81,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     uint32_t num_subdevice = 0;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
-        MeasurementData m_data = getLatestStatistics(*metric_types_iter, device_id);
+        MeasurementData m_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
         hasDataOnDevice = hasDataOnDevice || m_data.hasDataOnDevice();
         num_subdevice = num_subdevice < m_data.getSubdeviceDatas()->size() ? m_data.getSubdeviceDatas()->size() : num_subdevice;
         m_datas.insert(std::make_pair(*metric_types_iter, m_data));
@@ -104,6 +105,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
                 if (Utility::isCounterMetric(type)) {
                     stats_data.isCounter = true;
+                    stats_data.accumulated = datas_iter->second.getCurrent();
                     stats_data.value = datas_iter->second.getCurrent() - datas_iter->second.getMin();
                 } else {
                     stats_data.isCounter = false;
@@ -133,6 +135,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
                 if (Utility::isCounterMetric(type)) {
                     stats_data.isCounter = true;
+                    stats_data.accumulated = datas_iter->second.getSubdeviceDataCurrent(i);
                     stats_data.value = datas_iter->second.getSubdeviceDataCurrent(i) - datas_iter->second.getSubdeviceDataMin(i);
                 } else {
                     stats_data.isCounter = false;

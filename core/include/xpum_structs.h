@@ -395,6 +395,7 @@ struct xpum_device_stats_data_t {
     xpum_stats_type_t metricsType; ///< Metric type
     bool isCounter;                ///< If this metric is a counter
     uint64_t value;                ///< The value of this metric type
+    uint64_t accumulated;          ///< The accumulated value of this metric type, only valid if isCounter is true
     uint64_t min;                  ///< The min value since last call, only valid if isCounter is false
     uint64_t avg;                  ///< The average value since last call, only valid if isCounter is false
     uint64_t max;                  ///< The max value since last call, only valid if isCounter is false
