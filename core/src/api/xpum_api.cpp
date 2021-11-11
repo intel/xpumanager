@@ -314,8 +314,9 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
                            xpum_device_stats_t dataList[],
                            int *count,
                            uint64_t *begin,
-                           uint64_t *end) {
-    Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end);
+                           uint64_t *end,
+                           uint64_t sessionId) {
+    Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
     return xpum_result_t::XPUM_OK;
 }
 
@@ -421,7 +422,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
     for (int i = 0; i < groupInfo.count; i++) {
         currentCount = *count - totalCount;
         Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], pStatus,
-                                                              &currentCount, begin, end);
+                                                              &currentCount, begin, end, 0);
         totalCount += currentCount;
         pStatus += currentCount;
         if (*count < totalCount) {

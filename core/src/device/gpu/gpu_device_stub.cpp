@@ -72,7 +72,7 @@ void GPUDeviceStub::init() {
 }
 
 void GPUDeviceStub::checkInitDependency() {
-    XPUM_LOG_INFO("GPUDeviceStub::checkInitDependancy start");
+    XPUM_LOG_INFO("GPUDeviceStub::checkInitDependency start");
     std::string details;
 
     std::vector<std::string> checkEnvVaribles = {"ZES_ENABLE_SYSMAN", "ZET_ENABLE_METRICS"};
@@ -138,7 +138,7 @@ void GPUDeviceStub::checkInitDependency() {
         XPUM_LOG_ERROR("Permission check failed.");
     }
 
-    XPUM_LOG_INFO("GPUDeviceStub::checkXPUMInitDependancy done");
+    XPUM_LOG_INFO("GPUDeviceStub::checkInitDependency done");
 }
 
 bool GPUDeviceStub::isDevEntry(const std::string& entryName) {
