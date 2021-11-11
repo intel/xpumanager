@@ -32,7 +32,7 @@ class ConfigSchema(Schema):
     deviceId = fields.Int(metadata={"description": "Device id"})
     powerLimit = fields.Nested(PowerLimitSchema)
     interval = fields.Nested(IntervalSchema)
-    tileCount = fields.Int
+    tileCount = fields.Int()
     tileConfigData = fields.Nested(TileConfigSchema)
 
 def set_standby(deviceId):

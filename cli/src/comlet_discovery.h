@@ -21,6 +21,8 @@ class ComletDiscovery : public ComletBase {
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
+    virtual void getTableResult(std::ostream &out) override;
+
    private:
     std::unique_ptr<ComletDiscoveryOptions> opts;
 };

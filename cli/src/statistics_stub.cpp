@@ -128,6 +128,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
     if (tileLevelStatsDataList.size() > 0)
         (*json)["tile_level"] = tileLevelStatsDataList;
 
+    (*json)["device_id"] = deviceId;
     return json;
 }
 

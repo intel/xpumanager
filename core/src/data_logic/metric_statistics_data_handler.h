@@ -4,6 +4,8 @@
 
 namespace xpum {
 
+const uint64_t MAX_STATISTICS_SESSION_NUM = 2;
+
 struct Statistics_subdevice_data {
     uint64_t count;
     uint64_t avg;
@@ -46,13 +48,13 @@ class MetricStatisticsDataHandler : public DataHandler {
 
     virtual MeasurementData getLatestData(std::string &device_id) noexcept;
 
-    virtual MeasurementData getLatestStatistics(std::string &device_id) noexcept;
+    virtual MeasurementData getLatestStatistics(std::string &device_id, uint64_t session_id) noexcept;
 
    protected:
-    void resetStatistics(std::string &device_id);
+    void resetStatistics(std::string &device_id, uint64_t session_id);
 
     void updateStatistics(std::shared_ptr<SharedData> &p_data);
 
-    std::map<std::string, Statistics_data> statistics_datas;
+    std::map<uint64_t, std::map<std::string, Statistics_data>> statistics_datas;
 };
 } // end namespace xpum

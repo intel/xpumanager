@@ -25,14 +25,18 @@ class ComletBase {
         return this->subCLIApp->parsed();
     }
 
-    virtual void printResult(bool raw = false) {
+    virtual void getJsonResult(std::ostream &out, bool raw = false) {
         if (raw) {
-            std::cout << this->run()->dump() << std::endl;
+            out << this->run()->dump() << std::endl;
             return;
         } else {
-            std::cout << this->run()->dump(4) << std::endl;
+            out << this->run()->dump(4) << std::endl;
             return;
         }
+    }
+
+    virtual void getTableResult(std::ostream &out) {
+        out << "Only -j/--json option supported for this command" << std::endl;
     }
 
    protected:

@@ -70,7 +70,7 @@ void MonitorTask::start() {
         auto datas = std::make_shared<std::map<std::string, std::shared_ptr<MeasurementData>>>();
         
         for (auto& p_device : devices) {
-            auto method = Utility::getDeviceMethod(p_this->capability, p_device.get());
+            auto method = Device::getDeviceMethod(p_this->capability, p_device.get());
             method([p_device, this_weak_ptr, datas](
                        std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                 auto p_this = this_weak_ptr.lock();

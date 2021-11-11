@@ -7,12 +7,18 @@
 #include "CLI/App.hpp"
 #include "comlet_base.h"
 #include "core_stub.h"
+#include "help_formatter.h"
 
 namespace xpum::cli {
 
 CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
-    cliApp.add_flag("--raw", this->opts->raw, "Enable raw printing");
+
+    cliApp.formatter(std::make_shared<HelpFormatter>());
+    
+    cliApp.add_flag("-j,--json", this->opts->json, "Print result in format of json");
+    cliApp.add_flag("--raw", this->opts->raw, "Print json output in raw format");
+
     cliApp.fallthrough(true);
 
     this->coreStub = std::make_shared<CoreStub>();
@@ -31,10 +37,14 @@ CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
     return *this;
 }
 
-void CLIWrapper::printResult() {
+void CLIWrapper::printResult(std::ostream &out) {
     for (auto comlet : comlets) {
         if (comlet->parsed()) {
-            comlet->printResult(this->opts->raw);
+            if(this->opts->json){
+                comlet->getJsonResult(out, this->opts->raw);
+                return;
+            }
+            comlet->getTableResult(out);
             return;
         }
     }

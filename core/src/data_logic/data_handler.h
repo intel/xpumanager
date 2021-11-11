@@ -33,7 +33,7 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
 
     virtual void getLatestData(std::map<std::string, MeasurementData> &datas) noexcept;
 
-    virtual MeasurementData getLatestStatistics(std::string &device_id) noexcept;
+    virtual MeasurementData getLatestStatistics(std::string &device_id, uint64_t session_id) noexcept;
 
    protected:
     std::mutex mutex;

@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <deque>
+#include <thread>
 
 #include "device/frequency.h"
 #include "device/scheduler.h"
@@ -16,10 +18,30 @@
 #include "infrastructure/logger.h"
 #include "infrastructure/measurement_data.h"
 
-
 namespace xpum {
 
-GPUDeviceStub::GPUDeviceStub() : p_thread_pool(nullptr), initialized(false) {
+template <class F, class... Args>
+void invokeTask(Callback_t callback, F&& f, Args&&... args) {
+    auto task = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
+    auto taskInfo = std::make_tuple(task, callback);
+
+    try {
+        auto ret = (std::get<0>(taskInfo))();
+        (std::get<1>(taskInfo))(std::static_pointer_cast<void>(ret), nullptr);
+    } catch (std::exception& e) {
+        std::string error = "Failed to execute task in thread pool:";
+        error += e.what();
+        XPUM_LOG_DEBUG(error);
+        (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(e.what()));
+    } catch (...) {
+        std::string error =
+            "Failed to execute task in thread pool: unexpected exception";
+        XPUM_LOG_DEBUG(error);
+        (std::get<1>(taskInfo))(nullptr, std::make_shared<BaseException>(error));
+    }
+}
+
+GPUDeviceStub::GPUDeviceStub() : initialized(false) {
     XPUM_LOG_DEBUG("GPUDeviceStub()");
 }
 
@@ -37,7 +59,6 @@ GPUDeviceStub& GPUDeviceStub::instance() {
 }
 
 void GPUDeviceStub::init() {
-    p_thread_pool = std::make_unique<ThreadPool>(Configuration::DEVICE_THREAD_POOL_SIZE);
     initialized = true;
     putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
     putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
@@ -51,7 +72,7 @@ void GPUDeviceStub::init() {
 }
 
 void GPUDeviceStub::checkInitDependency() {
-    XPUM_LOG_INFO("GPUDeviceStub::checkInitDependancy start");
+    XPUM_LOG_INFO("GPUDeviceStub::checkInitDependency start");
     std::string details;
 
     std::vector<std::string> checkEnvVaribles = {"ZES_ENABLE_SYSMAN", "ZET_ENABLE_METRICS"};
@@ -117,7 +138,7 @@ void GPUDeviceStub::checkInitDependency() {
         XPUM_LOG_ERROR("Permission check failed.");
     }
 
-    XPUM_LOG_INFO("GPUDeviceStub::checkXPUMInitDependancy done");
+    XPUM_LOG_INFO("GPUDeviceStub::checkInitDependency done");
 }
 
 bool GPUDeviceStub::isDevEntry(const std::string& entryName) {
@@ -132,7 +153,7 @@ bool GPUDeviceStub::isDevEntry(const std::string& entryName) {
 }
 
 void GPUDeviceStub::discoverDevices(Callback_t callback) {
-    p_thread_pool->addTask(callback, toDiscover);
+    invokeTask(callback, toDiscover);
 }
 
 class SystemCommandResult {
@@ -813,7 +834,7 @@ void GPUDeviceStub::getPower(const zes_device_handle_t& device, Callback_t callb
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetPower, device);
+    invokeTask(callback, toGetPower, device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_handle_t& device) {
@@ -857,7 +878,7 @@ void GPUDeviceStub::getEnergy(const zes_device_handle_t& device, Callback_t call
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetEnergy, device);
+    invokeTask(callback, toGetEnergy, device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_handle_t& device) {
@@ -896,7 +917,7 @@ void GPUDeviceStub::getActuralFrequency(const zes_device_handle_t& device, Callb
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetActuralFrequency, device);
+    invokeTask(callback, toGetActuralFrequency, device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_device_handle_t& device) {
@@ -935,7 +956,7 @@ void GPUDeviceStub::getRequestFrequency(const zes_device_handle_t& device, Callb
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetRequestFrequency, device);
+    invokeTask(callback, toGetRequestFrequency, device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_device_handle_t& device) {
@@ -974,7 +995,7 @@ void GPUDeviceStub::getTemperature(const zes_device_handle_t& device, Callback_t
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetTemperature, device, type);
+    invokeTask(callback, toGetTemperature, device, type);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_device_handle_t& device, zes_temp_sensors_t type) {
@@ -1039,7 +1060,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
                         break;
                 }
             }
-        } 
+        }
     }
     if (res == ZE_RESULT_SUCCESS && dataAcquired) {
         return ret;
@@ -1052,7 +1073,7 @@ void GPUDeviceStub::getMemory(const zes_device_handle_t& device, Callback_t call
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetMemory, device);
+    invokeTask(callback, toGetMemory, device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_handle_t& device) {
@@ -1096,7 +1117,7 @@ void GPUDeviceStub::getMemoryUtilization(const zes_device_handle_t& device, Call
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetMemoryUtilization, device);
+    invokeTask(callback, toGetMemoryUtilization, device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes_device_handle_t& device) {
@@ -1141,7 +1162,7 @@ void GPUDeviceStub::getMemoryBandwidth(const zes_device_handle_t& device, Callba
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetMemoryBandwidth, device);
+    invokeTask(callback, toGetMemoryBandwidth, device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_device_handle_t& device) {
@@ -1193,7 +1214,7 @@ void GPUDeviceStub::getMemoryRead(const zes_device_handle_t& device, Callback_t 
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetMemoryRead, device);
+    invokeTask(callback, toGetMemoryRead, device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryRead(const zes_device_handle_t& device) {
@@ -1236,7 +1257,7 @@ void GPUDeviceStub::getMemoryWrite(const zes_device_handle_t& device, Callback_t
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetMemoryWrite, device);
+    invokeTask(callback, toGetMemoryWrite, device);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_device_handle_t& device) {
@@ -1279,7 +1300,7 @@ void GPUDeviceStub::getOccupationEfficiency(const ze_device_handle_t& device, co
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetOccupationEfficiency, device, driver, type);
+    invokeTask(callback, toGetOccupationEfficiency, device, driver, type);
 }
 
 std::mutex GPUDeviceStub::metric_streamer_mutex;
@@ -1457,8 +1478,8 @@ void GPUDeviceStub::getRasError(const zes_device_handle_t& device, Callback_t ca
     if (device == nullptr) {
         return;
     }
-    //p_thread_pool->addTask(callback, toGetRasError, device,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
-    p_thread_pool->addTask(callback, toGetRasError, device, rasCat, rasType);
+    //invokeTask(callback, toGetRasError, device,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+    invokeTask(callback, toGetRasError, device, rasCat, rasType);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) {
@@ -1500,8 +1521,8 @@ void GPUDeviceStub::getRasErrorOnSubdevice(const zes_device_handle_t& device, Ca
     if (device == nullptr) {
         return;
     }
-    //p_thread_pool->addTask(callback, toGetRasError, device,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
-    p_thread_pool->addTask(callback, toGetRasErrorOnSubdevice, device, rasCat, rasType);
+    //invokeTask(callback, toGetRasError, device,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+    invokeTask(callback, toGetRasErrorOnSubdevice, device, rasCat, rasType);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) {
@@ -1603,7 +1624,7 @@ void GPUDeviceStub::getEngineUtilization(const zes_device_handle_t& device, Call
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetEngineUtilization, device);
+    invokeTask(callback, toGetEngineUtilization, device);
 }
 
 uint32_t getAverage(std::vector<uint32_t>& datas) {
@@ -1731,7 +1752,7 @@ void GPUDeviceStub::getEngineGroupUtilization(const zes_device_handle_t& device,
     if (device == nullptr) {
         return;
     }
-    p_thread_pool->addTask(callback, toGetEngineGroupUtilization, device, engine_group_type);
+    invokeTask(callback, toGetEngineGroupUtilization, device, engine_group_type);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(const zes_device_handle_t& device, zes_engine_group_t engine_group_type) {

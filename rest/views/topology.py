@@ -22,7 +22,7 @@ def get_topology(deviceId):
         responses:
             200:
                 description: OK
-                    items: TopologyInfoSchema
+                schema: TopologyInfoSchema
             500:
                 description: Error
     """

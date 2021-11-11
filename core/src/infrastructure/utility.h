@@ -24,8 +24,6 @@ class Utility {
 
     static DeviceCapability capabilityFromMeasurementType(MeasurementType& measurementType);
 
-    static std::function<void(Callback_t)> getDeviceMethod(DeviceCapability& capability, Device* p_device);
-
     static xpum_stats_type_t xpumStatsTypeFromMeasurementType(MeasurementType& MeasurementType);
 
     static MeasurementType measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type);

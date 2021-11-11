@@ -60,13 +60,16 @@ Service:
 Help info of the "discovery" subcommand
 ```
 ./xpumcli discovery -h
-usage: xpumcli discovery [-h] [-d <deviceId>]
+
 Discover the GPU devices installed on this machine and provide the device info. 
 
-Optional arguments:
-  -h, --help            show this help message and exit
-  -d <deviceId>, --device <deviceId>
-                        The device ID to query, will show more detailed info
+Usage: xpumcli discovery [Options]
+  xpumcli discovery
+  xpumcli discovery -d [deviceId]
+
+Options:
+  -h,--help            Print this help message and exit.
+  -d,--device          Device ID to query. It will show more detailed info.
 ```
 
 
@@ -74,7 +77,6 @@ Optional arguments:
 Discover the devices in this machine
 ```
 ./xpumcli discovery
-Device Type: GPU
 +-----------+--------------------------------------------------------------------------------------+
 | Device ID | Device Information                                                                   |
 +-----------+--------------------------------------------------------------------------------------+
@@ -127,24 +129,32 @@ Show the detailed info of one device. The device info includes the model, freque
 Help info of the group operation
 ```
 ./xpumcli group -h
-usage: xpumcli group [-h] [-c <groupName>] [-r] [-l] [-g <groupId>] [-a <deviceIds> [<deviceIds> ...]] [-d <deviceIds> [<deviceIds> ...]]
-Group the managed GPU devices
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -c <groupName>, --create <groupName>
-                        Create a group
-  -r -g <groupId>, --remove -g <groupId>
-                        Remove a group
-  -l, --list            List all groups info
-  -a <deviceIds> [<deviceIds> ...] -g <groupId>, --add <deviceIds> [<deviceIds> ...] -g <groupId>
-                        Add devices to a group
-  -d <deviceIds> [<deviceIds> ...], --delete <deviceIds> [<deviceIds> ...]
-                        Remove devices from a group
+Group the managed GPU devices.
+
+Usage: xpumcli group [Options]
+  xpumcli group -c -n [groupName]
+  xpumcli group -a -g [groupId] -d [deviceIds]
+  xpumcli group -r -d [deviceIds] -g [groupId]
+  xpumcli group -D -g [groupId]
+  xpumcli -l
+  xpumcli -l -g [groupId]
+
+
+Options:
+  -h,--help                   Print this help message and exit
+  -c,--create                 Create a group.
+  -D,--delete                 Delete a group.
+  -l,--list                   List the groups info.
+  -a,--add                    Add devices to a group.
+  -r,--remove                 Remove devices from group.
+  -g,--group                  Group ID.
+  -n,--name                   group name.
+  -d,--device                 Device IDs.
 ```
  
 Create a group                        
-```./xpumcli group -c testgroup
+```./xpumcli group -c -n "testgroup"
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
@@ -155,7 +165,7 @@ Create a group
  
 Add device to a group
 ```
-./xpumcli group -a 0 -g 1
+./xpumcli group -a 0 -g 1 -d 0
 Successfully add device [0] to group 1
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
@@ -178,7 +188,7 @@ List a group info
  
 Remove devices from a group
 ```
-./xpumcli group -d 0 -g 1
+./xpumcli group -r -d 0 -g 1
 Successfully remove device [0] from group 1
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
@@ -190,7 +200,7 @@ Successfully remove device [0] from group 1
  
 Remove a group 
 ```
-./xpumcli group -r -g 1
+./xpumcli group -D -g 1
 Successfully remove the group
 ```
  
@@ -213,17 +223,20 @@ optional arguments:
                             2. GPU Frequency (MHz)
                             3. GPU Core Temperature (°C)
                             4. GPU Memory Temperature (°C)
-                            4. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
-                            5. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
-                            6. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
-                            7. GPU Energy Consumed (J)
-                            8. Reset Count
-                            9. Programming Errors
-                            10. Driver Errors
-                            11. Cache Erros Correctable
-                            12. Cache Errors Uncorrectable
-                            13. Display Errors Correctable
-                            14. Display Errors Uncorrectable
+                            5. GPU Memory Utilization (%)
+                            6. GPU Memory Read (kB/s)
+                            7. GPU Memory Write (kB/s)
+                            8. GPU Energy Consumed (J)
+                            9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
+                            10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
+                            11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
+                            12. Reset Count
+                            13. Programming Errors
+                            14. Driver Errors
+                            15. Cache Erros Correctable
+                            16. Cache Errors Uncorrectable
+                            17. Display Errors Correctable
+                            18. Display Errors Uncorrectable
 ```
  
 List the XPU Manager settings
@@ -264,13 +277,18 @@ optional arguments:
 List the GPU device statistics that are collected by XPU Manager
 ```
 ./xpumcli stats -d 0
-Device Type: GPU
 +------------------------------+-------------------------------------------------------------------+
 | Device ID                    | 0                                                                 |
 +------------------------------+-------------------------------------------------------------------+
 | Start Time                   | 2021-11-02 14:44:25.000                                           |
 | End Time                     | 2021-11-02 14:47:49.021                                           |
+| Elapsed Time (second)        | 204                                                               |
 | Energy Consumed (J)          | 18264.05                                                          |
+| GPU Utilization (%)          | Tile 0: 0, Tile 1: 0                                              |
+| EU Array Active (%)          | Tile 0: 0, Tile 1: 0                                              |
+| EU Array Stall (%)           | Tile 0: 0, Tile 1: 0                                              |
+| EU Array Idle (%)            | Tile 0: 0, Tile 1: 0                                              |
++------------------------------+-------------------------------------------------------------------+
 | Reset                        | 0                                                                 |
 | Programming Errors           | Tile 0: 0, Tile 1: 0                                              |
 | Driver Errors                | Tile 0: 0, Tile 1: 0                                              |
@@ -279,31 +297,16 @@ Device Type: GPU
 | Display Errors Correctable   | Tile 0: 0, Tile 1: 0                                              |
 | Display Errors Uncorrectable | Tile 0: 0, Tile 1: 0                                              |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Utilization (%)          | Tile 0: avg: 0, min: 0, max: 100, current:0                       |
-|                              | Tile 1: avg: 0, min: 0, max: 100, current:0                       |
-+------------------------------+-------------------------------------------------------------------+
 | GPU Power (W)                | avg: 88, min: 88, max: 90， current: 89                           |
 +------------------------------+-------------------------------------------------------------------+
 | GPU Frequency (MHz)          | Tile 0: avg: 1400, min: 1400, max: 1400, current: 1400            |
 |                              | Tile 1: avg: 300, min: 300, max: 300, current: 300                |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Core Temperature (°C)    | Tile 0: avg: 36, min: 36, max: 36, current: 36                    |
-|                              | Tile 1: avg: 33, min: 33, max: 34, current: 33                    |
+| GPU Core Temperature         | Tile 0: avg: 36, min: 36, max: 36, current: 36                    |
+| (Celsius Degree)             | Tile 1: avg: 33, min: 33, max: 34, current: 33                    |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Memory Temperature (°C)  | Tile 0: avg: 36, min: 36, max: 36, current: 36                    |
-|                              | Tile 1: avg: 33, min: 33, max: 34, current: 33                    |
-+------------------------------+-------------------------------------------------------------------+
-| Occupation (%)               | Tile 0: avg: 0, min: 0, max: 100, current:0                       |
-|                              | Tile 1: avg: 0, min: 0, max: 100, current:0                       |
-+------------------------------+-------------------------------------------------------------------+
-| Issue Efficiency (%)         | Tile 0: avg: 0, min: 0, max: 100, current:0                       |
-|                              | Tile 1: avg: 0, min: 0, max: 100, current:0                       |
-+------------------------------+-------------------------------------------------------------------+
-| Execution Efficiency (%)     | Tile 0: avg: 0, min: 0, max: 100, current:0                       |
-|                              | Tile 1: avg: 0, min: 0, max: 100, current:0                       |
-+------------------------------+-------------------------------------------------------------------+
-| Non-Occupation (%)           | Tile 0: avg: 0, min: 0, max: 100, current:0                       |
-|                              | Tile 1: avg: 0, min: 0, max: 100, current:0                       |
+| GPU Memory Temperature       | Tile 0: avg: 36, min: 36, max: 36, current: 36                    |
+| (Celsius Degree)             | Tile 1: avg: 33, min: 33, max: 34, current: 33                    |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
@@ -330,7 +333,6 @@ optional arguments:
 Get the GPU device component health status. There are some build-in thresholds for the GPU telemetries. You may also set your custom threshold to help monitor the GPU component health status. 
 ```
 ./xpumcli health -l
-Device Type: GPU
 +------------------------------+-------------------------------------------------------------------+
 | Device ID                    | 0                                                                 |
 +------------------------------+-------------------------------------------------------------------+
@@ -359,7 +361,6 @@ Device Type: GPU
 Change the component custom temperature threshold 
 ```
 ./xpumcli health -d 0 -t "GPU Temperature" 90
-Device Type: GPU
 +------------------------------+-------------------------------------------------------------------+
 | Device ID                    | 0                                                                 |
 +------------------------------+-------------------------------------------------------------------+
@@ -386,7 +387,7 @@ Device Type: GPU
 ```
  
 # Dump the device statistics
-Help info of dumping the device statistics
+Help info of dumping the device average statistics in the specified time interval.
 ```
 ./xpumcli dump
 usage: xpumcli dump [-h] [-d <deviceId>] [-t <deviceTileId>] [-m <metricsId> [<metricsId> ...]] [-i <timeInterval>] [-n <dumpTimes>]
@@ -399,23 +400,26 @@ optional arguments:
                         The device tile ID to query
   -m <metricsId> [<metricsId> ...], --metrics <metricsId> [<metricsId> ...]
                         Metrics type to collect raw data, options:
-                            0. GPU Utilization (%)
+                            0. GPU Utilization (%), GPU active time of the elapsed time
                             1. GPU Power (W)
                             2. GPU Frequency (MHz)
                             3. GPU Core Temperature (°C)
                             4. GPU Memory Temperature (°C)
-                            4. GPU EU Array Active (%)
-                            5. GPU EU Array Stall (%)
-                            6. GPU EU Array Idle (%)
-                            7. GPU Energy Consumed (J)
-                            8. Reset Count
-                            9. Programming Errors
-                            10. Driver Errors
-                            11. Cache Erros Correctable
-                            12. Cache Errors Uncorrectable
-                            13. Display Errors Correctable
-                            14. Display Errors Uncorrectable
-  -i <timeInterval>     Dump the device data at seconds interval. Its default value is 1 second if not specified. 
+                            5. GPU Memory Utilization (%)
+                            6. GPU Memory Read (kB/s)
+                            7. GPU Memory Write (kB/s)
+                            8. GPU Energy Consumed (J)
+                            9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
+                            10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
+                            11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
+                            12. Reset Count
+                            13. Programming Errors
+                            14. Driver Errors
+                            15. Cache Erros Correctable
+                            16. Cache Errors Uncorrectable
+                            17. Display Errors Correctable
+                            18. Display Errors Uncorrectable
+  -i <timeInterval>     Display the device data at seconds interval. Its default value is 1 second if not specified. 
   -n <dumpTimes>        The times to dump the device data. The dumping will not be ended if not specified. 
 ```
 
@@ -423,11 +427,11 @@ Dump the devce statistics
 ```
 ./xpumcli -d 0 -t 0 -m 0,1,2 -i 1 -n 5
 Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
-2021-11-08 13:31:43.100,0,0,0,,300
-2021-11-08 13:31:44.100,0,0,0,,300
-2021-11-08 13:31:45.100,0,0,46,,1100
-2021-11-08 13:31:46.100,0,0,0,,300
-2021-11-08 13:31:47.100,0,0,0,,300
+2021-11-08 13:31:43.100, 00, 0, 000,    , 0300
+2021-11-08 13:31:44.100, 00, 0, 000,    , 0300
+2021-11-08 13:31:45.100, 00, 0, 046,    , 1100
+2021-11-08 13:31:46.100, 00, 0, 000,    , 0300
+2021-11-08 13:31:47.100, 00, 0, 000,    , 0300
 ```
 
 <!---

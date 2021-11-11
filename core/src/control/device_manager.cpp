@@ -3,6 +3,8 @@
 #include <atomic>
 #include <iostream>
 #include <vector>
+#include <condition_variable>
+#include <memory>
 
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/exception/ilegal_parameter_exception.h"
@@ -85,7 +87,7 @@ MeasurementData DeviceManager::getRealtimeMeasurementData(
     }
 
     DeviceCapability capability = Utility::capabilityFromMeasurementType(type);
-    auto method = Utility::getDeviceMethod(capability, p_device.get());
+    auto method = Device::getDeviceMethod(capability, p_device.get());
     if (method == nullptr) {
         throw IlegalParameterException("method does not exist");
     }

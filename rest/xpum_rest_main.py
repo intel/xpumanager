@@ -12,6 +12,7 @@ from views import devices
 from views import exporter
 from views import diagnostics
 from views import health
+from views import policy
 from views import groups
 from views import firmwares
 from views import agent_settings
@@ -61,6 +62,18 @@ app.add_url_rule('/rest/v1/devices/<int:deviceId>/health/<healthType>', methods=
                  view_func=auth.login_required(health.set_health_config))
 app.add_url_rule('/rest/v1/groups/<int:groupId>/health/<healthType>', methods=['PUT'],
                  view_func=auth.login_required(health.set_group_health_config))
+
+# policy management
+app.add_url_rule('/rest/v1/policy', methods=['GET'],
+                 view_func=auth.login_required(policy.get_all_policy))
+app.add_url_rule('/rest/v1/devices/<int:deviceId>/policy', methods=['GET'],
+                 view_func=auth.login_required(policy.get_device_policy))
+app.add_url_rule('/rest/v1/groups/<int:groupId>/policy', methods=['GET'],
+                 view_func=auth.login_required(policy.get_group_policy))
+app.add_url_rule('/rest/v1/devices/<int:deviceId>/policy', methods=['POST','DELETE'],
+                 view_func=auth.login_required(policy.set_device_policy))
+app.add_url_rule('/rest/v1/groups/<int:groupId>/policy', methods=['POST','DELETE'],
+                 view_func=auth.login_required(policy.set_group_policy))
 
 # groups management
 app.add_url_rule('/rest/v1/groups', methods=['POST', 'GET'],

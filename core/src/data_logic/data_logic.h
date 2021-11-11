@@ -35,13 +35,14 @@ class DataLogic : public DataLogicInterface {
         MeasurementType type,
         std::map<std::string, MeasurementData>& datas) override;
 
-    MeasurementData getLatestStatistics(MeasurementType type, std::string& device_id) override;
+    MeasurementData getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) override;
 
-    void getMetricsStatistics(xpum_device_id_t deviceId,
-                              xpum_device_stats_t dataList[],
+    void getMetricsStatistics(xpum_device_id_t device_id,
+                              xpum_device_stats_t data_list[],
                               int* count,
                               uint64_t* begin,
-                              uint64_t* end);
+                              uint64_t* end,
+                              uint64_t session_id);
 
     void getLatestMetrics(xpum_device_id_t deviceId,
                           xpum_device_metrics_t dataList[],
