@@ -148,7 +148,7 @@ install(
 		install/tools/fwUpgrade/GfxFwFPT
     PERMISSIONS
 		OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-    DESTINATION bin
+    DESTINATION /usr/local/bin
 )
 
 install(FILES
