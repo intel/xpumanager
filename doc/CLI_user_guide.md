@@ -142,14 +142,15 @@ Usage: xpumcli group [Options]
 
 
 Options:
-  -h,--help             Print this help message and exit.
-  -g,--group            Group ID.
-  -d,--device           Device IDs.
-  -c,--create           Create a group.
-  -r,--remove           Remove a group.
-  -l,--list             List the groups info.
-  -a,--add              Add devices to a group.
-  -D,--delete           Remove devices from a group.
+  -h,--help                   Print this help message and exit
+  -c,--create                 Create a group.
+  -D,--delete                 Delete a group.
+  -l,--list                   List the groups info.
+  -a,--add                    Add devices to a group.
+  -r,--remove                 Remove devices from group.
+  -g,--group                  Group ID.
+  -n,--name                   group name.
+  -d,--device                 Device IDs.
 ```
  
 Create a group                        

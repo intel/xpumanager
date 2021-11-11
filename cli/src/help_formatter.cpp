@@ -11,7 +11,7 @@ std::string HelpFormatter::make_option_opts(const CLI::Option *) const {
 
 std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) const {
     if (app->get_name().compare("group") == 0) {
-        return "Usage: xpumcli group [Options] \n"
+        return "\nUsage: xpumcli group [Options] \n"
                "   xpumcli group -c -n [groupName] \n"
                "   xpumcli group -a -g [groupId] -d [deviceIds] \n"
                "   xpumcli group -r -d [deviceIds] -g [groupId] \n"
