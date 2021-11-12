@@ -222,7 +222,7 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
                     counter_values[mm] = new_value
                     mm.inc(new_value-cur_value)
                 else:
-                    print(f'abnormal counter value detected: pre={cur_value}, cur={new_value}')
+                    print(f'counter value decreased, {metric_name}: pre={cur_value}, cur={new_value}')
             else:
                 # aggregated value
                 metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
