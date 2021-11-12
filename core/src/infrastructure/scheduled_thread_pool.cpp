@@ -130,7 +130,7 @@ std::shared_ptr<ScheduledThreadPoolTask> SchedulingQueue::dequeue() {
                 q.pop_front();
                 return first;
             }
-            cv.wait_for(lock, now - first->scheduled_time);
+            cv.wait_for(lock, first->scheduled_time - now);
         } else {
             cv.wait(lock);
         }
