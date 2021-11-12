@@ -29,6 +29,8 @@ cd ${WORK_DIR}
 
 # cp *.md build/
 
+../rest/gen_grpc_py_files.sh
+
 python3 ../rest/gen_doc.py > build/schema.json
 
 # build rst to html by sphinx

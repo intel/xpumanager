@@ -56,6 +56,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
                                [](unsigned char c) { return std::tolower(c); });
                 (*json)[name] = p.value();
             }
+            (*json)["device_id"] = deviceId;
         }
     }
 

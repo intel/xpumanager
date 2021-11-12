@@ -6,6 +6,15 @@
 #include <sstream>
 #include <string>
 
+static std::string join(std::vector<std::string> strs) {
+    if (strs.size() == 0) return "";
+    std::string res = strs[0];
+    for (std::size_t i = 1; i < strs.size(); i++) {
+        res += "\n" + strs[i];
+    }
+    return res;
+}
+
 namespace xpum::cli {
 
 void Table::add_row(std::vector<std::string> row) {
@@ -27,6 +36,14 @@ void Table::add_row(std::vector<std::string> row) {
         columns[i] = seglist;
     }
     this->rows.push_back(columns);
+}
+
+void Table::add_augmented_row(std::vector<std::vector<std::string>> row) {
+    std::vector<std::string> r;
+    for (auto c : row) {
+        r.push_back(join(c));
+    }
+    add_row(r);
 }
 
 void Table::printHorizontalGrid() {

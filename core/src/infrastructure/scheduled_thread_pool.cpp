@@ -13,7 +13,9 @@ namespace xpum {
 
 // ScheduledThreadPool
 ScheduledThreadPool::ScheduledThreadPool(uint32_t size) : stop(false) {
+    XPUM_LOG_TRACE("constructing scheduled thread pool");
     init(size);
+    XPUM_LOG_TRACE("scheduled thread pool constructed");
 }
 
 void ScheduledThreadPool::init(uint32_t& size) {
@@ -47,11 +49,14 @@ void ScheduledThreadPool::init(uint32_t& size) {
         };
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         this->workers.emplace_back(std::thread(worker_thread_proc));
+        XPUM_LOG_DEBUG("workder thread created in scheduled thread pool");
     }
 }
 
 void ScheduledThreadPool::close() {
     if (this->stop.load(std::memory_order_acquire)) return;
+
+    XPUM_LOG_TRACE("closing scheduled thread pool");
 
     this->stop.store(true, std::memory_order_release);
     this->p_taskqueue->close();
@@ -60,6 +65,8 @@ void ScheduledThreadPool::close() {
     }
     workers.clear();
     this->p_taskqueue = nullptr;
+
+    XPUM_LOG_TRACE("scheduled thread pool closed");
 }
 
 /// ScheduledThreadPoolTask
@@ -70,16 +77,31 @@ bool ScheduledThreadPoolTask::after(std::shared_ptr<ScheduledThreadPoolTask> oth
 
 bool ScheduledThreadPoolTask::next() {
     if (this->interval == 0) return false;
-    this->scheduled_time = this->scheduled_time + std::chrono::milliseconds{this->interval};
+    this->scheduled_time += std::chrono::milliseconds{this->interval};
+    auto now = std::chrono::steady_clock::now();
+    if (now > this->scheduled_time) {
+        // the scheduled time is too far before now, advance it to a near time
+        auto gap_to_now = std::chrono::duration_cast<std::chrono::milliseconds>(now - this->scheduled_time);
+        auto gaps = gap_to_now.count() / this->interval;
+        auto advanced_ms = std::chrono::milliseconds{this->interval * gaps};
+        this->scheduled_time += advanced_ms;
+    }
     return true;
 }
 
 void ScheduledThreadPoolTask::run() {
 #ifdef TRACE_SCHEDULED_TASK_RUN
-    auto duration = std::chrono::steady_clock::now() - this->scheduled_time;
-    XPUM_LOG_WARN("calling user function in worker thread, scheduled_time delayed: {}ns", duration.count());
+    auto start = std::chrono::steady_clock::now() auto delay = start - this->scheduled_time;
+    XPUM_LOG_WARN("calling user function in worker thread, scheduled_time delayed: {}us",
+                  std::chrono::duration_cast<std::chrono::microseconds>(delay).count());
+
 #endif
     this->func();
+#ifdef TRACE_SCHEDULED_TASK_RUN
+    auto duration = std::chrono::steady_clock::now() - start;
+    XPUM_LOG_WARN("user function runs for {}ms",
+                  std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
+#endif
 }
 
 void ScheduledThreadPoolTask::cancel() {
@@ -130,7 +152,7 @@ std::shared_ptr<ScheduledThreadPoolTask> SchedulingQueue::dequeue() {
                 q.pop_front();
                 return first;
             }
-            cv.wait_for(lock, now - first->scheduled_time);
+            cv.wait_for(lock, first->scheduled_time - now);
         } else {
             cv.wait(lock);
         }
@@ -140,11 +162,13 @@ std::shared_ptr<ScheduledThreadPoolTask> SchedulingQueue::dequeue() {
 
 void SchedulingQueue::close() {
     if (this->stop.load(std::memory_order_acquire)) return;
+    XPUM_LOG_TRACE("closing scheduling queue");
     {
         std::lock_guard<std::mutex> lock(q_mutex);
         this->stop.store(true, std::memory_order_release);
         this->q.clear();
     }
     cv.notify_all();
+    XPUM_LOG_TRACE("scheduling queue closed");
 }
 } // namespace xpum

@@ -27,15 +27,6 @@ std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     return json;
 }
 
-static std::string join(std::vector<std::string> strs) {
-    if (strs.size() == 0) return "";
-    std::string res = strs[0];
-    for (std::size_t i = 1; i < strs.size(); i++) {
-        res += "\n" + strs[i];
-    }
-    return res;
-}
-
 static nlohmann::json getMetricsTypeFromList(std::vector<nlohmann::json> metricsList, std::string metricsType) {
     for (auto obj : metricsList) {
         std::string k = obj["metrics_type"].get<std::string>();
@@ -138,7 +129,7 @@ void ComletStatistics::getTableResult(std::ostream &out) {
     keys.push_back("Display Errors Uncorrectable");
     values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE"));
 
-    table.add_row({join(keys), join(values)});
+    table.add_augmented_row({keys, values});
 
     table.add_row({"GPU Utilization (%)", getNonCounterMetricsValue(json, "XPUM_STATS_GPU_UTILIZATION")});
     // table.add_row({"XPUM_STATS_MEMORY_UTILIZATION",getNonCounterMetricsValue(*json,"XPUM_STATS_MEMORY_UTILIZATION")});

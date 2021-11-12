@@ -77,9 +77,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
 
     grpc::ClientContext context;
     XpumGetStatsResponse response;
-    DeviceId grpcDeviceId;
-    grpcDeviceId.set_id(deviceId);
-    grpc::Status status = stub->getStatistics(&context, grpcDeviceId, &response);
+    XpumGetStatsRequest request;
+    request.set_deviceid(deviceId);
+    request.set_sessionid(0);
+    grpc::Status status = stub->getStatistics(&context, request, &response);
 
     if (!status.ok()) {
         (*json)["Error"] = status.error_message();
@@ -139,9 +140,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
 
     grpc::ClientContext context;
     XpumGetStatsResponse response;
-    GroupId grpcGroupId;
-    grpcGroupId.set_id(groupId);
-    grpc::Status status = stub->getStatisticsByGroup(&context, grpcGroupId, &response);
+    XpumGetStatsByGroupRequest request;
+    request.set_groupid(groupId);
+    request.set_sessionid(0);
+    grpc::Status status = stub->getStatisticsByGroup(&context, request, &response);
 
     if (!status.ok()) {
         (*json)["Error"] = status.error_message();

@@ -6,6 +6,7 @@
 #include "infrastructure/const.h"
 #include "infrastructure/exception/ilegal_state_exception.h"
 #include "infrastructure/utility.h"
+#include "core/core.h"
 
 namespace xpum {
 
@@ -156,9 +157,12 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
                                  xpum_device_metrics_t dataList[],
                                  int* count) {
     if (dataList == nullptr) {
+        Property prop;
+        Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES,prop);
+        *count = prop.getValueInt() + 1;
         return;
     }
-    *count = 0;
+    int index = 0;
     std::vector<MeasurementType> metric_types;
     std::map<MeasurementType, MeasurementData> m_datas;
     Utility::getMetricsTypes(metric_types);
@@ -192,7 +196,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
             }
             ++datas_iter;
         }
-        dataList[(*count)++] = device_metrics;
+        dataList[index++] = device_metrics;
     }
 
     for (uint32_t i = 0; i < num_subdevice; i++) {
@@ -214,8 +218,10 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
             }
             ++datas_iter;
         }
-        dataList[(*count)++] = subdevice_metrics;
+        dataList[index++] = subdevice_metrics;
     }
+
+    *count = index;
 }
 
 uint32_t DataLogic::startRawDataCollectionTask(xpum_device_id_t deviceId, std::vector<MeasurementType> types) {
