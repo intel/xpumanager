@@ -545,6 +545,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             deviceStatsData->set_min(data.min);
             deviceStatsData->set_avg(data.avg);
             deviceStatsData->set_max(data.max);
+            deviceStatsData->set_accumulated(data.accumulated);
         }
     }
     return grpc::Status::OK;
@@ -579,6 +580,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             deviceStatsData->set_min(data.min);
             deviceStatsData->set_avg(data.avg);
             deviceStatsData->set_max(data.max);
+            deviceStatsData->set_accumulated(data.accumulated);
         }
     }
     return grpc::Status::OK;

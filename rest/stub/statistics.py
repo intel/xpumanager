@@ -36,7 +36,7 @@ XpumStatsType = Enum("xpum_stats_type_t", (
 ), start=0)
 
 
-def getStatistics(device_id, session_id=0):
+def getStatistics(device_id, session_id=0, get_accumulated=False):
     resp = stub.getStatistics(core_pb2.XpumGetStatsRequest(deviceId=device_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
@@ -64,6 +64,8 @@ def getStatistics(device_id, session_id=0):
                 tmp["avg"] = stats_data.avg
                 tmp["min"] = stats_data.min
                 tmp["max"] = stats_data.max
+            elif get_accumulated:
+                tmp["acc"] = stats_data.accumulated
             dataList.append(tmp)
         if stats_info.isTileData:
             tmp = dict(tile_id=stats_info.tileId, data_list=dataList)
@@ -76,7 +78,7 @@ def getStatistics(device_id, session_id=0):
     return 0, "OK", data
 
 
-def getStatisticsByGroup(group_id, session_id = 0):
+def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
     resp = stub.getStatisticsByGroup(core_pb2.XpumGetStatsByGroupRequest(groupId=group_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
@@ -101,6 +103,8 @@ def getStatisticsByGroup(group_id, session_id = 0):
                 tmp["min"] = d.min
                 tmp["avg"] = d.avg
                 tmp["max"] = d.max
+            elif get_accumulated:
+                tmp["acc"] = d.accumulated
             dataList.append(tmp)
         if deviceStats.isTileData:
             deviceMap[deviceId]["tile_level"].append({
