@@ -129,7 +129,7 @@ def get_metrics(core, pod_resources):
 
             for tile_data in stat_data.get('tile_level', []):
                 r = convert_to_prometheus_metrics(
-                    pod_resources, dev, tile_data['tile_level'], device_id, tile_data['tileId'])
+                    pod_resources, dev, tile_data['data_list'], device_id, tile_data['tile_id'])
                 resp = resp + r
 
         code, _, data = core.getAllGroups()
