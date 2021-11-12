@@ -516,12 +516,13 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getStatistics(::grpc::ServerContext* context, const ::DeviceId* request, ::XpumGetStatsResponse* response) {
-    xpum_device_id_t deviceId = request->id();
+::grpc::Status XpumCoreServiceImpl::getStatistics(::grpc::ServerContext* context, const ::XpumGetStatsRequest* request, ::XpumGetStatsResponse* response) {
+    xpum_device_id_t deviceId = request->deviceid();
+    uint64_t sessionId = request->sessionid();
     int count = 5;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
-    xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, 0);
+    xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, sessionId);
     if (res != XPUM_OK || count < 0) {
         response->set_errormsg("Error");
         return grpc::Status::OK;
@@ -549,12 +550,13 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getStatisticsByGroup(::grpc::ServerContext* context, const ::GroupId* request, ::XpumGetStatsResponse* response) {
-    xpum_device_id_t groupId = request->id();
+::grpc::Status XpumCoreServiceImpl::getStatisticsByGroup(::grpc::ServerContext* context, const ::XpumGetStatsByGroupRequest* request, ::XpumGetStatsResponse* response) {
+    xpum_device_id_t groupId = request->groupid();
+    uint64_t sessionId = request->sessionid();
     int count = 5 * XPUM_MAX_NUM_DEVICES;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
-    xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end);
+    xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end, sessionId);
     if (res != XPUM_OK || count < 0) {
         response->set_errormsg("Error");
         return grpc::Status::OK;
