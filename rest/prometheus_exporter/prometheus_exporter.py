@@ -214,12 +214,17 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
                 metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
         else:
             if acc is not None:
+                # counter value
                 mm = metrics[metric_name].labels(*all_labelvalues)
                 cur_value = counter_values.setdefault(mm, 0)
                 new_value = acc * scale
-                counter_values[mm] = new_value
-                mm.inc(new_value-cur_value)
+                if new_value >= cur_value:
+                    counter_values[mm] = new_value
+                    mm.inc(new_value-cur_value)
+                else:
+                    print(f'abnormal counter value detected: pre={cur_value}, cur={new_value}')
             else:
+                # aggregated value
                 metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
     return generate_latest(registry)
 
