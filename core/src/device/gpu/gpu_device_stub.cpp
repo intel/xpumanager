@@ -843,7 +843,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
         throw BaseException("toGetPower error");
     }
     uint32_t power_domain_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
@@ -862,17 +861,20 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
                     if (res == ZE_RESULT_SUCCESS && (snap2.timestamp - snap1.timestamp) != 0) {
                         uint64_t data = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
-                        dataAcquired = true;
+                    } else {
+                        throw BaseException("toGetPower error caused by zesPowerGetEnergyCounter");
                     }
+                } else {
+                    throw BaseException("toGetPower error caused by zesPowerGetEnergyCounter");
                 }
+            } else {
+                throw BaseException("toGetPower error caused by zesPowerGetProperties");
             }
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetPower error");
+        throw BaseException("toGetPower error caused by zesDeviceEnumPowerDomains");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getEnergy(const zes_device_handle_t& device, Callback_t callback) noexcept {
@@ -887,7 +889,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_han
         throw BaseException("toGetEnergy");
     }
     uint32_t power_domain_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
@@ -902,16 +903,17 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_han
                 XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &counter));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, counter.energy * 1.0 / 1000) : ret->setCurrent(counter.energy * 1.0 / 1000);
-                    dataAcquired = true;
+                } else {
+                    throw BaseException("toGetEnergy error caused by zesPowerGetEnergyCounter");
                 }
+            } else {
+                throw BaseException("toGetEnergy error caused by zesPowerGetProperties");
             }
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetEnergy error");
+        throw BaseException("toGetEnergy error caused by zesDeviceEnumPowerDomains");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getActuralFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept {
@@ -926,7 +928,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
         throw BaseException("toGetActuralFrequency error");
     }
     uint32_t freq_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
@@ -941,16 +942,17 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
                 XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetState(ph_freq, &freq_state));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.actual) : ret->setCurrent(freq_state.actual);
-                    dataAcquired = true;
+                } else {
+                    throw BaseException("toGetActuralFrequency error caused by zesFrequencyGetState");
                 }
+            } else {
+                throw BaseException("toGetActuralFrequency error caused by zesFrequencyGetProperties");
             }
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetActuralFrequency error");
+        throw BaseException("toGetActuralFrequency error caused by zesDeviceEnumFrequencyDomains");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getRequestFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept {
@@ -965,7 +967,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_
         throw BaseException("toGetRequestFrequency error");
     }
     uint32_t freq_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
@@ -980,16 +981,17 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_
                 XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetState(ph_freq, &freq_state));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.request) : ret->setCurrent(freq_state.request);
-                    dataAcquired = true;
+                } else {
+                    throw BaseException("toGetRequestFrequency error caused by zesFrequencyGetState");
                 }
+            } else {
+                throw BaseException("toGetRequestFrequency error caused by zesFrequencyGetProperties");
             }
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetRequestFrequency error");
+        throw BaseException("toGetRequestFrequency error caused by zesDeviceEnumFrequencyDomains");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getTemperature(const zes_device_handle_t& device, Callback_t callback, zes_temp_sensors_t type) noexcept {
@@ -1004,60 +1006,65 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
         throw BaseException("toGetTemperature error");
     }
     uint32_t temp_sensor_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
-    if (res != ZE_RESULT_SUCCESS || temp_sensor_count == 0) {
-        throw BaseException("toGetTemperature error");
+    if (temp_sensor_count == 0) {
+        throw BaseException("No temperature sensor detected");
     }
     std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
     if (res == ZE_RESULT_SUCCESS) {
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
-        for (auto& temp : temp_sensors) {
-            zes_temp_properties_t props;
-            XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetProperties(temp, &props));
-            if (res == ZE_RESULT_SUCCESS) {
-                switch (props.type) {
-                    case ZES_TEMP_SENSORS_GPU:
-                        if (type == props.type) {
-                            double temp_val = 0;
-                            XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetState(temp, &temp_val));
-                            if (res == ZE_RESULT_SUCCESS) {
-                                if (props.onSubdevice) {
-                                    ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+        if (res == ZE_RESULT_SUCCESS) {
+            for (auto& temp : temp_sensors) {
+                zes_temp_properties_t props;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetProperties(temp, &props));
+                if (res == ZE_RESULT_SUCCESS) {
+                    switch (props.type) {
+                        case ZES_TEMP_SENSORS_GPU:
+                            if (type == props.type) {
+                                double temp_val = 0;
+                                XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetState(temp, &temp_val));
+                                if (res == ZE_RESULT_SUCCESS) {
+                                    if (props.onSubdevice) {
+                                        ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                                    } else {
+                                        ret->setCurrent(temp_val);
+                                    }
                                 } else {
-                                    ret->setCurrent(temp_val);
+                                    throw BaseException("toGetTemperature error caused by zesTemperatureGetState");
                                 }
-                                dataAcquired = true;
                             }
-                        }
-                        break;
-                    case ZES_TEMP_SENSORS_MEMORY:
-                        if (type == props.type) {
-                            double temp_val = 0;
-                            XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetState(temp, &temp_val));
-                            if (res == ZE_RESULT_SUCCESS) {
-                                if (props.onSubdevice) {
-                                    ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                            break;
+                        case ZES_TEMP_SENSORS_MEMORY:
+                            if (type == props.type) {
+                                double temp_val = 0;
+                                XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetState(temp, &temp_val));
+                                if (res == ZE_RESULT_SUCCESS) {
+                                    if (props.onSubdevice) {
+                                        ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                                    } else {
+                                        ret->setCurrent(temp_val);
+                                    }
                                 } else {
-                                    ret->setCurrent(temp_val);
+                                    throw BaseException("toGetTemperature error caused by zesTemperatureGetState");
                                 }
-                                dataAcquired = true;
                             }
-                        }
-                        break;
-                    default:
-                        break;
+                            break;
+                        default:
+                            break;
+                    }
+                } else {
+                    throw BaseException("toGetTemperature error caused by zesTemperatureGetProperties");
                 }
             }
+        } else {
+            throw BaseException("toGetTemperature error caused by zesDeviceEnumTemperatureSensors");
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetTemperature error");
+        throw BaseException("toGetTemperature error caused by zesDeviceEnumTemperatureSensors");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getMemory(const zes_device_handle_t& device, Callback_t callback) noexcept {
@@ -1071,7 +1078,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_han
     if (device == nullptr) {
         throw BaseException("toGetMemory error");
     }
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     uint32_t mem_module_count = 0;
     ze_result_t res;
@@ -1091,17 +1097,20 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_han
                     if (res == ZE_RESULT_SUCCESS) {
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, used) : ret->setCurrent(used);
-                        dataAcquired = true;
+                    } else {
+                        throw BaseException("toGetMemory error caused by zesMemoryGetState");
                     }
+                } else {
+                    throw BaseException("toGetMemory error caused by zesMemoryGetProperties");
                 }
             }
+        } else {
+            throw BaseException("toGetMemory error caused by zesDeviceEnumMemoryModules");
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetMemory error");
+        throw BaseException("toGetMemory error caused by zesDeviceEnumMemoryModules");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getMemoryUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept {
@@ -1115,7 +1124,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
     if (device == nullptr) {
         throw BaseException("toGetMemoryUtilization error");
     }
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     uint32_t mem_module_count = 0;
     ze_result_t res;
@@ -1136,17 +1144,20 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
                         uint64_t utilization = used * 100.0 / sysman_memory_state.size;
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, utilization) : ret->setCurrent(utilization);
-                        dataAcquired = true;
+                    } else {
+                        throw BaseException("toGetMemoryUtilization error caused by zesMemoryGetState");
                     }
+                } else {
+                    throw BaseException("toGetMemoryUtilization error caused by zesMemoryGetProperties");
                 }
             }
+        } else {
+            throw BaseException("toGetMemoryUtilization error caused by zesDeviceEnumMemoryModules");
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetMemoryUtilization error");
+        throw BaseException("toGetMemoryUtilization error caused by zesDeviceEnumMemoryModules");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getMemoryBandwidth(const zes_device_handle_t& device, Callback_t callback) noexcept {
@@ -1160,7 +1171,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
     if (device == nullptr) {
         throw BaseException("toGetMemoryBandwidth error");
     }
-    bool dataAcquired = false;
     uint32_t mem_module_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
@@ -1188,17 +1198,20 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
                             val = 100;
                         }
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, val) : ret->setCurrent(val);
-                        dataAcquired = true;
+                    } else {
+                        throw BaseException("toGetMemoryBandwidth error caused by zesMemoryGetBandwidth");
                     }
+                } else {
+                    throw BaseException("toGetMemoryBandwidth error caused by zesMemoryGetBandwidth");
                 }
             }
+        } else {
+            throw BaseException("toGetMemoryBandwidth error caused by zesDeviceEnumMemoryModules");
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetMemoryBandwidth error");
+        throw BaseException("toGetMemoryBandwidth error caused by zesDeviceEnumMemoryModules");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getMemoryRead(const zes_device_handle_t& device, Callback_t callback) noexcept {
@@ -1212,7 +1225,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryRead(const zes_device
     if (device == nullptr) {
         throw BaseException("toGetMemoryRead error");
     }
-    bool dataAcquired = false;
     uint32_t mem_module_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
@@ -1232,16 +1244,17 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryRead(const zes_device
                 XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, mem_bandwidth.readCounter) : ret->setCurrent(mem_bandwidth.readCounter);
-                    dataAcquired = true;
+                } else {
+                    throw BaseException("toGetMemoryRead error caused by zesMemoryGetBandwidth");
                 }
             }
+        } else {
+            throw BaseException("toGetMemoryRead error caused by zesDeviceEnumMemoryModules");
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetMemoryRead error");
+        throw BaseException("toGetMemoryRead error caused by zesDeviceEnumMemoryModules");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getMemoryWrite(const zes_device_handle_t& device, Callback_t callback) noexcept {
@@ -1255,7 +1268,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_devic
     if (device == nullptr) {
         throw BaseException("toGetMemoryWrite error");
     }
-    bool dataAcquired = false;
     uint32_t mem_module_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
@@ -1275,16 +1287,17 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_devic
                 XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, mem_bandwidth.writeCounter) : ret->setCurrent(mem_bandwidth.writeCounter);
-                    dataAcquired = true;
+                } else {
+                    throw BaseException("toGetMemoryWrite error caused by zesMemoryGetBandwidth");
                 }
             }
+        } else {
+            throw BaseException("toGetMemoryWrite error caused by zesDeviceEnumMemoryModules");
         }
-    }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
-        return ret;
     } else {
-        throw BaseException("toGetMemoryWrite error");
+        throw BaseException("toGetMemoryWrite error caused by zesDeviceEnumMemoryModules");
     }
+    return ret;
 }
 
 void GPUDeviceStub::getOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type, Callback_t callback) noexcept {
