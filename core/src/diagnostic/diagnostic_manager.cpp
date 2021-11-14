@@ -301,7 +301,7 @@ void DiagnosticManager::doDeviceDiagnosticHardware(const zes_device_handle_t &ze
         bool passTest = true;
         for (auto &test_suite : test_suites) {
             zes_diag_result_t result;
-            XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDiagnosticsRunTests(test_suite, ZES_DIAG_FIRST_TEST_INDEX, ZES_DIAG_LAST_TEST_INDEX, &result));
+            XPUM_ZE_HANDLE_LOCK(test_suite, res = zesDiagnosticsRunTests(test_suite, ZES_DIAG_FIRST_TEST_INDEX, ZES_DIAG_LAST_TEST_INDEX, &result));
             if (res == ZE_RESULT_SUCCESS) {
                 if (result != zes_diag_result_t::ZES_DIAG_RESULT_NO_ERRORS) {
                     passTest = false;
