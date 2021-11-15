@@ -30,8 +30,6 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "UUID";
         case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
             return "PCI_DEVICE_ID";
-        case XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID:
-            return "PCI_SUB_DEVICE_ID";
         case XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID:
             return "PCI_VENDOR_ID";
         case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
@@ -171,10 +169,6 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
                 case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
                     value.copy(info.PCIDeviceId, value.size());
                     info.PCIDeviceId[value.size()] = 0;
-                    break;
-                case XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID:
-                    value.copy(info.SubDeviceId, value.size());
-                    info.SubDeviceId[value.size()] = 0;
                     break;
                 case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
                     value.copy(info.PCIBDFAddress, value.size());

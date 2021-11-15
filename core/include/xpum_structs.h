@@ -110,7 +110,6 @@ struct xpum_device_basic_info {
     char uuid[XPUM_MAX_STR_LENGTH];          ///< Device uuid
     char deviceName[XPUM_MAX_STR_LENGTH];    ///< Device name
     char PCIDeviceId[XPUM_MAX_STR_LENGTH];   ///< Device PCI device id
-    char SubDeviceId[XPUM_MAX_STR_LENGTH];   ///< Device PCI sub device id
     char PCIBDFAddress[XPUM_MAX_STR_LENGTH]; ///< Device PCI bdf address
     char VendorName[XPUM_MAX_STR_LENGTH];    ///< Device vendor name
 };
@@ -124,7 +123,6 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_VENDOR_NAME,                    ///< Vendor name
     XPUM_DEVICE_PROPERTY_UUID,                           ///< Device uuid
     XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID,                  ///< The PCI device id of device
-    XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID,              ///< The PCI sub device id of device
     XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID,                  ///< The PCI vendor id of device
     XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS,                ///< The PCI bdf address of device
     XPUM_DEVICE_PROPERTY_PCI_SLOT,                       ///< PCI slot of device

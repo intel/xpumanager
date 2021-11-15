@@ -11,8 +11,6 @@ class DeviceBasicInfoSchema(Schema):
     device_name = fields.Str(metadata={"description": "Device name"})
     pci_device_id = fields.Str(
         metadata={"description": "The PCI device id of device"})
-    pci_sub_device_id = fields.Str(
-        metadata={"description": "The PCI sub device id of device"})
     pci_bdf_address = fields.Str(
         metadata={"description": "The PCI bdf address of device"})
     vendor_name = fields.Str(metadata={"description": "Vendor name"})
@@ -36,7 +34,7 @@ def get_devices():
                     items: DeviceBasicInfoSchema
                 examples: 
                     application/json:
-                        [ { "device_id": 0, "device_name": "Intel(R) Graphics [0x020a]", "device_type": "GPU", "pci_bdf_address": "0000:4d:00.0", "pci_device_id": "0x20a", "pci_sub_device_id": "0x0", "uuid": "00000000-0000-0000-0000-020a00008086", "vendor_name": "Intel(R) Corporation" } ]
+                        [ { "device_id": 0, "device_name": "Intel(R) Graphics [0x020a]", "device_type": "GPU", "pci_bdf_address": "0000:4d:00.0", "pci_device_id": "0x20a", "uuid": "00000000-0000-0000-0000-020a00008086", "vendor_name": "Intel(R) Corporation" } ]
             500:
                 description: Error
     """

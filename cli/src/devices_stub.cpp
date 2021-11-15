@@ -25,7 +25,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
                 deviceJson["uuid"] = deviceInfo.uuid();
                 deviceJson["device_name"] = deviceInfo.devicename();
                 deviceJson["pci_device_id"] = deviceInfo.pciedeviceid();
-                deviceJson["pci_sub_device_id"] = deviceInfo.subdeviceid();
                 deviceJson["pci_bdf_address"] = deviceInfo.pcibdfaddress();
                 deviceJson["vendor_name"] = deviceInfo.vendorname();
                 deviceJsonList.push_back(deviceJson);

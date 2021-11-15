@@ -683,7 +683,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES, std::to_string(props.core.numSlices)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU, std::to_string(props.core.numThreadsPerEU)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH, std::to_string(props.core.physicalEUSimdWidth)));
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID, to_hex_string(props.core.subdeviceId)));
                 // p_gpu->addProperty(Property(DeviceProperty::TIMER_RESOLUTION,std::to_string(props.core.timerResolution)));
                 // p_gpu->addProperty(Property(DeviceProperty::TIMESTAMP_VALID_BITS,std::to_string(props.core.timestampValidBits)));
                 auto& uuidBuf = props.core.uuid.id;

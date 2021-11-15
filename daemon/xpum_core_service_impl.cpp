@@ -54,7 +54,6 @@ grpc::Status XpumCoreServiceImpl::getDeviceList(grpc::ServerContext* context, co
             device->set_uuid(devices[i].uuid);
             device->set_devicename(devices[i].deviceName);
             device->set_pciedeviceid(devices[i].PCIDeviceId);
-            device->set_subdeviceid(devices[i].SubDeviceId);
             device->set_pcibdfaddress(devices[i].PCIBDFAddress);
             device->set_vendorname(devices[i].VendorName);
         }
