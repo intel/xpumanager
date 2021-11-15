@@ -10,6 +10,16 @@
 
 namespace xpum {
 
+struct MonitorTaskLogStatus {
+    bool reported;
+    MonitorTaskLogStatus() {
+        reported = false;
+    }
+};
+
+std::mutex monitor_task_log_status_mutex;
+std::map<std::shared_ptr<Device>, std::map<DeviceCapability, MonitorTaskLogStatus>> monitor_task_log_status;
+
 MonitorTask::MonitorTask(
     DeviceCapability capability, int freq,
     std::shared_ptr<DeviceManagerInterface>& p_device_manager,
@@ -70,8 +80,9 @@ void MonitorTask::start() {
         auto datas = std::make_shared<std::map<std::string, std::shared_ptr<MeasurementData>>>();
         
         for (auto& p_device : devices) {
-            auto method = Device::getDeviceMethod(p_this->capability, p_device.get());
-            method([p_device, this_weak_ptr, datas](
+            DeviceCapability capability = p_this->capability;
+            auto method = Device::getDeviceMethod(capability, p_device.get());
+            method([p_device, this_weak_ptr, datas, capability](
                        std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                 auto p_this = this_weak_ptr.lock();
                 if (p_this == nullptr) {
@@ -80,6 +91,16 @@ void MonitorTask::start() {
                 if (e == nullptr && ret != nullptr) {
                     std::string id = p_device->getId();
                     (*datas)[id] = std::static_pointer_cast<MeasurementData>(ret);
+                    monitor_task_log_status_mutex.lock();
+                    monitor_task_log_status[p_device][capability].reported = false;
+                    monitor_task_log_status_mutex.unlock();
+                } else if (e != nullptr) {
+                    monitor_task_log_status_mutex.lock();
+                    if (!monitor_task_log_status[p_device][capability].reported) {
+                        XPUM_LOG_WARN(e->what());
+                        monitor_task_log_status[p_device][capability].reported = true;
+                    }
+                    monitor_task_log_status_mutex.unlock();
                 }
             });
         }

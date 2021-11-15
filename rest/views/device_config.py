@@ -68,7 +68,7 @@ def set_standby(deviceId):
     req = request.get_json()
     tileId = req["tileId"]
     standby = req["standby"]
-    code, message, data = stub.setDeviceStandby(
+    code, message, data = stub.setStandby(
         deviceId, tileId, standby)
     if code != 0:
         error = dict(Status=code, Message=message)
@@ -106,9 +106,9 @@ def set_powerlimit(deviceId):
                 description: Error
     """
     req = request.get_json()
-    power = req["powerLimit"]
+    power = req["powerLimit"]*1000
     interval = req["intervalWindow"]
-    code, message, data = stub.setDevicePowerLimit(deviceId, power, interval)
+    code, message, data = stub.setPowerLimit(deviceId, power, interval)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
@@ -153,7 +153,7 @@ def set_frequencyrange(deviceId):
     tileId = req["tileId"]
     minFreq = req["minFreq"]
     maxFreq = req["maxFreq"]
-    code, message, data = stub.setDeviceFrequencyRange(
+    code, message, data = stub.setFrequencyRange(
         deviceId, tileId, minFreq, maxFreq)
     if code != 0:
         error = dict(Status=code, Message=message)
@@ -205,7 +205,7 @@ def set_scheduler(deviceId):
     mode = req["mode"]
     val1 = req["val1"]
     val2 = req["val2"]
-    code, message, data = stub.setDeviceScheduler(deviceId, tileId, mode, val1, val2)
+    code, message, data = stub.setScheduler(deviceId, tileId, mode, val1, val2)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
@@ -247,7 +247,7 @@ def get_config(deviceId):
     """
     req = request.get_json()
     tileId = req["tileId"]
-    code, message, data = stub.getDeviceConfig(deviceId, tileId)
+    code, message, data = stub.getConfig(deviceId, tileId)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

@@ -15,6 +15,7 @@ SchedulerModeEnumToString = {
 def getConfig(deviceId, tileId):
     if(tileId == -1):
         isTiledId = False
+        tileId = 0
     else:
         isTiledId = True
     
@@ -27,14 +28,16 @@ def getConfig(deviceId, tileId):
     data['interval'] = resp.interval
     data['tileCount'] = resp.tileCount
 
-    for tile in resp.tileConfigData:
+    tilelist = list()
+    for i in range(0,resp.tileCount):
         tiledata = dict()
-        tiledata['tileId'] = tile.tileId
-        tiledata['minFreq'] = tile.minFreq
-        tiledata['maxFreq'] = tile.maxFreq
-        tiledata['standby'] = StandbyModeEnumToString[tile.standby]
-        tiledata['scheduler'] = SchedulerModeEnumToString[tile.scheduler]
-        data['tileConfigData'].append(tiledata)        
+        tiledata['tileId'] = resp.tileConfigData[i].tileId
+        tiledata['minFreq'] = resp.tileConfigData[i].minFreq
+        tiledata['maxFreq'] = resp.tileConfigData[i].maxFreq
+        tiledata['standby'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
+        tiledata['scheduler'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
+        tilelist.append(tiledata)
+    data['tileConfigData'] = tilelist
     return 0, "OK", data
 
 def setStandby(deviceId, tileId, standby):
