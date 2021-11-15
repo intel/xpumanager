@@ -81,11 +81,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
     grpc::Status status = stub->getStatistics(&context, request, &response);
 
     if (!status.ok()) {
-        (*json)["Error"] = status.error_message();
+        (*json)["error"] = status.error_message();
     }
 
     if (response.errormsg().length() != 0) {
-        (*json)["Error"] = response.errormsg();
+        (*json)["error"] = response.errormsg();
         return json;
     }
 
@@ -144,11 +144,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId)
     grpc::Status status = stub->getStatisticsByGroup(&context, request, &response);
 
     if (!status.ok()) {
-        (*json)["Error"] = status.error_message();
+        (*json)["error"] = status.error_message();
     }
 
     if (response.errormsg().length() != 0) {
-        (*json)["Error"] = response.errormsg();
+        (*json)["error"] = response.errormsg();
         return json;
     }
 
@@ -175,7 +175,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId)
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
             tmp["value"] = stats_data.value();
-            if (stats_data.iscounter()) {
+            if (!stats_data.iscounter()) {
                 tmp["avg"] = stats_data.avg();
                 tmp["min"] = stats_data.min();
                 tmp["max"] = stats_data.max();

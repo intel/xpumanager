@@ -52,7 +52,7 @@ static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, 
             auto metricsJson = getMetricsTypeFromList(tileLevelMetricsList, metricsType);
             if (!metricsJson.empty()) {
                 if (res.size() > 0) res += ", ";
-                res += "Tile "+std::to_string(tileId)+": "+std::to_string(metricsJson["value"].get<std::uint64_t>());
+                res += "Tile " + std::to_string(tileId) + ": " + std::to_string(metricsJson["value"].get<std::uint64_t>());
             }
         }
     }
@@ -61,14 +61,22 @@ static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, 
 
 static std::string getAggregateLine(nlohmann::json metricsJson) {
     std::string res;
-    auto current = metricsJson["value"].get<std::uint64_t>();
-    auto avg = metricsJson["avg"].get<std::uint64_t>();
-    auto min = metricsJson["min"].get<std::uint64_t>();
-    auto max = metricsJson["max"].get<std::uint64_t>();
-    res += "avg: " + std::to_string(avg) + ", ";
-    res += "min: " + std::to_string(min) + ", ";
-    res += "max: " + std::to_string(max) + ", ";
-    res += "current: " + std::to_string(current);
+    if (metricsJson.contains("avg")) {
+        auto value = metricsJson["avg"].get<std::uint64_t>();
+        res += "avg: " + std::to_string(value) + ", ";
+    }
+    if (metricsJson.contains("min")) {
+        auto value = metricsJson["min"].get<std::uint64_t>();
+        res += "min: " + std::to_string(value) + ", ";
+    }
+    if (metricsJson.contains("max")) {
+        auto value = metricsJson["max"].get<std::uint64_t>();
+        res += "max: " + std::to_string(value) + ", ";
+    }
+    if (metricsJson.contains("value")) {
+        auto current = metricsJson["value"].get<std::uint64_t>();
+        res += "current: " + std::to_string(current);
+    }
     return res;
 }
 
@@ -95,15 +103,7 @@ static std::string getNonCounterMetricsValue(std::shared_ptr<nlohmann::json> jso
     return res;
 }
 
-void ComletStatistics::getTableResult(std::ostream &out) {
-    auto res = run();
-    if (res->contains("error")) {
-        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
-        return;
-    }
-    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
-    *json = *res;
-    auto table = xpum::cli::Table(out);
+static void showDeviceStatistics(Table &table, std::shared_ptr<nlohmann::json> json) {
     table.add_row({"Device ID", std::to_string((*json)["device_id"].get<int>())});
     std::vector<std::string> keys;
     std::vector<std::string> values;
@@ -142,6 +142,26 @@ void ComletStatistics::getTableResult(std::ostream &out) {
     table.add_row({"EU Array Active (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_ACTIVE")});
     table.add_row({"EU Array Stall (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_STALL")});
     table.add_row({"EU Array Idle (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_IDLE")});
+}
+
+void ComletStatistics::getTableResult(std::ostream &out) {
+    auto res = run();
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+    *json = *res;
+    auto table = xpum::cli::Table(out);
+    if (this->opts->groupId != 0) {
+        table.add_row({"Group Id", std::to_string(this->opts->groupId)});
+        auto devices = (*json)["datas"].get<std::vector<nlohmann::json>>();
+        for (auto device : devices) {
+            showDeviceStatistics(table, std::make_shared<nlohmann::json>(device));
+        }
+    } else {
+        showDeviceStatistics(table, json);
+    }
 
     table.show();
 }

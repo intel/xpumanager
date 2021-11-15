@@ -557,9 +557,15 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
     xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end, sessionId);
-    if (res != XPUM_OK || count < 0) {
-        response->set_errormsg("Error");
-        return grpc::Status::OK;
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("Group not found");
+                return grpc::Status::OK;
+            default:
+                response->set_errormsg("Generic error");
+                return grpc::Status::OK;
+        }
     }
     response->set_begin(begin);
     response->set_end(end);

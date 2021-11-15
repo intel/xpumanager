@@ -410,8 +410,10 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
     int currentCount = 0, totalCount = 0;
     xpum_device_stats_t *pStatus = dataList;
 
-    if (Core::instance().getGroupManager()->getGroupInfo(groupId, &groupInfo) != XPUM_OK) {
-        return XPUM_GENERIC_ERROR;
+    auto res = Core::instance().getGroupManager()->getGroupInfo(groupId, &groupInfo);
+
+    if ( res != XPUM_OK) {
+        return res;
     }
 
     for (int i = 0; i < groupInfo.count; i++) {
