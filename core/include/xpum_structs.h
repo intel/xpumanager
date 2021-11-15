@@ -355,10 +355,9 @@ typedef enum xpum_agent_config_enum {
  */
 typedef enum xpum_stats_type_enum {
     XPUM_STATS_GPU_UTILIZATION = 0,                  ///< GPU Utilization
-    XPUM_STATS_OCCUPATION,                           ///< GPU Occupation
-    XPUM_STATS_ISSUE_EFFICIENCY,                     ///< Issue Efficiency
-    XPUM_STATS_EXECUTION_EFFICIENCY,                 ///< Execution Efficiency
-    XPUM_STATS_NON_OCCUPATION,                       ///< Non Occupation
+    XPUM_STATS_EU_ACTIVE,                            ///< GPU EU Array Active
+    XPUM_STATS_EU_STALL,                             ///< GPU EU Array Stall
+    XPUM_STATS_EU_IDLE,                              ///< GPU EU Array Idle
     XPUM_STATS_POWER,                                ///< Power
     XPUM_STATS_ENERGY,                               ///< Energy
     XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Actual Frequency

@@ -154,14 +154,8 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getMemoryUtilization(callback); };
         case DeviceCapability::METRIC_MEMORY_BANDWIDTH:
             return [p_device](Callback_t callback) { p_device->getMemoryBandwidth(callback); };
-        case DeviceCapability::METRIC_OCCUPATION:
-            return [p_device](Callback_t callback) { p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_OCCUPATION); };
-        case DeviceCapability::METRIC_ISSUE_EFFICIENCY:
-            return [p_device](Callback_t callback) { p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_ISSUE_EFFICIENCY); };
-        case DeviceCapability::METRIC_EXECUTION_EFFICIENCY:
-            return [p_device](Callback_t callback) { p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_EXECUTION_EFFICIENCY); };
-        case DeviceCapability::METRIC_NON_OCCUPATION:
-            return [p_device](Callback_t callback) { p_device->getOccupationEfficiency(callback, MeasurementType::METRIC_NON_OCCUPATION); };
+        case DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE:
+            return [p_device](Callback_t callback) { p_device->getEuActiveStallIdle(callback, MeasurementType::METRIC_EU_ACTIVE); };
         case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
             return [p_device](Callback_t callback) { p_device->getRasError(callback, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
         case DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:

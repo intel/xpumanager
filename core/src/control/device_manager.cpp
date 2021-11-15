@@ -124,6 +124,15 @@ MeasurementData DeviceManager::getRealtimeMeasurementData(
         throw(*exception);
     }
 
+    auto subdeviceAdditionalCurrentDataTypes = p_data->getSubdeviceAdditionalCurrentDataTypes(); 
+    if (subdeviceAdditionalCurrentDataTypes.find(type) != subdeviceAdditionalCurrentDataTypes.end()) {
+        auto mData = std::make_shared<MeasurementData>();
+        auto subdeviceAdditionalCurrentDatas = p_data->getSubdeviceAdditionalCurrentDatas();
+        for (auto & sData : subdeviceAdditionalCurrentDatas) {
+            mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
+        }
+        return *mData;
+    }
     return *p_data;
 }
 

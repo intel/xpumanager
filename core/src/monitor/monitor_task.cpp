@@ -3,6 +3,7 @@
 #include <chrono>
 #include <mutex>
 #include <thread>
+#include <set>
 
 #include "control/device_manager.h"
 #include "infrastructure/logger.h"
@@ -105,9 +106,36 @@ void MonitorTask::start() {
             });
         }
 
+        std::unique_lock<std::mutex> lock(p_this->mutex);
+        bool hasSubdeviceAdditionalCurrentData = false;
+        std::set<MeasurementType> subdeviceAdditionalCurrentDataTypes;
+        // deviceId, subdeviceId, addtionalType, addtionalData
+        std::map<std::string, std::map<uint32_t, std::map<MeasurementType, uint64_t>>> subdeviceAdditionalCurrentDatasAll;
+        for (auto& data : (*datas)) {
+            if (data.second->getSubdeviceAdditionalCurrentDataTypeSize() > 0) {
+                hasSubdeviceAdditionalCurrentData = true;
+                subdeviceAdditionalCurrentDataTypes = data.second->getSubdeviceAdditionalCurrentDataTypes();
+                subdeviceAdditionalCurrentDatasAll[data.first] = data.second->getSubdeviceAdditionalCurrentDatas();
+                data.second->clearSubdeviceAdditionalCurrentDataTypes();
+                data.second->clearSubdeviceAdditionalCurrentData();
+            }
+        }
         MeasurementType measurmentType = Utility::measurementTypeFromCapability(p_this->capability);
         XPUM_LOG_TRACE("Monitor passes data {} to datalogic", p_this->capability);
         p_this->p_data_logic->storeMeasurementData(measurmentType, now, datas);
+        if (hasSubdeviceAdditionalCurrentData) {
+            for(auto& type : subdeviceAdditionalCurrentDataTypes) {
+                for (auto & data : (*datas)) {
+                    auto mData = std::make_shared<MeasurementData>();
+                    for (auto & sData : subdeviceAdditionalCurrentDatasAll[data.first]) {
+                        mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
+                    }
+                    (*datas)[data.first] = mData;
+                }
+                XPUM_LOG_TRACE("Monitor passes data {} to datalogic", p_this->capability);
+                p_this->p_data_logic->storeMeasurementData(type, now, datas);
+            }
+        }
     });
 
     XPUM_LOG_TRACE("Monitor task started for {}", this->capability);

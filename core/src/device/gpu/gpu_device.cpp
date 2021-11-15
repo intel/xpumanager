@@ -112,8 +112,8 @@ void GPUDevice::getEnergy(Callback_t callback) noexcept {
                                         });
 }
 
-void GPUDevice::getOccupationEfficiency(Callback_t callback, MeasurementType type) noexcept {
-    GPUDeviceStub::instance().getOccupationEfficiency(ze_device_handle, ze_driver_handle, type,
+void GPUDevice::getEuActiveStallIdle(Callback_t callback, MeasurementType type) noexcept {
+    GPUDeviceStub::instance().getEuActiveStallIdle(ze_device_handle, ze_driver_handle, type,
                                                       [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                                                           callback(ret, e);
                                                       });

@@ -33,7 +33,7 @@ class GPUDevice : public Device {
     void getEngineUtilization(Callback_t callback) noexcept override;
     void getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept override;
     void getEnergy(Callback_t callback) noexcept override;
-    void getOccupationEfficiency(Callback_t callback, MeasurementType type) noexcept override;
+    void getEuActiveStallIdle(Callback_t callback, MeasurementType type) noexcept override;
     void getRasError(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
     void getRasErrorOnSubdevice(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
 

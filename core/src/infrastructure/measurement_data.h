@@ -4,6 +4,7 @@
 #include <ctime>
 #include <map>
 #include <string>
+#include <set>
 
 #include "const.h"
 #include "logger.h"
@@ -83,6 +84,8 @@ class MeasurementData {
         p_subdevice_datas = other.p_subdevice_datas;
         raw_timestamp = other.raw_timestamp;
         timestamp = other.timestamp;
+        subdevice_additional_current_data_types = other.subdevice_additional_current_data_types;
+        subdevice_additional_current_datas = other.subdevice_additional_current_datas;
     }
 
    public:
@@ -167,6 +170,20 @@ class MeasurementData {
 
     void setTimestamp(uint64_t time) { this->timestamp = time; }
 
+    void setSubdeviceAdditionalCurrentData(uint32_t subdevice_id, MeasurementType type, uint64_t data);
+
+    std::map<uint32_t, std::map<MeasurementType, uint64_t>> getSubdeviceAdditionalCurrentDatas();
+
+    void insertSubdeviceAdditionalCurrentDataType(MeasurementType type);
+
+    std::set<MeasurementType> getSubdeviceAdditionalCurrentDataTypes();
+
+    uint32_t getSubdeviceAdditionalCurrentDataTypeSize();
+
+    void clearSubdeviceAdditionalCurrentDataTypes();
+
+    void clearSubdeviceAdditionalCurrentData();
+
    protected:
 
     std::string device_id;
@@ -194,6 +211,10 @@ class MeasurementData {
     uint64_t raw_timestamp;
 
     uint64_t timestamp;
+    
+    std::set<MeasurementType> subdevice_additional_current_data_types;
+
+    std::map<uint32_t, std::map<MeasurementType, uint64_t>> subdevice_additional_current_datas;
 };
 
 } // end namespace xpum

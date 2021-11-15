@@ -80,14 +80,8 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
         case DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
             return MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION;
-        case DeviceCapability::METRIC_OCCUPATION:
-            return MeasurementType::METRIC_OCCUPATION;
-        case DeviceCapability::METRIC_ISSUE_EFFICIENCY:
-            return MeasurementType::METRIC_ISSUE_EFFICIENCY;
-        case DeviceCapability::METRIC_EXECUTION_EFFICIENCY:
-            return MeasurementType::METRIC_EXECUTION_EFFICIENCY;
-        case DeviceCapability::METRIC_NON_OCCUPATION:
-            return MeasurementType::METRIC_NON_OCCUPATION;
+        case DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE:
+            return MeasurementType::METRIC_EU_ACTIVE;
         case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
             return MeasurementType::METRIC_RAS_ERROR_CAT_RESET;
         case DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
@@ -153,14 +147,12 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
             return DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
         case MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
             return DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION;
-        case MeasurementType::METRIC_OCCUPATION:
-            return DeviceCapability::METRIC_OCCUPATION;
-        case MeasurementType::METRIC_ISSUE_EFFICIENCY:
-            return DeviceCapability::METRIC_ISSUE_EFFICIENCY;
-        case MeasurementType::METRIC_EXECUTION_EFFICIENCY:
-            return DeviceCapability::METRIC_EXECUTION_EFFICIENCY;
-        case MeasurementType::METRIC_NON_OCCUPATION:
-            return DeviceCapability::METRIC_NON_OCCUPATION;
+        case MeasurementType::METRIC_EU_ACTIVE:
+            return DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE;
+        case MeasurementType::METRIC_EU_STALL:
+            return DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE;
+        case MeasurementType::METRIC_EU_IDLE:
+            return DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE;
         case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
             return DeviceCapability::METRIC_RAS_ERROR_CAT_RESET;
         case MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
@@ -217,10 +209,9 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
     metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
     metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
     metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
-    metric_types.push_back(MeasurementType::METRIC_OCCUPATION);
-    metric_types.push_back(MeasurementType::METRIC_ISSUE_EFFICIENCY);
-    metric_types.push_back(MeasurementType::METRIC_EXECUTION_EFFICIENCY);
-    metric_types.push_back(MeasurementType::METRIC_NON_OCCUPATION);
+    metric_types.push_back(MeasurementType::METRIC_EU_ACTIVE);
+    metric_types.push_back(MeasurementType::METRIC_EU_STALL);
+    metric_types.push_back(MeasurementType::METRIC_EU_IDLE);
     metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_RESET);
     metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
     metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
@@ -264,6 +255,12 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
             return MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION;
         case xpum_stats_type_enum::XPUM_STATS_ENERGY:
             return MeasurementType::METRIC_ENERGY;
+        case xpum_stats_type_enum::XPUM_STATS_EU_ACTIVE:
+            return MeasurementType::METRIC_EU_ACTIVE;
+        case xpum_stats_type_enum::XPUM_STATS_EU_STALL:
+            return MeasurementType::METRIC_EU_STALL;
+        case xpum_stats_type_enum::XPUM_STATS_EU_IDLE:
+            return MeasurementType::METRIC_EU_IDLE;
         case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_RESET:
             return MeasurementType::METRIC_RAS_ERROR_CAT_RESET;
         case xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
@@ -319,14 +316,12 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
             return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION;
         case MeasurementType::METRIC_ENERGY:
             return xpum_stats_type_enum::XPUM_STATS_ENERGY;
-        case MeasurementType::METRIC_OCCUPATION:
-            return xpum_stats_type_enum::XPUM_STATS_OCCUPATION;
-        case MeasurementType::METRIC_ISSUE_EFFICIENCY:
-            return xpum_stats_type_enum::XPUM_STATS_ISSUE_EFFICIENCY;
-        case MeasurementType::METRIC_EXECUTION_EFFICIENCY:
-            return xpum_stats_type_enum::XPUM_STATS_EXECUTION_EFFICIENCY;
-        case MeasurementType::METRIC_NON_OCCUPATION:
-            return xpum_stats_type_enum::XPUM_STATS_NON_OCCUPATION;
+        case MeasurementType::METRIC_EU_ACTIVE:
+            return xpum_stats_type_enum::XPUM_STATS_EU_ACTIVE;
+        case MeasurementType::METRIC_EU_STALL:
+            return xpum_stats_type_enum::XPUM_STATS_EU_STALL;
+        case MeasurementType::METRIC_EU_IDLE:
+            return xpum_stats_type_enum::XPUM_STATS_EU_IDLE;
         case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
             return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_RESET;
         case MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:

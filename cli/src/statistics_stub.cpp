@@ -12,14 +12,12 @@ static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
     switch (metricsType) {
         case XPUM_STATS_GPU_UTILIZATION:
             return "XPUM_STATS_GPU_UTILIZATION";
-        case XPUM_STATS_OCCUPATION:
-            return "XPUM_STATS_OCCUPATION";
-        case XPUM_STATS_ISSUE_EFFICIENCY:
-            return "XPUM_STATS_ISSUE_EFFICIENCY";
-        case XPUM_STATS_EXECUTION_EFFICIENCY:
-            return "XPUM_STATS_EXECUTION_EFFICIENCY";
-        case XPUM_STATS_NON_OCCUPATION:
-            return "XPUM_STATS_NON_OCCUPATION";
+        case XPUM_STATS_EU_ACTIVE:
+            return "XPUM_STATS_EU_ACTIVE";
+        case XPUM_STATS_EU_STALL:
+            return "XPUM_STATS_EU_STALL";
+        case XPUM_STATS_EU_IDLE:
+            return "XPUM_STATS_EU_IDLE";
         case XPUM_STATS_POWER:
             return "XPUM_STATS_POWER";
         case XPUM_STATS_ENERGY:

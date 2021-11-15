@@ -108,21 +108,17 @@ void RawDataManager::init() {
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION, p_persistency);
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION]->init();
 
-    data_handlers[MeasurementType::METRIC_OCCUPATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_OCCUPATION, p_persistency);
-    data_handlers[MeasurementType::METRIC_OCCUPATION]->init();
+    data_handlers[MeasurementType::METRIC_EU_ACTIVE] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EU_ACTIVE, p_persistency);
+    data_handlers[MeasurementType::METRIC_EU_ACTIVE]->init();
 
-    data_handlers[MeasurementType::METRIC_ISSUE_EFFICIENCY] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ISSUE_EFFICIENCY, p_persistency);
-    data_handlers[MeasurementType::METRIC_ISSUE_EFFICIENCY]->init();
+    data_handlers[MeasurementType::METRIC_EU_STALL] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EU_STALL, p_persistency);
+    data_handlers[MeasurementType::METRIC_EU_STALL]->init();
 
-    data_handlers[MeasurementType::METRIC_EXECUTION_EFFICIENCY] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EXECUTION_EFFICIENCY, p_persistency);
-    data_handlers[MeasurementType::METRIC_EXECUTION_EFFICIENCY]->init();
-
-    data_handlers[MeasurementType::METRIC_NON_OCCUPATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_NON_OCCUPATION, p_persistency);
-    data_handlers[MeasurementType::METRIC_NON_OCCUPATION]->init();
+    data_handlers[MeasurementType::METRIC_EU_IDLE] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EU_IDLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_EU_IDLE]->init();
 
     //METRIC_RAS_ERROR
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_RESET, p_persistency);

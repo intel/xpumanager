@@ -139,10 +139,9 @@ void ComletStatistics::getTableResult(std::ostream &out) {
                    getNonCounterMetricsValue(json, "XPUM_STATS_GPU_TEMPERATURE")});
     table.add_row({"GPU Memory Temperature\n(Celsius Degree)",
                    getNonCounterMetricsValue(json, "XPUM_STATS_MEMORY_TEMPERATURE")});
-    table.add_row({"Occupation (%)", getNonCounterMetricsValue(json, "XPUM_STATS_OCCUPATION")});
-    table.add_row({"Issue Efficiency (%)", getNonCounterMetricsValue(json, "XPUM_STATS_ISSUE_EFFICIENCY")});
-    table.add_row({"Execution Efficiency (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EXECUTION_EFFICIENCY")});
-    table.add_row({"Non-Occupation (%)", getNonCounterMetricsValue(json, "XPUM_STATS_NON_OCCUPATION")});
+    table.add_row({"EU Array Active (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_ACTIVE")});
+    table.add_row({"EU Array Stall (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_STALL")});
+    table.add_row({"EU Array Idle (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_IDLE")});
 
     table.show();
 }

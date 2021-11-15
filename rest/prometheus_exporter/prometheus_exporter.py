@@ -40,11 +40,10 @@ class PromMetric(Enum):
     xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])  # nopep8
     xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])  # nopep8
 
-    # Occupation
-    xpum_occupation_ratio = ('xpum_occupation_ratio')  # nopep8
-    xpum_non_occupation_ratio = ('xpum_non_occupation_ratio')  # nopep8
-    xpum_issue_efficiency_ratio = ('xpum_issue_efficiency_ratio')  # nopep8
-    xpum_execution_efficiency_ratio = ('xpum_execution_efficiency_ratio')  # nopep8
+    # Eu Active Stall Idle
+    xpum_eu_active_ratio = ('xpum_eu_active_ratio')  # nopep8
+    xpum_eu_stall_ratio = ('xpum_eu_stall_ratio')  # nopep8
+    xpum_eu_idle_ratio = ('xpum_eu_idle_ratio')  # nopep8
 
     def __new__(cls, name, desc=None, ext_labelnames=[]):
         obj = object.__new__(cls)
@@ -70,11 +69,10 @@ metrics_map = {
     'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'render'}),
     'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': '3d'}),
 
-    # Occupation
-    'XPUM_STATS_OCCUPATION': Metric(PromMetric.xpum_occupation_ratio, scale=0.01),
-    'XPUM_STATS_ISSUE_EFFICIENCY': Metric(PromMetric.xpum_issue_efficiency_ratio, scale=0.01),
-    'XPUM_STATS_EXECUTION_EFFICIENCY': Metric(PromMetric.xpum_execution_efficiency_ratio, scale=0.01),
-    'XPUM_STATS_NON_OCCUPATION': Metric(PromMetric.xpum_non_occupation_ratio, scale=0.01),
+    # EuActive/EuStall/EuIdle
+    'XPUM_STATS_EU_ACTIVE': Metric(PromMetric.xpum_eu_active_ratio, scale=0.01),
+    'XPUM_STATS_EU_STALL': Metric(PromMetric.xpum_eu_stall_ratio, scale=0.01),
+    'XPUM_STATS_EU_IDLE': Metric(PromMetric.xpum_eu_idle_ratio, scale=0.01),
 
     # Power/Energy/Temperature
     'XPUM_STATS_POWER': Metric(PromMetric.xpum_power_watts),
