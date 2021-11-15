@@ -406,7 +406,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(int groupId, int level) {
+std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId, int level) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -448,7 +448,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(int groupId, int
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(int groupId) {
+std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t groupId) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -636,7 +636,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setHealthConfig(int deviceId, HealthCo
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(int groupId) {
+std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -678,7 +678,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(int groupId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(int groupId, HealthType type) {
+std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId, HealthType type) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     HealthDataByGroupRequest request;
@@ -712,7 +712,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(int groupId, HealthTy
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::setHealthConfigByGroup(int groupId, HealthConfigType cfgtype, int threshold) {
+std::unique_ptr<nlohmann::json> CoreStub::setHealthConfigByGroup(uint32_t groupId, HealthConfigType cfgtype, int threshold) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
