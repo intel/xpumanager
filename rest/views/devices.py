@@ -123,6 +123,8 @@ def get_device_properties(deviceId):
                         { "core_clock_rate_mhz": "1300", "device_name": "Intel(R) Graphics [0x020a]", "device_type": "GPU", "driver_version": "16929133", "firmware_name": "GSC", "firmware_version": "ATS1_0.1345", "max_command_queue_priority": "0", "max_hardware_contexts": "65536", "max_mem_alloc_size_byte": "4294959104", "memory_bus_width": "128", "memory_free_size_byte": "34090999808", "memory_physical_size_byte": "34359738368", "number_of_eus_per_sub_slice": "16", "number_of_memory_channels": "2", "number_of_slices": "2", "number_of_sub_slices_per_slice": "30", "number_of_threads_per_eu": "8", "number_of_tiles": "2", "pci_bdf_address": "0000:4d:00.0", "pci_device_id": "0x20a", "pci_slot": "Riser 1, slot 1", "pci_sub_device_id": "0x0", "pci_vendor_id": "0x8086", "pcie_generation": "4", "pcie_max_link_width": "16", "physical_eu_simd_width": "8", "serial_number": "unknown", "uuid": "00000000-0000-0000-0000-020a00008086", "vendor_name": "Intel(R) Corporation" }
             400:
                 description: Error
+            404:
+                description: "Device not found"
             500:
                 description: Error
     """
@@ -131,6 +133,8 @@ def get_device_properties(deviceId):
         if code == 0:
             return jsonify(data)
         error = dict(Status=code, Message=message)
+        if message == "Device not found":
+            return jsonify(error), 404
         return jsonify(error), 400
     except Exception as e:
         print(e)

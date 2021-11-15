@@ -75,7 +75,13 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
             propRpc->set_value(prop.value);
         }
     } else {
-        response->set_errormsg("Error");
+        switch(res){
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("Device not found");
+                break;
+            default:
+                response->set_errormsg("Error");
+        }
     }
     return grpc::Status::OK;
 }
