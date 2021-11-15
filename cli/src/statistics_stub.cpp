@@ -132,7 +132,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
+std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

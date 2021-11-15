@@ -48,7 +48,7 @@ class CoreStub {
     std::string healthTypeEnumToString(HealthType type);
 
     std::unique_ptr<nlohmann::json> getStatistics(int deviceId);
-    std::unique_ptr<nlohmann::json> getStatisticsByGroup(int groupId);
+    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId);
     //config related interface
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2);
@@ -70,8 +70,9 @@ class CoreStub {
 
     std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath );
 
+    static std::string isotimestamp(uint64_t t);
+    
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
-    static std::string isotimestamp(uint64_t t);
 };
 } // end namespace xpum::cli
