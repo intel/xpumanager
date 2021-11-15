@@ -153,6 +153,13 @@ void GPUDevice::getEngineGroupUtilization(Callback_t callback, zes_engine_group_
         engine_group_type);
 }
 
+void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getFrequencyThrottle(zes_device_handle,
+                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                       callback(ret, e);
+                                                   });
+}
+
 bool GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
     Property pcieAddrProp;
     bool res = getProperty(XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS, pcieAddrProp);

@@ -536,6 +536,16 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
     }
+
+    has_exception = false;
+    try {
+        toGetFrequencyThrottle(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
+    }
 }
 
 void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
@@ -929,6 +939,54 @@ void GPUDeviceStub::getRequestFrequency(const zes_device_handle_t& device, Callb
         return;
     }
     invokeTask(callback, toGetRequestFrequency, device);
+}
+
+void GPUDeviceStub::getFrequencyThrottle(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetFrequencyThrottle, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottle(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetFrequencyThrottle error");
+    }
+    uint32_t freq_count = 0;
+    int sampling_period = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 0.8;
+    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
+    std::vector<zes_freq_handle_t> freq_handles(freq_count);
+    if (res == ZE_RESULT_SUCCESS) {
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
+        for (auto& ph_freq : freq_handles) {
+            zes_freq_properties_t props;
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &props));
+            if (res == ZE_RESULT_SUCCESS) {
+                zes_freq_throttle_time_t freq_throttle_1, freq_throttle_2;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle_1));
+                if (res == ZE_RESULT_SUCCESS) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle_2));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        uint64_t data = (freq_throttle_2.throttleTime - freq_throttle_1.throttleTime) / (freq_throttle_2.timestamp - freq_throttle_1.timestamp);
+                        props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
+                        std::cout << data << std::endl;
+                    } else {
+                        throw BaseException("toGetFrequencyThrottle error caused by zesFrequencyGetThrottleTime");
+                    }
+                } else {
+                    throw BaseException("toGetFrequencyThrottle error caused by zesFrequencyGetThrottleTime");
+                }
+            } else {
+                throw BaseException("toGetFrequencyThrottle error caused by zesFrequencyGetProperties");
+            }
+        }
+    } else {
+        throw BaseException("toGetFrequencyThrottle error caused by zesDeviceEnumFrequencyDomains");
+    }
+    return ret;
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_device_handle_t& device) {

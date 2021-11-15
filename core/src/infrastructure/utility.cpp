@@ -98,6 +98,8 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
         case DeviceCapability::METRIC_MEMORY_TEMPERATURE:
             return MeasurementType::METRIC_MEMORY_TEMPERATURE;
+        case DeviceCapability::METRIC_FREQUENCY_THROTTLE:
+            return MeasurementType::METRIC_FREQUENCY_THROTTLE;
         default:
             return MeasurementType::POWER;
     }
@@ -169,6 +171,8 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
             return DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
         case MeasurementType::METRIC_MEMORY_TEMPERATURE:
             return DeviceCapability::METRIC_MEMORY_TEMPERATURE;
+        case MeasurementType::METRIC_FREQUENCY_THROTTLE:
+            return DeviceCapability::METRIC_FREQUENCY_THROTTLE;
         default:
             return DeviceCapability::POWER;
     }
@@ -221,6 +225,7 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
     metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
     metric_types.push_back(MeasurementType::METRIC_REQUEST_FREQUENCY);
     metric_types.push_back(MeasurementType::METRIC_MEMORY_TEMPERATURE);
+    metric_types.push_back(MeasurementType::METRIC_FREQUENCY_THROTTLE);
 }
 
 MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type) {
@@ -279,6 +284,8 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
             return MeasurementType::METRIC_REQUEST_FREQUENCY;
         case xpum_stats_type_enum::XPUM_STATS_MEMORY_TEMPERATURE:
             return MeasurementType::METRIC_MEMORY_TEMPERATURE;
+        case xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE:
+            return MeasurementType::METRIC_FREQUENCY_THROTTLE;
         default:
             return MeasurementType::METRIC_POWER;
     }
@@ -340,6 +347,8 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
             return xpum_stats_type_enum::XPUM_STATS_GPU_REQUEST_FREQUENCY;
         case MeasurementType::METRIC_MEMORY_TEMPERATURE:
             return xpum_stats_type_enum::XPUM_STATS_MEMORY_TEMPERATURE;
+        case MeasurementType::METRIC_FREQUENCY_THROTTLE:
+            return xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE;
         default:
             return xpum_stats_type_enum::XPUM_STATS_POWER;
     }

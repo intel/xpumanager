@@ -139,6 +139,10 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_TEMPERATURE, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE]->init();
+
+    data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE]->init();
 }
 
 void RawDataManager::close() {

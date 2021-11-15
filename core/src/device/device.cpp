@@ -174,6 +174,8 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getRequestFrequency(callback); };
         case DeviceCapability::METRIC_MEMORY_TEMPERATURE:
             return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_MEMORY); };
+        case DeviceCapability::METRIC_FREQUENCY_THROTTLE:
+            return [p_device](Callback_t callback) { p_device->getFrequencyThrottle(callback); };
         default:
             break;
     }

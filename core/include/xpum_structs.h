@@ -381,6 +381,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     XPUM_STATS_GPU_REQUEST_FREQUENCY,                ///< Gpu Request Frequency
     XPUM_STATS_MEMORY_TEMPERATURE,                   ///< Memory Temeperature
+    XPUM_STATS_FREQUENCY_THROTTLE,                   ///< Frequency Throttle
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 

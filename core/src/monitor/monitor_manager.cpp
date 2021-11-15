@@ -94,6 +94,8 @@ void MonitorManager::createMonitorTasks() {
                                                      Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
     tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_MEMORY_TEMPERATURE,
                                                      Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
+    tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_FREQUENCY_THROTTLE,
+                                                     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
 }
 
 void MonitorManager::addMetricTask(MeasurementType type, int freq) {
