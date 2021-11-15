@@ -449,26 +449,6 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
 
     has_exception = false;
     try {
-        toGetEnergy(device);
-    } catch (BaseException& e) {
-        has_exception = true;
-    }
-    if (!has_exception) {
-        capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-    }
-
-    has_exception = false;
-    try {
-        toGetEnergy(device);
-    } catch (BaseException& e) {
-        has_exception = true;
-    }
-    if (!has_exception) {
-        capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-    }
-
-    has_exception = false;
-    try {
         toGetRasError(device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
     } catch (BaseException& e) {
         has_exception = true;
