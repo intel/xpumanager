@@ -420,34 +420,38 @@ Dump the device statistics
 
 Usage: xpumcli dump [Options]
   xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
-  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes] -f [filename]
+  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -f [filename]
+  xpumcli dump -l
   xpumcli dump -stop [taskId]
 
 optional arguments:
   -h,--help                   Print this help message and exit
   -d,--device                 The device id to query
   -t,--tile                   The device tile ID to query
-  -m,--metrics                Metrics type to collect raw data, options:
-                                0. GPU Utilization (%), GPU active time of the elapsed time
-                                1. GPU Power (W)
-                                2. GPU Frequency (MHz)
-                                3. GPU Core Temperature (°C)
-                                4. GPU Memory Temperature (°C)
-                                5. GPU Memory Utilization (%)
-                                6. GPU Memory Read (kB/s)
-                                7. GPU Memory Write (kB/s)
-                                8. GPU Energy Consumed (J)
-                                9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
-                                10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
-                                11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
-                                12. Reset Count
-                                13. Programming Errors
-                                14. Driver Errors
-                                15. Cache Erros Correctable
-                                16. Cache Errors Uncorrectable
-  -i                          The interval (in seconds) to dump the device statistics. The interval will be XPU Manager sampling period if this parameter is not specified. 
-  -n                          Number of the device statistics dump. The dump will never be ended if this parameter is not specified. 
-  -f                          File to dump the device statistics. It is executed in background and the task ID is returned when the command is executed. 
+  -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
+                                0. GPU Utilization (%), GPU active time of the elapsed time, per tile
+                                1. GPU Power (W), per GPU
+                                2. GPU Frequency (MHz), per tile
+                                3. GPU Core Temperature (°C), per tile
+                                4. GPU Memory Temperature (°C), per tile
+                                5. GPU Memory Utilization (%), per tile
+                                6. GPU Memory Read (kB/s), per tile
+                                7. GPU Memory Write (kB/s), per tile
+                                8. GPU Energy Consumed (J), per tile
+                                9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile.
+                                10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile.
+                                    At least one thread is loaded, but the EU is stalled. Per tile.
+                                11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile.
+                                12. Reset Counter, per GPU.
+                                13. Programming Errors, per tile.
+                                14. Driver Errors, per tile.
+                                15. Cache Erros Correctable, per tile.
+                                16. Cache Errors Uncorrectable, per tile. 
+  
+  -i                          The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified. 
+  -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
+  
+  -f                          File to dump the raw statistics. It is executed in background and the task ID is returned when the command is executed. 
   --stop                      Stop the dump task in background. 
   --list                      List the running dump tasks in background.
 ```
@@ -463,19 +467,19 @@ Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
 2021-11-08 13:31:47.100, 00, 0, 000,    , 0300
 ```
 
-Dump the devce statistics to file.
+Start to dump the devce raw statistics to file.
 ```
 ./xpumcli dump -d 0 -t 0 -m 0,1,2 -f gpu_data.csv
 Task id: 0. Dump device statistics to the file, gpu_data.csv.
 ```
 
-List the dump tasks.
+List the tasks of the file dump.
 ```
 ./xpumcli dump --list
 Dump task 0 is running. 
 ```
 
-Stop the dump task.
+Stop the task of file dump.
 ```
 ./xpumcli dump --stop 0
 Dump task 0 is stopped. 
