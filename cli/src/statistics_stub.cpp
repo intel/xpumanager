@@ -62,6 +62,10 @@ static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
             return "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE";
         case XPUM_STATS_GPU_REQUEST_FREQUENCY:
             return "XPUM_STATS_GPU_REQUEST_FREQUENCY";
+        case XPUM_STATS_MEMORY_TEMPERATURE:
+            return "XPUM_STATS_MEMORY_TEMPERATURE";
+        case XPUM_STATS_FREQUENCY_THROTTLE:
+            return "XPUM_STATS_FREQUENCY_THROTTLE";
         default:
             break;
     }
