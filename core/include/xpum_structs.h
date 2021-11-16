@@ -363,7 +363,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Actual Frequency
     XPUM_STATS_GPU_TEMPERATURE,                      ///< Gpu Temeperature
     XPUM_STATS_MEMORY_USED,                          ///< Memory Used
-    XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization
+    XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization. Percent utilization is calculated by the equation: physical size - free size / physical size.
     XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth
     XPUM_STATS_MEMORY_READ,                          ///< Memory Read
     XPUM_STATS_MEMORY_WRITE,                         ///< Memory Write
