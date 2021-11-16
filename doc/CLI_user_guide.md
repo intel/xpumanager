@@ -420,9 +420,9 @@ Dump the device statistics
 
 Usage: xpumcli dump [Options]
   xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
-  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -f [filename]
-  xpumcli dump -l
-  xpumcli dump -stop [taskId]
+  
+  xpumcli dump --rawdata -d [deviceId] -t [deviceTileId] --maxrows [maxRowNumber]
+  xpumcli dump --save [filename]
 
 optional arguments:
   -h,--help                   Print this help message and exit
@@ -451,9 +451,9 @@ optional arguments:
   -i                          The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
   
-  -f                          File to dump the raw statistics. It is executed in background and the task ID is returned when the command is executed. 
-  --stop                      Stop the dump task in background. 
-  --list                      List the running dump tasks in background.
+  --rawdata                   Dump the raw statistics to the buffer.
+  --maxrows                   Maximal rows of raw statistics. If exceeded, the old data will be overwritten by the new data. Its upper limit is 100000.
+  --save                      Save the buffered raw statistics to the file. 
 ```
 
 Dump the devce statistics on screen.
@@ -467,22 +467,14 @@ Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
 2021-11-08 13:31:47.100, 00, 0, 000,    , 0300
 ```
 
-Start to dump the devce raw statistics to file.
+Start to dump the devce raw statistics to buffer.
 ```
-./xpumcli dump -d 0 -t 0 -m 0,1,2 -f gpu_data.csv
-Task id: 0. Dump device statistics to the file, gpu_data.csv.
-```
-
-List the tasks of the file dump.
-```
-./xpumcli dump --list
-Dump task 0 is running. 
+xpumcli dump --rawdata -d 0 -t 0 --maxrows 100000
 ```
 
-Stop the task of file dump.
+Save the buffered data to file.
 ```
-./xpumcli dump --stop 0
-Dump task 0 is stopped. 
+xpumcli dump --save gpu_data.csv
 ```
 
 <!---
