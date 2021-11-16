@@ -856,6 +856,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     uint32_t subdevice_Id = request->tileid();
     bool istiledata = request->istiledata();
     int tileCount = -1;
+    uint32_t tileTotalCount = 0;
 
     res = xpumGetDeviceProperties( deviceId, &properties);
     if (res != XPUM_OK) {
@@ -863,20 +864,26 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         return grpc::Status::OK;
     }
 
+    for (int i = 0; i < properties.propertyLen; i++) {
+        auto &prop = properties.properties[i];
+        if (prop.name != XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES) {
+            continue;
+        }
+        tileTotalCount = atoi(prop.value);
+        break;
+    }
+
     if (istiledata) {
-        tileList.push_back(subdevice_Id);
-        tileCount = 1;
+        if(subdevice_Id >= tileTotalCount) {
+            tileCount = 0;
+        } else {
+            tileList.push_back(subdevice_Id);
+            tileCount = 1;
+        }
     } else {
-        for (int i = 0; i < properties.propertyLen; i++) {
-            auto &prop = properties.properties[i];
-            if (prop.name != XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES) {
-                continue;
-            }
-            tileCount = atoi(prop.value);
-            for(int i = 0; i < tileCount; i++) {
-                tileList.push_back(i); 
-            }
-            break;
+        for(uint32_t i = 0; i < tileTotalCount; i++) {
+            tileList.push_back(i); 
+            tileCount = tileTotalCount;
         }
     }
 
@@ -928,7 +935,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             }
         }
         for (uint32_t i = 0; i < standbyCount; i++) {
-            if (standbyArray[i].type == XPUM_GLOBAL && standbyArray[i].on_subdevice == true && standbyArray[i].subdevice_Id == tileId ) {
+            if (standbyArray[i].type == XPUM_GLOBAL /*&& standbyArray[i].on_subdevice == true */&& standbyArray[i].subdevice_Id == tileId ) {
                 if (standbyArray[i].mode == XPUM_DEFAULT) {
                     tileData->set_standby(STANDBY_DEFAULT);
                 } else {
@@ -938,7 +945,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             }
         }
         for (uint32_t i = 0; i < schedulerCount; i++) {
-            if (schedulerArray[i].on_subdevice == true && schedulerArray[i].subdevice_Id == tileId ) {
+            if (/*schedulerArray[i].on_subdevice == true && */schedulerArray[i].subdevice_Id == tileId ) {
                 if (schedulerArray[i].mode == XPUM_TIMEOUT) {
                     tileData->set_scheduler(SCHEDULER_TIMEOUT);
                 } else if (schedulerArray[i].mode == XPUM_TIMESLICE) {

@@ -33,7 +33,7 @@ std::vector<std::string> ComletConfig::split(std::string str, std::string delimi
 }
 
 std::unique_ptr<nlohmann::json> ComletConfig::run() {
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json({"return:error"}));
     if (this->opts->deviceId >= 0 
         && this->opts->schedulerTimeout.empty()
         && this->opts->schedulerTimeslice.empty()

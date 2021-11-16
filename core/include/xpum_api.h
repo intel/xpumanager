@@ -338,7 +338,7 @@ xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a dataArray is NULL
  */
 xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
-                                       int32_t subDeviceId,
+                                       int32_t tileId,
                                        xpum_power_limits_t *dataArray);
 /**
  * @brief Set device sustained power limit
@@ -352,7 +352,7 @@ xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
-                                                int32_t subDeviceId,
+                                                int32_t tileId,
                                                 const xpum_power_sustained_limit_t &sustained_limit);
 /**
  * @brief Set device burst power limit
@@ -366,7 +366,7 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
-                                            int32_t subDeviceId,
+                                            int32_t tileId,
                                             const xpum_power_burst_limit_t &burst_limit);
 /**
  * @brief Set device peak power limit
@@ -380,7 +380,7 @@ xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
-                                           int32_t subDeviceId,
+                                           int32_t tileId,
                                            const xpum_power_peak_limit_t &peak_limit);
 /**
  * @brief Get device frequency ranges
