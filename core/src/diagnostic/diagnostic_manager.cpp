@@ -151,7 +151,7 @@ void DiagnosticManager::doDeviceDiagnosticSoftware(const zes_device_handle_t &de
     updateMessage(component1.message, std::string("Running"));
     std::vector<std::string> checkEnvVaribles;
     checkEnvVaribles.push_back(std::string("ZES_ENABLE_SYSMAN"));
-    checkEnvVaribles.push_back(std::string("ZES_ENABLE_SYSMAN_LOW_POWER"));
+    checkEnvVaribles.push_back(std::string("ZET_ENABLE_METRICS"));
 
     bool findEnvVaribles = false;
     for (auto it = checkEnvVaribles.begin(); it != checkEnvVaribles.end(); it++) {
@@ -926,7 +926,7 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
 }
 
 void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
-    std::atomic<bool> computationDone(false);
+    std::atomic<bool> computation_done(false);
     xpum_diag_component_info_t &compute_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTE];
     p_task_info->count += 1;
     updateMessage(compute_component.message, std::string("Running"));
@@ -938,134 +938,34 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
     power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
     ze_result_t ret;
-    long double gflops = 0, timed;
-    std::size_t flops_per_work_item = 4096;
-    struct ZeWorkGroups workgroup_info;
-    float input_value = 1.3f;
+    std::vector<ze_device_handle_t> device_handles;
+    std::vector<long double> all_gflops;
+    std::vector<std::thread> compute_threads;
 
-    ze_context_handle_t context;
-    ze_context_desc_t context_desc = {};
-    context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-    XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
+    uint32_t subdevice_count = 0;
+    ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, nullptr);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeContextCreate()");
+        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetSubDevices");
     }
-    ze_module_handle_t module_handle;
-    ze_module_desc_t module_description = {};
-    std::vector<uint8_t> binary_file = loadBinaryFile("ze_sp_compute.spv");
-    module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
-    module_description.pNext = nullptr;
-    module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
-    module_description.inputSize = static_cast<uint32_t>(binary_file.size());
-    module_description.pInputModule = binary_file.data();
-    module_description.pBuildFlags = nullptr;
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeModuleCreate(context, ze_device, &module_description, &module_handle, nullptr));
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeModuleCreate()");
+    if (subdevice_count == 0) {
+        device_handles.push_back(ze_device);
+        all_gflops.push_back(0);
+    } else {
+        std::vector<ze_device_handle_t> subdevices(subdevice_count);
+        ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, subdevices.data());
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetSubDevices");
+        }
+        for (auto& subdevice : subdevices) {
+            device_handles.push_back(subdevice);
+            all_gflops.push_back(0);
+        }
     }
-    ze_device_properties_t device_properties;
-    device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeDeviceGetProperties(ze_device, &device_properties));
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetProperties()");
-    }
-    ze_device_compute_properties_t device_compute_properties;
-    device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeDeviceGetComputeProperties(ze_device, &device_compute_properties));
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetComputeProperties()");
-    }
-    uint64_t max_work_items = device_properties.numSlices *
-                              device_properties.numSubslicesPerSlice *
-                              device_properties.numEUsPerSubslice *
-                              device_compute_properties.maxGroupCountX * 2048;
-
-    uint64_t max_number_of_allocated_items = device_properties.maxMemAllocSize / sizeof(float);
-    uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(float)));
-    number_of_work_items = setWorkgroups(device_compute_properties, number_of_work_items, &workgroup_info);
-
-    void *device_input_value;
-    ze_device_mem_alloc_desc_t in_device_desc = {};
-    in_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
-    in_device_desc.pNext = nullptr;
-    in_device_desc.ordinal = 0;
-    in_device_desc.flags = 0;
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeMemAllocDevice(context, &in_device_desc, sizeof(float), 1, ze_device, &device_input_value));
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemAllocDevice()");
-    }
-    void *device_output_buffer;
-    ze_device_mem_alloc_desc_t out_device_desc = {};
-    out_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
-    out_device_desc.pNext = nullptr;
-    out_device_desc.ordinal = 0;
-    out_device_desc.flags = 0;
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeMemAllocDevice(context, &out_device_desc, static_cast<std::size_t>((number_of_work_items * sizeof(float))),
-                           1, ze_device, &device_output_buffer));
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemAllocDevice()");
-    }
-    ze_command_list_handle_t command_list;
-    ze_command_list_desc_t command_list_description{};
-    command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
-    command_list_description.pNext = nullptr;
-    command_list_description.flags = ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY;
-    command_list_description.commandQueueGroupOrdinal = 0;
-
-    ze_command_queue_handle_t command_queue;
-    ze_command_queue_desc_t command_queue_description{};
-    command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
-    command_queue_description.pNext = nullptr;
-    command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
-    command_queue_description.flags = ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY;
-    command_queue_description.ordinal = 0;
-    command_queue_description.index = 0;
-
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeCommandListCreate(context, ze_device, &command_list_description, &command_list));
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListCreate()");
-    }
-    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeCommandQueueCreate(context, ze_device, &command_queue_description, &command_queue));
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueCreate()");
-    }
-    ret = zeCommandListAppendMemoryCopy(command_list, device_input_value, &input_value, sizeof(float), nullptr, 0, nullptr);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendMemoryCopy()");
-    }
-    ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendBarrier()");
-    }
-    ret = zeCommandListClose(command_list);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListClose()");
-    }
-    ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
-    }
-    waitForCommandQueueSynchronize(command_queue, "Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
-    ret = zeCommandListReset(command_list);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListReset()");
-    }
-    ze_kernel_handle_t compute_sp_v1;
-    ze_kernel_handle_t compute_sp_v2;
-    ze_kernel_handle_t compute_sp_v4;
-    ze_kernel_handle_t compute_sp_v8;
-    ze_kernel_handle_t compute_sp_v16;
-
-    setupFunction(module_handle, compute_sp_v1, "compute_sp_v1", device_input_value, device_output_buffer);
-    setupFunction(module_handle, compute_sp_v2, "compute_sp_v2", device_input_value, device_output_buffer);
-    setupFunction(module_handle, compute_sp_v4, "compute_sp_v4", device_input_value, device_output_buffer);
-    setupFunction(module_handle, compute_sp_v8, "compute_sp_v8", device_input_value, device_output_buffer);
-    setupFunction(module_handle, compute_sp_v16, "compute_sp_v16", device_input_value, device_output_buffer);
 
     int power_value = 0;
     zes_device_handle_t device = (zes_device_handle_t)ze_device;
-    std::thread readPowerTask = std::thread([&computationDone, &power_value, device]() {
-        while (!computationDone.load()) {
+    std::thread read_power_thread = std::thread([&computation_done, &power_value, device]() {
+        while (!computation_done.load()) {
             try {
                 auto raw_power_value = GPUDeviceStub::toGetPower(device);
                 if ((int)raw_power_value->getCurrent() > power_value) {
@@ -1080,98 +980,245 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
         }
     });
 
+    for (std::size_t i = 0; i < device_handles.size(); i++) {
+        compute_threads.push_back(std::thread([&all_gflops, i, &device_handles, &ze_driver]() {
+            try {
+                ze_result_t ret;
+                long double timed;
+                std::size_t flops_per_work_item = 4096;
+                struct ZeWorkGroups workgroup_info;
+                float input_value = 1.3f;
+
+                ze_context_handle_t context;
+                ze_context_desc_t context_desc = {};
+                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeContextCreate()");
+                }
+                ze_module_handle_t module_handle;
+                ze_module_desc_t module_description = {};
+                std::vector<uint8_t> binary_file = loadBinaryFile("ze_sp_compute.spv");
+                module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+                module_description.pNext = nullptr;
+                module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
+                module_description.inputSize = static_cast<uint32_t>(binary_file.size());
+                module_description.pInputModule = binary_file.data();
+                module_description.pBuildFlags = nullptr;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeModuleCreate(context, device_handles[i], &module_description, &module_handle, nullptr));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeModuleCreate()");
+                }
+                ze_device_properties_t device_properties;
+                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetProperties()");
+                }
+                ze_device_compute_properties_t device_compute_properties;
+                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeDeviceGetComputeProperties()");
+                }
+                uint64_t max_work_items = device_properties.numSlices *
+                                          device_properties.numSubslicesPerSlice *
+                                          device_properties.numEUsPerSubslice *
+                                          device_compute_properties.maxGroupCountX * 2048;
+
+                uint64_t max_number_of_allocated_items = device_properties.maxMemAllocSize / sizeof(float);
+                uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(float)));
+                number_of_work_items = setWorkgroups(device_compute_properties, number_of_work_items, &workgroup_info);
+
+                void *device_input_value;
+                ze_device_mem_alloc_desc_t in_device_desc = {};
+                in_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+                in_device_desc.pNext = nullptr;
+                in_device_desc.ordinal = 0;
+                in_device_desc.flags = 0;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &in_device_desc, sizeof(float), 1, device_handles[i], &device_input_value));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemAllocDevice()");
+                }
+                void *device_output_buffer;
+                ze_device_mem_alloc_desc_t out_device_desc = {};
+                out_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+                out_device_desc.pNext = nullptr;
+                out_device_desc.ordinal = 0;
+                out_device_desc.flags = 0;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &out_device_desc, static_cast<std::size_t>((number_of_work_items * sizeof(float))),
+                                    1, device_handles[i], &device_output_buffer));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemAllocDevice()");
+                }
+                ze_command_list_handle_t command_list;
+                ze_command_list_desc_t command_list_description{};
+                command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
+                command_list_description.pNext = nullptr;
+                command_list_description.flags = ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY;
+                command_list_description.commandQueueGroupOrdinal = 0;
+
+                ze_command_queue_handle_t command_queue;
+                ze_command_queue_desc_t command_queue_description{};
+                command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
+                command_queue_description.pNext = nullptr;
+                command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
+                command_queue_description.flags = ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY;
+                command_queue_description.ordinal = 0;
+                command_queue_description.index = 0;
+
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandListCreate(context, device_handles[i], &command_list_description, &command_list));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListCreate()");
+                }
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandQueueCreate(context, device_handles[i], &command_queue_description, &command_queue));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueCreate()");
+                }
+                ret = zeCommandListAppendMemoryCopy(command_list, device_input_value, &input_value, sizeof(float), nullptr, 0, nullptr);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendMemoryCopy()");
+                }
+                ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListAppendBarrier()");
+                }
+                ret = zeCommandListClose(command_list);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListClose()");
+                }
+                ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueExecuteCommandLists()");
+                }
+                waitForCommandQueueSynchronize(command_queue, "Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandQueueSynchronize()");
+                ret = zeCommandListReset(command_list);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeCommandListReset()");
+                }
+                ze_kernel_handle_t compute_sp_v1;
+                ze_kernel_handle_t compute_sp_v2;
+                ze_kernel_handle_t compute_sp_v4;
+                ze_kernel_handle_t compute_sp_v8;
+                ze_kernel_handle_t compute_sp_v16;
+
+                setupFunction(module_handle, compute_sp_v1, "compute_sp_v1", device_input_value, device_output_buffer);
+                setupFunction(module_handle, compute_sp_v2, "compute_sp_v2", device_input_value, device_output_buffer);
+                setupFunction(module_handle, compute_sp_v4, "compute_sp_v4", device_input_value, device_output_buffer);
+                setupFunction(module_handle, compute_sp_v8, "compute_sp_v8", device_input_value, device_output_buffer);
+                setupFunction(module_handle, compute_sp_v16, "compute_sp_v16", device_input_value, device_output_buffer);
+
+                timed = 0;
+                long double current;
+                // Vector width 1
+                timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info);
+                current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+                all_gflops[i] = std::max(all_gflops[i], current);
+                XPUM_LOG_INFO("compute sp vector width 1 done");
+
+                // disable these kernel functions to be compatible with ATS-M
+                /* 
+                timed = 0;
+                // Vector width 2
+                timed = runKernel(command_queue, command_list, compute_sp_v2, workgroup_info);
+                current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+                gflops = std::max(gflops, current);
+                XPUM_LOG_INFO("compute sp vector width 2 done");
+
+                timed = 0;
+                // Vector width 4
+                timed = runKernel(command_queue, command_list, compute_sp_v4, workgroup_info);
+                current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+                gflops = std::max(gflops, current);
+                XPUM_LOG_INFO("compute sp vector width 4 done");
+
+                timed = 0;
+                // Vector width 8
+                timed = runKernel(command_queue, command_list, compute_sp_v8, workgroup_info);
+                current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+                gflops = std::max(gflops, current);
+                XPUM_LOG_INFO("compute sp vector width 8 done");
+
+                timed = 0;
+                // Vector width 16
+                timed = runKernel(command_queue, command_list, compute_sp_v16, workgroup_info);
+                current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+                gflops = std::max(gflops, current);
+                XPUM_LOG_INFO("compute sp vector width 16 done");
+                */
+                ret = zeKernelDestroy(compute_sp_v1);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+                }
+                ret = zeKernelDestroy(compute_sp_v2);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+                }
+                ret = zeKernelDestroy(compute_sp_v4);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+                }
+                ret = zeKernelDestroy(compute_sp_v8);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+                }
+                ret = zeKernelDestroy(compute_sp_v16);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
+                }
+                ret = zeMemFree(context, device_input_value);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemFree()");
+                }
+                ret = zeMemFree(context, device_output_buffer);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemFree()");
+                }
+                ret = zeModuleDestroy(module_handle);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeModuleDestroy()");
+                }
+                ret = zeContextDestroy(context);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeContextDestroy()");
+                }
+            } catch (BaseException& e) {
+                XPUM_LOG_DEBUG(e.what());
+                all_gflops[i] = -1;
+            } catch (...) {
+                XPUM_LOG_DEBUG("Error in XPUM_DIAG_PERFORMANCE_COMPUTE");
+                all_gflops[i] = -1;
+            }
+        }));
+    }
+
+    for (std::size_t i = 0; i < compute_threads.size(); i++) {
+        compute_threads[i].join();
+    }
+    computation_done.store(true);
+    read_power_thread.join();
+
     bool computeCheckPass = true;
     std::string compute_detail;
-    timed = 0;
-    long double current;
-    // Vector width 1
-    timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info);
-    current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-    gflops = std::max(gflops, current);
-    XPUM_LOG_INFO("compute sp vector width 1 done");
-
-    // disable these kernel functions to be compatible with ATS-M
-    /* 
-  timed = 0;
-  // Vector width 2
-  timed = runKernel(command_queue, command_list, compute_sp_v2, workgroup_info);
-  current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-  gflops = std::max(gflops, current);
-  XPUM_LOG_INFO("compute sp vector width 2 done");
-
-  timed = 0;
-  // Vector width 4
-  timed = runKernel(command_queue, command_list, compute_sp_v4, workgroup_info);
-  current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-  gflops = std::max(gflops, current);
-  XPUM_LOG_INFO("compute sp vector width 4 done");
-
-  timed = 0;
-  // Vector width 8
-  timed = runKernel(command_queue, command_list, compute_sp_v8, workgroup_info);
-  current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-  gflops = std::max(gflops, current);
-  XPUM_LOG_INFO("compute sp vector width 8 done");
-
-  timed = 0;
-  // Vector width 16
-  timed = runKernel(command_queue, command_list, compute_sp_v16, workgroup_info);
-  current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
-  gflops = std::max(gflops, current);
-  XPUM_LOG_INFO("compute sp vector width 16 done");
-  */
-
-    if (gflops < Configuration::SINGLE_PRECISION_MIN_GFLOPS) {
+    long double all_gflops_value = 0;
+    for (auto gflops : all_gflops) {
+        if (gflops == -1) {
+            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE");
+        }
+        all_gflops_value += gflops;
+    }
+    if (all_gflops_value < Configuration::SINGLE_PRECISION_MIN_GFLOPS) {
         computeCheckPass = false;
     }
-    compute_detail = "Its single-precision GFLOPS is " + roundDouble(gflops, 3) + ".";
+    compute_detail = "Its single-precision GFLOPS is " + roundDouble(all_gflops_value, 3) + ".";
 
-    computationDone.store(true);
-    readPowerTask.join();
     bool powerCheckPass = true;
     std::string power_detail;
-    
     if (power_value < Configuration::POWER_MIN_STRESS) {
         powerCheckPass = false;
     }
     power_detail = "Its stress power is " + std::to_string(power_value) + " W.";
 
-    ret = zeKernelDestroy(compute_sp_v1);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
-    }
-    ret = zeKernelDestroy(compute_sp_v2);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
-    }
-    ret = zeKernelDestroy(compute_sp_v4);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
-    }
-    ret = zeKernelDestroy(compute_sp_v8);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
-    }
-    ret = zeKernelDestroy(compute_sp_v16);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeKernelDestroy()");
-    }
-    ret = zeMemFree(context, device_input_value);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemFree()");
-    }
-    ret = zeMemFree(context, device_output_buffer);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeMemFree()");
-    }
-    ret = zeModuleDestroy(module_handle);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeModuleDestroy()");
-    }
-    ret = zeContextDestroy(context);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE: zeContextDestroy()");
-    }
     if (computeCheckPass) {
         compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
         std::string desc = "Performance compute check info: ";
@@ -1324,8 +1371,8 @@ std::string DiagnosticManager::roundDouble(double r, int precision) {
 
 void DiagnosticManager::waitForCommandQueueSynchronize(ze_command_queue_handle_t command_queue, std::string info) {
     ze_result_t ret;
-    int commandQueueQynchronizeMaximumRound = 200;
-    int commandQueueSynchronizeStepDuration = 3; //seconds
+    int commandQueueQynchronizeMaximumRound = 600;
+    int commandQueueSynchronizeStepDuration = 1; //seconds
     ret = zeCommandQueueSynchronize(command_queue, 100 * 1000);
     int currentRound = 0;
     while (ret == ZE_RESULT_NOT_READY && currentRound < commandQueueQynchronizeMaximumRound) {
