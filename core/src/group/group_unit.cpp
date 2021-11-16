@@ -37,12 +37,11 @@ void GroupUnit::getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES]
 
 xpum_result_t GroupUnit::addDevice(xpum_device_id_t deviceId) {
     XPUM_LOG_DEBUG("GroupUnit::addDevice");
-    xpum_result_t ret = XPUM_GENERIC_ERROR;
 
     for (unsigned int i = 0; i < deviceList.size(); i++) {
         if (deviceList[i] == deviceId) {
             XPUM_LOG_ERROR(std::string("GroupUnit::addDevice- device id ") + std::string(std::to_string(deviceId)) + std::string(" was already in the group."));
-            return ret;
+            return XPUM_GROUP_DEVICE_DUPLICATED;
         }
     }
 
