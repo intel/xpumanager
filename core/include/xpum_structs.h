@@ -77,7 +77,9 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_DEVICE_NOT_FOUND,   ///< Device not found
     XPUM_RESULT_GROUP_NOT_FOUND,
     XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT,
-    XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE
+    XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE,
+    XPUM_GROUP_DEVICE_DUPLICATED,
+    XPUM_GROUP_CHANGE_NOT_ALLOWED
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -363,7 +365,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Actual Frequency
     XPUM_STATS_GPU_TEMPERATURE,                      ///< Gpu Temeperature
     XPUM_STATS_MEMORY_USED,                          ///< Memory Used
-    XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization
+    XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization. Percent utilization is calculated by the equation: physical size - free size / physical size.
     XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth
     XPUM_STATS_MEMORY_READ,                          ///< Memory Read
     XPUM_STATS_MEMORY_WRITE,                         ///< Memory Write
