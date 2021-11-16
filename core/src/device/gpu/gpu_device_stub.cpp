@@ -412,7 +412,6 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetMemoryRead(device);
     } catch (BaseException& e) {
         has_exception = true;
-        std::cout << e.what() << " " << typeid(e).name() << std::endl;
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ);

@@ -142,6 +142,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_id(request->id());
     } else if(res == XPUM_RESULT_GROUP_NOT_FOUND) {
         response->set_errormsg("group not found");
+    } else if(res == XPUM_GROUP_CHANGE_NOT_ALLOWED) {
+        response->set_errormsg("operation not allowed");
     } else {
         response->set_errormsg("Error");
     }
@@ -170,6 +172,10 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_errormsg("group not found");
     } else if(res == XPUM_RESULT_DEVICE_NOT_FOUND) {
         response->set_errormsg("device not found");
+    } else if(res == XPUM_GROUP_CHANGE_NOT_ALLOWED) {
+        response->set_errormsg("operation not allowed");
+    } else if(res == XPUM_GROUP_DEVICE_DUPLICATED) {
+        response->set_errormsg("device was already in the group");
     } else {
         response->set_errormsg("Error");
     }
@@ -199,6 +205,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_errormsg("group not found");
     } else if(res == XPUM_RESULT_DEVICE_NOT_FOUND) {
         response->set_errormsg("device not found in group");
+    } else if(res == XPUM_GROUP_CHANGE_NOT_ALLOWED) {
+        response->set_errormsg("operation not allowed");
     } else {
         response->set_errormsg("Error");
     }

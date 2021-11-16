@@ -32,7 +32,7 @@ class ComletDump : public ComletBase {
         {XPUM_STATS_GPU_UTILIZATION, "XPUM_STATS_GPU_UTILIZATION", "GPU Utilization (%)", "GPU active time of the elapsed time"},
         {XPUM_STATS_POWER, "XPUM_STATS_POWER", "GPU Power (W)", ""},
         {XPUM_STATS_GPU_FREQUENCY, "XPUM_STATS_GPU_FREQUENCY", "GPU Frequency (MHz)", ""},
-        {XPUM_STATS_GPU_TEMPERATURE, "XPUM_STATS_GPU_TEMPERATURE", "GPU Core Temperature (°C)", ""},
+        {XPUM_STATS_GPU_CORE_TEMPERATURE, "XPUM_STATS_GPU_CORE_TEMPERATURE", "GPU Core Temperature (°C)", ""},
         {XPUM_STATS_MEMORY_TEMPERATURE, "XPUM_STATS_MEMORY_TEMPERATURE", "GPU Memory Temperature (°C)", ""},
         {XPUM_STATS_MEMORY_UTILIZATION, "XPUM_STATS_MEMORY_UTILIZATION", "GPU Memory Utilization (%)", ""},
         {XPUM_STATS_MEMORY_READ, "XPUM_STATS_MEMORY_READ", "GPU Memory Read (kB/s)", ""},
