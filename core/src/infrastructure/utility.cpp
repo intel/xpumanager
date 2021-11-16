@@ -230,7 +230,7 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
 
 MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type) {
     switch (xpum_stats_type) {
-        case xpum_stats_type_enum::XPUM_STATS_GPU_TEMPERATURE:
+        case xpum_stats_type_enum::XPUM_STATS_GPU_CORE_TEMPERATURE:
             return MeasurementType::METRIC_TEMPERATURE;
         case xpum_stats_type_enum::XPUM_STATS_GPU_FREQUENCY:
             return MeasurementType::METRIC_FREQUENCY;
@@ -294,7 +294,7 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
 xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& measurementType) {
     switch (measurementType) {
         case MeasurementType::METRIC_TEMPERATURE:
-            return xpum_stats_type_enum::XPUM_STATS_GPU_TEMPERATURE;
+            return xpum_stats_type_enum::XPUM_STATS_GPU_CORE_TEMPERATURE;
         case MeasurementType::METRIC_FREQUENCY:
             return xpum_stats_type_enum::XPUM_STATS_GPU_FREQUENCY;
         case MeasurementType::METRIC_POWER:

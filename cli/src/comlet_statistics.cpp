@@ -136,7 +136,7 @@ static void showDeviceStatistics(Table &table, std::shared_ptr<nlohmann::json> j
     table.add_row({"GPU Power (W)", getNonCounterMetricsValue(json, "XPUM_STATS_POWER")});
     table.add_row({"GPU Frequency (MHz)", getNonCounterMetricsValue(json, "XPUM_STATS_GPU_FREQUENCY")});
     table.add_row({"GPU Core Temperature\n(Celsius Degree)",
-                   getNonCounterMetricsValue(json, "XPUM_STATS_GPU_TEMPERATURE")});
+                   getNonCounterMetricsValue(json, "XPUM_STATS_GPU_CORE_TEMPERATURE")});
     table.add_row({"GPU Memory Temperature\n(Celsius Degree)",
                    getNonCounterMetricsValue(json, "XPUM_STATS_MEMORY_TEMPERATURE")});
     table.add_row({"EU Array Active (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_ACTIVE")});
