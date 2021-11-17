@@ -421,8 +421,9 @@ Dump the device statistics
 Usage: xpumcli dump [Options]
   xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
   
-  xpumcli dump --rawdata -d [deviceId] -t [deviceTileId] --maxrows [maxRowNumber]
-  xpumcli dump --save [filename]
+  xpumcli dump --rawdata --start -d [deviceId] -t [deviceTileId] -m [metricsIds] 
+  xpumcli dump --rawdata --list
+  xpumcli dump --rawdata --stop [taskId]
 
 optional arguments:
   -h,--help                   Print this help message and exit
@@ -451,12 +452,13 @@ optional arguments:
   -i                          The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
   
-  --rawdata                   Dump the raw statistics to the buffer.
-  --maxrows                   Maximal rows of raw statistics. If exceeded, the old data will be overwritten by the new data. Its upper limit is 100000.
-  --save                      Save the buffered raw statistics to the file. 
+  --rawdata                   Dump the required raw statistics to a file in background. 
+  --start                     Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.
+  --stop                      Stop one active dump task.
+  --list                      List all the active dump tasks. 
 ```
 
-Dump the devce statistics on screen.
+Dump the devce statistics to screen.
 ```
 ./xpumcli dump -d 0 -t 0 -m 0,1,2 -i 1 -n 5
 Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
@@ -467,14 +469,25 @@ Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
 2021-11-08 13:31:47.100, 00, 0, 000,    , 0300
 ```
 
-Start to dump the devce raw statistics to buffer.
+Start to dump the devce raw statistics to the file.
 ```
-xpumcli dump --rawdata -d 0 -t 0 --maxrows 100000
+xpumcli dump --rawdata --start -d 0 -t 0 -m 0,1,2 
+Task 0 is started.
+Dump file path: /opt/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
 ```
 
-Save the buffered data to file.
+List all the active dump tasks.
 ```
-xpumcli dump --save gpu_data.csv
+xpumcli dump --rawdata --list
+Task 0 is running. 
+Task 1 is running.
+```
+
+Stop the dump task. 
+```
+xpumcli dump --rawdata --stop 0
+Task 0 is stopped. 
+Dump file path: /opt/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
 ```
 
 <!---
