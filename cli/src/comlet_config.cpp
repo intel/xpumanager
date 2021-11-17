@@ -33,7 +33,8 @@ std::vector<std::string> ComletConfig::split(std::string str, std::string delimi
 }
 
 std::unique_ptr<nlohmann::json> ComletConfig::run() {
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json({"return:error"}));
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    (*json)["return"]="error";
     if (this->opts->deviceId >= 0 
         && this->opts->schedulerTimeout.empty()
         && this->opts->schedulerTimeslice.empty()
@@ -58,7 +59,8 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMESLICE, val1, val2);
                 return json;
             }else {
-                return json;
+                 (*json)["return"]="invalid parameter";
+                 return json;
             }
         } else if (this->opts->tileId >= 0 && this->opts->schedulerExclusive) {
             json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_EXCLUSIVE, 0, 0);
@@ -71,6 +73,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 json = this->coreStub->setDevicePowerlimit(this->opts->deviceId, val1, val2);
                 return json;
             }else {
+                (*json)["return"]="invalid parameter";
                 return json;
             }
         } else if (this->opts->tileId >= 0 && !this->opts->standby.empty()) {
@@ -80,6 +83,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             } else if (this->opts->standby.compare("default") == 0) {
                 mode = STANDBY_DEFAULT;
             } else {
+                (*json)["return"]="invalid parameter";
                 return json;    
             }
             json = this->coreStub->setDeviceStandby(this->opts->deviceId, this->opts->tileId, mode);
@@ -92,11 +96,14 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 json = this->coreStub->setDeviceFrequencyRange(this->opts->deviceId, this->opts->tileId, val1, val2);
                 return json;
             }else {
+                (*json)["return"]="invalid parameter";
                 return json;
             }
         }
+        (*json)["return"]="unknonw or invalid command/parameter";
         return json;
     }
+    (*json)["return"]="invalid device Id";
     return json;
 }
 } // end namespace xpum::cli

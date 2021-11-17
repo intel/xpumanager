@@ -1215,6 +1215,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     grpc::Status status = stub->getDeviceConfig(&context, request, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
+            (*json)["device_id"] = deviceId;
             (*json)["power_limit"] = response.powerlimit();
             (*json)["power_average_window"] = response.interval();
             std::vector<nlohmann::json> tileJsonList;
