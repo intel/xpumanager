@@ -1228,7 +1228,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
                     XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetState(mem, &sysman_memory_state));
                     if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
-                        uint64_t utilization = used * 100.0 / sysman_memory_state.size;
+                        uint64_t utilization = used * 100.0 / (props.physicalSize == 0 ? sysman_memory_state.size:props.physicalSize);
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, utilization) : ret->setCurrent(utilization);
                         data_acquired = true;
                     } else {
