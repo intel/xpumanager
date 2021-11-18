@@ -719,7 +719,7 @@ std::condition_variable condtionForCallBackDataList;
 std::list<std::shared_ptr<ReadPolicyNotifyDataResponse>> callBackDataList;
 void xpum_notify_callback_func(xpum_policy_notify_callback_para_t *p_para) {
     XPUM_LOG_INFO("------xpum_notify_callback_func-----begin---");
-    XPUM_LOG_INFO("Device Id: {}", p_para->deviceId);
+    XPUM_LOG_INFO("Policy Device Id: {}", p_para->deviceId);
     XPUM_LOG_INFO("Policy Type: {}", p_para->type);
     XPUM_LOG_INFO("Policy Condition Type: {}", p_para->condition.type);
     XPUM_LOG_INFO("Policy Condition Threshold: {}", p_para->condition.threshold);
