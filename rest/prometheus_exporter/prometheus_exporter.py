@@ -7,6 +7,7 @@ import sys
 from enum import Enum, unique
 
 registries = {}
+counter_values = {}
 
 
 @unique
@@ -39,11 +40,10 @@ class PromMetric(Enum):
     xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])  # nopep8
     xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])  # nopep8
 
-    # Occupation
-    xpum_occupation_ratio = ('xpum_occupation_ratio')  # nopep8
-    xpum_non_occupation_ratio = ('xpum_non_occupation_ratio')  # nopep8
-    xpum_issue_efficiency_ratio = ('xpum_issue_efficiency_ratio')  # nopep8
-    xpum_execution_efficiency_ratio = ('xpum_execution_efficiency_ratio')  # nopep8
+    # Eu Active Stall Idle
+    xpum_eu_active_ratio = ('xpum_eu_active_ratio')  # nopep8
+    xpum_eu_stall_ratio = ('xpum_eu_stall_ratio')  # nopep8
+    xpum_eu_idle_ratio = ('xpum_eu_idle_ratio')  # nopep8
 
     def __new__(cls, name, desc=None, ext_labelnames=[]):
         obj = object.__new__(cls)
@@ -69,16 +69,15 @@ metrics_map = {
     'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'render'}),
     'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': '3d'}),
 
-    # Occupation
-    'XPUM_STATS_OCCUPATION': Metric(PromMetric.xpum_occupation_ratio, scale=0.01),
-    'XPUM_STATS_ISSUE_EFFICIENCY': Metric(PromMetric.xpum_issue_efficiency_ratio, scale=0.01),
-    'XPUM_STATS_EXECUTION_EFFICIENCY': Metric(PromMetric.xpum_execution_efficiency_ratio, scale=0.01),
-    'XPUM_STATS_NON_OCCUPATION': Metric(PromMetric.xpum_non_occupation_ratio, scale=0.01),
+    # EuActive/EuStall/EuIdle
+    'XPUM_STATS_EU_ACTIVE': Metric(PromMetric.xpum_eu_active_ratio, scale=0.01),
+    'XPUM_STATS_EU_STALL': Metric(PromMetric.xpum_eu_stall_ratio, scale=0.01),
+    'XPUM_STATS_EU_IDLE': Metric(PromMetric.xpum_eu_idle_ratio, scale=0.01),
 
     # Power/Energy/Temperature
     'XPUM_STATS_POWER': Metric(PromMetric.xpum_power_watts),
     'XPUM_STATS_ENERGY': Metric(PromMetric.xpum_energy_joules, scale=0.001),
-    'XPUM_STATS_GPU_TEMPERATURE': Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'gpu'}),
+    'XPUM_STATS_GPU_CORE_TEMPERATURE': Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'gpu'}),
 
     # Frequency
     'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),
@@ -115,19 +114,20 @@ def get_metrics(core, pod_resources):
         for dev in data:
 
             device_id = dev.get('device_id')
-            stat_code, _, stat_data = core.getMetrics(device_id)
+            stat_code, _, stat_data = core.getStatistics(
+                device_id, session_id=1, get_accumulated=True)
 
             if stat_code != 0:
                 continue
 
-            if 'DeviceLevel' in stat_data:
+            if 'device_level' in stat_data:
                 r = convert_to_prometheus_metrics(
-                    pod_resources, dev, stat_data['DeviceLevel'], device_id)
+                    pod_resources, dev, stat_data['device_level'], device_id)
                 resp = resp + r
 
-            for tile_data in stat_data.get('TileLevel', []):
+            for tile_data in stat_data.get('tile_level', []):
                 r = convert_to_prometheus_metrics(
-                    pod_resources, dev, tile_data['dataList'], device_id, tile_data['tileId'])
+                    pod_resources, dev, tile_data['data_list'], device_id, tile_data['tile_id'])
                 resp = resp + r
 
         code, _, data = core.getAllGroups()
@@ -140,23 +140,21 @@ def get_metrics(core, pod_resources):
             if group_id is None or group_id & 0x80000000 != 0x80000000:
                 continue
 
-            stat_code, _, stat_data = core.getMetricsByGroup(group_id)
+            stat_code, _, stat_data = core.getStatisticsByGroup(
+                group_id, session_id=1, get_accumulated=True)
             if stat_code != 0:
                 continue
+            card_power = 0
+            for datas in stat_data.get('datas', []):
+                for metric in datas.get('device_level', {}):
+                    if metric['metrics_type'] == 'XPUM_STATS_POWER':
+                        card_power = card_power + metric.get('value')
+                        break
 
-            if 'DeviceLevel' in stat_data:
-                card_power = 0
-                for device_data in stat_data['DeviceLevel']:
-                    for metric in device_data:
-                        if metric['metricsType'] == 'XPUM_STATS_POWER':
-                            card_power = card_power + metric.get('avg')
-
-                card_data = [{'metricsType': 'XPUM_STATS_POWER',
-                              'avg': card_power, 'value': card_power}]
-
-                r = convert_to_prometheus_metrics(
-                    pod_resources, dev=None, datalist=card_data, card_id=group_id)
-                resp = resp + r
+            card_data = [{'metrics_type': 'XPUM_STATS_POWER', 'avg': card_power} ]
+            r = convert_to_prometheus_metrics(
+                pod_resources, dev=None, datalist=card_data, card_id=group_id)
+            resp = resp + r
 
         return tidy_response(resp)
     except Exception as e:
@@ -187,34 +185,45 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
         metrics_owner, (CollectorRegistry(), {}))
 
     for stat in datalist:
-        metric = metrics_map.get(stat.get('metricsType'))
+        metric = metrics_map.get(stat.get('metrics_type'))
         if metric is None:
             continue
         metric_name = metric.prom_metric.name
         scale = metric.scale
-        value = stat.get('value')
+        acc = stat.get('acc')
         avg = stat.get('avg')
 
         all_labelnames, all_labelvalues = attach_ext_labels(
             labels, label_values, metric.prom_metric.ext_labelnames, metric.ext_labels)
 
         if metric_name not in metrics:
-            if avg is not None:
+            if acc is not None:
+                # counter value
+                metrics[metric_name] = Counter(
+                    metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
+                mm = metrics[metric_name].labels(*all_labelvalues)
+                new_value = acc * scale
+                counter_values[mm] = new_value
+                mm.inc(new_value)
+            else:
+                # aggregated value
                 metrics[metric_name] = Gauge(
                     metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
                 metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
-            else:
-                metrics[metric_name] = Counter(
-                    metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
-                metrics[metric_name].labels(
-                    *all_labelvalues).inc(value * scale)
         else:
-            if avg is not None:
-                metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
+            if acc is not None:
+                # counter value
+                mm = metrics[metric_name].labels(*all_labelvalues)
+                cur_value = counter_values.setdefault(mm, 0)
+                new_value = acc * scale
+                if new_value >= cur_value:
+                    counter_values[mm] = new_value
+                    mm.inc(new_value-cur_value)
+                else:
+                    print(f'counter value decreased, {metric_name}: pre={cur_value}, cur={new_value}')
             else:
-                metrics[metric_name].labels(
-                    *all_labelvalues).inc(value * scale)
-
+                # aggregated value
+                metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
     return generate_latest(registry)
 
 
@@ -234,7 +243,7 @@ def attach_kube_labels(dev, labels, label_values, pod_resources):
     if nodename is not None:
         labels.append('node')
         label_values.append(nodename)
-        
+
     if dev is None or pod_resources is None:
         return
     bdf = dev.get('pci_bdf_address', '')

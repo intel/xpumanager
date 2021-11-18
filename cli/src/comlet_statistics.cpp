@@ -27,15 +27,6 @@ std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     return json;
 }
 
-static std::string join(std::vector<std::string> strs) {
-    if (strs.size() == 0) return "";
-    std::string res = strs[0];
-    for (std::size_t i = 1; i < strs.size(); i++) {
-        res += "\n" + strs[i];
-    }
-    return res;
-}
-
 static nlohmann::json getMetricsTypeFromList(std::vector<nlohmann::json> metricsList, std::string metricsType) {
     for (auto obj : metricsList) {
         std::string k = obj["metrics_type"].get<std::string>();
@@ -61,7 +52,7 @@ static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, 
             auto metricsJson = getMetricsTypeFromList(tileLevelMetricsList, metricsType);
             if (!metricsJson.empty()) {
                 if (res.size() > 0) res += ", ";
-                res += "Tile "+std::to_string(tileId)+": "+std::to_string(metricsJson["value"].get<std::uint64_t>());
+                res += "Tile " + std::to_string(tileId) + ": " + std::to_string(metricsJson["value"].get<std::uint64_t>());
             }
         }
     }
@@ -70,14 +61,22 @@ static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, 
 
 static std::string getAggregateLine(nlohmann::json metricsJson) {
     std::string res;
-    auto current = metricsJson["value"].get<std::uint64_t>();
-    auto avg = metricsJson["avg"].get<std::uint64_t>();
-    auto min = metricsJson["min"].get<std::uint64_t>();
-    auto max = metricsJson["max"].get<std::uint64_t>();
-    res += "avg: " + std::to_string(avg) + ", ";
-    res += "min: " + std::to_string(min) + ", ";
-    res += "max: " + std::to_string(max) + ", ";
-    res += "current: " + std::to_string(current);
+    if (metricsJson.contains("avg")) {
+        auto value = metricsJson["avg"].get<std::uint64_t>();
+        res += "avg: " + std::to_string(value) + ", ";
+    }
+    if (metricsJson.contains("min")) {
+        auto value = metricsJson["min"].get<std::uint64_t>();
+        res += "min: " + std::to_string(value) + ", ";
+    }
+    if (metricsJson.contains("max")) {
+        auto value = metricsJson["max"].get<std::uint64_t>();
+        res += "max: " + std::to_string(value) + ", ";
+    }
+    if (metricsJson.contains("value")) {
+        auto current = metricsJson["value"].get<std::uint64_t>();
+        res += "current: " + std::to_string(current);
+    }
     return res;
 }
 
@@ -104,15 +103,7 @@ static std::string getNonCounterMetricsValue(std::shared_ptr<nlohmann::json> jso
     return res;
 }
 
-void ComletStatistics::getTableResult(std::ostream &out) {
-    auto res = run();
-    if (res->contains("error")) {
-        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
-        return;
-    }
-    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
-    *json = *res;
-    auto table = xpum::cli::Table(out);
+static void showDeviceStatistics(Table &table, std::shared_ptr<nlohmann::json> json) {
     table.add_row({"Device ID", std::to_string((*json)["device_id"].get<int>())});
     std::vector<std::string> keys;
     std::vector<std::string> values;
@@ -138,20 +129,39 @@ void ComletStatistics::getTableResult(std::ostream &out) {
     keys.push_back("Display Errors Uncorrectable");
     values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE"));
 
-    table.add_row({join(keys), join(values)});
+    table.add_augmented_row({keys, values});
 
     table.add_row({"GPU Utilization (%)", getNonCounterMetricsValue(json, "XPUM_STATS_GPU_UTILIZATION")});
     // table.add_row({"XPUM_STATS_MEMORY_UTILIZATION",getNonCounterMetricsValue(*json,"XPUM_STATS_MEMORY_UTILIZATION")});
     table.add_row({"GPU Power (W)", getNonCounterMetricsValue(json, "XPUM_STATS_POWER")});
     table.add_row({"GPU Frequency (MHz)", getNonCounterMetricsValue(json, "XPUM_STATS_GPU_FREQUENCY")});
     table.add_row({"GPU Core Temperature\n(Celsius Degree)",
-                   getNonCounterMetricsValue(json, "XPUM_STATS_GPU_TEMPERATURE")});
+                   getNonCounterMetricsValue(json, "XPUM_STATS_GPU_CORE_TEMPERATURE")});
     table.add_row({"GPU Memory Temperature\n(Celsius Degree)",
                    getNonCounterMetricsValue(json, "XPUM_STATS_MEMORY_TEMPERATURE")});
-    table.add_row({"Occupation (%)", getNonCounterMetricsValue(json, "XPUM_STATS_OCCUPATION")});
-    table.add_row({"Issue Efficiency (%)", getNonCounterMetricsValue(json, "XPUM_STATS_ISSUE_EFFICIENCY")});
-    table.add_row({"Execution Efficiency (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EXECUTION_EFFICIENCY")});
-    table.add_row({"Non-Occupation (%)", getNonCounterMetricsValue(json, "XPUM_STATS_NON_OCCUPATION")});
+    table.add_row({"EU Array Active (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_ACTIVE")});
+    table.add_row({"EU Array Stall (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_STALL")});
+    table.add_row({"EU Array Idle (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_IDLE")});
+}
+
+void ComletStatistics::getTableResult(std::ostream &out) {
+    auto res = run();
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+    *json = *res;
+    auto table = xpum::cli::Table(out);
+    if (this->opts->groupId != 0) {
+        table.add_row({"Group Id", std::to_string(this->opts->groupId)});
+        auto devices = (*json)["datas"].get<std::vector<nlohmann::json>>();
+        for (auto device : devices) {
+            showDeviceStatistics(table, std::make_shared<nlohmann::json>(device));
+        }
+    } else {
+        showDeviceStatistics(table, json);
+    }
 
     table.show();
 }

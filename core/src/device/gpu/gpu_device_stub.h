@@ -55,12 +55,15 @@ class GPUDeviceStub {
 
     void getEnergy(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-    void getOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type, Callback_t callback) noexcept;
+    void getEuActiveStallIdle(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type, Callback_t callback) noexcept;
 
     void getRasError(const zes_device_handle_t& device, Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept;
+
     void getRasErrorOnSubdevice(const zes_device_handle_t& device, Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept;
 
     void getRasError(const zes_device_handle_t& device, uint64_t errorCategory[XPUM_RAS_ERROR_MAX]) noexcept;
+
+    void getFrequencyThrottle(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     static void getSchedulers(const zes_device_handle_t& device, std::vector<Scheduler>& schedulers);
 
@@ -144,12 +147,15 @@ class GPUDeviceStub {
 
     static std::shared_ptr<MeasurementData> toGetEnergy(const zes_device_handle_t& device);
 
-    static std::shared_ptr<MeasurementData> toGetOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type);
+    static std::shared_ptr<MeasurementData> toGetEuActiveStallIdle(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type);
 
-    static void toGetOccupationEfficiencyCore(const ze_device_handle_t& device, int subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data);
+    static void toGetEuActiveStallIdleCore(const ze_device_handle_t& device, int subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data);
 
     static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
+
     static std::shared_ptr<MeasurementData> toGetRasErrorOnSubdevice(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
+
+    static std::shared_ptr<MeasurementData> toGetFrequencyThrottle(const zes_device_handle_t& device);
 
     static std::string to_string(ze_device_uuid_t val);
 
@@ -161,7 +167,7 @@ class GPUDeviceStub {
 
     static std::string to_regex_string(zes_pci_address_t address);
 
-    static void addOccupationEfficiencyCapabilities(zes_device_handle_t device, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
+    static void addEuActiveStallIdleCapabilities(zes_device_handle_t device, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
 
     static void addCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities);
 

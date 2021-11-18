@@ -16,7 +16,6 @@ def getDeviceList():
         device['uuid'] = str(uuid.UUID(d.uuid))
         device['device_name'] = d.deviceName
         device['pci_device_id'] = d.pcieDeviceId
-        device['pci_sub_device_id'] = d.subDeviceId
         device['pci_bdf_address'] = d.pciBdfAddress
         device['vendor_name'] = d.vendorName
         data.append(device)

@@ -320,8 +320,8 @@ xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
  * @param deviceId          IN: The device Id
  * @param standby           IN: The standby mode need to be set
  * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_OK                  if set successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
                                    const xpum_standby_data_t &standby);
@@ -334,10 +334,11 @@ xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
  * @param dataArray         IN/OUT: The detailed power limit data.
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a dataArray is NULL
  */
 xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
-                                       int32_t subDeviceId,
+                                       int32_t tileId,
                                        xpum_power_limits_t *dataArray);
 /**
  * @brief Set device sustained power limit
@@ -348,10 +349,10 @@ xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
  * @param sustained_limit   IN: The sustained power limit need to be set
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
-                                                int32_t subDeviceId,
+                                                int32_t tileId,
                                                 const xpum_power_sustained_limit_t &sustained_limit);
 /**
  * @brief Set device burst power limit
@@ -362,10 +363,10 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
  * @param burst_limit       IN: The burstr power limit need to be set
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
-                                            int32_t subDeviceId,
+                                            int32_t tileId,
                                             const xpum_power_burst_limit_t &burst_limit);
 /**
  * @brief Set device peak power limit
@@ -376,10 +377,10 @@ xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
  * @param peak_limit       IN: The peak power limit need to be set
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
-                                           int32_t subDeviceId,
+                                           int32_t tileId,
                                            const xpum_power_peak_limit_t &peak_limit);
 /**
  * @brief Get device frequency ranges
@@ -402,7 +403,7 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
  * @param frequency         IN: The frequency ranges need to be set
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
                                           const xpum_frequency_range_t &t);
@@ -427,7 +428,7 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
  * @param sched_timeout     IN: The scheduler timeout mode need to be set
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
                                                 const xpum_scheduler_timeout_t &sched_timeout);
@@ -439,7 +440,7 @@ xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
  * @param sched_timeout     IN: The scheduler time slice mode need to be set
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
                                                   const xpum_scheduler_timeslice_t &sched_timeslice);
@@ -451,7 +452,7 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
  * @param sched_timeout     IN: The scheduler time slice mode need to be set
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                                                   const xpum_scheduler_exclusive_t &sched_exclusive);
@@ -462,7 +463,7 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
  * @param force             IN: Reset the device forcibly
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
 /**
@@ -477,7 +478,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, uint32_t *count);
+xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count);
 
 /** @} */ // Closing for CONFIGURATION_API
 
@@ -616,6 +617,7 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
  *                          When return, \a count will store the actual number of entries stored in \a dataList.
  * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
  * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @param sessionId     IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
@@ -624,7 +626,8 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
                            xpum_device_stats_t dataList[],
                            int *count,
                            uint64_t *begin,
-                           uint64_t *end);
+                           uint64_t *end,
+                           uint64_t sessionId);
 
 /**
  * @brief Get statistics data by group
@@ -635,6 +638,7 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
  *                          When return, \a count will store the actual number of entries stored in \a dataList.
  * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
  * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @param sessionId     IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.
  * @return xpum_result_t 
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
@@ -643,7 +647,8 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   xpum_device_stats_t dataList[],
                                   int *count,
                                   uint64_t *begin,
-                                  uint64_t *end);
+                                  uint64_t *end,
+                                  uint64_t sessionId);
 
 /** @} */ // Closing for STATISTICS_API
 

@@ -28,9 +28,8 @@ message XpumDeviceBasicInfoArray {
         string uuid = 3;
         string deviceName = 4;
         string pcieDeviceId = 5;
-        string subDeviceId = 6;
-        string pciBdfAddress = 7;
-        string vendorName = 8;
+        string pciBdfAddress = 6;
+        string vendorName = 7;
     }
     repeated XpumDeviceBasicInfo info = 1;
     string errorMsg = 2;
@@ -221,6 +220,7 @@ message DeviceStatsData{
     uint64 min = 4;
     uint64 avg = 5;
     uint64 max = 6;
+    uint64 accumulated = 7;
 }
 
 message DeviceStatsInfo{
@@ -234,6 +234,16 @@ message DeviceStatsInfo{
 message DeviceStatsInfoArray {
     repeated DeviceStatsInfo dataList = 1;
     string errorMsg = 2;
+}
+
+message XpumGetStatsRequest {
+    uint32 deviceId = 1;
+    uint64 sessionId = 2;
+}
+
+message XpumGetStatsByGroupRequest {
+    uint32 groupId = 1;
+    uint64 sessionId = 2;
 }
 
 message XpumGetStatsResponse {
@@ -424,8 +434,8 @@ service XpumCoreService {
     rpc setHealthConfigByGroup( HealthConfigByGroupRequest ) returns ( HealthConfigByGroupInfo );
     rpc getMetrics( DeviceId ) returns ( DeviceStatsInfoArray );
     rpc getMetricsByGroup( GroupId ) returns ( DeviceStatsInfoArray );
-    rpc getStatistics( DeviceId ) returns ( XpumGetStatsResponse );
-    rpc getStatisticsByGroup( GroupId ) returns ( XpumGetStatsResponse );
+    rpc getStatistics( XpumGetStatsRequest ) returns ( XpumGetStatsResponse );
+    rpc getStatisticsByGroup( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );
     rpc runFirmwareFlash( XpumFirmwareFlashJob ) returns ( GeneralEnum );
     rpc getFirmwareFlashResult( XpumFirmwareFlashTaskRequest ) returns ( XpumFirmwareFlashTaskResult );
     rpc getPolicy( GetPolicyRequest ) returns ( GetPolicyResponse );

@@ -108,21 +108,17 @@ void RawDataManager::init() {
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION, p_persistency);
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION]->init();
 
-    data_handlers[MeasurementType::METRIC_OCCUPATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_OCCUPATION, p_persistency);
-    data_handlers[MeasurementType::METRIC_OCCUPATION]->init();
+    data_handlers[MeasurementType::METRIC_EU_ACTIVE] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EU_ACTIVE, p_persistency);
+    data_handlers[MeasurementType::METRIC_EU_ACTIVE]->init();
 
-    data_handlers[MeasurementType::METRIC_ISSUE_EFFICIENCY] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ISSUE_EFFICIENCY, p_persistency);
-    data_handlers[MeasurementType::METRIC_ISSUE_EFFICIENCY]->init();
+    data_handlers[MeasurementType::METRIC_EU_STALL] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EU_STALL, p_persistency);
+    data_handlers[MeasurementType::METRIC_EU_STALL]->init();
 
-    data_handlers[MeasurementType::METRIC_EXECUTION_EFFICIENCY] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EXECUTION_EFFICIENCY, p_persistency);
-    data_handlers[MeasurementType::METRIC_EXECUTION_EFFICIENCY]->init();
-
-    data_handlers[MeasurementType::METRIC_NON_OCCUPATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_NON_OCCUPATION, p_persistency);
-    data_handlers[MeasurementType::METRIC_NON_OCCUPATION]->init();
+    data_handlers[MeasurementType::METRIC_EU_IDLE] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_EU_IDLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_EU_IDLE]->init();
 
     //METRIC_RAS_ERROR
     data_handlers[MeasurementType::METRIC_RAS_ERROR_CAT_RESET] = std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_RAS_ERROR_CAT_RESET, p_persistency);
@@ -143,6 +139,10 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_TEMPERATURE, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE]->init();
+
+    data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE, p_persistency);
+    data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE]->init();
 }
 
 void RawDataManager::close() {
@@ -175,13 +175,13 @@ MeasurementData RawDataManager::getLatestData(
                                 : p_handler->getLatestData(device_id);
 }
 
-MeasurementData RawDataManager::getLatestStatistics(MeasurementType type, std::string& device_id) noexcept {
+MeasurementData RawDataManager::getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) noexcept {
     std::unique_lock<std::mutex> lock(mutex);
     auto& p_handler = data_handlers[type];
     lock.unlock();
 
     return p_handler == nullptr ? MeasurementData()
-                                : p_handler->getLatestStatistics(device_id);
+                                : p_handler->getLatestStatistics(device_id, session_id);
 }
 
 void RawDataManager::getLatestData(

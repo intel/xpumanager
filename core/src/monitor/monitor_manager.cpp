@@ -74,13 +74,7 @@ void MonitorManager::createMonitorTasks() {
                                                      Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
     tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION,
                                                      Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
-    tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_OCCUPATION,
-                                                     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
-    tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_ISSUE_EFFICIENCY,
-                                                     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
-    tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_EXECUTION_EFFICIENCY,
-                                                     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
-    tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_NON_OCCUPATION,
+    tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE,
                                                      Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
     tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET,
                                                      Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
@@ -99,6 +93,8 @@ void MonitorManager::createMonitorTasks() {
     tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_REQUEST_FREQUENCY,
                                                      Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
     tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_MEMORY_TEMPERATURE,
+                                                     Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
+    tasks.emplace_back(std::make_shared<MonitorTask>(DeviceCapability::METRIC_FREQUENCY_THROTTLE,
                                                      Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS, p_scheduled_thread_pool));
 }
 

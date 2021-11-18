@@ -2,19 +2,20 @@ from .grpc_stub import stub
 import core_pb2
 
 StandbyModeEnumToString = {
-    core_pb2.STANDBY_DEFAULT: "default",
-    core_pb2.STANDBY_NEVER: "never"
+    core_pb2.STANDBY_DEFAULT: "STANDBY_MODE_DEFAULT",
+    core_pb2.STANDBY_NEVER: "STANDBY_MODE_NEVER"
 }
 
 SchedulerModeEnumToString = {
-    core_pb2.SCHEDULER_TIMEOUT: "timeout",
-    core_pb2.SCHEDULER_TIMESLICE: "timeslice",
-    core_pb2.SCHEDULER_EXCLUSIVE: "exclusive"
+    core_pb2.SCHEDULER_TIMEOUT: "SCHEDULER_MODE_TIMEOUT",
+    core_pb2.SCHEDULER_TIMESLICE: "SCHEDULER_MODE_TIMESLICE",
+    core_pb2.SCHEDULER_EXCLUSIVE: "SCHEDULER_MODE_EXCLUSIVE"
 }
 
 def getConfig(deviceId, tileId):
     if(tileId == -1):
         isTiledId = False
+        tileId = 0
     else:
         isTiledId = True
     
@@ -22,19 +23,21 @@ def getConfig(deviceId, tileId):
     if len(resp.errorMsg) != 0:
             return 1, resp.errorMsg, None
     data = dict()
-    data['deviceId'] = resp.deviceId
-    data['powerLimit'] = resp.powerLimit
-    data['interval'] = resp.interval
-    data['tileCount'] = resp.tileCount
+    data['device_id'] = resp.deviceId
+    data['power_limit'] = resp.powerLimit
+    data['power_average_window'] = resp.interval
+    #data['tileCount'] = resp.tileCount
 
-    for tile in resp.tileConfigData:
+    tilelist = list()
+    for i in range(0,resp.tileCount):
         tiledata = dict()
-        tiledata['tileId'] = tile.tileId
-        tiledata['minFreq'] = tile.minFreq
-        tiledata['maxFreq'] = tile.maxFreq
-        tiledata['standby'] = StandbyModeEnumToString[tile.standby]
-        tiledata['scheduler'] = SchedulerModeEnumToString[tile.scheduler]
-        data['tileConfigData'].append(tiledata)        
+        tiledata['tile_id'] = resp.tileConfigData[i].tileId
+        tiledata['min_frequency'] = resp.tileConfigData[i].minFreq
+        tiledata['max_frequency'] = resp.tileConfigData[i].maxFreq
+        tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
+        tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
+        tilelist.append(tiledata)
+    data['tileConfigData'] = tilelist
     return 0, "OK", data
 
 def setStandby(deviceId, tileId, standby):

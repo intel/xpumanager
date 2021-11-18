@@ -1,6 +1,6 @@
 
 # Intel XPU Manager Command Line Interface User Guide
-This guidevc  describes how to use Intel XPU Manager Command Line Interface to manage Intel GPU devices. 
+This guide describes how to use Intel XPU Manager Command Line Interface to manage Intel GPU devices. 
   
 
 ## Intel XPU Manager Command Line Interface main features 
@@ -13,7 +13,7 @@ This guidevc  describes how to use Intel XPU Manager Command Line Interface to m
 * Set some automatic action when some condition is met. 
 
 ## Help info
-Show the CLI help info. 
+Show the XPU Manager CLI help info. 
 ```
 ./xpumcli 
 Intel XPU Manager Command Line Interface -- v1.0 
@@ -23,24 +23,26 @@ Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Ma
 Supported devcies: 
   - Intel ATS-M1/ATS-M3 
  
-Usage: xpumcli [-h] [-v] {discovery,group,agentset,stats,health,diag,fwflash,config,telemetry,topology} ...
+Usage: xpumcli [Options]
+  xpumcli -v
+  xpumcli -h
+  xpumcli discovery
 
 Optional arguments:
-  -h, --help            show this help message and exit
-  -v, --version         Display version information and exit
-
-Subcommand options:
-    discovery           Discover devices on the system
-    group               Group management
-    agentset            XPUM agent settings
-    stats               Display device statistics
-    health              Display health status of GPUs
-    diag                System validation/diagnostic
-    updatefw            Update device firmware
-    config              Configure settings for devices.
-    dump                Dump statistics raw data
-    topology            Show CPU/GPU/PCIe switch topology
-    policy              Manager GPU policies
+  -h, --help                  Print this help message and exit.
+  -v, --version               Display version information and exit.
+  
+  discovery                   Discover devices on the system.
+  group                       Group management.
+  agentset                    XPUM agent settings.
+  stats                       Display device statistics.
+  health                      Display health status of GPUs.
+  diag                        System validation/diagnostic.
+  updatefw                    Update device firmware.
+  config                      Configure settings for devices.
+  dump                        Dump device statistics data.
+  topology                    Show CPU/GPU/PCIe switch topology.
+  policy                      Manager GPU policies.
 ```
   
 Show Intel XPU Manager version and Level Zero version. 
@@ -68,8 +70,9 @@ Usage: xpumcli discovery [Options]
   xpumcli discovery -d [deviceId]
 
 Options:
-  -h,--help            Print this help message and exit.
-  -d,--device          Device ID to query. It will show more detailed info.
+  -h,--help                   Print this help message and exit.
+  -d,--device                 Device ID to query. It will show more detailed info.
+
 ```
 
 
@@ -118,9 +121,9 @@ Show the detailed info of one device. The device info includes the model, freque
 |           |                                                                                      |
 |           | Number of Tiles: 2                                                                   |
 |           | Number of Slices: 2                                                                  |
-|           | Number of Sub Slices Per Slice: 30                                                   |
-|           | Number of EUs Per Sub Slice: 16                                                      |
-|           | Number of Threads Per EU: 8                                                          |
+|           | Number of Sub Slices per Slice: 30                                                   |
+|           | Number of EUs per Sub Slice: 16                                                      |
+|           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
 +--------------------------------------------------------------------------------------------------+
 ```
@@ -149,12 +152,13 @@ Options:
   -a,--add                    Add devices to a group.
   -r,--remove                 Remove devices from group.
   -g,--group                  Group ID.
-  -n,--name                   group name.
+  -n,--name                   Group name.
   -d,--device                 Device IDs.
 ```
  
 Create a group                        
-```./xpumcli group -c -n "testgroup"
+```
+./xpumcli group -c -n "testgroup"
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
@@ -165,7 +169,7 @@ Create a group
  
 Add device to a group
 ```
-./xpumcli group -a 0 -g 1 -d 0
+./xpumcli group -a -g 1 -d 0
 Successfully add device [0] to group 1
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
@@ -205,39 +209,42 @@ Successfully remove the group
 ```
  
 ## Get and change the Intel XPU Manager settings
-Help message of agentset
+Help message of the "agentset" subcommand.
 ```
 ./xpumcli agentset
-usage: xpumcli agentset [-h] [-l] [-t <interval>]
-Get or change some XPU Manager settings
+Get or change some XPU Manager settings. 
+
+usage: xpumcli agentset [Options]
+  xpumcli agentset -l
+  xpumcli agentset -t 200
+  xpumcli agentset -m [metricsIds]
+
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -l, --list            Display all agent settings
-  -t <interval>, --time <interval>
-                        Set the time interval (in milliseconds) by which XPU Manager daemon retrieve raw gpu statistics. Valid values include 100,200,500,1000.
-  -m <metricsId> [<metricsId> ...], --metrics <metricsId> [<metricsId> ...]
-                        Metrics type to collect raw data, options:
-                            0. GPU Utilization (%), GPU active time of the elapsed time
-                            1. GPU Power (W)
-                            2. GPU Frequency (MHz)
-                            3. GPU Core Temperature (°C)
-                            4. GPU Memory Temperature (°C)
-                            5. GPU Memory Utilization (%)
-                            6. GPU Memory Read (kB/s)
-                            7. GPU Memory Write (kB/s)
-                            8. GPU Energy Consumed (J)
-                            9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
-                            10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
-                            11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
-                            12. Reset Count
-                            13. Programming Errors
-                            14. Driver Errors
-                            15. Cache Erros Correctable
-                            16. Cache Errors Uncorrectable
-                            17. Display Errors Correctable
-                            18. Display Errors Uncorrectable
+  -h,--help                   Print this help message and exit
+  -l,--list                   Display all agent settings
+  -t,--time                   Set the time interval (in milliseconds) by which XPU Manager daemon retrieve raw gpu statistics. Valid values include 100,200,500,1000.
 ```
+<!--
+  -m,--metrics                Metrics types to collect, options:
+                                0. GPU Utilization (%), GPU active time of the elapsed time
+                                1. GPU Power (W)
+                                2. GPU Frequency (MHz)
+                                3. GPU Core Temperature (°C)
+                                4. GPU Memory Temperature (°C)
+                                5. GPU Memory Utilization (%)
+                                6. GPU Memory Read (kB/s)
+                                7. GPU Memory Write (kB/s)
+                                8. GPU Energy Consumed (J)
+                                9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
+                                10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
+                                11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
+                                12. Reset Count
+                                13. Programming Errors
+                                14. Driver Errors
+                                15. Cache Erros Correctable
+                                16. Cache Errors Uncorrectable
+-->
  
 List the XPU Manager settings
 ```
@@ -258,23 +265,37 @@ Change the XPU Manager sampling period
 | Sampling Interval (ms) | 200                                                                     +
 +------------------------+-------------------------------------------------------------------------+
 ```
+<!--
+Change the XPU Manager sampling metrics typs
+```
+./xpumcli agentset -m 0,2,3,4,5,6,7,9,10,11
++------------------------+-------------------------------------------------------------------------+
+| Name                   | Value                                                                   +
++------------------------+-------------------------------------------------------------------------+
+| Collected Metrics      | 0,2,3,4,5,6,7,9,10,11                                                   +
++------------------------+-------------------------------------------------------------------------+
+```
+-->
 
 ## Get the aggregrated device statistics
-Help info for getting the GPU device statistics 
+Help info for getting the GPU device aggregrated statistics 
 ```
 ./xpumcli stats -h
-usage: xpumcli stats [-h] [-d <deviceId>] [-g <groupId>]
-List the GPU statistics since last execution of this command or XPU Manager service is started.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -d <deviceId>, --device <deviceId>
-                        The device ID to query
-  -g <groupId>, --group <groupId>
-                        The group ID to query
+List the GPU aggregrated statistics since last execution of this command or XPU Manager daemon is started.
+
+Usage: xpumcli stats [Options]
+  xpumcli stats
+  xpumcli stats -d [deviceId]
+  xpumcli stats -g [groupId]
+
+Options:
+  -h,--help                   Print this help message and exit
+  -d,--device                 The device ID to query
+  -g,--group                  The group ID to query
 ```
  
-List the GPU device statistics that are collected by XPU Manager
+List the GPU device aggregrated statistics that are collected by XPU Manager
 ```
 ./xpumcli stats -d 0
 +------------------------------+-------------------------------------------------------------------+
@@ -282,7 +303,7 @@ List the GPU device statistics that are collected by XPU Manager
 +------------------------------+-------------------------------------------------------------------+
 | Start Time                   | 2021-11-02 14:44:25.000                                           |
 | End Time                     | 2021-11-02 14:47:49.021                                           |
-| Elapsed Time (second)        | 204                                                               |
+| Elapsed Time (Second)        | 204                                                               |
 | Energy Consumed (J)          | 18264.05                                                          |
 | GPU Utilization (%)          | Tile 0: 0, Tile 1: 0                                              |
 | EU Array Active (%)          | Tile 0: 0, Tile 1: 0                                              |
@@ -294,8 +315,6 @@ List the GPU device statistics that are collected by XPU Manager
 | Driver Errors                | Tile 0: 0, Tile 1: 0                                              |
 | Cache Errors Correctable     | Tile 0: 0, Tile 1: 0                                              |
 | Cache Errors Uncorrectable   | Tile 0: 0, Tile 1: 0                                              |
-| Display Errors Correctable   | Tile 0: 0, Tile 1: 0                                              |
-| Display Errors Uncorrectable | Tile 0: 0, Tile 1: 0                                              |
 +------------------------------+-------------------------------------------------------------------+
 | GPU Power (W)                | avg: 88, min: 88, max: 90， current: 89                           |
 +------------------------------+-------------------------------------------------------------------+
@@ -308,26 +327,32 @@ List the GPU device statistics that are collected by XPU Manager
 | GPU Memory Temperature       | Tile 0: avg: 36, min: 36, max: 36, current: 36                    |
 | (Celsius Degree)             | Tile 1: avg: 33, min: 33, max: 34, current: 33                    |
 +------------------------------+-------------------------------------------------------------------+
+| GPU Memory Read (kB/s)       | Tile 0: avg: 100, min: 90, max: 240, current: 100                 |
+|                              | Tile 1: avg: 100, min: 90, max: 240, current: 100                 |
++------------------------------+-------------------------------------------------------------------+
+| GPU Memory Write (kB/s)      | Tile 0: avg: 100, min: 90, max: 240, current: 100                 |
+|                              | Tile 1: avg: 100, min: 90, max: 240, current: 100                 |
++------------------------------+-------------------------------------------------------------------+
 ```
  
 ## Get the device health status
 Help info of get GPU device component health status
 ```
 ./xpumcli health
-usage: xpumcli health [-h] [-l] [-d <deviceId>] [-g <groupId>] [-t <componentName> <thermalThreshold>] [-p <powerThreshold>]
+
 Get the GPU device component health status
 
+Usage: xpumcli health [Options]
+  xpumcli health -l
+  xpumcli health -d [deviceId] -t [componentName] [threshold]
+  xpumcli health -g [groupId] -t [componentName] [threshold]
+
 optional arguments:
-  -h, --help            show this help message and exit
-  -l, --list            Display health info for all devices
-  -d <deviceId>, --device <deviceId>
-                        The device ID to query
-  -g <groupId>, --group <groupId>
-                        The group ID to query
-  -t <componentName> <thermalThreshold>, --thermal <componetName> <thermalThreshold>
-                        Set temperature custom threshold for device component
-  -p <powerThreshold>, --power <powerThreshold>
-                        Set power custom threshold for device
+  -h,--help                   Print this help message and exit
+  -l,--list                   Display health info for all devices
+  -d,--device                 The device ID
+  -g,--group                  The group ID
+  -t,--threshold              Set custom threshold for device component
 ```
  
 Get the GPU device component health status. There are some build-in thresholds for the GPU telemetries. You may also set your custom threshold to help monitor the GPU component health status. 
@@ -387,51 +412,82 @@ Change the component custom temperature threshold
 ```
  
 # Dump the device statistics
-Help info of dumping the device average statistics in the specified time interval.
+Help info of the device statistics dump.
 ```
 ./xpumcli dump
-usage: xpumcli dump [-h] [-d <deviceId>] [-t <deviceTileId>] [-m <metricsId> [<metricsId> ...]] [-i <timeInterval>] [-n <dumpTimes>]
+
+Dump the device statistics
+
+Usage: xpumcli dump [Options]
+  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
+  
+  xpumcli dump --rawdata --start -d [deviceId] -t [deviceTileId] -m [metricsIds] 
+  xpumcli dump --rawdata --list
+  xpumcli dump --rawdata --stop [taskId]
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -d <deviceId>, --device <deviceId>
-                        The device id to query
-  -t <deviceTileId>, --tile <deviceTileId>
-                        The device tile ID to query
-  -m <metricsId> [<metricsId> ...], --metrics <metricsId> [<metricsId> ...]
-                        Metrics type to collect raw data, options:
-                            0. GPU Utilization (%), GPU active time of the elapsed time
-                            1. GPU Power (W)
-                            2. GPU Frequency (MHz)
-                            3. GPU Core Temperature (°C)
-                            4. GPU Memory Temperature (°C)
-                            5. GPU Memory Utilization (%)
-                            6. GPU Memory Read (kB/s)
-                            7. GPU Memory Write (kB/s)
-                            8. GPU Energy Consumed (J)
-                            9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
-                            10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
-                            11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
-                            12. Reset Count
-                            13. Programming Errors
-                            14. Driver Errors
-                            15. Cache Erros Correctable
-                            16. Cache Errors Uncorrectable
-                            17. Display Errors Correctable
-                            18. Display Errors Uncorrectable
-  -i <timeInterval>     Display the device data at seconds interval. Its default value is 1 second if not specified. 
-  -n <dumpTimes>        The times to dump the device data. The dumping will not be ended if not specified. 
+  -h,--help                   Print this help message and exit
+  -d,--device                 The device id to query
+  -t,--tile                   The device tile ID to query
+  -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
+                                0. GPU Utilization (%), GPU active time of the elapsed time, per tile
+                                1. GPU Power (W), per GPU
+                                2. GPU Frequency (MHz), per tile
+                                3. GPU Core Temperature (°C), per tile
+                                4. GPU Memory Temperature (°C), per tile
+                                5. GPU Memory Utilization (%), per tile
+                                6. GPU Memory Read (kB/s), per tile
+                                7. GPU Memory Write (kB/s), per tile
+                                8. GPU Energy Consumed (J), per tile
+                                9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile.
+                                10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile.
+                                    At least one thread is loaded, but the EU is stalled. Per tile.
+                                11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile.
+                                12. Reset Counter, per GPU.
+                                13. Programming Errors, per tile.
+                                14. Driver Errors, per tile.
+                                15. Cache Erros Correctable, per tile.
+                                16. Cache Errors Uncorrectable, per tile. 
+  
+  -i                          The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified. 
+  -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
+  
+  --rawdata                   Dump the required raw statistics to a file in background. 
+  --start                     Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.
+  --stop                      Stop one active dump task.
+  --list                      List all the active dump tasks. 
 ```
 
-Dump the devce statistics
+Dump the devce statistics to screen.
 ```
-./xpumcli -d 0 -t 0 -m 0,1,2 -i 1 -n 5
+./xpumcli dump -d 0 -t 0 -m 0,1,2 -i 1 -n 5
 Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
 2021-11-08 13:31:43.100, 00, 0, 000,    , 0300
 2021-11-08 13:31:44.100, 00, 0, 000,    , 0300
 2021-11-08 13:31:45.100, 00, 0, 046,    , 1100
 2021-11-08 13:31:46.100, 00, 0, 000,    , 0300
 2021-11-08 13:31:47.100, 00, 0, 000,    , 0300
+```
+
+Start to dump the devce raw statistics to the file.
+```
+xpumcli dump --rawdata --start -d 0 -t 0 -m 0,1,2 
+Task 0 is started.
+Dump file path: /opt/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
+```
+
+List all the active dump tasks.
+```
+xpumcli dump --rawdata --list
+Task 0 is running. 
+Task 1 is running.
+```
+
+Stop the dump task. 
+```
+xpumcli dump --rawdata --stop 0
+Task 0 is stopped. 
+Dump file path: /opt/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
 ```
 
 <!---

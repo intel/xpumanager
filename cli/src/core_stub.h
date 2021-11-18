@@ -31,24 +31,24 @@ class CoreStub {
 
     std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level);
     std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId);
-    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(int groupId, int level);
-    std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(int groupId);
+    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level);
+    std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId);
     std::string diagnosticResultEnumToString(DiagnosticsComponentInfo_Result result);
     std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type);
 
     std::unique_ptr<nlohmann::json> getAllHealth();
     std::unique_ptr<nlohmann::json> getHealth(int deviceId);
     std::unique_ptr<nlohmann::json> getHealth(int deviceId, HealthType type);
-    std::unique_ptr<nlohmann::json> getHealthByGroup(int groupId);
-    std::unique_ptr<nlohmann::json> getHealthByGroup(int groupId, HealthType type);
+    std::unique_ptr<nlohmann::json> getHealthByGroup(uint32_t groupId);
+    std::unique_ptr<nlohmann::json> getHealthByGroup(uint32_t groupId, HealthType type);
     std::unique_ptr<nlohmann::json> setHealthConfig(int deviceId, HealthConfigType cfgtype, int threshold);
-    std::unique_ptr<nlohmann::json> setHealthConfigByGroup(int groupId, HealthConfigType cfgtype, int threshold);
+    std::unique_ptr<nlohmann::json> setHealthConfigByGroup(uint32_t groupId, HealthConfigType cfgtype, int threshold);
     int getHealthConfig(int deviceId, HealthConfigType cfgtype);
     std::string healthStatusEnumToString(HealthStatusType status);
     std::string healthTypeEnumToString(HealthType type);
 
     std::unique_ptr<nlohmann::json> getStatistics(int deviceId);
-    std::unique_ptr<nlohmann::json> getStatisticsByGroup(int groupId);
+    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId);
     //config related interface
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2);
@@ -70,8 +70,9 @@ class CoreStub {
 
     std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath );
 
+    static std::string isotimestamp(uint64_t t);
+    
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
-    static std::string isotimestamp(uint64_t t);
 };
 } // end namespace xpum::cli

@@ -57,7 +57,6 @@ grpc::Status XpumCoreServiceImpl::getDeviceList(grpc::ServerContext* context, co
             device->set_uuid(devices[i].uuid);
             device->set_devicename(devices[i].deviceName);
             device->set_pciedeviceid(devices[i].PCIDeviceId);
-            device->set_subdeviceid(devices[i].SubDeviceId);
             device->set_pcibdfaddress(devices[i].PCIBDFAddress);
             device->set_vendorname(devices[i].VendorName);
         }
@@ -79,7 +78,13 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
             propRpc->set_value(prop.value);
         }
     } else {
-        response->set_errormsg("Error");
+        switch(res){
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("Device not found");
+                break;
+            default:
+                response->set_errormsg("Error");
+        }
     }
     return grpc::Status::OK;
 }
@@ -140,6 +145,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_id(request->id());
     } else if(res == XPUM_RESULT_GROUP_NOT_FOUND) {
         response->set_errormsg("group not found");
+    } else if(res == XPUM_GROUP_CHANGE_NOT_ALLOWED) {
+        response->set_errormsg("operation not allowed");
     } else {
         response->set_errormsg("Error");
     }
@@ -168,6 +175,10 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_errormsg("group not found");
     } else if(res == XPUM_RESULT_DEVICE_NOT_FOUND) {
         response->set_errormsg("device not found");
+    } else if(res == XPUM_GROUP_CHANGE_NOT_ALLOWED) {
+        response->set_errormsg("operation not allowed");
+    } else if(res == XPUM_GROUP_DEVICE_DUPLICATED) {
+        response->set_errormsg("device was already in the group");
     } else {
         response->set_errormsg("Error");
     }
@@ -197,6 +208,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_errormsg("group not found");
     } else if(res == XPUM_RESULT_DEVICE_NOT_FOUND) {
         response->set_errormsg("device not found in group");
+    } else if(res == XPUM_GROUP_CHANGE_NOT_ALLOWED) {
+        response->set_errormsg("operation not allowed");
     } else {
         response->set_errormsg("Error");
     }
@@ -519,12 +532,13 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getStatistics(::grpc::ServerContext* context, const ::DeviceId* request, ::XpumGetStatsResponse* response) {
-    xpum_device_id_t deviceId = request->id();
+::grpc::Status XpumCoreServiceImpl::getStatistics(::grpc::ServerContext* context, const ::XpumGetStatsRequest* request, ::XpumGetStatsResponse* response) {
+    xpum_device_id_t deviceId = request->deviceid();
+    uint64_t sessionId = request->sessionid();
     int count = 5;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
-    xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end);
+    xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, sessionId);
     if (res != XPUM_OK || count < 0) {
         response->set_errormsg("Error");
         return grpc::Status::OK;
@@ -547,20 +561,28 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             deviceStatsData->set_min(data.min);
             deviceStatsData->set_avg(data.avg);
             deviceStatsData->set_max(data.max);
+            deviceStatsData->set_accumulated(data.accumulated);
         }
     }
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getStatisticsByGroup(::grpc::ServerContext* context, const ::GroupId* request, ::XpumGetStatsResponse* response) {
-    xpum_device_id_t groupId = request->id();
+::grpc::Status XpumCoreServiceImpl::getStatisticsByGroup(::grpc::ServerContext* context, const ::XpumGetStatsByGroupRequest* request, ::XpumGetStatsResponse* response) {
+    xpum_device_id_t groupId = request->groupid();
+    uint64_t sessionId = request->sessionid();
     int count = 5 * XPUM_MAX_NUM_DEVICES;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
-    xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end);
-    if (res != XPUM_OK || count < 0) {
-        response->set_errormsg("Error");
-        return grpc::Status::OK;
+    xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end, sessionId);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("Group not found");
+                return grpc::Status::OK;
+            default:
+                response->set_errormsg("Generic error");
+                return grpc::Status::OK;
+        }
     }
     response->set_begin(begin);
     response->set_end(end);
@@ -580,6 +602,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             deviceStatsData->set_min(data.min);
             deviceStatsData->set_avg(data.avg);
             deviceStatsData->set_max(data.max);
+            deviceStatsData->set_accumulated(data.accumulated);
         }
     }
     return grpc::Status::OK;
@@ -601,7 +624,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     if (res == XPUM_OK) {
         response->mutable_id()->set_id(request->id().id());
         response->mutable_type()->set_value(request->type().value());
-        response->mutable_result()->set_value(res);
+        response->mutable_result()->set_value(result.result);
         response->set_desc("");
         response->set_version("");
     } else {
@@ -938,6 +961,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t *p_para) {
     uint32_t subdevice_Id = request->tileid();
     bool istiledata = request->istiledata();
     int tileCount = -1;
+    uint32_t tileTotalCount = 0;
 
     res = xpumGetDeviceProperties( deviceId, &properties);
     if (res != XPUM_OK) {
@@ -945,20 +969,26 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t *p_para) {
         return grpc::Status::OK;
     }
 
+    for (int i = 0; i < properties.propertyLen; i++) {
+        auto &prop = properties.properties[i];
+        if (prop.name != XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES) {
+            continue;
+        }
+        tileTotalCount = atoi(prop.value);
+        break;
+    }
+
     if (istiledata) {
-        tileList.push_back(subdevice_Id);
-        tileCount = 1;
+        if(subdevice_Id >= tileTotalCount) {
+            tileCount = 0;
+        } else {
+            tileList.push_back(subdevice_Id);
+            tileCount = 1;
+        }
     } else {
-        for (int i = 0; i < properties.propertyLen; i++) {
-            auto &prop = properties.properties[i];
-            if (prop.name != XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES) {
-                continue;
-            }
-            tileCount = atoi(prop.value);
-            for(int i = 0; i < tileCount; i++) {
-                tileList.push_back(i); 
-            }
-            break;
+        for(uint32_t i = 0; i < tileTotalCount; i++) {
+            tileList.push_back(i); 
+            tileCount = tileTotalCount;
         }
     }
 
@@ -1010,7 +1040,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t *p_para) {
             }
         }
         for (uint32_t i = 0; i < standbyCount; i++) {
-            if (standbyArray[i].type == XPUM_GLOBAL && standbyArray[i].on_subdevice == true && standbyArray[i].subdevice_Id == tileId ) {
+            if (standbyArray[i].type == XPUM_GLOBAL /*&& standbyArray[i].on_subdevice == true */&& standbyArray[i].subdevice_Id == tileId ) {
                 if (standbyArray[i].mode == XPUM_DEFAULT) {
                     tileData->set_standby(STANDBY_DEFAULT);
                 } else {
@@ -1020,7 +1050,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t *p_para) {
             }
         }
         for (uint32_t i = 0; i < schedulerCount; i++) {
-            if (schedulerArray[i].on_subdevice == true && schedulerArray[i].subdevice_Id == tileId ) {
+            if (/*schedulerArray[i].on_subdevice == true && */schedulerArray[i].subdevice_Id == tileId ) {
                 if (schedulerArray[i].mode == XPUM_TIMEOUT) {
                     tileData->set_scheduler(SCHEDULER_TIMEOUT);
                 } else if (schedulerArray[i].mode == XPUM_TIMESLICE) {

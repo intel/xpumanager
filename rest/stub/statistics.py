@@ -2,12 +2,42 @@ from google.protobuf import empty_pb2
 from .grpc_stub import stub
 import core_pb2
 import datetime
+from enum import Enum
 
-from .exporter import XpumStatsType
+XpumStatsType = Enum("xpum_stats_type_t", (
+    "XPUM_STATS_GPU_UTILIZATION",
+    "XPUM_STATS_EU_ACTIVE",
+    "XPUM_STATS_EU_STALL",
+    "XPUM_STATS_EU_IDLE",
+    "XPUM_STATS_POWER",
+    "XPUM_STATS_ENERGY",
+    "XPUM_STATS_GPU_FREQUENCY",
+    "XPUM_STATS_GPU_CORE_TEMPERATURE",
+    "XPUM_STATS_MEMORY_USED",
+    "XPUM_STATS_MEMORY_UTILIZATION",
+    "XPUM_STATS_MEMORY_BANDWIDTH",
+    "XPUM_STATS_MEMORY_READ",
+    "XPUM_STATS_MEMORY_WRITE",
+    "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION",
+    "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION",
+    "XPUM_STATS_RAS_ERROR_CAT_RESET",
+    "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS",
+    "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS",
+    "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE",
+    "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE",
+    "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE",
+    "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE",
+    "XPUM_STATS_GPU_REQUEST_FREQUENCY",
+    "XPUM_STATS_MEMORY_TEMPERATURE",
+    "XPUM_STATS_FREQUENCY_THROTTLE"
+), start=0)
 
 
-def getStatistics(device_id):
-    resp = stub.getStatistics(core_pb2.DeviceId(id=device_id))
+def getStatistics(device_id, session_id=0, get_accumulated=False):
+    resp = stub.getStatistics(core_pb2.XpumGetStatsRequest(deviceId=device_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     data = dict()
@@ -34,6 +64,8 @@ def getStatistics(device_id):
                 tmp["avg"] = stats_data.avg
                 tmp["min"] = stats_data.min
                 tmp["max"] = stats_data.max
+            elif get_accumulated:
+                tmp["acc"] = stats_data.accumulated
             dataList.append(tmp)
         if stats_info.isTileData:
             tmp = dict(tile_id=stats_info.tileId, data_list=dataList)
@@ -46,8 +78,8 @@ def getStatistics(device_id):
     return 0, "OK", data
 
 
-def getStatisticsByGroup(group_id):
-    resp = stub.getStatisticsByGroup(core_pb2.GroupId(id=group_id))
+def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
+    resp = stub.getStatisticsByGroup(core_pb2.XpumGetStatsByGroupRequest(groupId=group_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
 
@@ -71,6 +103,8 @@ def getStatisticsByGroup(group_id):
                 tmp["min"] = d.min
                 tmp["avg"] = d.avg
                 tmp["max"] = d.max
+            elif get_accumulated:
+                tmp["acc"] = d.accumulated
             dataList.append(tmp)
         if deviceStats.isTileData:
             deviceMap[deviceId]["tile_level"].append({

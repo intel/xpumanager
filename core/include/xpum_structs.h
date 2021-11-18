@@ -74,10 +74,12 @@ typedef enum xpum_result_enum {
     XPUM_OK = 0,           ///< Ok
     XPUM_GENERIC_ERROR,    ///< Function return with unknown errors
     XPUM_BUFFER_TOO_SMALL, ///< The buffer pass to function is too small
-    XPUM_RESULT_DEVICE_NOT_FOUND,
+    XPUM_RESULT_DEVICE_NOT_FOUND,   ///< Device not found
     XPUM_RESULT_GROUP_NOT_FOUND,
     XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT,
-    XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE
+    XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE,
+    XPUM_GROUP_DEVICE_DUPLICATED,
+    XPUM_GROUP_CHANGE_NOT_ALLOWED
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -110,7 +112,6 @@ struct xpum_device_basic_info {
     char uuid[XPUM_MAX_STR_LENGTH];          ///< Device uuid
     char deviceName[XPUM_MAX_STR_LENGTH];    ///< Device name
     char PCIDeviceId[XPUM_MAX_STR_LENGTH];   ///< Device PCI device id
-    char SubDeviceId[XPUM_MAX_STR_LENGTH];   ///< Device PCI sub device id
     char PCIBDFAddress[XPUM_MAX_STR_LENGTH]; ///< Device PCI bdf address
     char VendorName[XPUM_MAX_STR_LENGTH];    ///< Device vendor name
 };
@@ -124,7 +125,6 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_VENDOR_NAME,                    ///< Vendor name
     XPUM_DEVICE_PROPERTY_UUID,                           ///< Device uuid
     XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID,                  ///< The PCI device id of device
-    XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID,              ///< The PCI sub device id of device
     XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID,                  ///< The PCI vendor id of device
     XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS,                ///< The PCI bdf address of device
     XPUM_DEVICE_PROPERTY_PCI_SLOT,                       ///< PCI slot of device
@@ -357,16 +357,15 @@ typedef enum xpum_agent_config_enum {
  */
 typedef enum xpum_stats_type_enum {
     XPUM_STATS_GPU_UTILIZATION = 0,                  ///< GPU Utilization
-    XPUM_STATS_OCCUPATION,                           ///< GPU Occupation
-    XPUM_STATS_ISSUE_EFFICIENCY,                     ///< Issue Efficiency
-    XPUM_STATS_EXECUTION_EFFICIENCY,                 ///< Execution Efficiency
-    XPUM_STATS_NON_OCCUPATION,                       ///< Non Occupation
+    XPUM_STATS_EU_ACTIVE,                            ///< GPU EU Array Active
+    XPUM_STATS_EU_STALL,                             ///< GPU EU Array Stall
+    XPUM_STATS_EU_IDLE,                              ///< GPU EU Array Idle
     XPUM_STATS_POWER,                                ///< Power
     XPUM_STATS_ENERGY,                               ///< Energy
     XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Actual Frequency
-    XPUM_STATS_GPU_TEMPERATURE,                      ///< Gpu Temeperature
+    XPUM_STATS_GPU_CORE_TEMPERATURE,                 ///< Gpu Temeperature
     XPUM_STATS_MEMORY_USED,                          ///< Memory Used
-    XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization
+    XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization. Percent utilization is calculated by the equation: physical size - free size / physical size.
     XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth
     XPUM_STATS_MEMORY_READ,                          ///< Memory Read
     XPUM_STATS_MEMORY_WRITE,                         ///< Memory Write
@@ -384,6 +383,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     XPUM_STATS_GPU_REQUEST_FREQUENCY,                ///< Gpu Request Frequency
     XPUM_STATS_MEMORY_TEMPERATURE,                   ///< Memory Temeperature
+    XPUM_STATS_FREQUENCY_THROTTLE,                   ///< Frequency Throttle
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -395,6 +395,7 @@ struct xpum_device_stats_data_t {
     xpum_stats_type_t metricsType; ///< Metric type
     bool isCounter;                ///< If this metric is a counter
     uint64_t value;                ///< The value of this metric type
+    uint64_t accumulated;          ///< The accumulated value of this metric type, only valid if isCounter is true
     uint64_t min;                  ///< The min value since last call, only valid if isCounter is false
     uint64_t avg;                  ///< The average value since last call, only valid if isCounter is false
     uint64_t max;                  ///< The max value since last call, only valid if isCounter is false
@@ -508,10 +509,10 @@ enum xpum_frequency_type_t {
 };
 
 enum xpum_scheduler_mode_t {
-    XPUM_TIMEOUT = 1 << 0,
-    XPUM_TIMESLICE = 1 << 1,
-    XPUM_EXCLUSIVE = 1 << 2,
-    XPUM_COMPUTE_UNIT_DEBUG = 1 << 3,
+    XPUM_TIMEOUT = 0,
+    XPUM_TIMESLICE = 1,
+    XPUM_EXCLUSIVE = 2,
+    XPUM_COMPUTE_UNIT_DEBUG = 3,
     XPUM_MODE_FORCE_UINT32 = 0x7fffffff
 };
 

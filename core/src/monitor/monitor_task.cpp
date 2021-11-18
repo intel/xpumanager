@@ -3,12 +3,23 @@
 #include <chrono>
 #include <mutex>
 #include <thread>
+#include <set>
 
 #include "control/device_manager.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/utility.h"
 
 namespace xpum {
+
+struct MonitorTaskLogStatus {
+    bool reported;
+    MonitorTaskLogStatus() {
+        reported = false;
+    }
+};
+
+std::mutex monitor_task_log_status_mutex;
+std::map<std::shared_ptr<Device>, std::map<DeviceCapability, MonitorTaskLogStatus>> monitor_task_log_status;
 
 MonitorTask::MonitorTask(
     DeviceCapability capability, int freq,
@@ -70,8 +81,9 @@ void MonitorTask::start() {
         auto datas = std::make_shared<std::map<std::string, std::shared_ptr<MeasurementData>>>();
         
         for (auto& p_device : devices) {
-            auto method = Device::getDeviceMethod(p_this->capability, p_device.get());
-            method([p_device, this_weak_ptr, datas](
+            DeviceCapability capability = p_this->capability;
+            auto method = Device::getDeviceMethod(capability, p_device.get());
+            method([p_device, this_weak_ptr, datas, capability](
                        std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                 auto p_this = this_weak_ptr.lock();
                 if (p_this == nullptr) {
@@ -80,13 +92,50 @@ void MonitorTask::start() {
                 if (e == nullptr && ret != nullptr) {
                     std::string id = p_device->getId();
                     (*datas)[id] = std::static_pointer_cast<MeasurementData>(ret);
+                    monitor_task_log_status_mutex.lock();
+                    monitor_task_log_status[p_device][capability].reported = false;
+                    monitor_task_log_status_mutex.unlock();
+                } else if (e != nullptr) {
+                    monitor_task_log_status_mutex.lock();
+                    if (!monitor_task_log_status[p_device][capability].reported) {
+                        XPUM_LOG_WARN(e->what());
+                        monitor_task_log_status[p_device][capability].reported = true;
+                    }
+                    monitor_task_log_status_mutex.unlock();
                 }
             });
         }
 
+        std::unique_lock<std::mutex> lock(p_this->mutex);
+        bool hasSubdeviceAdditionalCurrentData = false;
+        std::set<MeasurementType> subdeviceAdditionalCurrentDataTypes;
+        // deviceId, subdeviceId, addtionalType, addtionalData
+        std::map<std::string, std::map<uint32_t, std::map<MeasurementType, uint64_t>>> subdeviceAdditionalCurrentDatasAll;
+        for (auto& data : (*datas)) {
+            if (data.second->getSubdeviceAdditionalCurrentDataTypeSize() > 0) {
+                hasSubdeviceAdditionalCurrentData = true;
+                subdeviceAdditionalCurrentDataTypes = data.second->getSubdeviceAdditionalCurrentDataTypes();
+                subdeviceAdditionalCurrentDatasAll[data.first] = data.second->getSubdeviceAdditionalCurrentDatas();
+                data.second->clearSubdeviceAdditionalCurrentDataTypes();
+                data.second->clearSubdeviceAdditionalCurrentData();
+            }
+        }
         MeasurementType measurmentType = Utility::measurementTypeFromCapability(p_this->capability);
         XPUM_LOG_TRACE("Monitor passes data {} to datalogic", p_this->capability);
         p_this->p_data_logic->storeMeasurementData(measurmentType, now, datas);
+        if (hasSubdeviceAdditionalCurrentData) {
+            for(auto& type : subdeviceAdditionalCurrentDataTypes) {
+                for (auto & data : (*datas)) {
+                    auto mData = std::make_shared<MeasurementData>();
+                    for (auto & sData : subdeviceAdditionalCurrentDatasAll[data.first]) {
+                        mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
+                    }
+                    (*datas)[data.first] = mData;
+                }
+                XPUM_LOG_TRACE("Monitor passes data {} to datalogic", p_this->capability);
+                p_this->p_data_logic->storeMeasurementData(type, now, datas);
+            }
+        }
     });
 
     XPUM_LOG_TRACE("Monitor task started for {}", this->capability);

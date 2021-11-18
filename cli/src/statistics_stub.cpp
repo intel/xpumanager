@@ -12,22 +12,20 @@ static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
     switch (metricsType) {
         case XPUM_STATS_GPU_UTILIZATION:
             return "XPUM_STATS_GPU_UTILIZATION";
-        case XPUM_STATS_OCCUPATION:
-            return "XPUM_STATS_OCCUPATION";
-        case XPUM_STATS_ISSUE_EFFICIENCY:
-            return "XPUM_STATS_ISSUE_EFFICIENCY";
-        case XPUM_STATS_EXECUTION_EFFICIENCY:
-            return "XPUM_STATS_EXECUTION_EFFICIENCY";
-        case XPUM_STATS_NON_OCCUPATION:
-            return "XPUM_STATS_NON_OCCUPATION";
+        case XPUM_STATS_EU_ACTIVE:
+            return "XPUM_STATS_EU_ACTIVE";
+        case XPUM_STATS_EU_STALL:
+            return "XPUM_STATS_EU_STALL";
+        case XPUM_STATS_EU_IDLE:
+            return "XPUM_STATS_EU_IDLE";
         case XPUM_STATS_POWER:
             return "XPUM_STATS_POWER";
         case XPUM_STATS_ENERGY:
             return "XPUM_STATS_ENERGY";
         case XPUM_STATS_GPU_FREQUENCY:
             return "XPUM_STATS_GPU_FREQUENCY";
-        case XPUM_STATS_GPU_TEMPERATURE:
-            return "XPUM_STATS_GPU_TEMPERATURE";
+        case XPUM_STATS_GPU_CORE_TEMPERATURE:
+            return "XPUM_STATS_GPU_CORE_TEMPERATURE";
         case XPUM_STATS_MEMORY_USED:
             return "XPUM_STATS_MEMORY_USED";
         case XPUM_STATS_MEMORY_UTILIZATION:
@@ -64,6 +62,10 @@ static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
             return "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE";
         case XPUM_STATS_GPU_REQUEST_FREQUENCY:
             return "XPUM_STATS_GPU_REQUEST_FREQUENCY";
+        case XPUM_STATS_MEMORY_TEMPERATURE:
+            return "XPUM_STATS_MEMORY_TEMPERATURE";
+        case XPUM_STATS_FREQUENCY_THROTTLE:
+            return "XPUM_STATS_FREQUENCY_THROTTLE";
         default:
             break;
     }
@@ -77,16 +79,17 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
 
     grpc::ClientContext context;
     XpumGetStatsResponse response;
-    DeviceId grpcDeviceId;
-    grpcDeviceId.set_id(deviceId);
-    grpc::Status status = stub->getStatistics(&context, grpcDeviceId, &response);
+    XpumGetStatsRequest request;
+    request.set_deviceid(deviceId);
+    request.set_sessionid(0);
+    grpc::Status status = stub->getStatistics(&context, request, &response);
 
     if (!status.ok()) {
-        (*json)["Error"] = status.error_message();
+        (*json)["error"] = status.error_message();
     }
 
     if (response.errormsg().length() != 0) {
-        (*json)["Error"] = response.errormsg();
+        (*json)["error"] = response.errormsg();
         return json;
     }
 
@@ -132,23 +135,24 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
+std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
     grpc::ClientContext context;
     XpumGetStatsResponse response;
-    GroupId grpcGroupId;
-    grpcGroupId.set_id(groupId);
-    grpc::Status status = stub->getStatisticsByGroup(&context, grpcGroupId, &response);
+    XpumGetStatsByGroupRequest request;
+    request.set_groupid(groupId);
+    request.set_sessionid(0);
+    grpc::Status status = stub->getStatisticsByGroup(&context, request, &response);
 
     if (!status.ok()) {
-        (*json)["Error"] = status.error_message();
+        (*json)["error"] = status.error_message();
     }
 
     if (response.errormsg().length() != 0) {
-        (*json)["Error"] = response.errormsg();
+        (*json)["error"] = response.errormsg();
         return json;
     }
 
@@ -175,7 +179,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(int groupId) {
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
             tmp["value"] = stats_data.value();
-            if (stats_data.iscounter()) {
+            if (!stats_data.iscounter()) {
                 tmp["avg"] = stats_data.avg();
                 tmp["min"] = stats_data.min();
                 tmp["max"] = stats_data.max();

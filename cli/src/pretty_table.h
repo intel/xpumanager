@@ -20,6 +20,8 @@ class Table {
 
     void add_row(std::vector<std::string> row);
 
+    void add_augmented_row(std::vector<std::vector<std::string>> row);
+
     void show();
 
    private:

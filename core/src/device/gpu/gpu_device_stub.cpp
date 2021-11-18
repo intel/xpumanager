@@ -1,10 +1,10 @@
 #include "device/gpu/gpu_device_stub.h"
 
 #include <algorithm>
+#include <deque>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <deque>
 #include <thread>
 
 #include "device/frequency.h"
@@ -72,7 +72,7 @@ void GPUDeviceStub::init() {
 }
 
 void GPUDeviceStub::checkInitDependency() {
-    XPUM_LOG_INFO("GPUDeviceStub::checkInitDependancy start");
+    XPUM_LOG_INFO("GPUDeviceStub::checkInitDependency start");
     std::string details;
 
     std::vector<std::string> checkEnvVaribles = {"ZES_ENABLE_SYSMAN", "ZET_ENABLE_METRICS"};
@@ -138,7 +138,7 @@ void GPUDeviceStub::checkInitDependency() {
         XPUM_LOG_ERROR("Permission check failed.");
     }
 
-    XPUM_LOG_INFO("GPUDeviceStub::checkXPUMInitDependancy done");
+    XPUM_LOG_INFO("GPUDeviceStub::checkInitDependency done");
 }
 
 bool GPUDeviceStub::isDevEntry(const std::string& entryName) {
@@ -449,26 +449,6 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
 
     has_exception = false;
     try {
-        toGetEnergy(device);
-    } catch (BaseException& e) {
-        has_exception = true;
-    }
-    if (!has_exception) {
-        capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-    }
-
-    has_exception = false;
-    try {
-        toGetEnergy(device);
-    } catch (BaseException& e) {
-        has_exception = true;
-    }
-    if (!has_exception) {
-        capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-    }
-
-    has_exception = false;
-    try {
         toGetRasError(device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
     } catch (BaseException& e) {
         has_exception = true;
@@ -536,47 +516,27 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
     }
+
+    has_exception = false;
+    try {
+        toGetFrequencyThrottle(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
+    }
 }
 
-void GPUDeviceStub::addOccupationEfficiencyCapabilities(zes_device_handle_t device, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
+void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
     bool has_exception = false;
     try {
-        toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_OCCUPATION);
+        toGetEuActiveStallIdle(device, driver, MeasurementType::METRIC_EU_ACTIVE);
     } catch (BaseException& e) {
         has_exception = true;
     }
     if (!has_exception) {
-        capabilities.push_back(DeviceCapability::METRIC_OCCUPATION);
-    }
-
-    has_exception = false;
-    try {
-        toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_ISSUE_EFFICIENCY);
-    } catch (BaseException& e) {
-        has_exception = true;
-    }
-    if (!has_exception) {
-        capabilities.push_back(DeviceCapability::METRIC_ISSUE_EFFICIENCY);
-    }
-
-    has_exception = false;
-    try {
-        toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_EXECUTION_EFFICIENCY);
-    } catch (BaseException& e) {
-        has_exception = true;
-    }
-    if (!has_exception) {
-        capabilities.push_back(DeviceCapability::METRIC_EXECUTION_EFFICIENCY);
-    }
-
-    has_exception = false;
-    try {
-        toGetOccupationEfficiency(device, driver, MeasurementType::METRIC_NON_OCCUPATION);
-    } catch (BaseException& e) {
-        has_exception = true;
-    }
-    if (!has_exception) {
-        capabilities.push_back(DeviceCapability::METRIC_NON_OCCUPATION);
+        capabilities.push_back(DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE);
     }
 }
 
@@ -584,14 +544,14 @@ void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, std::vecto
     ze_result_t res;
     uint32_t engine_grp_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr);
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_engine_handle_t> engines(engine_grp_count);
-        res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& engine : engines) {
                 zes_engine_properties_t props;
-                res = zesEngineGetProperties(engine, &props);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     switch (props.type) {
                         case ZES_ENGINE_GROUP_COMPUTE_ALL:
@@ -631,7 +591,8 @@ void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, std::vecto
 void addPCIeProperties(ze_device_handle_t& device, std::shared_ptr<GPUDevice> p_gpu) {
     using namespace std;
     zes_pci_properties_t data;
-    auto res = zesDevicePciGetProperties(device, &data);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &data));
     if (res == ZE_RESULT_SUCCESS) {
         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCIE_GENERATION, std::to_string(data.maxSpeed.gen)));
         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH, std::to_string(data.maxSpeed.width)));
@@ -659,11 +620,11 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
             zes_device_handle_t zes_device = (zes_device_handle_t)device;
             zes_device_properties_t props = {};
             props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-            zesDeviceGetProperties(zes_device, &props);
+            XPUM_ZE_HANDLE_LOCK(zes_device, zesDeviceGetProperties(zes_device, &props));
             if (props.core.type == ZE_DEVICE_TYPE_GPU) {
                 addCapabilities(device, capabilities);
                 addEgnineCapabilities(device, capabilities);
-                addOccupationEfficiencyCapabilities(device, p_driver, capabilities);
+                addEuActiveStallIdleCapabilities(device, p_driver, capabilities);
                 auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_DEVICE_TYPE, std::string("GPU")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));
@@ -682,7 +643,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES, std::to_string(props.core.numSlices)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU, std::to_string(props.core.numThreadsPerEU)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH, std::to_string(props.core.physicalEUSimdWidth)));
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_SUB_DEVICE_ID, to_hex_string(props.core.subdeviceId)));
                 // p_gpu->addProperty(Property(DeviceProperty::TIMER_RESOLUTION,std::to_string(props.core.timerResolution)));
                 // p_gpu->addProperty(Property(DeviceProperty::TIMESTAMP_VALID_BITS,std::to_string(props.core.timestampValidBits)));
                 auto& uuidBuf = props.core.uuid.id;
@@ -721,7 +681,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                         uint64_t mem_module_physical_size = 0;
                         zes_mem_properties_t props;
                         props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                        XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetProperties(mem, &props));
                         if (res == ZE_RESULT_SUCCESS) {
                             mem_module_physical_size = props.physicalSize;
                             int32_t mem_bus_width = props.busWidth;
@@ -732,7 +692,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
                         zes_mem_state_t sysman_memory_state = {};
                         sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                        XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetState(mem, &sysman_memory_state));
                         if (res == ZE_RESULT_SUCCESS) {
                             if (props.physicalSize == 0) {
                                 mem_module_physical_size = sysman_memory_state.size;
@@ -841,8 +801,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
     if (device == nullptr) {
         throw BaseException("toGetPower error");
     }
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     uint32_t power_domain_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
@@ -861,16 +822,28 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
                     if (res == ZE_RESULT_SUCCESS && (snap2.timestamp - snap1.timestamp) != 0) {
                         uint64_t data = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
-                        dataAcquired = true;
+                        data_acquired = true;
+                    } else {
+                        exception_msgs["zesPowerGetEnergyCounter"] = res;
                     }
+                } else {
+                    exception_msgs["zesPowerGetEnergyCounter"] = res;
                 }
+            } else {
+                exception_msgs["zesPowerGetProperties"] = res;
             }
         }
+    } else {
+        throw BaseException("toGetPower error caused by zesDeviceEnumPowerDomains");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetPower error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetPower error caused by " + content);
     }
 }
 
@@ -885,8 +858,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_han
     if (device == nullptr) {
         throw BaseException("toGetEnergy");
     }
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     uint32_t power_domain_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
@@ -901,15 +875,25 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_han
                 XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &counter));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, counter.energy * 1.0 / 1000) : ret->setCurrent(counter.energy * 1.0 / 1000);
-                    dataAcquired = true;
+                    data_acquired = true;
+                } else {
+                    exception_msgs["zesPowerGetEnergyCounter"] = res;
                 }
+            } else {
+                exception_msgs["zesPowerGetProperties"] = res;
             }
         }
+    } else {
+        throw BaseException("toGetEnergy error caused by zesDeviceEnumPowerDomains");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetEnergy error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetEnergy error caused by " + content);
     }
 }
 
@@ -924,8 +908,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
     if (device == nullptr) {
         throw BaseException("toGetActuralFrequency error");
     }
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     uint32_t freq_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
@@ -937,18 +922,86 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
             XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_freq_state_t freq_state;
-                XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetState(ph_freq, &freq_state));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.actual) : ret->setCurrent(freq_state.actual);
-                    dataAcquired = true;
+                    data_acquired = true;
+                } else {
+                    exception_msgs["zesFrequencyGetState"] = res;
                 }
+            } else {
+                exception_msgs["zesFrequencyGetProperties"] = res;
             }
         }
+    } else {
+        throw BaseException("toGetActuralFrequency error caused by zesDeviceEnumFrequencyDomains");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetActuralFrequency error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetActuralFrequency error caused by " + content);
+    }
+}
+
+void GPUDeviceStub::getFrequencyThrottle(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetFrequencyThrottle, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottle(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetFrequencyThrottle error");
+    }
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
+    uint32_t freq_count = 0;
+    int sampling_period = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 0.8;
+    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
+    std::vector<zes_freq_handle_t> freq_handles(freq_count);
+    if (res == ZE_RESULT_SUCCESS) {
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
+        for (auto& ph_freq : freq_handles) {
+            zes_freq_properties_t props;
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &props));
+            if (res == ZE_RESULT_SUCCESS) {
+                zes_freq_throttle_time_t freq_throttle_1, freq_throttle_2;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle_1));
+                if (res == ZE_RESULT_SUCCESS) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle_2));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        uint64_t data = (freq_throttle_2.throttleTime - freq_throttle_1.throttleTime) / (freq_throttle_2.timestamp - freq_throttle_1.timestamp);
+                        props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
+                        data_acquired = true;
+                    } else {
+                        exception_msgs["zesFrequencyGetThrottleTime"] = res;
+                    }
+                } else {
+                    exception_msgs["zesFrequencyGetThrottleTime"] = res;
+                }
+            } else {
+                exception_msgs["zesFrequencyGetProperties"] = res;
+            }
+        }
+    } else {
+        throw BaseException("toGetFrequencyThrottle error caused by zesDeviceEnumFrequencyDomains");
+    }
+    if (data_acquired) {
+        return ret;
+    } else {
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetFrequencyThrottle error caused by " + content);
     }
 }
 
@@ -963,8 +1016,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_
     if (device == nullptr) {
         throw BaseException("toGetRequestFrequency error");
     }
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     uint32_t freq_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
@@ -976,18 +1030,28 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_
             XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_freq_state_t freq_state;
-                XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetState(ph_freq, &freq_state));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.request) : ret->setCurrent(freq_state.request);
-                    dataAcquired = true;
+                    data_acquired = true;
+                } else {
+                    exception_msgs["zesFrequencyGetState"] = res;
                 }
+            } else {
+                exception_msgs["zesFrequencyGetProperties"] = res;
             }
         }
+    } else {
+        throw BaseException("toGetRequestFrequency error caused by zesDeviceEnumFrequencyDomains");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetRequestFrequency error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetFrequencyThrottle error caused by " + content);
     }
 }
 
@@ -1002,70 +1066,77 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
     if (device == nullptr) {
         throw BaseException("toGetTemperature error");
     }
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     uint32_t temp_sensor_count = 0;
-    bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
-    if (res != ZE_RESULT_SUCCESS || temp_sensor_count == 0) {
-        throw BaseException("toGetTemperature error");
+    if (temp_sensor_count == 0) {
+        throw BaseException("No temperature sensor detected");
     }
     std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
     if (res == ZE_RESULT_SUCCESS) {
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
-        for (auto& temp : temp_sensors) {
-            zes_temp_properties_t props;
-            XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetProperties(temp, &props));
-            /*
-            if (res == ZE_RESULT_SUCCESS && props.type == ZES_TEMP_SENSORS_GLOBAL) {
-                double temp_val = 0;
-                res = zesTemperatureGetState(temp, &temp_val);
+        if (res == ZE_RESULT_SUCCESS) {
+            for (auto& temp : temp_sensors) {
+                zes_temp_properties_t props;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetProperties(temp, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    ret->setCurrent(temp_val);
-                    dataAcquired = true;
+                    switch (props.type) {
+                        case ZES_TEMP_SENSORS_GPU:
+                            if (type == props.type) {
+                                double temp_val = 0;
+                                XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetState(temp, &temp_val));
+                                if (res == ZE_RESULT_SUCCESS) {
+                                    if (props.onSubdevice) {
+                                        ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                                    } else {
+                                        ret->setCurrent(temp_val);
+                                    }
+                                    data_acquired = true;
+                                } else {
+                                    exception_msgs["zesTemperatureGetState"] = res;
+                                }
+                            }
+                            break;
+                        case ZES_TEMP_SENSORS_MEMORY:
+                            if (type == props.type) {
+                                double temp_val = 0;
+                                XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetState(temp, &temp_val));
+                                if (res == ZE_RESULT_SUCCESS) {
+                                    if (props.onSubdevice) {
+                                        ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                                    } else {
+                                        ret->setCurrent(temp_val);
+                                    }
+                                    data_acquired = true;
+                                } else {
+                                    exception_msgs["zesTemperatureGetState"] = res;
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                } else {
+                    exception_msgs["zesTemperatureGetProperties"] = res;
                 }
             }
-            */
-            if (res == ZE_RESULT_SUCCESS) {
-                switch (props.type) {
-                    case ZES_TEMP_SENSORS_GPU:
-                        if (type == props.type) {
-                            double temp_val = 0;
-                            XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
-                            if (res == ZE_RESULT_SUCCESS) {
-                                if (props.onSubdevice) {
-                                    ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
-                                } else {
-                                    ret->setCurrent(temp_val);
-                                }
-                                dataAcquired = true;
-                            }
-                        }
-                        break;
-                    case ZES_TEMP_SENSORS_MEMORY:
-                        if (type == props.type) {
-                            double temp_val = 0;
-                            XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
-                            if (res == ZE_RESULT_SUCCESS) {
-                                if (props.onSubdevice) {
-                                    ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
-                                } else {
-                                    ret->setCurrent(temp_val);
-                                }
-                                dataAcquired = true;
-                            }
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
+        } else {
+            throw BaseException("toGetTemperature error caused by zesDeviceEnumTemperatureSensors");
         }
+    } else {
+        throw BaseException("toGetTemperature error caused by zesDeviceEnumTemperatureSensors");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetTemperature error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetTemperature error caused by " + content);
     }
 }
 
@@ -1080,7 +1151,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_han
     if (device == nullptr) {
         throw BaseException("toGetMemory error");
     }
-    bool dataAcquired = false;
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     uint32_t mem_module_count = 0;
     ze_result_t res;
@@ -1096,20 +1168,32 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_han
                 if (res == ZE_RESULT_SUCCESS) {
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetState(mem, &sysman_memory_state));
                     if (res == ZE_RESULT_SUCCESS) {
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, used) : ret->setCurrent(used);
-                        dataAcquired = true;
+                        data_acquired = true;
+                    } else {
+                        exception_msgs["zesMemoryGetState"] = res;
                     }
+                } else {
+                    exception_msgs["zesMemoryGetProperties"] = res;
                 }
             }
+        } else {
+            throw BaseException("toGetMemory error caused by zesDeviceEnumMemoryModules");
         }
+    } else {
+        throw BaseException("toGetMemory error caused by zesDeviceEnumMemoryModules");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetMemory error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetMemory error caused by " + content);
     }
 }
 
@@ -1124,7 +1208,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
     if (device == nullptr) {
         throw BaseException("toGetMemoryUtilization error");
     }
-    bool dataAcquired = false;
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     uint32_t mem_module_count = 0;
     ze_result_t res;
@@ -1140,21 +1225,33 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
                 if (res == ZE_RESULT_SUCCESS) {
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetState(mem, &sysman_memory_state));
                     if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
-                        uint64_t utilization = used * 100.0 / sysman_memory_state.size;
+                        uint64_t utilization = used * 100.0 / (props.physicalSize == 0 ? sysman_memory_state.size:props.physicalSize);
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, utilization) : ret->setCurrent(utilization);
-                        dataAcquired = true;
+                        data_acquired = true;
+                    } else {
+                        exception_msgs["zesMemoryGetState"] = res;
                     }
+                } else {
+                    exception_msgs["zesMemoryGetProperties"] = res;
                 }
             }
+        } else {
+            throw BaseException("toGetMemoryUtilization error caused by zesDeviceEnumMemoryModules");
         }
+    } else {
+        throw BaseException("toGetMemoryUtilization error caused by zesDeviceEnumMemoryModules");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetMemoryUtilization error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetMemoryUtilization error caused by " + content);
     }
 }
 
@@ -1169,7 +1266,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
     if (device == nullptr) {
         throw BaseException("toGetMemoryBandwidth error");
     }
-    bool dataAcquired = false;
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     uint32_t mem_module_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
@@ -1197,16 +1295,28 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
                             val = 100;
                         }
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, val) : ret->setCurrent(val);
-                        dataAcquired = true;
+                        data_acquired = true;
+                    } else {
+                        exception_msgs["zesMemoryGetBandwidth"] = res;
                     }
+                } else {
+                    exception_msgs["zesMemoryGetBandwidth"] = res;
                 }
             }
+        } else {
+            throw BaseException("toGetMemoryBandwidth error caused by zesDeviceEnumMemoryModules");
         }
+    } else {
+        throw BaseException("toGetMemoryBandwidth error caused by zesDeviceEnumMemoryModules");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetMemoryBandwidth error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetMemoryBandwidth error caused by " + content);
     }
 }
 
@@ -1221,7 +1331,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryRead(const zes_device
     if (device == nullptr) {
         throw BaseException("toGetMemoryRead error");
     }
-    bool dataAcquired = false;
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     uint32_t mem_module_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
@@ -1241,15 +1352,25 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryRead(const zes_device
                 XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, mem_bandwidth.readCounter) : ret->setCurrent(mem_bandwidth.readCounter);
-                    dataAcquired = true;
+                    data_acquired = true;
+                } else {
+                    exception_msgs["zesMemoryGetBandwidth"] = res;
                 }
             }
+        } else {
+            throw BaseException("toGetMemoryRead error caused by zesDeviceEnumMemoryModules");
         }
+    } else {
+        throw BaseException("toGetMemoryRead error caused by zesDeviceEnumMemoryModules");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetMemoryRead error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetMemoryRead error caused by " + content);
     }
 }
 
@@ -1264,7 +1385,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_devic
     if (device == nullptr) {
         throw BaseException("toGetMemoryWrite error");
     }
-    bool dataAcquired = false;
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     uint32_t mem_module_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
@@ -1284,29 +1406,39 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_devic
                 XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, mem_bandwidth.writeCounter) : ret->setCurrent(mem_bandwidth.writeCounter);
-                    dataAcquired = true;
+                    data_acquired = true;
+                } else {
+                    exception_msgs["zesMemoryGetBandwidth"] = res;
                 }
             }
+        } else {
+            throw BaseException("toGetMemoryWrite error caused by zesDeviceEnumMemoryModules");
         }
+    } else {
+        throw BaseException("toGetMemoryWrite error caused by zesDeviceEnumMemoryModules");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetMemoryWrite error");
-    }
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetMemoryWrite error caused by " + content);
+    } 
 }
 
-void GPUDeviceStub::getOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type, Callback_t callback) noexcept {
+void GPUDeviceStub::getEuActiveStallIdle(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type, Callback_t callback) noexcept {
     if (device == nullptr) {
         return;
     }
-    invokeTask(callback, toGetOccupationEfficiency, device, driver, type);
+    invokeTask(callback, toGetEuActiveStallIdle, device, driver, type);
 }
 
 std::mutex GPUDeviceStub::metric_streamer_mutex;
 std::map<ze_device_handle_t, zet_metric_group_handle_t> GPUDeviceStub::target_metric_groups;
 std::map<ze_device_handle_t, zet_metric_streamer_handle_t> GPUDeviceStub::target_metric_streamers;
-void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t& device, int subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data) {
+void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device, int subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data) {
     ze_result_t res;
     std::unique_lock<std::mutex> lock(GPUDeviceStub::metric_streamer_mutex);
     zet_metric_group_handle_t hMetricGroup = nullptr;
@@ -1336,7 +1468,7 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t& devi
     }
 
     if (hMetricGroup == nullptr) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdleCore");
     }
     zet_metric_streamer_handle_t hMetricStreamer = nullptr;
     if (GPUDeviceStub::target_metric_streamers.find(device) != GPUDeviceStub::target_metric_streamers.end()) {
@@ -1347,53 +1479,53 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t& devi
         context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
         XPUM_ZE_HANDLE_LOCK(driver, res = zeContextCreate(driver, &context_desc, &hContext));
         if (res != ZE_RESULT_SUCCESS) {
-            throw BaseException("toGetOccupationEfficiency - zeContextCreate");
+            throw BaseException("toGetEuActiveStallIdleCore - zeContextCreate");
         }
         zet_metric_streamer_desc_t metricStreamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
         XPUM_ZE_HANDLE_LOCK(device, res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup));
         if (res != ZE_RESULT_SUCCESS) {
-            throw BaseException("toGetOccupationEfficiency - zetContextActivateMetricGroups");
+            throw BaseException("toGetEuActiveStallIdleCore - zetContextActivateMetricGroups");
         }
 
-        metricStreamerDesc.samplingPeriod = Configuration::OCCUPATION_EFFICIENCY_STREAMER_SAMPLING_PERIOD;
+        metricStreamerDesc.samplingPeriod = Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
         XPUM_ZE_HANDLE_LOCK(device, res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &metricStreamerDesc, nullptr, &hMetricStreamer));
         if (res != ZE_RESULT_SUCCESS) {
-            throw BaseException("toGetOccupationEfficiency - zetMetricStreamerOpen");
+            throw BaseException("toGetEuActiveStallIdleCore - zetMetricStreamerOpen");
         }
         GPUDeviceStub::target_metric_streamers[device] = hMetricStreamer;
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::OCCUPATION_EFFICIENCY_MONITOR_INTERNAL_PERIOD));
+    std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD));
     size_t rawSize = 0;
     res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdleCore");
     }
     std::vector<uint8_t> rawData(rawSize);
     res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, rawData.data());
     if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdleCore");
     }
     uint32_t numMetricValues = 0;
     zet_metric_group_calculation_type_t calculationType = ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES;
     res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdleCore");
     }
     std::vector<zet_typed_value_t> metricValues(numMetricValues);
     res = zetMetricGroupCalculateMetricValues(hMetricGroup, calculationType, rawSize, rawData.data(), &numMetricValues, metricValues.data());
     if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdleCore");
     }
     uint32_t metricCount = 0;
     res = zetMetricGet(hMetricGroup, &metricCount, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdleCore");
     }
     std::vector<zet_metric_handle_t> phMetrics(metricCount);
     res = zetMetricGet(hMetricGroup, &metricCount, phMetrics.data());
     if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdleCore");
     }
 
     uint32_t numReports = numMetricValues / metricCount;
@@ -1412,7 +1544,7 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t& devi
             zet_metric_properties_t metricProperties;
             res = zetMetricGetProperties(phMetrics[metric], &metricProperties);
             if (res != ZE_RESULT_SUCCESS) {
-                throw BaseException("toGetOccupationEfficiency");
+                throw BaseException("toGetEuActiveStallIdleCore");
             }
             if (std::strcmp(metricProperties.name, "GpuBusy") == 0) {
                 currentGpuBusy = data.value.fp32;
@@ -1432,45 +1564,55 @@ void GPUDeviceStub::toGetOccupationEfficiencyCore(const ze_device_handle_t& devi
         totalEuActive += currentGPUElapsedTime * currentEuActive;
         totalGPUElapsedTime += currentGPUElapsedTime;
     }
-    if (type == MeasurementType::METRIC_OCCUPATION) {
-        data->setSubdeviceDataCurrent(subdeviceId, (totalEuStall + totalEuActive) / totalGPUElapsedTime);
-    } else if (type == MeasurementType::METRIC_ISSUE_EFFICIENCY) {
-        data->setSubdeviceDataCurrent(subdeviceId, totalEuStall / totalGPUElapsedTime);
-    } else if (type == MeasurementType::METRIC_EXECUTION_EFFICIENCY) {
-        data->setSubdeviceDataCurrent(subdeviceId, totalEuActive / totalGPUElapsedTime);
-    } else if (type == MeasurementType::METRIC_NON_OCCUPATION) {
-        data->setSubdeviceDataCurrent(subdeviceId, (totalGpuBusy - totalEuStall - totalEuActive) / totalGPUElapsedTime);
+    uint64_t euActive = totalEuActive / totalGPUElapsedTime;
+    uint64_t euStall = totalEuStall / totalGPUElapsedTime;
+    uint64_t euIdle = 100 - euActive - euStall;
+    if (type == MeasurementType::METRIC_EU_ACTIVE) {
+        data->setSubdeviceDataCurrent(subdeviceId, euActive);
+        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_STALL, euStall);
+        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_IDLE, euIdle);
+        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_STALL);
+        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_IDLE);
+    } else if (type == MeasurementType::METRIC_EU_STALL) {
+        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_ACTIVE, euActive);
+        data->setSubdeviceDataCurrent(subdeviceId,  euStall);
+        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_IDLE, euIdle);
+        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_ACTIVE);
+        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_IDLE);
+    } else if (type == MeasurementType::METRIC_EU_IDLE) {
+        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_ACTIVE, euActive);
+        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_STALL, euStall);
+        data->setSubdeviceDataCurrent(subdeviceId, euIdle);
+        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_ACTIVE);
+        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_STALL);
     }
 }
 
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetOccupationEfficiency(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type) {
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEuActiveStallIdle(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type) {
     if (device == nullptr) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdle");
     }
-    // uint64_t start_time = Utility::getCurrentMillisecond();
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     uint32_t sub_device_count = 0;
     XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &sub_device_count, nullptr));
     if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdle");
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
     XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &sub_device_count, sub_device_handles.data()));
     if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("toGetOccupationEfficiency");
+        throw BaseException("toGetEuActiveStallIdle");
     }
     for (auto& sub_device : sub_device_handles) {
         ze_device_properties_t props = {};
         props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-        XPUM_ZE_HANDLE_LOCK(sub_device, res = zeDeviceGetProperties(sub_device, &props));
+        XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetProperties(sub_device, &props));
         if (res != ZE_RESULT_SUCCESS) {
-            throw BaseException("toGetOccupationEfficiency");
+            throw BaseException("toGetEuActiveStallIdle");
         }
-        toGetOccupationEfficiencyCore(sub_device, props.subdeviceId, driver, type, ret);
+        toGetEuActiveStallIdleCore(sub_device, props.subdeviceId, driver, type, ret);
     }
-    // uint64_t end_time = Utility::getCurrentMillisecond();
-    // std::cout << "GetOccupationEfficiency total_time: " << (end_time - start_time) << std::endl;
     return ret;
 }
 
@@ -1498,12 +1640,12 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasError(const zes_device_h
             for (auto& rasHandle : phRasErrorSets) {
                 zes_ras_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesRasGetProperties(rasHandle, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     //if (props.supported && props.enabled) {
                     if (props.type == rasType) {
                         zes_ras_state_t errorDetails;
-                        XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetState(rasHandle, 0, &errorDetails));
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesRasGetState(rasHandle, 0, &errorDetails));
                         if (res == ZE_RESULT_SUCCESS) {
                             rasCounter += errorDetails.category[rasCat];
                         }
@@ -1545,12 +1687,12 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const z
             for (auto& rasHandle : phRasErrorSets) {
                 zes_ras_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesRasGetProperties(rasHandle, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     //if (props.supported && props.enabled) {
                     if (props.type == rasType) {
                         zes_ras_state_t errorDetails;
-                        XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetState(rasHandle, 0, &errorDetails));
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesRasGetState(rasHandle, 0, &errorDetails));
                         if (res == ZE_RESULT_SUCCESS) {
                             uint64_t rasCounter = errorDetails.category[rasCat];
                             props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, rasCounter) : ret->setCurrent(rasCounter);
@@ -1591,18 +1733,18 @@ void GPUDeviceStub::getRasError(const zes_device_handle_t& device, uint64_t erro
             for (auto& rasHandle : phRasErrorSets) {
                 zes_ras_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesRasGetProperties(rasHandle, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (props.type == ZES_RAS_ERROR_TYPE_CORRECTABLE) {
                         zes_ras_state_t errorDetails;
-                        XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetState(rasHandle, 0, &errorDetails));
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesRasGetState(rasHandle, 0, &errorDetails));
                         if (res == ZE_RESULT_SUCCESS) {
                             errorCategory[XPUM_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE] += errorDetails.category[ZES_RAS_ERROR_CAT_CACHE_ERRORS];
                             errorCategory[XPUM_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE] += errorDetails.category[ZES_RAS_ERROR_CAT_DISPLAY_ERRORS];
                         }
                     } else if (props.type == ZES_RAS_ERROR_TYPE_UNCORRECTABLE) {
                         zes_ras_state_t errorDetails;
-                        XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetState(rasHandle, 0, &errorDetails));
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesRasGetState(rasHandle, 0, &errorDetails));
                         if (res == ZE_RESULT_SUCCESS) {
                             errorCategory[XPUM_RAS_ERROR_CAT_RESET] += errorDetails.category[ZES_RAS_ERROR_CAT_RESET];
                             errorCategory[XPUM_RAS_ERROR_CAT_PROGRAMMING_ERRORS] += errorDetails.category[ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS];
@@ -1643,6 +1785,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
     if (device == nullptr) {
         throw BaseException("toGetEngineUtilization error");
     }
+
     bool dataAcquired = false;
     uint32_t engine_count = 0;
     int sampling_period = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 0.8;
@@ -1666,14 +1809,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
                 threads.emplace_back(std::thread([&]() {
                     zes_engine_properties_t props;
                     props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-                    XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetProperties(engine, &props));
                     if (res == ZE_RESULT_SUCCESS) {
                         zes_engine_stats_t snap1 = {};
                         zes_engine_stats_t snap2 = {};
-                        XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap1));
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetActivity(engine, &snap1));
                         if (res == ZE_RESULT_SUCCESS) {
                             std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
-                            XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap2));
+                            XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetActivity(engine, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 uint64_t val = 100 * (snap2.activeTime - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
                                 if (val > 100) {
@@ -1775,7 +1918,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
             for (auto& engine : engines) {
                 zes_engine_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     switch (engine_group_type) {
                         case ZES_ENGINE_GROUP_COMPUTE_ALL:
@@ -1810,14 +1953,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
                 threads.emplace_back(std::thread([&]() {
                     zes_engine_properties_t props;
                     props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-                    XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetProperties(engine, &props));
                     if (res == ZE_RESULT_SUCCESS) {
                         zes_engine_stats_t snap1 = {};
                         zes_engine_stats_t snap2 = {};
-                        XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap1));
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetActivity(engine, &snap1));
                         if (res == ZE_RESULT_SUCCESS) {
                             std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
-                            XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap2));
+                            XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetActivity(engine, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 uint64_t val = 100 * (snap2.activeTime - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
                                 if (val > 100) {
@@ -1867,16 +2010,17 @@ void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector
         return;
     }
     uint32_t scheduler_count = 0;
-    ze_result_t res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_sched_handle_t> scheds(scheduler_count);
-        res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data()));
         for (auto& sched : scheds) {
             zes_sched_properties_t props;
-            res = zesSchedulerGetProperties(sched, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetProperties(sched, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_sched_mode_t mode;
-                res = zesSchedulerGetCurrentMode(sched, &mode);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetCurrentMode(sched, &mode));
                 schedulers.push_back(*(new Scheduler(props.onSubdevice,
                                                      props.subdeviceId,
                                                      props.canControl,
@@ -1892,7 +2036,8 @@ bool GPUDeviceStub::resetDevice(const zes_device_handle_t& device, ze_bool_t for
     if (device == nullptr) {
         return false;
     }
-    ze_result_t res = zesDeviceReset(device, force);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceReset(device, force));
     if (res == ZE_RESULT_SUCCESS) {
         return true;
     } else {
@@ -1905,16 +2050,17 @@ void GPUDeviceStub::getStandbys(const zes_device_handle_t& device, std::vector<S
         return;
     }
     uint32_t standby_count = 0;
-    ze_result_t res = zesDeviceEnumStandbyDomains(device, &standby_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumStandbyDomains(device, &standby_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_standby_handle_t> stans(standby_count);
-        res = zesDeviceEnumStandbyDomains(device, &standby_count, stans.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumStandbyDomains(device, &standby_count, stans.data()));
         for (auto& stan : stans) {
             zes_standby_properties_t props;
-            res = zesStandbyGetProperties(stan, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesStandbyGetProperties(stan, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_standby_promo_mode_t mode;
-                res = zesStandbyGetMode(stan, &mode);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesStandbyGetMode(stan, &mode));
                 standbys.push_back(*(new Standby(props.type, (bool)props.onSubdevice, props.subdeviceId, mode)));
             }
         }
@@ -1926,13 +2072,14 @@ void GPUDeviceStub::getPowerProps(const zes_device_handle_t& device, std::vector
         return;
     }
     uint32_t power_domain_count = 0;
-    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
     std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_properties_t props;
-            res = zesPowerGetProperties(power, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 powers.push_back(*(new Power(props.onSubdevice,
                                              props.subdeviceId,
@@ -1954,15 +2101,16 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
         return;
     }
     uint32_t power_domain_count = 0;
-    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
     std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_sustained_limit_t sustained;
             zes_power_burst_limit_t burst;
             zes_power_peak_limit_t peak;
-            res = zesPowerGetLimits(power, &sustained, &burst, &peak);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetLimits(power, &sustained, &burst, &peak));
             if (res == ZE_RESULT_SUCCESS) {
                 sustained_limit.enabled = sustained.enabled;
                 sustained_limit.power = sustained.power;
@@ -1984,16 +2132,17 @@ bool GPUDeviceStub::setPowerSustainedLimits(const zes_device_handle_t& device,
         return false;
     }
     uint32_t power_domain_count = 0;
-    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
     std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_sustained_limit_t sustained;
             sustained.enabled = sustained_limit.enabled;
             sustained.power = sustained_limit.power;
             sustained.interval = sustained_limit.interval;
-            res = zesPowerSetLimits(power, &sustained, nullptr, nullptr);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerSetLimits(power, &sustained, nullptr, nullptr));
             if (res == ZE_RESULT_SUCCESS) {
                 return true;
             }
@@ -2008,15 +2157,16 @@ bool GPUDeviceStub::setPowerBurstLimits(const zes_device_handle_t& device,
         return false;
     }
     uint32_t power_domain_count = 0;
-    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
     std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_burst_limit_t burst;
             burst.enabled = burst_limit.enabled;
             burst.power = burst_limit.power;
-            res = zesPowerSetLimits(power, nullptr, &burst, nullptr);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerSetLimits(power, nullptr, &burst, nullptr));
             if (res == ZE_RESULT_SUCCESS) {
                 return true;
             }
@@ -2031,15 +2181,16 @@ bool GPUDeviceStub::setPowerPeakLimits(const zes_device_handle_t& device,
         return false;
     }
     uint32_t power_domain_count = 0;
-    ze_result_t res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
     std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-    res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data());
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_peak_limit_t peak;
             peak.powerAC = peak_limit.power_AC;
             peak.powerDC = peak_limit.power_DC;
-            res = zesPowerSetLimits(power, nullptr, nullptr, &peak);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerSetLimits(power, nullptr, nullptr, &peak));
             if (res == ZE_RESULT_SUCCESS) {
                 return true;
             }
@@ -2053,19 +2204,21 @@ void GPUDeviceStub::getFrequencyRanges(const zes_device_handle_t& device, std::v
         return;
     }
     uint32_t freq_count = 0;
-    ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
     std::vector<zes_freq_handle_t> freq_handles(freq_count);
     if (res == ZE_RESULT_SUCCESS) {
-        res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
         for (auto& ph_freq : freq_handles) {
             zes_freq_properties_t prop = {};
             prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
-            if (zesFrequencyGetProperties(ph_freq, &prop) == ZE_RESULT_SUCCESS) {
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &prop));
+            if (res == ZE_RESULT_SUCCESS) {
                 if (prop.type != ZES_FREQ_DOMAIN_GPU) {
                     continue;
                 }
                 zes_freq_range_t range;
-                res = zesFrequencyGetRange(ph_freq, &range);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetRange(ph_freq, &range));
                 if (res == ZE_RESULT_SUCCESS) {
                     frequencies.push_back(*(new Frequency(prop.type,
                                                           prop.onSubdevice,
@@ -2085,22 +2238,24 @@ void GPUDeviceStub::getFreqAvailableClocks(const zes_device_handle_t& device, ui
         return;
     }
     uint32_t freq_count = 0;
-    ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
     std::vector<zes_freq_handle_t> freq_handles(freq_count);
     if (res == ZE_RESULT_SUCCESS) {
-        res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
         for (auto& ph_freq : freq_handles) {
             zes_freq_properties_t prop = {};
             prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
-            if (zesFrequencyGetProperties(ph_freq, &prop) == ZE_RESULT_SUCCESS) {
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &prop));
+            if (res == ZE_RESULT_SUCCESS) {
                 if (prop.type != ZES_FREQ_DOMAIN_GPU || prop.subdeviceId != subdevice_id) {
                     continue;
                 }
                 uint32_t pCount = 0;
-                res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, nullptr);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, nullptr));
                 double clockArray[pCount];
                 if (res == ZE_RESULT_SUCCESS) {
-                    res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, clockArray);
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetAvailableClocks(ph_freq, &pCount, clockArray));
                     for (uint32_t i = 0; i < pCount; i++) {
                         clocks.push_back(clockArray[i]);
                     }
@@ -2115,21 +2270,23 @@ bool GPUDeviceStub::setFrequencyRange(const zes_device_handle_t& device, const F
         return false;
     }
     uint32_t freq_count = 0;
-    ze_result_t res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
     std::vector<zes_freq_handle_t> freq_handles(freq_count);
     if (res == ZE_RESULT_SUCCESS) {
-        res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
         for (auto& ph_freq : freq_handles) {
             zes_freq_properties_t prop = {};
             prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
-            if (zesFrequencyGetProperties(ph_freq, &prop) == ZE_RESULT_SUCCESS) {
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &prop));
+            if (res == ZE_RESULT_SUCCESS) {
                 if (prop.type != freq.getType() || prop.subdeviceId != freq.getSubdeviceId()) {
                     continue;
                 }
                 zes_freq_range_t range;
                 range.min = freq.getMin();
                 range.max = freq.getMax();
-                res = zesFrequencySetRange(ph_freq, &range);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencySetRange(ph_freq, &range));
                 if (res == ZE_RESULT_SUCCESS) {
                     return true;
                 }
@@ -2144,18 +2301,19 @@ bool GPUDeviceStub::setStandby(const zes_device_handle_t& device, const Standby&
         return false;
     }
     uint32_t standby_count = 0;
-    ze_result_t res = zesDeviceEnumStandbyDomains(device, &standby_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumStandbyDomains(device, &standby_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_standby_handle_t> stans(standby_count);
-        res = zesDeviceEnumStandbyDomains(device, &standby_count, stans.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumStandbyDomains(device, &standby_count, stans.data()));
         for (auto& stan : stans) {
             zes_standby_properties_t props;
-            res = zesStandbyGetProperties(stan, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesStandbyGetProperties(stan, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 if (props.subdeviceId != standby.getSubdeviceId()) {
                     continue;
                 }
-                res = zesStandbySetMode(stan, standby.getMode());
+                XPUM_ZE_HANDLE_LOCK(device, res = zesStandbySetMode(stan, standby.getMode()));
                 if (res == ZE_RESULT_SUCCESS) {
                     return true;
                 }
@@ -2172,13 +2330,14 @@ bool GPUDeviceStub::setSchedulerTimeoutMode(const zes_device_handle_t& device,
         return ret;
     }
     uint32_t scheduler_count = 0;
-    ze_result_t res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_sched_handle_t> scheds(scheduler_count);
-        res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data()));
         for (auto& sched : scheds) {
             zes_sched_properties_t props;
-            res = zesSchedulerGetProperties(sched, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetProperties(sched, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 if (props.subdeviceId != mode.subdevice_Id) {
                     continue;
@@ -2188,7 +2347,7 @@ bool GPUDeviceStub::setSchedulerTimeoutMode(const zes_device_handle_t& device,
                 prop.stype = ZES_STRUCTURE_TYPE_SCHED_TIMEOUT_PROPERTIES;
                 prop.pNext = nullptr;
                 prop.watchdogTimeout = mode.mode_setting.watchdogTimeout;
-                res = zesSchedulerSetTimeoutMode(sched, &prop, &needReload);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerSetTimeoutMode(sched, &prop, &needReload));
                 if (res == ZE_RESULT_SUCCESS) {
                     ret = ret || true;
                 }
@@ -2205,13 +2364,14 @@ bool GPUDeviceStub::setSchedulerTimesliceMode(const zes_device_handle_t& device,
         return ret;
     }
     uint32_t scheduler_count = 0;
-    ze_result_t res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_sched_handle_t> scheds(scheduler_count);
-        res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data()));
         for (auto& sched : scheds) {
             zes_sched_properties_t props;
-            res = zesSchedulerGetProperties(sched, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetProperties(sched, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 if (props.subdeviceId != mode.subdevice_Id) {
                     continue;
@@ -2222,7 +2382,7 @@ bool GPUDeviceStub::setSchedulerTimesliceMode(const zes_device_handle_t& device,
                 prop.pNext = nullptr;
                 prop.interval = mode.mode_setting.interval;
                 prop.yieldTimeout = mode.mode_setting.yieldTimeout;
-                res = zesSchedulerSetTimesliceMode(sched, &prop, &needReload);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerSetTimesliceMode(sched, &prop, &needReload));
                 if (res == ZE_RESULT_SUCCESS) {
                     ret = ret || true;
                 }
@@ -2238,19 +2398,20 @@ bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device,
         return ret;
     }
     uint32_t scheduler_count = 0;
-    ze_result_t res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr);
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_sched_handle_t> scheds(scheduler_count);
-        res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data());
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data()));
         for (auto& sched : scheds) {
             zes_sched_properties_t props;
-            res = zesSchedulerGetProperties(sched, &props);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetProperties(sched, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 if (props.subdeviceId != mode.subdevice_Id) {
                     continue;
                 }
                 ze_bool_t needReload;
-                res = zesSchedulerSetExclusiveMode(sched, &needReload);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerSetExclusiveMode(sched, &needReload));
                 if (res == ZE_RESULT_SUCCESS) {
                     ret = ret || true;
                 }
@@ -2281,7 +2442,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                 for (auto& mem : mems) {
                     zes_mem_state_t memory_state = {};
                     memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &memory_state));
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetState(mem, &memory_state));
                     if (res == ZE_RESULT_SUCCESS) {
                         if (memory_state.health == ZES_MEM_HEALTH_OK && (int)status < ZES_MEM_HEALTH_OK) {
                             status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
@@ -2318,11 +2479,11 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& power : power_handles) {
                 zes_power_energy_counter_t snap1, snap2;
-                XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap1));
                 if (res == ZE_RESULT_SUCCESS) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
                     int power_val = 0;
-                    XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap2));
                     if (res == ZE_RESULT_SUCCESS) {
                         power_val = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                         if (power_val < power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
@@ -2352,12 +2513,12 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
             for (auto& temp : temp_sensors) {
                 zes_temp_properties_t props;
-                XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetProperties(temp, &props));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetProperties(temp, &props));
                 if (res != ZE_RESULT_SUCCESS || props.type != ZES_TEMP_SENSORS_GPU) {
                     continue;
                 }
                 double temp_val = 0;
-                XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetState(temp, &temp_val));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (temp_val < thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
                         status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
@@ -2382,7 +2543,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, fabric_ports.data()));
             for (auto& fabric_port : fabric_ports) {
                 zes_fabric_port_state_t fabric_port_state;
-                XPUM_ZE_HANDLE_LOCK(fabric_port, res = zesFabricPortGetState(fabric_port, &fabric_port_state));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetState(fabric_port, &fabric_port_state));
                 if (res == ZE_RESULT_SUCCESS) {
                     if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_HEALTHY && (int)status < ZES_FABRIC_PORT_STATUS_HEALTHY) {
                         status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;

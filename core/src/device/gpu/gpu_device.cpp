@@ -112,8 +112,8 @@ void GPUDevice::getEnergy(Callback_t callback) noexcept {
                                         });
 }
 
-void GPUDevice::getOccupationEfficiency(Callback_t callback, MeasurementType type) noexcept {
-    GPUDeviceStub::instance().getOccupationEfficiency(ze_device_handle, ze_driver_handle, type,
+void GPUDevice::getEuActiveStallIdle(Callback_t callback, MeasurementType type) noexcept {
+    GPUDeviceStub::instance().getEuActiveStallIdle(ze_device_handle, ze_driver_handle, type,
                                                       [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                                                           callback(ret, e);
                                                       });
@@ -151,6 +151,13 @@ void GPUDevice::getEngineGroupUtilization(Callback_t callback, zes_engine_group_
             callback(ret, e);
         },
         engine_group_type);
+}
+
+void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getFrequencyThrottle(zes_device_handle,
+                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                       callback(ret, e);
+                                                   });
 }
 
 bool GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {

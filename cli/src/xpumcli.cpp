@@ -15,12 +15,12 @@
 #include "comlet_config.h"
 #include "comlet_version.h"
 #include "comlet_firmware.h"
+#include "comlet_dump.h"
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
 
 int main(int argc, char **argv) {
 
-    std::ios_base::sync_with_stdio(false);
     CLI::App app{"Intel XPU Manager Command Line Interface"};
 
     xpum::cli::CLIWrapper wrapper(app);
@@ -34,7 +34,8 @@ int main(int argc, char **argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletPolicy))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletFirmware))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletConfig))
-        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics));
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump));
     app.require_subcommand();
 
     CLI11_PARSE(app, argc, argv);

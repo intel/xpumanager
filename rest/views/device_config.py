@@ -68,7 +68,11 @@ def set_standby(deviceId):
     req = request.get_json()
     tileId = req["tileId"]
     standby = req["standby"]
-    code, message, data = stub.setDeviceStandby(
+
+    if tileId<0 or standby<0:
+        return jsonify("invalid parameter"), 500
+    
+    code, message, data = stub.setStandby(
         deviceId, tileId, standby)
     if code != 0:
         error = dict(Status=code, Message=message)
@@ -106,9 +110,12 @@ def set_powerlimit(deviceId):
                 description: Error
     """
     req = request.get_json()
-    power = req["powerLimit"]
+    power = req["powerLimit"]*1000
     interval = req["intervalWindow"]
-    code, message, data = stub.setDevicePowerLimit(deviceId, power, interval)
+    if power<0 or interval<0:
+        return jsonify("invalid parameter"), 500
+    
+    code, message, data = stub.setPowerLimit(deviceId, power, interval)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
@@ -153,7 +160,11 @@ def set_frequencyrange(deviceId):
     tileId = req["tileId"]
     minFreq = req["minFreq"]
     maxFreq = req["maxFreq"]
-    code, message, data = stub.setDeviceFrequencyRange(
+    
+    if tileId<0 or minFreq<0 or maxFreq<0 :
+        return jsonify("invalid parameter"), 500
+    
+    code, message, data = stub.setFrequencyRange(
         deviceId, tileId, minFreq, maxFreq)
     if code != 0:
         error = dict(Status=code, Message=message)
@@ -205,7 +216,11 @@ def set_scheduler(deviceId):
     mode = req["mode"]
     val1 = req["val1"]
     val2 = req["val2"]
-    code, message, data = stub.setDeviceScheduler(deviceId, tileId, mode, val1, val2)
+
+    if tileId<0 or mode<0 or val1<0 or val2 <0:
+        return jsonify("invalid parameter"), 500
+    
+    code, message, data = stub.setScheduler(deviceId, tileId, mode, val1, val2)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
@@ -247,7 +262,11 @@ def get_config(deviceId):
     """
     req = request.get_json()
     tileId = req["tileId"]
-    code, message, data = stub.getDeviceConfig(deviceId, tileId)
+
+    if tileId<0:
+        return jsonify("invalid parameter"), 500
+    
+    code, message, data = stub.getConfig(deviceId, tileId)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

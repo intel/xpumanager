@@ -70,14 +70,13 @@ xpum_result_t GroupManager::createGroup(const char* pGroupName, xpum_group_id_t*
 
 xpum_result_t GroupManager::destroyGroup(xpum_group_id_t groupId) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    xpum_result_t ret = XPUM_GENERIC_ERROR;
     std::shared_ptr<GroupUnit> pGroupInfo;
 
     XPUM_LOG_DEBUG("GroupManager::destroyGroup");
 
     if ((groupId & BUILD_IN_GROUP_MASK) == BUILD_IN_GROUP_MASK) {
         XPUM_LOG_DEBUG("GroupManager::destroyGroup- can not destory build-in group {}", groupId);
-        return ret;
+        return XPUM_GROUP_CHANGE_NOT_ALLOWED;
     }
 
     GroupMap::iterator groupIterator = groupMap.find(groupId);
@@ -94,11 +93,10 @@ xpum_result_t GroupManager::destroyGroup(xpum_group_id_t groupId) {
 
 xpum_result_t GroupManager::addDeviceToGroup(xpum_group_id_t groupId, xpum_device_id_t deviceId) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    xpum_result_t ret = XPUM_GENERIC_ERROR;
 
     if ((groupId & BUILD_IN_GROUP_MASK) == BUILD_IN_GROUP_MASK) {
         XPUM_LOG_DEBUG("GroupManager::addDeviceToGroup- can not add to build-in group {}", groupId);
-        return ret;
+        return XPUM_GROUP_CHANGE_NOT_ALLOWED;
     }
 
     std::shared_ptr<GroupUnit> pGroupInfo = getGroupById(groupId);
@@ -117,11 +115,10 @@ xpum_result_t GroupManager::addDeviceToGroup(xpum_group_id_t groupId, xpum_devic
 
 xpum_result_t GroupManager::removeDeviceFromGroup(xpum_group_id_t groupId, xpum_device_id_t deviceId) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    xpum_result_t ret = XPUM_GENERIC_ERROR;
 
     if ((groupId & BUILD_IN_GROUP_MASK) == BUILD_IN_GROUP_MASK) {
         XPUM_LOG_DEBUG("GroupManager::removeDeviceFromGroup- can not remove from build-in group {}", groupId);
-        return ret;
+        return XPUM_GROUP_CHANGE_NOT_ALLOWED;
     }
 
     std::shared_ptr<GroupUnit> pGroupInfo = getGroupById(groupId);

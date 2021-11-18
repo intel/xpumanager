@@ -82,24 +82,29 @@ target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 enable_testing()
 
 if (BUILD_TESTING)
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TEST_SRC)
-list(REMOVE_ITEM XPUM_CLI_TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
-file(GLOB test_sources test/*_test.cpp)
+  if (NOT DEFINED WORK_PATH)   
+    link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/lib)
+  endif()
 
-foreach(testsourcefile ${test_sources})
+  aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TEST_SRC)
+  list(REMOVE_ITEM XPUM_CLI_TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
-  get_filename_component(testname ${testsourcefile} NAME_WE)
+  file(GLOB test_sources test/*_test.cpp)
 
-  add_executable(${testname} ${testsourcefile})
+  foreach(testsourcefile ${test_sources})
 
-  target_sources(${testname} PUBLIC ${XPUM_CLI_TEST_SRC} ${GRPC_SRC})
+    get_filename_component(testname ${testsourcefile} NAME_WE)
 
-  target_link_libraries(${testname} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF}
-                        gtest_main gmock_main)
+    add_executable(${testname} ${testsourcefile})
 
-  include(GoogleTest)
-  gtest_discover_tests(${testname})
+    target_sources(${testname} PUBLIC ${XPUM_CLI_TEST_SRC} ${GRPC_SRC})
 
-endforeach(testsourcefile ${test_sources})
+    target_link_libraries(${testname} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF}
+      gtest gmock gtest_main gmock_main)
+
+    include(GoogleTest)
+    gtest_discover_tests(${testname})
+
+  endforeach(testsourcefile ${test_sources})
 endif()

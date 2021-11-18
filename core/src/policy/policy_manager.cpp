@@ -240,11 +240,11 @@ xpum_device_metric_data_t* PolicyManager::getPolicyCurValue(std::shared_ptr<xpum
 }
 
 bool PolicyManager::isMatchMetricType(xpum_stats_type_t metricsType, xpum_policy_type_t policyType) {
-    if (policyType == XPUM_POLICY_TYPE_GPU_TEMPERATURE && metricsType == XPUM_STATS_GPU_TEMPERATURE) {
+    if (policyType == XPUM_POLICY_TYPE_GPU_TEMPERATURE && metricsType == XPUM_STATS_GPU_CORE_TEMPERATURE) {
         return true;
     }
     //TODO: Check XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE supported by monitor
-    // else if(policyType == XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE && metricsType == XPUM_STATS_GPU_TEMPERATURE){
+    // else if(policyType == XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE && metricsType == XPUM_STATS_GPU_CORE_TEMPERATURE){
     //   return true;
     // }
     else if (policyType == XPUM_POLICY_TYPE_GPU_POWER && metricsType == XPUM_STATS_POWER) {
