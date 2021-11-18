@@ -41,8 +41,15 @@ def getConfig(deviceId, tileId):
     return 0, "OK", data
 
 def setStandby(deviceId, tileId, standby):
+    if standby.lower() == "never":
+        mode = core_pb2.STANDBY_NEVER
+    elif standby.lower() == "default":
+        mode = core_pb2.STANDBY_NEVER
+    else:
+        return 1, "Invalid Parameter", None
+    
     resp = stub.setDeviceStandbyMode(core_pb2.ConfigDeviceStandbyRequest(
-        deviceId=deviceId, isTileData=True, tileId=tileId, standby=standby))
+        deviceId=deviceId, isTileData=True, tileId=tileId, standby=mode))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}

@@ -848,6 +848,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         standby.mode = XPUM_DEFAULT;
     } else if (mode == STANDBY_NEVER) {
         standby.mode = XPUM_NEVER;
+    } else {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
     }
     res =  xpumSetDeviceStandby(deviceId, standby);
     if (res != XPUM_OK) {

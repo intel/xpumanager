@@ -78,6 +78,9 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
         } else if (this->opts->tileId >= 0 && !this->opts->standby.empty()) {
             XpumStandbyMode mode;
+            std::for_each(this->opts->standby.begin(), this->opts->standby.end(), [](char & c) {
+                c = ::tolower(c);
+            });
             if (this->opts->standby.compare("never") == 0) {
                 mode = STANDBY_NEVER;
             } else if (this->opts->standby.compare("default") == 0) {
