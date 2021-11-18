@@ -157,6 +157,10 @@ def readConfig(path):
 user, salt, pwHash, disableAuth = readConfig(
     os.path.dirname(os.path.realpath(__file__)))
 
+####
+policy.startPolicyCallBackThread()
+####
+
 if __name__ == '__main__':
     app.debug = True
 #   app.run()

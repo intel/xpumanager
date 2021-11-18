@@ -24,6 +24,7 @@ struct xpum_policy_data {
     xpum_policy_condition_t condition;
     xpum_policy_action_t action;
     xpum_notify_callback_ptr_t notifyCallBack;
+    char notifyCallBackUrl[XPUM_MAX_STR_LENGTH];
     xpum_device_id_t deviceId; // Only for get policy api, ignored by set policy api.
     bool isDeletePolicy;
     std::shared_ptr<std::vector<xpum_device_metrics_t>> pMetricCur;
