@@ -9,7 +9,7 @@ namespace xpum::cli {
 
 struct ComletConfigOptions {
     int deviceId = -1;
-    uint32_t tileId = -1;
+    int32_t tileId = -1;
     std::string schedulerTimeslice ="";
     std::string schedulerTimeout ="";
     bool schedulerExclusive = false;

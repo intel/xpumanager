@@ -103,7 +103,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 return json;
             }
         }
-        (*json)["return"]="unknonw or invalid command/parameter";
+        (*json)["return"]="unknonw or invalid command, parameter or device/tile Id";
         return json;
     }
     (*json)["return"]="invalid device Id";
