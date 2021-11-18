@@ -11,5 +11,8 @@ class EngineUtilizationDataHandler : public MetricStatisticsDataHandler {
     virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
 
     void calculateData(std::shared_ptr<SharedData> &p_data);
+
+   private:
+    uint32_t getAverage(std::vector<uint32_t> &datas);
 };
 } // end namespace xpum
