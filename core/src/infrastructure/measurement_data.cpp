@@ -107,4 +107,13 @@ void MeasurementData::clearSubdeviceAdditionalCurrentDataTypes() {
 void MeasurementData::clearSubdeviceAdditionalCurrentData() {
     subdevice_additional_current_datas.clear();
 }
+
+const std::shared_ptr<std::map<uint64_t, ExtendedMeasurementData>> MeasurementData::getExtendedDatas() {
+    return p_extended_datas;
+}
+
+void MeasurementData::addExtendedData(uint64_t handle, ExtendedMeasurementData data) {
+    (*p_extended_datas)[handle] = data;
+}
+
 } // end namespace xpum

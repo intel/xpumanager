@@ -1786,108 +1786,70 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
         throw BaseException("toGetEngineUtilization error");
     }
 
-    bool dataAcquired = false;
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
     uint32_t engine_count = 0;
-    int sampling_period = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 0.8;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
+    zes_device_properties_t props = {};
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
+    if (res == ZE_RESULT_SUCCESS) {
+        ret->setNumSubdevices(props.numSubdevices);
+    } else {
+        throw BaseException("toGetEngineUtilization error caused by zesDeviceGetProperties");
+    }
+
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_engine_handle_t> engines(engine_count);
-        std::map<uint32_t, std::vector<uint32_t>> compute_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> render_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> decode_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> encode_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> copy_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> media_enhancement_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> three_d_utilizations;
-        std::vector<std::thread> threads;
-        std::mutex mutex;
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& engine : engines) {
-                threads.emplace_back(std::thread([&]() {
-                    zes_engine_properties_t props;
-                    props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-                    XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetProperties(engine, &props));
-                    if (res == ZE_RESULT_SUCCESS) {
+                zes_engine_properties_t props;
+                props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetProperties(engine, &props));
+                if (res == ZE_RESULT_SUCCESS) {
+                    if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE
+                    || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE
+                    || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE
+                    || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE
+                    || props.type == ZES_ENGINE_GROUP_COPY_SINGLE
+                    || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE
+                    || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
                         zes_engine_stats_t snap1 = {};
-                        zes_engine_stats_t snap2 = {};
                         XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetActivity(engine, &snap1));
                         if (res == ZE_RESULT_SUCCESS) {
-                            std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
-                            XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetActivity(engine, &snap2));
-                            if (res == ZE_RESULT_SUCCESS) {
-                                uint64_t val = 100 * (snap2.activeTime - snap1.activeTime) / (snap2.timestamp - snap1.timestamp);
-                                if (val > 100) {
-                                    val = 100;
-                                }
-                                mutex.lock();
-                                switch (props.type) {
-                                    case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
-                                        compute_utilizations[(props.onSubdevice ? props.subdeviceId : 0)].push_back(val);
-                                        break;
-                                    case ZES_ENGINE_GROUP_RENDER_SINGLE:
-                                        render_utilizations[(props.onSubdevice ? props.subdeviceId : 0)].push_back(val);
-                                        break;
-                                    case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
-                                        decode_utilizations[(props.onSubdevice ? props.subdeviceId : 0)].push_back(val);
-                                        break;
-                                    case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
-                                        encode_utilizations[(props.onSubdevice ? props.subdeviceId : 0)].push_back(val);
-                                        break;
-                                    case ZES_ENGINE_GROUP_COPY_SINGLE:
-                                        copy_utilizations[(props.onSubdevice ? props.subdeviceId : 0)].push_back(val);
-                                        break;
-                                    case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
-                                        media_enhancement_utilizations[(props.onSubdevice ? props.subdeviceId : 0)].push_back(val);
-                                        break;
-                                    case ZES_ENGINE_GROUP_3D_SINGLE:
-                                        three_d_utilizations[(props.onSubdevice ? props.subdeviceId : 0)].push_back(val);
-                                        break;
-                                    default:
-                                        break;
-                                }
-                                mutex.unlock();
-                            }
+                            ExtendedMeasurementData data;
+                            data.on_subdevice = props.onSubdevice;
+                            data.subdevice_id = props.subdeviceId;
+                            data.type = props.type;
+                            data.active_time = snap1.activeTime;
+                            data.timestamp = snap1.timestamp;
+                            ret->addExtendedData(uint64_t(engine), data);
+                            data_acquired = true;
+                        } else {
+                            exception_msgs["zesEngineGetActivity"] = res;
                         }
                     }
-                }));
-            }
-            for (auto& thread : threads) {
-                thread.join();
-            }
-            zes_device_properties_t props = {};
-            props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
-            if (res == ZE_RESULT_SUCCESS) {
-                std::map<uint32_t, std::vector<uint64_t>> utilizations;
-                uint32_t i = 0;
-                do {
-                    utilizations[i].push_back(getAverage(compute_utilizations[i]));
-                    utilizations[i].push_back(getAverage(render_utilizations[i]));
-                    utilizations[i].push_back(getAverage(decode_utilizations[i]));
-                    utilizations[i].push_back(getAverage(encode_utilizations[i]));
-                    utilizations[i].push_back(getAverage(copy_utilizations[i]));
-                    utilizations[i].push_back(getAverage(media_enhancement_utilizations[i]));
-                    utilizations[i].push_back(getAverage(three_d_utilizations[i]));
-                    i++;
-                } while (i < props.numSubdevices);
-                if (props.numSubdevices != 0) {
-                    for (uint32_t i = 0; i < props.numSubdevices; ++i) {
-                        ret->setSubdeviceDataCurrent(i, *std::max_element(utilizations[i].begin(), utilizations[i].end()));
-                    }
                 } else {
-                    ret->setCurrent(*std::max_element(utilizations[0].begin(), utilizations[0].end()));
+                    exception_msgs["zesEngineGetProperties"] = res;
                 }
-                dataAcquired = true;
             }
+        } else {
+            throw BaseException("toGetEngineUtilization error caused by zesDeviceEnumEngineGroups");
         }
+    } else {
+        throw BaseException("toGetEngineUtilization error caused by zesDeviceEnumEngineGroups");
     }
-    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+    if (data_acquired) {
         return ret;
     } else {
-        throw BaseException("toGetEngineUtilization error");
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetEngineUtilization error caused by " + content);
     }
 }
 
