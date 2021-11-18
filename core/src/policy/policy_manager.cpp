@@ -24,6 +24,7 @@ void xpum_policy_triggered_for_trace(xpum_policy_notify_callback_para_t *p_para)
     XPUM_LOG_INFO("Policy curValue: {}", p_para->curValue);
     XPUM_LOG_INFO("Policy isTileData: {}", p_para->isTileData);
     XPUM_LOG_INFO("Policy tileId: {}", p_para->tileId);
+    XPUM_LOG_INFO("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
     XPUM_LOG_INFO("------xpum_policy_triggered_for_trace-----end----");
 }
 
@@ -38,6 +39,7 @@ void print_policy_for_demo(const char* tag,xpum_policy_t *p_para) {
     //XPUM_LOG_INFO("Policy timestamp: {}", p_para->timestamp);
     //XPUM_LOG_INFO("Policy curValue: {}", p_para->curValue);
     //XPUM_LOG_INFO("Policy preValue: {}", p_para->preValue);
+    XPUM_LOG_INFO("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
     XPUM_LOG_INFO("-----------------{}-----------end---",*tag);
 }
 
@@ -55,6 +57,7 @@ void print_policy_for_demoEx2(const char* tag,std::shared_ptr<xpum_policy_data> 
     XPUM_LOG_TRACE("Policy curTimestamp: {}", p_para->curTimestamp);
     XPUM_LOG_TRACE("Policy isTileData: {}", p_para->isTileData);
     XPUM_LOG_TRACE("Policy tileId: {}", p_para->tileId);
+    XPUM_LOG_INFO("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
     XPUM_LOG_TRACE("-----------------{}-----------end----",*tag);
 }
 
@@ -313,6 +316,7 @@ void PolicyManager::triggerNotification(std::shared_ptr<xpum_policy_data> p_poli
     para.deviceId = p_policy->deviceId;
     para.timestamp = Utility::getCurrentMillisecond();
     para.type = p_policy->type;
+    strcpy(para.notifyCallBackUrl,p_policy->notifyCallBackUrl);
     
     /////
     xpum_policy_triggered_for_trace(&para);
@@ -394,6 +398,7 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
             p_data->condition = policy.condition;
             p_data->deviceId = deviceIds[i];
             p_data->notifyCallBack = policy.notifyCallBack;
+            strcpy(p_data->notifyCallBackUrl,policy.notifyCallBackUrl);
             p_data->type = policy.type;
             p_data->curValue = 0;
             p_data->preValue = 0;
@@ -488,6 +493,7 @@ xpum_result_t PolicyManager::xpumGetPolicyByDeviceIds(xpum_device_id_t deviceIds
             resultList[i].deviceId = p_policy->deviceId;
             resultList[i].notifyCallBack = p_policy->notifyCallBack;
             resultList[i].type = p_policy->type;
+            strcpy(resultList[i].notifyCallBackUrl,p_policy->notifyCallBackUrl);
             i++;
             XPUM_LOG_INFO("---PolicyManager::xpumGetPolicyByDeviceIds()---2-3-");  
         }

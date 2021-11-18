@@ -2,7 +2,8 @@ import stub
 from flask import request
 from flask import jsonify
 from marshmallow import Schema, fields
-
+import time, threading
+import traceback,datetime
 
 class PolicyComponentSchema(Schema):
     description = fields.Str(
@@ -198,4 +199,21 @@ def get_all_policy():
         return jsonify(ret)
     else:
         return message, 500
-    
+
+def policyCallBackThread():
+    while True:
+        try:
+            stub.readPolicyNotifyData()
+        except:
+            time.sleep(5)
+            traceback.print_exc()  
+            time_stamp = datetime.datetime.now()
+            time_stamp = time_stamp.strftime('[%Y-%m-%d %H:%M:%S]')
+            print("{}: policyCallBackThread(): Failed to readPolicyNotifyData!".format(time_stamp))
+        
+
+def startPolicyCallBackThread():
+    t = threading.Thread(target=policyCallBackThread, name='policyCallBackRun')
+    t.daemon = True
+    t.start()
+    pass
