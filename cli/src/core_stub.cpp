@@ -1228,7 +1228,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["scheduler_mode"] = schedulerModeEnumToString(response.tileconfigdata(i).scheduler());
                 tileJsonList.push_back(tileJson);
             }
-            (*json)["tile_list"] = tileJsonList;
+            (*json)["tile_config_data"] = tileJsonList;
         } else {
             (*json)["error"] = response.errormsg();
         }

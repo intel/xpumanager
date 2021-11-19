@@ -37,7 +37,7 @@ def getConfig(deviceId, tileId):
         tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
         tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
         tilelist.append(tiledata)
-    data['tileConfigData'] = tilelist
+    data['tile_config_data'] = tilelist
     return 0, "OK", data
 
 def setStandby(deviceId, tileId, standby):

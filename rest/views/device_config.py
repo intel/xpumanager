@@ -32,7 +32,7 @@ class ConfigSchema(Schema):
     deviceId = fields.Int(metadata={"description": "Device id"})
     powerLimit = fields.Nested(PowerLimitSchema)
     interval = fields.Nested(IntervalSchema)
-    tileCount = fields.Int()
+    #tileCount = fields.Int()
     tileConfigData = fields.Nested(TileConfigSchema)
 
 def set_standby(deviceId):
@@ -66,11 +66,17 @@ def set_standby(deviceId):
                 description: Error
     """
     req = request.get_json()
+    if ("tileId" not in req) or ("standby" not in req):
+        return jsonify("json string is invalid"), 500
     tileId = req["tileId"]
     standby = req["standby"]
-
-    if tileId<0 or standby<0:
-        return jsonify("invalid parameter"), 500
+    if type(standby) != str:
+        return jsonify("Invalid Parameter"), 500
+    if type(tileId) != int:
+        return jsonify("Invalid Parameter"), 500
+    
+    if tileId<0:
+        return jsonify("invalid Parameter"), 500
     
     code, message, data = stub.setStandby(
         deviceId, tileId, standby)
@@ -110,10 +116,18 @@ def set_powerlimit(deviceId):
                 description: Error
     """
     req = request.get_json()
-    power = req["powerLimit"]*1000
+    if ("powerLimit" not in req) or ("intervalWindow" not in req):
+        return jsonify("json string is invalid"), 500
+    power = req["powerLimit"]
     interval = req["intervalWindow"]
+    if type(power) != int:
+       return jsonify("Invalid Parameter"), 500
+    if type(interval) != int:
+        return jsonify("Invalid Parameter"), 500
+    power = power *1000
+    
     if power<0 or interval<0:
-        return jsonify("invalid parameter"), 500
+        return jsonify("invalid Parameter"), 500
     
     code, message, data = stub.setPowerLimit(deviceId, power, interval)
     if code != 0:
@@ -157,12 +171,20 @@ def set_frequencyrange(deviceId):
                 description: Error
     """
     req = request.get_json()
+    if ("tileId" not in req) or ("minFreq" not in req) or ("maxFreq" not in req):
+        return jsonify("json string is invalid"), 500
     tileId = req["tileId"]
     minFreq = req["minFreq"]
     maxFreq = req["maxFreq"]
+    if type(tileId) != int:
+        return jsonify("Invalid Parameter"), 500
+    if type(minFreq) != int:
+        return jsonify("Invalid Parameter"), 500
+    if type(maxFreq) != int:
+        return jsonify("Invalid Parameter"), 500
     
     if tileId<0 or minFreq<0 or maxFreq<0 :
-        return jsonify("invalid parameter"), 500
+        return jsonify("invalid Parameter"), 500
     
     code, message, data = stub.setFrequencyRange(
         deviceId, tileId, minFreq, maxFreq)
@@ -212,13 +234,23 @@ def set_scheduler(deviceId):
                 description: Error
     """
     req = request.get_json()
+    if ("tileId" not in req) or ("mode" not in req) or ("val1" not in req) or ("val2" not in req):
+        return jsonify("json string is invalid"), 500
     tileId = req["tileId"]
     mode = req["mode"]
     val1 = req["val1"]
     val2 = req["val2"]
+    if type(tileId) != int:
+        return jsonify("Invalid Parameter"), 500
+    if type(mode) != int:
+        return jsonify("Invalid Parameter"), 500
+    if type(val1) != int:
+        return jsonify("Invalid Parameter"), 500
+    if type(val2) != int:
+        return jsonify("Invalid Parameter"), 500
 
     if tileId<0 or mode<0 or val1<0 or val2 <0:
-        return jsonify("invalid parameter"), 500
+        return jsonify("invalid Parameter"), 500
     
     code, message, data = stub.setScheduler(deviceId, tileId, mode, val1, val2)
     if code != 0:
@@ -264,7 +296,7 @@ def get_config(deviceId):
     tileId = req["tileId"]
 
     if tileId<0:
-        return jsonify("invalid parameter"), 500
+        return jsonify("invalid Parameter"), 500
     
     code, message, data = stub.getConfig(deviceId, tileId)
     if code != 0:
