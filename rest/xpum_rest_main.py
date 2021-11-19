@@ -31,7 +31,7 @@ app.add_url_rule('/metrics',
 
 # version
 app.add_url_rule('/rest/v1/version',
-                 view_func=auth.login_required(versions.get_version), methods=['GET'])
+                 view_func=versions.get_version, methods=['GET'])
 
 # devices
 app.add_url_rule('/rest/v1/devices',
