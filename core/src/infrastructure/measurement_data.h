@@ -158,7 +158,9 @@ class MeasurementData {
 
     uint32_t getSubdeviceDataSize();
 
-    bool hasSubdeviceData();
+    bool hasSubdeviceData(uint32_t subdevice_id);
+
+    bool hasSubdeviceData() { return p_subdevice_datas->size() > 0; }
 
     uint32_t subdeviceNum() { return p_subdevice_datas->size(); }
 

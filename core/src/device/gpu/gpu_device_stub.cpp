@@ -429,6 +429,26 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
 
     has_exception = false;
     try {
+        toGetMemoryReadThroughput(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ_THROUGHPUT);
+    }
+
+    has_exception = false;
+    try {
+        toGetMemoryWriteThroughput(device);
+    } catch (BaseException& e) {
+        has_exception = true;
+    }
+    if (!has_exception) {
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE_THROUGHPUT);
+    }
+
+    has_exception = false;
+    try {
         toGetEngineUtilization(device);
     } catch (BaseException& e) {
         has_exception = true;
@@ -1425,6 +1445,116 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_devic
             content.append(info.first + " ");
         }
         throw BaseException("toGetMemoryWrite error caused by " + content);
+    } 
+}
+
+void GPUDeviceStub::getMemoryReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetMemoryReadThroughput, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadThroughput(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetMemoryReadThroughput error");
+    }
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
+    uint32_t mem_module_count = 0;
+    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_mem_handle_t> mems(mem_module_count);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
+        if (res == ZE_RESULT_SUCCESS) {
+            for (auto& mem : mems) {
+                zes_mem_properties_t props;
+                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetProperties(mem, &props));
+                if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
+                    continue;
+                }
+                zes_mem_bandwidth_t mem_bandwidth;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
+                if (res == ZE_RESULT_SUCCESS) {
+                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, mem_bandwidth.readCounter/1024) : ret->setRawData(mem_bandwidth.readCounter/1024);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond()/1000) : ret->setRawTimestamp(Utility::getCurrentMillisecond()/1000);
+                    data_acquired = true;
+                } else {
+                    exception_msgs["zesMemoryGetBandwidth"] = res;
+                }
+            }
+        } else {
+            throw BaseException("toGetMemoryReadThroughput error caused by zesDeviceEnumMemoryModules");
+        }
+    } else {
+        throw BaseException("toGetMemoryReadThroughput error caused by zesDeviceEnumMemoryModules");
+    }
+    if (data_acquired) {
+        return ret;
+    } else {
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetMemoryReadThroughput error caused by " + content);
+    }
+}
+
+void GPUDeviceStub::getMemoryWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetMemoryWriteThroughput, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWriteThroughput(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetMemoryWriteThroughput error");
+    }
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
+    uint32_t mem_module_count = 0;
+    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_mem_handle_t> mems(mem_module_count);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
+        if (res == ZE_RESULT_SUCCESS) {
+            for (auto& mem : mems) {
+                zes_mem_properties_t props;
+                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetProperties(mem, &props));
+                if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
+                    continue;
+                }
+                zes_mem_bandwidth_t mem_bandwidth;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
+                if (res == ZE_RESULT_SUCCESS) {
+                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, mem_bandwidth.writeCounter/1024) : ret->setRawData(mem_bandwidth.writeCounter/1024);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond()/1000) : ret->setRawTimestamp(Utility::getCurrentMillisecond()/1000);
+                    data_acquired = true;
+                } else {
+                    exception_msgs["zesMemoryGetBandwidth"] = res;
+                }
+            }
+        } else {
+            throw BaseException("toGetMemoryWriteThroughput error caused by zesDeviceEnumMemoryModules");
+        }
+    } else {
+        throw BaseException("toGetMemoryWriteThroughput error caused by zesDeviceEnumMemoryModules");
+    }
+    if (data_acquired) {
+        return ret;
+    } else {
+        std::string content;
+        for (auto info:exception_msgs) {
+            content.append(info.first + " ");
+        }
+        throw BaseException("toGetMemoryWriteThroughput error caused by " + content);
     } 
 }
 

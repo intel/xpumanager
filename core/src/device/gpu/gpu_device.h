@@ -30,6 +30,8 @@ class GPUDevice : public Device {
     void getMemoryBandwidth(Callback_t callback) noexcept override;
     void getMemoryRead(Callback_t callback) noexcept override;
     void getMemoryWrite(Callback_t callback) noexcept override;
+    void getMemoryReadThroughput(Callback_t callback) noexcept override;
+    void getMemoryWriteThroughput(Callback_t callback) noexcept override;
     void getEngineUtilization(Callback_t callback) noexcept override;
     void getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept override;
     void getEnergy(Callback_t callback) noexcept override;
