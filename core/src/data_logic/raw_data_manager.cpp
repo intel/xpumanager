@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "engine_utilization_data_handler.h"
+#include "engine_group_utilization_data_handler.h"
 #include "frequency_data_handler.h"
 #include "infrastructure/configuration.h"
 #include "memory_data_handler.h"
@@ -89,23 +90,23 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_COMPUTATION]->init();
 
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, p_persistency);
+        std::make_shared<EngineGroupUtilizationDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, p_persistency);
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION, p_persistency);
+        std::make_shared<EngineGroupUtilizationDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION, p_persistency);
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION, p_persistency);
+        std::make_shared<EngineGroupUtilizationDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION, p_persistency);
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION, p_persistency);
+        std::make_shared<EngineGroupUtilizationDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION, p_persistency);
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION, p_persistency);
+        std::make_shared<EngineGroupUtilizationDataHandler>(MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION, p_persistency);
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_EU_ACTIVE] =
