@@ -2,14 +2,14 @@ from .grpc_stub import stub
 import core_pb2
 
 StandbyModeEnumToString = {
-    core_pb2.STANDBY_DEFAULT: "default",
-    core_pb2.STANDBY_NEVER: "never"
+    core_pb2.STANDBY_DEFAULT: "STANDBY_MODE_DEFAULT",
+    core_pb2.STANDBY_NEVER: "STANDBY_MODE_NEVER"
 }
 
 SchedulerModeEnumToString = {
-    core_pb2.SCHEDULER_TIMEOUT: "timeout",
-    core_pb2.SCHEDULER_TIMESLICE: "timeslice",
-    core_pb2.SCHEDULER_EXCLUSIVE: "exclusive"
+    core_pb2.SCHEDULER_TIMEOUT: "SCHEDULER_MODE_TIMEOUT",
+    core_pb2.SCHEDULER_TIMESLICE: "SCHEDULER_MODE_TIMESLICE",
+    core_pb2.SCHEDULER_EXCLUSIVE: "SCHEDULER_MODE_EXCLUSIVE"
 }
 
 def getConfig(deviceId, tileId):
@@ -23,26 +23,33 @@ def getConfig(deviceId, tileId):
     if len(resp.errorMsg) != 0:
             return 1, resp.errorMsg, None
     data = dict()
-    data['deviceId'] = resp.deviceId
-    data['powerLimit'] = resp.powerLimit
-    data['interval'] = resp.interval
-    data['tileCount'] = resp.tileCount
+    data['device_id'] = resp.deviceId
+    data['power_limit'] = resp.powerLimit
+    data['power_average_window'] = resp.interval
+    #data['tileCount'] = resp.tileCount
 
     tilelist = list()
     for i in range(0,resp.tileCount):
         tiledata = dict()
-        tiledata['tileId'] = resp.tileConfigData[i].tileId
-        tiledata['minFreq'] = resp.tileConfigData[i].minFreq
-        tiledata['maxFreq'] = resp.tileConfigData[i].maxFreq
-        tiledata['standby'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
-        tiledata['scheduler'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
+        tiledata['tile_id'] = resp.tileConfigData[i].tileId
+        tiledata['min_frequency'] = resp.tileConfigData[i].minFreq
+        tiledata['max_frequency'] = resp.tileConfigData[i].maxFreq
+        tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
+        tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
         tilelist.append(tiledata)
     data['tileConfigData'] = tilelist
     return 0, "OK", data
 
 def setStandby(deviceId, tileId, standby):
+    if standby.lower() == "never":
+        mode = core_pb2.STANDBY_NEVER
+    elif standby.lower() == "default":
+        mode = core_pb2.STANDBY_NEVER
+    else:
+        return 1, "Invalid Parameter", None
+    
     resp = stub.setDeviceStandbyMode(core_pb2.ConfigDeviceStandbyRequest(
-        deviceId=deviceId, isTileData=True, tileId=tileId, standby=standby))
+        deviceId=deviceId, isTileData=True, tileId=tileId, standby=mode))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}

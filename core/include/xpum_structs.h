@@ -369,6 +369,8 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth
     XPUM_STATS_MEMORY_READ,                          ///< Memory Read
     XPUM_STATS_MEMORY_WRITE,                         ///< Memory Write
+    XPUM_STATS_MEMORY_READ_THROUGHPUT,               ///< Memory read throughput
+    XPUM_STATS_MEMORY_WRITE_THROUGHPUT,              ///< Memory write throughput
     XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, ///< Engine Group Compute All Utilization
     XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION,   ///< Engine Group Media All Utilization
     XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,    ///< Engine Group Copy All Utilization
@@ -624,6 +626,7 @@ struct xpum_policy_notify_callback_para_t {
     uint64_t curValue;    
     bool isTileData;
     int32_t tileId;
+    char notifyCallBackUrl[XPUM_MAX_STR_LENGTH];
 };
 
 typedef void (*xpum_notify_callback_ptr_t)(xpum_policy_notify_callback_para_t *); //return value for policy condtion trigger and action
@@ -632,6 +635,7 @@ struct xpum_policy_t {
     xpum_policy_condition_t condition;
     xpum_policy_action_t action;
     xpum_notify_callback_ptr_t notifyCallBack;
+    char notifyCallBackUrl[XPUM_MAX_STR_LENGTH];
     xpum_device_id_t deviceId; // Only for get policy api, ignored by set policy api.
     bool isDeletePolicy;       // Only for set policy api, ignored by get policy api. If true, then delete this policy in set policy api.
 };

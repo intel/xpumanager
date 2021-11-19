@@ -49,6 +49,10 @@ class GPUDeviceStub {
 
     void getMemoryWrite(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
+    void getMemoryReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
+    void getMemoryWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
     void getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getEngineGroupUtilization(const zes_device_handle_t& device, Callback_t callback, zes_engine_group_t engine_group_type) noexcept;
@@ -140,6 +144,10 @@ class GPUDeviceStub {
     static std::shared_ptr<MeasurementData> toGetMemoryRead(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetMemoryWrite(const zes_device_handle_t& device);
+
+    static std::shared_ptr<MeasurementData> toGetMemoryReadThroughput(const zes_device_handle_t& device);
+
+    static std::shared_ptr<MeasurementData> toGetMemoryWriteThroughput(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetEngineUtilization(const zes_device_handle_t& device);
 

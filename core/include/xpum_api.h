@@ -478,7 +478,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, uint32_t *count);
+xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count);
 
 /** @} */ // Closing for CONFIGURATION_API
 

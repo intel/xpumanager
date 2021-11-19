@@ -2,11 +2,11 @@
 
 namespace xpum {
 
-class EngineUtilizationDataHandler : public MetricStatisticsDataHandler {
+class EngineGroupUtilizationDataHandler : public MetricStatisticsDataHandler {
    public:
-    EngineUtilizationDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
+    EngineGroupUtilizationDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 
-    virtual ~EngineUtilizationDataHandler();
+    virtual ~EngineGroupUtilizationDataHandler();
 
     virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept;
 

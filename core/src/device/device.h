@@ -54,6 +54,10 @@ class Device {
 
     virtual void getMemoryWrite(Callback_t callback) noexcept = 0;
 
+    virtual void getMemoryReadThroughput(Callback_t callback) noexcept = 0;
+
+    virtual void getMemoryWriteThroughput(Callback_t callback) noexcept = 0;
+
     virtual void getEngineUtilization(Callback_t callback) noexcept = 0;
 
     virtual void getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept = 0;

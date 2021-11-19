@@ -31,7 +31,7 @@ app.add_url_rule('/metrics',
 
 # version
 app.add_url_rule('/rest/v1/version',
-                 view_func=auth.login_required(versions.get_version), methods=['GET'])
+                 view_func=versions.get_version, methods=['GET'])
 
 # devices
 app.add_url_rule('/rest/v1/devices',
@@ -158,6 +158,9 @@ user, salt, pwHash, disableAuth = readConfig(
     os.path.dirname(os.path.realpath(__file__)))
 
 if __name__ == '__main__':
+    ####
+    #policy.startPolicyCallBackThread()
+    ####
     app.debug = True
 #   app.run()
     app.run(host='0.0.0.0', port=30000, use_reloader=False)

@@ -1,6 +1,9 @@
 #include "xpum_core_service_impl.h"
 
 #include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "xpum_api.h"
 #include "xpum_structs.h"
@@ -667,6 +670,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             output->mutable_action()->set_throttle_device_frequency_min(input.action.throttle_device_frequency_min);
             output->set_deviceid(input.deviceId);
             output->set_isdeletepolicy(false);
+            //XPUM_LOG_INFO("---XpumCoreServiceImpl::getPolicy()---1--notifyCallBackUrl={}",input.notifyCallBackUrl); 
+            output->set_notifycallbackurl(input.notifyCallBackUrl);
         }
     }else{
         xpum_group_id_t id = request->id();
@@ -701,8 +706,96 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             output->mutable_action()->set_throttle_device_frequency_min(input.action.throttle_device_frequency_min);
             output->set_deviceid(input.deviceId);
             output->set_isdeletepolicy(false);
+            //XPUM_LOG_INFO("---XpumCoreServiceImpl::getPolicy()---2--notifyCallBackUrl={}",input.notifyCallBackUrl); 
+            output->set_notifycallbackurl(input.notifyCallBackUrl);
         }
     }    
+    return grpc::Status::OK;
+}
+
+/////
+std::mutex mutexForCallBackDataList;
+std::condition_variable condtionForCallBackDataList; 
+std::list<std::shared_ptr<ReadPolicyNotifyDataResponse>> callBackDataList;
+void xpum_notify_callback_func(xpum_policy_notify_callback_para_t *p_para) {
+    XPUM_LOG_INFO("------xpum_notify_callback_func-----begin---");
+    XPUM_LOG_INFO("Policy Device Id: {}", p_para->deviceId);
+    XPUM_LOG_INFO("Policy Type: {}", p_para->type);
+    XPUM_LOG_INFO("Policy Condition Type: {}", p_para->condition.type);
+    XPUM_LOG_INFO("Policy Condition Threshold: {}", p_para->condition.threshold);
+    XPUM_LOG_INFO("Policy Action type: {}", p_para->action.type);
+    XPUM_LOG_INFO("Policy timestamp: {}", p_para->timestamp);
+    XPUM_LOG_INFO("Policy curValue: {}", p_para->curValue);
+    XPUM_LOG_INFO("Policy isTileData: {}", p_para->isTileData);
+    XPUM_LOG_INFO("Policy tileId: {}", p_para->tileId);
+    XPUM_LOG_INFO("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
+    XPUM_LOG_INFO("------xpum_notify_callback_func-----end----");
+
+    /////
+    if(strcmp(p_para->notifyCallBackUrl,"NoCallBackFromCli") == 0
+        ||strcmp(p_para->notifyCallBackUrl,"NoCallBackFromRest") == 0
+        ||strlen(p_para->notifyCallBackUrl) == 0
+        ){
+        return;
+    }
+
+    /////
+    std::shared_ptr<ReadPolicyNotifyDataResponse> output = std::make_shared<ReadPolicyNotifyDataResponse>();
+    output->set_type(static_cast<XpumPolicyType>(p_para->type));
+    output->mutable_condition()->set_type(static_cast<XpumPolicyConditionType>(p_para->condition.type));
+    output->mutable_condition()->set_threshold(p_para->condition.threshold);
+    output->mutable_action()->set_type(static_cast<XpumPolicyActionType>(p_para->action.type));
+    output->mutable_action()->set_throttle_device_frequency_max(p_para->action.throttle_device_frequency_max);
+    output->mutable_action()->set_throttle_device_frequency_min(p_para->action.throttle_device_frequency_min);
+    output->set_deviceid(p_para->deviceId);
+    output->set_timestamp(p_para->timestamp);
+    output->set_curvalue(p_para->curValue);
+    output->set_istiledata(p_para->isTileData);
+    output->set_tileid(p_para->tileId);
+    output->set_notifycallbackurl(p_para->notifyCallBackUrl);
+
+    //lock
+    std::unique_lock<std::mutex> lock(mutexForCallBackDataList);
+    //XPUM_LOG_INFO("------xpum_notify_callback_func-----1----size={}", callBackDataList.size());
+    // If restful not start, then callBackDataList only save latest 100 record.
+    uint32_t maxSize = 200;
+    while(callBackDataList.size() >= maxSize){
+        callBackDataList.pop_front();
+    }
+    // push_back
+    callBackDataList.push_back(output);
+    condtionForCallBackDataList.notify_all();
+    //XPUM_LOG_INFO("------xpum_notify_callback_func-----2----size={}", callBackDataList.size());
+}
+
+::grpc::Status XpumCoreServiceImpl::readPolicyNotifyData(::grpc::ServerContext* context, const google::protobuf::Empty* request, ::grpc::ServerWriter<ReadPolicyNotifyDataResponse>* writer) {
+    while(true){
+        //XPUM_LOG_INFO("------readPolicyNotifyData-----1----");
+        {
+            std::unique_lock<std::mutex> lock(mutexForCallBackDataList);
+            //XPUM_LOG_INFO("------readPolicyNotifyData-----2----size={}", callBackDataList.size());
+            if(callBackDataList.size() <= 0){
+                //XPUM_LOG_INFO("------readPolicyNotifyData-----before-wait---size={}", callBackDataList.size());
+                condtionForCallBackDataList.wait(lock);
+                //XPUM_LOG_INFO("------readPolicyNotifyData-----after-wait----size={}", callBackDataList.size());
+            }
+            for(auto it = callBackDataList.begin();it!=callBackDataList.end();it++){
+                std::shared_ptr<ReadPolicyNotifyDataResponse> output = *it;
+                writer->Write(*output);
+                //XPUM_LOG_INFO("------readPolicyNotifyData-----Write----");
+            }
+            callBackDataList.clear();
+        }
+    }
+    ///////    
+    // ReadPolicyNotifyDataResponse resp;
+    // resp.set_type(POLICY_TYPE_RAS_ERROR_CAT_RESET);    
+    // for (auto i=0;i<100;i++) {
+    //     resp.set_timestamp(i);
+    //     writer->Write(resp);
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(10 * 1000));
+    //     XPUM_LOG_INFO("------readPolicyNotifyData-----i={}----",i);
+    // }
     return grpc::Status::OK;
 }
 
@@ -726,7 +819,11 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         policy.action.throttle_device_frequency_min = static_cast<double>(policyInput.action().throttle_device_frequency_min());
     }
     policy.isDeletePolicy = policyInput.isdeletepolicy();  
-    policy.notifyCallBack = nullptr;  
+
+    //notifyCallBack
+    policy.notifyCallBack = xpum_notify_callback_func;  
+    strcpy(policy.notifyCallBackUrl,policyInput.notifycallbackurl().c_str());
+
     
     if(isDevcie){
         //
@@ -848,6 +945,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         standby.mode = XPUM_DEFAULT;
     } else if (mode == STANDBY_NEVER) {
         standby.mode = XPUM_NEVER;
+    } else {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
     }
     res =  xpumSetDeviceStandby(deviceId, standby);
     if (res != XPUM_OK) {

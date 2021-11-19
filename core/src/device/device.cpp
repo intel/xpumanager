@@ -148,6 +148,10 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getMemoryRead(callback); };
         case DeviceCapability::METRIC_MEMORY_WRITE:
             return [p_device](Callback_t callback) { p_device->getMemoryWrite(callback); };
+        case DeviceCapability::METRIC_MEMORY_READ_THROUGHPUT:
+            return [p_device](Callback_t callback) { p_device->getMemoryReadThroughput(callback); };
+        case DeviceCapability::METRIC_MEMORY_WRITE_THROUGHPUT:
+            return [p_device](Callback_t callback) { p_device->getMemoryWriteThroughput(callback); };
         case DeviceCapability::METRIC_ENERGY:
             return [p_device](Callback_t callback) { p_device->getEnergy(callback); };
         case DeviceCapability::METRIC_MEMORY_UTILIZATION:

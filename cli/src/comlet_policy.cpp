@@ -89,6 +89,10 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             policy.mutable_action()->set_type(this->policyActionTypeEnumFromString(this->opts->polictyActionType));
         }
 
+        //set_notifycallbackurl
+        policy.set_notifycallbackurl("NoCallBackFromCli");
+        //policy.set_notifycallbackurl("https://www.baidu.com/");
+
         //std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPolicyData &policy) {
         json = this->coreStub->setPolicy(isDevcie,id,policy);
         return json;

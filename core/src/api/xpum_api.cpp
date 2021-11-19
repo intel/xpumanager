@@ -878,13 +878,13 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
     return Topology::getSwitchTopo(bdfAddress, topo, memSize);
 }
 
-xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t subdevice_id, double *dataArray, uint32_t *count) {
+xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
     }
     std::vector<double> clocks;
-    Core::instance().getDeviceManager()->getFreqAvailableClocks(std::to_string(deviceId), subdevice_id, clocks);
+    Core::instance().getDeviceManager()->getFreqAvailableClocks(std::to_string(deviceId), tileId, clocks);
 
     if (clocks.size() > *count || dataArray == nullptr) {
         return XPUM_BUFFER_TOO_SMALL;
