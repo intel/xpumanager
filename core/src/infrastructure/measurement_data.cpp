@@ -26,6 +26,10 @@ void MeasurementData::setSubdeviceDataAvg(uint32_t subdevice_id, uint64_t data) 
     (*p_subdevice_datas)[subdevice_id].avg = data;
 }
 
+bool MeasurementData::hasSubdeviceData(uint32_t subdevice_id) {
+    return p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end();
+}
+
 uint64_t MeasurementData::getSubdeviceDataCurrent(uint32_t subdevice_id) {
     if (p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end()) {
         return (*p_subdevice_datas)[subdevice_id].current;
@@ -76,10 +80,6 @@ uint32_t MeasurementData::getSubdeviceDataSize() {
     return p_subdevice_datas->size();
 }
 
-bool MeasurementData::hasSubdeviceData() {
-    return p_subdevice_datas->size() >= 1;
-}
-
 void MeasurementData::setSubdeviceAdditionalCurrentData(uint32_t subdevice_id, MeasurementType type, uint64_t data) {
     subdevice_additional_current_datas[subdevice_id][type] = data;
 }
@@ -112,8 +112,8 @@ const std::shared_ptr<std::map<uint64_t, ExtendedMeasurementData>> MeasurementDa
     return p_extended_datas;
 }
 
-void MeasurementData::addExtendedData(uint64_t handle, ExtendedMeasurementData data) {
-    (*p_extended_datas)[handle] = data;
+void MeasurementData::addExtendedData(uint64_t key, ExtendedMeasurementData data) {
+    (*p_extended_datas)[key] = data;
 }
 
 } // end namespace xpum

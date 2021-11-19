@@ -369,6 +369,8 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth
     XPUM_STATS_MEMORY_READ,                          ///< Memory Read
     XPUM_STATS_MEMORY_WRITE,                         ///< Memory Write
+    XPUM_STATS_MEMORY_READ_THROUGHPUT,               ///< Memory read throughput
+    XPUM_STATS_MEMORY_WRITE_THROUGHPUT,              ///< Memory write throughput
     XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, ///< Engine Group Compute All Utilization
     XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION,   ///< Engine Group Media All Utilization
     XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,    ///< Engine Group Copy All Utilization

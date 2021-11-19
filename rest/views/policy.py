@@ -206,7 +206,7 @@ def policyCallBackThread():
             stub.readPolicyNotifyData()
         except:
             time.sleep(5)
-            traceback.print_exc()  
+            #traceback.print_exc()  
             time_stamp = datetime.datetime.now()
             time_stamp = time_stamp.strftime('[%Y-%m-%d %H:%M:%S]')
             print("{}: policyCallBackThread(): Failed to readPolicyNotifyData!".format(time_stamp))
