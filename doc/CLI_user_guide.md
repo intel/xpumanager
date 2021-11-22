@@ -339,11 +339,11 @@ List the GPU device aggregrated statistics that are collected by XPU Manager
 | EU Array Stall (%)           | Tile 0: 0, Tile 1: 0                                              |
 | EU Array Idle (%)            | Tile 0: 0, Tile 1: 0                                              |
 +------------------------------+-------------------------------------------------------------------+
-| Reset                        | 0                                                                 |
-| Programming Errors           | Tile 0: 0, Tile 1: 0                                              |
-| Driver Errors                | Tile 0: 0, Tile 1: 0                                              |
-| Cache Errors Correctable     | Tile 0: 0, Tile 1: 0                                              |
-| Cache Errors Uncorrectable   | Tile 0: 0, Tile 1: 0                                              |
+| Reset                        | 0, total: 0                                                       |
+| Programming Errors           | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
+| Driver Errors                | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
+| Cache Errors Correctable     | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
+| Cache Errors Uncorrectable   | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
 +------------------------------+-------------------------------------------------------------------+
 | GPU Power (W)                | avg: 88, min: 88, max: 90， current: 89                           |
 +------------------------------+-------------------------------------------------------------------+
@@ -611,6 +611,7 @@ Options:
 ```
 
 show the GPU settings
+```
 ./xpumcli config -d 0
 +-------------+-------------------+----------------------------------------------------------------+
 | Device Type | Device Id/Tile Id | Configuration                                                  |
@@ -645,7 +646,7 @@ show the GPU settings
 |             |                   |     Interval(us): 5000                                         |
 |             |                   |     Yield Timeout (us): 640000                                 |
 +-------------+-------------------+----------------------------------------------------------------+
- 
+```
  
 Change the GPU tile core frequency range.
 ```
@@ -670,32 +671,34 @@ Change the GPU tile scheduler mode.
 ./xpumcli config -d 0 -t 0 --scheduler timeout,640000
 Succeed to change the scheduler mode on GPU 0 tile 0.
 ```
- 
-##Get and set the policy, automatic action triggered by the condition
-The supported policies are list in the table below. 
-+-------------+-------------------+----------------------------------------------------------------+
-| Types       | Threshold         | Action                                                         |
-+-------------+-------------------+----------------------------------------------------------------+
- GPU Temperature
- Programming Error
- Driver Error
- Cache Correctable Errors
- Cache Uncorrectable Errors 
- 
-<!--
+
+## Get and set the policy, automatic action triggered by the condition
+The supported policies are list in the table below. For example, if the "GPU Core Temperature" policy is set and one GPU tile temperature reaches the specified threshold, the GPU throttling action will be taken automatically. For "Driver Errors", if the accumulated driver errors reaches the specified threshold, a resetting GPU action will be taken. The temperature and errors are based on tile-level.  
+
+| Types                      | Threshold         | Action               |  
+|:---------------------------|:------------------|:---------------------|
+| GPU Core Temperature       | Settable          | Throttle GPU Core    |  
+| Programming Errors         | Settable          | Reset GPU            |  
+| Driver Errors              | Setabble          | Reset GPU            |  
+| Cache Errors Correctable   | Setabble          | Reset GPU            |  
+| Cache Errors Uncorrectable | Setabble          | Reset GPU            |  
+  
+
 Help info for GPU policy
-```
 ```
 ./xpumcli policy
 
 Get and set the GPU policis.
 
 Usage: xpumcli poligy [Options]
-  xpumcli policy -d [deviceId]
-  xpumcli policy -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]
-  xpumcli policy -d [deviceId] --powerlimit [powerValue, averageWindow]
-  xpumcli policy -d [deviceId] -t [tileId] --standby [standbyMode]
-  xpumcli policy -d [deviceId] -t [tileId] --scheduler [schedulerMode]
+  xpumcli policy -d [deviceId] -l
+  xpumcli policy -d [deviceId] -l -j
+  xpumcli policy -g [groupId] -l
+  xpumcli policy -g [groupId] -l -j
+  xpumcli policy -c -d [deviceId] --type [policyTypeValue] --threshold [threshold]  --action [policyActionValue]
+  xpumcli policy -c -g [groupId] --type 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]
+  xpumcli policy -r -d [deviceId] --type [poligyTypeValue]
+  xpumcli policy -r -g [groupId] --type [poligyTypeValue]
   
 
 
@@ -707,55 +710,64 @@ Options:
   -g,--group                  The group ID.
 
   -l,--list                   List all policies.
-  --listallpolicytype         list all policy types, including the supported condition and action.
+  --listalltypes              List all policy types, including the supported condition and action.
   -c,--create                 Create one policy
-  -r,--remove                 Remove one poligy
+  -r,--remove                 Remove one policy. Only the policy is removed and the changed GPU settings will not be resumed. 
   
-  --policytype                Policy type.
-  --policycondition           Policy condition.
-  --policyaction              Policy action.
-  -t,--threshold              Threshold
-  --throttlefrequencymin      Throttle device frequency to min value
-  --throttlefrequencymax      Throttle device frequency to max value
+  --type                      Policy type.
+                                1. GPU Core Temperature
+                                2. Programming Errors
+                                3. Driver Errors
+                                4. Cache Errors Correctable
+                                5. Cache Errors Uncorrectable
+  --action                    Policy action.
+                                1. Throttle GPU
+                                2. Reset GPU
+  --threshold                 Threshold
+  --throttlefrequencymin      Throttle GPU frequency to min value
+  --throttlefrequencymax      Throttle GPU frequency to max value
 ```
+  
+Create a policy to throttle GPU when the GPU tile temperature is a little high. 
 ```
--->
+./xpumcli policy -c -d 0 --type 1 --threshold 95  --action 1 --throttlefrequencymin 300 --throttlefrequencymax 400
+Succeed to set the "GPU Core Temperature" policy.
+```
 
-<!---
-./xpumcli config -d 0
-+-------------+-------------------+----------------------------------------------------------------+
-| Device Type | Device Id/Tile Id | Configuration                                                  |
-+-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0                 | Power Limit(w): 300.0                                          |
-|             |                   |   Supported Values: 0 to 500                                   |
-|             |                   | Power Average Window (ms): 0                                   |
-|             |                   |   Supported Values: 0 to 10000                                 |
-+-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
-|             |                   | GPU Max Frequency(MHz): 1400.0                                 |
-|             |                   |   Supported Values: 300, 350, 400, 450, 500, 550, 600, 650     |
-|             |                   |   700, 750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200   |
-|             |                   |   1250, 1300                                                   |
-|             |                   |                                                                |
-|             |                   | Standby type: default                                          |
-|             |                   |     Supported Values: default, never                           |
-|             |                   |                                                                |
-|             |                   | Scheduler Mode: timeslice                                      |
-|             |                   |     Supported Values: timeout, timeslice, exclusive            |
-+-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
-|             |                   | GPU Max Frequency(MHz): 1400.0                                 |
-|             |                   |   Supported Values: 300, 350, 400, 450, 500, 550, 600, 650     |
-|             |                   |   700, 750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200   |
-|             |                   |   1250, 1300                                                   |
-|             |                   |                                                                |
-|             |                   | Standby type: default                                          |
-|             |                   |     Supported Values: default, never                           |
-|             |                   |                                                                |
-|             |                   | Scheduler Mode: timeslice                                      |
-|             |                   |     Supported Values: timeout, timeslice, exclusive            |
-+-------------+-------------------+----------------------------------------------------------------+
---->
+List all supported policies
+```
+./xpumcli policy --listalltypes
++-------------------------------+-----------+------------------------------------------------------+
+| Condition                     | Threshold | Action                                               |
++-------------------------------+-----------+------------------------------------------------------+
+| 1. GPU Core Temperature       | Settable  | 1. Throttle GPU Core                                 |
+| 2. Programming Errors         | Settable  | 2. Reset GPU                                         |
+| 3. Driver Errors              | Settable  | 2. Reset GPU                                         |
+| 4. Cache Errors Correctable   | Settable  | 2. Reset GPU                                         |
+| 5. Cache Errors Uncorrectable | Settable  | 2. Reset GPU                                         |
++-------------------------------+-----------+------------------------------------------------------+
+```
+
+List all policies set on the GPU. 
+```
+./xpumcli policy -l -d 0
++----------------------------+-----------+---------------------------------------------------------+
+| Condition                  | Threshold | Action                                                  |
++----------------------------+-----------+---------------------------------------------------------+
+| GPU Core Temperature       | 95        | Throttle GPU Core frequency, min: 300, max: 400         |
+| Cache Errors Uncorrectable | 1         | Reset GPU                                               |
++----------------------------+-----------+---------------------------------------------------------+
+```
+  
+Remove a policy.
+```
+./xpumcli policy -r -d 0 --type 1
+Succeed to remove the "GPU Core Temperature" policy.
+```
+
+
+
+
 
 
 
