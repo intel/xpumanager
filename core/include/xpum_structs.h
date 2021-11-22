@@ -68,6 +68,11 @@ typedef int32_t xpum_event_id_t;
 typedef int32_t xpum_dump_task_id_t;
 
 /**
+ * Tile id
+ */
+typedef int32_t xpum_device_tile_id_t;
+
+/**
  * API call results
  */
 typedef enum xpum_result_enum {
@@ -638,6 +643,20 @@ struct xpum_policy_t {
     char notifyCallBackUrl[XPUM_MAX_STR_LENGTH];
     xpum_device_id_t deviceId; // Only for get policy api, ignored by set policy api.
     bool isDeletePolicy;       // Only for set policy api, ignored by get policy api. If true, then delete this policy in set policy api.
+};
+
+/**
+ * @brief dump raw data task structure
+ * 
+ */
+struct xpum_dump_raw_data_task_t {
+    xpum_dump_task_id_t taskId;                        ///< Task id of the task
+    xpum_device_id_t deviceId;                         ///< device id
+    xpum_device_tile_id_t tileId;                      ///< tile id, when it is -1, means dumping device level data
+    xpum_stats_type_t metricsTypeList[XPUM_STATS_MAX]; ///< metrics types to dump
+    int count;                                         ///< The count of entries in metricsTypeList
+    uint64_t beginTime;                                ///< The begin time of the task
+    char dumpFilePath[XPUM_MAX_STR_LENGTH];            ///< The dump file path
 };
 
 #if defined(__cplusplus)

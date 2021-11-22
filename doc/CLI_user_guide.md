@@ -68,9 +68,12 @@ Discover the GPU devices installed on this machine and provide the device info.
 Usage: xpumcli discovery [Options]
   xpumcli discovery
   xpumcli discovery -d [deviceId]
+  xpumcli discovery -d [deviceId] -j
 
 Options:
   -h,--help                   Print this help message and exit.
+  -j,--json                   Print result in JSON format
+
   -d,--device                 Device ID to query. It will show more detailed info.
 
 ```
@@ -90,12 +93,30 @@ Discover the devices in this machine
 +-----------+--------------------------------------------------------------------------------------+
 ```
 
+Discover the devices in this machine and get the JSON format output
+```
+./xpumcli discovery -j
+{
+    "device_list": [
+        {
+            "device_id": 0,
+            "device_name": "Intel(R) Graphics [0x020a]",
+            "device_type": "GPU",
+            "pci_bdf_address": "0000:4d:00.0",
+            "pci_device_id": "0x20a",
+            "uuid": "00000000-0000-0000-0000-020a00008086",
+            "vendor_name": "Intel(R) Corporation"
+        }
+    ]
+}
+```
+
 Show the detailed info of one device. The device info includes the model, frequency, driver/firwmare info, PCI info, memory info and tile/execution unit info. 
 ```
 ./xpumcli discovery -d 0
-+--------------------------------------------------------------------------------------------------+
++-----------+--------------------------------------------------------------------------------------+
 | Device ID | Device Information                                                                   |
-+--------------------------------------------------------------------------------------------------+
++-----------+--------------------------------------------------------------------------------------+
 | 0         | Device Type: GPU                                                                     |
 |           | Device Name: Intel(R) Graphics [0x020a]                                              |
 |           | Vendor Name: Intel(R) Corporation                                                    |
@@ -125,7 +146,7 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Number of EUs per Sub Slice: 16                                                      |
 |           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
-+--------------------------------------------------------------------------------------------------+
++-----------+--------------------------------------------------------------------------------------+
 ```
 
 ## Manage the devices in groups
@@ -141,11 +162,14 @@ Usage: xpumcli group [Options]
   xpumcli group -r -d [deviceIds] -g [groupId]
   xpumcli group -D -g [groupId]
   xpumcli -l
+  xpumcli -l -j
   xpumcli -l -g [groupId]
 
 
 Options:
   -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
   -c,--create                 Create a group.
   -D,--delete                 Delete a group.
   -l,--list                   List the groups info.
@@ -216,12 +240,15 @@ Get or change some XPU Manager settings.
 
 usage: xpumcli agentset [Options]
   xpumcli agentset -l
+  xpumcli agentset -l -j
   xpumcli agentset -t 200
   xpumcli agentset -m [metricsIds]
 
 
 optional arguments:
   -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
   -l,--list                   Display all agent settings
   -t,--time                   Set the time interval (in milliseconds) by which XPU Manager daemon retrieve raw gpu statistics. Valid values include 100,200,500,1000.
 ```
@@ -291,6 +318,8 @@ Usage: xpumcli stats [Options]
 
 Options:
   -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
   -d,--device                 The device ID to query
   -g,--group                  The group ID to query
 ```
@@ -310,11 +339,11 @@ List the GPU device aggregrated statistics that are collected by XPU Manager
 | EU Array Stall (%)           | Tile 0: 0, Tile 1: 0                                              |
 | EU Array Idle (%)            | Tile 0: 0, Tile 1: 0                                              |
 +------------------------------+-------------------------------------------------------------------+
-| Reset                        | 0                                                                 |
-| Programming Errors           | Tile 0: 0, Tile 1: 0                                              |
-| Driver Errors                | Tile 0: 0, Tile 1: 0                                              |
-| Cache Errors Correctable     | Tile 0: 0, Tile 1: 0                                              |
-| Cache Errors Uncorrectable   | Tile 0: 0, Tile 1: 0                                              |
+| Reset                        | 0, total: 0                                                       |
+| Programming Errors           | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
+| Driver Errors                | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
+| Cache Errors Correctable     | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
+| Cache Errors Uncorrectable   | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
 +------------------------------+-------------------------------------------------------------------+
 | GPU Power (W)                | avg: 88, min: 88, max: 90， current: 89                           |
 +------------------------------+-------------------------------------------------------------------+
@@ -345,10 +374,13 @@ Get the GPU device component health status
 Usage: xpumcli health [Options]
   xpumcli health -l
   xpumcli health -d [deviceId] -t [componentName] [threshold]
+  xpumcli health -d [deviceId] -t [componentName] [threshold] -j
   xpumcli health -g [groupId] -t [componentName] [threshold]
 
 optional arguments:
   -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
   -l,--list                   Display health info for all devices
   -d,--device                 The device ID
   -g,--group                  The group ID
@@ -411,7 +443,7 @@ Change the component custom temperature threshold
 +------------------------------+-------------------------------------------------------------------+
 ```
  
-# Dump the device statistics
+# Dump the device statistics in CSV format
 Help info of the device statistics dump.
 ```
 ./xpumcli dump
@@ -427,6 +459,7 @@ Usage: xpumcli dump [Options]
 
 optional arguments:
   -h,--help                   Print this help message and exit
+
   -d,--device                 The device id to query
   -t,--tile                   The device tile ID to query
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
@@ -458,7 +491,7 @@ optional arguments:
   --list                      List all the active dump tasks. 
 ```
 
-Dump the devce statistics to screen.
+Dump the devce statistics to screen in CSV format.
 ```
 ./xpumcli dump -d 0 -t 0 -m 0,1,2 -i 1 -n 5
 Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
@@ -469,7 +502,7 @@ Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
 2021-11-08 13:31:47.100, 00, 0, 000,    , 0300
 ```
 
-Start to dump the devce raw statistics to the file.
+Start to dump the devce raw statistics to the CSV file.
 ```
 xpumcli dump --rawdata --start -d 0 -t 0 -m 0,1,2 
 Task 0 is started.
@@ -490,41 +523,251 @@ Task 0 is stopped.
 Dump file path: /opt/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
 ```
 
-<!---
+## Get the device topology
+Help info of get GPU to CPU and GPU to PCIe switch topology
+```
+./xpumcli topology
+
+Get the GPU to CPU and GPU to PCIe switch topology info
+
+Usage: xpumcli topology [Options]
+  xpumcli topology -d [deviceId]
+  xpumcli topology -d [deviceId] -j
+
+optional arguments:
+  -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
+  -d,--device                 The device ID to query
+```
+
+Get the info of the CPUs and PCIe switches which are conneted to the GPU
+```
+/xpumcli topology -d 0
+./Topology:
+    Device ID: 0
+    Local CPU List: 0-23,48-71
+    Local CPUs: 000000ff,ffff0000,00ffffff
+    PCIe Switch Count:1
+    PCIe Switch:/sys/devices/pci0000:4a/0000:4a:02.0/0000:4b:00.0/0000:4c:00.0/0000:4d:00.0/0000:4e:18.0/0000:54:00.0/0000:55:01.0
+```
+  
+  
+## Update the GPU firmware
+Help info of updating GPU firmware
+```
+./xpumcli updatefw
+
+Update GPU firmware
+
+Usage: xpumcli fwflash [Options]
+  xpumcli updatefw -d [deviceId] -t [firmwareName] -f [imageFilePath]
+
+Options:
+  -h,--help                   Print this help message and exit
+
+  -d,--device                 The device ID
+  -t,--type                   The firmware name. Valid input: GSC.
+  -f,--file                   The firmware image file path on this server.
+```
+
+Update GPU firmware
+```
+./xpumcli updatefw -d 0 -t GSC -f /home/test/tools/ATS.PS.B.P.Si.2021.WW41.5_25MHz_Quad_DAMen_IFWI.bin
+Start to update firmware:
+Firmware name: GSC
+Image path: /home/test/tools/ATS.PS.B.P.Si.2021.WW41.5_25MHz_Quad_DAMen_IFWI.bin
+Update firmware successfully. 
+```
+ 
+
+## Get and change the GPU settings
+Help info of getting/changing the GPU settings
+```
+./xpumcli config
+
+Get and change the GPU settings.
+
+Usage: xpumcli config [Options]
+  xpumcli config -d [deviceId]
+  xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]
+  xpumcli config -d [deviceId] --powerlimit [powerValue, averageWindow]
+  xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
+  xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
+  
+
+
+Options:
+  -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
+  -d,--device                 The device ID
+  -t,--tile                   The tile ID
+
+  --frequencyrange            GPU tile-level core frequency range.
+  --powerlimit                GPU-level power limit. 
+  --standby                   Tile-level standby mode. Valid options: "default"; "never".
+  --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us); "exclusive".
+```
+
+show the GPU settings
+```
 ./xpumcli config -d 0
 +-------------+-------------------+----------------------------------------------------------------+
 | Device Type | Device Id/Tile Id | Configuration                                                  |
 +-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0                 | Power Limit(w): 300.0                                          |
-|             |                   |   Supported Values: 0 to 500                                   |
-|             |                   | Power Average Window (ms): 0                                   |
-|             |                   |   Supported Values: 0 to 10000                                 |
+| GPU         | 0                 | Power Limit (w): 300.0                                         |
+|             |                   |     Valid Range: 0 to 500                                      |
+|             |                   | Power Average Window (ms): 1                                   |
+|             |                   |     Valid Range: 1 to 60000                                    |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
-|             |                   | GPU Max Frequency(MHz): 1400.0                                 |
-|             |                   |   Supported Values: 300, 350, 400, 450, 500, 550, 600, 650     |
-|             |                   |   700, 750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200   |
-|             |                   |   1250, 1300                                                   |
+|             |                   | GPU Max Frequency(MHz): 1300.0                                 |
+|             |                   |     Valid Opitons: 300, 350, 400, 450, 500,550, 600, 650, 700  |
+|             |                   |       750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200    |
+|             |                   |       1250, 1300                                               |
 |             |                   |                                                                |
-|             |                   | Standby type: default                                          |
-|             |                   |     Supported Values: default, never                           |
+|             |                   | Standby Mode: default                                          |
+|             |                   |     Valid Options: default, never                              |
 |             |                   |                                                                |
 |             |                   | Scheduler Mode: timeslice                                      |
-|             |                   |     Supported Values: timeout, timeslice, exclusive            |
+|             |                   |     Interval(us): 5000                                         |
+|             |                   |     Yield Timeout (us): 640000                                 |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
-|             |                   | GPU Max Frequency(MHz): 1400.0                                 |
-|             |                   |   Supported Values: 300, 350, 400, 450, 500, 550, 600, 650     |
-|             |                   |   700, 750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200   |
-|             |                   |   1250, 1300                                                   |
+|             |                   | GPU Max Frequency(MHz): 1300.0                                 |
+|             |                   |     Valid Options: 300, 350, 400, 450, 500,550, 600, 650, 700  |
+|             |                   |       750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200    |
+|             |                   |       1250, 1300                                               |
 |             |                   |                                                                |
-|             |                   | Standby type: default                                          |
-|             |                   |     Supported Values: default, never                           |
+|             |                   | Standby Mode: default                                          |
 |             |                   |                                                                |
 |             |                   | Scheduler Mode: timeslice                                      |
-|             |                   |     Supported Values: timeout, timeslice, exclusive            |
+|             |                   |     Interval(us): 5000                                         |
+|             |                   |     Yield Timeout (us): 640000                                 |
 +-------------+-------------------+----------------------------------------------------------------+
---->
+```
+ 
+Change the GPU tile core frequency range.
+```
+xpumcli config -d 0 -t 0 --frequencyrange 1200,1300
+Succeed to change the core frequency range on GPU 0 tile 0.
+```
+ 
+Change the GPU power limit.
+```
+./xpumcli config -d 0 --powerlimit 299,1000
+Succeed to set the power limit on GPU 0.
+```
+ 
+Change the GPU tile standby mode.
+```
+./xpumcli config -d 0 -t 0 --standby never
+Succeed to change the standby mode on GPU 0.
+```
+
+Change the GPU tile scheduler mode.
+```
+./xpumcli config -d 0 -t 0 --scheduler timeout,640000
+Succeed to change the scheduler mode on GPU 0 tile 0.
+```
+
+## Get and set the policy, automatic action triggered by the condition
+The supported policies are list in the table below. For example, if the "GPU Core Temperature" policy is set and one GPU tile temperature reaches the specified threshold, the GPU throttling action will be taken automatically. For "Driver Errors", if the accumulated driver errors reaches the specified threshold, a resetting GPU action will be taken. The temperature and errors are based on tile-level.  
+
+| Types                      | Threshold         | Action               |  
+|:---------------------------|:------------------|:---------------------|
+| GPU Core Temperature       | Settable          | Throttle GPU Core    |  
+| Programming Errors         | Settable          | Reset GPU            |  
+| Driver Errors              | Setabble          | Reset GPU            |  
+| Cache Errors Correctable   | Setabble          | Reset GPU            |  
+| Cache Errors Uncorrectable | Setabble          | Reset GPU            |  
+  
+
+Help info for GPU policy
+```
+./xpumcli policy
+
+Get and set the GPU policis.
+
+Usage: xpumcli poligy [Options]
+  xpumcli policy -d [deviceId] -l
+  xpumcli policy -d [deviceId] -l -j
+  xpumcli policy -g [groupId] -l
+  xpumcli policy -g [groupId] -l -j
+  xpumcli policy -c -d [deviceId] --type [policyTypeValue] --threshold [threshold]  --action [policyActionValue]
+  xpumcli policy -c -g [groupId] --type 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]
+  xpumcli policy -r -d [deviceId] --type [poligyTypeValue]
+  xpumcli policy -r -g [groupId] --type [poligyTypeValue]
+  
+
+
+Options:
+  -h,--help                   Print this help message and exit.
+  -j,--json                   Print result in JSON format.
+
+  -d,--device                 The device ID.
+  -g,--group                  The group ID.
+
+  -l,--list                   List all policies.
+  --listalltypes              List all policy types, including the supported condition and action.
+  -c,--create                 Create one policy
+  -r,--remove                 Remove one policy. Only the policy is removed and the changed GPU settings will not be resumed. 
+  
+  --type                      Policy type.
+                                1. GPU Core Temperature
+                                2. Programming Errors
+                                3. Driver Errors
+                                4. Cache Errors Correctable
+                                5. Cache Errors Uncorrectable
+  --action                    Policy action.
+                                1. Throttle GPU
+                                2. Reset GPU
+  --threshold                 Threshold
+  --throttlefrequencymin      Throttle GPU frequency to min value
+  --throttlefrequencymax      Throttle GPU frequency to max value
+```
+  
+Create a policy to throttle GPU when the GPU tile temperature is a little high. 
+```
+./xpumcli policy -c -d 0 --type 1 --threshold 95  --action 1 --throttlefrequencymin 300 --throttlefrequencymax 400
+Succeed to set the "GPU Core Temperature" policy.
+```
+
+List all supported policies
+```
+./xpumcli policy --listalltypes
++-------------------------------+-----------+------------------------------------------------------+
+| Condition                     | Threshold | Action                                               |
++-------------------------------+-----------+------------------------------------------------------+
+| 1. GPU Core Temperature       | Settable  | 1. Throttle GPU Core                                 |
+| 2. Programming Errors         | Settable  | 2. Reset GPU                                         |
+| 3. Driver Errors              | Settable  | 2. Reset GPU                                         |
+| 4. Cache Errors Correctable   | Settable  | 2. Reset GPU                                         |
+| 5. Cache Errors Uncorrectable | Settable  | 2. Reset GPU                                         |
++-------------------------------+-----------+------------------------------------------------------+
+```
+
+List all policies set on the GPU. 
+```
+./xpumcli policy -l -d 0
++----------------------------+-----------+---------------------------------------------------------+
+| Condition                  | Threshold | Action                                                  |
++----------------------------+-----------+---------------------------------------------------------+
+| GPU Core Temperature       | 95        | Throttle GPU Core frequency, min: 300, max: 400         |
+| Cache Errors Uncorrectable | 1         | Reset GPU                                               |
++----------------------------+-----------+---------------------------------------------------------+
+```
+  
+Remove a policy.
+```
+./xpumcli policy -r -d 0 --type 1
+Succeed to remove the "GPU Core Temperature" policy.
+```
+
+
+
+
 
 
 
