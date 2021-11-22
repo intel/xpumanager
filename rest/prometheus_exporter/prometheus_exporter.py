@@ -104,10 +104,29 @@ metrics_map = {
 
 def get_metrics(core, pod_resources):
 
+    all_card_data = {}
+    device_to_card_map = {}
+
     try:
+        # construct mapping "device->card"
+        code, _, data = core.getAllGroups()
+        if code != 0:
+            return f'#nodata: failed to get cards ({code})', 500
+
+        for group in data:
+            group_id = group.get('group_id')
+            # only process built-in groups (i.e., cards) whose group id has 1 as the highest bit
+            if group_id is None or group_id & 0x80000000 != 0x80000000:
+                continue
+
+            for device_id in group.get('device_id_list', []):
+                # a device should be belong to one card at most , no check here
+                device_to_card_map[device_id] = group_id
+
+        # processing device metrics
         code, _, data = core.getDeviceList()
         if code != 0:
-            return '#NODATA', 500
+            return f'#nodata: failed to get devices ({code})', 500
 
         resp = b''
 
@@ -125,41 +144,41 @@ def get_metrics(core, pod_resources):
                     pod_resources, dev, stat_data['device_level'], device_id)
                 resp = resp + r
 
+                # aggregate to card level
+                card_id = device_to_card_map.get(device_id)
+                if card_id is not None:
+                    card_data = all_card_data.setdefault(card_id, [])
+                    aggregate_to_card(card_data, stat_data['device_level'])
+
             for tile_data in stat_data.get('tile_level', []):
                 r = convert_to_prometheus_metrics(
                     pod_resources, dev, tile_data['data_list'], device_id, tile_data['tile_id'])
                 resp = resp + r
 
-        code, _, data = core.getAllGroups()
-        if code != 0:
-            return '#NODATA', 500
-
-        for group in data:
-            group_id = group.get('group_id')
-            # only process built-in groups (i.e., cards) whose group id has 1 as the highest bit
-            if group_id is None or group_id & 0x80000000 != 0x80000000:
-                continue
-
-            stat_code, _, stat_data = core.getStatisticsByGroup(
-                group_id, session_id=1, get_accumulated=True)
-            if stat_code != 0:
-                continue
-            card_power = 0
-            for datas in stat_data.get('datas', []):
-                for metric in datas.get('device_level', {}):
-                    if metric['metrics_type'] == 'XPUM_STATS_POWER':
-                        card_power = card_power + metric.get('value')
-                        break
-
-            card_data = [{'metrics_type': 'XPUM_STATS_POWER', 'avg': card_power} ]
+        # export card metrcis
+        for card_id, card_data in all_card_data.items():
             r = convert_to_prometheus_metrics(
-                pod_resources, dev=None, datalist=card_data, card_id=group_id)
+                pod_resources, dev=None, datalist=card_data, card_id=card_id)
             resp = resp + r
 
         return tidy_response(resp)
     except Exception as e:
         traceback.print_exc()
-        return "#NODATA due to unexpected failure", 500
+        return "#nodata: due to unexpected failure", 500
+
+
+def aggregate_to_card(card_data: list, device_data):
+    for metric in device_data:
+        metric_type = metric['metrics_type']
+        if metric_type == 'XPUM_STATS_POWER':
+            try:
+                card_metric = next(
+                    x for x in card_data if x['metrics_type'] == metric_type)
+            except StopIteration:
+                card_metric = {'metrics_type': metric_type, 'avg': 0}
+                card_data.append(card_metric)
+            card_metric['avg'] = card_metric['avg'] + metric.get('avg')
+            break
 
 
 def tidy_response(resp):
@@ -220,7 +239,8 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
                     counter_values[mm] = new_value
                     mm.inc(new_value-cur_value)
                 else:
-                    print(f'counter value decreased, {metric_name}: pre={cur_value}, cur={new_value}')
+                    print(
+                        f'counter value decreased, {metric_name}: pre={cur_value}, cur={new_value}')
             else:
                 # aggregated value
                 metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
