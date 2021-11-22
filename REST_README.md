@@ -5,7 +5,7 @@
  2. install pip3.
  3. install python packages as root for all user.  
     `umask 022`  
-    `pip3 install protobuf grpcio prometheus-client marshmallow flask flask_httpauth gunicorn[gevent]`
+    `pip3 install protobuf grpcio prometheus-client marshmallow flask flask_httpauth gunicorn[gthread]`
  
 ##Run Script
  1. Run rest_config.py to setup password for REST API user xpumadmin.  
