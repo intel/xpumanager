@@ -720,13 +720,14 @@ xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
 /**
  * @brief Stop write to dumpFilePath
  * 
- * @param taskId    IN: task id
+ * @param taskId      IN: Task id
+ * @param taskInfo   OUT: The info of the task just stopped
  * @return xpum_result_t 
  *      - \ref XPUM_OK  if query successfully
  *      - \ref XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST if task id not exists
  *      - \ref XPUM_GENERIC_ERROR if other error happens
  */
-xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId);
+xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_data_task_t *taskInfo);
 
 /**
  * @brief List all the active dump tasks
