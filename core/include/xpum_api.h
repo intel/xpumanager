@@ -692,67 +692,55 @@ xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
 /** @} */ // Closing for METRICS_API
 
 /**************************************************************************/
-/** @defgroup COLLECT_METRICS_RAW_DATA_API Dump metrics raw data
+/** @defgroup DUMP_RAW_DATA_API Dump metrics raw data
  * These APIs are for collecting metrics raw data
  * @{
  */
 /**************************************************************************/
-
 /**
- * @brief Start a task to collect metrics raw data by device
- * @details This function is used to start a task to collect metrics raw data on specific device.
- *          You can specify the metrics you want to collect, and return a task id, by which you can
- *          stop the collect task and query the result data.
+ * @brief Start dump raw data task. When call this function, core lib will start to write raw data into dump file 
  * 
- * @param deviceId                  IN: The device to collect raw metrics data
- * @param metricsTypeList           IN: The metrics to collect
- * @param count                     IN: The count of entries in \a metricsTypeList
- * @param taskId                   OUT: The id for task created to collect data
+ * @param deviceId      IN: Device id to query 
+ * @param tileId        IN: tile id to query, when pass -1, means to get device level data
+ * @param metricsTypeList   IN: metrics type to dump
+ * @param count         IN: The count of entries in \a metricsTypeList
+ * @param dumpFilePath  IN: The path of file to dump raw data
+ * @param taskInfo      OUT: The info of the task just created
  * @return xpum_result_t 
+ *      - \ref XPUM_OK  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR if other error happens
  */
-xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
-                                                 xpum_stats_type_t metricsTypeList[],
-                                                 int count,
-                                                 xpum_dump_task_id_t *taskId);
+xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
+                                       xpum_device_tile_id_t tileId,
+                                       xpum_stats_type_t metricsTypeList[],
+                                       int count,
+                                       char *dumpFilePath,
+                                       xpum_dump_raw_data_task_t *taskInfo);
 
 /**
- * @brief Start a task to collect metrics raw data by group
- * @details This function is used to start a task to collect metrics raw data on specific group.
- *          You can specify the metrics you want to collect, and return a task id, by which you can
- *          stop the collect task and query the result data.
+ * @brief Stop write to dumpFilePath
  * 
- * @param groupId                   IN: The group to collect raw metrics data
- * @param metricsTypeList           IN: The metrics to collect
- * @param count                     IN: The count of entries in \a metricsTypeList
- * @param taskId                   OUT: The id for task created to collect data
+ * @param taskId    IN: task id
  * @return xpum_result_t 
+ *      - \ref XPUM_OK  if query successfully
+ *      - \ref XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST if task id not exists
+ *      - \ref XPUM_GENERIC_ERROR if other error happens
  */
-xpum_result_t xpumStartCollectMetricsRawDataTaskByGroup(xpum_group_id_t groupId,
-                                                        xpum_stats_type_t metricsTypeList[],
-                                                        int count,
-                                                        xpum_dump_task_id_t *taskId);
+xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId);
 
 /**
- * @brief Stop a metrics raw data collect task
+ * @brief List all the active dump tasks
  * 
- * @param taskId                IN: The task id to query
+ * @param taskList      OUT: The array to store task info. First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count      IN/OUT: When \a taskList is NULL, \a count will be filled with the number of running tasks, and return. When \a taskList is not NULL, \a count denotes the length of \a taskList, \a count should be equal to or larger than the number of running tasks, when return, the \a count will store real number of entries returned by \a taskList   
  * @return xpum_result_t 
+ *      - \ref XPUM_OK  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR if other error happens
  */
-xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId);
+xpum_result_t xpumListDumpRawDataTask(xpum_dump_raw_data_task_t taskList[], int *count);
 
-/**
- * @brief Get metrics raw data 
- * 
- * @param taskId                IN: The task id to query
- * @param dataList          IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.                          
- * @param count             IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList                
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed 
- */
-xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count);
 
-/** @} */ // Closing for COLLECT_METRICS_RAW_DATA_API
+/** @} */ // Closing for DUMP_RAW_DATA_API
 
 /**************************************************************************/
 /** @defgroup TOPOLOGY_API Topologies
