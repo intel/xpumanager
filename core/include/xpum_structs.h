@@ -656,8 +656,6 @@ struct xpum_dump_raw_data_task_t {
     xpum_stats_type_t metricsTypeList[XPUM_STATS_MAX]; ///< metrics types to dump
     int count;                                         ///< The count of entries in metricsTypeList
     uint64_t beginTime;                                ///< The begin time of the task
-    bool taskStopped;                                  ///< The task is stopped or not
-    uint64_t endTime;                                  ///< The end time of the task
     char dumpFilePath[XPUM_MAX_STR_LENGTH];            ///< The dump file path
 };
 
