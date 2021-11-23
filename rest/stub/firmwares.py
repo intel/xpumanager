@@ -9,7 +9,6 @@ def runFirmwareFlash(deviceId, firmwareType, filePath):
     job.path = filePath
     resp = stub.runFirmwareFlash(job)
     if resp.value != 0:
-        print("error msg " + resp.errorMsg)
         return 1, "Fail to run firmware flash", None
     else:
         data = dict()
