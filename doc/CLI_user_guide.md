@@ -690,7 +690,7 @@ Help info for GPU policy
 
 Get and set the GPU policis.
 
-Usage: xpumcli poligy [Options]
+Usage: xpumcli policy [Options]
   xpumcli policy -d [deviceId] -l
   xpumcli policy -d [deviceId] -l -j
   xpumcli policy -g [groupId] -l
@@ -698,8 +698,8 @@ Usage: xpumcli poligy [Options]
   xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 1 --threshold [threshold]  --action [policyActionValue]
   xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 2 --action [policyActionValue]
   xpumcli policy -c -g [groupId] --type 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]
-  xpumcli policy -r -d [deviceId] --type [poligyTypeValue]
-  xpumcli policy -r -g [groupId] --type [poligyTypeValue]
+  xpumcli policy -r -d [deviceId] --type [policyTypeValue]
+  xpumcli policy -r -g [groupId] --type [policyTypeValue]
   
 
 
@@ -769,7 +769,62 @@ Remove a policy.
 ./xpumcli policy -r -d 0 --type 1
 Succeed to remove the "GPU Core Temperature" policy.
 ```
+  
+## Diagnose GPU with different test suites
+When running tests on GPU, GPU will be used exclusively. There will be obviously performance impact on the GPU. Some CPU performance may also be impacted. 
 
+Help info for GPU diagnostics
+```
+./xpumcli diag
+
+Run some test suites to diagnose GPU.
+
+Usage: xpumcli diag [Options]
+  xpumcli diag -d [deviceId] -l [level]
+  xpumcli diag -d [deviceId] -l [level] -j
+  xpumcli diag -g [groupId] -l
+  xpumcli diag -g [groupId] -l -j
+  
+Options:
+  -h,--help                   Print this help message and exit.
+  -j,--json                   Print result in JSON format.
+
+  -d,--device                 The device ID.
+  -g,--group                  The group ID.
+  -l,--level                  The diagnostics level to run. The valid options include
+                                1. quick test
+                                2. medium test
+                                3. long test
+```
+
+Run test to diagnose GPU
+```
+./xpumcli diag -d 0 -l 1
+Device Type: GPU
++------------------------+-------------------------------------------------------------------------+
+| Device Id              | 0                                                                       |
++------------------------+-------------------------------------------------------------------------+
+| Level                  | 1                                                                       |
+| Result                 | Fail                                                                    |
+| Message                | Aborted - other GPU processes are running                               |
+| Checking Items         | 4                                                                       |
++------------------------+-------------------------------------------------------------------------+
+| Software Env Variables | Result: Pass                                                            |
+|                        | Message: Pass - check environment variables.                            |
++------------------------+-------------------------------------------------------------------------+
+| Software Library       | Result: Pass                                                            |
+|                        | Message: Pass - check libraries                                         |
++------------------------+-------------------------------------------------------------------------+
+| Software Permission    | Result: Pass                                                            |
+|                        | Message: Pass - check permission                                        |
++------------------------+-------------------------------------------------------------------------+
+| Software Exclusive     | Result: Fail                                                            |
+|                        | Message: Fail - exclusive check. 2 processs(es) are using the device.   |
+|                        |   PID: 633972, Command: ./ze_gemm                                       |
+|                        |   PID: 633973, Command: ./ze_gemm                                       |
++------------------------+-------------------------------------------------------------------------+
+
+```
 
 
 

@@ -222,12 +222,13 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult() noexcept {
     xpum_firmware_flash_result_t rc{XPUM_DEVICE_FIRMWARE_FLASH_OK};
 
     if (commandExec != nullptr) {
-        char buf[BUFFERSIZE];
-        char* res = fgets(buf, BUFFERSIZE, commandExec);
-        if (res != nullptr) {
-            log += std::string{res};
-        } else {
-            /*
+        for (int i = 0; i < 100; ++i) {
+            char buf[BUFFERSIZE];
+            char* res = fgets(buf, BUFFERSIZE, commandExec);
+            if (res != nullptr) {
+                log += std::string{res};
+            } else {
+                /*
             if ( log.find( "FPT Operation Successful" ) != string::npos ) {
                 rc = Flash_result_t::OK;
             }
@@ -235,40 +236,19 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult() noexcept {
                 rc = Flash_result_t::ERROR;
             }
             */
-            dumpFirmwareFlashLog();
-            log.clear();
-            if (pclose(commandExec) == 0) {
-                rc = XPUM_DEVICE_FIRMWARE_FLASH_OK;
-            } else {
-                rc = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+                dumpFirmwareFlashLog();
+                log.clear();
+                if (pclose(commandExec) == 0) {
+                    rc = XPUM_DEVICE_FIRMWARE_FLASH_OK;
+                } else {
+                    rc = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+                }
+                commandExec = nullptr;
+                return rc;
             }
-            commandExec = nullptr;
-            return rc;
         }
 
-        res = fgets(buf, BUFFERSIZE, commandExec);
-        if (res != nullptr) {
-            log += std::string{res};
-            return XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
-        } else {
-            /*
-            if ( res.find( "FPT Operation Successful" ) != string::npos ) {
-                rc = Flash_result_t::OK;
-            }
-            else {
-                rc = Flash_result_t::ERROR;
-            }
-            */
-            dumpFirmwareFlashLog();
-            log.clear();
-            if (pclose(commandExec) == 0) {
-                rc = XPUM_DEVICE_FIRMWARE_FLASH_OK;
-            } else {
-                rc = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
-            }
-            commandExec = nullptr;
-            return rc;
-        }
+        return XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
     } else {
         return XPUM_DEVICE_FIRMWARE_FLASH_OK;
     }
