@@ -242,14 +242,14 @@ def set_scheduler(deviceId):
     val2 = req["val2"]
     if type(tileId) != int:
         return jsonify("Invalid Parameter"), 500
-    if type(mode) != int:
+    if type(mode) != str:
         return jsonify("Invalid Parameter"), 500
     if type(val1) != int:
         return jsonify("Invalid Parameter"), 500
     if type(val2) != int:
         return jsonify("Invalid Parameter"), 500
 
-    if tileId<0 or mode<0 or val1<0 or val2 <0:
+    if tileId<0 or val1<0 or val2 <0:
         return jsonify("invalid Parameter"), 500
     
     code, message, data = stub.setScheduler(deviceId, tileId, mode, val1, val2)
