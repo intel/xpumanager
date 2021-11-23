@@ -19,21 +19,19 @@ class MonitorTask : public std::enable_shared_from_this<MonitorTask> {
         DeviceCapability capability,
         int freq,
         std::shared_ptr<DeviceManagerInterface>& p_device_manager,
-        std::shared_ptr<DataLogicInterface>& p_data_logic,
-        std::shared_ptr<ScheduledThreadPool>& p_scheduled_thread_pool);
+        std::shared_ptr<DataLogicInterface>& p_data_logic);
 
     MonitorTask(
         DeviceCapability capability,
         int freq,
         std::shared_ptr<DeviceManagerInterface>& p_device_manager,
         std::shared_ptr<DataLogicInterface>& p_data_logic,
-        MonitorTaskType type,
-        std::shared_ptr<ScheduledThreadPool>& p_scheduled_thread_pool);
+        MonitorTaskType type);
 
     virtual ~MonitorTask();
 
    public:
-    void start();
+    void start(std::shared_ptr<ScheduledThreadPool>& p_scheduled_thread_pool);
 
     void stop();
 
@@ -49,7 +47,6 @@ class MonitorTask : public std::enable_shared_from_this<MonitorTask> {
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
     std::shared_ptr<DataLogicInterface> p_data_logic;
     MonitorTaskType type;
-    std::shared_ptr<ScheduledThreadPool> p_scheduled_thread_pool;
     std::shared_ptr<ScheduledThreadPoolTask> p_scheduled_task;
 };
 

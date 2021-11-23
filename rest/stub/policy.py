@@ -66,7 +66,7 @@ def getPolicy(id, isDevcie):
     except:
         traceback.print_exc()  
         print("Failed to getPolicy:id={},isDevcie={}".format(id,isDevcie))
-        return 1, 'gRPC Error When getPolicy', None
+        return 2, 'gRPC Error When getPolicy', None
     ##########    
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
@@ -139,7 +139,7 @@ def setPolicy(id, isDevcie,input,isDeletePolicy):
     ##########
     resp = stub.setPolicy(core_pb2.SetPolicyRequest(id=id,isDevcie=isDevcie,policy=policy))
     if len(resp.errorMsg) != 0:
-        return 1, resp.errorMsg, None
+        return 2, resp.errorMsg, None
     return 0, "OK", {"result":"success"}
 
 def readPolicyNotifyData(): 

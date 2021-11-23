@@ -24,14 +24,12 @@ std::map<std::shared_ptr<Device>, std::map<DeviceCapability, MonitorTaskLogStatu
 MonitorTask::MonitorTask(
     DeviceCapability capability, int freq,
     std::shared_ptr<DeviceManagerInterface>& p_device_manager,
-    std::shared_ptr<DataLogicInterface>& p_data_logic,
-    std::shared_ptr<ScheduledThreadPool>& p_scheduled_thread_pool)
+    std::shared_ptr<DataLogicInterface>& p_data_logic)
     : capability(capability),
       freq(freq),
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(MonitorTaskType::DEFAULT_TELEMETRY),
-      p_scheduled_thread_pool(p_scheduled_thread_pool),
       p_scheduled_task(nullptr) {
     XPUM_LOG_DEBUG("MonitorTask()");
 }
@@ -40,14 +38,12 @@ MonitorTask::MonitorTask(
     DeviceCapability capability, int freq,
     std::shared_ptr<DeviceManagerInterface>& p_device_manager,
     std::shared_ptr<DataLogicInterface>& p_data_logic,
-    MonitorTaskType type,
-    std::shared_ptr<ScheduledThreadPool>& p_scheduled_thread_pool)
+    MonitorTaskType type)
     : capability(capability),
       freq(freq),
       p_device_manager(p_device_manager),
       p_data_logic(p_data_logic),
       type(type),
-      p_scheduled_thread_pool(p_scheduled_thread_pool),
       p_scheduled_task(nullptr) {
     XPUM_LOG_DEBUG("MonitorTask()");
 }
@@ -56,13 +52,13 @@ MonitorTask::~MonitorTask() {
     XPUM_LOG_DEBUG("~MonitorTask()");
 }
 
-void MonitorTask::start() {
+void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
     long long now = Utility::getCurrentMillisecond();
     long delay = freq - now % freq;
     std::weak_ptr<MonitorTask> this_weak_ptr = shared_from_this();
 
     std::lock_guard<std::mutex> lock(this->mutex);
-    p_scheduled_task = p_scheduled_thread_pool->scheduleAtFixedRate(delay, freq, [this_weak_ptr]() {
+    p_scheduled_task = threadPool->scheduleAtFixedRate(delay, freq, [this_weak_ptr]() {
         auto p_this = this_weak_ptr.lock();
         if (p_this == nullptr) {
             XPUM_LOG_WARN("this_weak_ptr is nullptr for monitor data");
@@ -106,7 +102,6 @@ void MonitorTask::start() {
             });
         }
 
-        std::unique_lock<std::mutex> lock(p_this->mutex);
         bool hasSubdeviceAdditionalCurrentData = false;
         std::set<MeasurementType> subdeviceAdditionalCurrentDataTypes;
         // deviceId, subdeviceId, addtionalType, addtionalData

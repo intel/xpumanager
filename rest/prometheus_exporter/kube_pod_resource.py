@@ -1,17 +1,10 @@
-import re
-import os
 import grpc
 import api_pb2_grpc as apigrpc
 import api_pb2 as apipb2
 
-import traceback
+from dev_file_converter import get_bdf_address
 
 KUBELET_SOCKET = 'unix:///var/lib/kubelet/pod-resources/kubelet.sock'
-
-device_id_pattern = re.compile('(card\d+)\-\d*')
-bdf_pattern = re.compile(
-    '.*/([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]{1}\S*)')
-
 
 def get_pod_resources():
 
@@ -40,19 +33,6 @@ def get_pod_resources():
     except Exception as e:
         print('failed to get pod resource list due to: ', e)
     return ret
-
-
-def get_bdf_address(device_id):
-    device_id_match = device_id_pattern.fullmatch(device_id)
-    if device_id_match is not None:
-        card_dev = device_id_match.group(1)
-        link = os.readlink(f'/sys/class/drm/{card_dev}/device')
-        bdf_match = bdf_pattern.fullmatch(link)
-        if bdf_match is not None:
-            return bdf_match.group(1)
-
-    return None
-
 
 if __name__ == '__main__':
     print(get_pod_resources())
