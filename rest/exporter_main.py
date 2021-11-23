@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--host', default='0.0.0.0',
                         help='address on which the server listens')
-    parser.add_argument('--port', default=30000,
+    parser.add_argument('--port', default=3198,
                         help='port on which the server listens')
     parser.add_argument('--pod', action='store_true', default=None,
                         help='enable pod information retrieval from kubernetes')
