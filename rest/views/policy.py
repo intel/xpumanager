@@ -16,7 +16,7 @@ class PolicyActionSchema(Schema):
     throttle_device_frequency_max = fields.Int(metadata={"description": "The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type."})
 
 
-class PolicySchema(FieldABC):
+class PolicySchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
     type = fields.Str(metadata={"description": "Policy type"})
     notifyCallBackUrl = fields.Str(metadata={"description": "Policy notify callback url"})
@@ -26,7 +26,7 @@ class PolicySchema(FieldABC):
 
 class PolicyGetSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
-    poliyList = fields.List(PolicySchema)
+    poliyList = fields.Nested(PolicySchema,many=True)
 
 class PolicyRespSchema(Schema):  
     Status = fields.Int(metadata={"description": "Status code, 0 is success, other is error."})
@@ -38,7 +38,7 @@ def get_device_policy(deviceId):
     ---
     get:
         tags:
-            - "Policy Management"
+            - "Policy"
         description: Get all policies for a device
         parameters:
             - 
@@ -82,8 +82,8 @@ def set_device_policy(deviceId):
     ---
     post:
         tags:
-            - "Policy Management"
-        description: Set a policy for a device
+            - "Policy"
+        description: Set a policy for a device. The isDeletePolicy must be false.
         parameters:
             - 
                 name: policy info
@@ -110,11 +110,10 @@ def set_device_policy(deviceId):
                 examples: 
                     application/json:
                         { "Message": "Invalid Parameter: policy type is invalid.", "Status": 1 }
-    ---
     delete:
         tags:
-            - "Policy Management"
-        description: Delete a policy for a device
+            - "Policy"
+        description: Delete a policy for a device. The policy type must be set, isDeletePolicy must be true.
         parameters:
             - 
                 name: policy info
@@ -163,7 +162,7 @@ def get_group_policy(groupId):
     ---
     get:
         tags:
-            - "Policy Management"
+            - "Policy"
         description: Get all policies for a group
         parameters:
             - 
@@ -207,8 +206,8 @@ def set_group_policy(groupId):
     ---
     post:
         tags:
-            - "Policy Management"
-        description: Set a policy for a group
+            - "Policy"
+        description: Set a policy for a group. The isDeletePolicy must be false.
         parameters:
             - 
                 name: policy info
@@ -235,11 +234,10 @@ def set_group_policy(groupId):
                 examples: 
                     application/json:
                         { "Message": "Invalid Parameter: policy type is invalid.", "Status": 1 }
-    ---
     delete:
         tags:
-            - "Policy Management"
-        description: Delete a policy for a group
+            - "Policy"
+        description: Delete a policy for a group. The policy type must be set, isDeletePolicy must be true.
         parameters:
             - 
                 name: policy info
@@ -288,7 +286,7 @@ def get_all_policy():
     ---
     get:
         tags:
-            - "Policy Management"
+            - "Policy"
         description: Get all policies for all devices
         produces: 
             - application/json
