@@ -2,9 +2,10 @@ from prometheus_client import CollectorRegistry, Gauge, Counter, generate_latest
 
 import os
 import traceback
-import sys
 
 from enum import Enum, unique
+
+from dev_file_converter import get_dev_file
 
 registries = {}
 counter_values = {}
@@ -261,6 +262,11 @@ def build_dev_labels(dev):
     label_values = [dev.get(key, '') for key in [
         'uuid', 'device_name', 'pci_device_id', 'vendor_name', 'pci_bdf_address']]
 
+    dev_file = get_dev_file(dev.get('pci_bdf_address', ''))
+    if dev_file is not None:
+        labels.append('dev_file')
+        label_values.append(dev_file)
+
     return labels, label_values
 
 
@@ -304,13 +310,3 @@ def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels):
             [ext_labels.get(key, 'n/a') for key in ext_labelnames]
         return all_labelnames, all_labelvalues
     return labels, label_values
-
-
-if __name__ == '__main__':
-    rest_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.insert(1, rest_folder)
-    import stub as core
-    from kube_pod_resource import get_pod_resources
-    pod_resources = get_pod_resources()
-    metrics = get_metrics(core, pod_resources)
-    print(metrics)
