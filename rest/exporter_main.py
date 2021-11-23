@@ -35,7 +35,10 @@ if __name__ == '__main__':
 
     # prometheus exporter
     app.add_url_rule('/metrics',
-                    view_func=exporter.export_metrics, methods=['GET'])
+                     view_func=exporter.export_metrics, methods=['GET'])
+
+    app.add_url_rule('/healtz',
+                     view_func=exporter.check_health, methods=['GET'])
 
     app.run(host=args.host, port=args.port, use_reloader=False)
 
@@ -45,4 +48,7 @@ else:
 
     # prometheus exporter
     app.add_url_rule('/metrics',
-                    view_func=exporter.export_metrics, methods=['GET'])
+                     view_func=exporter.export_metrics, methods=['GET'])
+
+    app.add_url_rule('/healtz',
+                     view_func=exporter.check_health, methods=['GET'])
