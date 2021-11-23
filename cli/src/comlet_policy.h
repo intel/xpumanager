@@ -16,9 +16,9 @@ struct ComletPolicyOptions {
     bool remove = false;
     int deviceId = -1;
     int groupId = -1;
-    std::string polictyType = "";
-    std::string polictyConditionType = "";
-    std::string polictyActionType = "";
+    std::string policyType = "";
+    std::string policyConditionType = "";
+    std::string policyActionType = "";
     int threshold = -2;
     double throttleDeviceFrequencyMin=-200000;
     double throttleDeviceFrequencyMax=-200000;
