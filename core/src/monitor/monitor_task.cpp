@@ -102,7 +102,6 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
             });
         }
 
-        std::unique_lock<std::mutex> lock(p_this->mutex);
         bool hasSubdeviceAdditionalCurrentData = false;
         std::set<MeasurementType> subdeviceAdditionalCurrentDataTypes;
         // deviceId, subdeviceId, addtionalType, addtionalData
