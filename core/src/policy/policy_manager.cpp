@@ -235,12 +235,9 @@ xpum_device_metric_data_t* PolicyManager::getPolicyCurValue(std::shared_ptr<xpum
 bool PolicyManager::isMatchMetricType(xpum_stats_type_t metricsType, xpum_policy_type_t policyType) {
     if (policyType == XPUM_POLICY_TYPE_GPU_TEMPERATURE && metricsType == XPUM_STATS_GPU_CORE_TEMPERATURE) {
         return true;
-    }
-    //TODO: Check XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE supported by monitor
-    // else if(policyType == XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE && metricsType == XPUM_STATS_GPU_CORE_TEMPERATURE){
-    //   return true;
-    // }
-    else if (policyType == XPUM_POLICY_TYPE_GPU_POWER && metricsType == XPUM_STATS_POWER) {
+    } else if(policyType == XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE && metricsType == XPUM_STATS_MEMORY_TEMPERATURE){
+      return true;
+    } else if (policyType == XPUM_POLICY_TYPE_GPU_POWER && metricsType == XPUM_STATS_POWER) {
         return true;
     } else if (policyType == XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET && metricsType == XPUM_STATS_RAS_ERROR_CAT_RESET) {
         return true;
@@ -430,7 +427,9 @@ xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
             return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
         }
     } else if (policy.action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE) {
-        if (!(policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE)) {
+        if (!(policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE)) {
             return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
         }
     }
