@@ -62,6 +62,9 @@ def setPowerLimit(deviceId, power, interval):
     return 0, "OK", {"result": "OK"}
 
 def setFrequencyRange(deviceId, tileId, minFreq, maxFreq):
+    if maxFreq < minFreq:
+        return 1, "maxFreq < minFreq", None
+
     resp = stub.setDeviceFrequencyRange(core_pb2.ConfigDeviceFrequencyRangeRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, minFreq=minFreq, maxFreq=maxFreq))
     if len(resp.errorMsg) != 0:
@@ -69,8 +72,16 @@ def setFrequencyRange(deviceId, tileId, minFreq, maxFreq):
     return 0, "OK", {"result": "OK"}
 
 def setScheduler(deviceId, tileId, mode, val1, val2):
+    if mode.lower() == "timeout":
+        scheduler = core_pb2.SCHEDULER_TIMEOUT
+    elif mode.lower() == "timeslice":
+        scheduler = core_pb2.SCHEDULER_TIMESLICE
+    elif mode.lower() == "exclusive":
+        scheduler = core_pb2.SCHEDULER_EXCLUSIVE
+    else:
+        return 1, "Invalid Parameter", None
     resp = stub.setDeviceSchedulerMode(core_pb2.ConfigDeviceSchdeulerModeRequest(
-        deviceId=deviceId, isTileData=True, tileId=tileId, scheduler=mode, val1=val1, val2=val2))
+        deviceId=deviceId, isTileData=True, tileId=tileId, scheduler=scheduler, val1=val1, val2=val2))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}
