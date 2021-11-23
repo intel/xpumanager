@@ -1988,6 +1988,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
     uint32_t engine_count = 0;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
+    zes_device_properties_t props = {};
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
+    if (res == ZE_RESULT_SUCCESS) {
+        ret->setNumSubdevices(props.numSubdevices);
+    } else {
+        throw BaseException("toGetEngineGroupUtilization error caused by zesDeviceGetProperties");
+    }
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_engine_handle_t> engines(engine_count);
