@@ -21,6 +21,7 @@ class PromMetric(Enum):
     xpum_power_watts = ('xpum_power_watts', 'Avg GPU power (in watts), per GPU and per card')  # nopep8
     xpum_energy_joules = ('xpum_energy_joules', 'Total GPU energy consumption since boot (in Joules), per GPU')  # nopep8
     xpum_temperature_celsius = ('xpum_temperature_celsius', 'Avg GPU temperature (in Celsius degree), per tile', ['location'])  # nopep8
+    xpum_max_temperature_celsius = ('xpum_max_temperature_celsius', 'Max GPU temperature (in Celsius degree), per tile', ['location'])  # nopep8
 
     # Frequency
     xpum_frequency_mhz = ('xpum_frequency_mhz', 'Avg (GPU) frequency (in MHz), per GPU tile', ['location', 'type'])  # nopep8
@@ -54,11 +55,12 @@ class PromMetric(Enum):
 
 
 class Metric:
-    def __init__(self, prom_metric: PromMetric, scale: float = 1, ext_labels: dict = {}) -> None:
+    def __init__(self, prom_metric: PromMetric, is_counter: bool = False, xpum_field=None, scale: float = 1, ext_labels: dict = {}) -> None:
         self.prom_metric = prom_metric
         self.scale = scale
         self.ext_labels = ext_labels
-
+        self.is_counter = is_counter
+        self.xpum_field = xpum_field if xpum_field is not None else ('acc' if is_counter else 'avg')
 
 metrics_map = {
     # Engine utilization
@@ -76,8 +78,10 @@ metrics_map = {
 
     # Power/Energy/Temperature
     'XPUM_STATS_POWER': Metric(PromMetric.xpum_power_watts),
-    'XPUM_STATS_ENERGY': Metric(PromMetric.xpum_energy_joules, scale=0.001),
-    'XPUM_STATS_GPU_CORE_TEMPERATURE': Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'gpu'}),
+    'XPUM_STATS_ENERGY': Metric(PromMetric.xpum_energy_joules, is_counter=True, scale=0.001),
+    'XPUM_STATS_GPU_CORE_TEMPERATURE': [
+        Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'gpu'}),  # nopep8
+        Metric(PromMetric.xpum_max_temperature_celsius, xpum_field='max', ext_labels={'location': 'gpu'})],  # nopep8
 
     # Frequency
     'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),
@@ -88,17 +92,17 @@ metrics_map = {
     'XPUM_STATS_MEMORY_USED': Metric(PromMetric.xpum_memory_used_bytes),
     'XPUM_STATS_MEMORY_UTILIZATION': Metric(PromMetric.xpum_memory_ratio, scale=0.01),
     'XPUM_STATS_MEMORY_BANDWIDTH': Metric(PromMetric.xpum_memory_bandwidth_ratio, scale=0.01),
-    'XPUM_STATS_MEMORY_READ': Metric(PromMetric.xpum_memory_read_bytes),
-    'XPUM_STATS_MEMORY_WRITE': Metric(PromMetric.xpum_memory_write_bytes),
+    'XPUM_STATS_MEMORY_READ': Metric(PromMetric.xpum_memory_read_bytes, is_counter=True),
+    'XPUM_STATS_MEMORY_WRITE': Metric(PromMetric.xpum_memory_write_bytes, is_counter=True),
 
     # Errors
-    'XPUM_STATS_RAS_ERROR_CAT_RESET': Metric(PromMetric.xpum_resets),
-    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': Metric(PromMetric.xpum_programming_errors),
-    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': Metric(PromMetric.xpum_driver_errors),
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_cache_errors, ext_labels={'type': 'correctable'}),
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_cache_errors, ext_labels={'type': 'uncorrectable'}),
-    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_display_errors, ext_labels={'type': 'correctable'}),
-    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_display_errors, ext_labels={'type': 'uncorrectable'}),
+    'XPUM_STATS_RAS_ERROR_CAT_RESET': Metric(PromMetric.xpum_resets, is_counter=True),
+    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': Metric(PromMetric.xpum_programming_errors, is_counter=True),
+    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': Metric(PromMetric.xpum_driver_errors, is_counter=True),
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_cache_errors, is_counter=True, ext_labels={'type': 'correctable'}),
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_cache_errors, is_counter=True, ext_labels={'type': 'uncorrectable'}),
+    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_display_errors, is_counter=True, ext_labels={'type': 'correctable'}),
+    'XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_display_errors, is_counter=True, ext_labels={'type': 'uncorrectable'}),
 }
 
 
@@ -204,46 +208,48 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
         metrics_owner, (CollectorRegistry(), {}))
 
     for stat in datalist:
-        metric = metrics_map.get(stat.get('metrics_type'))
-        if metric is None:
+        metrics_list = metrics_map.get(stat.get('metrics_type'))
+        if metrics_list is None:
             continue
-        metric_name = metric.prom_metric.name
-        scale = metric.scale
-        acc = stat.get('acc')
-        avg = stat.get('avg')
 
-        all_labelnames, all_labelvalues = attach_ext_labels(
-            labels, label_values, metric.prom_metric.ext_labelnames, metric.ext_labels)
+        if type(metrics_list) is not list:
+            metrics_list = [metrics_list]
 
-        if metric_name not in metrics:
-            if acc is not None:
-                # counter value
-                metrics[metric_name] = Counter(
-                    metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
-                mm = metrics[metric_name].labels(*all_labelvalues)
-                new_value = acc * scale
-                counter_values[mm] = new_value
-                mm.inc(new_value)
-            else:
-                # aggregated value
-                metrics[metric_name] = Gauge(
-                    metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
-                metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
-        else:
-            if acc is not None:
-                # counter value
-                mm = metrics[metric_name].labels(*all_labelvalues)
-                cur_value = counter_values.setdefault(mm, 0)
-                new_value = acc * scale
-                if new_value >= cur_value:
-                    counter_values[mm] = new_value
-                    mm.inc(new_value-cur_value)
+        for metric in metrics_list:
+            metric_name = metric.prom_metric.name
+            val = stat.get(metric.xpum_field) * metric.scale
+
+            all_labelnames, all_labelvalues = attach_ext_labels(
+                labels, label_values, metric.prom_metric.ext_labelnames, metric.ext_labels)
+
+            if metric_name not in metrics:
+                if metric.is_counter:
+                    # counter value
+                    metrics[metric_name] = Counter(
+                        metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
+                    mm = metrics[metric_name].labels(*all_labelvalues)
+                    counter_values[mm] = val
+                    mm.inc(val)
                 else:
-                    print(
-                        f'counter value decreased, {metric_name}: pre={cur_value}, cur={new_value}')
+                    # aggregated value
+                    metrics[metric_name] = Gauge(
+                        metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
+                    metrics[metric_name].labels(*all_labelvalues).set(val)
             else:
-                # aggregated value
-                metrics[metric_name].labels(*all_labelvalues).set(avg * scale)
+                if metric.is_counter:
+                    # counter value
+                    mm = metrics[metric_name].labels(*all_labelvalues)
+                    cur_value = counter_values.setdefault(mm, 0)
+                    if val >= cur_value:
+                        counter_values[mm] = val
+                        mm.inc(val-cur_value)
+                    else:
+                        print(
+                            f'counter value decreased, {metric_name}: pre={cur_value}, cur={val}')
+                else:
+                    # aggregated value
+                    metrics[metric_name].labels(*all_labelvalues).set(val)
+
     return generate_latest(registry)
 
 
