@@ -221,6 +221,7 @@ message DeviceStatsData{
     uint64 avg = 5;
     uint64 max = 6;
     uint64 accumulated = 7;
+    uint32 scale = 8;
 }
 
 message DeviceStatsInfo{
