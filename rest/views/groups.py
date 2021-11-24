@@ -61,7 +61,7 @@ def groups():
             # create group
             req = request.get_json()
             if (req is None):
-                return "error: group name is required"
+                return "requires group name.", 500
 
             groupName = req["GroupName"]
             code, message, data = stub.createGroup(groupName)
