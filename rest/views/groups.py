@@ -170,6 +170,9 @@ def group_detail(groupId):
         elif request.method == 'POST':
             req = request.get_json()
 
+            if (req is None):
+                return "Wrong argument or unknow operation.", 500
+
             data = dict()
 
             # add device to group
