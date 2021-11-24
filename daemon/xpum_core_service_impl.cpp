@@ -562,6 +562,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             deviceStatsData->set_avg(data.avg);
             deviceStatsData->set_max(data.max);
             deviceStatsData->set_accumulated(data.accumulated);
+            deviceStatsData->set_scale(data.scale);
         }
     }
     return grpc::Status::OK;
@@ -603,6 +604,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             deviceStatsData->set_avg(data.avg);
             deviceStatsData->set_max(data.max);
             deviceStatsData->set_accumulated(data.accumulated);
+            deviceStatsData->set_scale(data.scale);
         }
     }
     return grpc::Status::OK;
@@ -1067,4 +1069,95 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t *p_para) {
     }
     return grpc::Status::OK;
 }
+
+::grpc::Status XpumCoreServiceImpl::startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response) {
+    std::vector<xpum_stats_type_t> metricsTypeList;
+    for (auto enumValue : request->metricstypelist()) {
+        xpum_stats_type_t metricsType = static_cast<xpum_stats_type_t>(enumValue.value());
+        metricsTypeList.push_back(metricsType);
+    }
+    xpum_dump_raw_data_task_t taskInfo;
+    
+    std::string dumpFilePath = "/opt/xpum/dump/dump.txt";
+
+    auto res = xpumStartDumpRawDataTask(
+        request->deviceid(),
+        request->tileid(),
+        metricsTypeList.data(),
+        metricsTypeList.size(),
+        dumpFilePath.c_str(),
+        &taskInfo);
+    response->set_status(res);
+    if (res == XPUM_OK) {
+        auto grpcTaskInfo = response->mutable_taskinfo();
+        grpcTaskInfo->set_dumptaskid(taskInfo.taskId);
+        grpcTaskInfo->set_deviceid(taskInfo.deviceId);
+        grpcTaskInfo->set_tileid(taskInfo.tileId);
+        for (int i = 0; i < taskInfo.count; i++) {
+            auto generalEnum = grpcTaskInfo->add_metricstypelist();
+            generalEnum->set_value(taskInfo.metricsTypeList[i]);
+        }
+        grpcTaskInfo->set_begintime(taskInfo.beginTime);
+        grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
+    } else {
+        response->set_errormsg("Error occurs");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::stopDumpRawDataTask(::grpc::ServerContext* context, const ::StopDumpRawDataTaskRequest* request, ::StopDumpRawDataTaskReponse* response){
+    xpum_dump_raw_data_task_t taskInfo;
+    auto res = xpumStopDumpRawDataTask(request->dumptaskid(),&taskInfo);
+    response->set_status(res);
+    if (res == XPUM_OK) {
+        auto grpcTaskInfo = response->mutable_taskinfo();
+        grpcTaskInfo->set_dumptaskid(taskInfo.taskId);
+        grpcTaskInfo->set_deviceid(taskInfo.deviceId);
+        grpcTaskInfo->set_tileid(taskInfo.tileId);
+        for (int i = 0; i < taskInfo.count; i++) {
+            auto generalEnum = grpcTaskInfo->add_metricstypelist();
+            generalEnum->set_value(taskInfo.metricsTypeList[i]);
+        }
+        grpcTaskInfo->set_begintime(taskInfo.beginTime);
+        grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
+    }else{
+        response->set_errormsg("Error occurs");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::listDumpRawDataTasks(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::ListDumpRawDataTaskResponse* response){
+    int count=0;
+    auto res = xpumListDumpRawDataTasks(nullptr,&count);
+    response->set_status(res);
+    if(res!=XPUM_OK||count<0){
+        response->set_errormsg("Error occurs");
+        return grpc::Status::OK;
+    }
+    if(count==0){
+        return grpc::Status::OK;
+    }
+    xpum_dump_raw_data_task_t taskInfoList[count];
+    res = xpumListDumpRawDataTasks(taskInfoList, &count);
+    response->set_status(res);
+    if (res == XPUM_OK) {
+        for (int i = 0; i < count; i++) {
+            xpum_dump_raw_data_task_t taskInfo = taskInfoList[i];
+            auto grpcTaskInfo = response->add_tasklist();
+            grpcTaskInfo->set_dumptaskid(taskInfo.taskId);
+            grpcTaskInfo->set_deviceid(taskInfo.deviceId);
+            grpcTaskInfo->set_tileid(taskInfo.tileId);
+            for (int i = 0; i < taskInfo.count; i++) {
+                auto generalEnum = grpcTaskInfo->add_metricstypelist();
+                generalEnum->set_value(taskInfo.metricsTypeList[i]);
+            }
+            grpcTaskInfo->set_begintime(taskInfo.beginTime);
+            grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
+        }
+    } else {
+        response->set_errormsg("Error occurs");
+    }
+    return grpc::Status::OK;
+}
+
 }// end namespace xpum::daemon

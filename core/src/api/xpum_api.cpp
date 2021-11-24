@@ -914,4 +914,21 @@ xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t result
 }
 ///////////////////Policy//////////////////////
 
+xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
+                                       xpum_device_tile_id_t tileId,
+                                       const xpum_stats_type_t metricsTypeList[],
+                                       const int count,
+                                       const char *dumpFilePath,
+                                       xpum_dump_raw_data_task_t *taskInfo) {
+    return XPUM_GENERIC_ERROR;
+}
+
+xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_data_task_t *taskInfo) {
+    return XPUM_GENERIC_ERROR;
+}
+
+xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int *count) {
+    return XPUM_GENERIC_ERROR;
+}
+
 } // end namespace xpum
