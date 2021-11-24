@@ -26,7 +26,7 @@ class Configuration {
     static std::string MEDIA_CODER_TOOLS_PATH;
     static std::string MEDIA_CODER_TOOLS_DECODE_FILE;
     static std::string MEDIA_CODER_TOOLS_ENCODE_FILE;
-
+    static uint32_t DEFAULT_MEASUREMENT_DATA_SCALE;
    public:
     static void init() {
     }

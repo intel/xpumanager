@@ -840,8 +840,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
                     XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap2));
                     if (res == ZE_RESULT_SUCCESS && (snap2.timestamp - snap1.timestamp) != 0) {
-                        uint64_t data = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+                        uint64_t data = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
+                        ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                         data_acquired = true;
                     } else {
                         exception_msgs["zesPowerGetEnergyCounter"] = res;
@@ -1109,10 +1110,11 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
                                 double temp_val = 0;
                                 XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetState(temp, &temp_val));
                                 if (res == ZE_RESULT_SUCCESS) {
+                                    ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                     if (props.onSubdevice) {
-                                        ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                                        ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                     } else {
-                                        ret->setCurrent(temp_val);
+                                        ret->setCurrent(temp_val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                     }
                                     data_acquired = true;
                                 } else {
@@ -1125,10 +1127,11 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
                                 double temp_val = 0;
                                 XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetState(temp, &temp_val));
                                 if (res == ZE_RESULT_SUCCESS) {
+                                    ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                     if (props.onSubdevice) {
-                                        ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val);
+                                        ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                     } else {
-                                        ret->setCurrent(temp_val);
+                                        ret->setCurrent(temp_val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                     }
                                     data_acquired = true;
                                 } else {
@@ -1248,8 +1251,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
                     XPUM_ZE_HANDLE_LOCK(device, res = zesMemoryGetState(mem, &sysman_memory_state));
                     if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
-                        uint64_t utilization = used * 100.0 / (props.physicalSize == 0 ? sysman_memory_state.size:props.physicalSize);
+                        uint64_t utilization = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * used * 100 / (props.physicalSize == 0 ? sysman_memory_state.size:props.physicalSize);
                         props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, utilization) : ret->setCurrent(utilization);
+                        ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                         data_acquired = true;
                     } else {
                         exception_msgs["zesMemoryGetState"] = res;
