@@ -60,6 +60,9 @@ def groups():
         if request.method == 'POST':
             # create group
             req = request.get_json()
+            if (req is None):
+                return "error: group name is required"
+
             groupName = req["GroupName"]
             code, message, data = stub.createGroup(groupName)
             if code == 0:
