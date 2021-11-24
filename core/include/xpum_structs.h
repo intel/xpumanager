@@ -84,7 +84,8 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT,
     XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE,
     XPUM_GROUP_DEVICE_DUPLICATED,
-    XPUM_GROUP_CHANGE_NOT_ALLOWED
+    XPUM_GROUP_CHANGE_NOT_ALLOWED,
+    XPUM_NOT_INITIALIZED     ///< XPUM is not initialized.
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
