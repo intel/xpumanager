@@ -104,6 +104,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                 xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+                stats_data.scale = datas_iter->second.getScale();
                 if (Utility::isCounterMetric(type)) {
                     stats_data.isCounter = true;
                     stats_data.accumulated = datas_iter->second.getCurrent();
@@ -134,6 +135,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                 xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+                stats_data.scale = datas_iter->second.getScale();
                 if (Utility::isCounterMetric(type)) {
                     stats_data.isCounter = true;
                     stats_data.accumulated = datas_iter->second.getSubdeviceDataCurrent(i);
@@ -192,6 +194,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
                 metric_data.isCounter = Utility::isCounterMetric(type) ? true : false;
                 metric_data.value = datas_iter->second.getCurrent();
                 metric_data.timestamp =  datas_iter->second.getTimestamp();
+                metric_data.scale = datas_iter->second.getScale();
                 device_metrics.dataList[device_metrics.count++] = metric_data;
             }
             ++datas_iter;
@@ -214,6 +217,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
                 metric_data.isCounter = Utility::isCounterMetric(type) ? true : false;
                 metric_data.value = datas_iter->second.getSubdeviceDataCurrent(i);
                 metric_data.timestamp = datas_iter->second.getTimestamp();
+                metric_data.scale = datas_iter->second.getScale();
                 subdevice_metrics.dataList[subdevice_metrics.count++] = metric_data;
             }
             ++datas_iter;

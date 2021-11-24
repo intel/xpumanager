@@ -1,6 +1,7 @@
 #include "engine_utilization_data_handler.h"
 #include <algorithm>
 #include <iostream>
+#include "infrastructure/configuration.h"
 
 namespace xpum {
 
@@ -43,9 +44,9 @@ void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_
             if (pre_data != p_preData->getData().end()) {
                 auto pre_extended = pre_data->second.getExtendedDatas()->find(extended_data->first);
                 if (pre_extended != pre_data->second.getExtendedDatas()->end()) {
-                    uint64_t val = 100 * (extended_data->second.active_time - pre_extended->second.active_time) / (extended_data->second.timestamp - pre_extended->second.timestamp);
-                    if (val > 100) {
-                        val = 100;
+                    uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 * (extended_data->second.active_time - pre_extended->second.active_time) / (extended_data->second.timestamp - pre_extended->second.timestamp);
+                    if (val > Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
+                        val =  Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
                     }
                     switch (extended_data->second.type) {
                         case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
@@ -93,9 +94,11 @@ void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_
         if (num_subdevice != 0) {
             for (uint32_t i = 0; i < num_subdevice; ++i) {
                 p_data->getData()[iter->first].setSubdeviceDataCurrent(i, *std::max_element(utilizations[i].begin(), utilizations[i].end()));
+                p_data->getData()[iter->first].setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
             }
         } else {
             p_data->getData()[iter->first].setCurrent(*std::max_element(utilizations[0].begin(), utilizations[0].end()));
+            p_data->getData()[iter->first].setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
         }
         ++iter;
     }
