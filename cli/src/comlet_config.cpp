@@ -53,7 +53,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             return json;
         } else if (this->opts->tileId >= 0 && !this->opts->schedulerTimeslice.empty()) {
             std::vector<std::string> paralist = split(this->opts->schedulerTimeslice, ",");
-            if (paralist.size() >=2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
+            if (paralist.size() ==2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
                 int val1 = std::stoi(paralist.at(0));
                 int val2 = std::stoi(paralist.at(1));
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMESLICE, val1, val2);
@@ -67,7 +67,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             return json;
         } else if (!this->opts->powerlimit.empty()) {
             std::vector<std::string> paralist = split(this->opts->powerlimit, ",");
-            if (paralist.size() >=2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
+            if (paralist.size() ==2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
                 int val1 = std::stoi(paralist.at(0));
                 int val2 = std::stoi(paralist.at(1));
                 json = this->coreStub->setDevicePowerlimit(this->opts->deviceId, val1, val2);
@@ -93,7 +93,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             return json;
         } else if (this->opts->tileId >= 0 && !this->opts->frequencyrange.empty()) {
             std::vector<std::string> paralist = split(this->opts->frequencyrange, ",");
-            if (paralist.size() >= 2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
+            if (paralist.size() == 2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
                 int val1 = std::stoi(paralist.at(0));
                 int val2 = std::stoi(paralist.at(1));
                 json = this->coreStub->setDeviceFrequencyRange(this->opts->deviceId, this->opts->tileId, val1, val2);
