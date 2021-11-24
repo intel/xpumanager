@@ -222,7 +222,7 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult() noexcept {
     xpum_firmware_flash_result_t rc{XPUM_DEVICE_FIRMWARE_FLASH_OK};
 
     if (commandExec != nullptr) {
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 50; ++i) {
             char buf[BUFFERSIZE];
             char* res = fgets(buf, BUFFERSIZE, commandExec);
             if (res != nullptr) {
