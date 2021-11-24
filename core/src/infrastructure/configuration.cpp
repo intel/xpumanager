@@ -23,4 +23,5 @@ int Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD = 20000000;
 std::string Configuration::MEDIA_CODER_TOOLS_PATH = "/usr/share/mfx/samples/";
 std::string Configuration::MEDIA_CODER_TOOLS_DECODE_FILE = "test_stream.264";
 std::string Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE = "test_stream_176x96.yuv";
+uint32_t Configuration::DEFAULT_MEASUREMENT_DATA_SCALE = 100;
 } // end namespace xpum
