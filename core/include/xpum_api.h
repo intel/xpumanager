@@ -712,9 +712,9 @@ xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
  */
 xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
                                        xpum_device_tile_id_t tileId,
-                                       xpum_stats_type_t metricsTypeList[],
-                                       int count,
-                                       char *dumpFilePath,
+                                       const xpum_stats_type_t metricsTypeList[],
+                                       const int count,
+                                       const char *dumpFilePath,
                                        xpum_dump_raw_data_task_t *taskInfo);
 
 /**
@@ -738,7 +738,7 @@ xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_
  *      - \ref XPUM_OK  if query successfully
  *      - \ref XPUM_GENERIC_ERROR if other error happens
  */
-xpum_result_t xpumListDumpRawDataTask(xpum_dump_raw_data_task_t taskList[], int *count);
+xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int *count);
 
 
 /** @} */ // Closing for DUMP_RAW_DATA_API

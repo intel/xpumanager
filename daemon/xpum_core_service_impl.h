@@ -80,6 +80,10 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status setDevicePowerLimit(::grpc::ServerContext* context, const ::ConfigDevicePowerLimitRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status setDeviceFrequencyRange(::grpc::ServerContext* context, const ::ConfigDeviceFrequencyRangeRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status setDeviceStandbyMode(::grpc::ServerContext* context, const ::ConfigDeviceStandbyRequest* request, ::ConfigDeviceResultData* response) override;
+
+    virtual ::grpc::Status startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response);
+    virtual ::grpc::Status stopDumpRawDataTask(::grpc::ServerContext* context, const ::StopDumpRawDataTaskRequest* request, ::StopDumpRawDataTaskReponse* response);
+    virtual ::grpc::Status listDumpRawDataTasks(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::ListDumpRawDataTaskResponse* response);
 };
 
 } // end namespace xpum::daemon

@@ -116,10 +116,12 @@ app.add_url_rule('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'],
                  view_func=auth.login_required(topology.get_topology))
 
 # dump raw data
-app.add_url_rule('/rest/v1/metricsRawDataTask', methods=['POST'],
-                 view_func=auth.login_required(dump_raw_data.start_metrics_raw_data_collect_task))
-app.add_url_rule('/rest/v1/metricsRawDataTask/<int:taskId>', methods=['POST', 'GET'],
-                 view_func=auth.login_required(dump_raw_data.metrics_raw_data_collect_task))
+app.add_url_rule('/rest/v1/dump', methods=['POST'],
+                 view_func=auth.login_required(dump_raw_data.startDumpRawDataTask))
+app.add_url_rule('/rest/v1/dump/<int:taskId>', methods=['DELETE'],
+                 view_func=auth.login_required(dump_raw_data.stopDumpRawDataTask))
+app.add_url_rule('/rest/v1/dump', methods=['GET'],
+                 view_func=auth.login_required(dump_raw_data.listDumpRawDataTasks))
 
 
 @auth.verify_password
