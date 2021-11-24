@@ -185,6 +185,8 @@ class GPUDeviceStub {
 
     static bool isDevEntry(const std::string& entryName);
 
+    static std::string buildErrors(const std::map<std::string, ze_result_t>& exception_msgs, const char* func, uint32_t line);
+
    private:
     bool initialized;
 
