@@ -135,28 +135,27 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count) {
 }
 
 xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_DEVICES], int *count) {
-    std::vector<std::shared_ptr<Device>> devices;
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
 
+    std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
+    if (deviceList == nullptr || devices.size() > XPUM_MAX_NUM_DEVICES) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
 
     for (size_t i = 0; i < devices.size(); i++) {
         auto &p_device = devices[i];
-
         auto &info = deviceList[i];
-
         info.deviceId = stoi(p_device->getId());
-
         info.type = GPU;
-
         std::vector<Property> properties;
-
         p_device->getProperties(properties);
 
         for (Property &prop : properties) {
             auto name = prop.getName();
-
             std::string value = prop.getValue();
-
             switch (name) {
                 case XPUM_DEVICE_PROPERTY_UUID:
                     value.copy(info.uuid, value.size());
@@ -183,7 +182,6 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
             }
         }
     }
-
     *count = devices.size();
 
     return XPUM_OK;
@@ -913,5 +911,22 @@ xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t result
     return Core::instance().getPolicyManager()->xpumGetPolicyByGroup(groupId, resultList, count);
 }
 ///////////////////Policy//////////////////////
+
+xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
+                                       xpum_device_tile_id_t tileId,
+                                       const xpum_stats_type_t metricsTypeList[],
+                                       const int count,
+                                       const char *dumpFilePath,
+                                       xpum_dump_raw_data_task_t *taskInfo) {
+    return XPUM_GENERIC_ERROR;
+}
+
+xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_data_task_t *taskInfo) {
+    return XPUM_GENERIC_ERROR;
+}
+
+xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int *count) {
+    return XPUM_GENERIC_ERROR;
+}
 
 } // end namespace xpum

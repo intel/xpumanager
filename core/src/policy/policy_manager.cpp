@@ -180,7 +180,7 @@ bool PolicyManager::isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_po
         }
 
         //check condition
-        uint64_t curValue = curData->value;
+        uint64_t curValue = curData->value/curData->scale;
         if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER) {
             uint64_t threshold = p_policy->condition.threshold;
             if (curValue > threshold) {

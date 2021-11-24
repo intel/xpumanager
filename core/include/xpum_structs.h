@@ -84,7 +84,8 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT,
     XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE,
     XPUM_GROUP_DEVICE_DUPLICATED,
-    XPUM_GROUP_CHANGE_NOT_ALLOWED
+    XPUM_GROUP_CHANGE_NOT_ALLOWED,
+    XPUM_NOT_INITIALIZED     ///< XPUM is not initialized.
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -406,6 +407,7 @@ struct xpum_device_stats_data_t {
     uint64_t min;                  ///< The min value since last call, only valid if isCounter is false
     uint64_t avg;                  ///< The average value since last call, only valid if isCounter is false
     uint64_t max;                  ///< The max value since last call, only valid if isCounter is false
+    uint32_t scale;                ///< The magnification of the value, accumulated, min, avg, and max fields
 };
 
 /**
@@ -442,6 +444,7 @@ struct xpum_device_metric_data_t {
     bool isCounter;                ///< If this metric is a counter
     uint64_t value;                ///< The value of this metric type
     uint64_t timestamp;            ///< The timestamp of this data
+    uint32_t scale;                ///< The magnification of the value field
 };
 
 /**

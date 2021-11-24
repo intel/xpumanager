@@ -8,6 +8,8 @@
 
 #include "core.grpc.pb.h"
 
+#include "xpum_structs.h"
+
 namespace xpum::cli {
 
 class CoreStub {
@@ -70,7 +72,13 @@ class CoreStub {
 
     std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath );
 
+    std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<int> metricsTypeList);
+    std::unique_ptr<nlohmann::json> stopDumpRawDataTask(int taskId);
+    std::unique_ptr<nlohmann::json> listDumpRawDataTasks();
+
     static std::string isotimestamp(uint64_t t);
+
+    static std::string metricsTypeToString(xpum_stats_type_t metricsType);
     
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;

@@ -15,6 +15,12 @@ struct ComletDumpOptions {
     std::vector<int> metricsIdList;
     uint32_t timeInterval = 1;
     int dumpTimes = -1;
+    // for dump raw data to file
+    bool rawData;
+    bool startDumpTask;
+    bool stopDumpTask;
+    bool listDumpTask;
+    int dumpTaskId = -1;
 };
 
 struct MetricsOption {
@@ -58,10 +64,12 @@ class ComletDump : public ComletBase {
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
-    virtual void getJsonResult(std::ostream &out, bool raw = false) override {
-        out << "Not supported" << std::endl;
-    };
+    virtual void getJsonResult(std::ostream &out, bool raw = false) override;
 
     virtual void getTableResult(std::ostream &out) override;
+
+    void printByLine(std::ostream &out);
+
+    void dumpRawDataToFile(std::ostream &out);
 };
 } // end namespace xpum::cli

@@ -2,33 +2,36 @@ from flask import request, jsonify
 import stub
 
 
-def start_metrics_raw_data_collect_task():
+def startDumpRawDataTask():
     reqData = request.get_json()
-    metricsTypeList = reqData['metricsTypeList']
-    if "deviceId" in reqData:
-        deviceId = reqData['deviceId']
-        code, message, data = stub.startCollectMetricsRawDataTask(
-            deviceId, metricsTypeList)
-    elif 'groupId' in reqData:
-        groupId = reqData['groupId']
-        code, message, data = stub.startCollectMetricsRawDataTaskByGroup(
-            groupId, metricsTypeList)
+    deviceId = reqData.get("device_id", None)
+    if not deviceId:
+        error = dict(Message="Device id must be assigned", Status=1)
+        return jsonify(error), 400
+    metricsTypeList = reqData.get("metrics_type_list", [])
+    if not metricsTypeList:
+        error = dict(Message="`metrics_type_list` can not be empty", Status=1)
+        return jsonify(error), 400
+    tileId = reqData.get("device_id", -1)
+    code, message, data = stub.startDumpRawDataTask(
+        deviceId, tileId, metricsTypeList)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
 
 
-def metrics_raw_data_collect_task(taskId):
-    if request.method == 'POST':
-        code, message, data = stub.stopCollectMetricsRawDataTask(taskId)
-        if code != 0:
-            error = dict(Status=code, Message=message)
-            return jsonify(error), 500
-        return "", 200
-    elif request.method == 'GET':
-        code, message, data = stub.getMetricsRawDataByTask(taskId)
-        if code != 0:
-            error = dict(Status=code, Message=message)
-            return jsonify(error), 500
-        return data
+def stopDumpRawDataTask(taskId):
+    code, message, data = stub.stopDumpRawDataTask(taskId)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+
+def listDumpRawDataTasks():
+    code, message, data = stub.listDumpRawDataTasks()
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)

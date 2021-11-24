@@ -17,14 +17,56 @@ void ComletDump::setupOptions() {
     addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr, true);
     addOption("-i", this->opts->timeInterval, "Display the device data at seconds interval. Its default value is 1 second if not specified.");
     addOption("-n", this->opts->dumpTimes, "The times to dump the device data. The dumping will not be ended if not specified.");
+
+    addFlag("--rawdata", this->opts->rawData, "Dump the required raw statistics to a file in background.");
+    addFlag("--start", this->opts->startDumpTask, "Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.");
+    addFlag("--stop", this->opts->stopDumpTask, "Stop one active dump task.");
+    addFlag("--list", this->opts->listDumpTask, "List all the active dump tasks.");
 }
 
 std::unique_ptr<nlohmann::json> ComletDump::run() {
-    auto json = this->coreStub->getStatistics(this->opts->deviceId);
+    std::unique_ptr<nlohmann::json> json;
+    if (this->opts->rawData) {
+        if (this->opts->startDumpTask && this->opts->deviceId != -1) {
+            int deviceId = this->opts->deviceId;
+            int tileId = this->opts->deviceTileId;
+            json = this->coreStub->startDumpRawDataTask(deviceId, tileId, this->opts->metricsIdList);
+        } else if (this->opts->stopDumpTask && this->opts->dumpTaskId != -1) {
+            json = this->coreStub->stopDumpRawDataTask(this->opts->dumpTaskId);
+        } else if (this->opts->listDumpTask) {
+            json = this->coreStub->listDumpRawDataTasks();
+        } else {
+            json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+            (*json)["error"] = "Unknow operation";
+        }
+    } else {
+        json = this->coreStub->getStatistics(this->opts->deviceId);
+    }
     return json;
 }
 
+void ComletDump::getJsonResult(std::ostream &out, bool raw) {
+    if (!this->opts->rawData) {
+        out << "Not supported" << std::endl;
+        return;
+    } else {
+        ComletBase::getJsonResult(out, raw);
+    }
+};
+
+void ComletDump::dumpRawDataToFile(std::ostream &out) {
+    out << "Not implemented!" << std::endl;
+}
+
 void ComletDump::getTableResult(std::ostream &out) {
+    if (this->opts->rawData) {
+        dumpRawDataToFile(out);
+    } else {
+        printByLine(out);
+    }
+}
+
+void ComletDump::printByLine(std::ostream &out) {
     // out << std::left << std::setw(25) << std::setfill(' ') << "Timestamp, ";
     int deviceId = this->opts->deviceId;
     int tileId = this->opts->deviceTileId;
@@ -50,8 +92,8 @@ void ComletDump::getTableResult(std::ostream &out) {
 
         res = run();
 
-        if(res->contains("error")){
-            out<<" ";
+        if (res->contains("error")) {
+            out << " ";
         }
 
         std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();

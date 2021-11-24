@@ -221,6 +221,7 @@ message DeviceStatsData{
     uint64 avg = 5;
     uint64 max = 6;
     uint64 accumulated = 7;
+    uint32 scale = 8;
 }
 
 message DeviceStatsInfo{
@@ -409,6 +410,42 @@ message ReadPolicyNotifyDataResponse{
     int32 tileId = 9;
 }
 
+message DumpRawDataTaskInfo{
+    int32 dumpTaskId = 1;
+    uint32 deviceId = 2;
+    int32 tileId = 3;
+    repeated GeneralEnum metricsTypeList = 4;
+    uint64 beginTime = 5;
+    string dumpFilePath = 6;
+}
+
+message StartDumpRawDataTaskRequest{
+    uint32 deviceId = 1;
+    int32 tileId = 2;
+    repeated GeneralEnum metricsTypeList = 3;
+}
+
+message StartDumpRawDataTaskResponse{
+    DumpRawDataTaskInfo taskInfo = 1;
+    int32 status = 2;
+    string errorMsg = 3;
+}
+
+message StopDumpRawDataTaskRequest{
+    int32 dumpTaskId = 1;
+}
+
+message StopDumpRawDataTaskReponse{
+    DumpRawDataTaskInfo taskInfo = 1;
+    int32 status = 2;
+    string errorMsg = 3;
+}
+
+message ListDumpRawDataTaskResponse{
+    repeated DumpRawDataTaskInfo taskList = 1;
+    int32 status = 2;
+    string errorMsg = 3;
+}
 
 /* services */
 service XpumCoreService {    
@@ -446,4 +483,7 @@ service XpumCoreService {
     rpc setDevicePowerLimit( ConfigDevicePowerLimitRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceFrequencyRange( ConfigDeviceFrequencyRangeRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceStandbyMode( ConfigDeviceStandbyRequest ) returns ( ConfigDeviceResultData );
+    rpc startDumpRawDataTask( StartDumpRawDataTaskRequest ) returns ( StartDumpRawDataTaskResponse );
+    rpc stopDumpRawDataTask( StopDumpRawDataTaskRequest ) returns ( StopDumpRawDataTaskReponse );
+    rpc listDumpRawDataTasks( google.protobuf.Empty ) returns ( ListDumpRawDataTaskResponse );
 }

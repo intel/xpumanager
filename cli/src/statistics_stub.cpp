@@ -8,7 +8,7 @@
 
 namespace xpum::cli {
 
-static std::string metricsTypeToString(xpum_stats_type_t metricsType) {
+std::string CoreStub::metricsTypeToString(xpum_stats_type_t metricsType) {
     switch (metricsType) {
         case XPUM_STATS_GPU_UTILIZATION:
             return "XPUM_STATS_GPU_UTILIZATION";
