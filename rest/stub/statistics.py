@@ -62,7 +62,6 @@ def getStatistics(device_id, session_id=0, get_accumulated=False):
                 metricsType = stats_data.metricsType.value
             tmp["metrics_type"] = metricsType
             scale = stats_data.scale
-            print(f'{metricsType}, scale: {scale}')
             tmp["value"] = stats_data.value / scale
             if not stats_data.isCounter:
                 tmp["avg"] = stats_data.avg / scale
