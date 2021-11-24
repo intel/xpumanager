@@ -295,7 +295,7 @@ def get_config(deviceId):
     req = request.get_json()
     tileId = req["tileId"]
 
-    if tileId<0:
+    if tileId < -1:
         return jsonify("invalid Parameter"), 500
     
     code, message, data = stub.getConfig(deviceId, tileId)
