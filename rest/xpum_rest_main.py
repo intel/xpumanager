@@ -27,7 +27,7 @@ auth = HTTPBasicAuth()
 
 # prometheus exporter
 app.add_url_rule('/metrics',
-                 view_func=exporter.export_metrics, methods=['GET'])
+                 view_func=auth.login_required(exporter.export_metrics), methods=['GET'])
 
 # version
 app.add_url_rule('/rest/v1/version',
