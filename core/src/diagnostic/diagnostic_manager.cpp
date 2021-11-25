@@ -968,8 +968,9 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
         while (!computation_done.load()) {
             try {
                 auto raw_power_value = GPUDeviceStub::toGetPower(device);
-                if ((int)raw_power_value->getCurrent() > power_value) {
-                    power_value = raw_power_value->getCurrent();
+                auto current_value = (int) (raw_power_value->getCurrent() / raw_power_value->getScale()); 
+                if (current_value > power_value) {
+                    power_value = current_value;
                     XPUM_LOG_DEBUG("update peak power value: " + std::to_string(power_value));
                 }
             } catch (...) {
