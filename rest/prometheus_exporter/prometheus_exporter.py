@@ -26,7 +26,7 @@ class PromMetric(Enum):
 
     # Frequency
     xpum_frequency_mhz = ('xpum_frequency_mhz', 'Avg (GPU) frequency (in MHz), per GPU tile', ['location', 'type'])  # nopep8
-    xpum_frequency_throttling_ratio = ('xpum_frequency_throttling_ratio', 'Avg frequency throttle ratio (in %), per GPU tile', ['location'])  # nopep8
+    # xpum_frequency_throttling_ratio = ('xpum_frequency_throttling_ratio', 'Avg frequency throttle ratio (in %), per GPU tile', ['location'])  # nopep8
 
     # Memory
     xpum_memory_used_bytes = ('xpum_memory_used_bytes', 'Used GPU memory (in bytes), per GPU tile')  # nopep8
@@ -40,12 +40,12 @@ class PromMetric(Enum):
     xpum_programming_errors = ('xpum_programming_errors', 'Total number of GPU programming errors since boot, per GPU')  # nopep8
     xpum_driver_errors = ('xpum_driver_errors', 'Total number of GPU driver errors since boot, per GPU')  # nopep8
     xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])  # nopep8
-    xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])  # nopep8
+    # xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])  # nopep8
 
     # Eu Active Stall Idle
-    xpum_eu_active_ratio = ('xpum_eu_active_ratio')  # nopep8
-    xpum_eu_stall_ratio = ('xpum_eu_stall_ratio')  # nopep8
-    xpum_eu_idle_ratio = ('xpum_eu_idle_ratio')  # nopep8
+    # xpum_eu_active_ratio = ('xpum_eu_active_ratio')  # nopep8
+    # xpum_eu_stall_ratio = ('xpum_eu_stall_ratio')  # nopep8
+    # xpum_eu_idle_ratio = ('xpum_eu_idle_ratio')  # nopep8
 
     def __new__(cls, name, desc=None, ext_labelnames=[]):
         obj = object.__new__(cls)
@@ -73,9 +73,9 @@ metrics_map = {
     'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': '3d'}),
 
     # EuActive/EuStall/EuIdle
-    'XPUM_STATS_EU_ACTIVE': Metric(PromMetric.xpum_eu_active_ratio, scale=0.01),
-    'XPUM_STATS_EU_STALL': Metric(PromMetric.xpum_eu_stall_ratio, scale=0.01),
-    'XPUM_STATS_EU_IDLE': Metric(PromMetric.xpum_eu_idle_ratio, scale=0.01),
+    # 'XPUM_STATS_EU_ACTIVE': Metric(PromMetric.xpum_eu_active_ratio, scale=0.01),
+    # 'XPUM_STATS_EU_STALL': Metric(PromMetric.xpum_eu_stall_ratio, scale=0.01),
+    # 'XPUM_STATS_EU_IDLE': Metric(PromMetric.xpum_eu_idle_ratio, scale=0.01),
 
     # Power/Energy/Temperature
     'XPUM_STATS_POWER': Metric(PromMetric.xpum_power_watts),
@@ -88,7 +88,7 @@ metrics_map = {
     # Frequency
     'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),
     'XPUM_STATS_GPU_REQUEST_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'request'}),
-    'XPUM_STATS_GPU_FREQUENCY_THROTTLE_RATIO': Metric(PromMetric.xpum_frequency_throttling_ratio, scale=0.01, ext_labels={'location': 'gpu'}),
+    # 'XPUM_STATS_GPU_FREQUENCY_THROTTLE_RATIO': Metric(PromMetric.xpum_frequency_throttling_ratio, scale=0.01, ext_labels={'location': 'gpu'}),
 
     # Memory
     'XPUM_STATS_MEMORY_USED': Metric(PromMetric.xpum_memory_used_bytes),
