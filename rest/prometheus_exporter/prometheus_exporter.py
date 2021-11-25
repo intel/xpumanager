@@ -83,7 +83,9 @@ metrics_map = {
     'XPUM_STATS_GPU_CORE_TEMPERATURE': [
         Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'gpu'}),  # nopep8
         Metric(PromMetric.xpum_max_temperature_celsius, xpum_field='max', ext_labels={'location': 'gpu'})],  # nopep8
-    'XPUM_STATS_MEMORY_TEMPERATURE': Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'memory'}),  # nopep8
+    'XPUM_STATS_MEMORY_TEMPERATURE': [
+        Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'mem'}),  # nopep8
+        Metric(PromMetric.xpum_max_temperature_celsius, xpum_field='max', ext_labels={'location': 'mem'})],  # nopep8
 
     # Frequency
     'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),
