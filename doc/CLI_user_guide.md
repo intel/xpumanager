@@ -127,6 +127,8 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Driver Version: 16929133                                                             |
 |           | Firmware Name: GSC                                                                   |
 |           | Firmware Version: ATS0_1.1                                                           |
+|           | Firmware Name: AMC                                                                   |
+|           | Firmware Version: 3.4.0.0                                                            |
 |           |                                                                                      |
 |           | PCI BDF Address: 0000:4d:00.0                                                        |
 |           | PCI Slot: Riser 1, slot 1                                                            |
@@ -266,7 +268,7 @@ optional arguments:
                                 9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
                                 10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
                                 11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
-                                12. Reset Count
+                                12. Reset Count, number of accelertor engine resets attempted by the driver.
                                 13. Programming Errors
                                 14. Driver Errors
                                 15. Cache Erros Correctable
@@ -567,7 +569,7 @@ Options:
   -h,--help                   Print this help message and exit
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid input: GSC.
+  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P card so far.
   -f,--file                   The firmware image file path on this server.
 ```
 
@@ -607,7 +609,9 @@ Options:
   --frequencyrange            GPU tile-level core frequency range.
   --powerlimit                GPU-level power limit. 
   --standby                   Tile-level standby mode. Valid options: "default"; "never".
-  --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us); "exclusive".
+  --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us);
+                                "exclusive".
+  --reset                     Hard reset the GPU. All applications that are currently using this device will be forcibly killed. 
 ```
 
 show the GPU settings
@@ -670,6 +674,17 @@ Change the GPU tile scheduler mode.
 ```
 ./xpumcli config -d 0 -t 0 --scheduler timeout,640000
 Succeed to change the scheduler mode on GPU 0 tile 0.
+```
+
+Reset the GPU.
+```
+./xpumcli config -d 0 --reset
+The process（es） below are using this device. 
+  PID: 633972, Command: ./ze_gemm
+  PID: 633973, Command: ./ze_gemm
+
+All process(es) above will be forcibly killed if you reset it. Do you want to continue? (Y/N) Y
+Succeed to reset the GPU 0.
 ```
 
 ## Get and set the policy, automatic action triggered by the condition
