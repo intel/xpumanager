@@ -274,6 +274,7 @@ optional arguments:
                                 15. Cache Erros Correctable
                                 16. Cache Errors Uncorrectable
                                 17. GPU Memory Bandwidth Utilization (%)
+                                18. GPU Memory Used (MiB)
 -->
  
 List the XPU Manager settings
@@ -367,6 +368,9 @@ List the GPU device aggregrated statistics that are collected by XPU Manager
 +------------------------------+-------------------------------------------------------------------+
 | GPU Memory Bandwidth (%)     | Tile 0: avg: 10, min: 9, max: 15, current: 10                     |
 |                              | Tile 1: avg: 10, min: 9, max: 15, current: 10                     |
++------------------------------+-------------------------------------------------------------------+
+| GPU Memory Used (MiB)        | Tile 0: avg: 500, min: 100, max: 700, current: 400                |
+|                              | Tile 1: avg: 500, min: 100, max: 700, current: 400                |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
@@ -488,6 +492,7 @@ optional arguments:
                                 15. Cache Erros Correctable, per tile.
                                 16. Cache Errors Uncorrectable, per tile. 
                                 17. GPU Memory Bandwidth Utilization. (%)
+                                18. GPU Memory Used (MiB)
   
   -i                          The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
