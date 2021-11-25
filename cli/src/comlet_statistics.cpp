@@ -37,13 +37,37 @@ static nlohmann::json getMetricsTypeFromList(std::vector<nlohmann::json> metrics
     return nlohmann::json();
 }
 
-static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, std::string metricsType) {
+static std::string getFloatStringWithPrecision(float value, int precision) {
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(precision) << value;
+    return stream.str();
+}
+
+inline int getScaleFromeIndex(int index) {
+    int scale = 1;
+    for (int i = 0; i < index; i++) {
+        scale *= 10;
+    }
+    return scale;
+}
+
+static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, std::string metricsType, int scaleIndex = 0, int precision = 2) {
     std::string res = "";
     if (json->contains("device_level")) {
         auto deviceLevelMetricsList = (*json)["device_level"];
         auto metricsJson = getMetricsTypeFromList(deviceLevelMetricsList, metricsType);
-        if (!metricsJson.empty())
-            res += std::to_string(metricsJson["value"].get<std::uint64_t>());
+        if (!metricsJson.empty()) {
+            std::string valueStr;
+
+            if (!metricsJson["value"].is_number_float() && scaleIndex == 0) {
+                valueStr = std::to_string(metricsJson["value"].get<std::uint64_t>());
+            } else {
+                auto value = metricsJson["value"].get<float>();
+                int scale = getScaleFromeIndex(scaleIndex);
+                valueStr = getFloatStringWithPrecision(value / scale, precision);
+            }
+            res += valueStr;
+        }
     }
     if (json->contains("tile_level")) {
         for (auto tile : (*json)["tile_level"]) {
@@ -52,41 +76,57 @@ static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, 
             auto metricsJson = getMetricsTypeFromList(tileLevelMetricsList, metricsType);
             if (!metricsJson.empty()) {
                 if (res.size() > 0) res += ", ";
-                res += "Tile " + std::to_string(tileId) + ": " + std::to_string(metricsJson["value"].get<std::uint64_t>());
+                std::string valueStr;
+                if (!metricsJson["value"].is_number_float() && scaleIndex == 0) {
+                    auto value = metricsJson["value"].get<std::uint64_t>();
+                    valueStr = std::to_string(value);
+                } else {
+                    float value = metricsJson["value"].get<float>();
+                    int scale = getScaleFromeIndex(scaleIndex);
+                    valueStr = getFloatStringWithPrecision(value / scale, precision);
+                }
+                res += "Tile " + std::to_string(tileId) + ": " + valueStr;
             }
         }
     }
     return res;
 }
 
-static std::string getAggregateLine(nlohmann::json metricsJson) {
+static std::string getAggregateValue(nlohmann::json valueJson, std::string name, int scaleIndex, int precision) {
+    if (!valueJson.is_number_float() && scaleIndex == 0) {
+        auto value = valueJson.get<std::uint64_t>();
+        return name + ": " + std::to_string(value);
+    } else {
+        auto value = valueJson.get<float>();
+        int scale = getScaleFromeIndex(scaleIndex);
+        return name + ": " + getFloatStringWithPrecision(value / scale, precision);
+    }
+}
+
+static std::string getAggregateLine(nlohmann::json metricsJson, int scaleIndex, int precision) {
     std::string res;
     if (metricsJson.contains("avg")) {
-        auto value = metricsJson["avg"].get<std::uint64_t>();
-        res += "avg: " + std::to_string(value) + ", ";
+        res += getAggregateValue(metricsJson["avg"], "avg", scaleIndex, precision) + ", ";
     }
     if (metricsJson.contains("min")) {
-        auto value = metricsJson["min"].get<std::uint64_t>();
-        res += "min: " + std::to_string(value) + ", ";
+        res += getAggregateValue(metricsJson["min"], "min", scaleIndex, precision) + ", ";
     }
     if (metricsJson.contains("max")) {
-        auto value = metricsJson["max"].get<std::uint64_t>();
-        res += "max: " + std::to_string(value) + ", ";
+        res += getAggregateValue(metricsJson["max"], "max", scaleIndex, precision) + ", ";
     }
     if (metricsJson.contains("value")) {
-        auto current = metricsJson["value"].get<std::uint64_t>();
-        res += "current: " + std::to_string(current);
+        res += getAggregateValue(metricsJson["value"], "current", scaleIndex, precision);
     }
     return res;
 }
 
-static std::string getNonCounterMetricsValue(std::shared_ptr<nlohmann::json> json, std::string metricsType) {
+static std::string getNonCounterMetricsValue(std::shared_ptr<nlohmann::json> json, std::string metricsType, int scaleIndex = 0, int precision = 2) {
     std::string res = "";
     if (json->contains("device_level")) {
         auto deviceLevelMetricsList = (*json)["device_level"];
         auto metricsJson = getMetricsTypeFromList(deviceLevelMetricsList, metricsType);
         if (!metricsJson.empty()) {
-            res += getAggregateLine(metricsJson);
+            res += getAggregateLine(metricsJson, scaleIndex, precision);
         }
     }
     if (json->contains("tile_level")) {
@@ -96,7 +136,7 @@ static std::string getNonCounterMetricsValue(std::shared_ptr<nlohmann::json> jso
             auto metricsJson = getMetricsTypeFromList(tileLevelMetricsList, metricsType);
             if (!metricsJson.empty()) {
                 if (res.size() > 0) res += "\n";
-                res += "Tile " + std::to_string(tileId) + ": " + getAggregateLine(metricsJson);
+                res += "Tile " + std::to_string(tileId) + ": " + getAggregateLine(metricsJson, scaleIndex, precision);
             }
         }
     }
@@ -107,13 +147,28 @@ static void showDeviceStatistics(Table &table, std::shared_ptr<nlohmann::json> j
     table.add_row({"Device ID", std::to_string((*json)["device_id"].get<int>())});
     std::vector<std::string> keys;
     std::vector<std::string> values;
+
     keys.push_back("Start Time");
     values.push_back((*json)["begin"].get<std::string>());
     keys.push_back("End Time");
     values.push_back((*json)["end"].get<std::string>());
-
+    keys.push_back("Elapsed Time (Second)");
+    values.push_back(std::to_string((*json)["elapsed_time"].get<int>()));
     keys.push_back("Energy Consumed (J)");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_ENERGY"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_ENERGY", 3));
+    keys.push_back("GPU Utilization (%)");
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_GPU_UTILIZATION"));
+    keys.push_back("EU Array Active (%)");
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_EU_ACTIVE"));
+    keys.push_back("EU Array Stall (%)");
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_EU_STALL"));
+    keys.push_back("EU Array Idle (%)");
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_EU_IDLE"));
+
+    table.add_augmented_row({keys, values});
+
+    keys.clear();
+    values.clear();
     keys.push_back("Reset");
     values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_RESET"));
     keys.push_back("Programming Errors");
@@ -124,24 +179,18 @@ static void showDeviceStatistics(Table &table, std::shared_ptr<nlohmann::json> j
     values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE"));
     keys.push_back("Cache Errors Uncorrectable");
     values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE"));
-    keys.push_back("Display Errors Correctable");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE"));
-    keys.push_back("Display Errors Uncorrectable");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE"));
-
     table.add_augmented_row({keys, values});
 
-    table.add_row({"GPU Utilization (%)", getNonCounterMetricsValue(json, "XPUM_STATS_GPU_UTILIZATION")});
-    // table.add_row({"XPUM_STATS_MEMORY_UTILIZATION",getNonCounterMetricsValue(*json,"XPUM_STATS_MEMORY_UTILIZATION")});
     table.add_row({"GPU Power (W)", getNonCounterMetricsValue(json, "XPUM_STATS_POWER")});
     table.add_row({"GPU Frequency (MHz)", getNonCounterMetricsValue(json, "XPUM_STATS_GPU_FREQUENCY")});
     table.add_row({"GPU Core Temperature\n(Celsius Degree)",
                    getNonCounterMetricsValue(json, "XPUM_STATS_GPU_CORE_TEMPERATURE")});
     table.add_row({"GPU Memory Temperature\n(Celsius Degree)",
                    getNonCounterMetricsValue(json, "XPUM_STATS_MEMORY_TEMPERATURE")});
-    table.add_row({"EU Array Active (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_ACTIVE")});
-    table.add_row({"EU Array Stall (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_STALL")});
-    table.add_row({"EU Array Idle (%)", getNonCounterMetricsValue(json, "XPUM_STATS_EU_IDLE")});
+    table.add_row({"GPU Memory Read (kB/s)",
+                   getNonCounterMetricsValue(json, "XPUM_STATS_MEMORY_READ_THROUGHPUT")});
+    table.add_row({"GPU Memory Write (kB/s)",
+                   getNonCounterMetricsValue(json, "XPUM_STATS_MEMORY_WRITE_THROUGHPUT")});
 }
 
 void ComletStatistics::getTableResult(std::ostream &out) {

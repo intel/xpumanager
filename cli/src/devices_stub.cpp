@@ -46,18 +46,24 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     DeviceId grpcDeviceId;
     grpcDeviceId.set_id(deviceId);
     grpc::Status status = stub->getDeviceProperties(&context, grpcDeviceId, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            for (int i{0}; i < response.properties_size(); ++i) {
-                auto &p = response.properties(i);
-                std::string name = p.name();
-                std::transform(name.begin(), name.end(), name.begin(),
-                               [](unsigned char c) { return std::tolower(c); });
-                (*json)[name] = p.value();
-            }
-            (*json)["device_id"] = deviceId;
-        }
+
+    if (!status.ok()) {
+        (*json)["error"] = status.error_message();
     }
+
+    if (response.errormsg().length() != 0) {
+        (*json)["error"] = response.errormsg();
+        return json;
+    }
+
+    for (int i{0}; i < response.properties_size(); ++i) {
+        auto &p = response.properties(i);
+        std::string name = p.name();
+        std::transform(name.begin(), name.end(), name.begin(),
+                       [](unsigned char c) { return std::tolower(c); });
+        (*json)[name] = p.value();
+    }
+    (*json)["device_id"] = deviceId;
 
     return json;
 }

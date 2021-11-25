@@ -10,6 +10,7 @@
 #include "infrastructure/init_close_interface.h"
 #include "monitor/monitor_manager_interface.h"
 #include "policy/policy_manager_interface.h"
+#include "dump_raw_data/dump_manager.h"
 
 namespace xpum {
 
@@ -41,6 +42,8 @@ class Core : public InitCloseInterface {
 
     std::shared_ptr<PolicyManagerInterface> getPolicyManager();
 
+    std::shared_ptr<DumpRawDataManager> getDumpRawDataManager();
+
    private:
     Core();
 
@@ -66,6 +69,8 @@ class Core : public InitCloseInterface {
     std::shared_ptr<DiagnosticManagerInterface> p_diagnostic_manager;
 
     std::shared_ptr<PolicyManagerInterface> p_policy_manager;
+
+    std::shared_ptr<DumpRawDataManager> p_dump_raw_data_manager;
 
     bool initialized;
 
