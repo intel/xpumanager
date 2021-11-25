@@ -293,11 +293,13 @@ def get_config(deviceId):
                 description: Error
     """
     req = request.get_json()
+    if ("tileId" not in req):
+        return jsonify("json string is invalid"), 500
     tileId = req["tileId"]
-
+    if type(tileId) != int:
+        return jsonify("Invalid Parameter"), 500
     if tileId < -1:
         return jsonify("invalid Parameter"), 500
-    
     code, message, data = stub.getConfig(deviceId, tileId)
     if code != 0:
         error = dict(Status=code, Message=message)

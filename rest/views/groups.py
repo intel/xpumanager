@@ -60,6 +60,9 @@ def groups():
         if request.method == 'POST':
             # create group
             req = request.get_json()
+            if (req is None):
+                return "requires group name.", 500
+
             groupName = req["GroupName"]
             code, message, data = stub.createGroup(groupName)
             if code == 0:
@@ -166,6 +169,9 @@ def group_detail(groupId):
             return jsonify(error), 400
         elif request.method == 'POST':
             req = request.get_json()
+
+            if (req is None):
+                return "Wrong argument or unknow operation.", 500
 
             data = dict()
 

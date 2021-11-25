@@ -326,12 +326,21 @@ static std::string getPciSlot(const std::string& bdf_regex) {
     return res;
 }
 
-void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities) {
+void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities) {
     bool has_exception = false;
+    zes_pci_properties_t pci_props;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+    std::string bdf_address;
+    if (res == ZE_RESULT_SUCCESS) {
+        bdf_address = to_string(pci_props.address);
+    }
+    
     try {
         toGetPower(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no power monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_POWER);
@@ -342,6 +351,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetActuralFrequency(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no frequency monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY);
@@ -352,6 +362,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetRequestFrequency(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no request frequency monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_REQUEST_FREQUENCY);
@@ -362,6 +373,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetTemperature(device, ZES_TEMP_SENSORS_GPU);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no temperature monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
@@ -372,6 +384,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetTemperature(device, ZES_TEMP_SENSORS_MEMORY);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no memory temperature monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_TEMPERATURE);
@@ -382,6 +395,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetMemory(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no memory monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_USED);
@@ -392,6 +406,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetMemoryUtilization(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no memory utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_UTILIZATION);
@@ -402,6 +417,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetMemoryBandwidth(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no memory bandwidth monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_BANDWIDTH);
@@ -412,6 +428,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetMemoryRead(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no memory read monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ);
@@ -422,6 +439,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetMemoryWrite(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no memory write monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE);
@@ -432,6 +450,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetMemoryReadThroughput(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no memory read throughput monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ_THROUGHPUT);
@@ -442,6 +461,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetMemoryWriteThroughput(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no memory write throughput monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE_THROUGHPUT);
@@ -452,6 +472,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetEngineUtilization(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no gpu utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
@@ -462,6 +483,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetEnergy(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no energy monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_ENERGY);
@@ -472,6 +494,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetRasError(device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no reset count monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
@@ -482,6 +505,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetRasErrorOnSubdevice(device, ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no programming error monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
@@ -492,6 +516,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetRasErrorOnSubdevice(device, ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no driver error monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
@@ -502,6 +527,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetRasErrorOnSubdevice(device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no correctable cache error monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
@@ -512,6 +538,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetRasErrorOnSubdevice(device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no uncorrectable cache error monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
@@ -522,6 +549,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetRasErrorOnSubdevice(device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no correctable display error monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
@@ -532,6 +560,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetRasErrorOnSubdevice(device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no uncorrectable display error monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
@@ -542,27 +571,42 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, std::vector<Devi
         toGetFrequencyThrottle(device);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no frequency throttle monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
     }
 }
 
-void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
+void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
     bool has_exception = false;
+    zes_pci_properties_t pci_props;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+    std::string bdf_address;
+    if (res == ZE_RESULT_SUCCESS) {
+        bdf_address = to_string(pci_props.address);
+    }
     try {
         toGetEuActiveStallIdle(device, driver, MeasurementType::METRIC_EU_ACTIVE);
     } catch (BaseException& e) {
         has_exception = true;
+        XPUM_LOG_WARN("Device {}{} has no EU active, EU stall and EU idle monitoring capability.", props.core.name, bdf_address);
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE);
     }
 }
 
-void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities) {
+void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities) {
     ze_result_t res;
     uint32_t engine_grp_count = 0;
+    zes_pci_properties_t pci_props;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+    std::string bdf_address;
+    if (res == ZE_RESULT_SUCCESS) {
+        bdf_address = to_string(pci_props.address);
+    }
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
@@ -606,6 +650,25 @@ void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, std::vecto
             }
         }
     }
+    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION) == capabilities.end()) {
+        XPUM_LOG_WARN("Device {}{} has no compute engine group utilization monitoring capability.", props.core.name, bdf_address);
+    }
+    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION) == capabilities.end()) {
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
+        XPUM_LOG_WARN("Device {}{} has no media engine group utilization monitoring capability.", props.core.name, bdf_address);
+    }
+    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) == capabilities.end()) {
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
+        XPUM_LOG_WARN("Device {}{} has no copy engine group utilization monitoring capability.", props.core.name, bdf_address);
+    }
+    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) == capabilities.end()) {
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
+        XPUM_LOG_WARN("Device {}{} has no render engine group utilization monitoring capability.", props.core.name, bdf_address);
+    }
+    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION) == capabilities.end()) {
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
+        XPUM_LOG_WARN("Device {}{} has no 3D engine group utilization monitoring capability.", props.core.name, bdf_address);
+    }
 }
 
 void addPCIeProperties(ze_device_handle_t& device, std::shared_ptr<GPUDevice> p_gpu) {
@@ -642,9 +705,9 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
             props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
             XPUM_ZE_HANDLE_LOCK(zes_device, zesDeviceGetProperties(zes_device, &props));
             if (props.core.type == ZE_DEVICE_TYPE_GPU) {
-                addCapabilities(device, capabilities);
-                addEgnineCapabilities(device, capabilities);
-                addEuActiveStallIdleCapabilities(device, p_driver, capabilities);
+                addCapabilities(device, props, capabilities);
+                addEgnineCapabilities(device, props, capabilities);
+                addEuActiveStallIdleCapabilities(device, props, p_driver, capabilities);
                 auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_DEVICE_TYPE, std::string("GPU")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));
@@ -737,6 +800,9 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     for (auto firmware : firmwares) {
                         zes_firmware_properties_t prop;
                         XPUM_ZE_HANDLE_LOCK(device, res = zesFirmwareGetProperties(firmware, &prop));
+                        if (strcmp(prop.name, "GSC") != 0 || strcmp(prop.name, "unknown") == 0 || strcmp(prop.version,"unknown") == 0){
+                            continue;
+                        }
                         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FIRMWARE_NAME, std::string(prop.name)));
                         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION, std::string(prop.version)));
                     }
@@ -855,16 +921,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
             }
         }
     } else {
-        throw BaseException("toGetPower error caused by zesDeviceEnumPowerDomains");
+        exception_msgs["zesDeviceEnumPowerDomains"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetPower error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -873,6 +936,25 @@ void GPUDeviceStub::getEnergy(const zes_device_handle_t& device, Callback_t call
         return;
     }
     invokeTask(callback, toGetEnergy, device);
+}
+
+std::string GPUDeviceStub::buildErrors(const std::map<std::string, ze_result_t>& exception_msgs, const char* func, uint32_t line) {
+    
+    if (!exception_msgs.empty()) {
+        std::string content;
+        bool first = true;
+        for (auto info : exception_msgs) {
+            if (first) {
+                std::string func_name = func;
+                content.append("[" + func_name + ":" + std::to_string(line) + "] " + info.first + ":" + to_hex_string(info.second));
+                first = false;
+            } else {
+                content.append(", " + info.first + ":" + to_hex_string(info.second));
+            }
+        }
+        return content;
+    }
+    return "";
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_handle_t& device) {
@@ -905,16 +987,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_han
             }
         }
     } else {
-        throw BaseException("toGetEnergy error caused by zesDeviceEnumPowerDomains");
+        exception_msgs["zesDeviceEnumPowerDomains"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetEnergy error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -955,16 +1034,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
             }
         }
     } else {
-        throw BaseException("toGetActuralFrequency error caused by zesDeviceEnumFrequencyDomains");
+        exception_msgs["zesDeviceEnumFrequencyDomains"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetActuralFrequency error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1013,16 +1089,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottle(const zes
             }
         }
     } else {
-        throw BaseException("toGetFrequencyThrottle error caused by zesDeviceEnumFrequencyDomains");
+        exception_msgs["zesDeviceEnumFrequencyDomains"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetFrequencyThrottle error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1063,16 +1136,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_
             }
         }
     } else {
-        throw BaseException("toGetRequestFrequency error caused by zesDeviceEnumFrequencyDomains");
+        exception_msgs["zesDeviceEnumFrequencyDomains"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetFrequencyThrottle error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1147,19 +1217,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
                 }
             }
         } else {
-            throw BaseException("toGetTemperature error caused by zesDeviceEnumTemperatureSensors");
+            exception_msgs["zesDeviceEnumTemperatureSensors"] = res;
         }
     } else {
-        throw BaseException("toGetTemperature error caused by zesDeviceEnumTemperatureSensors");
+        exception_msgs["zesDeviceEnumTemperatureSensors"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetTemperature error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1204,19 +1271,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_han
                 }
             }
         } else {
-            throw BaseException("toGetMemory error caused by zesDeviceEnumMemoryModules");
+            exception_msgs["zesDeviceEnumMemoryModules"] = res;
         }
     } else {
-        throw BaseException("toGetMemory error caused by zesDeviceEnumMemoryModules");
+        exception_msgs["zesDeviceEnumMemoryModules"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetMemory error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1263,19 +1327,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
                 }
             }
         } else {
-            throw BaseException("toGetMemoryUtilization error caused by zesDeviceEnumMemoryModules");
+            exception_msgs["zesDeviceEnumMemoryModules"] = res;
         }
     } else {
-        throw BaseException("toGetMemoryUtilization error caused by zesDeviceEnumMemoryModules");
+        exception_msgs["zesDeviceEnumMemoryModules"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetMemoryUtilization error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1328,19 +1389,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
                 }
             }
         } else {
-            throw BaseException("toGetMemoryBandwidth error caused by zesDeviceEnumMemoryModules");
+            exception_msgs["zesDeviceEnumMemoryModules"] = res;
         }
     } else {
-        throw BaseException("toGetMemoryBandwidth error caused by zesDeviceEnumMemoryModules");
+        exception_msgs["zesDeviceEnumMemoryModules"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetMemoryBandwidth error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1382,19 +1440,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryRead(const zes_device
                 }
             }
         } else {
-            throw BaseException("toGetMemoryRead error caused by zesDeviceEnumMemoryModules");
+            exception_msgs["zesDeviceEnumMemoryModules"] = res;
         }
     } else {
-        throw BaseException("toGetMemoryRead error caused by zesDeviceEnumMemoryModules");
+        exception_msgs["zesDeviceEnumMemoryModules"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetMemoryRead error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1436,19 +1491,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_devic
                 }
             }
         } else {
-            throw BaseException("toGetMemoryWrite error caused by zesDeviceEnumMemoryModules");
+            exception_msgs["zesDeviceEnumMemoryModules"] = res;
         }
     } else {
-        throw BaseException("toGetMemoryWrite error caused by zesDeviceEnumMemoryModules");
+        exception_msgs["zesDeviceEnumMemoryModules"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetMemoryWrite error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     } 
 }
 
@@ -1491,19 +1543,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadThroughput(const 
                 }
             }
         } else {
-            throw BaseException("toGetMemoryReadThroughput error caused by zesDeviceEnumMemoryModules");
+            exception_msgs["zesDeviceEnumMemoryModules"] = res;
         }
     } else {
-        throw BaseException("toGetMemoryReadThroughput error caused by zesDeviceEnumMemoryModules");
+        exception_msgs["zesDeviceEnumMemoryModules"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetMemoryReadThroughput error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1546,19 +1595,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWriteThroughput(const
                 }
             }
         } else {
-            throw BaseException("toGetMemoryWriteThroughput error caused by zesDeviceEnumMemoryModules");
+            exception_msgs["zesDeviceEnumMemoryModules"] = res;
         }
     } else {
-        throw BaseException("toGetMemoryWriteThroughput error caused by zesDeviceEnumMemoryModules");
+        exception_msgs["zesDeviceEnumMemoryModules"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetMemoryWriteThroughput error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     } 
 }
 
@@ -1919,7 +1965,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
     if (res == ZE_RESULT_SUCCESS) {
         ret->setNumSubdevices(props.numSubdevices);
     } else {
-        throw BaseException("toGetEngineUtilization error caused by zesDeviceGetProperties");
+        exception_msgs["zesDeviceGetProperties"] = res;
     }
 
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
@@ -1959,19 +2005,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
                 }
             }
         } else {
-            throw BaseException("toGetEngineUtilization error caused by zesDeviceEnumEngineGroups");
+            exception_msgs["zesDeviceEnumEngineGroups"] = res;
         }
     } else {
-        throw BaseException("toGetEngineUtilization error caused by zesDeviceEnumEngineGroups");
+        exception_msgs["zesDeviceEnumEngineGroups"] = res;
     }
     if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetEngineUtilization error caused by " + content);
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
@@ -1998,7 +2041,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
     if (res == ZE_RESULT_SUCCESS) {
         ret->setNumSubdevices(props.numSubdevices);
     } else {
-        throw BaseException("toGetEngineGroupUtilization error caused by zesDeviceGetProperties");
+        exception_msgs["zesDeviceGetProperties"] = res;
     }
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
@@ -2059,20 +2102,20 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
                 }
             }
         } else {
-            throw BaseException("toGetEngineUtilization error caused by zesDeviceEnumEngineGroups");
+            exception_msgs["zesDeviceEnumEngineGroups"] = res;
         }
     } else {
-        throw BaseException("toGetEngineUtilization error caused by zesDeviceEnumEngineGroups");
+        exception_msgs["zesDeviceEnumEngineGroups"] = res;
     }
 
     if (data_acquired) {
+        if (!exception_msgs.empty()) {
+            ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__) + ". Engine group type " + std::to_string(engine_group_type));
+        }
         return ret;
     } else {
-        std::string content;
-        for (auto info:exception_msgs) {
-            content.append(info.first + " ");
-        }
-        throw BaseException("toGetEngineGroupUtilization error caused by " + content + ". Engine group type " + std::to_string(engine_group_type) );
+
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__) + ". Engine group type " + std::to_string(engine_group_type));
     }
 }
 

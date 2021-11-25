@@ -3,8 +3,8 @@
 #include <chrono>
 #include <ctime>
 #include <map>
-#include <string>
 #include <set>
+#include <string>
 
 #include "const.h"
 #include "logger.h"
@@ -46,10 +46,10 @@ class MeasurementData {
                                       raw_data(-1),
                                       scale(1),
                                       bHasDataOnDevice(true),
-                                      raw_timestamp(0), 
+                                      raw_timestamp(0),
                                       timestamp(0) {
-                                          p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
-                                          p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
+        p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
+        p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
     }
 
     MeasurementData(uint64_t value, uint64_t scale) : avg(value),
@@ -59,10 +59,10 @@ class MeasurementData {
                                                       raw_data(-1),
                                                       scale(scale),
                                                       bHasDataOnDevice(true),
-                                                      raw_timestamp(0), 
+                                                      raw_timestamp(0),
                                                       timestamp(0) {
-                                                          p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
-                                                          p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
+        p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
+        p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
     }
 
     MeasurementData(uint64_t avg, uint64_t min, uint64_t max) : avg(avg),
@@ -74,11 +74,19 @@ class MeasurementData {
                                                                 bHasDataOnDevice(true),
                                                                 raw_timestamp(0),
                                                                 timestamp(0) {
-                                                                    p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
-                                                                    p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
+        p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
+        p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
     }
 
-    MeasurementData(uint64_t avg, uint64_t min, uint64_t max, uint64_t current, uint64_t scale) : avg(avg), min(min), max(max), current(current), raw_data(-1), scale(scale), bHasDataOnDevice(true), raw_timestamp(0), timestamp(0) {
+    MeasurementData(uint64_t avg, uint64_t min, uint64_t max, uint64_t current, uint64_t scale) : avg(avg),
+                                                                                                  min(min),
+                                                                                                  max(max),
+                                                                                                  current(current),
+                                                                                                  raw_data(-1),
+                                                                                                  scale(scale),
+                                                                                                  bHasDataOnDevice(true),
+                                                                                                  raw_timestamp(0),
+                                                                                                  timestamp(0) {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
     }
@@ -100,6 +108,7 @@ class MeasurementData {
         timestamp = other.timestamp;
         subdevice_additional_current_data_types = other.subdevice_additional_current_data_types;
         subdevice_additional_current_datas = other.subdevice_additional_current_datas;
+        errors = other.errors;
     }
 
    public:
@@ -208,8 +217,15 @@ class MeasurementData {
 
     void setNumSubdevices(uint32_t num) { this->num_subdevice = num; }
 
-   protected:
+    void setErrors(const std::string& errors) {
+        this->errors = errors;
+    }
 
+    const std::string& getErrors() {
+        return this->errors;
+    }
+
+   protected:
     std::string device_id;
 
     Timestamp_t start_time;
@@ -239,10 +255,12 @@ class MeasurementData {
     uint32_t num_subdevice;
 
     std::shared_ptr<std::map<uint64_t, ExtendedMeasurementData>> p_extended_datas;
-    
+
     std::set<MeasurementType> subdevice_additional_current_data_types;
 
     std::map<uint32_t, std::map<MeasurementType, uint64_t>> subdevice_additional_current_datas;
+
+    std::string errors;
 };
 
 } // end namespace xpum

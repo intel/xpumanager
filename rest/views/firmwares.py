@@ -4,12 +4,13 @@ from marshmallow import Schema, fields
 
 
 class FirmwareFlashJobSchema(Schema):
-    type = fields.Int(metadata={"description": "The firmware type to flash, 0: GSC"})
+    #type = fields.Str(metadata={"description": "The firmware type to flash, GSC"})
     file = fields.Str(metadata={"description": "The path of firmware binary file to flash"})
 
 
 class FirmwareFlashStateQuerySchema(Schema):
-    type = fields.Int(metadata={"description": "The firmware type"})
+    #type = fields.Str(metadata={"description": "The firmware type"})
+    pass
 
 
 class FirmwareFlashResultSchema(Schema):
@@ -46,15 +47,14 @@ def run_firmware_flash(deviceId):
                 description: Error
     """
     req = request.get_json()
-    firmwareType = req.get('type')
-    if not firmwareType:
-        firmwareType = 0
+    if not req:
+        return jsonify({'error': 'missing arguments'})
 
     filePath = req.get('file')
     if not filePath:
         return jsonify({'error': 'missing arguments'})
 
-    rc = stub.runFirmwareFlash(deviceId, firmwareType, filePath)
+    rc = stub.runFirmwareFlash(deviceId, 0, filePath)
     return jsonify({'result': rc})
 
 
@@ -69,11 +69,6 @@ def get_firmware_flash_result(deviceId):
             - text/plain; charset=utf-8
             - application/json
         parameters:
-            - 
-                name: type
-                in: query
-                description: Firmware flash result query form
-                type: integer
             -
                 name: deviceId
                 in: path
@@ -88,8 +83,8 @@ def get_firmware_flash_result(deviceId):
             500:
                 description: Error
     """
-    firmwareType = request.args.get('type', type=int, default=0)
+    #firmwareType = request.args.get('type', type=str, default='')
 
-    rc = stub.getFirmwareFlashResult(deviceId, firmwareType)
+    rc = stub.getFirmwareFlashResult(deviceId, 0)
 
     return jsonify({'result': rc})
