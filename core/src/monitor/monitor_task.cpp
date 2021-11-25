@@ -120,7 +120,10 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
                 for (auto & data : (*datas)) {
                     auto mData = std::make_shared<MeasurementData>();
                     for (auto & sData : subdeviceAdditionalCurrentDatasAll[data.first]) {
-                        mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
+                        if (sData.first == UINT32_MAX)
+                            mData->setCurrent(sData.second[type]);
+                        else
+                            mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
                     }
                     (*datas)[data.first] = mData;
                 }

@@ -129,7 +129,10 @@ MeasurementData DeviceManager::getRealtimeMeasurementData(
         auto mData = std::make_shared<MeasurementData>();
         auto subdeviceAdditionalCurrentDatas = p_data->getSubdeviceAdditionalCurrentDatas();
         for (auto & sData : subdeviceAdditionalCurrentDatas) {
-            mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
+            if (sData.first == UINT32_MAX)
+                mData->setCurrent(sData.second[type]);
+            else
+                mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
         }
         return *mData;
     }
