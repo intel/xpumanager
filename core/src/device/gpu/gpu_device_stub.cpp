@@ -654,19 +654,15 @@ void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, const zes_
         XPUM_LOG_WARN("Device {}{} has no compute engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION) == capabilities.end()) {
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
         XPUM_LOG_WARN("Device {}{} has no media engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) == capabilities.end()) {
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
         XPUM_LOG_WARN("Device {}{} has no copy engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) == capabilities.end()) {
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
         XPUM_LOG_WARN("Device {}{} has no render engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION) == capabilities.end()) {
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
         XPUM_LOG_WARN("Device {}{} has no 3D engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
 }
