@@ -175,11 +175,11 @@ class GPUDeviceStub {
 
     static std::string to_regex_string(zes_pci_address_t address);
 
-    static void addEuActiveStallIdleCapabilities(zes_device_handle_t device, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
+    static void addEuActiveStallIdleCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
 
-    static void addCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities);
+    static void addCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
 
-    static void addEgnineCapabilities(zes_device_handle_t device, std::vector<DeviceCapability>& capabilities);
+    static void addEgnineCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
 
     static void checkInitDependency();
 
