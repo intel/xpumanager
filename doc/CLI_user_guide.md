@@ -259,8 +259,8 @@ optional arguments:
                                 0. GPU Utilization (%), GPU active time of the elapsed time
                                 1. GPU Power (W)
                                 2. GPU Frequency (MHz)
-                                3. GPU Core Temperature (°C)
-                                4. GPU Memory Temperature (°C)
+                                3. GPU Core Temperature (Celsius Degree)
+                                4. GPU Memory Temperature (Celsius Degree)
                                 5. GPU Memory Utilization (%)
                                 6. GPU Memory Read (kB/s)
                                 7. GPU Memory Write (kB/s)
@@ -273,6 +273,7 @@ optional arguments:
                                 14. Driver Errors
                                 15. Cache Erros Correctable
                                 16. Cache Errors Uncorrectable
+                                17. GPU Memory Bandwidth Utilization (%)
 -->
  
 List the XPU Manager settings
@@ -363,6 +364,9 @@ List the GPU device aggregrated statistics that are collected by XPU Manager
 +------------------------------+-------------------------------------------------------------------+
 | GPU Memory Write (kB/s)      | Tile 0: avg: 100, min: 90, max: 240, current: 100                 |
 |                              | Tile 1: avg: 100, min: 90, max: 240, current: 100                 |
++------------------------------+-------------------------------------------------------------------+
+| GPU Memory Bandwidth (%)     | Tile 0: avg: 10, min: 9, max: 15, current: 10                     |
+|                              | Tile 1: avg: 10, min: 9, max: 15, current: 10                     |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
@@ -468,8 +472,8 @@ optional arguments:
                                 0. GPU Utilization (%), GPU active time of the elapsed time, per tile
                                 1. GPU Power (W), per GPU
                                 2. GPU Frequency (MHz), per tile
-                                3. GPU Core Temperature (°C), per tile
-                                4. GPU Memory Temperature (°C), per tile
+                                3. GPU Core Temperature (Celsius Degree), per tile
+                                4. GPU Memory Temperature (Celsius Degree), per tile
                                 5. GPU Memory Utilization (%), per tile
                                 6. GPU Memory Read (kB/s), per tile
                                 7. GPU Memory Write (kB/s), per tile
@@ -483,6 +487,7 @@ optional arguments:
                                 14. Driver Errors, per tile.
                                 15. Cache Erros Correctable, per tile.
                                 16. Cache Errors Uncorrectable, per tile. 
+                                17. GPU Memory Bandwidth Utilization. (%)
   
   -i                          The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
