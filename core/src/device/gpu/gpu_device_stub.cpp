@@ -800,7 +800,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     for (auto firmware : firmwares) {
                         zes_firmware_properties_t prop;
                         XPUM_ZE_HANDLE_LOCK(device, res = zesFirmwareGetProperties(firmware, &prop));
-                        if (strcmp(prop.name, "unknown") == 0 || strcmp(prop.version,"unknown") == 0){
+                        if (strcmp(prop.name, "GSC") != 0 || strcmp(prop.name, "unknown") == 0 || strcmp(prop.version,"unknown") == 0){
                             continue;
                         }
                         p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FIRMWARE_NAME, std::string(prop.name)));
