@@ -590,8 +590,8 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         deviceStatsInfo->set_count(stats.count);
         for (int j = 0; j < stats.count; j++) {
             xpum_device_stats_data_t& data = stats.dataList[j];
-            if (!metricsTypeAllowList(data.metricsType))
-                continue;
+            // if (!metricsTypeAllowList(data.metricsType))
+            //     continue;
             DeviceStatsData* deviceStatsData = deviceStatsInfo->add_datalist();
             deviceStatsData->mutable_metricstype()->set_value(data.metricsType);
             deviceStatsData->set_iscounter(data.isCounter);
