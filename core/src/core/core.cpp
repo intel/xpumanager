@@ -109,6 +109,10 @@ void Core::init() {
     p_policy_manager = std::make_shared<PolicyManager>(p_device_manager, p_data_logic, p_group_manager);
     p_policy_manager->init();
 
+    XPUM_LOG_INFO("initialize dump raw data manager");
+    p_dump_raw_data_manager = std::make_shared<DumpRawDataManager>();
+    p_dump_raw_data_manager->init();
+
     XPUM_LOG_INFO("xpumd core initialization completed");
     initialized = true;
 }

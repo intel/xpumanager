@@ -116,7 +116,8 @@ void ComletDiscovery::getTableResult(std::ostream &out) {
 
     if (this->opts->deviceId != -1) {
         showDetailedInfo(out, json);
+    }else{
+        showBasicInfo(out, json);
     }
-    showBasicInfo(out, json);
 }
 } // end namespace xpum::cli

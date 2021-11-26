@@ -127,6 +127,8 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Driver Version: 16929133                                                             |
 |           | Firmware Name: GSC                                                                   |
 |           | Firmware Version: ATS0_1.1                                                           |
+|           | Firmware Name: AMC                                                                   |
+|           | Firmware Version: 3.4.0.0                                                            |
 |           |                                                                                      |
 |           | PCI BDF Address: 0000:4d:00.0                                                        |
 |           | PCI Slot: Riser 1, slot 1                                                            |
@@ -257,8 +259,8 @@ optional arguments:
                                 0. GPU Utilization (%), GPU active time of the elapsed time
                                 1. GPU Power (W)
                                 2. GPU Frequency (MHz)
-                                3. GPU Core Temperature (°C)
-                                4. GPU Memory Temperature (°C)
+                                3. GPU Core Temperature (Celsius Degree)
+                                4. GPU Memory Temperature (Celsius Degree)
                                 5. GPU Memory Utilization (%)
                                 6. GPU Memory Read (kB/s)
                                 7. GPU Memory Write (kB/s)
@@ -266,11 +268,13 @@ optional arguments:
                                 9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
                                 10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
                                 11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
-                                12. Reset Count
+                                12. Reset Count, number of accelertor engine resets attempted by the driver.
                                 13. Programming Errors
                                 14. Driver Errors
                                 15. Cache Erros Correctable
                                 16. Cache Errors Uncorrectable
+                                17. GPU Memory Bandwidth Utilization (%)
+                                18. GPU Memory Used (MiB)
 -->
  
 List the XPU Manager settings
@@ -361,6 +365,12 @@ List the GPU device aggregrated statistics that are collected by XPU Manager
 +------------------------------+-------------------------------------------------------------------+
 | GPU Memory Write (kB/s)      | Tile 0: avg: 100, min: 90, max: 240, current: 100                 |
 |                              | Tile 1: avg: 100, min: 90, max: 240, current: 100                 |
++------------------------------+-------------------------------------------------------------------+
+| GPU Memory Bandwidth (%)     | Tile 0: avg: 10, min: 9, max: 15, current: 10                     |
+|                              | Tile 1: avg: 10, min: 9, max: 15, current: 10                     |
++------------------------------+-------------------------------------------------------------------+
+| GPU Memory Used (MiB)        | Tile 0: avg: 500, min: 100, max: 700, current: 400                |
+|                              | Tile 1: avg: 500, min: 100, max: 700, current: 400                |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
@@ -466,8 +476,8 @@ optional arguments:
                                 0. GPU Utilization (%), GPU active time of the elapsed time, per tile
                                 1. GPU Power (W), per GPU
                                 2. GPU Frequency (MHz), per tile
-                                3. GPU Core Temperature (°C), per tile
-                                4. GPU Memory Temperature (°C), per tile
+                                3. GPU Core Temperature (Celsius Degree), per tile
+                                4. GPU Memory Temperature (Celsius Degree), per tile
                                 5. GPU Memory Utilization (%), per tile
                                 6. GPU Memory Read (kB/s), per tile
                                 7. GPU Memory Write (kB/s), per tile
@@ -481,6 +491,8 @@ optional arguments:
                                 14. Driver Errors, per tile.
                                 15. Cache Erros Correctable, per tile.
                                 16. Cache Errors Uncorrectable, per tile. 
+                                17. GPU Memory Bandwidth Utilization. (%)
+                                18. GPU Memory Used (MiB)
   
   -i                          The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
@@ -567,7 +579,7 @@ Options:
   -h,--help                   Print this help message and exit
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid input: GSC.
+  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P card so far.
   -f,--file                   The firmware image file path on this server.
 ```
 
@@ -607,7 +619,9 @@ Options:
   --frequencyrange            GPU tile-level core frequency range.
   --powerlimit                GPU-level power limit. 
   --standby                   Tile-level standby mode. Valid options: "default"; "never".
-  --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us); "exclusive".
+  --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us);
+                                "exclusive".
+  --reset                     Hard reset the GPU. All applications that are currently using this device will be forcibly killed. 
 ```
 
 show the GPU settings
@@ -670,6 +684,17 @@ Change the GPU tile scheduler mode.
 ```
 ./xpumcli config -d 0 -t 0 --scheduler timeout,640000
 Succeed to change the scheduler mode on GPU 0 tile 0.
+```
+
+Reset the GPU.
+```
+./xpumcli config -d 0 --reset
+The process（es） below are using this device. 
+  PID: 633972, Command: ./ze_gemm
+  PID: 633973, Command: ./ze_gemm
+
+All process(es) above will be forcibly killed if you reset it. Do you want to continue? (Y/N) Y
+Succeed to reset the GPU 0.
 ```
 
 ## Get and set the policy, automatic action triggered by the condition

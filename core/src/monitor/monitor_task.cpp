@@ -11,16 +11,6 @@
 
 namespace xpum {
 
-struct MonitorTaskLogStatus {
-    bool reported;
-    MonitorTaskLogStatus() {
-        reported = false;
-    }
-};
-
-std::mutex monitor_task_log_status_mutex;
-std::map<std::shared_ptr<Device>, std::map<DeviceCapability, MonitorTaskLogStatus>> monitor_task_log_status;
-
 MonitorTask::MonitorTask(
     DeviceCapability capability, int freq,
     std::shared_ptr<DeviceManagerInterface>& p_device_manager,
@@ -87,17 +77,24 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
                 }
                 if (e == nullptr && ret != nullptr) {
                     std::string id = p_device->getId();
-                    (*datas)[id] = std::static_pointer_cast<MeasurementData>(ret);
-                    monitor_task_log_status_mutex.lock();
-                    monitor_task_log_status[p_device][capability].reported = false;
-                    monitor_task_log_status_mutex.unlock();
-                } else if (e != nullptr) {
-                    monitor_task_log_status_mutex.lock();
-                    if (!monitor_task_log_status[p_device][capability].reported) {
-                        XPUM_LOG_WARN(e->what());
-                        monitor_task_log_status[p_device][capability].reported = true;
+                    auto p_mdata = std::static_pointer_cast<MeasurementData>(ret);
+                    (*datas)[id] = p_mdata;
+                    if (p_mdata->getErrors().empty()) {
+                        // everything is ok, no error messages reported in executing the underlying task, clear the log reported flag
+                        p_this->monitor_task_log_status[p_device] = false;
+                    } else {
+                        // errors happened in executing the underlying task though partial data has been collected successfully, log the error if it has not been logged before
+                        if (!p_this->monitor_task_log_status[p_device]) {
+                            XPUM_LOG_WARN("partial monitoring failure: {}", p_mdata->getErrors());
+                            p_this->monitor_task_log_status[p_device] = true;
+                        }
                     }
-                    monitor_task_log_status_mutex.unlock();
+                } else if (e != nullptr) {
+                    // errors happened in executing the underlying task, log the error if it has not been logged before
+                    if (!p_this->monitor_task_log_status[p_device]) {
+                        XPUM_LOG_WARN("monitoring failure: {}", e->what());
+                        p_this->monitor_task_log_status[p_device] = true;
+                    }
                 }
             });
         }
@@ -123,7 +120,10 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
                 for (auto & data : (*datas)) {
                     auto mData = std::make_shared<MeasurementData>();
                     for (auto & sData : subdeviceAdditionalCurrentDatasAll[data.first]) {
-                        mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
+                        if (sData.first == UINT32_MAX)
+                            mData->setCurrent(sData.second[type]);
+                        else
+                            mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
                     }
                     (*datas)[data.first] = mData;
                 }

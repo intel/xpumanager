@@ -14,7 +14,6 @@ for dev_file in glob.glob("/dev/dri/card*"):
     with open(f'/sys/class/drm/{dev_file_basename}/device/uevent', 'r') as f:
         for line in f.readlines():
             line = line.strip()
-            print(line)
             match = pci_slot_name_pattern.match(line)
             if match is not None:
                 bdf_2_dev_file_map[match.group(1)] = dev_file_basename

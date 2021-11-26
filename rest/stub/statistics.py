@@ -62,13 +62,22 @@ def getStatistics(device_id, session_id=0, get_accumulated=False):
                 metricsType = stats_data.metricsType.value
             tmp["metrics_type"] = metricsType
             scale = stats_data.scale
-            tmp["value"] = stats_data.value / scale
-            if not stats_data.isCounter:
-                tmp["avg"] = stats_data.avg / scale
-                tmp["min"] = stats_data.min / scale
-                tmp["max"] = stats_data.max / scale
-            elif get_accumulated:
-                tmp["acc"] = stats_data.accumulated / scale
+            if scale == 1:
+                tmp["value"] = stats_data.value
+                if not stats_data.isCounter:
+                    tmp["avg"] = stats_data.avg
+                    tmp["min"] = stats_data.min
+                    tmp["max"] = stats_data.max
+                elif get_accumulated:
+                    tmp["acc"] = stats_data.accumulated
+            else:
+                tmp["value"] = stats_data.value / scale
+                if not stats_data.isCounter:
+                    tmp["avg"] = stats_data.avg / scale
+                    tmp["min"] = stats_data.min / scale
+                    tmp["max"] = stats_data.max / scale
+                elif get_accumulated:
+                    tmp["acc"] = stats_data.accumulated / scale
             dataList.append(tmp)
         if stats_info.isTileData:
             tmp = dict(tile_id=stats_info.tileId, data_list=dataList)
@@ -102,13 +111,22 @@ def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
             metricsType = XpumStatsType(d.metricsType.value).name
             tmp["metrics_type"] = metricsType
             scale = d.scale
-            tmp["value"] = d.value / scale
-            if not d.isCounter:
-                tmp["min"] = d.min / scale
-                tmp["avg"] = d.avg / scale
-                tmp["max"] = d.max / scale
-            elif get_accumulated:
-                tmp["acc"] = d.accumulated / scale
+            if scale == 1:
+                tmp["value"] = d.value
+                if not d.isCounter:
+                    tmp["min"] = d.min
+                    tmp["avg"] = d.avg
+                    tmp["max"] = d.max
+                elif get_accumulated:
+                    tmp["acc"] = d.accumulated
+            else:
+                tmp["value"] = d.value / scale
+                if not d.isCounter:
+                    tmp["min"] = d.min / scale
+                    tmp["avg"] = d.avg / scale
+                    tmp["max"] = d.max / scale
+                elif get_accumulated:
+                    tmp["acc"] = d.accumulated / scale
             dataList.append(tmp)
         if deviceStats.isTileData:
             deviceMap[deviceId]["tile_level"].append({

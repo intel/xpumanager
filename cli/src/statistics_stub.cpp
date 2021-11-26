@@ -36,6 +36,10 @@ std::string CoreStub::metricsTypeToString(xpum_stats_type_t metricsType) {
             return "XPUM_STATS_MEMORY_READ";
         case XPUM_STATS_MEMORY_WRITE:
             return "XPUM_STATS_MEMORY_WRITE";
+        case XPUM_STATS_MEMORY_READ_THROUGHPUT:
+            return "XPUM_STATS_MEMORY_READ_THROUGHPUT";
+        case XPUM_STATS_MEMORY_WRITE_THROUGHPUT:
+            return "XPUM_STATS_MEMORY_WRITE_THROUGHPUT";
         case XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
             return "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION";
         case XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
@@ -99,6 +103,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
     (*json)["begin"] = isotimestamp(begin);
     (*json)["end"] = isotimestamp(end);
 
+    (*json)["elapsed_time"] = (end - begin) / 1000;
+
     std::vector<nlohmann::json> deviceLevelStatsDataList;
     std::vector<nlohmann::json> tileLevelStatsDataList;
 
@@ -110,11 +116,21 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
             auto tmp = nlohmann::json();
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
-            tmp["value"] = stats_data.value();
-            if (!stats_data.iscounter()) {
-                tmp["avg"] = stats_data.avg();
-                tmp["min"] = stats_data.min();
-                tmp["max"] = stats_data.max();
+            int32_t scale = stats_data.scale();
+            if (scale == 1) {
+                tmp["value"] = stats_data.value();
+                if (!stats_data.iscounter()) {
+                    tmp["avg"] = stats_data.avg();
+                    tmp["min"] = stats_data.min();
+                    tmp["max"] = stats_data.max();
+                }
+            } else {
+                tmp["value"] = (double)stats_data.value() / scale;
+                if (!stats_data.iscounter()) {
+                    tmp["avg"] = (double)stats_data.avg() / scale;
+                    tmp["min"] = (double)stats_data.min() / scale;
+                    tmp["max"] = (double)stats_data.max() / scale;
+                }
             }
             dataList.push_back(tmp);
         }
@@ -178,11 +194,21 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId)
             auto tmp = nlohmann::json();
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
-            tmp["value"] = stats_data.value();
-            if (!stats_data.iscounter()) {
-                tmp["avg"] = stats_data.avg();
-                tmp["min"] = stats_data.min();
-                tmp["max"] = stats_data.max();
+            int32_t scale = stats_data.scale();
+            if (scale == 1) {
+                tmp["value"] = stats_data.value();
+                if (!stats_data.iscounter()) {
+                    tmp["avg"] = stats_data.avg();
+                    tmp["min"] = stats_data.min();
+                    tmp["max"] = stats_data.max();
+                }
+            } else {
+                tmp["value"] = (double)stats_data.value() / scale;
+                if (!stats_data.iscounter()) {
+                    tmp["avg"] = (double)stats_data.avg() / scale;
+                    tmp["min"] = (double)stats_data.min() / scale;
+                    tmp["max"] = (double)stats_data.max() / scale;
+                }
             }
             dataList.push_back(tmp);
         }
@@ -199,6 +225,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId)
 
     uint64_t begin = response.begin();
     uint64_t end = response.end();
+    uint32_t elapsed_time = (end - begin) / 1000;
     std::string beginTimestamp = isotimestamp(begin);
     std::string endTimestamp = isotimestamp(end);
 
@@ -207,6 +234,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId)
         nlohmann::json data;
         data["begin"] = beginTimestamp;
         data["end"] = endTimestamp;
+        data["elapsed_time"] = elapsed_time;
         data["device_id"] = item.value()["device_id"];
         data["device_level"] = item.value()["device_level"];
         data["tile_level"] = item.value()["tile_level"];

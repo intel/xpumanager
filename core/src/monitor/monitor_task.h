@@ -47,6 +47,7 @@ class MonitorTask : public std::enable_shared_from_this<MonitorTask> {
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
     std::shared_ptr<DataLogicInterface> p_data_logic;
     MonitorTaskType type;
+    std::map<std::shared_ptr<Device>, bool> monitor_task_log_status;
     std::shared_ptr<ScheduledThreadPoolTask> p_scheduled_task;
 };
 

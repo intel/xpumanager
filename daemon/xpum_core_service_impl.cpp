@@ -532,6 +532,42 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
+inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
+    std::vector<xpum_stats_type_t> allowList{
+        XPUM_STATS_GPU_UTILIZATION,
+        XPUM_STATS_EU_ACTIVE,
+        XPUM_STATS_EU_STALL,
+        XPUM_STATS_EU_IDLE,
+        XPUM_STATS_POWER,
+        XPUM_STATS_ENERGY,
+        XPUM_STATS_GPU_FREQUENCY,
+        XPUM_STATS_GPU_CORE_TEMPERATURE,
+        // XPUM_STATS_MEMORY_USED,
+        // XPUM_STATS_MEMORY_UTILIZATION,
+        // XPUM_STATS_MEMORY_BANDWIDTH,
+        // XPUM_STATS_MEMORY_READ,
+        // XPUM_STATS_MEMORY_WRITE,
+        XPUM_STATS_MEMORY_READ_THROUGHPUT,
+        XPUM_STATS_MEMORY_WRITE_THROUGHPUT,
+        // XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION,
+        // XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION,
+        // XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,
+        XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION,
+        XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION,
+        XPUM_STATS_RAS_ERROR_CAT_RESET,
+        XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
+        XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS,
+        XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
+        XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
+        // XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
+        // XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
+        // XPUM_STATS_GPU_REQUEST_FREQUENCY,
+        XPUM_STATS_MEMORY_TEMPERATURE,
+        XPUM_STATS_FREQUENCY_THROTTLE,
+    };
+    return std::find(allowList.begin(), allowList.end(), metricsType) != allowList.end();
+}
+
 ::grpc::Status XpumCoreServiceImpl::getStatistics(::grpc::ServerContext* context, const ::XpumGetStatsRequest* request, ::XpumGetStatsResponse* response) {
     xpum_device_id_t deviceId = request->deviceid();
     uint64_t sessionId = request->sessionid();
@@ -554,6 +590,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         deviceStatsInfo->set_count(stats.count);
         for (int j = 0; j < stats.count; j++) {
             xpum_device_stats_data_t& data = stats.dataList[j];
+            if (!metricsTypeAllowList(data.metricsType))
+                continue;
             DeviceStatsData* deviceStatsData = deviceStatsInfo->add_datalist();
             deviceStatsData->mutable_metricstype()->set_value(data.metricsType);
             deviceStatsData->set_iscounter(data.isCounter);
