@@ -240,18 +240,18 @@ static bool invalidChar (char c)
 } 
 
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties) {
-    std::vector<std::shared_ptr<Device>> devices;
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
 
+    std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
 
     for (auto &p_device : devices) {
         if (deviceId == stoi(p_device->getId())) {
             pXpumProperties->deviceId = deviceId;
-
             std::vector<Property> properties;
-
             p_device->getProperties(properties);
-
             pXpumProperties->propertyLen = properties.size();
 
             for (size_t i = 0; i < properties.size(); i++) {
@@ -262,15 +262,11 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 if (name == XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION) {
                     value.erase(remove_if(value.begin(), value.end(), invalidChar), value.end());
                 }
-
                 auto &copy = pXpumProperties->properties[i];
-                // name.copy(copy.name, name.size());
-                // copy.name[name.size()] = 0;
                 copy.name = name;
                 value.copy(copy.value, value.size());
                 copy.value[value.size()] = 0;
             }
-
             return XPUM_OK;
         }
     }
@@ -308,6 +304,9 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
                            uint64_t *begin,
                            uint64_t *end,
                            uint64_t sessionId) {
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
     Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
     return xpum_result_t::XPUM_OK;
 }
@@ -315,6 +314,9 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
 xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
                              xpum_device_metrics_t dataList[],
                              int *count) {
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
     Core::instance().getDataLogic()->getLatestMetrics(deviceId, dataList, count);
     return xpum_result_t::XPUM_OK;
 }
@@ -349,6 +351,9 @@ xpum_result_t xpumStartCollectMetricsRawDataTask(xpum_device_id_t deviceId,
                                                  xpum_stats_type_t metricsTypeList[],
                                                  int count,
                                                  xpum_dump_task_id_t *taskId) {
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
     std::vector<MeasurementType> types;
     for (int i = 0; i < count; ++i) {
         types.push_back(Utility::measurementTypeFromXpumStatsType(metricsTypeList[i]));
@@ -368,6 +373,10 @@ xpum_result_t xpumStopCollectMetricsRawDataTask(xpum_dump_task_id_t taskId) {
 }
 
 xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metrics_raw_data_t dataList[], int *count) {
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
     int item_count = 0;
     std::vector<std::deque<MeasurementCacheData>> datas = Core::instance().getDataLogic()->getCachedRawData(taskId);
     std::vector<std::deque<MeasurementCacheData>>::iterator iter = datas.begin();
@@ -430,6 +439,9 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
 }
 
 xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
+    if (Core::instance().getMonitorManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
     switch (key) {
         case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
             Core::instance().getMonitorManager()->resetMetricTasksFrequency(*(int *)value);
