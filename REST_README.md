@@ -2,8 +2,9 @@
 
 ##Installation
  1. install python3, may need to soft link python if your python package doesn't auto generate one.
- 2. install pip3.
- 3. install python packages as root for all user.  
+ 2. install python3-devel
+ 3. install pip3.
+ 4. install python packages as root for all user.  
     `umask 022`  
     `pip3 install protobuf grpcio prometheus-client marshmallow flask flask_httpauth gunicorn[gthread]`
  
