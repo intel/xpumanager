@@ -318,7 +318,7 @@ void DiagnosticManager::doDeviceDiagnosticHardware(const zes_device_handle_t &ze
         }
     } else {
         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
-        updateMessage(component.message, std::string("Sysman hardware not supported"));
+        updateMessage(component.message, std::string("Sysman hardware unsupported!"));
     }
     component.finished = true;
 }
@@ -390,11 +390,20 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
             } else {
                 std::string desc = "Media codec check failed.";
                 if (resultDecode.find("Decoding finished") == std::string::npos) {
-                    desc += " Errors happened when run sample_decode.";
+                    if (resultDecode.find("ERR_UNSUPPORTED") != std::string::npos)
+                        desc += " Decoder unsupported!";
+                    else
+                        desc += " Errors happened when run sample_decode.";
+                    XPUM_LOG_INFO("detail error message:\n" + resultDecode);
                 }
 
                 if (resultEncode.find("Processing finished") == std::string::npos) {
-                    desc += " Errors happened when run sample_encode.";
+                    if (resultEncode.find("ERR_UNSUPPORTED") != std::string::npos)
+                        desc += " Encoder unsupported!";
+                    else
+                        desc += " Errors happened when run sample_encode.";
+                    XPUM_LOG_INFO("detail error message:\n" + resultEncode);
+                       
                 }
                 component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING;
                 updateMessage(component.message, desc);
@@ -405,7 +414,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
         }
     } else {
         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
-        updateMessage(component.message, std::string("Media codec not suppoted"));
+        updateMessage(component.message, std::string("Media codec unsuppoted!"));
     }
     component.finished = true;
 }
@@ -418,6 +427,13 @@ std::string DiagnosticManager::getCommandResult(std::string command) {
         result += buffer.data();
     }
     pclose(pipe);
+    std::string::size_type pos;
+    while ((pos= result.find("\n\n", 0)) != std::string::npos) {
+        result.erase(pos, 1);
+    }
+    pos = result.find_last_of("\n");
+    if (pos == result.size() - 1)
+        result.erase(pos, 1);
     return result;
 }
 
@@ -941,6 +957,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
     std::vector<ze_device_handle_t> device_handles;
     std::vector<long double> all_gflops;
     std::vector<std::thread> compute_threads;
+    std::vector<std::string> error_messages;
 
     uint32_t subdevice_count = 0;
     ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, nullptr);
@@ -950,6 +967,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
     if (subdevice_count == 0) {
         device_handles.push_back(ze_device);
         all_gflops.push_back(0);
+        error_messages.push_back("");
     } else {
         std::vector<ze_device_handle_t> subdevices(subdevice_count);
         ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, subdevices.data());
@@ -959,6 +977,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
         for (auto& subdevice : subdevices) {
             device_handles.push_back(subdevice);
             all_gflops.push_back(0);
+            error_messages.push_back("");
         }
     }
 
@@ -982,7 +1001,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
     });
 
     for (std::size_t i = 0; i < device_handles.size(); i++) {
-        compute_threads.push_back(std::thread([&all_gflops, i, &device_handles, &ze_driver]() {
+        compute_threads.push_back(std::thread([&all_gflops, &error_messages, i, &device_handles, &ze_driver]() {
             try {
                 ze_result_t ret;
                 long double timed;
@@ -1186,6 +1205,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
             } catch (BaseException& e) {
                 XPUM_LOG_DEBUG(e.what());
                 all_gflops[i] = -1;
+                error_messages[i] = e.what();
             } catch (...) {
                 XPUM_LOG_DEBUG("Error in XPUM_DIAG_PERFORMANCE_COMPUTE");
                 all_gflops[i] = -1;
@@ -1202,11 +1222,14 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
     bool computeCheckPass = true;
     std::string compute_detail;
     long double all_gflops_value = 0;
-    for (auto gflops : all_gflops) {
-        if (gflops == -1) {
-            throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE");
+    for (size_t i = 0; i < all_gflops.size(); i++) {
+        if (all_gflops[i] == -1) {
+            if (error_messages[i].length() == 0)
+                throw BaseException("Error in XPUM_DIAG_PERFORMANCE_COMPUTE");
+            else
+                throw BaseException(error_messages[i]);
         }
-        all_gflops_value += gflops;
+        all_gflops_value += all_gflops[i];
     }
     if (all_gflops_value < Configuration::SINGLE_PRECISION_MIN_GFLOPS) {
         computeCheckPass = false;

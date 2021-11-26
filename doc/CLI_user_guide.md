@@ -274,6 +274,7 @@ optional arguments:
                                 15. Cache Erros Correctable
                                 16. Cache Errors Uncorrectable
                                 17. GPU Memory Bandwidth Utilization (%)
+                                18. GPU Memory Used (MiB)
 -->
  
 List the XPU Manager settings
@@ -368,6 +369,9 @@ List the GPU device aggregrated statistics that are collected by XPU Manager
 | GPU Memory Bandwidth (%)     | Tile 0: avg: 10, min: 9, max: 15, current: 10                     |
 |                              | Tile 1: avg: 10, min: 9, max: 15, current: 10                     |
 +------------------------------+-------------------------------------------------------------------+
+| GPU Memory Used (MiB)        | Tile 0: avg: 500, min: 100, max: 700, current: 400                |
+|                              | Tile 1: avg: 500, min: 100, max: 700, current: 400                |
++------------------------------+-------------------------------------------------------------------+
 ```
  
 ## Get the device health status
@@ -379,9 +383,9 @@ Get the GPU device component health status
 
 Usage: xpumcli health [Options]
   xpumcli health -l
-  xpumcli health -d [deviceId] -t [componentName] [threshold]
-  xpumcli health -d [deviceId] -t [componentName] [threshold] -j
-  xpumcli health -g [groupId] -t [componentName] [threshold]
+  xpumcli health -d [deviceId] -c [componentTypeId] --threshold  [threshold]
+  xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] -j
+  xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold]
 
 optional arguments:
   -h,--help                   Print this help message and exit
@@ -390,7 +394,12 @@ optional arguments:
   -l,--list                   Display health info for all devices
   -d,--device                 The device ID
   -g,--group                  The group ID
-  -t,--threshold              Set custom threshold for device component
+  -c,--component              Commponent types
+                                1. GPU Core Temperature
+                                2. GPU Memory Temperature
+                                3. GPU Power
+                                4. GPU Memory
+  --threshold                 Set custom threshold for device component
 ```
  
 Get the GPU device component health status. There are some build-in thresholds for the GPU telemetries. You may also set your custom threshold to help monitor the GPU component health status. 
@@ -399,53 +408,39 @@ Get the GPU device component health status. There are some build-in thresholds f
 +------------------------------+-------------------------------------------------------------------+
 | Device ID                    | 0                                                                 |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Temperature              | Status: Ok                                                        |
+| 1. GPU Core Temperature      | Status: Ok                                                        |
 |                              | Description: All temperature sensors are healthy.                 |
 |                              | Throttle Threshold: 105 Celsius Degree                            |
 |                              | Shutdown Threshold: 130 Celsius Degree                            |
 |                              | Custom Threshold: -1                                              |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Memory Temperature       | Status: Ok                                                        |
+| 2. GPU Memory Temperature    | Status: Ok                                                        |
 |                              | Description: All temperature sensors are healthy.                 |
 |                              | Throttle Threshold: 85  Celsius Degree                            |
 |                              | Shutdown Threshold: 100 Celsius Degree                            |
 |                              | Custom Threshold: -1                                              |
 +------------------------------+-------------------------------------------------------------------+
-| Power                        | Status: Ok                                                        |
+| 3. GPU Power                 | Status: Ok                                                        |
 |                              | Description: All power domains are healthy.                       |
 |                              | Throttle Threshold: 150 watts                                     |
 |                              | Custom Threshold: -1                                              |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Memory                   | Status: Ok                                                        |
+| 4. GPU Memory                | Status: Ok                                                        |
 |                              | Description: All memory channels are healthy.                     |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
 Change the component custom temperature threshold 
 ```
-./xpumcli health -d 0 -t "GPU Temperature" 90
+./xpumcli health -d 0 -c 1 --threshold 90
 +------------------------------+-------------------------------------------------------------------+
 | Device ID                    | 0                                                                 |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Core Temperature         | Status: Ok                                                        |
+| 1. GPU Core Temperature      | Status: Ok                                                        |
 |                              | Description: All temperature sensors are healthy.                 |
 |                              | Throttle Threshold: 105 Celsius Degree                            |
 |                              | Shutdown Threshold: 130 Celsius Degree                            |
 |                              | Custom Threshold: 90 Celsius Degree                               |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Memory Temperature       | Status: Ok                                                        |
-|                              | Description: All temperature sensors are healthy.                 |
-|                              | Throttle Threshold: 85  Celsius Degree                            |
-|                              | Shutdown Threshold: 100 Celsius Degree                            |
-|                              | Custom Threshold: -1                                              |
-+------------------------------+-------------------------------------------------------------------+
-| Power                        | Status: Ok                                                        |
-|                              | Description: All power domains are healthy.                       |
-|                              | Throttle Threshold: 150 watts                                     |
-|                              | Custom Threshold: -1                                              |
-+------------------------------+-------------------------------------------------------------------+
-| GPU Memory                   | Status: Ok                                                        |
-|                              | Description: All memory channels are healthy.                     |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
@@ -488,6 +483,7 @@ optional arguments:
                                 15. Cache Erros Correctable, per tile.
                                 16. Cache Errors Uncorrectable, per tile. 
                                 17. GPU Memory Bandwidth Utilization. (%)
+                                18. GPU Memory Used (MiB)
   
   -i                          The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 

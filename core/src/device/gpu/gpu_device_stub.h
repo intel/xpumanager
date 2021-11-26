@@ -157,7 +157,7 @@ class GPUDeviceStub {
 
     static std::shared_ptr<MeasurementData> toGetEuActiveStallIdle(const ze_device_handle_t& device, const ze_driver_handle_t& driver, MeasurementType type);
 
-    static void toGetEuActiveStallIdleCore(const ze_device_handle_t& device, int subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data);
+    static void toGetEuActiveStallIdleCore(const ze_device_handle_t& device, uint32_t subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data);
 
     static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
 

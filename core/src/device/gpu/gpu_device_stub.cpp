@@ -654,19 +654,15 @@ void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, const zes_
         XPUM_LOG_WARN("Device {}{} has no compute engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION) == capabilities.end()) {
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
         XPUM_LOG_WARN("Device {}{} has no media engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) == capabilities.end()) {
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
         XPUM_LOG_WARN("Device {}{} has no copy engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) == capabilities.end()) {
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
         XPUM_LOG_WARN("Device {}{} has no render engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
     if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION) == capabilities.end()) {
-        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
         XPUM_LOG_WARN("Device {}{} has no 3D engine group utilization monitoring capability.", props.core.name, bdf_address);
     }
 }
@@ -1618,7 +1614,7 @@ void GPUDeviceStub::getEuActiveStallIdle(const ze_device_handle_t& device, const
 std::mutex GPUDeviceStub::metric_streamer_mutex;
 std::map<ze_device_handle_t, zet_metric_group_handle_t> GPUDeviceStub::target_metric_groups;
 std::map<ze_device_handle_t, zet_metric_streamer_handle_t> GPUDeviceStub::target_metric_streamers;
-void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device, int subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data) {
+void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device, uint32_t subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data) {
     ze_result_t res;
     std::unique_lock<std::mutex> lock(GPUDeviceStub::metric_streamer_mutex);
     zet_metric_group_handle_t hMetricGroup = nullptr;
@@ -1748,21 +1744,30 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     uint64_t euStall = totalEuStall / totalGPUElapsedTime;
     uint64_t euIdle = 100 - euActive - euStall;
     if (type == MeasurementType::METRIC_EU_ACTIVE) {
-        data->setSubdeviceDataCurrent(subdeviceId, euActive);
+        if (subdeviceId == UINT32_MAX)
+            data->setCurrent(euActive);
+        else
+            data->setSubdeviceDataCurrent(subdeviceId, euActive);
         data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_STALL, euStall);
         data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_IDLE, euIdle);
         data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_STALL);
         data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_IDLE);
     } else if (type == MeasurementType::METRIC_EU_STALL) {
         data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_ACTIVE, euActive);
-        data->setSubdeviceDataCurrent(subdeviceId,  euStall);
+        if (subdeviceId == UINT32_MAX)
+            data->setCurrent(euStall);
+        else
+            data->setSubdeviceDataCurrent(subdeviceId,  euStall);
         data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_IDLE, euIdle);
         data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_ACTIVE);
         data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_IDLE);
     } else if (type == MeasurementType::METRIC_EU_IDLE) {
         data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_ACTIVE, euActive);
         data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_STALL, euStall);
-        data->setSubdeviceDataCurrent(subdeviceId, euIdle);
+        if (subdeviceId == UINT32_MAX)
+            data->setCurrent(euIdle);
+        else
+            data->setSubdeviceDataCurrent(subdeviceId, euIdle);
         data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_ACTIVE);
         data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_STALL);
     }
@@ -1783,6 +1788,10 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEuActiveStallIdle(const ze_
     XPUM_ZE_HANDLE_LOCK(device, res = zeDeviceGetSubDevices(device, &sub_device_count, sub_device_handles.data()));
     if (res != ZE_RESULT_SUCCESS) {
         throw BaseException("toGetEuActiveStallIdle");
+    }
+    if (sub_device_count == 0) {
+        toGetEuActiveStallIdleCore(device, UINT32_MAX, driver, type, ret);
+        return ret;
     }
     for (auto& sub_device : sub_device_handles) {
         ze_device_properties_t props = {};
