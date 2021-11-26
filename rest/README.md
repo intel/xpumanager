@@ -11,9 +11,10 @@ $ export https_proxy="http://child-prc.intel.com:913"
 
 ### steps
 
-1. install python
+1. install python and python-dev
 ```    
 $ sudo apt install python3.8
+$ sudo apt install python3-dev
 ```
 
 2. install pip
