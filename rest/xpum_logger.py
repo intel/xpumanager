@@ -14,13 +14,13 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 
 # create timed rotating file handler 
-fh = logging.handlers.TimedRotatingFileHandler(filename='xpum_rest.log', when='d', backupCount=3)
-fh.setLevel(logging.DEBUG)
-fh.setFormatter(formatter)
+# fh = logging.handlers.TimedRotatingFileHandler(filename='xpum_rest.log', when='d', backupCount=3)
+# fh.setLevel(logging.DEBUG)
+# fh.setFormatter(formatter)
 
 # add handlers to logger
 logger.addHandler(ch)
-logger.addHandler(fh)
+# logger.addHandler(fh)
 
 # logging function wrappers
 def info(msg, *args, **kwargs):
