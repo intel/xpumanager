@@ -473,6 +473,8 @@ service XpumCoreService {
     rpc getMetricsByGroup( GroupId ) returns ( DeviceStatsInfoArray );
     rpc getStatistics( XpumGetStatsRequest ) returns ( XpumGetStatsResponse );
     rpc getStatisticsByGroup( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );
+    rpc getStatisticsNotForPrometheus( XpumGetStatsRequest ) returns ( XpumGetStatsResponse );
+    rpc getStatisticsByGroupNotForPrometheus( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );
     rpc runFirmwareFlash( XpumFirmwareFlashJob ) returns ( GeneralEnum );
     rpc getFirmwareFlashResult( XpumFirmwareFlashTaskRequest ) returns ( XpumFirmwareFlashTaskResult );
     rpc getPolicy( GetPolicyRequest ) returns ( GetPolicyResponse );

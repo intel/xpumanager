@@ -57,7 +57,7 @@ def get_statistics(deviceId):
             500:
                 description: Error
     """
-    code, message, data = stub.getStatistics(deviceId)
+    code, message, data = stub.getStatisticsNotForPrometheus(deviceId)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
@@ -98,7 +98,7 @@ def get_group_statistics(groupId):
             500:
                 description: Error
     """
-    code, message, data = stub.getStatisticsByGroup(groupId)
+    code, message, data = stub.getStatisticsByGroupNotForPrometheus(groupId)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
