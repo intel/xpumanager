@@ -6,6 +6,7 @@ import traceback
 from enum import Enum, unique
 
 from dev_file_converter import get_dev_file
+import xpum_logger as logger
 
 registries = {}
 counter_values = {}
@@ -56,12 +57,15 @@ class PromMetric(Enum):
 
 
 class Metric:
-    def __init__(self, prom_metric: PromMetric, is_counter: bool = False, xpum_field=None, scale: float = 1, ext_labels: dict = {}) -> None:
+    def __init__(self, prom_metric: PromMetric, is_counter: bool = False, process_counter_wrap: bool = True, xpum_field=None, scale: float = 1, ext_labels: dict = {}) -> None:
         self.prom_metric = prom_metric
         self.scale = scale
         self.ext_labels = ext_labels
         self.is_counter = is_counter
-        self.xpum_field = xpum_field if xpum_field is not None else ('acc' if is_counter else 'avg')
+        self.process_counter_wrap = process_counter_wrap
+        self.xpum_field = xpum_field if xpum_field is not None else (
+            'acc' if is_counter else 'avg')
+
 
 metrics_map = {
     # Engine utilization
@@ -245,9 +249,19 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
                     if val >= cur_value:
                         counter_values[mm] = val
                         mm.inc(val-cur_value)
+                    elif metric.process_counter_wrap:
+                        logger.info(
+                            'counter wrapped, %s: pre=%d, cur=%d, create new counter', metric_name, cur_value, val)
+                        # remove the existing metric child
+                        metrics[metric_name].remove(*all_labelvalues)
+                        del counter_values[mm]
+                        # create new metric child
+                        mm = metrics[metric_name].labels(*all_labelvalues)
+                        counter_values[mm] = val
+                        mm.inc(val)
                     else:
-                        print(
-                            f'counter value decreased, {metric_name}: pre={cur_value}, cur={val}')
+                        logger.warn(
+                            'counter decreased, %s: pre=%d, cur=%d, ignore it', metric_name, cur_value, val)
                 else:
                     # aggregated value
                     metrics[metric_name].labels(*all_labelvalues).set(val)
