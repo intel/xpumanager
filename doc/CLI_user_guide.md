@@ -399,7 +399,7 @@ optional arguments:
                                 2. GPU Memory Temperature
                                 3. GPU Power
                                 4. GPU Memory
-  --threshold              Set custom threshold for device component
+  --threshold                 Set custom threshold for device component
 ```
  
 Get the GPU device component health status. There are some build-in thresholds for the GPU telemetries. You may also set your custom threshold to help monitor the GPU component health status. 
@@ -436,7 +436,7 @@ Change the component custom temperature threshold
 +------------------------------+-------------------------------------------------------------------+
 | Device ID                    | 0                                                                 |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Core Temperature         | Status: Ok                                                        |
+| 1. GPU Core Temperature      | Status: Ok                                                        |
 |                              | Description: All temperature sensors are healthy.                 |
 |                              | Throttle Threshold: 105 Celsius Degree                            |
 |                              | Shutdown Threshold: 130 Celsius Degree                            |
