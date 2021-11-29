@@ -32,14 +32,14 @@ xpum_result_t DumpRawDataManager::
     std::lock_guard<std::mutex> lock(dumpMutex);
 
     // create task
-    std::shared_ptr<DumpRawDataTask> p_task = std::make_shared<DumpRawDataTask>(taskIndex++, deviceId, tileId, std::string(dumpFilePath));
+    std::shared_ptr<DumpRawDataTask> p_task = std::make_shared<DumpRawDataTask>(taskIndex++, deviceId, tileId, std::string(dumpFilePath), pThreadPool);
     for (int i = 0; i < count; i++) {
         p_task->metricsTypeList.push_back(metricsTypeList[i]);
     }
     taskList.push_back(p_task);
 
     // start p_task
-    p_task->start(pThreadPool);
+    p_task->start();
 
     // fill output buffer
     fillTaskInfoBuffer(p_task, taskInfo);
@@ -78,7 +78,6 @@ xpum_result_t DumpRawDataManager::
     return XPUM_OK;
 }
 
-void DumpRawDataManager::init(){
-    
+void DumpRawDataManager::init() {
 }
 } // namespace xpum
