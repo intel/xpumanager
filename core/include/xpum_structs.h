@@ -85,7 +85,8 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE,
     XPUM_GROUP_DEVICE_DUPLICATED,
     XPUM_GROUP_CHANGE_NOT_ALLOWED,
-    XPUM_NOT_INITIALIZED     ///< XPUM is not initialized.
+    XPUM_NOT_INITIALIZED,     ///< XPUM is not initialized.
+    XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST   ///< Dump raw data task not exists
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

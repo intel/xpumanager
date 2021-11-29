@@ -70,6 +70,11 @@ std::shared_ptr<PolicyManagerInterface> Core::getPolicyManager() {
     return p_policy_manager;
 }
 
+std::shared_ptr<DumpRawDataManager> Core::getDumpRawDataManager() {
+    std::unique_lock<std::mutex> lock(mutex);
+    return p_dump_raw_data_manager;
+}
+
 void Core::init() {
     std::unique_lock<std::mutex> lock(mutex);
     if (initialized) {
@@ -111,7 +116,7 @@ void Core::init() {
 
     XPUM_LOG_INFO("initialize dump raw data manager");
     p_dump_raw_data_manager = std::make_shared<DumpRawDataManager>();
-    p_dump_raw_data_manager->init();
+    // p_dump_raw_data_manager->init();
 
     XPUM_LOG_INFO("xpumd core initialization completed");
     initialized = true;
