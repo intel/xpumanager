@@ -5,8 +5,14 @@
 
 #include "core_stub.h"
 #include "pretty_table.h"
+#include "cli_table.h"
 
 namespace xpum::cli {
+
+//static const CharTableConfig ComletConfigDiscovery();
+
+ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover devices on the system") {
+}
 
 void ComletDiscovery::setupOptions() {
     this->opts = std::unique_ptr<ComletDiscoveryOptions>(new ComletDiscoveryOptions());

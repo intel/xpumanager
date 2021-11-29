@@ -15,13 +15,17 @@ struct ComletDiscoveryOptions {
 
 class ComletDiscovery : public ComletBase {
    public:
-    ComletDiscovery() : ComletBase("discovery", "Discover devices on the system") {}
+    ComletDiscovery();
     virtual ~ComletDiscovery() {}
 
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
     virtual void getTableResult(std::ostream &out) override;
+
+	inline bool isDeviceList() {
+		return opts->deviceId < 0;
+	}
 
    private:
     std::unique_ptr<ComletDiscoveryOptions> opts;

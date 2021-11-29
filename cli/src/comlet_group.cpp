@@ -13,11 +13,11 @@ namespace xpum::cli {
 void ComletGroup::setupOptions() {
     this->opts = std::unique_ptr<ComletGroupOptions>(new ComletGroupOptions());
     
-    auto c = addFlag("-c,--create", this->opts->create, "Create a group.");
-    auto de = addFlag("-D, --delete", this->opts->del, "Delete a group.");
-    auto l = addFlag("-l,--list", this->opts->list, "List the groups info.");
-    auto a = addFlag("-a,--add", this->opts->add, "Add devices to a group.");
-    auto r = addFlag("-r,--remove", this->opts->remove, "Remove devices from group.");
+    auto c = addFlag("-c,--create", this->opts->flagCreate, "Create a group.");
+    auto de = addFlag("-D, --delete", this->opts->flagDel, "Delete a group.");
+    auto l = addFlag("-l,--list", this->opts->flagList, "List the groups info.");
+    auto a = addFlag("-a,--add", this->opts->flagAdd, "Add devices to a group.");
+    auto r = addFlag("-r,--remove", this->opts->flagRemove, "Remove devices from group.");
     
     auto g = addOption("-g,--group", this->opts->groupId, "Group ID.")->check(
         CLI::Range((uint32_t)1, std::numeric_limits<uint32_t>::max(), "unsigned"));
@@ -36,18 +36,22 @@ void ComletGroup::setupOptions() {
     r->excludes(c); r->excludes(de); r->excludes(l); r->excludes(a);    
 }
 
-std::unique_ptr<nlohmann::json> ComletGroup::run() {    
-    if (this->opts->create) {
-        return this->coreStub->groupCreate(this->opts->name);
-    } else if(this->opts->list) {
-        return listGroup();
-    } else if(this->opts->del) {
-        return destroyGroup();
-    } else if(this->opts->add) {
-        return addDeviceToGroup();
-    } else if(this->opts->remove) {
-        return removeDeviceFromGroup();
-    } 
+std::unique_ptr<nlohmann::json> ComletGroup::run() {
+	setupOperationType();
+	switch (opts->opType) {
+	case GO_CREATE:
+		return this->coreStub->groupCreate(this->opts->name);
+	case GO_DELETE:
+		return destroyGroup();
+	case GO_LIST:
+		return listGroup();
+	case GO_ADD:
+		return addDeviceToGroup();
+	case GO_REMOVE:
+		return removeDeviceFromGroup();
+	case GO_EMPTY:
+		break;
+	}
     
     //std::cout << "Wrong argument or unknow operation\nRun with --help for more information.\n";
     //exit(1);
@@ -93,6 +97,9 @@ std::unique_ptr<nlohmann::json> ComletGroup::removeDeviceFromGroup(){
     } 
     
     return json;
+}
+
+void ComletGroup::getTableResult(std::ostream &out) {
 }
 
 } // end namespace xpum::cli
