@@ -15,6 +15,8 @@ namespace xpum::cli {
 #define KEY_TABLE_CELLS             "cells"
 #define KEY_TABLE_CELL_LABEL        "label"
 #define KEY_TABLE_CELL_VALUE        "value"
+#define KEY_TABLE_CELL_SUFFIX       "suffix"
+#define KEY_TABLE_CELL_FIXER        "fixer"
 
 #define PATH_DELIMITER '.'
 
@@ -39,25 +41,29 @@ prop_name((is_array)?confValue.substr(0,confValue.length()-2):confValue) {
 }
 
 CharTableConfigPath::CharTableConfigPath(const std::string& confValue):
-elements(count_elements(confValue, PATH_DELIMITER)) {
-    unsigned long i = 0;
-    unsigned int c = 0;
-    while (i < confValue.size()) {
-        unsigned long j = 0;
-        j = confValue.find(PATH_DELIMITER, i);
-        if (j == std::string::npos) {
-            j = confValue.length();
+elements(confValue.empty() ? 0 : count_elements(confValue, PATH_DELIMITER)) {
+    if (elements.size() > 0) {
+        unsigned long i = 0;
+        unsigned int c = 0;
+        while (i < confValue.size()) {
+            unsigned long j = 0;
+            j = confValue.find(PATH_DELIMITER, i);
+            if (j == std::string::npos) {
+                j = confValue.length();
+            }
+            std::string eleStr = confValue.substr(i, j-i);
+            elements[c] = new CharTableConfigPathElement(eleStr);
+            c ++;
+            i = j + 1;
         }
-        std::string eleStr = confValue.substr(i, j-i);
-        elements[c] = new CharTableConfigPathElement(eleStr);
-        c ++;
-        i = j + 1;
     }
 }
 
 CharTableConfigCellSingle::CharTableConfigCellSingle(const nlohmann::json& conf):
 label(conf.is_object() ? conf.value(KEY_TABLE_CELL_LABEL, "") : ""),
-value(conf.is_object() ? conf.value(KEY_TABLE_CELL_VALUE, "") : (std::string) conf) {
+value(conf.is_object() ? conf.value(KEY_TABLE_CELL_VALUE, "") : (std::string) conf),
+suffix(conf.is_object() ? conf.value(KEY_TABLE_CELL_SUFFIX, "") : ""),
+fixer(conf.is_object() ? conf.value(KEY_TABLE_CELL_FIXER, "") : "") {
 }
 
 ChatTableConfigCellMulti::ChatTableConfigCellMulti(const nlohmann::json& conf):
@@ -121,7 +127,7 @@ static const unsigned int margin = 1;
 static const unsigned int line = 1;
 
 void CharTableConfig::calculateColumnWidth() {
-    unsigned int leftWidth = width - margin - line;
+    unsigned int leftWidth = width - line;
     const unsigned int lastColId = colWidthMax.size() - 1;
     for (unsigned int i=0; i<=lastColId; i++) {
         CharTableConfigColumn& col = *(columns[i]);
@@ -133,7 +139,7 @@ void CharTableConfig::calculateColumnWidth() {
             colW = confSize;
         }
         colWidthSetting[i] = colW;
-        leftWidth -= (colW + margin + line);
+        leftWidth -= (colW + margin*2 + line);
     }
     if (leftWidth != 0) {
         colWidthSetting[lastColId] += leftWidth;
@@ -182,9 +188,7 @@ rows() {
     addSeparator();
 
     for (auto objConf: config.getObjects()) {
-        const nlohmann::json objIns = objConf->getAllInstances(res);
         const unsigned int objRows = objConf->maxRowCount();
-
         const nlohmann::json allObjs = objConf->getAllInstances(res);
 
         for (auto objIns: allObjs) {

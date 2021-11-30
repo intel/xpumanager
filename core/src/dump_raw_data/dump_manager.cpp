@@ -45,6 +45,7 @@ xpum_result_t DumpRawDataManager::
         auto p_task = *iter;
         if (p_task->taskId == taskId) {
             //found
+            p_task->stop();
             p_task->fillTaskInfoBuffer(taskInfo);
             taskList.erase(iter);
             return XPUM_OK;

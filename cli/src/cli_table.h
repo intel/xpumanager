@@ -3,6 +3,8 @@
 #include <list>
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 #define TABLE_COLUMN_AUTO           -1
 
@@ -85,7 +87,10 @@ class CharTableConfigPath {
         } else if (obj.is_object()) {
             ino.push_back(obj);
         }
-         nlohmann::json res;
+        if (elements.empty()) {
+            return ino;
+        }
+        nlohmann::json res;
         for (auto ele: elements) {
             res = ele->apply(ino);
             ino = res;
@@ -104,24 +109,60 @@ class CharTableConfigCellBase {
     virtual CharTableConfigCellSingle* getCellConfigAt(const unsigned int row) = 0;
 };
 
-inline void append_json_value(std::string& res, const nlohmann::json& value) {
+inline const std::string get_json_value_string(const nlohmann::json& value) {
     if (value.is_string()) {
-        res += value;
+        return value;
     } else if (value.is_number_unsigned()) {
-        res += std::to_string((unsigned long) value);
+        return std::to_string((unsigned long) value);
     } else if (value.is_number_integer()) {
-        res += std::to_string((long) value);
+        return std::to_string((long) value);
     } else if (value.is_number()) {
-        res += std::to_string((double) value);
+        return std::to_string((double) value);
     } else if (value.is_object() || value.is_array()) {
-        res += value.dump();
+        return value.dump();
     }
+    return "";
+}
+
+inline auto fix_double_value(const std::string& value, std::function<double(double)> conv) {
+    std::string procValue = value;
+    try {
+        double dv = conv(std::stod(value));
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(2) << dv;
+        procValue = oss.str();
+    } catch (...) {
+        procValue = value;
+    }
+    return procValue;
 }
 
 class CharTableConfigCellSingle : public CharTableConfigCellBase {
     private:
     const std::string label;
     const CharTableConfigPath value;
+    const std::string suffix;
+    const std::string fixer;
+
+    inline bool append_value(std::string& res, const std::string& value, const bool notFirst = false) {
+        bool ret = notFirst;
+        if (value.length() > 0) {
+            std::string procValue = value;
+            if ("Byte2MiB" == fixer) {
+                procValue = fix_double_value(value,
+                        [](double x) -> double {
+                            return x/1024.0/1024.0;
+                        });
+            }
+            if (notFirst) {
+                res += ",";
+            }
+            ret = true;
+            res += procValue;
+            res += suffix;
+        }
+        return ret;
+    }
 
     public:
     CharTableConfigCellSingle(const nlohmann::json& conf);
@@ -150,15 +191,10 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
         if (propValue.is_array()) {
             bool notFirst = false;
             for (auto sVal: propValue) {
-                if (notFirst) {
-                    res += ",";
-                } else {
-                    notFirst = true;
-                }
-                append_json_value(res, sVal);
+                notFirst = append_value(res, get_json_value_string(sVal), notFirst);
             }
         } else {
-            append_json_value(res, propValue);
+            append_value(res, get_json_value_string(propValue));
         }
         return res;
     }

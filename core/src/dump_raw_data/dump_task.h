@@ -18,8 +18,8 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
     std::string dumpFilePath;
     uint64_t begin;
 
+    uint64_t dataLastCachedTime[XPUM_STATS_MAX + 5];
    private:
-    std::ofstream outfile;
     std::shared_ptr<ScheduledThreadPool>& pThreadPool;
     std::shared_ptr<ScheduledThreadPoolTask> pThreadPoolTask;
     std::function<void()> lambda;
@@ -40,6 +40,10 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
     void reschedule();
 
     void fillTaskInfoBuffer(xpum_dump_raw_data_task_t *taskInfo);
+
+    void writeToFile(std::string text);
+
+    void writeHeader();
 
 };
 } // namespace xpum
