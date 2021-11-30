@@ -49,11 +49,23 @@ void DumpRawDataTask::stop() {
     }
 }
 
-void DumpRawDataTask::reschedule(int period) {
+void DumpRawDataTask::reschedule() {
+    // stop task first
     stop();
-    auto p_this = shared_from_this();
-    // schedule task
+    // reschedule the task to refresh the dump interval
     pThreadPoolTask = pThreadPool->scheduleAtFixedRate(0, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, lambda);
 }
+
+void DumpRawDataTask::fillTaskInfoBuffer(xpum_dump_raw_data_task_t *taskInfo) {
+    taskInfo->beginTime = begin;
+    taskInfo->taskId = taskId;
+    auto size = dumpFilePath.copy(taskInfo->dumpFilePath, dumpFilePath.size());
+    taskInfo->dumpFilePath[size] = '\0';
+    for (std::size_t i = 0; i < metricsTypeList.size(); i++) {
+        auto buf = taskInfo->metricsTypeList;
+        buf[i] = metricsTypeList[i];
+    }
+}
+
 
 } // namespace xpum
