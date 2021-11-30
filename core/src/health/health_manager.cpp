@@ -30,8 +30,11 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
     std::unique_lock<std::mutex> lock(this->mutex);
     if (value == nullptr || *static_cast<int*>(value) == -1) {
         switch (key) {
-            case xpum_health_config_type_t::XPUM_HEALTH_THEARMAL_LIMIT:
-                p_health_thermal_configs.erase(deviceId);
+            case xpum_health_config_type_t::XPUM_HEALTH_CORE_THEARMAL_LIMIT:
+                p_health_core_thermal_configs.erase(deviceId);
+                break;
+            case xpum_health_config_type_t::XPUM_HEALTH_MEMORY_THEARMAL_LIMIT:
+                p_health_core_thermal_configs.erase(deviceId);
                 break;
             case xpum_health_config_type_t::XPUM_HEALTH_POWER_LIMIT:
                 p_health_power_configs.erase(deviceId);
@@ -42,10 +45,15 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
 
     int threshold = *static_cast<int*>(value);
     switch (key) {
-        case xpum_health_config_type_t::XPUM_HEALTH_THEARMAL_LIMIT:
-            if (threshold <= 0 || threshold >= 105)
+        case xpum_health_config_type_t::XPUM_HEALTH_CORE_THEARMAL_LIMIT:
+            if (threshold <= 0 || threshold > 130) // (0, 130]
                 return XPUM_GENERIC_ERROR;
-            p_health_thermal_configs[deviceId] = threshold;
+            p_health_core_thermal_configs[deviceId] = threshold;
+            break;
+        case xpum_health_config_type_t::XPUM_HEALTH_MEMORY_THEARMAL_LIMIT:
+            if (threshold <= 0 || threshold > 100) // (0, 100])
+                return XPUM_GENERIC_ERROR;
+            p_health_memory_thermal_configs[deviceId] = threshold;
             break;
         case xpum_health_config_type_t::XPUM_HEALTH_POWER_LIMIT:
             if (threshold <= 0)
@@ -69,9 +77,14 @@ xpum_result_t HealthManager::getHealthConfig(xpum_device_id_t deviceId, xpum_hea
     *threshold = -1;
 
     switch (key) {
-        case xpum_health_config_type_t::XPUM_HEALTH_THEARMAL_LIMIT:
-            if (p_health_thermal_configs.find(deviceId) != p_health_thermal_configs.end()) {
-                *threshold = p_health_thermal_configs.at(deviceId);
+        case xpum_health_config_type_t::XPUM_HEALTH_CORE_THEARMAL_LIMIT:
+            if (p_health_core_thermal_configs.find(deviceId) != p_health_core_thermal_configs.end()) {
+                *threshold = p_health_core_thermal_configs.at(deviceId);
+            }
+            break;
+        case xpum_health_config_type_t::XPUM_HEALTH_MEMORY_THEARMAL_LIMIT:
+            if (p_health_memory_thermal_configs.find(deviceId) != p_health_memory_thermal_configs.end()) {
+                *threshold = p_health_memory_thermal_configs.at(deviceId);
             }
             break;
         case xpum_health_config_type_t::XPUM_HEALTH_POWER_LIMIT:
@@ -94,9 +107,15 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
     data->status = xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN;
 
     bool global_default_limit = true;
-    int thermal_thresold = Configuration::TEMPERATURE_HEALTH_DEFAULT_LIMIT;
-    if (p_health_thermal_configs.find(deviceId) != p_health_thermal_configs.end()) {
-        thermal_thresold = p_health_thermal_configs.at(deviceId);
+    int core_thermal_thresold = Configuration::CORE_TEMPERATURE_HEALTH_DEFAULT_LIMIT;
+    if (p_health_core_thermal_configs.find(deviceId) != p_health_core_thermal_configs.end()) {
+        core_thermal_thresold = p_health_core_thermal_configs.at(deviceId);
+        global_default_limit = false;
+    }
+
+    int memory_thermal_thresold = Configuration::MEMORY_TEMPERATURE_HEALTH_DEFAULT_LIMIT;
+    if (p_health_memory_thermal_configs.find(deviceId) != p_health_memory_thermal_configs.end()) {
+        memory_thermal_thresold = p_health_memory_thermal_configs.at(deviceId);
         global_default_limit = false;
     }
 
@@ -107,7 +126,7 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
     }
 
     GPUDeviceStub::instance().getHealthStatus(
-        this->p_device_manager->getDevice(std::to_string(deviceId))->getDeviceHandle(), type, data, thermal_thresold, power_threshold, global_default_limit);
+        this->p_device_manager->getDevice(std::to_string(deviceId))->getDeviceHandle(), type, data, core_thermal_thresold, memory_thermal_thresold, power_threshold, global_default_limit);
 
     return XPUM_OK;
 }

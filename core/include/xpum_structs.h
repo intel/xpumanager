@@ -194,12 +194,14 @@ struct xpum_group_info_t {
 /**************************************************************************/
 
 typedef enum xpum_health_config_type_enum {
-    XPUM_HEALTH_THEARMAL_LIMIT = 0,
+    XPUM_HEALTH_CORE_THEARMAL_LIMIT = 0,
+    XPUM_HEALTH_MEMORY_THEARMAL_LIMIT,
     XPUM_HEALTH_POWER_LIMIT
 } xpum_health_config_type_t;
 
 typedef enum xpum_health_type_enum {
-    XPUM_HEALTH_THERMAL = 0,
+    XPUM_HEALTH_CORE_THERMAL = 0,
+    XPUM_HEALTH_MEMORY_THEARMAL,
     XPUM_HEALTH_POWER,
     XPUM_HEALTH_MEMORY,
     XPUM_HEALTH_FABRIC_PORT,

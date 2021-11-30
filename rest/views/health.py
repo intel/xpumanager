@@ -5,7 +5,7 @@ from marshmallow import Schema, fields
 
 class ThresholdSchema(Schema):
     threshold = fields.Int(
-        metadata={"description": "The threshold for power or temperature"})
+        metadata={"description": "The threshold for coreTemperature, memoryTemperature or power"})
 
 class HealthComponentSchema(Schema):
     description = fields.Str(
@@ -13,20 +13,35 @@ class HealthComponentSchema(Schema):
     status = fields.Int(
         metadata={"description": "The status for health"})
 
-class HealthConfigurableComponentSchema(Schema):
+class HealthConfigurableComponentSchemaBase(Schema):
     description = fields.Str(
         metadata={"description": "The description for health"})
     status = fields.Int(
         metadata={"description": "The status for health"})
-    threshold = fields.Int(
-        metadata={"description": "The threshold for health, only for power and temperature"})
+    throttle_threshold = fields.Int(
+        metadata={"description": "The throttle threshold for health"})
+    custome_threshold = fields.Int(
+            metadata={"description": "The custom threshold for health"})
+
+class HealthConfigurableComponentSchemaExt(Schema):
+    description = fields.Str(
+        metadata={"description": "The description for health"})
+    status = fields.Int(
+        metadata={"description": "The status for health"})
+    throttle_threshold = fields.Int(
+        metadata={"description": "The throttle threshold for health"})
+    shutdown_threshold = fields.Int(
+        metadata={"description": "The shutdown threshold for health"})
+    custome_threshold = fields.Int(
+            metadata={"description": "The custom threshold for health"})
 
 class HealthSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
-    power = fields.Nested(HealthConfigurableComponentSchema)
-    temperature = fields.Nested(HealthConfigurableComponentSchema)
+    core_temperature = fields.Nested(HealthConfigurableComponentSchemaExt)
+    memory_temperature = fields.Nested(HealthConfigurableComponentSchemaExt)
+    power = fields.Nested(HealthConfigurableComponentSchemaBase)
     memory = fields.Nested(HealthComponentSchema)
-    fabricPort = fields.Nested(HealthComponentSchema)
+    fabric_port = fields.Nested(HealthComponentSchema)
 
 
 def get_health_all(deviceId):
@@ -108,7 +123,7 @@ def get_health(deviceId, healthType):
             -
                 name: healthType
                 in: path
-                description: Health type, temperature, power, memory or fabricPort
+                description: Health type, coreTemperature, memoryTemperature, power, memory or fabricPort
                 type: str
         responses:
             200:
@@ -117,7 +132,7 @@ def get_health(deviceId, healthType):
             500:
                 description: Error
     """
-    if healthType not in ["temperature", "power", "memory", "fabricPort"]:
+    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]:
         return
 
     code, message, data = stub.getHealth(deviceId, healthType)
@@ -144,7 +159,7 @@ def get_group_health(groupId, healthType):
             -
                 name: healthType
                 in: path
-                description: Health type, temperature, power, memory or fabricPort
+                description: Health type, coreTemperature, memoryTemperature, power, memory or fabricPort
                 type: str
         responses:
             200:
@@ -153,7 +168,7 @@ def get_group_health(groupId, healthType):
             500:
                 description: Error
     """
-    if healthType not in ["temperature", "power", "memory", "fabricPort"]:
+    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]:
         return
 
     code, message, data = stub.getHealthByGroup(groupId, healthType)
@@ -175,7 +190,7 @@ def set_health_config(deviceId, healthType):
             - 
                 name: threshold
                 in: body
-                description: The threshold for power or temperature
+                description: The threshold for coreTemperature, memoryTemperature or power
                 schema: ThresholdSchema
             -
                 name: deviceId
@@ -185,7 +200,7 @@ def set_health_config(deviceId, healthType):
             -
                 name: healthType
                 in: path
-                description: Health type, only power or temperature
+                description: Health type, only coreTemperature, memoryTemperature or power
                 type: str
         responses:
             200:
@@ -193,7 +208,7 @@ def set_health_config(deviceId, healthType):
             500:
                 description: Error
     """
-    if healthType not in ["temperature", "power"]:
+    if healthType not in ["coreTemperature", "memoryTemperature", "power"]:
         return
 
     req = request.get_json()
@@ -217,7 +232,7 @@ def set_group_health_config(groupId, healthType):
             - 
                 name: threshold
                 in: body
-                description: The threshold for power or temperature
+                description: The threshold for coreTemperature, memoryTemperature or power
                 schema: ThresholdSchema
             -
                 name: groupId
@@ -227,7 +242,7 @@ def set_group_health_config(groupId, healthType):
             -
                 name: healthType
                 in: path
-                description: health type, only power or temperature
+                description: health type, only coreTemperature, memoryTemperature or power
                 type: str
         responses:
             200:
@@ -235,7 +250,7 @@ def set_group_health_config(groupId, healthType):
             500:
                 description: Error
     """
-    if healthType not in ["temperature", "power"]:
+    if healthType not in ["coreTemperature", "memoryTemperature", "power"]:
         return
 
     req = request.get_json()

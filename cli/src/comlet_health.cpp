@@ -8,11 +8,16 @@ namespace xpum::cli {
 
 void ComletHealth::setupOptions() {
     this->opts = std::unique_ptr<ComletHealthOptions>(new ComletHealthOptions());
-    addFlag("-l,--list", this->opts->listAll, "list all devices");
-    addOption("-d,--device", this->opts->deviceId, "device id");
-    addOption("-g,--group", this->opts->groupId, "group id");
-    addOption("-p,--powerThreshold", this->opts->powerThreshold, "power threshold");
-    addOption("-t,--thermalThreshold", this->opts->thermalThreshold, "thermal threshold");
+    addFlag("-l,--list", this->opts->listAll, "Display health info for all devices");
+    addOption("-d,--device", this->opts->deviceId, "The device ID");
+    addOption("-g,--group", this->opts->groupId, "The group ID");
+    addOption("-c,--component", this->opts->componentType, "Commponent types\n\
+      1. GPU Core Temperature\n\
+      2. GPU Memory Temperature\n\
+      3. GPU Power\n\
+      4. GPU Memory\n\
+      5. GPU Fabric Port");
+    addOption("--threshold", this->opts->threshold, "Set custom threshold for device component");
 }
 
 std::unique_ptr<nlohmann::json> ComletHealth::run() {
@@ -32,40 +37,65 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         return json;
     }
     
-    if (this->opts->powerThreshold != INT_MIN && this->opts->powerThreshold < -1) {
-        (*json)["error"] = "invalid powerThreshold";
+    if (this->opts->componentType != INT_MIN && (this->opts->componentType < 1 || this->opts->componentType > 5)) {
+        (*json)["error"] = "invalid component";
         return json;
     }
 
-    if (this->opts->thermalThreshold != INT_MIN && this->opts->thermalThreshold < -1) {
-        (*json)["error"] = "invalid thermalThreshold";
+    if ((this->opts->threshold != INT_MIN && this->opts->threshold < -1)
+        || (this->opts->threshold == 0)) {
+        (*json)["error"] = "invalid threshold";
         return json;
     }
 
     if (this->opts->deviceId >= 0) {
-        if (this->opts->powerThreshold >= -1) {
-            json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_POWER_LIMIT, this->opts->powerThreshold);
+        if (this->opts->threshold >= -1) {
+            if (this->opts->componentType == 1) {
+                json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_CORE_THEARMAL_LIMIT, this->opts->threshold);
+            } else if (this->opts->componentType == 2) {
+                json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_MEMORY_THEARMAL_LIMIT, this->opts->threshold);
+            } else if (this->opts->componentType == 3) {
+                json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_POWER_LIMIT, this->opts->threshold);
+            } else {
+                (*json)["error"] = "threshold setting unsupported";
+            }
+            if ((*json).contains("error")) {
+                return json;
+            }
+            json = this->coreStub->getHealth(this->opts->deviceId, this->opts->componentType);
+            return json;
+        } else {
+           if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
+                json = this->coreStub->getHealth(this->opts->deviceId, this->opts->componentType);
+            else
+                json = this->coreStub->getHealth(this->opts->deviceId, -1);
             return json;
         }
-        if (this->opts->thermalThreshold >= -1) {
-            json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_THEARMAL_LIMIT, this->opts->thermalThreshold);
-            return json;
-        }
-        json = this->coreStub->getHealth(this->opts->deviceId);
-        return json;
     }
 
     if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
-        if (this->opts->powerThreshold >= -1) {
-            json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_POWER_LIMIT, this->opts->powerThreshold);
+        if (this->opts->threshold >= -1) {
+            if (this->opts->componentType == 1) {
+                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_CORE_THEARMAL_LIMIT, this->opts->threshold);
+            } else if (this->opts->componentType == 2) {
+                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_MEMORY_THEARMAL_LIMIT, this->opts->threshold);
+            } else if (this->opts->componentType == 3) {
+                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_POWER_LIMIT, this->opts->threshold);
+            } else {
+                (*json)["error"] = "threshold setting unsupported";
+            }
+            if ((*json).contains("error")) {
+                return json;
+            }
+            json = this->coreStub->getHealthByGroup(this->opts->groupId, this->opts->componentType);
+            return json;
+        } else {
+           if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
+                json = this->coreStub->getHealthByGroup(this->opts->groupId, this->opts->componentType);
+            else
+                json = this->coreStub->getHealthByGroup(this->opts->groupId, -1);
             return json;
         }
-        if (this->opts->thermalThreshold >= -1) {
-            json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_THEARMAL_LIMIT, this->opts->thermalThreshold);
-            return json;
-        }
-        json = this->coreStub->getHealthByGroup(this->opts->groupId);
-        return json;
     }
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
     return json;

@@ -517,8 +517,11 @@ std::string CoreStub::healthStatusEnumToString(HealthStatusType status) {
 std::string CoreStub::healthTypeEnumToString(HealthType type) {
     std::string ret;
     switch (type) {
-        case HEALTH_THERMAL:
-            ret = "temperature";
+        case HEALTH_CORE_THERMAL:
+            ret = "core_temperature";
+            break;
+        case HEALTH_MEMORY_THERMAL:
+            ret = "memory_temperature";
             break;
         case HEALTH_POWER:
             ret = "power";
@@ -535,6 +538,24 @@ std::string CoreStub::healthTypeEnumToString(HealthType type) {
     return ret;
 }
 
+nlohmann::json CoreStub::appendHealthThreshold(int deviceId, nlohmann::json json, HealthType type) {
+    if (type == HEALTH_POWER) {
+        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_POWER_LIMIT);
+        json["shutdown_threshold"] = "150 watts";
+    }
+    if (type == HEALTH_CORE_THERMAL) {
+        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_CORE_THEARMAL_LIMIT);
+        json["throttle_threshold"] = "105 Celsius Degree";
+        json["shutdown_threshold"] = "130 Celsius Degree";
+    }
+    if (type == HEALTH_MEMORY_THERMAL) {
+        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_MEMORY_THEARMAL_LIMIT);
+        json["throttle_threshold"] = "85 Celsius Degree";
+        json["shutdown_threshold"] = "100 Celsius Degree";
+    }
+    return json;
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getAllHealth() {
     assert(this->stub != nullptr);
     grpc::ClientContext context;
@@ -545,7 +566,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllHealth() {
         if (response.errormsg().length() == 0) {
             std::vector<nlohmann::json> healthJsonList;
             for (int i = 0; i < response.info_size(); i++) {
-                auto healthJson = (*getHealth(response.info(i).id().id()));
+                auto healthJson = (*getHealth(response.info(i).id().id(), -1));
                 healthJsonList.push_back(healthJson);
             }
             (*json)["all_health_list"] = healthJsonList;
@@ -558,7 +579,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllHealth() {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId) {
+std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId, int componentType) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -567,7 +588,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId) {
     HealthData response;
     (*json)["device_id"] = deviceId;
     grpc::Status status = grpc::Status::OK;
-    std::vector<HealthType> types = {HEALTH_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    if (componentType >= 1 && componentType <= (int)(types.size())) {
+        HealthType targetType = types[componentType - 1];
+        types.clear();
+        types.push_back(targetType);
+    }
     for (auto& type : types) {
         auto componentJson = (*getHealth(deviceId, type));
         if (componentJson.contains("error")) {
@@ -578,8 +604,14 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId) {
         std::string currentHealthType = healthTypeEnumToString(type);
         (*json)[currentHealthType]["status"] = componentJson["status"];
         (*json)[currentHealthType]["description"] = componentJson["description"];
-        if (componentJson.contains("threshold")) {
-            (*json)[currentHealthType]["threshold"] = componentJson["threshold"];
+        if (componentJson.contains("custom_threshold")) {
+            (*json)[currentHealthType]["custom_threshold"] = componentJson["custom_threshold"];
+        }
+        if (componentJson.contains("throttle_threshold")) {
+            (*json)[currentHealthType]["throttle_threshold"] = componentJson["throttle_threshold"];
+        }
+        if (componentJson.contains("shutdown_threshold")) {
+            (*json)[currentHealthType]["shutdown_threshold"] = componentJson["shutdown_threshold"];
         }
     }
     return json;
@@ -599,12 +631,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId, HealthType typ
             (*json)["type"] = healthTypeEnumToString(response.type());
             (*json)["status"] = healthStatusEnumToString(response.statustype());
             (*json)["description"] = response.description();
-            if (response.type() == HEALTH_POWER) {
-                (*json)["threshold"] = getHealthConfig(deviceId, HEALTH_POWER_LIMIT);
-            }
-            if (response.type() == HEALTH_THERMAL) {
-                (*json)["threshold"] = getHealthConfig(deviceId, HEALTH_THEARMAL_LIMIT);
-            }
+            (*json) = appendHealthThreshold(deviceId, (*json), response.type());
         } else {
             (*json)["error"] = response.errormsg();
         }
@@ -636,7 +663,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setHealthConfig(int deviceId, HealthCo
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId) {
+std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId, int componentType) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -645,7 +672,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId) {
     request.set_groupid(groupId);
     HealthDataByGroup response;
     std::vector<nlohmann::json> deviceJsonList;
-    std::vector<HealthType> types = {HEALTH_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    if (componentType >= 1 && componentType <= (int)(types.size())) {
+        HealthType targetType = types[componentType - 1];
+        types.clear();
+        types.push_back(targetType);
+    }
     for (auto& type : types) {
         auto deviceHealthTypeJsons = (*getHealthByGroup(groupId, type));
         if (deviceHealthTypeJsons.contains("error")) {
@@ -668,8 +700,14 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId) {
             }
             deviceJsonList[targetDeviceIndex][currentHealthType]["status"] = component["status"];
             deviceJsonList[targetDeviceIndex][currentHealthType]["description"] = component["description"];
-            if (component.contains("threshold")) {
-                deviceJsonList[targetDeviceIndex][currentHealthType]["threshold"] = component["threshold"];
+            if (component.contains("custom_threshold")) {
+                deviceJsonList[targetDeviceIndex][currentHealthType]["custom_threshold"] = component["custom_threshold"];
+            }
+            if (component.contains("throttle_threshold")) {
+                deviceJsonList[targetDeviceIndex][currentHealthType]["throttle_threshold"] = component["throttle_threshold"];
+            }
+            if (component.contains("shutdown_threshold")) {
+                deviceJsonList[targetDeviceIndex][currentHealthType]["shutdown_threshold"] = component["shutdown_threshold"];
             }
         }
     }
@@ -694,12 +732,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId, Hea
                 component["device_id"] = response.healthdata(i).deviceid();
                 component["status"] = healthStatusEnumToString(response.healthdata(i).statustype());
                 component["description"] = response.healthdata(i).description();
-                if (response.healthdata(i).type() == HEALTH_POWER) {
-                    component["threshold"] = getHealthConfig(response.healthdata(i).deviceid(), HEALTH_POWER_LIMIT);
-                }
-                if (response.healthdata(i).type() == HEALTH_THERMAL) {
-                    component["threshold"] = getHealthConfig(response.healthdata(i).deviceid(), HEALTH_THEARMAL_LIMIT);
-                }
+                component = appendHealthThreshold(response.healthdata(i).deviceid(), component, response.type());
+
                 componentJsonList.push_back(component);
             }
         } else {

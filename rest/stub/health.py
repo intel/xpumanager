@@ -2,7 +2,8 @@ from .grpc_stub import stub
 import core_pb2
 
 healthTypeEnumToString = {
-    core_pb2.HEALTH_THERMAL: "temperature",
+    core_pb2.HEALTH_CORE_THERMAL: "core_temperature",
+    core_pb2.HEALTH_MEMORY_THERMAL: "memory_temperature",
     core_pb2.HEALTH_POWER: "power",
     core_pb2.HEALTH_MEMORY: "memory",
     core_pb2.HEALTH_FABRIC_PORT: "fabric_port"
@@ -15,12 +16,21 @@ healthStatusEnumToString = {
     core_pb2.HEALTH_STATUS_CRITICAL: "Critical"
 }
 
+def appendHealthThreshold(healthData, healthType):
+    if healthType == 0:
+        healthData['throttle_threshold'] = "105 Celsius Degree"
+        healthData['shutdown_threshold'] = "130 Celsius Degree"
+    elif healthType == 1:
+        healthData['throttle_threshold'] = "85 Celsius Degree"
+        healthData['shutdown_threshold'] = "100 Celsius Degree"
+    elif healthType == 2:
+        healthData['shutdown_threshold'] = "150 watts"
 
 def getHealth(deviceId, healthType):
     types = []
-    healthTypes = ["temperature", "power", "memory", "fabricPort"]
+    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]
     if healthType == "All":
-        types = [0, 1, 2, 3]
+        types = [0, 1, 2, 3, 4]
     else:
         types.append(healthTypes.index(healthType))
     data = dict()
@@ -35,21 +45,22 @@ def getHealth(deviceId, healthType):
         data[key] = dict()
         data[key]['status'] = healthStatusEnumToString[resp.statusType]
         data[key]['description'] = resp.description
-        if t == 0 or t == 1:
+        if t == 0 or t == 1 or t == 2:
+            appendHealthThreshold(data[key], t)
             resp = stub.getHealthConfig(
                 core_pb2.HealthConfigRequest(deviceId=deviceId, configType=t))
             if len(resp.errorMsg) != 0:
                 return 1, resp.errorMsg, None
-            data[key]['threshold'] = resp.threshold
+            data[key]['custom_threshold'] = resp.threshold
 
     return 0, "OK", data
 
 
 def getHealthByGroup(groupId, healthType):
     types = []
-    healthTypes = ["temperature", "power", "memory", "fabricPort"]
+    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]
     if healthType == "All":
-        types = [0, 1, 2, 3]
+        types = [0, 1, 2, 3, 4]
     else:
         types.append(healthTypes.index(healthType))
 
@@ -72,12 +83,13 @@ def getHealthByGroup(groupId, healthType):
                     data[key] = dict()
                     data[key]['status'] = healthStatusEnumToString[healthData.statusType]
                     data[key]['description'] = healthData.description
-                    if t == 0 or t == 1:
+                    if t == 0 or t == 1 or t == 2:
+                        appendHealthThreshold(data[key], t)
                         resp = stub.getHealthConfig(core_pb2.HealthConfigRequest(
                             deviceId=data['device_id'], configType=t))
                         if len(resp.errorMsg) != 0:
                             return 1, resp.errorMsg, None
-                        data[key]['threshold'] = resp.threshold
+                        data[key]['custom_threshold'] = resp.threshold
 
     return 0, "OK", dict(group_id=groupId, device_count=len(datas), device_list=datas)
 
@@ -85,7 +97,7 @@ def getHealthByGroup(groupId, healthType):
 def setHealthConfig(deviceId, healthType, threshold):
     if threshold < -1:
         return 1, "invalid threshold", None
-    healthTypes = ["temperature", "power"]
+    healthTypes = ["coreTemperature", "memoryTemperature", "power"]
     t = healthTypes.index(healthType)
     resp = stub.setHealthConfig(core_pb2.HealthConfigRequest(
         deviceId=deviceId, configType=t, threshold=threshold))
@@ -97,7 +109,7 @@ def setHealthConfig(deviceId, healthType, threshold):
 def setHealthConfigByGroup(groupId, healthType, threshold):
     if threshold < -1:
         return 1, "invalid threshold", None
-    healthTypes = ["temperature", "power"]
+    healthTypes = ["coreTemperature", "memoryTemperature", "power"]
     t = healthTypes.index(healthType)
     resp = stub.setHealthConfigByGroup(core_pb2.HealthConfigByGroupRequest(
         groupId=groupId, configType=t, threshold=threshold))

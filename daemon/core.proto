@@ -140,15 +140,17 @@ message DiagnosticsGroupTaskInfo{
 }
 
 enum HealthType{
-    HEALTH_THERMAL = 0;
-    HEALTH_POWER = 1;
-    HEALTH_MEMORY = 2;
-    HEALTH_FABRIC_PORT = 3;
+    HEALTH_CORE_THERMAL = 0;
+    HEALTH_MEMORY_THERMAL = 1;
+    HEALTH_POWER = 2;
+    HEALTH_MEMORY = 3;
+    HEALTH_FABRIC_PORT = 4;
 }
 
 enum HealthConfigType{
-    HEALTH_THEARMAL_LIMIT = 0;
-    HEALTH_POWER_LIMIT = 1;
+    HEALTH_CORE_THEARMAL_LIMIT = 0;
+    HEALTH_MEMORY_THEARMAL_LIMIT = 1;
+    HEALTH_POWER_LIMIT = 2;
 }
 
 enum HealthStatusType{

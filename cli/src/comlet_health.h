@@ -12,13 +12,13 @@ struct ComletHealthOptions {
     bool listAll = false;
     int deviceId = INT_MIN;
     uint32_t groupId = UINT_MAX;
-    int powerThreshold = INT_MIN;
-    int thermalThreshold = INT_MIN;
+    int componentType = INT_MIN;
+    int threshold = INT_MIN;
 };
 
 class ComletHealth : public ComletBase {
    public:
-    ComletHealth() : ComletBase("health", "Health of the device") {}
+    ComletHealth() : ComletBase("health", "Get the GPU device component health status") {}
     virtual ~ComletHealth() {}
 
     virtual void setupOptions() override;

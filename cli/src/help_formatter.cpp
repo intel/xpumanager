@@ -18,6 +18,13 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "   xpumcli group -D -g [groupId] \n"
                "   xpumcli group -l \n"
                "   xpumcli group -l -g [groupId] \n";
+    } else if (app->get_name().compare("health") == 0) {
+        return "\nUsage: xpumcli health [Options] \n"
+               "   xpumcli health -l \n"
+               "   xpumcli health -d [deviceId] \n"
+               "   xpumcli health -g [groupId] \n"
+               "   xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] \n"
+               "   xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold] \n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }

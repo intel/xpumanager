@@ -37,7 +37,9 @@ class HealthManager : public HealthManagerInterface {
 
     std::shared_ptr<DataLogicInterface> p_data_logic;
 
-    std::map<xpum_device_id_t, int> p_health_thermal_configs;
+    std::map<xpum_device_id_t, int> p_health_core_thermal_configs;
+
+    std::map<xpum_device_id_t, int> p_health_memory_thermal_configs;
 
     std::map<xpum_device_id_t, int> p_health_power_configs;
 

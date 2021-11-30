@@ -2547,7 +2547,7 @@ bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device,
 }
 
 void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t* data,
-                                    int thermal_threshold, int power_threshold, bool global_default_limit) {
+                                    int core_thermal_threshold, int memory_thermal_threshold, int power_threshold, bool global_default_limit) {
     if (device == nullptr) {
         return;
     }
@@ -2623,12 +2623,16 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                 }
             }
         }
-    } else if (type == xpum_health_type_t::XPUM_HEALTH_THERMAL) {
-        if (thermal_threshold <= 0) {
+    } else if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL || type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THEARMAL) {
+        if (core_thermal_threshold <= 0 || memory_thermal_threshold <= 0) {
             description = "Temperature health threshold is not set";
             return;
         }
-
+        int thermal_threshold = 0;
+        if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL)
+            thermal_threshold = core_thermal_threshold;
+        else
+            thermal_threshold = memory_thermal_threshold;
         description = "The temperature health cannot be determined.";
         uint32_t temp_sensor_count = 0;
         ze_result_t res;
@@ -2639,7 +2643,13 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             for (auto& temp : temp_sensors) {
                 zes_temp_properties_t props;
                 XPUM_ZE_HANDLE_LOCK(device, res = zesTemperatureGetProperties(temp, &props));
-                if (res != ZE_RESULT_SUCCESS || props.type != ZES_TEMP_SENSORS_GPU) {
+                if (res != ZE_RESULT_SUCCESS) {
+                    continue;
+                }
+                if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL && props.type != ZES_TEMP_SENSORS_GPU) {
+                    continue;
+                }
+                if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THEARMAL && props.type != ZES_TEMP_SENSORS_MEMORY) {
                     continue;
                 }
                 double temp_val = 0;
