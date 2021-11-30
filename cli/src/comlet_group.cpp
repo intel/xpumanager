@@ -7,8 +7,77 @@
 
 #include "core.pb.h"
 #include "core_stub.h"
+#include "cli_table.h"
 
 namespace xpum::cli {
+
+static CharTableConfig ComletConfigCreateGroup(R"({
+    "columns": [{
+        "title": "Group ID"
+    }, {
+        "title": "Group Properties"
+    }],
+    "rows": [{
+        "instance": "",
+        "cells": [
+            "group_id", [
+                { "label": "Group Name", "value": "group_name" },
+                { "label": "Device IDs", "value": "device_id_list" }
+            ]
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigListGroup(R"({
+    "columns": [{
+        "title": "Group ID"
+    }, {
+        "title": "Group Properties"
+    }],
+    "rows": [{
+        "instance": "group_list[]",
+        "cells": [
+            "group_id", [
+                { "label": "Group Name", "value": "group_name" },
+                { "label": "Device IDs", "value": "device_id_list" }
+            ]
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigAddDeviceToGroup(R"({
+    "columns": [{
+        "title": "Group ID"
+    }, {
+        "title": "Group Properties"
+    }],
+    "rows": [{
+        "instance": "add_device",
+        "cells": [
+            "group_id", [
+                { "label": "Group Name", "value": "group_name" },
+                { "label": "Device IDs", "value": "device_id_list" }
+            ]
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigRemoveDeviceFromGroup(R"({
+    "columns": [{
+        "title": "Group ID"
+    }, {
+        "title": "Group Properties"
+    }],
+    "rows": [{
+        "instance": "remove_device",
+        "cells": [
+            "group_id", [
+                { "label": "Group Name", "value": "group_name" },
+                { "label": "Device IDs", "value": "device_id_list" }
+            ]
+        ]
+    }]
+})"_json);
 
 void ComletGroup::setupOptions() {
     this->opts = std::unique_ptr<ComletGroupOptions>(new ComletGroupOptions());
@@ -99,7 +168,63 @@ std::unique_ptr<nlohmann::json> ComletGroup::removeDeviceFromGroup(){
     return json;
 }
 
+static void showCreateGroupResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigCreateGroup, *json);
+    table.show(out);
+}
+
+static void showDeleteGroupResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    out << "Successfully remove the group" << std::endl;
+}
+
+static void showListGroupResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    if (!json->contains("group_list") || (*json)["group_list"].size() <= 0) {
+        out << "No group found" << std::endl;
+        return;
+    }
+
+    CharTable table(ComletConfigListGroup, *json);
+    table.show(out);
+}
+
+static void showAddDevicToGroupResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigAddDeviceToGroup, *json);
+    table.show(out);
+}
+
+static void showRemoveDeviceFromGroupResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigRemoveDeviceFromGroup, *json);
+    table.show(out);
+}
+
 void ComletGroup::getTableResult(std::ostream &out) {
+    auto res = run();
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+    *json = *res;
+
+	switch (opts->opType) {
+	case GO_CREATE:
+		showCreateGroupResult(out, json);
+        break;
+	case GO_DELETE:
+        showDeleteGroupResult(out, json);
+        break;
+	case GO_LIST:
+        showListGroupResult(out, json);
+        break;
+	case GO_ADD:
+        showAddDevicToGroupResult(out, json);
+        break;
+	case GO_REMOVE:
+        showRemoveDeviceFromGroupResult(out, json);
+        break;
+	case GO_EMPTY:
+        break;
+	}
 }
 
 } // end namespace xpum::cli

@@ -4,7 +4,6 @@
 #include <nlohmann/json.hpp>
 
 #include "core_stub.h"
-#include "pretty_table.h"
 #include "cli_table.h"
 
 namespace xpum::cli {
