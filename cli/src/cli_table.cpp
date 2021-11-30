@@ -181,8 +181,6 @@ rows() {
     config.addTitleRow(titleRow);
     addSeparator();
 
-    const unsigned int colCount = config.numOfColumns();
-
     for (auto objConf: config.getObjects()) {
         const nlohmann::json objIns = objConf->getAllInstances(res);
         const unsigned int objRows = objConf->maxRowCount();
