@@ -37,7 +37,9 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
 
     void stop();
 
-    void reschedule(int period);
+    void reschedule();
+
+    void fillTaskInfoBuffer(xpum_dump_raw_data_task_t *taskInfo);
 
 };
 } // namespace xpum

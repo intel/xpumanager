@@ -1,4 +1,5 @@
 #include "dump_manager.h"
+#include "xpum_structs.h"
 
 #include <iostream>
 #include <mutex>
@@ -11,16 +12,6 @@ DumpRawDataManager::DumpRawDataManager() {
     pThreadPool = std::make_shared<ScheduledThreadPool>(2);
 }
 
-static void fillTaskInfoBuffer(std::shared_ptr<DumpRawDataTask> p_task, xpum_dump_raw_data_task_t *taskInfo) {
-    taskInfo->beginTime = p_task->begin;
-    taskInfo->taskId = p_task->taskId;
-    auto size = p_task->dumpFilePath.copy(taskInfo->dumpFilePath, p_task->dumpFilePath.size());
-    taskInfo->dumpFilePath[size] = '\0';
-    for (std::size_t i = 0; i < p_task->metricsTypeList.size(); i++) {
-        auto buf = taskInfo->metricsTypeList;
-        buf[i] = p_task->metricsTypeList[i];
-    }
-}
 
 xpum_result_t DumpRawDataManager::
     startDumpRawDataTask(xpum_device_id_t deviceId,
@@ -42,7 +33,7 @@ xpum_result_t DumpRawDataManager::
     p_task->start();
 
     // fill output buffer
-    fillTaskInfoBuffer(p_task, taskInfo);
+    p_task->fillTaskInfoBuffer(taskInfo);
     return XPUM_OK;
 }
 
@@ -54,7 +45,7 @@ xpum_result_t DumpRawDataManager::
         auto p_task = *iter;
         if (p_task->taskId == taskId) {
             //found
-            fillTaskInfoBuffer(p_task, taskInfo);
+            p_task->fillTaskInfoBuffer(taskInfo);
             taskList.erase(iter);
             return XPUM_OK;
         }
@@ -66,11 +57,18 @@ xpum_result_t DumpRawDataManager::
 xpum_result_t DumpRawDataManager::
     listDumpRawDataTasks(xpum_dump_raw_data_task_t taskInfoList[], int *count) {
     std::lock_guard<std::mutex> lock(dumpMutex);
+    if (taskInfoList == nullptr) {
+        *count = (int)taskList.size();
+        return XPUM_OK;
+    } else {
+        if (*count < (int)taskList.size())
+            return XPUM_BUFFER_TOO_SMALL;
+    }
     auto iter = taskList.begin();
     int i = 0;
     while (iter != taskList.end()) {
         auto p_task = *iter;
-        fillTaskInfoBuffer(p_task, taskInfoList + i);
+        p_task->fillTaskInfoBuffer(taskInfoList + i);
         iter++;
         i++;
     }
