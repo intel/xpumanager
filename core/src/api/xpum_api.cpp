@@ -930,15 +930,18 @@ xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
                                        const int count,
                                        const char *dumpFilePath,
                                        xpum_dump_raw_data_task_t *taskInfo) {
-    return XPUM_GENERIC_ERROR;
+    // return XPUM_GENERIC_ERROR;
+    return Core::instance().getDumpRawDataManager()->startDumpRawDataTask(deviceId, tileId, metricsTypeList, count, dumpFilePath, taskInfo);
 }
 
 xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_data_task_t *taskInfo) {
-    return XPUM_GENERIC_ERROR;
+    // return XPUM_GENERIC_ERROR;
+    return Core::instance().getDumpRawDataManager()->stopDumpRawDataTask(taskId, taskInfo);
 }
 
 xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int *count) {
-    return XPUM_GENERIC_ERROR;
+    // return XPUM_GENERIC_ERROR;
+    return Core::instance().getDumpRawDataManager()->listDumpRawDataTasks(taskList, count);
 }
 
 } // end namespace xpum
