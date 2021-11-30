@@ -244,7 +244,6 @@ usage: xpumcli agentset [Options]
   xpumcli agentset -l
   xpumcli agentset -l -j
   xpumcli agentset -t 200
-  xpumcli agentset -m [metricsIds]
 
 
 optional arguments:
@@ -254,28 +253,6 @@ optional arguments:
   -l,--list                   Display all agent settings
   -t,--time                   Set the time interval (in milliseconds) by which XPU Manager daemon retrieve raw gpu statistics. Valid values include 100,200,500,1000.
 ```
-<!--
-  -m,--metrics                Metrics types to collect, options:
-                                0. GPU Utilization (%), GPU active time of the elapsed time
-                                1. GPU Power (W)
-                                2. GPU Frequency (MHz)
-                                3. GPU Core Temperature (Celsius Degree)
-                                4. GPU Memory Temperature (Celsius Degree)
-                                5. GPU Memory Utilization (%)
-                                6. GPU Memory Read (kB/s)
-                                7. GPU Memory Write (kB/s)
-                                8. GPU Energy Consumed (J)
-                                9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
-                                10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one thread is loaded, but the EU is stalled.
-                                11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core.
-                                12. Reset Count, number of accelertor engine resets attempted by the driver.
-                                13. Programming Errors
-                                14. Driver Errors
-                                15. Cache Erros Correctable
-                                16. Cache Errors Uncorrectable
-                                17. GPU Memory Bandwidth Utilization (%)
-                                18. GPU Memory Used (MiB)
--->
  
 List the XPU Manager settings
 ```
@@ -296,17 +273,7 @@ Change the XPU Manager sampling period
 | Sampling Interval (ms) | 200                                                                     |
 +------------------------+-------------------------------------------------------------------------+
 ```
-<!--
-Change the XPU Manager sampling metrics typs
-```
-./xpumcli agentset -m 0,2,3,4,5,6,7,9,10,11
-+------------------------+-------------------------------------------------------------------------+
-| Name                   | Value                                                                   |
-+------------------------+-------------------------------------------------------------------------+
-| Collected Metrics      | 0,2,3,4,5,6,7,9,10,11                                                   |
-+------------------------+-------------------------------------------------------------------------+
-```
--->
+
 
 ## Get the aggregrated device statistics
 Help info for getting the GPU device aggregrated statistics 
