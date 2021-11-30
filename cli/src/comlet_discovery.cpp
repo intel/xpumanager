@@ -9,7 +9,28 @@
 
 namespace xpum::cli {
 
-//static const CharTableConfig ComletConfigDiscovery();
+static CharTableConfig ComletConfigDiscoveryBasic(R"({
+    "columns": [{
+        "title": "Device ID"
+    }, {
+        "title": "Device Information"
+    }],
+    "rows": [{
+        "instance": "device_list[]",
+        "cells": [
+            "device_id",
+            [{
+                "label": "Device Name", "value": "device_name"
+            }, {
+                "label": "Vendor Name", "value": "vendor_name"
+            }, {
+                "label": "UUID", "value": "uuid"
+            }, {
+                "label": "PCI BDF Address", "value": "pci_bdf_address"
+            }]
+        ]
+    }]
+})"_json);
 
 ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover devices on the system") {
 }
@@ -43,24 +64,8 @@ static void showBasicInfo(std::ostream &out, std::shared_ptr<nlohmann::json> jso
         return;
     }
 
-    auto deviceList = (*json)["device_list"].get<std::vector<nlohmann::json>>();
-
-    auto table = xpum::cli::Table(out);
-
-    table.add_row({"Device ID", "Device Information"});
-    for (auto device : deviceList) {
-        std::vector<std::string> keys;
-        std::vector<std::string> values;
-        int deviceId = device["device_id"];
-        values.push_back(getDevicePropsStr("Device Name", "device_name", device));
-        values.push_back(getDevicePropsStr("Vendor Name", "vendor_name", device));
-        values.push_back(getDevicePropsStr("UUID", "uuid", device));
-        values.push_back(getDevicePropsStr("PCI BDF Address", "pci_bdf_address", device));
-        keys.push_back(std::to_string(deviceId));
-        table.add_augmented_row({keys, values});
-    }
-
-    table.show();
+    CharTable table(ComletConfigDiscoveryBasic, *json);
+    table.show(out);
 }
 
 static void showDetailedInfo(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
