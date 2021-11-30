@@ -18,16 +18,56 @@ static CharTableConfig ComletConfigDiscoveryBasic(R"({
     "rows": [{
         "instance": "device_list[]",
         "cells": [
-            "device_id",
-            [{
-                "label": "Device Name", "value": "device_name"
-            }, {
-                "label": "Vendor Name", "value": "vendor_name"
-            }, {
-                "label": "UUID", "value": "uuid"
-            }, {
-                "label": "PCI BDF Address", "value": "pci_bdf_address"
-            }]
+            "device_id", [
+                { "label": "Device Name", "value": "device_name" },
+                { "label": "Vendor Name", "value": "vendor_name" },
+                { "label": "UUID", "value": "uuid" },
+                { "label": "PCI BDF Address", "value": "pci_bdf_address" }
+            ]
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigDiscoveryDetailed(R"({
+    "columns": [{
+        "title": "Device ID"
+    }, {
+        "title": "Device Information"
+    }],
+    "rows": [{
+        "instance": "",
+        "cells": [
+            "device_id", [
+                { "label": "Device Type", "value": "device_type" },
+                { "label": "Device Name", "value": "device_name" },
+                { "label": "Vendor Name", "value": "vendor_name" },
+                { "label": "UUID", "value": "uuid" },
+                { "label": "Serial Number", "value": "serial_number" },
+                { "label": "Core Clock Rate", "value": "core_clock_rate_mhz", "suffix": " MHz" },
+                "none",
+                { "label": "Driver Version", "value": "driver_version" },
+                { "label": "Firmware Name", "value": "firmware_name" },
+                { "label": "Firmware Version", "value": "firmware_version" },
+                "none",
+                { "label": "PCI BDF Address", "value": "pci_bdf_address" },
+                { "label": "PCI Slot", "value": "pci_slot" },
+                { "label": "PCIe Generation", "value": "pcie_generation" },
+                { "label": "PCIe Max Link Width", "value": "pcie_max_link_width" },
+                "none",
+                { "label": "Memory Physical Size", "value": "memory_physical_size_byte", "suffix": " MiB", "fixer": "Byte2MiB" },
+                { "label": "Max Mem Alloc Size", "value": "max_mem_alloc_size_byte", "suffix": " MiB", "fixer": "Byte2MiB" },
+                { "label": "Number of Memory Channels", "value": "number_of_memory_channels" },
+                { "label": "Memory Bus Width", "value": "memory_bus_width" },
+                { "label": "Max Hardware Contexts", "value": "max_hardware_contexts" },
+                { "label": "Max Command Queue Priority", "value": "max_command_queue_priority" },
+                "none",
+                { "label": "Number of Tiles", "value": "number_of_tiles" },
+                { "label": "Number of Slices", "value": "number_of_slices" },
+                { "label": "Number of Sub Slices per Slice", "value": "number_of_sub_slices_per_slice" },
+                { "label": "Number of EUs per Sub Slice", "value": "number_of_eus_per_sub_slice" },
+                { "label": "Number of Threads per EU", "value": "number_of_threads_per_eu" },
+                { "label": "Physical EU SIMD Width", "value": "physical_eu_simd_width" }
+            ]
         ]
     }]
 })"_json);
@@ -50,14 +90,6 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     return json;
 }
 
-static std::string getDevicePropsStr(std::string name, std::string key, nlohmann::json json) {
-    std::string value;
-    if (json.contains(key)) {
-        value = json[key];
-    }
-    return name + ": " + value;
-}
-
 static void showBasicInfo(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
     if (!json->contains("device_list") || (*json)["device_list"].size() <= 0) {
         out << "No device discovered" << std::endl;
@@ -69,51 +101,8 @@ static void showBasicInfo(std::ostream &out, std::shared_ptr<nlohmann::json> jso
 }
 
 static void showDetailedInfo(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
-    auto table = xpum::cli::Table(out);
-
-    table.add_row({"Device ID", "Device Information"});
-
-    std::vector<std::string> keys;
-    std::vector<std::string> values;
-    int deviceId = (*json)["device_id"];
-    values.push_back(getDevicePropsStr("Device Type", "device_type", (*json)));
-    values.push_back(getDevicePropsStr("Device Name", "device_name", (*json)));
-    values.push_back(getDevicePropsStr("Vendor Name", "vendor_name", (*json)));
-    values.push_back(getDevicePropsStr("UUID", "uuid", (*json)));
-    values.push_back(getDevicePropsStr("Serial Number", "serial_number", (*json)));
-    values.push_back(getDevicePropsStr("Core Clock Rate", "core_clock_rate_mhz", (*json)) + " MHz");
-    values.push_back("");
-    values.push_back(getDevicePropsStr("Driver Version", "driver_version", (*json)));
-    values.push_back(getDevicePropsStr("Firmware Name", "firmware_name", (*json)));
-    values.push_back(getDevicePropsStr("Firmware Version", "firmware_version", (*json)));
-    values.push_back("");
-    values.push_back(getDevicePropsStr("PCI BDF Address", "pci_bdf_address", (*json)));
-    values.push_back(getDevicePropsStr("PCI Slot", "pci_slot", (*json)));
-    values.push_back(getDevicePropsStr("PCIe Generation", "pcie_generation", (*json)));
-    values.push_back(getDevicePropsStr("PCIe Max Link Width", "pcie_max_link_width", (*json)));
-    values.push_back("");
-
-    uint64_t memory_physical_size_byte = std::stoull((*json)["memory_physical_size_byte"].get<std::string>());
-    values.push_back("Memory Physical Size: " + std::to_string(memory_physical_size_byte / (1024 * 1024)) + " MiB");
-
-    uint64_t max_mem_alloc_size_byte = std::stoull((*json)["max_mem_alloc_size_byte"].get<std::string>());
-    values.push_back("Max Mem Alloc Size: " + std::to_string(max_mem_alloc_size_byte / (1024 * 1024)) + " MiB");
-
-    values.push_back(getDevicePropsStr("Number of Memory Channels", "number_of_memory_channels", (*json)));
-    values.push_back(getDevicePropsStr("Memory Bus Width", "memory_bus_width", (*json)));
-    values.push_back(getDevicePropsStr("Max Hardware Contexts", "max_hardware_contexts", (*json)));
-    values.push_back(getDevicePropsStr("Max Command Queue Priority", "max_command_queue_priority", (*json)));
-    values.push_back("");
-    values.push_back(getDevicePropsStr("Number of Tiles", "number_of_tiles", (*json)));
-    values.push_back(getDevicePropsStr("Number of Slices", "number_of_slices", (*json)));
-    values.push_back(getDevicePropsStr("Number of Sub Slices Per Slice", "number_of_sub_slices_per_slice", (*json)));
-    values.push_back(getDevicePropsStr("Number of EUs Per Sub Slice", "number_of_eus_per_sub_slice", (*json)));
-    values.push_back(getDevicePropsStr("Number of Threads Per EU", "number_of_threads_per_eu", (*json)));
-    values.push_back(getDevicePropsStr("Physical EU SIMD Width", "physical_eu_simd_width", (*json)));
-    keys.push_back(std::to_string(deviceId));
-    table.add_augmented_row({keys, values});
-
-    table.show();
+    CharTable table(ComletConfigDiscoveryDetailed, *json);
+    table.show(out);
 }
 
 void ComletDiscovery::getTableResult(std::ostream &out) {
