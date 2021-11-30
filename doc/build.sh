@@ -3,8 +3,8 @@
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 
-rm -rf build
 
+rm -rf build
 mkdir build
 
 # generate xml using doxygen
@@ -13,6 +13,12 @@ doxygen Doxyfile
 cd ${WORK_DIR}
 # convert xml to rst by doxyrest
 DOXYREST_FOLDER="./doxyrest"
+
+cat /etc/os-release | grep 'CentOS' >/dev/null 2>&1
+if [ $? -eq 0 ]; then           
+    mv $DOXYREST_FOLDER/bin/doxyrest $DOXYREST_FOLDER/bin/doxyrest-ubt
+    mv $DOXYREST_FOLDER/bin/doxyrest-rh $DOXYREST_FOLDER/bin/doxyrest
+fi
 
 $DOXYREST_FOLDER/bin/doxyrest \
     -c $DOXYREST_FOLDER/share/doxyrest/frame/doxyrest-config.lua \
