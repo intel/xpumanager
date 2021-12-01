@@ -110,26 +110,26 @@ void ScheduledThreadPoolTask::cancel() {
 
 /// SchedulingQueue
 
-void SchedulingQueue::enqueue(std::shared_ptr<ScheduledThreadPoolTask> p_new_task) {
+void SchedulingQueue::enqueue(std::shared_ptr<ScheduledThreadPoolTask> newTask) {
     {
         std::lock_guard<std::mutex> lock(q_mutex);
         if (this->stop.load(std::memory_order_acquire)) {
             XPUM_LOG_TRACE("trying to enqueue after queue has stopped");
             return;
         }
-        auto itr = std::find_if(q.rbegin(), q.rend(), [&p_new_task](auto& item) {
-            return p_new_task->after(item);
+        auto itr = std::find_if(q.rbegin(), q.rend(), [&newTask](auto& item) {
+            return newTask->after(item);
         });
 
         if (itr == q.rbegin()) {
-            // if at rbegin then p_new_task's priority is now the lowest
-            q.emplace_back(p_new_task);
+            // if at rbegin then newTask's priority is now the lowest
+            q.emplace_back(newTask);
         } else if (itr == q.rend()) {
-            // if at rend then p_new_task's priority is now the highest
-            q.emplace_front(p_new_task);
+            // if at rend then newTask's priority is now the highest
+            q.emplace_front(newTask);
         } else {
-            // if at rend then p_new_task's priority is now the highest
-            q.emplace(itr.base(), p_new_task);
+            // insert in middle
+            q.emplace(itr.base(), newTask);
         }
     }
     // notify all waiters on task queue change so that they can try to get new task from the queue
