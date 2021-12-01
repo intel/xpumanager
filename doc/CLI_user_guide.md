@@ -148,6 +148,10 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Number of EUs per Sub Slice: 16                                                      |
 |           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
+|           |                                                                                      |
+|           | Number of Xe Link ports: 16                                                          |
+|           | Max Tx/Rx Speed per Xe Link port: 51879.88 MiB/s                                     |
+|           | Number of Lanes per Xe Link port: 4                                                  |
 +-----------+--------------------------------------------------------------------------------------+
 ```
 
@@ -188,7 +192,7 @@ Create a group
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
-| 1        | Group Name: "testgroup"                                                               |
+| 1        | Group Name: testgroup                                                                 |
 |          | Device IDs: []                                                                        |
 +----------+---------------------------------------------------------------------------------------+
 ```
@@ -200,7 +204,7 @@ Successfully add device [0] to group 1
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
-| 1        | Group Name: "testgroup"                                                               |
+| 1        | Group Name: testgroup                                                                 |
 |          | Device IDs: [0]                                                                       |
 +----------+---------------------------------------------------------------------------------------+
 ```
@@ -211,7 +215,7 @@ List a group info
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
-| 1        | Group Name: "testgroup"                                                               |
+| 1        | Group Name: testgroup                                                                 |
 |          | Device IDs: [0]                                                                       |
 +----------+---------------------------------------------------------------------------------------+
 ```
@@ -223,7 +227,7 @@ Successfully remove device [0] from group 1
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
-| 1        | Group Name: "testgroup"                                                               |
+| 1        | Group Name: testgroup                                                                 |
 |          | Device IDs: []                                                                        |
 +----------+---------------------------------------------------------------------------------------+
 ```
@@ -366,6 +370,7 @@ optional arguments:
                                 2. GPU Memory Temperature
                                 3. GPU Power
                                 4. GPU Memory
+                                5. Xe Link Port
   --threshold                 Set custom threshold for device component
 ```
  
@@ -394,6 +399,9 @@ Get the GPU device component health status. There are some build-in thresholds f
 +------------------------------+-------------------------------------------------------------------+
 | 4. GPU Memory                | Status: Ok                                                        |
 |                              | Description: All memory channels are healthy.                     |
++------------------------------+-------------------------------------------------------------------+
+| 5. Xe Link Port              | Status: Ok                                                        |
+|                              | Description: All ports are healthy.                               |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
@@ -561,9 +569,12 @@ Get and change the GPU settings.
 Usage: xpumcli config [Options]
   xpumcli config -d [deviceId]
   xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]
-  xpumcli config -d [deviceId] --powerlimit [powerValue, averageWindow]
+  xpumcli config -d [deviceId] --powerlimit [powerValue,averageWindow]
   xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
   xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
+  xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
+  xpumcli config -d [deviceId] -t [tileId] --xelinkport [portId,value]
+  xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
   
 
 
@@ -580,6 +591,10 @@ Options:
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us);
                                 "exclusive".
   --reset                     Hard reset the GPU. All applications that are currently using this device will be forcibly killed. 
+  --performancefactor         Set the tile-level performance factor. Valid options: "compute/media";factorValue. The factor value should be 
+                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
+  --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
+  --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
 ```
 
 show the GPU settings
@@ -589,34 +604,56 @@ show the GPU settings
 | Device Type | Device Id/Tile Id | Configuration                                                  |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0                 | Power Limit (w): 300.0                                         |
-|             |                   |     Valid Range: 0 to 500                                      |
+|             |                   |   Valid Range: 0 to 500                                        |
 |             |                   | Power Average Window (ms): 1                                   |
-|             |                   |     Valid Range: 1 to 60000                                    |
+|             |                   |   Valid Range: 1 to 60000                                      |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
-|             |                   |     Valid Opitons: 300, 350, 400, 450, 500,550, 600, 650, 700  |
+|             |                   |   Valid Opitons: 300, 350, 400, 450, 500,550, 600, 650, 700    |
 |             |                   |       750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200    |
 |             |                   |       1250, 1300                                               |
 |             |                   |                                                                |
 |             |                   | Standby Mode: default                                          |
-|             |                   |     Valid Options: default, never                              |
+|             |                   |   Valid Options: default, never                                |
 |             |                   |                                                                |
 |             |                   | Scheduler Mode: timeslice                                      |
-|             |                   |     Interval(us): 5000                                         |
-|             |                   |     Yield Timeout (us): 640000                                 |
+|             |                   |   Interval(us): 5000                                           |
+|             |                   |   Yield Timeout (us): 640000                                   |
+|             |                   |                                                                |
+|             |                   | Engine Type: compute                                           |
+|             |                   |   Performance Factor: 70                                       |
+|             |                   | Engine Type: media                                             |
+|             |                   |   Performance Factor: 50                                       |
+|             |                   |                                                                |
+|             |                   | Xe Link ports:                                                 |
+|             |                   |   Up: 0,1,2,3                                                  |
+|             |                   |   Down: 4,5,6,7                                                |
+|             |                   |   Beaconing On: 0,1,2,3                                        |
+|             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
+| GPU         | 0/1               | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
-|             |                   |     Valid Options: 300, 350, 400, 450, 500,550, 600, 650, 700  |
-|             |                   |       750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200    |
-|             |                   |       1250, 1300                                               |
+|             |                   |   Valid Options: 300, 350, 400, 450, 500,550, 600, 650, 700    |
+|             |                   |     750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200      |
+|             |                   |     1250, 1300                                                 |
 |             |                   |                                                                |
 |             |                   | Standby Mode: default                                          |
 |             |                   |                                                                |
 |             |                   | Scheduler Mode: timeslice                                      |
-|             |                   |     Interval(us): 5000                                         |
-|             |                   |     Yield Timeout (us): 640000                                 |
+|             |                   |   Interval(us): 5000                                           |
+|             |                   |   Yield Timeout (us): 640000                                   |
+|             |                   |                                                                |
+|             |                   | Engine Type: compute                                           |
+|             |                   |   Performance Factor: 70                                       |
+|             |                   | Engine Type: media                                             |
+|             |                   |   Performance Factor: 50                                       |
+|             |                   |                                                                |
+|             |                   | Xe Link ports:                                                 |
+|             |                   |   Up: 0,1,2,3                                                  |
+|             |                   |   Down: 4,5,6,7                                                |
+|             |                   |   Beaconing On: 0,1,2,3                                        |
+|             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
 ```
  
@@ -653,6 +690,24 @@ The process（es） below are using this device.
 
 All process(es) above will be forcibly killed if you reset it. Do you want to continue? (Y/N) Y
 Succeed to reset the GPU 0.
+```
+
+Set the performance factor
+```
+./xpumcli config -d 0 -t 0 --performancefactor compute,70
+Succeed to change the compute performance factor to 70 on GPU 0 tile 0.
+```
+
+Change the Xe Link port status
+```
+./xpumcli config -d 0 -t 0 --xelinkport 0,1
+Succeed to change Xe Link port 0 to up.
+```
+
+Change the Xe Link port beaconing status
+```
+./xpumcli config -d 0 -t 0 --xelinkportbeaconing 0,1
+Succeed to change Xe Link port 0 beaconing to on.
 ```
 
 ## Get and set the policy, automatic action triggered by the condition
