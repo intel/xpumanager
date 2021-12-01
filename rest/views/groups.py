@@ -42,7 +42,7 @@ def groups():
     get:
         tags:
             - "Group Management"
-        description: Get all group ids
+        description: Get all groups
         produces: 
             - application/json
         responses:
@@ -50,9 +50,7 @@ def groups():
                 description: OK
                 schema: 
                     type: array
-                    items: 
-                        type: integer
-                        description: The id of groups
+                    items: GroupInfoSchema
             500:
                 description: Error
     """
