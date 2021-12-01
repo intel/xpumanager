@@ -52,7 +52,7 @@ static CharTableConfig ComletConfigAddDeviceToGroup(R"({
         "title": "Group Properties"
     }],
     "rows": [{
-        "instance": "add_device",
+        "instance": "group_info",
         "cells": [
             "group_id", [
                 { "label": "Group Name", "value": "group_name" },
@@ -69,7 +69,7 @@ static CharTableConfig ComletConfigRemoveDeviceFromGroup(R"({
         "title": "Group Properties"
     }],
     "rows": [{
-        "instance": "remove_device",
+        "instance": "group_info",
         "cells": [
             "group_id", [
                 { "label": "Group Name", "value": "group_name" },
