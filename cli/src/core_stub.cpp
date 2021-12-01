@@ -220,7 +220,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
     grpc::Status status = stub->groupAddDevice(&context, groupAR, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
-            (*json)["group_id"] = response.id();
+            (*json)["group_id"] = groupId;
             (*json)["group_name"] = response.groupname();
             (*json)["device_count"] = response.count();
 
@@ -231,9 +231,13 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
 
             (*json)["device_id_list"] = deviceIdList;
         } else {
+            (*json)["group_id"] = groupId;
+            (*json)["device_id"] = deviceId;
             (*json)["error message"] = response.errormsg();
         }
     } else {
+        (*json)["group_id"] = groupId;
+        (*json)["device_id"] = deviceId;
         (*json)["error code"] = status.error_code();
         (*json)["error message"] = response.errormsg();
     }
@@ -251,7 +255,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
     grpc::Status status = stub->groupRemoveDevice(&context, groupAR, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
-            (*json)["group_id"] = response.id();
+            (*json)["group_id"] = groupId;
             (*json)["group_name"] = response.groupname();
             (*json)["device_count"] = response.count();
 
@@ -262,9 +266,13 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
 
             (*json)["device_id_list"] = deviceIdList;
         } else {
+            (*json)["group_id"] = groupId;
+            (*json)["device_id"] = deviceId;
             (*json)["error message"] = response.errormsg();
         }
     } else {
+        (*json)["group_id"] = groupId;
+        (*json)["device_id"] = deviceId;
         (*json)["error code"] = status.error_code();
         (*json)["error message"] = response.errormsg();
     }
