@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include "core/core.h"
 #include "infrastructure/configuration.h"
