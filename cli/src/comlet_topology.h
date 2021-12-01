@@ -13,7 +13,7 @@ struct ComletTopologyOptions {
 
 class ComletTopology : public ComletBase {
    public:
-    ComletTopology() : ComletBase("topology", "Topology of the device") {}
+    ComletTopology() : ComletBase("topology", "Help info of get GPU to CPU and GPU to PCIe switch topology") {}
     virtual ~ComletTopology() {}
 
     virtual void setupOptions() override;

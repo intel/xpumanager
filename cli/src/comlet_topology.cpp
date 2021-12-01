@@ -9,7 +9,7 @@ namespace xpum::cli {
 
 void ComletTopology::setupOptions() {
     this->opts = std::unique_ptr<ComletTopologyOptions>(new ComletTopologyOptions());
-    addOption("-d,--device", this->opts->deviceId, "device id", true);
+    addOption("-d,--device", this->opts->deviceId, "The device ID to query", true);
 }
 
 std::unique_ptr<nlohmann::json> ComletTopology::run() {
