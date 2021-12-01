@@ -129,7 +129,9 @@ message DiagnosticsTaskInfo{
     repeated DiagnosticsComponentInfo componentInfo = 4;
     string message = 5;
     uint32 count = 6;
-    string errorMsg = 7;
+    uint64 startTime = 7;
+    uint64 endTime = 8;
+    string errorMsg = 9;
 }
 
 message DiagnosticsGroupTaskInfo{

@@ -296,16 +296,16 @@ std::string CoreStub::diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type t
     std::string ret;
     switch (type) {
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_ENV_VARIABLES:
-            ret = "Env Variables";
+            ret = "Software Env Variables";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_LIBRARY:
-            ret = "Library";
+            ret = "Software Library";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_PERMISSION:
-            ret = "Permission";
+            ret = "Software Permission";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE:
-            ret = "Exclusive";
+            ret = "Software Exclusive";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_HARDWARE_SYSMAN:
             ret = "Hardware Sysman";
@@ -387,6 +387,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
             (*json)["component_count"] = response.count();
             (*json)["finished"] = response.finished();
             (*json)["message"] = response.message();
+            (*json)["start_time"] = isotimestamp(response.starttime());
+            if (response.finished()) {
+                (*json)["end_time"] = isotimestamp(response.endtime());    
+            }
             std::vector<nlohmann::json> componentJsonList;
             for (int i = 0; i < response.componentinfo_size(); ++i) {
                 auto componentJson = nlohmann::json();
@@ -470,6 +474,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t g
                 deviceInfoJson["finished"] = response.taskinfo(i).finished();
                 finished = finished & response.taskinfo(i).finished();
                 deviceInfoJson["message"] = response.taskinfo(i).message();
+                deviceInfoJson["start_time"] = isotimestamp(response.taskinfo(i).starttime());
+                if (response.taskinfo(i).finished()) {
+                    deviceInfoJson["end_time"] = isotimestamp(response.taskinfo(i).endtime());
+                }
                 std::vector<nlohmann::json> componentJsonList;
                 for (int j = 0; j < response.taskinfo(i).componentinfo_size(); j++) {
                     auto componentJson = nlohmann::json();

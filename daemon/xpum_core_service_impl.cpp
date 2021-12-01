@@ -279,7 +279,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
             response->set_errormsg("device not found");
         else if (res == XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE)
-            response->set_errormsg("last diagnostic task not completed");
+            response->set_errormsg("last diagnostic task on the device is not completed");
         else
             response->set_errormsg("Error");
     }
@@ -294,7 +294,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         else if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
             response->set_errormsg("device not found");
         else if (res == XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE)
-            response->set_errormsg("last diagnostic task not completed");
+            response->set_errormsg("last diagnostic task on one device is not completed");
         else
             response->set_errormsg("Error");
     }
@@ -311,6 +311,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_finished(task_info.finished);
         response->set_message(task_info.message);
         response->set_count(task_info.count);
+        response->set_starttime(task_info.startTime);
+        response->set_endtime(task_info.endTime);
         for (int i = 0; i < task_info.count; i++) {
             DiagnosticsComponentInfo* component = response->add_componentinfo();
             component->set_type(static_cast<DiagnosticsComponentInfo_Type>(task_info.componentList[i].type));
@@ -342,6 +344,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             taskInfo->set_finished(taskInfos[i].finished);
             taskInfo->set_message(taskInfos[i].message);
             taskInfo->set_count(taskInfos[i].count);
+            taskInfo->set_starttime(taskInfos[i].startTime);
+            taskInfo->set_endtime(taskInfos[i].endTime);
             for (int j = 0; j < taskInfos[i].count; j++) {
                 DiagnosticsComponentInfo* component = taskInfo->add_componentinfo();
                 component->set_type(static_cast<DiagnosticsComponentInfo_Type>(taskInfos[i].componentList[j].type));
