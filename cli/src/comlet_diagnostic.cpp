@@ -8,9 +8,12 @@ namespace xpum::cli {
 
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
-    addOption("-d,--device", this->opts->deviceId, "device id");
-    addOption("-g,--group", this->opts->groupId, "group id");
-    addOption("-l,--level", this->opts->level, "diagnostics level. It must be 1, 2 or 3, where 1 is quick test, 2 is medium test and 3 is long test");
+    addOption("-d,--device", this->opts->deviceId, "The device ID");
+    addOption("-g,--group", this->opts->groupId, "The group ID");
+    addOption("-l,--level", this->opts->level, "The diagnostics level to run. The valid options include\n\
+      1. quick test\n\
+      2. medium test\n\
+      3. long test");
 }
 
 std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {

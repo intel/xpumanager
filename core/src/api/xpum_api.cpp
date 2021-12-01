@@ -556,6 +556,13 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
         return ret;
 
     for (int i = 0; i < xpum_group_info.count; i++) {
+        bool isRunning = Core::instance().getDiagnosticManager()->isDiagnosticsRunning(xpum_group_info.deviceList[i]);
+        if (isRunning) {
+            return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
+        }
+    }
+
+    for (int i = 0; i < xpum_group_info.count; i++) {
         ret = Core::instance().getDiagnosticManager()->runDiagnostics(xpum_group_info.deviceList[i], level);
         if (ret != XPUM_OK)
             return ret;

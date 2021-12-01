@@ -1,11 +1,12 @@
 import core_pb2
 from .grpc_stub import stub
+import datetime
 
 diagnosticTypeEnumToString = {
-    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_ENV_VARIABLES: "Env Variables",
-    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_LIBRARY: "Library",
-    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_PERMISSION: "Permission",
-    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE: "Exclusive",
+    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_ENV_VARIABLES: "Software Env Variables",
+    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_LIBRARY: "Software Library",
+    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_PERMISSION: "Software Permission",
+    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE: "Software Exclusive",
     core_pb2.DiagnosticsComponentInfo.DIAG_HARDWARE_SYSMAN: "Hardware Sysman",
     core_pb2.DiagnosticsComponentInfo.DIAG_INTEGRATION_PCIE: "Integration PCIe",
     core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC: "Media Codec",
@@ -53,6 +54,11 @@ def getDiagnosticsResult(deviceId):
     data['finished'] = resp.finished
     data['message'] = resp.message
     data['component_count'] = resp.count
+    beginTimestamp = datetime.datetime.fromtimestamp(resp.startTime/1e3)
+    data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
+    if resp.finished:
+        endTimestamp = datetime.datetime.fromtimestamp(resp.endTime/1e3)
+        data['end_time'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
     componentList = []
     i = 0
     for component in resp.componentInfo:
@@ -85,7 +91,11 @@ def getDiagnosticsResultByGroup(groupId):
         finished = finished & diagTaskInfo.finished
         data['message'] = diagTaskInfo.message
         data['component_count'] = diagTaskInfo.count
-
+        beginTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.startTime/1e3)
+        data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
+        if diagTaskInfo.finished:
+            endTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.endTime/1e3)
+            data['end_time'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
         componentList = []
         i = 0
         for component in diagTaskInfo.componentInfo:

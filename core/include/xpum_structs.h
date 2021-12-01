@@ -338,6 +338,8 @@ struct xpum_diag_task_info_t {
     xpum_diag_component_info_t componentList[XPUM_DIAG_MAX];
     char message[XPUM_MAX_STR_LENGTH];
     int count;
+    uint64_t startTime;
+    uint64_t endTime;
 };
 
 /**************************************************************************/

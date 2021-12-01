@@ -42,6 +42,7 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
     p_task_info->level = level;
     p_task_info->finished = false;
     p_task_info->count = 0;
+    p_task_info->startTime = Utility::getCurrentMillisecond();
 
     updateMessage(p_task_info->message, std::string("Doing diagnostics"));
     for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_MAX; index++) {
@@ -64,6 +65,19 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
     return XPUM_OK;
 }
 
+bool DiagnosticManager::isDiagnosticsRunning(xpum_device_id_t deviceId) {
+    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        return false;
+    }
+    
+    std::unique_lock<std::mutex> lock(this->mutex);
+    if (diagnostic_task_infos.find(deviceId) != diagnostic_task_infos.end() && diagnostic_task_infos.at(deviceId)->finished == false) {
+        return true;
+    }
+
+    return false;
+}
+
 xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result) {
     if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
@@ -78,6 +92,8 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
     result->level = diagnostic_task_infos.at(deviceId)->level;
     result->finished = diagnostic_task_infos.at(deviceId)->finished;
     result->count = diagnostic_task_infos.at(deviceId)->count;
+    result->startTime = diagnostic_task_infos.at(deviceId)->startTime;
+    result->endTime = diagnostic_task_infos.at(deviceId)->endTime;
     updateMessage(result->message, std::string(diagnostic_task_infos.at(deviceId)->message));
 
     for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_MAX; index++) {
@@ -128,6 +144,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
         errorDetails = "Aborted! " + std::string(e.what()).substr(0, 100);
     }
 
+    p_task_info->endTime = Utility::getCurrentMillisecond();
     p_task_info->finished = true;
     if (!findError) {
         updateMessage(p_task_info->message, std::string("All diagnostics done"));
@@ -261,11 +278,35 @@ void DiagnosticManager::doDeviceDiagnosticSoftware(const zes_device_handle_t &de
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("Error in XPUM_DIAG_SOFTWARE_EXCLUSIVE: zesDeviceProcessesGetState()");
     }
+    std::vector<zes_process_state_t> processes(process_count);
+    XPUM_ZE_HANDLE_LOCK(device, ret = zesDeviceProcessesGetState(device, &process_count, processes.data()));
+    pid_t pid = getpid();
+    std::string pidlist = " Self-PID: " + std::to_string(pid) + ". PID-List: ";
+    int position = 0;
+    for (auto process : processes) {
+        std::ifstream file("/proc/" + std::to_string(process.processId) + "/cmdline");
+        if (!file.good()) {
+            process_count -= 1;
+            continue;
+        }
+        if (position > 0)
+            pidlist += ", ";
+        std::string commandName;
+        std::getline(file, commandName);
+        if ((int)(commandName[commandName.size() - 1]) == 0)
+            commandName = commandName.substr(0, commandName.size() - 1);
+        pidlist += std::to_string(process.processId) + "-" + commandName;
+        position += 1;
+    }
     // relax exclusive process count
     if (process_count > 2) {
         std::vector<zes_process_state_t> process_statuses(process_count);
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_WARNING;
         std::string desc = "Exclusive check failed. " + std::to_string(process_count) + " processses are using the device.";
+        desc += pidlist;
+        if ((int)desc.size() > XPUM_MAX_STR_LENGTH - 1) {
+            desc = desc.substr(0, XPUM_MAX_STR_LENGTH - 4) + "...";
+        }
         updateMessage(component4.message, desc);
     } else {
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
@@ -478,7 +519,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &
     long double total_latency = 0.0;
 
     // DCGM PCIE_STR_INTS_PER_COPY 10000000.0 * 4 bytes = 40Mb
-    std::size_t size = 1 << 26;
+    std::size_t size = 1 << 28;
     void *device_buffer;
     void *host_buffer;
 
@@ -550,7 +591,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &
 
     std::string desc = "PCIe check info: ";
     desc += " Its bandwidth is " + roundDouble(total_bandwidth, 3) + " GBPS.";
-    desc += " Its latency is " + roundDouble(total_latency, 3) + " usec.";
+    desc += " " + std::to_string(size >> 20) + " Mib's latency is " + roundDouble(total_latency, 3) + " usec.";
     if (total_bandwidth < Configuration::PCIE_MIN_BANDWIDTH || total_latency > Configuration::PCIE_MAX_LATENCY) {
         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
         updateMessage(component.message, desc);
@@ -987,7 +1028,15 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputeAndPower(const ze_dev
         while (!computation_done.load()) {
             try {
                 auto raw_power_value = GPUDeviceStub::toGetPower(device);
-                auto current_value = (int) (raw_power_value->getCurrent() / raw_power_value->getScale()); 
+                auto current_value = 0;
+                if (raw_power_value->hasDataOnDevice()) {
+                    current_value = (int) (raw_power_value->getCurrent() / raw_power_value->getScale()); 
+                } else if (raw_power_value->hasSubdeviceData()) {
+                    auto subdevice_datas = raw_power_value->getSubdeviceDatas();
+                    for (auto subdevice_data : (*subdevice_datas)) {
+                        current_value += subdevice_data.second.current / raw_power_value->getScale();
+                    }
+                }
                 if (current_value > power_value) {
                     power_value = current_value;
                     XPUM_LOG_DEBUG("update peak power value: " + std::to_string(power_value));
@@ -1380,7 +1429,7 @@ long double DiagnosticManager::calculateGbps(long double period, long double tot
 
 void DiagnosticManager::updateMessage(char *arr, std::string str) {
     int index = 0;
-    while (index < (int)str.size()) {
+    while (index < (int)str.size() && index < XPUM_MAX_STR_LENGTH - 1) {
         arr[index] = str[index];
         index++;
     }

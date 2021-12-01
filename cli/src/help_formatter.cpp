@@ -31,6 +31,10 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "   xpumcli health -g [groupId] \n"
                "   xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] \n"
                "   xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold] \n";
+    } else if (app->get_name().compare("diag") == 0) {
+        return "\nUsage: xpumcli diag [Options] \n"
+               "   xpumcli diag -d [deviceId] -l [level] \n"
+               "   xpumcli diag -g [groupId] -l [level] \n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }

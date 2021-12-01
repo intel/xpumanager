@@ -4,7 +4,7 @@ from flask import jsonify
 from marshmallow import Schema, fields
 
 class DiagnosticsLevelSchema(Schema):
-    diagnostics_level = fields.Int(
+    level = fields.Int(
         metadata={"description": "The level for diagnostics to run"})
 
 
@@ -34,7 +34,7 @@ def run_diagnostics(deviceId):
                 description: Error
     """
     req = request.get_json()
-    level = req["diagnostics_level"]
+    level = req["level"]
     code, message, data = stub.runDiagnostics(deviceId, level)
     if code != 0:
         error = dict(Status=code, Message=message)
@@ -68,7 +68,7 @@ def run_group_diagnostics(groupId):
                 description: Error
     """
     req = request.get_json()
-    level = req["diagnostics_level"]
+    level = req["level"]
     code, message, data = stub.runDiagnosticsByGroup(groupId, level)
     if code != 0:
         error = dict(Status=code, Message=message)
@@ -88,13 +88,15 @@ class DiagnosticsComponentSchema(Schema):
 
 class DiagnosticsInfoSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
-    diagnostics_level = fields.Int(
+    level = fields.Int(
         metadata={"description": "The level for diagnostics to run"})
     finished = fields.Boolean(
         metadata={"description": "Finished or not"})
     message = fields.Str(
         metadata={"description": "Result message"})
     component_count = fields.Int(metadata={"description": "Component count"})
+    start_time = fields.Int(metadata={"description": "Start time"})
+    end_time = fields.Int(metadata={"description": "End time"})
     component_list = fields.List(fields.Nested(DiagnosticsComponentSchema))
 
 

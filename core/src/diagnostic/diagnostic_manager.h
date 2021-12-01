@@ -40,6 +40,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     xpum_result_t runDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) override;
 
+    bool isDiagnosticsRunning(xpum_device_id_t deviceId) override;
+
     xpum_result_t getDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result) override;
 
     static void doDeviceDiagnosticCore(const ze_device_handle_t &ze_device,
