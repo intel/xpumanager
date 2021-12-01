@@ -19,5 +19,5 @@ RUN chmod +x /grpc/build_grpc.sh && /grpc/build_grpc.sh
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y python3-dev liblua5.2-0
 RUN pip3 install grpcio-tools
-RUN apt-get install -y doxygen liblua5.2
+RUN apt-get install -y doxygen
 RUN pip3 install  apispec apispec_webframeworks Sphinx sphinx_rtd_theme sphinxcontrib-openapi  apispec-webframeworks myst-parser marshmallow prometheus-client flask flask_httpauth
