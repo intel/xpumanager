@@ -4,7 +4,7 @@ from marshmallow import Schema, fields
 
 
 class CreateGroupSchema(Schema):
-    GroupName = fields.Str(
+    group_name = fields.Str(
         metadata={"description": "The name for the group to be created"})
 
 
@@ -62,13 +62,16 @@ def groups():
             req = request.get_json()
             if (req is None):
                 return "requires group name.", 500
-
-            groupName = req["GroupName"]
-            code, message, data = stub.createGroup(groupName)
-            if code == 0:
-                return jsonify(data)
-            error = dict(Status=code, Message=message)
-            return jsonify(error), 400
+            if "group_name" in req:
+                groupName = req["group_name"]
+                code, message, data = stub.createGroup(groupName)
+                if code == 0:
+                    return jsonify(data)
+                error = dict(Status=code, Message=message)
+                return jsonify(error), 400
+            else:
+                return "requires group_name.", 500
+            
         elif request.method == 'GET':
             # get all group ids
             code, message, data = stub.getAllGroups()
@@ -82,9 +85,9 @@ def groups():
 
 
 class ModifyGroupDeviceSchema(Schema):
-    DeviceIdToAdd = fields.List(fields.Int(metadata={
+    device_id_add = fields.List(fields.Int(metadata={
                                  "description": "The id of devices add to this group"}))
-    DeviceIdToRemove = fields.List(fields.Int(metadata={
+    device_id_remove = fields.List(fields.Int(metadata={
                                  "description": "The id of devices remove from this group"}))
 
 class ModifyGroupErrorSchema(Schema):
@@ -176,23 +179,24 @@ def group_detail(groupId):
             data = dict()
 
             # add device to group
-            if "DeviceIdToAdd" in req:
-                deviceIdToAdd = req["DeviceIdToAdd"]
+            if "device_id_add" in req:
+                deviceIdToAdd = req["device_id_add"]
                 if len(deviceIdToAdd) == 0:
                     return "requires device id.", 500
                 fail_to_add = stub.addDeviceToGroup(groupId, deviceIdToAdd)
                 if fail_to_add:
                     data["fail_to_add"] = fail_to_add
-
             # remove device from group
-            if "DeviceIdToRemove" in req:
-                deviceIdToRemove = req["DeviceIdToRemove"]
+            elif "device_id_remove" in req:
+                deviceIdToRemove = req["device_id_remove"]
                 if len(deviceIdToRemove) == 0:
                     return "requires device id.", 500
                 fail_to_remove = stub.removeDeviceFromGroup(
                     groupId, deviceIdToRemove)
                 if fail_to_remove:
                     data["fail_to_remove"] = fail_to_remove
+            else:
+                return "requires device_id_add or device_id_remove", 500
 
             # get group info
             code, message, group_info = stub.getGroupInfo(groupId)
