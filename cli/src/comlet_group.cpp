@@ -146,30 +146,41 @@ std::unique_ptr<nlohmann::json> ComletGroup::listGroup(){
 
 std::unique_ptr<nlohmann::json> ComletGroup::addDeviceToGroup(){
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    
+    bool failed = false;
     std::vector<nlohmann::json> resultList;
     for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
         auto &id = this->opts->deviceList[i];
         std::unique_ptr<nlohmann::json> result = this->coreStub->groupAddDevice(opts->groupId, id);
-        resultList.push_back(*result);
+        if(result->contains("error")){
+            failed = true;
+            resultList.push_back(*result);
+        }        
     }
-    json = this->coreStub->groupList(this->opts->groupId);
-    (*json)["add_device"] = resultList;        
+    
+    (*json)["group_info"] = *this->coreStub->groupList(this->opts->groupId);
+    if(failed){
+        (*json)["fail_to_add"] = resultList;  
+    }          
 
     return json;
 }
 
 std::unique_ptr<nlohmann::json> ComletGroup::removeDeviceFromGroup(){
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    
+    bool failed = false;
     std::vector<nlohmann::json> resultList;
     for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
         auto &id = this->opts->deviceList[i];
         std::unique_ptr<nlohmann::json> result = this->coreStub->groupRemoveDevice(opts->groupId, id);
-        resultList.push_back(*result);
+        if(result->contains("error")){
+            failed = true;
+            resultList.push_back(*result);
+        }
     } 
-    json = this->coreStub->groupList(this->opts->groupId);
-    (*json)["remove_device"] = resultList;
+    (*json)["group_info"] = *this->coreStub->groupList(this->opts->groupId);
+    if(failed){
+        (*json)["fail_to_remove"] = resultList;  
+    } 
     return json;
 }
 
