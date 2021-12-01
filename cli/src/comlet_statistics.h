@@ -23,6 +23,14 @@ class ComletStatistics : public ComletBase {
 
     virtual void getTableResult(std::ostream &out) override;
 
+    inline const bool isDeviceOp() const {
+        return opts->deviceId >= 0;
+    }
+
+    inline const bool isGroupOp() const {
+        return opts->groupId != 0;
+    }
+
    private:
     std::unique_ptr<ComletStatisticsOptions> opts;
 };

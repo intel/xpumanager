@@ -15,10 +15,10 @@ void ComletStatistics::setupOptions() {
 }
 
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
-    if (this->opts->deviceId != -1) {
+    if (isDeviceOp()) {
         auto json = this->coreStub->getStatistics(this->opts->deviceId);
         return json;
-    } else if (this->opts->groupId != 0) {
+    } else if (isGroupOp()) {
         auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId);
         return json;
     }
