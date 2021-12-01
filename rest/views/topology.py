@@ -4,6 +4,10 @@ from marshmallow import Schema, fields
 
 class TopologyInfoSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
+    affinity_localcpulist = fields.String(metadata={"description": "local cpu list"})
+    affinity_localcpus = fields.String(metadata={"description": "local cpus"})
+    switch_count = fields.Int(metadata={"description": "Device parent switch count"})
+    switch_list = fields.String(metadata={"description": "list of switch device path"})
 
 def get_topology(deviceId):
     """
