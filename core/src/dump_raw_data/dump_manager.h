@@ -22,6 +22,8 @@ class DumpRawDataManager {
    public:
     DumpRawDataManager();
 
+    ~DumpRawDataManager();
+
     void init();
 
     xpum_result_t startDumpRawDataTask(xpum_device_id_t deviceId,

@@ -13,6 +13,8 @@ namespace xpum::daemon {
 
 class XpumCoreServiceImpl final : public XpumCoreService::Service {
    public:
+    static std::string dumpRawDataFileFolder;
+
     XpumCoreServiceImpl(void);
     virtual ~XpumCoreServiceImpl();
 

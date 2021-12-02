@@ -12,6 +12,10 @@ DumpRawDataManager::DumpRawDataManager() {
     pThreadPool = std::make_shared<ScheduledThreadPool>(2);
 }
 
+DumpRawDataManager::~DumpRawDataManager() {
+    pThreadPool->close();
+}
+
 
 xpum_result_t DumpRawDataManager::
     startDumpRawDataTask(xpum_device_id_t deviceId,

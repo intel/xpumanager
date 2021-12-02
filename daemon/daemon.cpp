@@ -41,11 +41,14 @@ static const string defaultSockName{"/tmp/xpum.sock"};
 int pidFilehandle = -1;
 char* pid_file_name = nullptr;
 char* sock_file_name = nullptr;
+char* dump_folder_name = nullptr;
 
 std::mutex xpummutex;
 std::atomic_bool stop(false);
 std::unique_lock<std::mutex> lock(xpummutex);
 std::condition_variable cv;
+
+std::string XpumCoreServiceImpl::dumpRawDataFileFolder;
 
 void print_help(const char* app_name) {
     printf("\n Usage: %s [OPTIONS]\n\n", app_name);
@@ -53,6 +56,7 @@ void print_help(const char* app_name) {
     printf("   -h --help                 Print this help\n");
     printf("   -p --pid_file  filename   PID file used by daemonized app\n");
     printf("   -s --socket_file  filename   socket file used by daemonized app\n");
+    printf("   -d --dump_folder  foldername   dump folder used by daemonized app\n");
     printf("\n");
 }
 
@@ -134,6 +138,32 @@ void signalHandler(int sig) {
     }
 }
 
+void createDumpFolder(){
+    std::string dumpFolder;
+    if (dump_folder_name != nullptr) {
+        dumpFolder = dump_folder_name;
+        if (dumpFolder.back() == '/') {
+            dumpFolder.pop_back();
+        }
+    } else {
+        dumpFolder = "/tmp/xpumdump";
+    }
+    // create dump folder
+    int res = mkdir(dumpFolder.c_str(), 0775);
+    if (res != 0 && errno != EEXIST) {
+        std::cerr << "Fail to create folder" << std::endl;
+        abort();
+    }
+
+    // chwon of folder
+    passwd* pwd = getpwnam("xpum");
+    if (pwd != nullptr) {
+        chown(dumpFolder.c_str(), pwd->pw_uid, pwd->pw_gid);
+    }
+
+    XpumCoreServiceImpl::dumpRawDataFileFolder = dumpFolder;
+}
+
 } // end namespace xpum::daemon
 
 using namespace xpum::daemon;
@@ -143,16 +173,20 @@ int main(int argc, char* argv[]) {
         {"socket_file", required_argument, 0, 's'},
         {"help", no_argument, 0, 'h'},
         {"pid_file", required_argument, 0, 'p'},
+        {"dump_folder", optional_argument, 0, 'd'},
         {NULL, 0, 0, 0}};
     int value, option_index = 0;
 
-    while ((value = getopt_long(argc, argv, "s:p:h", long_options, &option_index)) != -1) {
+    while ((value = getopt_long(argc, argv, "s:p:d:h", long_options, &option_index)) != -1) {
         switch (value) {
             case 's':
                 sock_file_name = strdup(optarg);
                 break;
             case 'p':
                 pid_file_name = strdup(optarg);
+                break;
+            case 'd':
+                dump_folder_name = strdup(optarg);
                 break;
             case 'h':
                 print_help(argv[0]);
@@ -168,6 +202,7 @@ int main(int argc, char* argv[]) {
     umask(S_IXUSR | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
 
     writePID();
+    createDumpFolder();
     signal(SIGINT, signalHandler);
     signal(SIGKILL, signalHandler);
     signal(SIGTERM, signalHandler);

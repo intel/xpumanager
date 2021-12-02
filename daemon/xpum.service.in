@@ -13,7 +13,7 @@ ExecStartPre=/bin/sh -c "ulimit -c unlimited"
 
 Environment="LD_LIBRARY_PATH=@CPACK_XPUM_LIB_INSTALL_DIR@:/$LD_LIBRARY_PATH"
 
-ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/xpumd  --pid_file /var/xpum_daemon.pid
+ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/xpumd  --pid_file /var/xpum_daemon.pid --dump_folder @CPACK_PACKAGING_INSTALL_PREFIX@/dump
 
 ExecStop=/bin/kill -s -TERM $MAINPID
 

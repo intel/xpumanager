@@ -18,7 +18,7 @@ struct ComletDumpOptions {
     // for dump raw data to file
     bool rawData;
     bool startDumpTask;
-    bool stopDumpTask;
+    // bool stopDumpTask;
     bool listDumpTask;
     int dumpTaskId = -1;
 };

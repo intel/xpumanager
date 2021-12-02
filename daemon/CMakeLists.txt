@@ -83,8 +83,8 @@ if (NOT DEFINED WORK_PATH)
   find_library(DGM_LIB 
     NAMES libxpum.so 
     PATHS 
-    ${CMAKE_CURRENT_LIST_DIR}/../build/core
     ${CMAKE_CURRENT_LIST_DIR}/../core/build
+    ${CMAKE_CURRENT_LIST_DIR}/../build/core
     NO_CMAKE_ENVIRONMENT_PATH
     NO_DEFAULT_PATH
     NO_SYSTEM_ENVIRONMENT_PATH

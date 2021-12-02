@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.2.0)
 
-#configure_file("${CMAKE_CURRENT_LIST_DIR}/xpum_rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/xpum_rest.service")
+configure_file("${CMAKE_CURRENT_LIST_DIR}/xpum_rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/xpum_rest.service")
 
 
 add_custom_target(rest ALL)

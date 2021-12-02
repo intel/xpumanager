@@ -23,6 +23,21 @@ std::string Utility::getCurrentTimeString() {
     return getTimeString(getCurrentMillisecond());
 }
 
+std::string Utility::getCurrentUTCTimeString() {
+    return getUTCTimeString(getCurrentMillisecond());
+}
+
+std::string Utility::getUTCTimeString(uint64_t t) {
+    time_t seconds = (long)t / 1000;
+    int milli_seconds = t % 1000;
+    tm* tm_p = gmtime(&seconds);
+    char buf[50];
+    strftime(buf, sizeof(buf), "%FT%T", tm_p);
+    char milli_buf[10];
+    sprintf(milli_buf, "%03d", milli_seconds);
+    return std::string(buf) + "." + std::string(milli_buf) + "Z";
+}
+
 std::string Utility::getTimeString(long long milliseconds) {
     const auto duration_since_epoch = std::chrono::milliseconds(milliseconds);
     const std::chrono::time_point<std::chrono::system_clock> time_point(duration_since_epoch);

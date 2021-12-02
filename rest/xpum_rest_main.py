@@ -21,108 +21,119 @@ from views import device_config
 from views import topology
 from views import dump_raw_data
 
-app = Flask(__name__)
+import argparse
+
+from stub import dump_raw_data as dump_raw_data_stub
 
 auth = HTTPBasicAuth()
 
-# prometheus exporter
-app.add_url_rule('/metrics',
-                 view_func=auth.login_required(exporter.export_metrics), methods=['GET'])
+def main(*args, **kwargs):
 
-# version
-app.add_url_rule('/rest/v1/version',
-                 view_func=versions.get_version, methods=['GET'])
+    if "dump_folder" in kwargs:
+        dump_raw_data_stub.dump_folder = kwargs["dump_folder"]
 
-# devices
-app.add_url_rule('/rest/v1/devices',
-                 view_func=auth.login_required(devices.get_devices), methods=['GET'])
-app.add_url_rule('/rest/v1/devices/<int:deviceId>',
-                 view_func=auth.login_required(devices.get_device_properties), methods=['GET'])
+    app = Flask(__name__, static_url_path=dump_raw_data_stub.url_prefix, static_folder=dump_raw_data_stub.dump_folder)
 
-# diagnostics
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/diagnostics', methods=['POST'],
-                 view_func=auth.login_required(diagnostics.run_diagnostics))
-app.add_url_rule('/rest/v1/groups/<int:groupId>/diagnostics', methods=['POST'],
-                 view_func=auth.login_required(diagnostics.run_group_diagnostics))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/diagnostics', methods=['GET'],
-                 view_func=auth.login_required(diagnostics.get_diagnostics_result))
-app.add_url_rule('/rest/v1/groups/<int:groupId>/diagnostics', methods=['GET'],
-                 view_func=auth.login_required(diagnostics.get_group_diagnostics_result))
 
-# health
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/health', methods=['GET'],
-                 view_func=auth.login_required(health.get_health_all))
-app.add_url_rule('/rest/v1/groups/<int:groupId>/health', methods=['GET'],
-                 view_func=auth.login_required(health.get_group_health_all))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/health/<healthType>', methods=['GET'],
-                 view_func=auth.login_required(health.get_health))
-app.add_url_rule('/rest/v1/groups/<int:groupId>/health/<healthType>', methods=['GET'],
-                 view_func=auth.login_required(health.get_group_health))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/health/<healthType>', methods=['PUT'],
-                 view_func=auth.login_required(health.set_health_config))
-app.add_url_rule('/rest/v1/groups/<int:groupId>/health/<healthType>', methods=['PUT'],
-                 view_func=auth.login_required(health.set_group_health_config))
+    # prometheus exporter
+    app.add_url_rule('/metrics',
+                    view_func=auth.login_required(exporter.export_metrics), methods=['GET'])
 
-# policy management
-app.add_url_rule('/rest/v1/policy', methods=['GET'],
-                 view_func=auth.login_required(policy.get_all_policy))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/policy', methods=['GET'],
-                 view_func=auth.login_required(policy.get_device_policy))
-app.add_url_rule('/rest/v1/groups/<int:groupId>/policy', methods=['GET'],
-                 view_func=auth.login_required(policy.get_group_policy))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/policy', methods=['POST','DELETE'],
-                 view_func=auth.login_required(policy.set_device_policy))
-app.add_url_rule('/rest/v1/groups/<int:groupId>/policy', methods=['POST','DELETE'],
-                 view_func=auth.login_required(policy.set_group_policy))
+    # version
+    app.add_url_rule('/rest/v1/version',
+                    view_func=versions.get_version, methods=['GET'])
 
-# groups management
-app.add_url_rule('/rest/v1/groups', methods=['POST', 'GET'],
-                 view_func=auth.login_required(groups.groups))
-app.add_url_rule('/rest/v1/groups/<int:groupId>', methods=['GET', 'POST', 'DELETE'],
-                 view_func=auth.login_required(groups.group_detail))
+    # devices
+    app.add_url_rule('/rest/v1/devices',
+                    view_func=auth.login_required(devices.get_devices), methods=['GET'])
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>',
+                    view_func=auth.login_required(devices.get_device_properties), methods=['GET'])
 
-# firmware flash
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/firmwareUpgrade', methods=['POST'],
-                 view_func=auth.login_required(firmwares.run_firmware_flash))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/firmware', methods=['GET'],
-                 view_func=auth.login_required(firmwares.get_firmware_flash_result))
+    # diagnostics
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/diagnostics', methods=['POST'],
+                    view_func=auth.login_required(diagnostics.run_diagnostics))
+    app.add_url_rule('/rest/v1/groups/<int:groupId>/diagnostics', methods=['POST'],
+                    view_func=auth.login_required(diagnostics.run_group_diagnostics))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/diagnostics', methods=['GET'],
+                    view_func=auth.login_required(diagnostics.get_diagnostics_result))
+    app.add_url_rule('/rest/v1/groups/<int:groupId>/diagnostics', methods=['GET'],
+                    view_func=auth.login_required(diagnostics.get_group_diagnostics_result))
 
-# agent settings
-app.add_url_rule('/rest/v1/globalSettings', methods=['GET', 'POST'],
-                 view_func=auth.login_required(agent_settings.agent_setting))
+    # health
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/health', methods=['GET'],
+                    view_func=auth.login_required(health.get_health_all))
+    app.add_url_rule('/rest/v1/groups/<int:groupId>/health', methods=['GET'],
+                    view_func=auth.login_required(health.get_group_health_all))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/health/<healthType>', methods=['GET'],
+                    view_func=auth.login_required(health.get_health))
+    app.add_url_rule('/rest/v1/groups/<int:groupId>/health/<healthType>', methods=['GET'],
+                    view_func=auth.login_required(health.get_group_health))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/health/<healthType>', methods=['PUT'],
+                    view_func=auth.login_required(health.set_health_config))
+    app.add_url_rule('/rest/v1/groups/<int:groupId>/health/<healthType>', methods=['PUT'],
+                    view_func=auth.login_required(health.set_group_health_config))
 
-# statistics
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/stats', methods=['GET'],
-                 view_func=auth.login_required(statistics.get_statistics))
-app.add_url_rule('/rest/v1/groups/<int:groupId>/stats', methods=['GET'],
-                 view_func=auth.login_required(statistics.get_group_statistics))
+    # policy management
+    app.add_url_rule('/rest/v1/policy', methods=['GET'],
+                    view_func=auth.login_required(policy.get_all_policy))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/policy', methods=['GET'],
+                    view_func=auth.login_required(policy.get_device_policy))
+    app.add_url_rule('/rest/v1/groups/<int:groupId>/policy', methods=['GET'],
+                    view_func=auth.login_required(policy.get_group_policy))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/policy', methods=['POST','DELETE'],
+                    view_func=auth.login_required(policy.set_device_policy))
+    app.add_url_rule('/rest/v1/groups/<int:groupId>/policy', methods=['POST','DELETE'],
+                    view_func=auth.login_required(policy.set_group_policy))
 
-# device config
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/standby', methods=['PUT'],
-                 view_func=auth.login_required(device_config.set_standby))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/powerlimit', methods=['PUT'],
-                 view_func=auth.login_required(device_config.set_powerlimit))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/frequencyrange', methods=['PUT'],
-                 view_func=auth.login_required(device_config.set_frequencyrange))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/scheduler', methods=['PUT'],
-                 view_func=auth.login_required(device_config.set_scheduler))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/config', methods=['GET'],
-                 view_func=auth.login_required(device_config.get_config))
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
-                 view_func=auth.login_required(device_config.run_reset))
+    # groups management
+    app.add_url_rule('/rest/v1/groups', methods=['POST', 'GET'],
+                    view_func=auth.login_required(groups.groups))
+    app.add_url_rule('/rest/v1/groups/<int:groupId>', methods=['GET', 'POST', 'DELETE'],
+                    view_func=auth.login_required(groups.group_detail))
 
-# topology
-app.add_url_rule('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'],
-                 view_func=auth.login_required(topology.get_topology))
+    # firmware flash
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/firmwareUpgrade', methods=['POST'],
+                    view_func=auth.login_required(firmwares.run_firmware_flash))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/firmware', methods=['GET'],
+                    view_func=auth.login_required(firmwares.get_firmware_flash_result))
 
-# dump raw data
-app.add_url_rule('/rest/v1/dump', methods=['POST'],
-                 view_func=auth.login_required(dump_raw_data.startDumpRawDataTask))
-app.add_url_rule('/rest/v1/dump/<int:taskId>', methods=['DELETE'],
-                 view_func=auth.login_required(dump_raw_data.stopDumpRawDataTask))
-app.add_url_rule('/rest/v1/dump', methods=['GET'],
-                 view_func=auth.login_required(dump_raw_data.listDumpRawDataTasks))
+    # agent settings
+    app.add_url_rule('/rest/v1/globalSettings', methods=['GET', 'POST'],
+                    view_func=auth.login_required(agent_settings.agent_setting))
 
+    # statistics
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/stats', methods=['GET'],
+                    view_func=auth.login_required(statistics.get_statistics))
+    app.add_url_rule('/rest/v1/groups/<int:groupId>/stats', methods=['GET'],
+                    view_func=auth.login_required(statistics.get_group_statistics))
+
+    # device config
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/standby', methods=['PUT'],
+                    view_func=auth.login_required(device_config.set_standby))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/powerlimit', methods=['PUT'],
+                    view_func=auth.login_required(device_config.set_powerlimit))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/frequencyrange', methods=['PUT'],
+                    view_func=auth.login_required(device_config.set_frequencyrange))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/scheduler', methods=['PUT'],
+                    view_func=auth.login_required(device_config.set_scheduler))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/config', methods=['GET'],
+                    view_func=auth.login_required(device_config.get_config))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
+                    view_func=auth.login_required(device_config.run_reset))
+
+    # topology
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'],
+                    view_func=auth.login_required(topology.get_topology))
+
+    # dump raw data
+    app.add_url_rule('/rest/v1/dump', methods=['POST'],
+                    view_func=auth.login_required(dump_raw_data.startDumpRawDataTask))
+    app.add_url_rule('/rest/v1/dump/<int:taskId>', methods=['DELETE'],
+                    view_func=auth.login_required(dump_raw_data.stopDumpRawDataTask))
+    app.add_url_rule('/rest/v1/dump', methods=['GET'],
+                    view_func=auth.login_required(dump_raw_data.listDumpRawDataTasks))
+
+    return app
 
 @auth.verify_password
 def verify_password(username, password):
@@ -164,6 +175,13 @@ policy.startPolicyCallBackThread()
 ####
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--dump_folder",
+                        help="folder stores dump raw data output files")
+    args = parser.parse_args()
+    if args.dump_folder:
+        app = main(dump_folder=args.dump_folder)
+    else:
+        app = main()
     app.debug = True
-#   app.run()
     app.run(host='0.0.0.0', port=30000, use_reloader=False)

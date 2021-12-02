@@ -2,38 +2,46 @@ from google.protobuf import empty_pb2
 import core_pb2
 from .grpc_stub import stub
 
+url_prefix = "/download"
+
+dump_folder = "/tmp/xpumdump"
+
 
 def startDumpRawDataTask(deviceId, tileId, metricsTypeList):
 
+    enumList = [core_pb2.GeneralEnum(value=m) for m in metricsTypeList]
+
     resp = stub.startDumpRawDataTask(core_pb2.StartDumpRawDataTaskRequest(
-        deviceId,
-        tileId,
-        metricsTypeList
+        deviceId=deviceId,
+        tileId=tileId,
+        metricsTypeList=enumList
     ))
 
     if len(resp.errorMsg) != 0:
         return resp.status, resp.errorMsg, None
 
-    taskInfo = resp.taskinfo
+    taskInfo = resp.taskInfo
 
     data = dict()
 
-    data["task_id"] = taskInfo.dumptaskid
-    data["dump_file_path"] = taskInfo.dumpfilepath
+    data["task_id"] = taskInfo.dumpTaskId
+    data["dump_file_path"] = taskInfo.dumpFilePath.replace(
+        dump_folder, url_prefix, 1)
 
     return 0, "OK", data
 
 
 def stopDumpRawDataTask(taskId):
     resp = stub.stopDumpRawDataTask(
-        core_pb2.StopDumpRawDataTaskRequest(taskId))
+        core_pb2.StopDumpRawDataTaskRequest(dumpTaskId=taskId))
     if len(resp.errorMsg) != 0:
         return resp.status, resp.errorMsg, None
-    taskInfo = resp.taskinfo
+    taskInfo = resp.taskInfo
     data = dict()
 
-    data["task_id"] = taskInfo.dumptaskid
-    data["dump_file_path"] = taskInfo.dumpfilepath
+    data["task_id"] = taskInfo.dumpTaskId
+    data["dump_file_path"] = taskInfo.dumpFilePath.replace(
+        dump_folder, url_prefix, 1)
 
     return 0, "OK", data
 
@@ -45,6 +53,6 @@ def listDumpRawDataTasks():
         return resp.status, resp.errorMsg, None
 
     data = dict(dump_task_ids=[
-                taskInfo.dumptaskid for taskInfo in resp.tasklist])
+                taskInfo.dumpTaskId for taskInfo in resp.taskList])
 
     return 0, "OK", data

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <map>
 
 #include "core/core.h"
 #include "infrastructure/configuration.h"
@@ -103,22 +104,12 @@ void DumpRawDataTask::start() {
     // write to file with header
     writeHeader();
 
-    // get data for first time
-    auto p_data_logic = xpum::Core::instance().getDataLogic();
-    for (auto metricsType : metricsTypeList) {
-        auto measurementType = Utility::measurementTypeFromXpumStatsType(metricsType);
-        std::string deviceIdStr = std::to_string(deviceId);
-        auto data = p_data_logic->getLatestData(measurementType, deviceIdStr);
-        auto t = data.getRawTimestamp();
-        dataLastCachedTime[metricsType] = t;
-    }
-
     auto p_this = shared_from_this();
     lambda = [p_this]() {
         std::stringstream ss;
 
         // timestamp string
-        ss << Utility::getCurrentTimeString();
+        ss << Utility::getCurrentUTCTimeString();
 
         // device id
         ss << "," << p_this->deviceId;
@@ -130,15 +121,36 @@ void DumpRawDataTask::start() {
 
         auto p_data_logic = xpum::Core::instance().getDataLogic();
 
+        int metricsCount;
+        p_data_logic->getLatestMetrics(p_this->deviceId,nullptr, &metricsCount);
+        std::vector<xpum_device_metrics_t> deviceMetricsList;
+        deviceMetricsList.reserve(metricsCount);
+        p_data_logic->getLatestMetrics(p_this->deviceId, deviceMetricsList.data(), &metricsCount);
+
+        std::map<xpum_stats_type_t,xpum_device_metric_data_t> m;
+        
+        for (auto deviceMetrics : deviceMetricsList) {
+            if ((p_this->tileId == -1 && !deviceMetrics.isTileData) || (deviceMetrics.isTileData && (p_this->tileId == deviceMetrics.tileId))) {
+                for (int i = 0; i < deviceMetrics.count; i++) {
+                    auto data = deviceMetrics.dataList[i];
+                    m[data.metricsType] = data;
+                }
+                break;
+            }
+        }
+
         for (auto metricsType : p_this->metricsTypeList) {
-            auto measurementType = Utility::measurementTypeFromXpumStatsType(metricsType);
-            std::string deviceId = std::to_string(p_this->deviceId);
-            auto data = p_data_logic->getLatestData(measurementType, deviceId);
-            auto t = data.getRawTimestamp();
+            auto it = m.find(metricsType);
+            if (it == m.end()) {
+                ss << ",";
+                continue;
+            }
+            auto data = it->second;
+            auto t = data.timestamp;
             if (p_this->dataLastCachedTime[metricsType] != t) {
                 p_this->dataLastCachedTime[metricsType] = t;
-                uint64_t scale = data.getScale();
-                uint64_t rawData = data.getRawdata();
+                uint64_t scale = data.scale;
+                uint64_t rawData = data.value;
                 // some metrics need unit transform
                 switch (metricsType) {
                     case XPUM_STATS_ENERGY:
@@ -189,6 +201,7 @@ void DumpRawDataTask::fillTaskInfoBuffer(xpum_dump_raw_data_task_t* taskInfo) {
         auto buf = taskInfo->metricsTypeList;
         buf[i] = metricsTypeList[i];
     }
+    taskInfo->count = metricsTypeList.size();
 }
 
 } // namespace xpum

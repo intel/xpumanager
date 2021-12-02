@@ -92,6 +92,8 @@ std::unique_ptr<nlohmann::json> CoreStub::listDumpRawDataTasks() {
         return json;
     }
     
+    (*json)["dump_task_ids"] = nlohmann::json::array();
+
     for (auto taskInfo : response.tasklist()) {
         int taskId = taskInfo.dumptaskid();
         (*json)["dump_task_ids"].push_back(taskId);
