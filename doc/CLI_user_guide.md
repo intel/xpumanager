@@ -853,7 +853,7 @@ Device Type: GPU
 |                        | Message: Pass to check libraries                                        |
 +------------------------+-------------------------------------------------------------------------+
 | Software Permission    | Result: Pass                                                            |
-|                        | Message: Pass to heck permission                                        |
+|                        | Message: Pass to check permission                                        |
 +------------------------+-------------------------------------------------------------------------+
 | Software Exclusive     | Result: Fail                                                            |
 |                        | Message: Fail to check the software exclusive. 2 processs(es) are       |
