@@ -844,20 +844,20 @@ Device Type: GPU
 +------------------------+-------------------------------------------------------------------------+
 | Level                  | 1                                                                       |
 | Result                 | Fail                                                                    |
-| Message                | Aborted - other GPU processes are running                               |
-| Checking Items         | 4                                                                       |
+| Items                  | 4                                                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Software Env Variables | Result: Pass                                                            |
-|                        | Message: Pass - check environment variables.                            |
+|                        | Message: Pass to check environment variables.                           |
 +------------------------+-------------------------------------------------------------------------+
 | Software Library       | Result: Pass                                                            |
-|                        | Message: Pass - check libraries                                         |
+|                        | Message: Pass to check libraries                                        |
 +------------------------+-------------------------------------------------------------------------+
 | Software Permission    | Result: Pass                                                            |
-|                        | Message: Pass - check permission                                        |
+|                        | Message: Pass to heck permission                                        |
 +------------------------+-------------------------------------------------------------------------+
 | Software Exclusive     | Result: Fail                                                            |
-|                        | Message: Fail - exclusive check. 2 processs(es) are using the device.   |
+|                        | Message: Fail to check the software exclusive. 2 processs(es) are       |
+|                        |   using the device.                                                     |
 |                        |   PID: 633972, Command: ./ze_gemm                                       |
 |                        |   PID: 633973, Command: ./ze_gemm                                       |
 +------------------------+-------------------------------------------------------------------------+
