@@ -123,8 +123,7 @@ void DumpRawDataTask::start() {
 
         int metricsCount;
         p_data_logic->getLatestMetrics(p_this->deviceId,nullptr, &metricsCount);
-        std::vector<xpum_device_metrics_t> deviceMetricsList;
-        deviceMetricsList.reserve(metricsCount);
+        std::vector<xpum_device_metrics_t> deviceMetricsList(metricsCount);
         p_data_logic->getLatestMetrics(p_this->deviceId, deviceMetricsList.data(), &metricsCount);
 
         std::map<xpum_stats_type_t,xpum_device_metric_data_t> m;
