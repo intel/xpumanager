@@ -18,6 +18,12 @@ ScheduledThreadPool::ScheduledThreadPool(uint32_t size) : stop(false) {
     XPUM_LOG_TRACE("scheduled thread pool constructed");
 }
 
+ScheduledThreadPool::~ScheduledThreadPool() {
+    XPUM_LOG_TRACE("destructing scheduled thread pool");
+    close();
+    XPUM_LOG_TRACE("scheduled thread pool destructed");
+}
+
 void ScheduledThreadPool::init(uint32_t& size) {
     this->p_taskqueue = std::make_shared<SchedulingQueue>();
 

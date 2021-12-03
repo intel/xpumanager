@@ -9,15 +9,16 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <syslog.h>
 #include <unistd.h>
 
 #include <chrono>
 #include <condition_variable>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <thread>
 
+#include "logger.h"
 #include "xpum_api.h"
 #include "xpum_core_service_impl.h"
 #include "xpum_structs.h"
@@ -42,6 +43,10 @@ int pidFilehandle = -1;
 char* pid_file_name = nullptr;
 char* sock_file_name = nullptr;
 char* dump_folder_name = nullptr;
+char* log_file_name = nullptr;
+std::size_t log_max_size = 10 * 1024 * 1024;
+std::size_t log_max_files = 3;
+std::string log_level = "info";
 
 std::mutex xpummutex;
 std::atomic_bool stop(false);
@@ -53,15 +58,19 @@ std::string XpumCoreServiceImpl::dumpRawDataFileFolder;
 void print_help(const char* app_name) {
     printf("\n Usage: %s [OPTIONS]\n\n", app_name);
     printf("  Options:\n");
-    printf("   -h --help                 Print this help\n");
-    printf("   -p --pid_file  filename   PID file used by daemonized app\n");
-    printf("   -s --socket_file  filename   socket file used by daemonized app\n");
-    printf("   -d --dump_folder  foldername   dump folder used by daemonized app\n");
+    printf("   -h, --help                   Print this help\n");
+    printf("   -p, --pid_file=filename      PID file used by daemonized app\n");
+    printf("   -s, --socket_file=filename   socket file used by daemonized app\n");
+    printf("   -d, --dump_folder=foldername dump folder used by daemonized app\n");
+    printf("   -l, --log_file=filename      logfile to write\n");
+    printf("       --log_max_size=number    max size of log file in MB\n");
+    printf("       --log_max_files=number   max number of log files\n");
+    printf("       --log_level=LEVEL        log level (trace, debug, info, warning, error)\n");
     printf("\n");
 }
 
 void runRPCServer() {
-    syslog(LOG_INFO, "XPUM: start RPC server ...");
+    XPUM_LOG_INFO("XPUM: start RPC server ...");
     string unixSockName;
 
     if (sock_file_name != nullptr) {
@@ -81,7 +90,7 @@ void runRPCServer() {
     builder.RegisterService(&service);
 
     unique_ptr<grpc::Server> server = builder.BuildAndStart();
-    syslog(LOG_INFO, "XPUM: RPC server is listening");
+    XPUM_LOG_INFO("XPUM: RPC server is listening at {}", unixSockName);
 
     passwd* pwd = getpwnam("xpum");
     if (pwd != nullptr) {
@@ -110,11 +119,11 @@ void writePID() {
         char str[32];
         pidFilehandle = open(pid_file_name, O_RDWR | O_CREAT, 0600);
         if (pidFilehandle < 0) {
-            syslog(LOG_ERR, "XPUM: Could not open PID file %s.", pid_file_name);
+            XPUM_LOG_ERROR("XPUM: Could not open PID file {}.", pid_file_name);
             exit(EXIT_FAILURE);
         }
         if (lockf(pidFilehandle, F_TLOCK, 0) < 0) {
-            syslog(LOG_ERR, "XPUM: Could not lock PID file %s.", pid_file_name);
+            XPUM_LOG_ERROR("XPUM: Could not lock PID file %{}", pid_file_name);
             exit(EXIT_FAILURE);
         }
         sprintf(str, "%d\n", getpid());
@@ -130,10 +139,10 @@ void signalHandler(int sig) {
         case SIGKILL:
             stop = true;
             cv.notify_all();
-            syslog(LOG_WARNING, "XPUM: recieved SIGTERM signal %d, service shutdown.", sig);
+            XPUM_LOG_WARN("XPUM: recieved SIGTERM signal {}, service shutdown.", sig);
             break;
         default:
-            syslog(LOG_INFO, "XPUM: recieved unhandled signal %d.", sig);
+            XPUM_LOG_INFO("XPUM: recieved unhandled signal {}.", sig);
             break;
     }
 }
@@ -164,42 +173,100 @@ void createDumpFolder(){
     XpumCoreServiceImpl::dumpRawDataFileFolder = dumpFolder;
 }
 
-} // end namespace xpum::daemon
+bool to_size_t(const char* number, size_t& size) {
+    size_t tmp;
+    std::istringstream iss(number);
+    iss >> tmp;
+    if (iss.fail()) {
+        return false;
+    } else {
+        size = tmp;
+        return true;
+    }
+}
 
-using namespace xpum::daemon;
+bool to_log_level(const char* level, std::string& log_level) {
+    std::string tmp = level;
+    for (auto p = tmp.begin(); tmp.end() != p; ++p)
+        *p = tolower(*p);
+    if (tmp != "trace" && tmp != "debug" && tmp != "info" && tmp != "warn" && tmp != "error")
+        return false;
+    else
+        log_level = tmp;
+    return true;
+}
 
-int main(int argc, char* argv[]) {
+void parse_opts(int argc, char* argv[]) {
+    int lopt;
     static struct option long_options[] = {
         {"socket_file", required_argument, 0, 's'},
         {"help", no_argument, 0, 'h'},
         {"pid_file", required_argument, 0, 'p'},
         {"dump_folder", optional_argument, 0, 'd'},
+        // log options:
+        {"log_file", required_argument, 0, 'l'},
+        {"log_max_size", required_argument, &lopt, 1},
+        {"log_max_files", required_argument, &lopt, 2},
+        {"log_level", required_argument, &lopt, 3},
         {NULL, 0, 0, 0}};
     int value, option_index = 0;
-
-    while ((value = getopt_long(argc, argv, "s:p:d:h", long_options, &option_index)) != -1) {
+    while ((value = getopt_long(argc, argv, "s:p:d:l:h", long_options, &option_index)) != -1) {
         switch (value) {
+            case 0: {
+                bool valid = false;
+                switch (lopt) {
+                    case 1:
+                        valid = to_size_t(optarg, log_max_size);
+                        break;
+                    case 2:
+                        valid = to_size_t(optarg, log_max_files);
+                        break;
+                    case 3:
+                        valid = to_log_level(optarg, log_level);
+                        break;
+                    default:
+                        break;
+                }
+                if (!valid) {
+                    print_help(argv[0]);
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            }
             case 's':
                 sock_file_name = strdup(optarg);
                 break;
             case 'p':
                 pid_file_name = strdup(optarg);
                 break;
+            case 'l':
+                log_file_name = strdup(optarg);
+                break;
             case 'd':
                 dump_folder_name = strdup(optarg);
                 break;
             case 'h':
                 print_help(argv[0]);
-                return EXIT_SUCCESS;
+                exit(EXIT_SUCCESS);
             case '?':
                 print_help(argv[0]);
-                return EXIT_FAILURE;
+                exit(EXIT_FAILURE);
             default:
                 break;
         }
     }
+}
+
+} // end namespace xpum::daemon
+
+using namespace xpum::daemon;
+
+int main(int argc, char* argv[]) {
+    parse_opts(argc, argv);
 
     umask(S_IXUSR | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
+
+    Logger::init(log_file_name, log_max_size, log_max_files, log_level);
 
     writePID();
     createDumpFolder();
@@ -207,22 +274,25 @@ int main(int argc, char* argv[]) {
     signal(SIGKILL, signalHandler);
     signal(SIGTERM, signalHandler);
 
-    syslog(LOG_INFO, "XPUM: Init xpum library");
+    XPUM_LOG_INFO("XPUM: Init xpum library");
     xpum::xpum_result_t res = xpum::xpumInit();
     if (res != xpum::XPUM_OK) {
-        syslog(LOG_ERR, "XPUM: Load xpum library failed! %d", res);
+        XPUM_LOG_ERROR("XPUM: Load xpum library failed! {}", res);
         return 1;
     }
 
-    syslog(LOG_INFO, "XPUM: start XPUM RPC Server.");
+    XPUM_LOG_INFO("XPUM: start XPUM RPC Server.");
     runRPCServer();
 
-    syslog(LOG_INFO, "XPUM: Shut down.");
+    XPUM_LOG_INFO("XPUM: Shut down.");
     res = xpum::xpumShutdown();
-    syslog(LOG_INFO, "XPUM: xpum service is closed.");
+    XPUM_LOG_INFO("XPUM: xpum service is closed.");
     if (pidFilehandle != -1) {
         close(pidFilehandle);
         unlink(pid_file_name);
     }
+
+    Logger::close();
+
     return 0;
 }

@@ -100,6 +100,7 @@ class SchedulingQueue {
 class ScheduledThreadPool {
    public:
     ScheduledThreadPool(uint32_t size);
+    ~ScheduledThreadPool();
 
     template <class F, class... Args>
     std::shared_ptr<ScheduledThreadPoolTask> scheduleAtFixedRate(uint64_t delay, uint32_t interval, F &&f, Args &&... args) {
