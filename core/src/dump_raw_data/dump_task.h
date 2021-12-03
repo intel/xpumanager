@@ -29,7 +29,7 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
                     xpum_device_id_t deviceId,
                     xpum_device_tile_id_t tileId,
                     std::string dumpFilePath,
-                    std::shared_ptr<ScheduledThreadPool>& pThreadPool);
+                    std::shared_ptr<ScheduledThreadPool> pThreadPool);
 
     ~DumpRawDataTask();
 

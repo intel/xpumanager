@@ -292,7 +292,7 @@ int main(int argc, char* argv[]) {
         unlink(pid_file_name);
     }
 
-    Logger::close();
+    Logger::flush();
 
     return 0;
 }

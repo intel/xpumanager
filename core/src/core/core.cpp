@@ -20,13 +20,14 @@ Core::Core()
       p_health_manager(nullptr),
       p_diagnostic_manager(nullptr),
       p_policy_manager(nullptr),
+      p_dump_raw_data_manager(nullptr),
       initialized(false) {
     Logger::init();
     XPUM_LOG_DEBUG("core()");
 }
 
 Core::~Core() {
-    // XPUM_LOG_DEBUG("~core()");
+    XPUM_LOG_DEBUG("~core()");
     close();
 }
 

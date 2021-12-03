@@ -29,6 +29,11 @@ class Logger {
         spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%L%$] [%P-%t] %v");
         spdlog::cfg::load_env_levels();
     }
+
+    static void flush(){
+        spdlog::default_logger()->flush();
+    }
+    
     static void close() {
         spdlog::shutdown();
     }
