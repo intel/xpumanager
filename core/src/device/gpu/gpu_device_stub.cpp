@@ -2158,6 +2158,25 @@ bool GPUDeviceStub::resetDevice(const zes_device_handle_t& device, ze_bool_t for
     }
 }
 
+void GPUDeviceStub::getDeviceProcessState(const zes_device_handle_t& device, std::vector<device_process>& processes) {
+    if (device == nullptr) {
+        return;
+    }
+    uint32_t process_count = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+       std::vector<zes_process_state_t> procs(process_count);
+       XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, procs.data()));
+       for (auto& proc : procs) {
+        processes.push_back (*( new device_process(proc.processId,proc.memSize, proc.sharedSize,proc.engines)));
+       }
+    } else {
+       return;
+    }
+}
+
+
 void GPUDeviceStub::getStandbys(const zes_device_handle_t& device, std::vector<Standby>& standbys) {
     if (device == nullptr) {
         return;

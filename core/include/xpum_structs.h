@@ -531,6 +531,13 @@ enum xpum_scheduler_mode_t {
     XPUM_MODE_FORCE_UINT32 = 0x7fffffff
 };
 
+struct xpum_device_process_t {
+    uint32_t processId;
+    uint64_t memSize;
+    uint64_t sharedSize;
+    xpum_engine_type_flags_t engine;
+};
+
 struct xpum_frequency_range_t {
     xpum_frequency_type_t type;
     uint32_t subdevice_Id;

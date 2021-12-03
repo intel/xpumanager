@@ -1325,4 +1325,53 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceFrequencyRange(int deviceId, 
     }
     return json;
 }
+
+std::unique_ptr<nlohmann::json> CoreStub::resetDevice(int deviceId, bool force){
+   assert(this->stub != nullptr);
+   auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+   grpc::ClientContext context;
+   ResetDeviceRequest request;
+   ResetDeviceResponse response;
+
+   request.set_deviceid(deviceId);
+   request.set_force(force);
+   grpc::Status status = stub->resetDevice(&context, request, &response);
+   if (status.ok()) {
+       if (response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+        } else {
+            (*json)["error"] = response.errormsg();
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+   }
+   return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getDeviceProcessState(int deviceId){
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceId request;
+    DeviceProcessStateResponse response;
+
+    request.set_id(deviceId);
+    grpc::Status status = stub->getDeviceProcessState(&context, request, &response);
+    if (status.ok()) {
+        std::vector<nlohmann::json> deviceProcessList;
+        for (uint i{0}; i < response.count(); ++i) {
+            auto proc = nlohmann::json();
+            proc["process_id"] = response.processlist(i).processid();
+            proc["mem_size"] = response.processlist(i).memsize();
+            proc["share_mem_size"] = response.processlist(i).sharedsize();
+            proc["engine"] = response.processlist(i).engine();
+            deviceProcessList.push_back(proc);
+        }
+        (*json)["device_process_list"] = deviceProcessList;
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;
+}
+
 } // end namespace xpum::cli
