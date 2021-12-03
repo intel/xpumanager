@@ -5,7 +5,9 @@ from flask import Flask
 from marshmallow import Schema, fields
 import json
 
-from xpum_rest_main import app
+from xpum_rest_main import main
+
+app = main()
 
 
 # Create an APISpec
