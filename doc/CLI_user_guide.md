@@ -308,7 +308,7 @@ List the GPU device aggregrated statistics that are collected by XPU Manager
 | Start Time                   | 2021-11-02 14:44:25.000                                           |
 | End Time                     | 2021-11-02 14:47:49.021                                           |
 | Elapsed Time (Second)        | 204                                                               |
-| Energy Consumed (J)          | 18264.05                                                          |
+| Energy Consumed (J)          | Tile 0: 18264.05, Tile 1: 18264.06                                |
 | GPU Utilization (%)          | Tile 0: 0, Tile 1: 0                                              |
 | EU Array Active (%)          | Tile 0: 0, Tile 1: 0                                              |
 | EU Array Stall (%)           | Tile 0: 0, Tile 1: 0                                              |
@@ -320,7 +320,8 @@ List the GPU device aggregrated statistics that are collected by XPU Manager
 | Cache Errors Correctable     | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
 | Cache Errors Uncorrectable   | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Power (W)                | avg: 88, min: 88, max: 90， current: 89                           |
+| GPU Power (W)                | Tile 0: avg: 88, min: 88, max: 90， current: 89                   |
+|                              | Tile 1: avg: 88, min: 88, max: 90， current: 89                   |
 +------------------------------+-------------------------------------------------------------------+
 | GPU Frequency (MHz)          | Tile 0: avg: 1400, min: 1400, max: 1400, current: 1400            |
 |                              | Tile 1: avg: 300, min: 300, max: 300, current: 300                |
@@ -569,7 +570,7 @@ Get and change the GPU settings.
 Usage: xpumcli config [Options]
   xpumcli config -d [deviceId]
   xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]
-  xpumcli config -d [deviceId] --powerlimit [powerValue,averageWindow]
+  xpumcli config -d [deviceId] -t [tileId] --powerlimit [powerValue,averageWindow]
   xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
   xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
   xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
@@ -586,7 +587,7 @@ Options:
   -t,--tile                   The tile ID
 
   --frequencyrange            GPU tile-level core frequency range.
-  --powerlimit                GPU-level power limit. 
+  --powerlimit                Tile-level power limit. 
   --standby                   Tile-level standby mode. Valid options: "default"; "never".
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us);
                                 "exclusive".
@@ -603,12 +604,12 @@ show the GPU settings
 +-------------+-------------------+----------------------------------------------------------------+
 | Device Type | Device Id/Tile Id | Configuration                                                  |
 +-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0                 | Power Limit (w): 300.0                                         |
+| GPU         | 0/0               | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 0 to 500                                        |
 |             |                   | Power Average Window (ms): 1                                   |
 |             |                   |   Valid Range: 1 to 60000                                      |
-+-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
+|             |                   |                                                                |
+|             |                   | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
 |             |                   |   Valid Opitons: 300, 350, 400, 450, 500,550, 600, 650, 700    |
 |             |                   |       750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200    |
@@ -632,7 +633,12 @@ show the GPU settings
 |             |                   |   Beaconing On: 0,1,2,3                                        |
 |             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0/1               | GPU Min Frequency(MHz): 300.0                                  |
+| GPU         | 0/1               | Power Limit (w): 300.0                                         |
+|             |                   |   Valid Range: 0 to 500                                        |
+|             |                   | Power Average Window (ms): 1                                   |
+|             |                   |   Valid Range: 1 to 60000                                      |
+|             |                   |                                                                |
+|             |                   | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
 |             |                   |   Valid Options: 300, 350, 400, 450, 500,550, 600, 650, 700    |
 |             |                   |     750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200      |
@@ -665,8 +671,8 @@ Succeed to change the core frequency range on GPU 0 tile 0.
  
 Change the GPU power limit.
 ```
-./xpumcli config -d 0 --powerlimit 299,1000
-Succeed to set the power limit on GPU 0.
+./xpumcli config -d 0 -t 0 --powerlimit 299,1000
+Succeed to set the power limit on GPU 0 tile 0.
 ```
  
 Change the GPU tile standby mode.
@@ -853,7 +859,7 @@ Device Type: GPU
 |                        | Message: Pass to check libraries                                        |
 +------------------------+-------------------------------------------------------------------------+
 | Software Permission    | Result: Pass                                                            |
-|                        | Message: Pass to check permission                                        |
+|                        | Message: Pass to check permission                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Software Exclusive     | Result: Fail                                                            |
 |                        | Message: Fail to check the software exclusive. 2 processs(es) are       |
