@@ -48,7 +48,11 @@ void Configuration::enabledMetricsFromOSEnv() {
         }
     } else {
         for (int metric = 0; metric < (int)MeasurementType::METRIC_MAX; metric++) {
-            enabled_metrics.push_back((MeasurementType)metric);
+            if (metric != (int)MeasurementType::METRIC_EU_ACTIVE 
+            && metric != (int)MeasurementType::METRIC_EU_IDLE 
+            && metric != (int)MeasurementType::METRIC_EU_STALL) {
+                enabled_metrics.push_back((MeasurementType)metric);
+            }
         }
     }
 }
