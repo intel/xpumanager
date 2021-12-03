@@ -15,7 +15,7 @@ struct ComletStatisticsOptions {
 
 class ComletStatistics : public ComletBase {
    public:
-    ComletStatistics() : ComletBase("stats", "Display device statistics") {}
+    ComletStatistics() : ComletBase("stats", "\nList the GPU aggregrated statistics since last execution of this command or XPU Manager daemon is started.\n") {}
     virtual ~ComletStatistics() {}
 
     virtual void setupOptions() override;

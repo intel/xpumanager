@@ -15,8 +15,9 @@ void ComletDump::setupOptions() {
     auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query");
 
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
+    metricsListOpt->delimiter(',');
     auto timeIntervalOpt = addOption("-i", this->opts->timeInterval, "Display the device data at seconds interval. Its default value is 1 second if not specified.");
-    auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "The times to dump the device data. The dumping will not be ended if not specified.");
+    auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "The times to dump the device data. The dumping will not be ended if not specified.\n");
 
     auto dumpRawDataFlag = addFlag("--rawdata", this->opts->rawData, "Dump the required raw statistics to a file in background.");
     auto startDumpFlag = addFlag("--start", this->opts->startDumpTask, "Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.");

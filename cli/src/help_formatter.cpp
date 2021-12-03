@@ -12,18 +12,18 @@ std::string HelpFormatter::make_option_opts(const CLI::Option *) const {
 std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) const {
     if (app->get_name().compare("group") == 0) {
         return "\n"
-            "Usage: xpumcli group [Options] \n"
-            "   xpumcli group -c -n [groupName] \n"
-            "   xpumcli group -a -g [groupId] -d [deviceIds] \n"
-            "   xpumcli group -r -d [deviceIds] -g [groupId] \n"
-            "   xpumcli group -D -g [groupId] \n"
-            "   xpumcli group -l \n"
-            "   xpumcli group -l -g [groupId] \n";
-    } else if(app->get_name().compare("topology") == 0) {
+               "Usage: xpumcli group [Options] \n"
+               "   xpumcli group -c -n [groupName] \n"
+               "   xpumcli group -a -g [groupId] -d [deviceIds] \n"
+               "   xpumcli group -r -d [deviceIds] -g [groupId] \n"
+               "   xpumcli group -D -g [groupId] \n"
+               "   xpumcli group -l \n"
+               "   xpumcli group -l -g [groupId] \n";
+    } else if (app->get_name().compare("topology") == 0) {
         return "\n"
-            "Usage: xpumcli topology [Options] \n"
-            "   xpumcli topology -d [deviceId] \n"
-            "   xpumcli topology -d [deviceId] -j \n";
+               "Usage: xpumcli topology [Options] \n"
+               "   xpumcli topology -d [deviceId] \n"
+               "   xpumcli topology -d [deviceId] -j \n";
     } else if (app->get_name().compare("health") == 0) {
         return "\nUsage: xpumcli health [Options] \n"
                "   xpumcli health -l \n"
@@ -35,6 +35,18 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
         return "\nUsage: xpumcli diag [Options] \n"
                "   xpumcli diag -d [deviceId] -l [level] \n"
                "   xpumcli diag -g [groupId] -l [level] \n";
+    } else if (app->get_name().compare("dump") == 0) {
+        return "\nUsage: xpumcli dump [Options]\n"
+               "  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
+               "\n"
+               "  xpumcli dump --rawdata --start -d [deviceId] -t [deviceTileId] -m [metricsIds]\n"
+               "  xpumcli dump --rawdata --list\n"
+               "  xpumcli dump --rawdata --stop [taskId]\n";
+    } else if (app->get_name().compare("stats") == 0) {
+        return "\nUsage: xpumcli stats [Options]\n"
+               "  xpumcli stats\n"
+               "  xpumcli stats -d [deviceId]\n"
+               "  xpumcli stats -g [groupId]\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }
