@@ -26,7 +26,7 @@ Core::Core()
 }
 
 Core::~Core() {
-    XPUM_LOG_DEBUG("~core()");
+    // XPUM_LOG_DEBUG("~core()");
     close();
 }
 
@@ -127,6 +127,8 @@ void Core::close() {
     if (!initialized) {
         return;
     }
+
+    p_dump_raw_data_manager = nullptr;
 
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_policy_manager),
           "Failed to close policy manager");

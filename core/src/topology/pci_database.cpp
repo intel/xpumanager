@@ -17,7 +17,6 @@ PciDatabase::PciDatabase() {
 }
 
 PciDatabase::~PciDatabase() {
-    XPUM_LOG_DEBUG("~PciDatabase()");
     devices.clear();
 }
 

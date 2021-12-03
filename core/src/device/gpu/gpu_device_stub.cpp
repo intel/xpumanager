@@ -46,7 +46,7 @@ GPUDeviceStub::GPUDeviceStub() : initialized(false) {
 }
 
 GPUDeviceStub::~GPUDeviceStub() {
-    XPUM_LOG_DEBUG("~GPUDeviceStub()");
+    // XPUM_LOG_DEBUG("~GPUDeviceStub()");
 }
 
 GPUDeviceStub& GPUDeviceStub::instance() {
