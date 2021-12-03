@@ -44,10 +44,7 @@ void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_
             if (pre_data != p_preData->getData().end()) {
                 auto pre_extended = pre_data->second.getExtendedDatas()->find(extended_data->first);
                 if (pre_extended != pre_data->second.getExtendedDatas()->end()) {
-                    uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 * (extended_data->second.active_time - pre_extended->second.active_time) / (extended_data->second.timestamp - pre_extended->second.timestamp);
-                    if (val > Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
-                        val =  Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
-                    }
+                    uint64_t val =  (extended_data->second.active_time - pre_extended->second.active_time) > 0 ? Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 : 0;
                     switch (extended_data->second.type) {
                         case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
                             compute_utilizations[(extended_data->second.on_subdevice ? extended_data->second.subdevice_id : 0)].push_back(val);
@@ -82,13 +79,27 @@ void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_
         uint32_t i = 0;
         uint32_t num_subdevice = p_data->getData()[iter->first].getNumSubdevices();
         do {
-            utilizations[i].push_back(getAverage(compute_utilizations[i]));
-            utilizations[i].push_back(getAverage(render_utilizations[i]));
-            utilizations[i].push_back(getAverage(decode_utilizations[i]));
-            utilizations[i].push_back(getAverage(encode_utilizations[i]));
-            utilizations[i].push_back(getAverage(copy_utilizations[i]));
-            utilizations[i].push_back(getAverage(media_enhancement_utilizations[i]));
-            utilizations[i].push_back(getAverage(three_d_utilizations[i]));
+            if (compute_utilizations.size() > 0) {
+                utilizations[i].push_back(*std::max_element(compute_utilizations[i].begin(), compute_utilizations[i].end()));
+            }
+            if (render_utilizations.size() > 0) {
+                utilizations[i].push_back(*std::max_element(render_utilizations[i].begin(), render_utilizations[i].end()));
+            }
+            if (decode_utilizations.size() > 0) {
+                utilizations[i].push_back(*std::max_element(decode_utilizations[i].begin(), decode_utilizations[i].end()));
+            }
+            if (encode_utilizations.size() > 0) {
+                utilizations[i].push_back(*std::max_element(encode_utilizations[i].begin(), encode_utilizations[i].end()));
+            }
+            if (copy_utilizations.size() > 0) {
+                utilizations[i].push_back(*std::max_element(copy_utilizations[i].begin(), copy_utilizations[i].end()));
+            }
+            if (media_enhancement_utilizations.size() > 0) {
+                utilizations[i].push_back(*std::max_element(media_enhancement_utilizations[i].begin(), media_enhancement_utilizations[i].end()));
+            }
+            if (three_d_utilizations.size() > 0) {
+                utilizations[i].push_back(*std::max_element(three_d_utilizations[i].begin(), three_d_utilizations[i].end()));
+            }
             i++;
         } while (i < num_subdevice);
         if (num_subdevice != 0) {
