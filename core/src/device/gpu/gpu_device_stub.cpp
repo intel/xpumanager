@@ -1050,7 +1050,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottle(const zes
     std::map<std::string, ze_result_t> exception_msgs;
     bool data_acquired = false;
     uint32_t freq_count = 0;
-    int sampling_period = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 0.8;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
@@ -1061,18 +1060,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottle(const zes
             zes_freq_properties_t props;
             XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                zes_freq_throttle_time_t freq_throttle_1, freq_throttle_2;
-                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle_1));
+                zes_freq_throttle_time_t freq_throttle;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle));
                 if (res == ZE_RESULT_SUCCESS) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
-                    XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle_2));
-                    if (res == ZE_RESULT_SUCCESS) {
-                        uint64_t data = (freq_throttle_2.throttleTime - freq_throttle_1.throttleTime) / (freq_throttle_2.timestamp - freq_throttle_1.timestamp);
-                        props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
-                        data_acquired = true;
-                    } else {
-                        exception_msgs["zesFrequencyGetThrottleTime"] = res;
-                    }
+                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, Configuration::DEFAULT_MEASUREMENT_DATA_SCALE*freq_throttle.throttleTime) : ret->setRawData(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE*freq_throttle.throttleTime);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, freq_throttle.timestamp) : ret->setRawTimestamp(freq_throttle.timestamp);
+                    ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                    data_acquired = true;
                 } else {
                     exception_msgs["zesFrequencyGetThrottleTime"] = res;
                 }

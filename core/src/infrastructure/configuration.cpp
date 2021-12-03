@@ -7,6 +7,7 @@
 namespace xpum {
 
 int Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = 1000;
+int Configuration::POWER_MONITOR_INTERNAL_PERIOD = 80;
 int Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD = 80;
 int Configuration::DEVICE_THREAD_POOL_SIZE = 32;
 int Configuration::DATA_HANDLER_CACHE_TIME_LIMIT = 60000;
