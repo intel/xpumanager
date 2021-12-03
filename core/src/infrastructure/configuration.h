@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <vector>
+#include "measurement_type.h"
 
 namespace xpum {
 
@@ -28,9 +30,20 @@ class Configuration {
     static std::string MEDIA_CODER_TOOLS_DECODE_FILE;
     static std::string MEDIA_CODER_TOOLS_ENCODE_FILE;
     static uint32_t DEFAULT_MEASUREMENT_DATA_SCALE;
+
    public:
     static void init() {
+        enabledMetricsFromOSEnv();
     }
+
+    static void enabledMetricsFromOSEnv();
+
+    static std::vector<MeasurementType>& getEnabledMetrics() {
+        return enabled_metrics;
+    }
+
+   private:
+    static std::vector<MeasurementType> enabled_metrics;
 };
 
 } // end namespace xpum

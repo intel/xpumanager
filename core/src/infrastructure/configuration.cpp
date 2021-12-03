@@ -1,4 +1,8 @@
 #include "configuration.h"
+#include <sstream>
+#include "infrastructure/utility.h"
+#include "infrastructure/logger.h"
+#include <cstdlib>
 
 namespace xpum {
 
@@ -25,4 +29,28 @@ std::string Configuration::MEDIA_CODER_TOOLS_PATH = "/usr/share/mfx/samples/";
 std::string Configuration::MEDIA_CODER_TOOLS_DECODE_FILE = "test_stream.264";
 std::string Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE = "test_stream_176x96.yuv";
 uint32_t Configuration::DEFAULT_MEASUREMENT_DATA_SCALE = 100;
+std::vector<MeasurementType> Configuration::enabled_metrics;
+
+void Configuration::enabledMetricsFromOSEnv() {
+    char* xpum_metrics_env;
+    xpum_metrics_env = getenv("XPUM_METRICS");
+    if (xpum_metrics_env != NULL) {
+        std::string env_str(xpum_metrics_env);
+        XPUM_LOG_INFO("The environment variable XPUM_METRICS is detected");
+        std::stringstream env_ss(env_str);
+        while (env_ss.good()) {
+            std::string substr;
+            getline(env_ss, substr, ',');
+            xpum_stats_type_t type = (xpum_stats_type_t)std::stoi(substr);
+            if ((int)type >= 0 && (int)type < MeasurementType::METRIC_MAX) {
+                enabled_metrics.push_back(Utility::measurementTypeFromXpumStatsType(type));
+            }
+        }
+    } else {
+        for (int metric = 0; metric < (int)MeasurementType::METRIC_MAX; metric++) {
+            enabled_metrics.push_back((MeasurementType)metric);
+        }
+    }
+}
+
 } // end namespace xpum

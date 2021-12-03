@@ -35,5 +35,7 @@ enum class DeviceCapability : int {
     METRIC_REQUEST_FREQUENCY,
     METRIC_MEMORY_TEMPERATURE,
     METRIC_FREQUENCY_THROTTLE,
+
+    DEVICE_CAPABILITY_MAX,
 };
 } // end namespace xpum

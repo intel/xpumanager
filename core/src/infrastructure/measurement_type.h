@@ -38,6 +38,8 @@ enum MeasurementType {
     METRIC_REQUEST_FREQUENCY,
     METRIC_MEMORY_TEMPERATURE,
     METRIC_FREQUENCY_THROTTLE,
+    
+    METRIC_MAX,
 };
 
 } // end namespace xpum
