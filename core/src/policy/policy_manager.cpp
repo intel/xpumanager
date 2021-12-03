@@ -70,7 +70,7 @@ PolicyManager::PolicyManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
 }
 
 PolicyManager::~PolicyManager() {
-    XPUM_LOG_DEBUG("~PolicyManager()");
+    // XPUM_LOG_DEBUG("~PolicyManager()");
 }
 
 void PolicyManager::init() {
