@@ -1,3 +1,5 @@
+#pragma once
+
 #include "metric_statistics_data_handler.h"
 
 namespace xpum {

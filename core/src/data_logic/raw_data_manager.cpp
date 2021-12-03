@@ -58,7 +58,7 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_REQUEST_FREQUENCY]->init();
 
     data_handlers[MeasurementType::METRIC_POWER] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_POWER, p_persistency);
+        std::make_shared<PowerDataHandler>(MeasurementType::METRIC_POWER, p_persistency);
     data_handlers[MeasurementType::METRIC_POWER]->init();
 
     data_handlers[MeasurementType::METRIC_ENERGY] =

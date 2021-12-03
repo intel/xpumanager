@@ -1,3 +1,5 @@
+#pragma once
+
 #include "time_weighted_average_data_handler.h"
 
 namespace xpum {

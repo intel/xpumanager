@@ -1,8 +1,8 @@
-#include "statistics_data_handler.h"
+#include "time_weighted_average_data_handler.h"
 
 namespace xpum {
 
-class PowerDataHandler : public StatisticsDataHandler {
+class PowerDataHandler : public TimeWeightedAverageDataHandler {
    public:
     PowerDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 

@@ -898,19 +898,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
             zes_power_properties_t props;
             XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                zes_power_energy_counter_t snap1, snap2;
-                XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap1));
+                zes_power_energy_counter_t snap;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap));
                 if (res == ZE_RESULT_SUCCESS) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
-                    XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap2));
-                    if (res == ZE_RESULT_SUCCESS && (snap2.timestamp - snap1.timestamp) != 0) {
-                        uint64_t data = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
-                        props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
-                        ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-                        data_acquired = true;
-                    } else {
-                        exception_msgs["zesPowerGetEnergyCounter"] = res;
-                    }
+                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, Configuration::DEFAULT_MEASUREMENT_DATA_SCALE*snap.energy) : ret->setRawData(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE*snap.energy);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, snap.timestamp) : ret->setRawTimestamp(snap.timestamp);
+                    ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                    data_acquired = true;
                 } else {
                     exception_msgs["zesPowerGetEnergyCounter"] = res;
                 }
