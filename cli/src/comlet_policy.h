@@ -11,7 +11,7 @@ namespace xpum::cli {
 
 struct ComletPolicyOptions {
     bool listAll = false;
-    bool listAllPolicyType = false;
+    bool listalltypes = false;
     bool create = false;
     bool remove = false;
     int deviceId = -1;
@@ -20,8 +20,8 @@ struct ComletPolicyOptions {
     std::string policyConditionType = "";
     std::string policyActionType = "";
     int threshold = -2;
-    double throttleDeviceFrequencyMin=-200000;
-    double throttleDeviceFrequencyMax=-200000;
+    double throttlefrequencymin=-200000;
+    double throttlefrequencymax=-200000;
 };
 
 class ComletPolicy : public ComletBase {

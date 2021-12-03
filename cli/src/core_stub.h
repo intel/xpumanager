@@ -68,9 +68,11 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getAllPolicyConditionType();
     std::unique_ptr<nlohmann::json> getAllPolicyActionType();
     std::unique_ptr<nlohmann::json> getAllPolicy();
+    std::unique_ptr<nlohmann::json> getPolicyById(bool isDevice, int id);
 	std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie,int id);
     std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie,int id,XpumPolicyData &policy);
-
+    bool isCliSupportedPolicyType(XpumPolicyType type);
+	
     std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath );
 
     std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<int> metricsTypeList);
