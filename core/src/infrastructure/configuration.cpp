@@ -37,10 +37,8 @@ void Configuration::initEnabledMetrics() {
             auto pos_s = substr.find('-');
             if (pos_s != 0 && pos_s != std::string::npos && pos_s + 1 < substr.length()) {
                 // support range in form of "a-b"
-                std::string s = substr.substr(0, pos_s);
-                std::string e = substr.substr(pos_s + 1);
-                int start_type_id = std::stoi(s);
-                int end_type_id = std::stoi(e);
+                int start_type_id = std::stoi(substr.substr(0, pos_s));
+                int end_type_id = std::stoi(substr.substr(pos_s + 1));
                 while (start_type_id <= end_type_id) {
                     xpum_stats_type_t type = (xpum_stats_type_t)start_type_id;
                     if ((int)type >= 0 && (int)type < MeasurementType::METRIC_MAX) {
