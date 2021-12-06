@@ -45,7 +45,7 @@ void MonitorManager::close() {
 }
 
 void MonitorManager::createMonitorTasks() {
-    std::vector<MeasurementType> metric_types = Configuration::getEnabledMetrics();
+    auto metric_types = Configuration::getEnabledMetrics();
     for (auto& type : metric_types) {
         tasks.emplace_back(std::make_shared<MonitorTask>(Utility::capabilityFromMeasurementType(type), Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
     }

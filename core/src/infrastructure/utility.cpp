@@ -124,7 +124,7 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
     }
 }
 
-DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measurementType) {
+DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& measurementType) {
     switch (measurementType) {
         case MeasurementType::POWER:
             return DeviceCapability::POWER;

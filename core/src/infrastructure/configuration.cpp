@@ -1,8 +1,11 @@
 #include "configuration.h"
-#include <sstream>
-#include "infrastructure/utility.h"
-#include "infrastructure/logger.h"
+
 #include <cstdlib>
+#include <sstream>
+
+#include "infrastructure/logger.h"
+#include "infrastructure/utility.h"
+
 
 namespace xpum {
 
@@ -19,7 +22,7 @@ uint32_t Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX = 16;
 int Configuration::EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD = 50;
 int Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD = 20000000;
 uint32_t Configuration::DEFAULT_MEASUREMENT_DATA_SCALE = 100;
-std::vector<MeasurementType> Configuration::enabled_metrics;
+std::set<MeasurementType> Configuration::enabled_metrics;
 
 void Configuration::initEnabledMetrics() {
     char* xpum_metrics_env;
@@ -31,17 +34,33 @@ void Configuration::initEnabledMetrics() {
         while (env_ss.good()) {
             std::string substr;
             getline(env_ss, substr, ',');
-            xpum_stats_type_t type = (xpum_stats_type_t)std::stoi(substr);
-            if ((int)type >= 0 && (int)type < MeasurementType::METRIC_MAX) {
-                enabled_metrics.push_back(Utility::measurementTypeFromXpumStatsType(type));
+            auto pos_s = substr.find('-');
+            if (pos_s != 0 && pos_s != std::string::npos && pos_s + 1 < substr.length()) {
+                // support range in form of "a-b"
+                std::string s = substr.substr(0, pos_s);
+                std::string e = substr.substr(pos_s + 1);
+                int start_type_id = std::stoi(s);
+                int end_type_id = std::stoi(e);
+                while (start_type_id <= end_type_id) {
+                    xpum_stats_type_t type = (xpum_stats_type_t)start_type_id;
+                    if ((int)type >= 0 && (int)type < MeasurementType::METRIC_MAX) {
+                        enabled_metrics.emplace(Utility::measurementTypeFromXpumStatsType(type));
+                    } else {
+                        break;
+                    }
+                    start_type_id++;
+                }
+            } else {
+                xpum_stats_type_t type = (xpum_stats_type_t)std::stoi(substr);
+                if ((int)type >= 0 && (int)type < MeasurementType::METRIC_MAX) {
+                    enabled_metrics.emplace(Utility::measurementTypeFromXpumStatsType(type));
+                }
             }
         }
     } else {
         for (int metric = 0; metric < (int)MeasurementType::METRIC_MAX; metric++) {
-            if (metric != (int)MeasurementType::METRIC_EU_ACTIVE 
-            && metric != (int)MeasurementType::METRIC_EU_IDLE 
-            && metric != (int)MeasurementType::METRIC_EU_STALL) {
-                enabled_metrics.push_back((MeasurementType)metric);
+            if (metric != (int)MeasurementType::METRIC_EU_ACTIVE && metric != (int)MeasurementType::METRIC_EU_IDLE && metric != (int)MeasurementType::METRIC_EU_STALL) {
+                enabled_metrics.emplace((MeasurementType)metric);
             }
         }
     }

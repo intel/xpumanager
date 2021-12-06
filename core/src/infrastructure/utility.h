@@ -26,7 +26,7 @@ class Utility {
 
     static MeasurementType measurementTypeFromCapability(DeviceCapability& capability);
 
-    static DeviceCapability capabilityFromMeasurementType(MeasurementType& measurementType);
+    static DeviceCapability capabilityFromMeasurementType(const MeasurementType& measurementType);
 
     static xpum_stats_type_t xpumStatsTypeFromMeasurementType(MeasurementType& MeasurementType);
 
