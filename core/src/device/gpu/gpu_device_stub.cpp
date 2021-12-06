@@ -310,7 +310,7 @@ static std::string getPciSlot(const std::string& bdf_regex) {
     std::string res;
     std::string cmd_find_device_link = "find /sys/devices -name \"*" + bdf_regex + "\"";
     SystemCommandResult sc_res = execCommand(cmd_find_device_link);
-    SystemCommandResult ss_res = execCommand("dmidecode -t 9");
+    SystemCommandResult ss_res = execCommand("dmidecode -t 9 2>/dev/null");
 
     if (sc_res.exitStatus() == 0 && ss_res.exitStatus() == 0) {
         std::deque<std::string> parentBridges = getParentPciBridges(sc_res.output());
