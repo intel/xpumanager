@@ -236,7 +236,7 @@ void parse_opts(int argc, char* argv[]) {
         {"socket_file", required_argument, 0, 's'},
         {"help", no_argument, 0, 'h'},
         {"pid_file", required_argument, 0, 'p'},
-        {"dump_folder", optional_argument, 0, 'd'},
+        {"dump_folder", required_argument, 0, 'd'},
         {"enable_metrics", required_argument, 0, 'm'},
         // log options:
         {"log_file", required_argument, 0, 'l'},
