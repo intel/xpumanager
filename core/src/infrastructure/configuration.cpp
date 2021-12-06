@@ -23,7 +23,7 @@ std::vector<MeasurementType> Configuration::enabled_metrics;
 
 void Configuration::initEnabledMetrics() {
     char* xpum_metrics_env;
-    xpum_metrics_env = getenv("XPUM_METRICS");
+    xpum_metrics_env = std::getenv("XPUM_METRICS");
     if (xpum_metrics_env != NULL) {
         std::string env_str(xpum_metrics_env);
         XPUM_LOG_INFO("The environment variable XPUM_METRICS is detected: {}", env_str);

@@ -319,7 +319,7 @@ void DiagnosticManager::doDeviceDiagnosticEnvironmentVariables(std::shared_ptr<x
     bool find_env_varibles = false;
     for (auto it = check_env_varibles.begin(); it != check_env_varibles.end(); it++) {
         std::string check_env_var = *it;
-        if (getenv(check_env_var.c_str()) != nullptr) {
+        if (std::getenv(check_env_var.c_str()) != nullptr) {
             find_env_varibles = true;
             details = check_env_var;
             break;

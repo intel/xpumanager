@@ -7,13 +7,13 @@
 #include <grpc/grpc.h>
 #include <pwd.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include <chrono>
 #include <condition_variable>
+#include <cstdlib>
 #include <memory>
 #include <sstream>
 #include <string>
