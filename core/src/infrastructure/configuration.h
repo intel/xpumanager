@@ -30,10 +30,10 @@ class Configuration {
 
    public:
     static void init() {
-        enabledMetricsFromOSEnv();
+        initEnabledMetrics();
     }
 
-    static void enabledMetricsFromOSEnv();
+    static void initEnabledMetrics();
 
     static std::vector<MeasurementType>& getEnabledMetrics() {
         return enabled_metrics;

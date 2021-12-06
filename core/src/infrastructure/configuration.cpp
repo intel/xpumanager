@@ -28,7 +28,7 @@ std::string Configuration::MEDIA_CODER_TOOLS_ENCODE_FILE = "test_stream_176x96.y
 uint32_t Configuration::DEFAULT_MEASUREMENT_DATA_SCALE = 100;
 std::vector<MeasurementType> Configuration::enabled_metrics;
 
-void Configuration::enabledMetricsFromOSEnv() {
+void Configuration::initEnabledMetrics() {
     char* xpum_metrics_env;
     xpum_metrics_env = getenv("XPUM_METRICS");
     if (xpum_metrics_env != NULL) {
