@@ -236,13 +236,13 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             }
         }
 
-        // if (p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
-        //     p_task_info->finished = true;
-        //     p_task_info->endTime = Utility::getCurrentMillisecond();
-        //     updateMessage(p_task_info->message, std::string("Aborted! Other GPU processes are running"));
-        //     XPUM_LOG_ERROR("aborted! other GPU processes are running");
-        //     return;
-        // }
+        if (p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
+            p_task_info->finished = true;
+            p_task_info->endTime = Utility::getCurrentMillisecond();
+            updateMessage(p_task_info->message, std::string("Aborted! Other GPU processes are running"));
+            XPUM_LOG_ERROR("aborted! other GPU processes are running");
+            return;
+        }
 
         if (p_task_info->level >= xpum_diag_level_t::XPUM_DIAG_LEVEL_2) {
             XPUM_LOG_INFO("start hardware sysmam diagnostic");
