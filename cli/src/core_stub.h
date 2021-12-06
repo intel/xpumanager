@@ -35,7 +35,7 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId);
     std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level);
     std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId);
-    std::string diagnosticResultEnumToString(DiagnosticsComponentInfo_Result result);
+    std::string diagnosticResultEnumToString(DiagnosticsTaskResult result);
     std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type);
 
     std::unique_ptr<nlohmann::json> getAllHealth();
