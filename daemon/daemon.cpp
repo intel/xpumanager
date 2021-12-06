@@ -7,6 +7,7 @@
 #include <grpc/grpc.h>
 #include <pwd.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -44,6 +45,7 @@ char* pid_file_name = nullptr;
 char* sock_file_name = nullptr;
 char* dump_folder_name = nullptr;
 char* log_file_name = nullptr;
+char* enabled_metrics = nullptr;
 std::size_t log_max_size = 10 * 1024 * 1024;
 std::size_t log_max_files = 3;
 std::string log_level = "info";
@@ -58,14 +60,46 @@ std::string XpumCoreServiceImpl::dumpRawDataFileFolder;
 void print_help(const char* app_name) {
     printf("\n Usage: %s [OPTIONS]\n\n", app_name);
     printf("  Options:\n");
-    printf("   -h, --help                   Print this help\n");
-    printf("   -p, --pid_file=filename      PID file used by daemonized app\n");
-    printf("   -s, --socket_file=filename   socket file used by daemonized app\n");
-    printf("   -d, --dump_folder=foldername dump folder used by daemonized app\n");
-    printf("   -l, --log_file=filename      logfile to write\n");
-    printf("       --log_max_size=number    max size of log file in MB\n");
-    printf("       --log_max_files=number   max number of log files\n");
-    printf("       --log_level=LEVEL        log level (trace, debug, info, warning, error)\n");
+    printf("   -h, --help                       Print this help\n");
+    printf("   -p, --pid_file=filename          PID file used by daemonized app\n");
+    printf("   -s, --socket_file=filename       socket file used by daemonized app\n");
+    printf("   -d, --dump_folder=foldername     dump folder used by daemonized app\n");
+    printf("   -l, --log_file=filename          logfile to write\n");
+    printf("       --log_max_size=number        max size of log file in MB\n");
+    printf("       --log_max_files=number       max number of log files\n");
+    printf("       --log_level=LEVEL            log level (trace, debug, info, warning, error)\n");
+    printf("       --enable_metrics=METRICS     list enabled metric indexes, seperated by comma\n");
+    printf("                                    Index   Metric                                              Default\n");
+    printf("                                      0     GPU_UTILIZATION                                     on\n");
+    printf("                                      1     EU_ACTIVE                                           off\n");
+    printf("                                      2     EU_STALL                                            off\n");
+    printf("                                      3     EU_IDLE                                             off\n");
+    printf("                                      4     POWER                                               on\n");
+    printf("                                      5     ENERGY                                              on\n");
+    printf("                                      6     GPU_FREQUENCY                                       on\n");
+    printf("                                      7     GPU_CORE_TEMPERATURE                                on\n");
+    printf("                                      8     MEMORY_USED                                         on\n");
+    printf("                                      9     MEMORY_UTILIZATION                                  on\n");
+    printf("                                      10    MEMORY_BANDWIDTH                                    on\n");
+    printf("                                      11    MEMORY_READ                                         on\n");
+    printf("                                      12    MEMORY_WRITE                                        on\n");
+    printf("                                      13    MEMORY_READ_THROUGHPUT                              on\n");
+    printf("                                      14    MEMORY_WRITE_THROUGHPUT                             on\n");
+    printf("                                      15    ENGINE_GROUP_COMPUTE_ALL_UTILIZATION                on\n");
+    printf("                                      16    ENGINE_GROUP_MEDIA_ALL_UTILIZATION                  on\n");
+    printf("                                      17    ENGINE_GROUP_COPY_ALL_UTILIZATION                   on\n");
+    printf("                                      18    ENGINE_GROUP_RENDER_ALL_UTILIZATION                 on\n");
+    printf("                                      19    ENGINE_GROUP_3D_ALL_UTILIZATION                     on\n");
+    printf("                                      20    RAS_ERROR_CAT_RESET                                 on\n");
+    printf("                                      21    RAS_ERROR_CAT_PROGRAMMING_ERRORS                    on\n");
+    printf("                                      22    RAS_ERROR_CAT_DRIVER_ERRORS                         on\n");
+    printf("                                      23    RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE              on\n");
+    printf("                                      24    RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE            on\n");
+    printf("                                      25    RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE            on\n");
+    printf("                                      26    RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE          on\n");
+    printf("                                      27    GPU_REQUEST_FREQUENCY                               on\n");
+    printf("                                      28    MEMORY_TEMPERATURE                                  on\n");
+    printf("                                      29    FREQUENCY_THROTTLE                                  on\n");
     printf("\n");
 }
 
@@ -147,7 +181,7 @@ void signalHandler(int sig) {
     }
 }
 
-void createDumpFolder(){
+void createDumpFolder() {
     std::string dumpFolder;
     if (dump_folder_name != nullptr) {
         dumpFolder = dump_folder_name;
@@ -203,6 +237,7 @@ void parse_opts(int argc, char* argv[]) {
         {"help", no_argument, 0, 'h'},
         {"pid_file", required_argument, 0, 'p'},
         {"dump_folder", optional_argument, 0, 'd'},
+        {"enable_metrics", required_argument, 0, 'm'},
         // log options:
         {"log_file", required_argument, 0, 'l'},
         {"log_max_size", required_argument, &lopt, 1},
@@ -210,7 +245,7 @@ void parse_opts(int argc, char* argv[]) {
         {"log_level", required_argument, &lopt, 3},
         {NULL, 0, 0, 0}};
     int value, option_index = 0;
-    while ((value = getopt_long(argc, argv, "s:p:d:l:h", long_options, &option_index)) != -1) {
+    while ((value = getopt_long(argc, argv, "s:p:d:l:m:h", long_options, &option_index)) != -1) {
         switch (value) {
             case 0: {
                 bool valid = false;
@@ -245,6 +280,9 @@ void parse_opts(int argc, char* argv[]) {
             case 'd':
                 dump_folder_name = strdup(optarg);
                 break;
+            case 'm':
+                enabled_metrics = strdup(optarg);
+                break;
             case 'h':
                 print_help(argv[0]);
                 exit(EXIT_SUCCESS);
@@ -273,6 +311,10 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, signalHandler);
     signal(SIGKILL, signalHandler);
     signal(SIGTERM, signalHandler);
+
+    if (enabled_metrics != nullptr) {
+        setenv("XPUM_METRICS", enabled_metrics, 1);
+    }
 
     XPUM_LOG_INFO("XPUM: Init xpum library");
     xpum::xpum_result_t res = xpum::xpumInit();
