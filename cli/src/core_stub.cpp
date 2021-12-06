@@ -9,6 +9,7 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <cstdlib>
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
@@ -17,7 +18,8 @@
 namespace xpum::cli {
 
 CoreStub::CoreStub() {
-    std::string unixSockName{"/tmp/xpum.sock"};    
+    char* xpum_socket_file_env = std::getenv("XPUM_SOCKET_FILE");
+    std::string unixSockName{xpum_socket_file_env != NULL ? xpum_socket_file_env : "/tmp/xpum.sock"};
     std::string serverAddr{"unix://" + unixSockName};
     auto channel = grpc::CreateChannel(serverAddr, grpc::InsecureChannelCredentials());
     this->stub = XpumCoreService::NewStub(channel);
