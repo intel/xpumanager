@@ -3,23 +3,23 @@ from .grpc_stub import stub
 import datetime
 
 diagnosticTypeEnumToString = {
-    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_ENV_VARIABLES: "Software Env Variables",
-    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_LIBRARY: "Software Library",
-    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_PERMISSION: "Software Permission",
-    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE: "Software Exclusive",
-    core_pb2.DiagnosticsComponentInfo.DIAG_HARDWARE_SYSMAN: "Hardware Sysman",
-    core_pb2.DiagnosticsComponentInfo.DIAG_INTEGRATION_PCIE: "Integration PCIe",
-    core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC: "Media Codec",
-    core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_COMPUTE: "Performance Computation",
-    core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_POWER: "Performance Power",
-    core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_MEMORY: "Performance Memory"
+    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_ENV_VARIABLES: "XPUM_DIAG_SOFTWARE_ENV_VARIABLES",
+    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_LIBRARY: "XPUM_DIAG_SOFTWARE_LIBRARY",
+    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_PERMISSION: "XPUM_DIAG_SOFTWARE_PERMISSION",
+    core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE: "XPUM_DIAG_SOFTWARE_EXCLUSIVE",
+    core_pb2.DiagnosticsComponentInfo.DIAG_HARDWARE_SYSMAN: "XPUM_DIAG_HARDWARE_SYSMAN",
+    core_pb2.DiagnosticsComponentInfo.DIAG_INTEGRATION_PCIE: "XPUM_DIAG_INTEGRATION_PCIE",
+    core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC: "XPUM_DIAG_MEDIA_CODEC",
+    core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_COMPUTATION: "XPUM_DIAG_PERFORMANCE_COMPUTATION",
+    core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_POWER: "XPUM_DIAG_PERFORMANCE_POWER",
+    core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_MEMORY_BANDWIDTH: "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH",
+    core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_MEMORY_ALLOCATION: "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION"
 }
 
 diagnosticResultEnumToString = {
-    core_pb2.DiagnosticsComponentInfo.DIAG_RESULT_UNKNOWN: "Unknown",
-    core_pb2.DiagnosticsComponentInfo.DIAG_RESULT_PASS: "Pass",
-    core_pb2.DiagnosticsComponentInfo.DIAG_RESULT_WARNING: "Warning",
-    core_pb2.DiagnosticsComponentInfo.DIAG_RESULT_CRITICAL: "Critical"
+    core_pb2.DIAG_RESULT_UNKNOWN: "Unknown",
+    core_pb2.DIAG_RESULT_PASS: "Pass",
+    core_pb2.DIAG_RESULT_FAIL: "Fail"
 }
 
 
@@ -52,6 +52,7 @@ def getDiagnosticsResult(deviceId):
     data['device_id'] = deviceId
     data['level'] = resp.level
     data['finished'] = resp.finished
+    data['result'] = diagnosticResultEnumToString[resp.result]
     data['message'] = resp.message
     data['component_count'] = resp.count
     beginTimestamp = datetime.datetime.fromtimestamp(resp.startTime/1e3)
@@ -89,6 +90,7 @@ def getDiagnosticsResultByGroup(groupId):
         data['level'] = diagTaskInfo.level
         data['finished'] = diagTaskInfo.finished
         finished = finished & diagTaskInfo.finished
+        data['result'] = diagnosticResultEnumToString[diagTaskInfo.result]
         data['message'] = diagTaskInfo.message
         data['component_count'] = diagTaskInfo.count
         beginTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.startTime/1e3)

@@ -97,6 +97,12 @@ message RunDiagnosticsByGroupRequest{
     uint32 level = 2;
 }
 
+enum DiagnosticsTaskResult {
+    DIAG_RESULT_UNKNOWN = 0;
+    DIAG_RESULT_PASS = 1;
+    DIAG_RESULT_FAIL = 2;
+}
+
 message DiagnosticsComponentInfo{
   enum Type {
     DIAG_SOFTWARE_ENV_VARIABLES = 0;
@@ -106,19 +112,14 @@ message DiagnosticsComponentInfo{
     DIAG_HARDWARE_SYSMAN = 4;
     DIAG_INTEGRATION_PCIE = 5;
     DIAG_MEDIA_CODEC = 6;
-    DIAG_PERFORMANCE_COMPUTE = 7;
+    DIAG_PERFORMANCE_COMPUTATION = 7;
     DIAG_PERFORMANCE_POWER = 8;
-    DIAG_PERFORMANCE_MEMORY = 9;
+    DIAG_PERFORMANCE_MEMORY_BANDWIDTH = 9;
+    DIAG_PERFORMANCE_MEMORY_ALLOCATION = 10;
   }
   Type type = 1;
   bool finished = 2;
-  enum Result {
-    DIAG_RESULT_UNKNOWN = 0;
-    DIAG_RESULT_PASS = 1;
-    DIAG_RESULT_WARNING = 2;
-    DIAG_RESULT_CRITICAL = 3;
-  }
-  Result result = 3;
+  DiagnosticsTaskResult result = 3;
   string message = 4;
 }
 
@@ -126,12 +127,13 @@ message DiagnosticsTaskInfo{
     uint32 deviceId = 1;
     uint32 level = 2;
     bool finished = 3;
-    repeated DiagnosticsComponentInfo componentInfo = 4;
-    string message = 5;
-    uint32 count = 6;
-    uint64 startTime = 7;
-    uint64 endTime = 8;
-    string errorMsg = 9;
+    DiagnosticsTaskResult result = 4;
+    repeated DiagnosticsComponentInfo componentInfo = 5;
+    string message = 6;
+    uint32 count = 7;
+    uint64 startTime = 8;
+    uint64 endTime = 9;
+    string errorMsg = 10;
 }
 
 message DiagnosticsGroupTaskInfo{

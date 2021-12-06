@@ -313,11 +313,12 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_count(task_info.count);
         response->set_starttime(task_info.startTime);
         response->set_endtime(task_info.endTime);
+        response->set_result(static_cast<DiagnosticsTaskResult>(task_info.result));
         for (int i = 0; i < task_info.count; i++) {
             DiagnosticsComponentInfo* component = response->add_componentinfo();
             component->set_type(static_cast<DiagnosticsComponentInfo_Type>(task_info.componentList[i].type));
             component->set_finished(task_info.componentList[i].finished);
-            component->set_result(static_cast<DiagnosticsComponentInfo_Result>(task_info.componentList[i].result));
+            component->set_result(static_cast<DiagnosticsTaskResult>(task_info.componentList[i].result));
             component->set_message(task_info.componentList[i].message);
         }
     } else {
@@ -346,11 +347,12 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             taskInfo->set_count(taskInfos[i].count);
             taskInfo->set_starttime(taskInfos[i].startTime);
             taskInfo->set_endtime(taskInfos[i].endTime);
+            taskInfo->set_result(static_cast<DiagnosticsTaskResult>(taskInfos[i].result));
             for (int j = 0; j < taskInfos[i].count; j++) {
                 DiagnosticsComponentInfo* component = taskInfo->add_componentinfo();
                 component->set_type(static_cast<DiagnosticsComponentInfo_Type>(taskInfos[i].componentList[j].type));
                 component->set_finished(taskInfos[i].componentList[j].finished);
-                component->set_result(static_cast<DiagnosticsComponentInfo_Result>(taskInfos[i].componentList[j].result));
+                component->set_result(static_cast<DiagnosticsTaskResult>(taskInfos[i].componentList[j].result));
                 component->set_message(taskInfos[i].componentList[j].message);
             }
         }

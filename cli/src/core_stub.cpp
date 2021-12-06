@@ -272,20 +272,17 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
     return json;
 }
 
-std::string CoreStub::diagnosticResultEnumToString(DiagnosticsComponentInfo_Result result) {
+std::string CoreStub::diagnosticResultEnumToString(DiagnosticsTaskResult result) {
     std::string ret;
     switch (result) {
-        case DiagnosticsComponentInfo_Result_DIAG_RESULT_UNKNOWN:
+        case DIAG_RESULT_UNKNOWN:
             ret = "Unknown";
             break;
-        case DiagnosticsComponentInfo_Result_DIAG_RESULT_PASS:
+        case DIAG_RESULT_PASS:
             ret = "Pass";
             break;
-        case DiagnosticsComponentInfo_Result_DIAG_RESULT_WARNING:
-            ret = "Warning";
-            break;
-        case DiagnosticsComponentInfo_Result_DIAG_RESULT_CRITICAL:
-            ret = "Critical";
+        case DIAG_RESULT_FAIL:
+            ret = "Fail";
             break;
         default:
             break;
@@ -297,34 +294,37 @@ std::string CoreStub::diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type t
     std::string ret;
     switch (type) {
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_ENV_VARIABLES:
-            ret = "Software Env Variables";
+            ret = "XPUM_DIAG_SOFTWARE_ENV_VARIABLES";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_LIBRARY:
-            ret = "Software Library";
+            ret = "XPUM_DIAG_SOFTWARE_LIBRARY";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_PERMISSION:
-            ret = "Software Permission";
+            ret = "XPUM_DIAG_SOFTWARE_PERMISSION";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE:
-            ret = "Software Exclusive";
+            ret = "XPUM_DIAG_SOFTWARE_EXCLUSIVE";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_HARDWARE_SYSMAN:
-            ret = "Hardware Sysman";
+            ret = "XPUM_DIAG_HARDWARE_SYSMAN";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_INTEGRATION_PCIE:
-            ret = "Integration PCIe";
+            ret = "XPUM_DIAG_INTEGRATION_PCIE";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC:
-            ret = "Media Codec";
+            ret = "XPUM_DIAG_MEDIA_CODEC";
             break;
-        case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_COMPUTE:
-            ret = "Performance Computation";
+        case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_COMPUTATION:
+            ret = "XPUM_DIAG_PERFORMANCE_COMPUTATION";
             break;
         case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_POWER:
-            ret = "Performance Power";
+            ret = "XPUM_DIAG_PERFORMANCE_POWER";
             break;
-        case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY:
-            ret = "Performance Memory";
+        case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY_ALLOCATION:
+            ret = "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION";
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY_BANDWIDTH:
+            ret = "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH";
             break;
         default:
             break;
@@ -387,6 +387,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
             (*json)["level"] = response.level();
             (*json)["component_count"] = response.count();
             (*json)["finished"] = response.finished();
+            (*json)["result"] = diagnosticResultEnumToString(response.result());
             (*json)["message"] = response.message();
             (*json)["start_time"] = isotimestamp(response.starttime());
             if (response.finished()) {
@@ -474,6 +475,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t g
                 deviceInfoJson["component_count"] = response.taskinfo(i).count();
                 deviceInfoJson["finished"] = response.taskinfo(i).finished();
                 finished = finished & response.taskinfo(i).finished();
+                deviceInfoJson["result"] = diagnosticResultEnumToString(response.taskinfo(i).result());
                 deviceInfoJson["message"] = response.taskinfo(i).message();
                 deviceInfoJson["start_time"] = isotimestamp(response.taskinfo(i).starttime());
                 if (response.taskinfo(i).finished()) {

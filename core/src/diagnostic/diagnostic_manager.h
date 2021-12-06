@@ -49,11 +49,16 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                        std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                        int gpu_total_count);
 
-    static void doDeviceDiagnosticSoftware(const zes_device_handle_t &zes_device,
-                                           std::shared_ptr<xpum_diag_task_info_t> p_task_info,
-                                           int gpu_total_count);
+    static void doDeviceDiagnosticEnvironmentVariables(std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
-    static void doDeviceDiagnosticHardware(const zes_device_handle_t &zes_device,
+    static void doDeviceDiagnosticLibraries(std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+
+    static void doDeviceDiagnosticPermission(int gpu_total_count, std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+
+    static void doDeviceDiagnosticExclusive(const zes_device_handle_t &zes_device,
+                                        std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+
+    static void doDeviceDiagnosticHardwareSysman(const zes_device_handle_t &zes_device,
                                            std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDeviceDiagnosticMediaCodec(const zes_device_handle_t &zes_device,
@@ -63,16 +68,22 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                               const ze_driver_handle_t &ze_driver,
                                               std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
-    static void doDeviceDiagnosticPeformanceComputeAndPower(const ze_device_handle_t &ze_device,
+    static void doDeviceDiagnosticPeformanceComputationAndPower(const ze_device_handle_t &ze_device,
                                                             const ze_driver_handle_t &ze_driver,
                                                             std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
-    static void doDeviceDiagnosticPeformanceMemory(const ze_device_handle_t &ze_device,
+    static void doDeviceDiagnosticPeformanceMemoryAllocation(const ze_device_handle_t &ze_device,
                                                    const ze_driver_handle_t &ze_driver,
                                                    std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
+    static void doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_device_handle_t &ze_device,
+                                                   const ze_driver_handle_t &ze_driver,
+                                                   std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+
+    static void doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t type, std::string error, std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+
    private:
-    static bool countDevEntry(const std::string &entryName);
+    static bool countDevEntry(const std::string &entry_name);
 
     static std::string getCommandResult(std::string command);
 
@@ -97,7 +108,7 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static long double runKernel(ze_command_queue_handle_t command_queue, ze_command_list_handle_t command_list,
                                  ze_kernel_handle_t &function,
-                                 struct ZeWorkGroups &workgroup_info);
+                                 struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type);
 
     static long double calculateGbps(long double period, long double buffer_size);
 
@@ -107,6 +118,17 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static std::string roundDouble(double r, int precision);
 
+    static void readConfigFile();
+
+    static std::map<std::string, std::map<std::string, int>> thresholds;
+
+    static std::map<ze_device_handle_t, std::string> device_names;
+
+    static std::string MEDIA_CODER_TOOLS_PATH;
+
+    static std::string MEDIA_CODER_TOOLS_DECODE_FILE;
+
+    static std::string MEDIA_CODER_TOOLS_ENCODE_FILE;
 
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
 

@@ -305,9 +305,10 @@ typedef enum xpum_diag_task_type_enum {
     XPUM_DIAG_INTEGRATION_PCIE,
     XPUM_DIAG_MEDIA_CODEC,
     // level 3
-    XPUM_DIAG_PERFORMANCE_COMPUTE,
+    XPUM_DIAG_PERFORMANCE_COMPUTATION,
     XPUM_DIAG_PERFORMANCE_POWER,
-    XPUM_DIAG_PERFORMANCE_MEMORY,
+    XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH,
+    XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION,
 
     XPUM_DIAG_MAX
 } xpum_diag_task_type_t;
@@ -315,8 +316,7 @@ typedef enum xpum_diag_task_type_enum {
 typedef enum xpum_diag_task_result_enum {
     XPUM_DIAG_RESULT_UNKNOWN = 0,
     XPUM_DIAG_RESULT_PASS,
-    XPUM_DIAG_RESULT_WARNING,
-    XPUM_DIAG_RESULT_CRITICAL
+    XPUM_DIAG_RESULT_FAIL
 } xpum_diag_task_result_t;
 
 typedef enum xpum_diag_level_enum {
@@ -336,6 +336,7 @@ struct xpum_diag_task_info_t {
     xpum_device_id_t deviceId;
     xpum_diag_level_t level;
     bool finished;
+    xpum_diag_task_result_t result;
     xpum_diag_component_info_t componentList[XPUM_DIAG_MAX];
     char message[XPUM_MAX_STR_LENGTH];
     int count;
