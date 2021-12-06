@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "../include/xpum_structs.h"
 
 namespace xpum {
 /**
@@ -10,5 +11,6 @@ namespace xpum {
 class HWInfo {
    public:
     static std::string getDevicePath(const std::string& bdf_address);
+    static bool isPcieDevExist(xpum_device_id_t deviceId);
 };
 } // end namespace xpum

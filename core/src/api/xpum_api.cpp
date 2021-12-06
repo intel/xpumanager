@@ -14,6 +14,7 @@
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_property.h"
 #include "infrastructure/version.h"
+#include "infrastructure/device_process.h"
 #include "topology/topology.h"
 
 namespace xpum {
@@ -905,18 +906,48 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
     std::vector<double> clocks;
     Core::instance().getDeviceManager()->getFreqAvailableClocks(std::to_string(deviceId), tileId, clocks);
 
-    if (clocks.size() > *count || dataArray == nullptr) {
+    if (clocks.size() > *count && dataArray != nullptr) {
         return XPUM_BUFFER_TOO_SMALL;
     } else {
         *count = clocks.size();
     }
-    int i = 0;
-    for (auto &clock : clocks) {
-        dataArray[i] = clock;
-        i++;
+    if (dataArray != nullptr) {
+        int i = 0;
+        for (auto &clock : clocks) {
+            dataArray[i] = clock;
+            i++;
+        }
     }
     return XPUM_OK;
 }
+
+xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_process_t *dataArray, uint32_t *count) {
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_GENERIC_ERROR;
+    }
+    std::vector<device_process> process;
+    Core::instance().getDeviceManager()->getDeviceProcessState(std::to_string(deviceId), process);
+
+    if (process.size() > *count && dataArray != nullptr) {
+        return XPUM_BUFFER_TOO_SMALL;
+    } else {
+        *count = process.size();
+    }
+
+    if (dataArray != nullptr) {
+        int i = 0;
+        for (auto &proc : process) {
+            dataArray[i].processId = proc.getProcessId();
+            dataArray[i].memSize = proc.getMemSize();
+            dataArray[i].sharedSize = proc.getSharedSize();
+            dataArray[i].engine = (xpum_engine_type_flags_t)proc.getEngine();
+            i++;
+        }
+    }
+    return XPUM_OK;
+}
+
 
 ///////////////////Policy//////////////////////
 xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {

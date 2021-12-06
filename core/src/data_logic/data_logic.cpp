@@ -6,6 +6,7 @@
 #include "infrastructure/const.h"
 #include "infrastructure/exception/ilegal_state_exception.h"
 #include "infrastructure/utility.h"
+#include "infrastructure/configuration.h"
 #include "core/core.h"
 
 namespace xpum {
@@ -72,9 +73,8 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         return;
     }
     *count = 0;
-    std::vector<MeasurementType> metric_types;
     std::map<MeasurementType, MeasurementData> m_datas;
-    Utility::getMetricsTypes(metric_types);
+    std::vector<MeasurementType> metric_types = Configuration::getEnabledMetrics();
     std::vector<MeasurementType>::iterator metric_types_iter = metric_types.begin();
     uint64_t start_time = Utility::getCurrentMillisecond();
     uint64_t end_time = 0;
@@ -165,9 +165,8 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
         return;
     }
     int index = 0;
-    std::vector<MeasurementType> metric_types;
     std::map<MeasurementType, MeasurementData> m_datas;
-    Utility::getMetricsTypes(metric_types);
+    std::vector<MeasurementType> metric_types = Configuration::getEnabledMetrics();
     std::vector<MeasurementType>::iterator metric_types_iter = metric_types.begin();
     bool hasDataOnDevice = false;
     uint32_t num_subdevice = 0;

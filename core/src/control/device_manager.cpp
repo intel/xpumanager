@@ -9,6 +9,7 @@
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/exception/ilegal_parameter_exception.h"
 #include "infrastructure/logger.h"
+#include "infrastructure/device_process.h"
 #include "infrastructure/utility.h"
 
 namespace xpum {
@@ -216,6 +217,11 @@ bool DeviceManager::setDeviceFrequencyRange(const std::string& id,
 void DeviceManager::getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id, std::vector<double>& clocks) {
     std::unique_lock<std::mutex> lock(this->mutex);
     GPUDeviceStub::instance().getFreqAvailableClocks(getDeviceHandle(id), subdevice_id, clocks);
+}
+
+void DeviceManager::getDeviceProcessState(const std::string& id, std::vector<device_process>& processes){
+    std::unique_lock<std::mutex> lock(this->mutex);
+    GPUDeviceStub::instance().getDeviceProcessState(getDeviceHandle(id), processes);
 }
 
 bool DeviceManager::setDeviceStandby(const std::string& id,

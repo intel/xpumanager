@@ -12,6 +12,7 @@
 #include "shared_data.h"
 #include "temperature_data_handler.h"
 #include "throughput_data_handler.h"
+#include "frequency_throttle_time_data_handler.h"
 
 namespace xpum {
 
@@ -58,7 +59,7 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_REQUEST_FREQUENCY]->init();
 
     data_handlers[MeasurementType::METRIC_POWER] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_POWER, p_persistency);
+        std::make_shared<PowerDataHandler>(MeasurementType::METRIC_POWER, p_persistency);
     data_handlers[MeasurementType::METRIC_POWER]->init();
 
     data_handlers[MeasurementType::METRIC_ENERGY] =
@@ -150,7 +151,7 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_MEMORY_TEMPERATURE]->init();
 
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE, p_persistency);
+        std::make_shared<FrequencyThrottleTimeDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE, p_persistency);
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE]->init();
 }
 

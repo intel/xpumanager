@@ -12,6 +12,7 @@
 #include "infrastructure/init_close_interface.h"
 #include "infrastructure/measurement_data.h"
 #include "infrastructure/measurement_type.h"
+#include "infrastructure/device_process.h"
 
 namespace xpum {
 
@@ -75,6 +76,8 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual bool resetDevice(const std::string& id, bool force) = 0;
 
     virtual void getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id, std::vector<double>& clocks) = 0;
+
+    virtual void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes) = 0;
 
     virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
 };

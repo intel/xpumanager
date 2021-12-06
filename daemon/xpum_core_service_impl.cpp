@@ -951,6 +951,11 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         xpum_result_t res = xpumSetPolicy(id, policy);
         if (res != XPUM_OK) {
             response->set_isok(false);
+            if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
+                response->set_errormsg("Error: policy type, condition or action do not match.");
+            }else{
+                response->set_errormsg("Error: unknow");
+            }            
             response->set_errormsg("Error with res:" + res);
             return grpc::Status::OK;
         }
@@ -961,6 +966,11 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         xpum_result_t res = xpumSetPolicyByGroup(id, policy);
         if (res != XPUM_OK) {
             response->set_isok(false);
+            if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
+                response->set_errormsg("Error: policy type, condition or action do not match.");
+            }else{
+                response->set_errormsg("Error: unknow");
+            }    
             response->set_errormsg("Error with res:" + res);
             return grpc::Status::OK;
         }
@@ -1074,6 +1084,76 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         response->set_errormsg("Error");
     }
     return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::resetDevice(::grpc::ServerContext* context, const ::ResetDeviceRequest* request, ::ResetDeviceResponse* response) {
+    xpum_result_t res;
+    xpum_device_id_t deviceId = request->deviceid();
+    bool force = request->force();
+    //test code
+    //response->set_deviceid (deviceId);
+    //response->set_retcode(XPUM_OK);
+    //return grpc::Status::OK;
+
+    res = xpumResetDevice(deviceId, force);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    response->set_deviceid (deviceId);
+    response->set_retcode(res);
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getDeviceProcessState(::grpc::ServerContext* context, const ::DeviceId* request, ::DeviceProcessStateResponse* response) {
+    xpum_result_t res;
+    xpum_device_id_t deviceId = request->id();
+    
+    uint32_t count;
+
+    res = xpumGetDeviceProcessState(deviceId, nullptr, &count);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    if (count > 0) {
+        xpum_device_process_t dataArray[count];
+        res = xpumGetDeviceProcessState(deviceId, dataArray, &count);
+        if (res != XPUM_OK) {
+            response->set_errormsg("Error");
+            return grpc::Status::OK;
+        }else {
+            for (uint32_t i = 0; i < count; i++) {
+                DeviceProcessState* proc = response->add_processlist();
+                proc->set_processid(dataArray[i].processId);
+                proc->set_memsize(dataArray[i].memSize);
+                proc->set_sharedsize(dataArray[i].sharedSize);
+                proc->set_engine(convertEngineId2Num(dataArray[i].engine));
+            }
+        }
+    }
+    response->set_count(count);
+    return grpc::Status::OK;
+}
+std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
+    if (engine == 1) {
+        return  "other";
+    }
+    if (engine == 2) {
+        return  "compute";
+    }
+    if (engine == 4) {
+        return  "3d";
+    }
+    if (engine == 8) {
+        return  "media";
+    }
+    if (engine == 16) {
+        return  "dma";
+    }
+    if (engine == 32) {
+        return  "render";
+    }
+    return std::to_string(engine);
 }
 
 ::grpc::Status XpumCoreServiceImpl::getDeviceConfig(::grpc::ServerContext* context, const ::ConfigDeviceDataRequest* request, ::ConfigDeviceData* response) {

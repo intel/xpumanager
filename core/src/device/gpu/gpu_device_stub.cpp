@@ -898,19 +898,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
             zes_power_properties_t props;
             XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                zes_power_energy_counter_t snap1, snap2;
-                XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap1));
+                zes_power_energy_counter_t snap;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap));
                 if (res == ZE_RESULT_SUCCESS) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
-                    XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap2));
-                    if (res == ZE_RESULT_SUCCESS && (snap2.timestamp - snap1.timestamp) != 0) {
-                        uint64_t data = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
-                        props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
-                        ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-                        data_acquired = true;
-                    } else {
-                        exception_msgs["zesPowerGetEnergyCounter"] = res;
-                    }
+                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, Configuration::DEFAULT_MEASUREMENT_DATA_SCALE*snap.energy) : ret->setRawData(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE*snap.energy);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, snap.timestamp) : ret->setRawTimestamp(snap.timestamp);
+                    ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                    data_acquired = true;
                 } else {
                     exception_msgs["zesPowerGetEnergyCounter"] = res;
                 }
@@ -1056,7 +1050,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottle(const zes
     std::map<std::string, ze_result_t> exception_msgs;
     bool data_acquired = false;
     uint32_t freq_count = 0;
-    int sampling_period = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 0.8;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
@@ -1067,18 +1060,13 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottle(const zes
             zes_freq_properties_t props;
             XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetProperties(ph_freq, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                zes_freq_throttle_time_t freq_throttle_1, freq_throttle_2;
-                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle_1));
+                zes_freq_throttle_time_t freq_throttle;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle));
                 if (res == ZE_RESULT_SUCCESS) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(sampling_period));
-                    XPUM_ZE_HANDLE_LOCK(device, res = zesFrequencyGetThrottleTime(ph_freq, &freq_throttle_2));
-                    if (res == ZE_RESULT_SUCCESS) {
-                        uint64_t data = (freq_throttle_2.throttleTime - freq_throttle_1.throttleTime) / (freq_throttle_2.timestamp - freq_throttle_1.timestamp);
-                        props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, data) : ret->setCurrent(data);
-                        data_acquired = true;
-                    } else {
-                        exception_msgs["zesFrequencyGetThrottleTime"] = res;
-                    }
+                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, Configuration::DEFAULT_MEASUREMENT_DATA_SCALE*freq_throttle.throttleTime) : ret->setRawData(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE*freq_throttle.throttleTime);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, freq_throttle.timestamp) : ret->setRawTimestamp(freq_throttle.timestamp);
+                    ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                    data_acquired = true;
                 } else {
                     exception_msgs["zesFrequencyGetThrottleTime"] = res;
                 }
@@ -2169,6 +2157,25 @@ bool GPUDeviceStub::resetDevice(const zes_device_handle_t& device, ze_bool_t for
         return false;
     }
 }
+
+void GPUDeviceStub::getDeviceProcessState(const zes_device_handle_t& device, std::vector<device_process>& processes) {
+    if (device == nullptr) {
+        return;
+    }
+    uint32_t process_count = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+       std::vector<zes_process_state_t> procs(process_count);
+       XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, procs.data()));
+       for (auto& proc : procs) {
+        processes.push_back (*( new device_process(proc.processId,proc.memSize, proc.sharedSize,proc.engines)));
+       }
+    } else {
+       return;
+    }
+}
+
 
 void GPUDeviceStub::getStandbys(const zes_device_handle_t& device, std::vector<Standby>& standbys) {
     if (device == nullptr) {

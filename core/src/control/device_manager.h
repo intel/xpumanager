@@ -74,6 +74,8 @@ class DeviceManager : public DeviceManagerInterface,
                                          const SchedulerExclusiveMode& mode);
 
     bool resetDevice(const std::string& id, bool force);
+    
+    void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes);
 
     std::shared_ptr<Device> getDevice(const std::string& id);
 

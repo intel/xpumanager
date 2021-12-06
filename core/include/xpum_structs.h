@@ -532,6 +532,13 @@ enum xpum_scheduler_mode_t {
     XPUM_MODE_FORCE_UINT32 = 0x7fffffff
 };
 
+struct xpum_device_process_t {
+    uint32_t processId;
+    uint64_t memSize;
+    uint64_t sharedSize;
+    xpum_engine_type_flags_t engine;
+};
+
 struct xpum_frequency_range_t {
     xpum_frequency_type_t type;
     uint32_t subdevice_Id;
@@ -603,8 +610,8 @@ typedef enum xpum_policy_type_enum {
     XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS,
     XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
     XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
-    XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
-    XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
+    // XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
+    // XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     XPUM_POLICY_TYPE_MAX
 } xpum_policy_type_t;
 

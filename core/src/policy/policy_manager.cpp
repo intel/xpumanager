@@ -28,8 +28,8 @@ void xpum_policy_triggered_for_trace(xpum_policy_notify_callback_para_t *p_para)
     XPUM_LOG_INFO("------xpum_policy_triggered_for_trace-----end----");
 }
 
-void print_policy_for_demo(const char* tag,xpum_policy_t *p_para) {
-    XPUM_LOG_INFO("-----------------{}-----------begin---",*tag);
+void print_policy_for_demo(const std::string &tag,xpum_policy_t *p_para) {
+    XPUM_LOG_INFO("-----------------{}-----------begin---",tag);
     XPUM_LOG_INFO("Policy Device Id: {}", p_para->deviceId);
     XPUM_LOG_INFO("Policy Type: {}", p_para->type);
     XPUM_LOG_INFO("Policy Condition Type: {}", p_para->condition.type);
@@ -40,11 +40,11 @@ void print_policy_for_demo(const char* tag,xpum_policy_t *p_para) {
     //XPUM_LOG_INFO("Policy curValue: {}", p_para->curValue);
     //XPUM_LOG_INFO("Policy preValue: {}", p_para->preValue);
     XPUM_LOG_INFO("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
-    XPUM_LOG_INFO("-----------------{}-----------end---",*tag);
+    XPUM_LOG_INFO("-----------------{}-----------end---",tag);
 }
 
-void print_policy_for_demoEx2(const char* tag,std::shared_ptr<xpum_policy_data> p_para) {
-    XPUM_LOG_TRACE("-----------------{}-----------begin---",*tag);
+void print_policy_for_demoEx2(const std::string &tag,std::shared_ptr<xpum_policy_data> p_para) {
+    XPUM_LOG_TRACE("-----------------{}-----------begin---",tag);
     XPUM_LOG_TRACE("Policy Device Id: {}", p_para->deviceId);
     XPUM_LOG_TRACE("Policy Type: {}", p_para->type);
     XPUM_LOG_TRACE("Policy Condition Type: {}", p_para->condition.type);
@@ -58,7 +58,7 @@ void print_policy_for_demoEx2(const char* tag,std::shared_ptr<xpum_policy_data> 
     XPUM_LOG_TRACE("Policy isTileData: {}", p_para->isTileData);
     XPUM_LOG_TRACE("Policy tileId: {}", p_para->tileId);
     XPUM_LOG_TRACE("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
-    XPUM_LOG_TRACE("-----------------{}-----------end----",*tag);
+    XPUM_LOG_TRACE("-----------------{}-----------end----",tag);
 }
 
 PolicyManager::PolicyManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
@@ -249,11 +249,12 @@ bool PolicyManager::isMatchMetricType(xpum_stats_type_t metricsType, xpum_policy
         return true;
     } else if (policyType == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE && metricsType == XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE) {
         return true;
-    } else if (policyType == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE && metricsType == XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE) {
-        return true;
-    } else if (policyType == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE && metricsType == XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE) {
-        return true;
-    }
+    } 
+    // else if (policyType == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE && metricsType == XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE) {
+    //     return true;
+    // } else if (policyType == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE && metricsType == XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE) {
+    //     return true;
+    // }
     return false;
 }
 
@@ -332,14 +333,14 @@ bool PolicyManager::isInDeviceIds(xpum_device_id_t deviceId, xpum_device_id_t de
 
 xpum_result_t PolicyManager::xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
     //XPUM_LOG_INFO("---PolicyManager::xpumSetPolicy()---1--deviceId={}",deviceId);
-    print_policy_for_demo("xpumSetPolicy", &policy);
+    //print_policy_for_demo("xpumSetPolicy", &policy);
     xpum_device_id_t deviceList[] = {deviceId};
     //XPUM_LOG_INFO("---PolicyManager::xpumSetPolicy()---2--deviceId={}",deviceId);
     return xpumSetPolicyByDeviceIds(deviceList, 1, policy);
 }
 xpum_result_t PolicyManager::xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t policy) {
     //XPUM_LOG_INFO("---PolicyManager::xpumSetPolicyByGroup()---1--groupId={}",groupId);
-    print_policy_for_demo("xpumSetPolicyByGroup", &policy);
+    //print_policy_for_demo("xpumSetPolicyByGroup", &policy);
     xpum_result_t res;
     xpum_group_info_t info;
     res = p_group_manager->getGroupInfo(groupId, &info);
@@ -392,6 +393,10 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
             p_data->type = policy.type;
             p_data->curValue = 0;
             p_data->preValue = 0;
+
+            //
+            policy.deviceId = p_data->deviceId;
+            print_policy_for_demo("xpumSetPolicyByDeviceIds", &policy);
             
             //XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds()---2-3-");
             std::map<xpum_device_id_t, std::shared_ptr<std::list<std::shared_ptr<xpum_policy_data>>>>::iterator it = policyMap.find(p_data->deviceId);
@@ -427,9 +432,10 @@ xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
             return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
         }
     } else if (policy.action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE) {
-        if (!(policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE 
-                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE 
-                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE)) {
+        if (!( policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE)) {
             return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
         }
     }

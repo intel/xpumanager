@@ -308,6 +308,31 @@ message XpumPolicyAction {
     double throttle_device_frequency_max = 3;
 }
 
+message ResetDeviceRequest{
+    uint32 deviceId = 1;
+    bool force = 2;
+}
+
+message ResetDeviceResponse{
+    uint32 deviceId = 1;
+    uint32 retCode = 2;
+    string errorMsg = 3;
+}
+
+message DeviceProcessState{
+    uint32 processId = 1;
+    uint64 memSize = 2;
+    uint64 sharedSize = 3;
+    string engine = 4;
+    string errorMsg = 5;
+}
+
+message DeviceProcessStateResponse{
+    uint32 count = 1;
+    repeated DeviceProcessState processlist = 2;
+    string errorMsg = 3;
+}
+
 message ConfigDeviceDataRequest{
     uint32 deviceId = 1;
     bool isTileData = 2;
@@ -504,6 +529,8 @@ service XpumCoreService {
     rpc setPolicy( SetPolicyRequest ) returns ( SetPolicyResponse );
     rpc readPolicyNotifyData( google.protobuf.Empty ) returns ( stream ReadPolicyNotifyDataResponse );
     rpc getDeviceConfig( ConfigDeviceDataRequest ) returns ( ConfigDeviceData );
+    rpc getDeviceProcessState( DeviceId ) returns ( DeviceProcessStateResponse );
+    rpc resetDevice( ResetDeviceRequest ) returns ( ResetDeviceResponse );
     rpc setDeviceSchedulerMode( ConfigDeviceSchdeulerModeRequest ) returns ( ConfigDeviceResultData );
     rpc setDevicePowerLimit( ConfigDevicePowerLimitRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceFrequencyRange( ConfigDeviceFrequencyRangeRequest ) returns ( ConfigDeviceResultData );

@@ -58,6 +58,8 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> setDevicePowerlimit(int deviceId, int power, int interval);
     std::unique_ptr<nlohmann::json> setDeviceStandby(int deviceId, int tileId, XpumStandbyMode mode);
     std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq);
+    std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId);
+    std::unique_ptr<nlohmann::json> resetDevice(int deviceId, bool force);
     std::string schedulerModeEnumToString(XpumSchedulerMode mode);
     std::string standbyModeEnumToString(XpumStandbyMode mode);
 
@@ -68,9 +70,11 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getAllPolicyConditionType();
     std::unique_ptr<nlohmann::json> getAllPolicyActionType();
     std::unique_ptr<nlohmann::json> getAllPolicy();
+    std::unique_ptr<nlohmann::json> getPolicyById(bool isDevice, int id);
 	std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie,int id);
     std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie,int id,XpumPolicyData &policy);
-
+    bool isCliSupportedPolicyType(XpumPolicyType type);
+	
     std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath );
 
     std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<int> metricsTypeList);

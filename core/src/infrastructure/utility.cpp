@@ -120,7 +120,7 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
         case DeviceCapability::METRIC_FREQUENCY_THROTTLE:
             return MeasurementType::METRIC_FREQUENCY_THROTTLE;
         default:
-            return MeasurementType::POWER;
+            return MeasurementType::METRIC_MAX;
     }
 }
 
@@ -197,7 +197,7 @@ DeviceCapability Utility::capabilityFromMeasurementType(MeasurementType& measure
         case MeasurementType::METRIC_FREQUENCY_THROTTLE:
             return DeviceCapability::METRIC_FREQUENCY_THROTTLE;
         default:
-            return DeviceCapability::POWER;
+            return DeviceCapability::DEVICE_CAPABILITY_MAX;
     }
 }
 
@@ -316,7 +316,7 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
         case xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE:
             return MeasurementType::METRIC_FREQUENCY_THROTTLE;
         default:
-            return MeasurementType::METRIC_POWER;
+            return MeasurementType::METRIC_MAX;
     }
 }
 
@@ -383,7 +383,7 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
         case MeasurementType::METRIC_FREQUENCY_THROTTLE:
             return xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE;
         default:
-            return xpum_stats_type_enum::XPUM_STATS_POWER;
+            return xpum_stats_type_enum::XPUM_STATS_MAX;
     }
 }
 
