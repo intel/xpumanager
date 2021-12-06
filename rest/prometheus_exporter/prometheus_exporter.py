@@ -150,21 +150,28 @@ def get_metrics(core, pod_resources):
             if stat_code != 0:
                 continue
 
+            card_id = device_to_card_map.get(device_id)
+            aggregated_power_from_device = False
+
             if 'device_level' in stat_data:
                 r = convert_to_prometheus_metrics(
                     pod_resources, dev, stat_data['device_level'], device_id)
                 resp = resp + r
 
                 # aggregate to card level
-                card_id = device_to_card_map.get(device_id)
                 if card_id is not None:
                     card_data = all_card_data.setdefault(card_id, [])
-                    aggregate_to_card(card_data, stat_data['device_level'])
+                    aggregated_power_from_device = aggregate_power_to_card(card_data, stat_data['device_level'])
 
             for tile_data in stat_data.get('tile_level', []):
                 r = convert_to_prometheus_metrics(
                     pod_resources, dev, tile_data['data_list'], device_id, tile_data['tile_id'])
                 resp = resp + r
+
+                # aggregate to card level from tile if it has not yet be aggregated from device level
+                if card_id is not None and not aggregated_power_from_device:
+                    card_data = all_card_data.setdefault(card_id, [])
+                    aggregate_power_to_card(card_data, tile_data['data_list'])
 
         # export card metrcis
         for card_id, card_data in all_card_data.items():
@@ -178,8 +185,8 @@ def get_metrics(core, pod_resources):
         return "#nodata: due to unexpected failure", 500
 
 
-def aggregate_to_card(card_data: list, device_data):
-    for metric in device_data:
+def aggregate_power_to_card(card_data: list, device_or_tile_data):
+    for metric in device_or_tile_data:
         metric_type = metric['metrics_type']
         if metric_type == 'XPUM_STATS_POWER':
             try:
@@ -189,7 +196,8 @@ def aggregate_to_card(card_data: list, device_data):
                 card_metric = {'metrics_type': metric_type, 'avg': 0}
                 card_data.append(card_metric)
             card_metric['avg'] = card_metric['avg'] + metric.get('avg')
-            break
+            return True
+    return False
 
 
 def tidy_response(resp):
