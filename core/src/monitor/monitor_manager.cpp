@@ -128,14 +128,14 @@ void MonitorManager::removeMetricTask(MeasurementType type) {
     tasks.erase(std::remove_if(tasks.begin(), tasks.end(), [capability](std::shared_ptr<MonitorTask> t) { return (t->getType() == MonitorTaskType::GPU_METRICS && t->getCapability() == capability); }), tasks.end());
 }
 
-void MonitorManager::resetMetricTasksFrequency(int freq) {
+void MonitorManager::resetMetricTasksFrequency() {
     std::vector<MeasurementType> metric_types;
     Utility::getMetricsTypes(metric_types);
     std::vector<MeasurementType>::iterator iter = metric_types.begin();
     while (iter != metric_types.end()) {
         removeMetricTask(*iter++);
     }
-    Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = freq;
+    
     iter = metric_types.begin();
     while (iter != metric_types.end()) {
         addMetricTask(*iter++, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE);

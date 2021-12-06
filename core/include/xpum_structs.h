@@ -86,7 +86,8 @@ typedef enum xpum_result_enum {
     XPUM_GROUP_DEVICE_DUPLICATED,
     XPUM_GROUP_CHANGE_NOT_ALLOWED,
     XPUM_NOT_INITIALIZED,     ///< XPUM is not initialized.
-    XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST   ///< Dump raw data task not exists
+    XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST,   ///< Dump raw data task not exists
+    XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY   ///< The the key for agent setting is unknown
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

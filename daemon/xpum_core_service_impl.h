@@ -89,6 +89,9 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response);
     virtual ::grpc::Status stopDumpRawDataTask(::grpc::ServerContext* context, const ::StopDumpRawDataTaskRequest* request, ::StopDumpRawDataTaskReponse* response);
     virtual ::grpc::Status listDumpRawDataTasks(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::ListDumpRawDataTaskResponse* response);
+
+    virtual ::grpc::Status setAgentConfig(::grpc::ServerContext* context, const ::AgentConfigMessage* request, ::AgentConfigResponse* response);
+    virtual ::grpc::Status getAgentConfig(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::AgentConfigResponse* response);
 };
 
 } // end namespace xpum::daemon

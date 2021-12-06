@@ -451,6 +451,25 @@ message ListDumpRawDataTaskResponse{
     string errorMsg = 3;
 }
 
+message FlexTypeValue{
+    oneof value{
+        int64 intValue = 1;
+        double floatValue = 2;
+        string stringValue = 3;
+    }
+}
+
+message AgentConfigMessage{
+    string key = 1;
+    FlexTypeValue value = 2;
+}
+
+message AgentConfigResponse{
+    repeated AgentConfigMessage configEntries = 1;
+    int32 status = 2;
+    string errorMsg = 3;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -492,4 +511,6 @@ service XpumCoreService {
     rpc startDumpRawDataTask( StartDumpRawDataTaskRequest ) returns ( StartDumpRawDataTaskResponse );
     rpc stopDumpRawDataTask( StopDumpRawDataTaskRequest ) returns ( StopDumpRawDataTaskReponse );
     rpc listDumpRawDataTasks( google.protobuf.Empty ) returns ( ListDumpRawDataTaskResponse );
+    rpc setAgentConfig( AgentConfigMessage ) returns ( AgentConfigResponse );
+    rpc getAgentConfig( google.protobuf.Empty ) returns ( AgentConfigResponse );
 }

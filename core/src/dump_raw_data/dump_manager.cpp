@@ -17,6 +17,12 @@ DumpRawDataManager::~DumpRawDataManager() {
     std::cout << "DumpRawDataManager::~DumpRawDataManager() called" << std::endl;
 }
 
+void DumpRawDataManager::resetDumpFrequency() {
+    std::lock_guard<std::mutex> lock(dumpMutex);
+    for (auto task : taskList) {
+        task->reschedule();
+    }
+}
 
 xpum_result_t DumpRawDataManager::
     startDumpRawDataTask(xpum_device_id_t deviceId,

@@ -26,6 +26,8 @@ class DumpRawDataManager {
 
     void init();
 
+    void resetDumpFrequency();
+
     xpum_result_t startDumpRawDataTask(xpum_device_id_t deviceId,
                                        xpum_device_tile_id_t tileId,
                                        const xpum_stats_type_t metricsTypeList[],

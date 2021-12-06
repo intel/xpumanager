@@ -98,7 +98,7 @@ def main(*args, **kwargs):
                     view_func=auth.login_required(firmwares.get_firmware_flash_result))
 
     # agent settings
-    app.add_url_rule('/rest/v1/globalSettings', methods=['GET', 'POST'],
+    app.add_url_rule('/rest/v1/agentSettings', methods=['GET', 'POST'],
                     view_func=auth.login_required(agent_settings.agent_setting))
 
     # statistics

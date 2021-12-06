@@ -444,12 +444,14 @@ xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
     }
     switch (key) {
         case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
-            Core::instance().getMonitorManager()->resetMetricTasksFrequency(*(int *)value);
+            Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = *(int64_t *)value;
+            Core::instance().getMonitorManager()->resetMetricTasksFrequency();
+            Core::instance().getDumpRawDataManager()->resetDumpFrequency();
             return XPUM_OK;
         default:
             break;
     }
-    return XPUM_GENERIC_ERROR;
+    return XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY;
 }
 
 xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value) {
@@ -460,7 +462,7 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value) {
         default:
             break;
     }
-    return XPUM_GENERIC_ERROR;
+    return XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY;
 }
 
 xpum_result_t xpumSetHealthConfig(xpum_device_id_t deviceId, xpum_health_config_type_t key, void *value) {
