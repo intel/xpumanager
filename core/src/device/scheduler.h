@@ -25,7 +25,8 @@ struct SchedulerExclusiveMode {
 
 class Scheduler {
    public:
-    Scheduler(bool on_subdevice, uint32_t subdevice_id, bool can_control, zes_engine_type_flags_t engines, uint32_t supportedModes, zes_sched_mode_t mode);
+    Scheduler(bool on_subdevice, uint32_t subdevice_id, bool can_control, zes_engine_type_flags_t engines, uint32_t supportedModes, zes_sched_mode_t mode,
+    uint64_t val1, uint64_t val2);
 
     virtual ~Scheduler();
 
@@ -41,6 +42,9 @@ class Scheduler {
 
     bool canControl() const;
 
+    uint64_t getVal1() const;
+    uint64_t getVal2() const;
+
    private:
     zes_engine_type_flags_t engine_types;
 
@@ -53,6 +57,8 @@ class Scheduler {
     uint32_t subdevice_id;
 
     bool can_control;
+    uint64_t val1;
+    uint64_t val2;
 };
 
 } // end namespace xpum

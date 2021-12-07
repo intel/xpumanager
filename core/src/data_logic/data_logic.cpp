@@ -74,8 +74,8 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     }
     *count = 0;
     std::map<MeasurementType, MeasurementData> m_datas;
-    std::vector<MeasurementType> metric_types = Configuration::getEnabledMetrics();
-    std::vector<MeasurementType>::iterator metric_types_iter = metric_types.begin();
+    auto metric_types = Configuration::getEnabledMetrics();
+    auto metric_types_iter = metric_types.begin();
     uint64_t start_time = Utility::getCurrentMillisecond();
     uint64_t end_time = 0;
     bool hasDataOnDevice = false;
@@ -166,8 +166,8 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
     }
     int index = 0;
     std::map<MeasurementType, MeasurementData> m_datas;
-    std::vector<MeasurementType> metric_types = Configuration::getEnabledMetrics();
-    std::vector<MeasurementType>::iterator metric_types_iter = metric_types.begin();
+    auto metric_types = Configuration::getEnabledMetrics();
+    auto metric_types_iter = metric_types.begin();
     bool hasDataOnDevice = false;
     uint32_t num_subdevice = 0;
     std::string device_id = std::to_string(deviceId);

@@ -41,7 +41,6 @@ void ComletDump::setupOptions() {
     listDumpFlag->excludes(metricsListOpt);
     listDumpFlag->excludes(timeIntervalOpt);
     listDumpFlag->excludes(dumpTimesOpt);
-
 }
 
 std::unique_ptr<nlohmann::json> ComletDump::run() {
@@ -122,21 +121,22 @@ void ComletDump::printByLine(std::ostream &out) {
         res = run();
 
         if (res->contains("error")) {
-            out << " ";
+            out << "Error: " << (*res)["error"] << std::endl;
+            return;
         }
 
-        std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+        std::shared_ptr<nlohmann::json> json;
 
         if (tileId == -1) {
             if (res->contains("device_level")) {
-                *json = (*res)["device_level"];
+                json = std::make_shared<nlohmann::json>((*res)["device_level"]);
             }
         } else {
             if (res->contains("tile_level")) {
                 auto tiles = (*res)["tile_level"].get<std::vector<nlohmann::json>>();
                 for (auto tile : tiles) {
-                    if (tile["tile_id"].get<int>() == tileId) {
-                        *json = tile["data_list"];
+                    if (tile.contains("tile_id") && tile["tile_id"].get<int>() == tileId && tile.contains("data_list")) {
+                        json = std::make_shared<nlohmann::json>(tile["data_list"]);
                         break;
                     }
                 }
@@ -148,14 +148,17 @@ void ComletDump::printByLine(std::ostream &out) {
         if (tileId != -1) {
             out << tileId << ", ";
         }
+
         for (std::size_t i = 0; i < this->opts->metricsIdList.size(); i++) {
             int metric = this->opts->metricsIdList[i];
             std::string metricKey = metricsOptions[metric].key;
             std::string value = "";
-            for (auto metricObj : json->get<std::vector<nlohmann::json>>()) {
-                if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
-                    value = std::to_string(metricObj["value"].get<uint64_t>());
-                    break;
+            if (json != nullptr) {
+                for (auto metricObj : json->get<std::vector<nlohmann::json>>()) {
+                    if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
+                        value = std::to_string(metricObj["value"].get<uint64_t>());
+                        break;
+                    }
                 }
             }
             if (value.size() < 4) {
