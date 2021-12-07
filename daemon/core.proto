@@ -326,13 +326,34 @@ message DeviceProcessState{
     uint64 memSize = 2;
     uint64 sharedSize = 3;
     string engine = 4;
-    string errorMsg = 5;
+    string processName = 5;
+    string errorMsg = 6;
 }
 
 message DeviceProcessStateResponse{
     uint32 count = 1;
     repeated DeviceProcessState processlist = 2;
     string errorMsg = 3;
+}
+
+message PerformanceFactor{
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    int32 tileId = 3;
+    int32 engineSet = 4;
+    double factor = 5;
+}
+
+message DevicePerformanceFactorResponse{
+    uint32 count = 1;
+    repeated PerformanceFactor pf = 2;
+    string errorMsg = 3;
+}
+
+message DeviceDataRequest{
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    uint32 tileId = 3;
 }
 
 message ConfigDeviceDataRequest{
@@ -342,18 +363,24 @@ message ConfigDeviceDataRequest{
 }
 message ConfigTileData {
     uint32 tileId = 1;
-    uint32 minFreq = 2;
-    uint32 maxFreq = 3;
-    XpumStandbyMode standby = 4;
-    XpumSchedulerMode scheduler = 5;
+    uint32 powerLimit = 2;
+    string powerScope = 3;
+    uint32 interval = 4;
+    string intervalScope = 5; 
+    uint32 minFreq = 6;
+    uint32 maxFreq = 7;
+    string freqOption = 8;
+    XpumStandbyMode standby = 9;
+    XpumSchedulerMode scheduler = 10;
+    uint32 schedulerVal1 = 11;
+    uint32 schedulerVal2 = 12;
+    repeated PerformanceFactor pf = 13;
 }
 message ConfigDeviceData{
     uint32 deviceId = 1;    
-    uint32 powerLimit = 2;
-    uint32 interval = 3;  
-    uint32 tileCount = 4;
-    repeated ConfigTileData tileConfigData = 5;
-    string errorMsg = 6;
+    uint32 tileCount = 2;
+    repeated ConfigTileData tileConfigData = 3;
+    string errorMsg = 4;
 }
 message ConfigDeviceSchdeulerModeRequest{
     uint32 deviceId = 1;
@@ -365,8 +392,9 @@ message ConfigDeviceSchdeulerModeRequest{
 }
 message ConfigDevicePowerLimitRequest{
     uint32 deviceId = 1;
-    uint32 powerLimit = 2;
-    uint32 intervalWindow = 3;
+    uint32 tileId = 2;
+    uint32 powerLimit = 3;
+    uint32 intervalWindow = 4;
 }
 message ConfigDeviceFrequencyRangeRequest{
     uint32 deviceId = 1;
@@ -388,6 +416,15 @@ message ConfigDeviceResultData {
     uint32 retCode = 4;
     string errorMsg = 5;
 }
+
+message DevicePerformanceFactorSettingResponse {
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    uint32 tileId = 3;
+    uint32 retCode = 4;
+    string errorMsg = 5;
+}
+
 enum XpumPolicyType {  
     POLICY_TYPE_GPU_TEMPERATURE=0;
     POLICY_TYPE_GPU_MEMORY_TEMPERATURE=1;
@@ -532,6 +569,8 @@ service XpumCoreService {
     rpc readPolicyNotifyData( google.protobuf.Empty ) returns ( stream ReadPolicyNotifyDataResponse );
     rpc getDeviceConfig( ConfigDeviceDataRequest ) returns ( ConfigDeviceData );
     rpc getDeviceProcessState( DeviceId ) returns ( DeviceProcessStateResponse );
+    rpc getPerformanceFactor( DeviceDataRequest ) returns ( DevicePerformanceFactorResponse );
+    rpc setPerformanceFactor( PerformanceFactor ) returns ( DevicePerformanceFactorSettingResponse );
     rpc resetDevice( ResetDeviceRequest ) returns ( ResetDeviceResponse );
     rpc setDeviceSchedulerMode( ConfigDeviceSchdeulerModeRequest ) returns ( ConfigDeviceResultData );
     rpc setDevicePowerLimit( ConfigDevicePowerLimitRequest ) returns ( ConfigDeviceResultData );

@@ -493,6 +493,32 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
  */
 xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_process_t *dataArray, uint32_t *count);
 
+/**
+ * @brief Get the performance factor of the device
+ * @details This function is used to get the performance factor of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_performancefactor_t * dataArray, uint32_t *count);
+
+/**
+ * @brief Set the performance factor of the device
+ * @details This function is used to set the performance factor of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param performanceFactor     IN: The performanceFactor to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ */
+xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t devicePF);
+
+
 /** @} */ // Closing for CONFIGURATION_API
 
 /**************************************************************************/

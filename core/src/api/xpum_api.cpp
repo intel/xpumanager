@@ -703,7 +703,7 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
     sustainedLimit.enabled = sustained_limit.enabled;
     sustainedLimit.interval = sustained_limit.interval;
     sustainedLimit.power = sustained_limit.power;
-    if (Core::instance().getDeviceManager()->setDevicePowerSustainedLimits(std::to_string(deviceId), sustainedLimit)) {
+    if (Core::instance().getDeviceManager()->setDevicePowerSustainedLimits(std::to_string(deviceId), tileId, sustainedLimit)) {
         return XPUM_OK;
     }
     return XPUM_GENERIC_ERROR;
@@ -942,12 +942,54 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_
             dataArray[i].memSize = proc.getMemSize();
             dataArray[i].sharedSize = proc.getSharedSize();
             dataArray[i].engine = (xpum_engine_type_flags_t)proc.getEngine();
+            strcpy(dataArray[i].processName ,proc.getProcessName().c_str());
+            i++;
+        }
+    }
+    return XPUM_OK;
+}
+xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_performancefactor_t * dataArray, uint32_t *count) {
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_GENERIC_ERROR;
+    }
+    std::vector<PerformanceFactor> pf;
+    Core::instance().getDeviceManager()->getPerformanceFactor(std::to_string(deviceId), pf);
+
+    if (pf.size() > *count && dataArray != nullptr) {
+        return XPUM_BUFFER_TOO_SMALL;
+    } else {
+        *count = pf.size();
+    }
+
+    if (dataArray != nullptr) {
+        int i = 0;
+        for (auto &p : pf) {
+            dataArray[i].engine = (xpum_engine_type_flags_t)p.getEngine();
+            dataArray[i].factor = p.getFactor();
+            dataArray[i].on_subdevice = p.onSubdevice();
+            dataArray[i].subdevice_id = p.getSubdeviceId();
             i++;
         }
     }
     return XPUM_OK;
 }
 
+xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t devicePF) {
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_GENERIC_ERROR;
+    }
+
+    PerformanceFactor pf (devicePF.on_subdevice,
+    devicePF.subdevice_id,(zes_engine_type_flags_t) devicePF.engine, devicePF.factor);
+    //(bool on_subdevice, uint32_t subdevice_id, zes_engine_type_flags_t engine, double factor)
+
+    if (Core::instance().getDeviceManager()->setPerformanceFactor(std::to_string(deviceId), pf)) {
+        return XPUM_OK;
+    }
+    return XPUM_GENERIC_ERROR;
+}
 
 ///////////////////Policy//////////////////////
 xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {

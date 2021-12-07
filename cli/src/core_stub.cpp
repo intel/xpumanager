@@ -1163,8 +1163,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["device_id"] = deviceId;
-            (*json)["power_limit"] = response.powerlimit();
-            (*json)["power_average_window"] = response.interval();
+            //(*json)["power_limit"] = response.powerlimit();
+            //(*json)["power_average_window"] = response.interval();
             std::vector<nlohmann::json> tileJsonList;
             for (uint i{0}; i < response.tilecount(); ++i) {
                 auto tileJson = nlohmann::json();
@@ -1173,6 +1173,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["max_frequency"] = response.tileconfigdata(i).maxfreq();
                 tileJson["standby_mode"] = standbyModeEnumToString(response.tileconfigdata(i).standby());
                 tileJson["scheduler_mode"] = schedulerModeEnumToString(response.tileconfigdata(i).scheduler());
+                tileJson["power_limit"] = response.tileconfigdata(i).powerlimit();
+                tileJson["power_average_window"] = response.tileconfigdata(i).interval();
                 tileJsonList.push_back(tileJson);
             }
             (*json)["tile_config_data"] = tileJsonList;
@@ -1249,12 +1251,13 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceSchedulerMode(int deviceId, i
     }
     return json;
 }
-std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int power, int interval){
+std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int tileId, int power, int interval){
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     ConfigDevicePowerLimitRequest request;
     request.set_deviceid(deviceId);
+    request.set_tileid(tileId);
     request.set_powerlimit(power*1000);
     request.set_intervalwindow(interval);
 
@@ -1352,6 +1355,64 @@ std::unique_ptr<nlohmann::json> CoreStub::resetDevice(int deviceId, bool force){
    return json;
 }
 
+std::unique_ptr<nlohmann::json> CoreStub::getPerformanceFactor(int deviceId, int tileId){
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceDataRequest request;
+    DevicePerformanceFactorResponse response;
+    request.set_deviceid(deviceId);
+    request.set_istiledata(true);
+    request.set_tileid(tileId);
+
+    grpc::Status status = stub->getPerformanceFactor(&context, request, &response);
+    if (status.ok()) {
+        std::vector<nlohmann::json> pfList;
+        for (uint i{0}; i < response.count(); ++i) {
+            auto pr = nlohmann::json();
+            pr["tile_id"] = response.pf(i).tileid();
+            pr["engine"] = response.pf(i).engineset();
+            pr["factor"] = response.pf(i).factor();
+            pfList.push_back(pr);
+        }
+        (*json)["performance_factor_list"] = pfList;
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setPerformanceFactor(int deviceId, int tileId, xpum_engine_type_flags_t engine, double factor) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    PerformanceFactor request;
+    request.set_deviceid(deviceId);
+    if (tileId == -1) {
+        request.set_istiledata(false);
+        request.set_tileid(0);
+    } else {
+        request.set_istiledata(true);
+        request.set_tileid(tileId);
+    }
+    request.set_engineset(engine);
+    request.set_factor(factor);
+
+    DevicePerformanceFactorSettingResponse response;
+    grpc::Status status = stub->setPerformanceFactor(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+        } else {
+            (*json)["error"] = response.errormsg();        
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;    
+
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceProcessState(int deviceId){
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -1366,9 +1427,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProcessState(int deviceId){
         for (uint i{0}; i < response.count(); ++i) {
             auto proc = nlohmann::json();
             proc["process_id"] = response.processlist(i).processid();
-            proc["mem_size"] = response.processlist(i).memsize();
-            proc["share_mem_size"] = response.processlist(i).sharedsize();
-            proc["engine"] = response.processlist(i).engine();
+            //proc["mem_size"] = response.processlist(i).memsize();
+            //proc["share_mem_size"] = response.processlist(i).sharedsize();
+            //proc["engine"] = response.processlist(i).engine();
+            proc["process_name"] = response.processlist(i).processname();
             deviceProcessList.push_back(proc);
         }
         (*json)["device_process_list"] = deviceProcessList;

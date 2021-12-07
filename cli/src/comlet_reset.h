@@ -13,7 +13,7 @@ struct ComletResetOptions {
 
 class ComletReset : public ComletBase {
    public:
-    ComletReset() : ComletBase("reset", "reset the device") {}
+    ComletReset() : ComletBase("reset", "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.") {}
     virtual ~ComletReset() {}
 
     virtual void setupOptions() override;

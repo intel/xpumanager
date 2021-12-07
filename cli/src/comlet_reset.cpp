@@ -19,17 +19,28 @@ std::unique_ptr<nlohmann::json> ComletReset::run() {
     (*json)["return"]="error";
     if (this->opts->deviceId >= 0) {
         json = this->coreStub->getDeviceProcessState(this->opts->deviceId);
-        std::cout <<"Current client process(es): "<<"\n";
-        std::cout << json->dump(4) <<"\n";
-        std::cout <<"Please confirm whether to reset GPU? y or n :";
+        std::cout <<"The process(es) below are using this device."<<"\n";
+
+        for(auto it= (*json)["device_process_list"].begin(); it!=(*json)["device_process_list"].end();++it) {
+            std::cout <<"PID: "<<(*it)["process_id"] <<" ,";
+            std::cout <<" Command: "<<(*it)["process_name"];
+            std::cout<<"\n";
+        }
+        //std::cout << json->dump(4) <<"\n";
+        std::cout <<"All process(es) above will be forcibly killed if you reset it. Do you want to continue? (Y/N):";
         std::cin>>confirmed;
         if (std::tolower(confirmed) == 'y') {
             json = this->coreStub->resetDevice(this->opts->deviceId, true); 
         } else {
             json->clear();
-            (*json)["status"] = "OK";
+            (*json)["status"] = "CANCEL";
             (*json)["return"] = "Reset is cancelled";
         }
+    }
+
+    if((*json)["status"] == "OK") {
+        //json->clear();
+        (*json)["return"] = "Succeed to reset the GPU "+ std::to_string(this->opts->deviceId);
     }
     return json;
 }

@@ -8,6 +8,7 @@
 #include "device/power.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
+#include "device/performancefactor.h"
 #include "infrastructure/device_capability.h"
 #include "infrastructure/init_close_interface.h"
 #include "infrastructure/measurement_data.h"
@@ -46,7 +47,7 @@ class DeviceManagerInterface : public InitCloseInterface {
                                       Power_burst_limit_t& burst_limit,
                                       Power_peak_limit_t& peak_limit) = 0;
 
-    virtual bool setDevicePowerSustainedLimits(const std::string& id,
+    virtual bool setDevicePowerSustainedLimits(const std::string& id, uint32_t tileId,
                                                const Power_sustained_limit_t& sustained_limit) = 0;
 
     virtual bool setDevicePowerBurstLimits(const std::string& id,
@@ -78,6 +79,10 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual void getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id, std::vector<double>& clocks) = 0;
 
     virtual void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes) = 0;
+
+    virtual void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) = 0;
+
+    virtual bool setPerformanceFactor(const std::string& id, PerformanceFactor &pf) = 0;
 
     virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
 };
