@@ -78,9 +78,8 @@ void MonitorManager::removeMetricTask(MeasurementType type) {
 }
 
 void MonitorManager::resetMetricTasksFrequency() {
-    std::vector<MeasurementType> metric_types;
-    Utility::getMetricsTypes(metric_types);
-    std::vector<MeasurementType>::iterator iter = metric_types.begin();
+    auto metric_types = Configuration::getEnabledMetrics();
+    auto iter = metric_types.begin();
     while (iter != metric_types.end()) {
         removeMetricTask(*iter++);
     }
