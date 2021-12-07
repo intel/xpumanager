@@ -73,6 +73,16 @@ PolicyManager::~PolicyManager() {
     // XPUM_LOG_DEBUG("~PolicyManager()");
 }
 
+void PolicyManager::resetCheckFrequency(){
+    int old = this->freq;
+    this->stop();
+    XPUM_LOG_INFO("PolicyManager::resetCheckFrequency(): stop check with old freq:{}",this->freq);
+    std::this_thread::sleep_for(std::chrono::milliseconds(old*2));
+    this->freq = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+    this->start();
+    XPUM_LOG_INFO("PolicyManager::resetCheckFrequency(): start check with new freq:{}",this->freq);
+}
+
 void PolicyManager::init() {
     this->start();
 }
