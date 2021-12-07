@@ -458,7 +458,7 @@ xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
 xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value) {
     switch (key) {
         case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
-            *(int *)value = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+            *(int64_t *)value =(int64_t) Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
             return XPUM_OK;
         default:
             break;
