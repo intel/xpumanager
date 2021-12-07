@@ -2,14 +2,14 @@ from .grpc_stub import stub
 import core_pb2
 
 StandbyModeEnumToString = {
-    core_pb2.STANDBY_DEFAULT: "STANDBY_MODE_DEFAULT",
-    core_pb2.STANDBY_NEVER: "STANDBY_MODE_NEVER"
+    core_pb2.STANDBY_DEFAULT: "default",
+    core_pb2.STANDBY_NEVER: "never"
 }
 
 SchedulerModeEnumToString = {
-    core_pb2.SCHEDULER_TIMEOUT: "SCHEDULER_MODE_TIMEOUT",
-    core_pb2.SCHEDULER_TIMESLICE: "SCHEDULER_MODE_TIMESLICE",
-    core_pb2.SCHEDULER_EXCLUSIVE: "SCHEDULER_MODE_EXCLUSIVE"
+    core_pb2.SCHEDULER_TIMEOUT: "timeout",
+    core_pb2.SCHEDULER_TIMESLICE: "timeslice",
+    core_pb2.SCHEDULER_EXCLUSIVE: "exclusive"
 }
 
 def getConfig(deviceId, tileId):

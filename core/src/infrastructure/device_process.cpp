@@ -1,11 +1,12 @@
 #include "device_process.h"
 
 namespace xpum {
-    device_process::device_process(uint32_t processId, uint64_t memSize, uint64_t sharedSize, zes_engine_type_flags_t engine){
+    device_process::device_process(uint32_t processId, uint64_t memSize, uint64_t sharedSize, zes_engine_type_flags_t engine,std::string processName){
         this->processId = processId;
         this->memSize = memSize;
         this->sharedSize = sharedSize;
         this->engine= engine;
+        this->processName = processName;
     }
     device_process::~device_process() {}
 
@@ -23,6 +24,10 @@ namespace xpum {
 
     zes_engine_type_flags_t device_process::getEngine() {
         return this->engine;
+    }
+
+    std::string device_process::getProcessName() {
+        return this->processName;
     }
 
 } // end namespace xpum

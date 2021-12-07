@@ -538,6 +538,14 @@ struct xpum_device_process_t {
     uint64_t memSize;
     uint64_t sharedSize;
     xpum_engine_type_flags_t engine;
+    char processName[XPUM_MAX_STR_LENGTH];
+};
+
+struct xpum_device_performancefactor_t {
+    bool on_subdevice;
+    uint32_t subdevice_id;
+    double factor;
+    xpum_engine_type_flags_t engine;
 };
 
 struct xpum_frequency_range_t {

@@ -44,7 +44,7 @@ class DeviceManager : public DeviceManagerInterface,
                               Power_burst_limit_t& burst_limit,
                               Power_peak_limit_t& peak_limit);
 
-    bool setDevicePowerSustainedLimits(const std::string& id,
+    bool setDevicePowerSustainedLimits(const std::string& id, uint32_t tileId,
                                        const Power_sustained_limit_t& sustained_limit);
 
     bool setDevicePowerBurstLimits(const std::string& id,
@@ -76,6 +76,10 @@ class DeviceManager : public DeviceManagerInterface,
     bool resetDevice(const std::string& id, bool force);
     
     void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes);
+
+    void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf);
+
+    bool setPerformanceFactor(const std::string& id, PerformanceFactor &pf);
 
     std::shared_ptr<Device> getDevice(const std::string& id);
 
