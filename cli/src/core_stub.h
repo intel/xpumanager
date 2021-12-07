@@ -55,10 +55,13 @@ class CoreStub {
     //config related interface
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2);
-    std::unique_ptr<nlohmann::json> setDevicePowerlimit(int deviceId, int power, int interval);
+    std::unique_ptr<nlohmann::json> setDevicePowerlimit(int deviceId, int tileId, int power, int interval);
     std::unique_ptr<nlohmann::json> setDeviceStandby(int deviceId, int tileId, XpumStandbyMode mode);
     std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq);
     std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId);
+    std::unique_ptr<nlohmann::json> getPerformanceFactor(int deviceId, int tileId);
+    std::unique_ptr<nlohmann::json> setPerformanceFactor(int deviceId, int tileId, xpum_engine_type_flags_t engine, double factor);
+    
     std::unique_ptr<nlohmann::json> resetDevice(int deviceId, bool force);
     std::string schedulerModeEnumToString(XpumSchedulerMode mode);
     std::string standbyModeEnumToString(XpumStandbyMode mode);

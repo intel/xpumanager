@@ -1021,6 +1021,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 ::grpc::Status XpumCoreServiceImpl::setDevicePowerLimit(::grpc::ServerContext* context, const ::ConfigDevicePowerLimitRequest* request,
                                                         ::ConfigDeviceResultData* response) {
     xpum_device_id_t deviceId = request->deviceid();
+    uint32_t tileId = request->tileid();
     uint32_t val1 = request->powerlimit();
     uint32_t val2 = request->intervalwindow();
     xpum_result_t res;
@@ -1030,7 +1031,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     sustained_limit.power = val1;
     sustained_limit.interval = val2;
 
-    res = xpumSetDevicePowerSustainedLimits(deviceId, 0, sustained_limit);
+    res = xpumSetDevicePowerSustainedLimits(deviceId, tileId, sustained_limit);
     if (res != XPUM_OK) {
         response->set_errormsg("Error");
     }
@@ -1106,6 +1107,66 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::getPerformanceFactor(::grpc::ServerContext* context, const ::DeviceDataRequest* request, ::DevicePerformanceFactorResponse* response) {
+    xpum_result_t res;
+    if (!request->istiledata()) {
+         response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    uint32_t count;
+
+    res = xpumGetPerformanceFactor(deviceId, nullptr , &count);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    if (count > 0) {
+        xpum_device_performancefactor_t dataArray[count];
+        res = xpumGetPerformanceFactor(deviceId, dataArray, &count);
+        if (res != XPUM_OK) {
+            response->set_errormsg("Error");
+            return grpc::Status::OK;
+        }else {
+            for (uint32_t i = 0; i < count; i++) {
+                if (dataArray[i].subdevice_id == subdevice_Id) {
+                    PerformanceFactor* pfh = response->add_pf();
+                    pfh->set_deviceid(deviceId);
+                    pfh->set_tileid(dataArray[i].subdevice_id);
+                    pfh->set_istiledata(dataArray[i].on_subdevice);
+                    pfh->set_engineset(dataArray[i].engine);
+                    pfh->set_factor(dataArray[i].factor);
+                }  
+            }
+        }
+    }
+    response->set_count(count);
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::setPerformanceFactor(::grpc::ServerContext* context, const ::PerformanceFactor* request, ::DevicePerformanceFactorSettingResponse* response) {
+    xpum_result_t res;
+    if (!request->istiledata()) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    xpum_device_performancefactor_t pf;
+    
+    pf.on_subdevice = request->istiledata();
+    pf.subdevice_id = subdevice_Id;
+    pf.engine = (xpum_engine_type_flags_t)request->engineset();
+    pf.factor = request->factor();
+
+    res = xpumSetPerformanceFactor(deviceId,pf);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
 ::grpc::Status XpumCoreServiceImpl::getDeviceProcessState(::grpc::ServerContext* context, const ::DeviceId* request, ::DeviceProcessStateResponse* response) {
     xpum_result_t res;
     xpum_device_id_t deviceId = request->id();
@@ -1130,6 +1191,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 proc->set_memsize(dataArray[i].memSize);
                 proc->set_sharedsize(dataArray[i].sharedSize);
                 proc->set_engine(convertEngineId2Num(dataArray[i].engine));
+                proc->set_processname(dataArray[i].processName);
             }
         }
     }
@@ -1207,16 +1269,17 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     int32_t interval = powerLimits.sustained_limit.interval;
 
     response->set_deviceid(deviceId);
-    response->set_powerlimit(power);
-    response->set_interval(interval);
+
     response->set_tilecount(tileCount);
 
     xpum_frequency_range_t freqArray[32];
     xpum_standby_data_t standbyArray[32];
     xpum_scheduler_data_t schedulerArray[32];
+    
     uint32_t freqCount = 32;
     uint32_t standbyCount = 32;
     uint32_t schedulerCount = 32;
+   
     res = xpumGetDeviceFrequencyRanges(deviceId, freqArray, &freqCount);
     if (res != XPUM_OK) {
         response->set_errormsg("Error");
@@ -1237,6 +1300,8 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         uint32_t tileId = tileList.at(j);
         ConfigTileData* tileData = response->add_tileconfigdata();
         tileData->set_tileid(tileId);
+        tileData->set_powerlimit(power);
+        tileData->set_interval(interval);
         for (uint32_t i = 0; i < freqCount; i++) {
             if (freqArray[i].type == XPUM_GPU_FREQUENCY && freqArray[i].subdevice_Id == tileId) {
                 tileData->set_minfreq(int(freqArray[i].min));

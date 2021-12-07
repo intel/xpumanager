@@ -4,12 +4,14 @@
 #include <deque>
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <thread>
 
 #include "device/frequency.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
+#include "device/performancefactor.h"
 #include "gpu_device.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_property.h"
@@ -2132,13 +2134,33 @@ void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector
             XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetProperties(sched, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_sched_mode_t mode;
+                zes_sched_timeout_properties_t timeout;
+                zes_sched_timeslice_properties_t timeslice;
+                uint64_t val1,val2;
                 XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetCurrentMode(sched, &mode));
+                if (mode == ZES_SCHED_MODE_TIMEOUT) {
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetTimeoutModeProperties(sched, false, &timeout));
+                    val1 = timeout.watchdogTimeout;
+                    val2 = 0;
+                }
+                if (mode == ZES_SCHED_MODE_TIMESLICE) {
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetTimesliceModeProperties(sched, false, &timeslice));
+                    val1 = timeslice.interval;
+                    val2 = timeslice.yieldTimeout;
+                }
+                if (mode == ZES_SCHED_MODE_EXCLUSIVE) {
+                    val1 = 0;
+                    val2 = 0;
+                } else {
+                    val1 = 0;
+                    val2 = 0;
+                }
                 schedulers.push_back(*(new Scheduler(props.onSubdevice,
                                                      props.subdeviceId,
                                                      props.canControl,
                                                      props.engines,
                                                      props.supportedModes,
-                                                     mode)));
+                                                     mode,val1,val2)));
             }
         }
     }
@@ -2165,10 +2187,97 @@ void GPUDeviceStub::getDeviceProcessState(const zes_device_handle_t& device, std
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
-        std::vector<zes_process_state_t> procs(process_count);
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, procs.data()));
-        for (auto& proc : procs) {
-            processes.push_back(*(new device_process(proc.processId, proc.memSize, proc.sharedSize, proc.engines)));
+       std::vector<zes_process_state_t> procs(process_count);
+       XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, procs.data()));
+       for (auto& proc : procs) {
+        std::string pn = getProcessName(proc.processId);
+        processes.push_back (*( new device_process(proc.processId,proc.memSize, proc.sharedSize,proc.engines,pn)));
+       }
+    } else {
+       return;
+    }
+}
+
+std::string GPUDeviceStub::getProcessName(uint32_t processId) {
+    std::string processName = "";
+    std::ifstream pinfo;  
+    char path[255];
+    sprintf(path, "/proc/%d/cmdline", processId);
+    pinfo.open(path);
+    if (pinfo.is_open())
+    {
+        std::getline(pinfo, processName);
+        pinfo.close();
+    }
+    return processName;
+}
+
+bool GPUDeviceStub::setPerformanceFactor(const zes_device_handle_t& device, PerformanceFactor &pf) {
+    if (device == nullptr) {
+        return false;
+    }
+    uint32_t pfCount = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPerformanceFactorDomains(device, &pfCount, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        zes_perf_handle_t hPerf[pfCount];
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPerformanceFactorDomains(device, &pfCount,hPerf));
+        if (res == ZE_RESULT_SUCCESS) {
+            for (auto perf : hPerf) {
+                zes_perf_properties_t prop;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesPerformanceFactorGetProperties(perf, &prop));
+                if (res == ZE_RESULT_SUCCESS) {
+                    if (prop.onSubdevice == pf.getSubdeviceId() && prop.subdeviceId == pf.getSubdeviceId() &&
+                        (prop.engines & pf.getEngine()) > 0) {
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesPerformanceFactorSetConfig(perf, pf.getFactor()));
+                        if (res == ZE_RESULT_SUCCESS) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                    continue;  
+                } else {
+                    return false;
+                }
+            }
+            return false;
+        } else {
+            return false;
+        }
+    } else {
+       return false;
+    }
+}
+
+void GPUDeviceStub::getPerformanceFactor(const zes_device_handle_t& device, std::vector<PerformanceFactor>& pf) {
+    if (device == nullptr) {
+        return ;
+    }
+    uint32_t pfCount = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPerformanceFactorDomains(device, &pfCount, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        zes_perf_handle_t hPerf[pfCount];
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPerformanceFactorDomains(device, &pfCount,hPerf));
+        if (res == ZE_RESULT_SUCCESS) {
+            for (auto perf : hPerf) {
+                zes_perf_properties_t prop;
+                double factor;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesPerformanceFactorGetProperties(perf, &prop));
+                if (res == ZE_RESULT_SUCCESS) {
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesPerformanceFactorGetConfig(perf, &factor));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        pf.push_back(*(new PerformanceFactor(prop.onSubdevice,prop.subdeviceId,prop.engines,factor)));
+                        continue;
+                    }
+                } else {
+                    continue;
+                }
+            }
+            return;
+        } else {
+            return;
         }
     } else {
         return;
@@ -2256,7 +2365,7 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
     }
 }
 
-bool GPUDeviceStub::setPowerSustainedLimits(const zes_device_handle_t& device,
+bool GPUDeviceStub::setPowerSustainedLimits(const zes_device_handle_t& device, uint32_t tileId,
                                             const Power_sustained_limit_t& sustained_limit) {
     if (device == nullptr) {
         return false;
@@ -2268,13 +2377,19 @@ bool GPUDeviceStub::setPowerSustainedLimits(const zes_device_handle_t& device,
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
-            zes_power_sustained_limit_t sustained;
-            sustained.enabled = sustained_limit.enabled;
-            sustained.power = sustained_limit.power;
-            sustained.interval = sustained_limit.interval;
-            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerSetLimits(power, &sustained, nullptr, nullptr));
+            zes_power_properties_t props;
+            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                return true;
+                if(props.subdeviceId == tileId) {
+                    zes_power_sustained_limit_t sustained;
+                    sustained.enabled = sustained_limit.enabled;
+                    sustained.power = sustained_limit.power;
+                    sustained.interval = sustained_limit.interval;
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesPowerSetLimits(power, &sustained, nullptr, nullptr));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        return true;
+                    }
+                }
             }
         }
     }
