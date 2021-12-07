@@ -448,6 +448,7 @@ xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
             Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = *(int64_t *)value;
             Core::instance().getMonitorManager()->resetMetricTasksFrequency();
             Core::instance().getDumpRawDataManager()->resetDumpFrequency();
+            Core::instance().getPolicyManager()->resetCheckFrequency();
             return XPUM_OK;
         default:
             break;
