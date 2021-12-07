@@ -148,6 +148,9 @@ def verify_password(username, password):
 
 
 def readConfig(path):
+    no_auth_env = os.environ.get('XPUM_REST_NO_AUTH', '0')
+    if no_auth_env == '1':
+        return None, None, None, True
     file = path + '/conf/rest.conf'
     config = configparser.ConfigParser()
     if config.read(file):
