@@ -16,10 +16,11 @@ void ComletDump::setupOptions() {
 
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
     metricsListOpt->delimiter(',');
+    metricsListOpt->check(CLI::Range(0, (int)metricsOptions.size() - 1));
     auto timeIntervalOpt = addOption("-i", this->opts->timeInterval, "Display the device data at seconds interval. Its default value is 1 second if not specified.");
-    timeIntervalOpt->check(CLI::Range(1));
+    timeIntervalOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
     auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "The times to dump the device data. The dumping will not be ended if not specified.\n");
-    dumpTimesOpt->check(CLI::Range(1));
+    dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
 
     auto dumpRawDataFlag = addFlag("--rawdata", this->opts->rawData, "Dump the required raw statistics to a file in background.");
     auto startDumpFlag = addFlag("--start", this->opts->startDumpTask, "Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.");
@@ -51,7 +52,12 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
         if (this->opts->startDumpTask && this->opts->deviceId != -1) {
             int deviceId = this->opts->deviceId;
             int tileId = this->opts->deviceTileId;
-            json = this->coreStub->startDumpRawDataTask(deviceId, tileId, this->opts->metricsIdList);
+            std::vector<xpum_stats_type_t> metricsTypeList;
+            for (auto i : this->opts->metricsIdList) {
+                auto &m = metricsOptions[i];
+                metricsTypeList.push_back(m.metricsType);
+            }
+            json = this->coreStub->startDumpRawDataTask(deviceId, tileId, metricsTypeList);
         } else if (this->opts->listDumpTask) {
             json = this->coreStub->listDumpRawDataTasks();
         } else if (this->opts->dumpTaskId != -1) {
