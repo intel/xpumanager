@@ -27,11 +27,20 @@ allow_dump_metrics = [
 
 class StartDumpRawDataTaskSchema(Schema):
     device_id = fields.Int(
-        metadata={"description": "The device to dump raw data"}, required=True)
+        required=True,
+        strict=True,
+        validate=validate.Range(0),
+        metadata={"description": "The device to dump raw data"}
+    )
     tile_id = fields.Int(
-        metadata={"description": "The tile to dump raw data"}, required=False)
+        required=False,
+        strict=True,
+        validate=validate.Range(0),
+        metadata={"description": "The tile to dump raw data"}
+    )
     metrics_type_list = fields.List(
         fields.String(
+            strict=True,
             validate=validate.OneOf(allow_dump_metrics),
             metadata={
                 "description": "The metrics type to dump, options are:\n"+"\n".join(allow_dump_metrics)}
