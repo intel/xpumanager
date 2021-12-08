@@ -38,8 +38,8 @@ class ComletDump : public ComletBase {
         {XPUM_STATS_GPU_UTILIZATION, "XPUM_STATS_GPU_UTILIZATION", "GPU Utilization (%)", "GPU active time of the elapsed time, per tile"},
         {XPUM_STATS_POWER, "XPUM_STATS_POWER", "GPU Power (W)", "per GPU"},
         {XPUM_STATS_GPU_FREQUENCY, "XPUM_STATS_GPU_FREQUENCY", "GPU Frequency (MHz)", "per tile"},
-        {XPUM_STATS_GPU_CORE_TEMPERATURE, "XPUM_STATS_GPU_CORE_TEMPERATURE", "GPU Core Temperature (°C)", "per tile"},
-        {XPUM_STATS_MEMORY_TEMPERATURE, "XPUM_STATS_MEMORY_TEMPERATURE", "GPU Memory Temperature (°C)", "per tile"},
+        {XPUM_STATS_GPU_CORE_TEMPERATURE, "XPUM_STATS_GPU_CORE_TEMPERATURE", "GPU Core Temperature (Celsius Degree)", "per tile"},
+        {XPUM_STATS_MEMORY_TEMPERATURE, "XPUM_STATS_MEMORY_TEMPERATURE", "GPU Memory Temperature (Celsius Degree)", "per tile"},
         {XPUM_STATS_MEMORY_UTILIZATION, "XPUM_STATS_MEMORY_UTILIZATION", "GPU Memory Utilization (%)", "per tile"},
         {XPUM_STATS_MEMORY_READ, "XPUM_STATS_MEMORY_READ", "GPU Memory Read (kB/s)", "per tile"},
         {XPUM_STATS_MEMORY_WRITE, "XPUM_STATS_MEMORY_WRITE", "GPU Memory Write (kB/s)", "per tile"},
@@ -59,7 +59,7 @@ class ComletDump : public ComletBase {
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
 
    public:
-    ComletDump() : ComletBase("dump", "\nDump the device statistics") {
+    ComletDump() : ComletBase("dump", "Dump the device statistics") {
         for (std::size_t i = 0; i < metricsOptions.size(); i++) {
             metricsHelpStr += std::to_string(i) + ". " + metricsOptions[i].name;
             if (metricsOptions[i].description.size() > 0) {

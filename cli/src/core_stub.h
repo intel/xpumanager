@@ -87,6 +87,10 @@ class CoreStub {
     static std::string isotimestamp(uint64_t t);
 
     static std::string metricsTypeToString(xpum_stats_type_t metricsType);
+
+    std::unique_ptr<nlohmann::json> setAgentConfig(std::string key, void* pValue);
+
+    std::unique_ptr<nlohmann::json> getAgentConfig();
     
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
