@@ -10,7 +10,7 @@ class CreateGroupSchema(Schema):
 
 class GroupInfoSchema(Schema):
     group_name = fields.Str(metadata={"description": "The name of the group"})
-    group_id = fields.Str(metadata={"description": "The id of the group"})
+    group_id = fields.Int(metadata={"description": "The id of the group"})
     device_id_list = fields.List(fields.Int(metadata={
                                  "description": "The id of devices belong to this group"}) )
 
