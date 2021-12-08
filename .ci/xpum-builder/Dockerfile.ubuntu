@@ -20,7 +20,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y python3-dev liblua5.2-0
 RUN pip3 install grpcio-tools
 RUN apt-get install -y doxygen
-RUN pip3 install apispec apispec_webframeworks \
+RUN pip3 install mistune==0.8.4 apispec apispec_webframeworks \
     Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
     apispec-webframeworks myst-parser marshmallow \
     prometheus-client flask flask_httpauth
