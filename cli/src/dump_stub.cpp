@@ -8,7 +8,7 @@
 
 namespace xpum::cli {
 
-std::unique_ptr<nlohmann::json> CoreStub::startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<int> metricsTypeList) {
+std::unique_ptr<nlohmann::json> CoreStub::startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_stats_type_t> metricsTypeList) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
