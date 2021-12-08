@@ -434,9 +434,8 @@ enum XpumPolicyType {
     POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS=5;
     POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE=6;
     POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE=7;
-    POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE=8;
-    POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE=9;
-    POLICY_TYPE_MAX=10;
+    POLICY_TYPE_GPU_MISSING=8;
+    POLICY_TYPE_MAX=9;
 }
 message XpumPolicyData {
     XpumPolicyType type = 1;
@@ -472,7 +471,7 @@ message ReadPolicyNotifyDataResponse{
     XpumPolicyAction action = 3;
     string notifyCallBackUrl = 4;
     uint32 deviceId = 5;
-    uint64 timestamp = 6;
+    string timestamp = 6;
     uint64 curValue = 7;    
     bool isTileData = 8;
     int32 tileId = 9;

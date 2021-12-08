@@ -68,6 +68,7 @@ class PolicyManager : public PolicyManagerInterface, public std::enable_shared_f
     void triggerNotification(std::shared_ptr<xpum_policy_data> p_policy);
     bool isPerGpuMetric(xpum_policy_type_t type);
     bool isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_policy);
+    bool isGpuExisted(xpum_device_id_t device_id);
     
 
     //
