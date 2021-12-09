@@ -51,7 +51,7 @@ inline int getScaleFromeIndex(int index) {
     return scale;
 }
 
-static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, std::string metricsType, int scaleIndex = 0, int precision = 2) {
+static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, std::string metricsType, std::string key, int scaleIndex = 0, int precision = 2) {
     std::string res = "";
     if (json->contains("device_level")) {
         auto deviceLevelMetricsList = (*json)["device_level"];
@@ -59,10 +59,10 @@ static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, 
         if (!metricsJson.empty()) {
             std::string valueStr;
 
-            if (!metricsJson["value"].is_number_float() && scaleIndex == 0) {
-                valueStr = std::to_string(metricsJson["value"].get<std::uint64_t>());
+            if (!metricsJson[key].is_number_float() && scaleIndex == 0) {
+                valueStr = std::to_string(metricsJson[key].get<std::uint64_t>());
             } else {
-                auto value = metricsJson["value"].get<float>();
+                auto value = metricsJson[key].get<float>();
                 int scale = getScaleFromeIndex(scaleIndex);
                 valueStr = getFloatStringWithPrecision(value / scale, precision);
             }
@@ -77,11 +77,11 @@ static std::string getCounterMetricsValue(std::shared_ptr<nlohmann::json> json, 
             if (!metricsJson.empty()) {
                 if (res.size() > 0) res += ", ";
                 std::string valueStr;
-                if (!metricsJson["value"].is_number_float() && scaleIndex == 0) {
-                    auto value = metricsJson["value"].get<std::uint64_t>();
+                if (!metricsJson[key].is_number_float() && scaleIndex == 0) {
+                    auto value = metricsJson[key].get<std::uint64_t>();
                     valueStr = std::to_string(value);
                 } else {
-                    float value = metricsJson["value"].get<float>();
+                    float value = metricsJson[key].get<float>();
                     int scale = getScaleFromeIndex(scaleIndex);
                     valueStr = getFloatStringWithPrecision(value / scale, precision);
                 }
@@ -155,30 +155,30 @@ static void showDeviceStatistics(Table &table, std::shared_ptr<nlohmann::json> j
     keys.push_back("Elapsed Time (Second)");
     values.push_back(std::to_string((*json)["elapsed_time"].get<int>()));
     keys.push_back("Energy Consumed (J)");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_ENERGY", 3));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_ENERGY", "value", 3));
     keys.push_back("GPU Utilization (%)");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_GPU_UTILIZATION"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_GPU_UTILIZATION", "avg"));
     keys.push_back("EU Array Active (%)");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_EU_ACTIVE"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_EU_ACTIVE", "avg"));
     keys.push_back("EU Array Stall (%)");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_EU_STALL"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_EU_STALL", "avg"));
     keys.push_back("EU Array Idle (%)");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_EU_IDLE"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_EU_IDLE", "avg"));
 
     table.add_augmented_row({keys, values});
 
     keys.clear();
     values.clear();
     keys.push_back("Reset");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_RESET"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_RESET", "value"));
     keys.push_back("Programming Errors");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS", "value"));
     keys.push_back("Driver Errors");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS", "value"));
     keys.push_back("Cache Errors Correctable");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE", "value"));
     keys.push_back("Cache Errors Uncorrectable");
-    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE"));
+    values.push_back(getCounterMetricsValue(json, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE", "value"));
     table.add_augmented_row({keys, values});
 
     table.add_row({"GPU Power (W)", getNonCounterMetricsValue(json, "XPUM_STATS_POWER")});
