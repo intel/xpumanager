@@ -55,7 +55,9 @@ void DiagnosticManager::readConfigFile() {
             if (value.find("#") != std::string::npos)
                 value = value.substr(0, value.find("#"));
             if (name == "MEDIA_CODER_TOOLS_PATH") {
-                MEDIA_CODER_TOOLS_PATH = value;
+                if (value == "/usr/bin/" || value == "/usr/share/mfx/samples/") {
+                    MEDIA_CODER_TOOLS_PATH = value;
+                }
             } else if (name == "MEDIA_CODER_TOOLS_DECODE_FILE") {
                 MEDIA_CODER_TOOLS_DECODE_FILE = value;
             } else if (name == "MEDIA_CODER_TOOLS_ENCODE_FILE") {
@@ -438,24 +440,22 @@ void DiagnosticManager::doDeviceDiagnosticExclusive(const zes_device_handle_t &d
         throw BaseException("zesDeviceProcessesGetState()");
     }
     pid_t pid = getpid();
-    std::string pidlist = " Self-PID: " + std::to_string(pid) + ". PID-List: ";
-    int position = 0;
+    std::string pidlist = " Self-PID: " + std::to_string(pid) + ". List: ";
     for (auto process : processes) {
         std::ifstream file("/proc/" + std::to_string(process.processId) + "/cmdline");
         if (!file.good()) {
             process_count -= 1;
             continue;
         }
-        if (position > 0)
-            pidlist += ", ";
         std::string command_name;
         std::getline(file, command_name);
-        if ((int)(command_name[command_name.size() - 1]) == 0)
-            command_name = command_name.substr(0, command_name.size() - 1);
-        pidlist += std::to_string(process.processId) + "-" + command_name;
-        position += 1;
+        std::string command_name_str;
+        for (std::size_t index = 0; index < command_name.size(); index++) {
+            if (command_name[index] != 0)
+                command_name_str.push_back(command_name[index]);
+        }
+        pidlist += std::to_string(process.processId) + "-" + command_name_str + "# ";
     }
-
     if (process_count > 1) {
         std::vector<zes_process_state_t> process_statuses(process_count);
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
