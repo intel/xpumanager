@@ -54,6 +54,7 @@ class PolicyManager : public PolicyManagerInterface, public std::enable_shared_f
     xpum_result_t xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t policy);
     xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[], int* count);
     xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int* count);
+    void resetCheckFrequency();
 
    private:
     void start();
@@ -67,6 +68,7 @@ class PolicyManager : public PolicyManagerInterface, public std::enable_shared_f
     void triggerNotification(std::shared_ptr<xpum_policy_data> p_policy);
     bool isPerGpuMetric(xpum_policy_type_t type);
     bool isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_policy);
+    bool isGpuExisted(xpum_device_id_t device_id);
     
 
     //

@@ -17,7 +17,7 @@ ADD build_grpc.sh /grpc
 RUN chmod +x /grpc/build_grpc.sh && /grpc/build_grpc.sh
 RUN dnf install -y python3-pip python3-devel && pip3 install grpcio-tools
 RUN dnf install -y lua-devel doxygen
-RUN pip3 install apispec apispec_webframeworks \
+RUN pip3 install mistune==0.8.4 apispec apispec_webframeworks \
     Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
     apispec-webframeworks myst-parser marshmallow \
     prometheus-client flask flask_httpauth

@@ -60,7 +60,7 @@ std::string XpumCoreServiceImpl::dumpRawDataFileFolder;
 void print_help(const char* app_name) {
     printf("\n Usage: %s [OPTIONS]\n\n", app_name);
     printf("  Options:\n");
-    printf("   -h, --help                       Print this help\n");
+    printf("   -h, --help                       print this help\n");
     printf("   -p, --pid_file=filename          PID file used by daemonized app\n");
     printf("   -s, --socket_file=filename       socket file used by daemonized app\n");
     printf("   -d, --dump_folder=foldername     dump folder used by daemonized app\n");
@@ -68,8 +68,10 @@ void print_help(const char* app_name) {
     printf("       --log_max_size=number        max size of log file in MB\n");
     printf("       --log_max_files=number       max number of log files\n");
     printf("       --log_level=LEVEL            log level (trace, debug, info, warning, error)\n");
-    printf("       --enable_metrics=METRICS     list enabled metric indexes, seperated by comma\n");
+    printf("   -m, --enable_metrics=METRICS     list enabled metric indexes, seperated by comma,\n");
+    printf("                                    use hyphen to indicate a range (e.g., 0,4-7,27-29)\n");
     printf("                                    Index   Metric                                              Default\n");
+    printf("                                    -----   --------------------------------------------------  -------\n");
     printf("                                      0     GPU_UTILIZATION                                     on\n");
     printf("                                      1     EU_ACTIVE                                           off\n");
     printf("                                      2     EU_STALL                                            off\n");

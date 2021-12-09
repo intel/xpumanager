@@ -7,6 +7,8 @@
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/logger.h"
+#include "infrastructure/utility.h"
+#include "topology/hwinfo.h"
 #include "xpum_structs.h"
 
 namespace xpum {
@@ -44,6 +46,7 @@ void print_policy_for_demo(const std::string &tag,xpum_policy_t *p_para) {
 }
 
 void print_policy_for_demoEx2(const std::string &tag,std::shared_ptr<xpum_policy_data> p_para) {
+    //XPUM_LOG_TRACE
     XPUM_LOG_TRACE("-----------------{}-----------begin---",tag);
     XPUM_LOG_TRACE("Policy Device Id: {}", p_para->deviceId);
     XPUM_LOG_TRACE("Policy Type: {}", p_para->type);
@@ -51,7 +54,6 @@ void print_policy_for_demoEx2(const std::string &tag,std::shared_ptr<xpum_policy
     XPUM_LOG_TRACE("Policy Condition Threshold: {}", p_para->condition.threshold);
     XPUM_LOG_TRACE("Policy Action type: {}", p_para->action.type);
     XPUM_LOG_TRACE("Policy isDeletePolicy: {}", p_para->isDeletePolicy);
-    //XPUM_LOG_TRACE("Policy timestamp: {}", p_para->timestamp);
     XPUM_LOG_TRACE("Policy curValue: {}", p_para->curValue);
     XPUM_LOG_TRACE("Policy preValue: {}", p_para->preValue);
     XPUM_LOG_TRACE("Policy curTimestamp: {}", p_para->curTimestamp);
@@ -71,6 +73,16 @@ PolicyManager::PolicyManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
 
 PolicyManager::~PolicyManager() {
     // XPUM_LOG_DEBUG("~PolicyManager()");
+}
+
+void PolicyManager::resetCheckFrequency(){
+    int old = this->freq;
+    this->stop();
+    XPUM_LOG_INFO("PolicyManager::resetCheckFrequency(): stop check with old freq:{}",this->freq);
+    std::this_thread::sleep_for(std::chrono::milliseconds(old*2));
+    this->freq = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+    this->start();
+    XPUM_LOG_INFO("PolicyManager::resetCheckFrequency(): start check with new freq:{}",this->freq);
 }
 
 void PolicyManager::init() {
@@ -162,7 +174,43 @@ void PolicyManager::checkPolicy() {
     }
 }
 
+bool PolicyManager::isGpuExisted(xpum_device_id_t device_id){
+    // static int count = 1;
+    // if(count++ % 5 == 0){
+    //     XPUM_LOG_INFO("PolicyManager::isGpuExisted(): return false & count = {}",count);
+    //     return false;
+    // }
+    // XPUM_LOG_INFO("PolicyManager::isGpuExisted(): return true & count = {}",count);
+    // return true;
+
+    bool bExist = false;
+    try {
+        //std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        bExist = xpum::HWInfo::isPcieDevExist(device_id);
+        XPUM_LOG_TRACE("PolicyManager::isGpuExisted(): Device={},bExist={}", device_id, bExist);
+    } catch (std::exception& e) {
+        XPUM_LOG_ERROR("PolicyManager::isGpuExisted(): failed to detect GPU missing with exception: {}", e.what());
+    }  
+    return bExist;
+}
+
 bool PolicyManager::isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_policy) {
+    //XPUM_POLICY_TYPE_GPU_MISSING
+    if (p_policy->type == XPUM_POLICY_TYPE_GPU_MISSING) {
+        bool isGpuMissing = !this->isGpuExisted(p_policy->deviceId);
+        p_policy->curValue = isGpuMissing?1:0;
+        p_policy->curTimestamp = Utility::getCurrentMillisecond();
+        p_policy->isTileData = false;
+        p_policy->tileId = 0;
+        if(p_policy->preValue == 0 && p_policy->curValue == 1){
+            //Only care occur
+            XPUM_LOG_INFO("PolicyManager::isPolicyMeetCondition(): XPUM_POLICY_TYPE_GPU_MISSING return true");
+            return true;
+        }
+        XPUM_LOG_INFO("PolicyManager::isPolicyMeetCondition(): XPUM_POLICY_TYPE_GPU_MISSING return false");
+        return false;
+    }
+
     //std::shared_ptr<std::vector<xpum_device_metrics_t>> pMetricCur = std::make_shared<std::vector<xpum_device_metrics_t>>(count);
     auto pMetricCur = p_policy->pMetricCur;
     for (auto itVector = pMetricCur->begin(); itVector != pMetricCur->end(); itVector++) {
@@ -179,33 +227,27 @@ bool PolicyManager::isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_po
             }
         }
 
-        //check condition
+        //save data
         uint64_t curValue = curData->value/curData->scale;
+        p_policy->curValue = curValue;
+        p_policy->curTimestamp = curTimestamp;
+        p_policy->isTileData = (*itVector).isTileData;
+        p_policy->tileId = (*itVector).tileId;
+                
+        //check condition      
         if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER) {
             uint64_t threshold = p_policy->condition.threshold;
             if (curValue > threshold) {
-                p_policy->curValue = curValue;
-                p_policy->curTimestamp = curTimestamp;
-                p_policy->isTileData = (*itVector).isTileData;
-                p_policy->tileId = (*itVector).tileId;
                 return true;
             }
         } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_LESS) {
             uint64_t threshold = p_policy->condition.threshold;
             if (curValue < threshold) {
-                p_policy->curValue = curValue;
-                p_policy->curTimestamp = curTimestamp;
-                p_policy->isTileData = (*itVector).isTileData;
-                p_policy->tileId = (*itVector).tileId;
                 return true;
             }
-        } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_WHEN_INCREASE) {
+        } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR) {
             uint64_t preValue = p_policy->preValue;
             if (curValue > preValue) {
-                p_policy->curValue = curValue;
-                p_policy->curTimestamp = curTimestamp;
-                p_policy->isTileData = (*itVector).isTileData;
-                p_policy->tileId = (*itVector).tileId;
                 return true;
             }
         }

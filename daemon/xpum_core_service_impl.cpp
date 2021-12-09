@@ -841,6 +841,17 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     return grpc::Status::OK;
 }
 
+std::string getUTCTimeString(uint64_t t) {
+    time_t seconds = (long)t / 1000;
+    int milli_seconds = t % 1000;
+    tm* tm_p = gmtime(&seconds);
+    char buf[50];
+    strftime(buf, sizeof(buf), "%FT%T", tm_p);
+    char milli_buf[10];
+    sprintf(milli_buf, "%03d", milli_seconds);
+    return std::string(buf) + "." + std::string(milli_buf) + "Z";
+}
+
 /////
 std::mutex mutexForCallBackDataList;
 std::condition_variable condtionForCallBackDataList;
@@ -873,7 +884,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     output->mutable_action()->set_throttle_device_frequency_max(p_para->action.throttle_device_frequency_max);
     output->mutable_action()->set_throttle_device_frequency_min(p_para->action.throttle_device_frequency_min);
     output->set_deviceid(p_para->deviceId);
-    output->set_timestamp(p_para->timestamp);
+    output->set_timestamp(getUTCTimeString(p_para->timestamp));
     output->set_curvalue(p_para->curValue);
     output->set_istiledata(p_para->isTileData);
     output->set_tileid(p_para->tileId);

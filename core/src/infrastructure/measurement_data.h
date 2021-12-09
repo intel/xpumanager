@@ -181,7 +181,7 @@ class MeasurementData {
 
     uint64_t getRawdata() { return raw_data; }
 
-    void setRawData(uint64_t val) { this->raw_data = val; }
+    void setRawData(uint64_t val) { bHasDataOnDevice = true; this->raw_data = val; }
 
     void setSubdeviceRawData(uint32_t subdevice_id, uint64_t data);
 

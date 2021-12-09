@@ -17,6 +17,7 @@
 #include "comlet_version.h"
 #include "comlet_firmware.h"
 #include "comlet_dump.h"
+#include "comlet_agentset.h"
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
 
@@ -37,7 +38,8 @@ int main(int argc, char **argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletConfig))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletReset))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics))
-        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump));
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet));
     app.require_subcommand();
 
     CLI11_PARSE(app, argc, argv);

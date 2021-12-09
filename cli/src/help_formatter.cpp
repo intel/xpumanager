@@ -47,6 +47,11 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli stats\n"
                "  xpumcli stats -d [deviceId]\n"
                "  xpumcli stats -g [groupId]\n";
+    } else if (app->get_name().compare("agentset") == 0) {
+        return "\nUsage: xpumcli agentset [Options]\n"
+               "  xpumcli agentset -l\n"
+               "  xpumcli agentset -l -j\n"
+               "  xpumcli agentset -t 200\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }
