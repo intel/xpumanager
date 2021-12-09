@@ -1,9 +1,11 @@
 from google.protobuf import empty_pb2
-from .grpc_stub import stub
+from .grpc_stub import stub, exit_on_disconnect
 import core_pb2
 import datetime
 from .xpum_enums import XpumStatsType
 
+
+@exit_on_disconnect
 def getStatistics(device_id, session_id=0, get_accumulated=False):
     resp = stub.getStatistics(core_pb2.XpumGetStatsRequest(deviceId=device_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
@@ -56,6 +58,7 @@ def getStatistics(device_id, session_id=0, get_accumulated=False):
     return 0, "OK", data
 
 
+@exit_on_disconnect
 def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
     resp = stub.getStatisticsByGroup(core_pb2.XpumGetStatsByGroupRequest(groupId=group_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
