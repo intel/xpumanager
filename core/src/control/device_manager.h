@@ -81,6 +81,8 @@ class DeviceManager : public DeviceManagerInterface,
 
     bool setPerformanceFactor(const std::string& id, PerformanceFactor &pf);
 
+    bool getFabricPorts(const std::string& id, std::vector<port_info>& portInfo);
+
     std::shared_ptr<Device> getDevice(const std::string& id);
 
    private:
