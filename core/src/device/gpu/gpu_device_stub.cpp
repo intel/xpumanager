@@ -809,6 +809,24 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     }
                 }
 
+                uint32_t fabric_count = 0;
+                XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFabricPorts(device, &fabric_count, nullptr));
+                if (fabric_count > 0) {
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER, std::to_string(fabric_count)));
+                    std::vector<zes_fabric_port_handle_t> fps(fabric_count);
+                    XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFabricPorts(device, &fabric_count, fps.data()));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        for (auto& fp : fps) {
+                            zes_fabric_port_properties_t props;
+                            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetProperties(fp, &props));
+                            p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_RX_SPEED, props.maxRxSpeed.bitRate));
+                            p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_TX_SPEED, props.maxTxSpeed.bitRate));
+                            p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FABRIC_PORT_RX_LANES_NUMBER, props.maxRxSpeed.width));
+                            p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_FABRIC_PORT_TX_LANES_NUMBER, props.maxTxSpeed.width));
+                        }
+                    }
+                }
+
                 addPCIeProperties(device, p_gpu);
 
                 p_devices->push_back(p_gpu);

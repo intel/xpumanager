@@ -77,6 +77,16 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "NUMBER_OF_THREADS_PER_EU";
         case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
             return "PHYSICAL_EU_SIMD_WIDTH";
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
+            return "NUMBER_OF_FABRIC_PORTS";
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_RX_SPEED:
+            return "MAX_FABRIC_PORT_RX_SPEED";
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_TX_SPEED:
+            return "MAX_FABRIC_PORT_TX_SPEED";
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_RX_LANES_NUMBER:
+            return "NUMBER_OF_LANES_PER_FABRIC_PORT_RX";
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_TX_LANES_NUMBER:
+            return "NUMBER_OF_LANES_PER_FABRIC_PORT_TX";
         default:
             return "";
     }

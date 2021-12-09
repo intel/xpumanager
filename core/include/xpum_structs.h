@@ -156,6 +156,11 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE,    ///< Maximum number of EUs per sub-slice
     XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU,       ///< Maximum number of threads per EU
     XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH,         ///< The physical EU simd width
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER,             ///< Number of fabric ports
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_RX_SPEED,       ///< Maximum speed supported by the receive side of the port (sum of all lanes)
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_TX_SPEED,       ///< Maximum speed supported by the transmit side of the port (sum of all lanes)
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_RX_LANES_NUMBER,    ///< The number of lanes per the receive side of the port
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_TX_LANES_NUMBER,    ///< The number of lanes per the transmit side of the port
 } xpum_device_property_name_t;
 
 extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name);
