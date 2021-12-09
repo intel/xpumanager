@@ -65,6 +65,9 @@ def set_standby(deviceId):
             500:
                 description: Error
     """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
+
     req = request.get_json()
     if ("tileId" not in req) or ("standby" not in req):
         return jsonify("json string is invalid"), 500
@@ -115,6 +118,8 @@ def set_powerlimit(deviceId):
             500:
                 description: Error
     """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
     req = request.get_json()
     if ("powerLimit" not in req) or ("intervalWindow" not in req):
         return jsonify("json string is invalid"), 500
@@ -170,6 +175,8 @@ def set_frequencyrange(deviceId):
             500:
                 description: Error
     """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
     req = request.get_json()
     if ("tileId" not in req) or ("minFreq" not in req) or ("maxFreq" not in req):
         return jsonify("json string is invalid"), 500
@@ -233,6 +240,8 @@ def set_scheduler(deviceId):
             500:
                 description: Error
     """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
     req = request.get_json()
     if ("tileId" not in req) or ("mode" not in req) or ("val1" not in req) or ("val2" not in req):
         return jsonify("json string is invalid"), 500
@@ -292,6 +301,8 @@ def get_config(deviceId):
             500:
                 description: Error
     """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
     req = request.get_json()
     if ("tileId" not in req):
         return jsonify("json string is invalid"), 500
