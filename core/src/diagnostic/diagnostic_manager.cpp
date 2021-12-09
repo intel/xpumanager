@@ -39,7 +39,7 @@ void DiagnosticManager::readConfigFile() {
     ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
     exe_path[len] = '\0';
     std::string current_file = exe_path;
-    std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/config/";
+    std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../config/";
     std::string file_name = config_folder + std::string("diagnostics.conf");
     std::ifstream conf_file(file_name);
     if (conf_file.is_open()) {
@@ -71,7 +71,7 @@ void DiagnosticManager::readConfigFile() {
         
     }
     else {
-        XPUM_LOG_ERROR("couldn't open config file for diagnostics");
+        XPUM_LOG_ERROR("couldn't open config file for diagnostics: " + file_name);
     }
 }
 
