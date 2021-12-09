@@ -584,6 +584,10 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
 }
 
 void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
+    if (!std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
+                    [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
+        return;
+    }
     bool has_exception = false;
     zes_pci_properties_t pci_props;
     ze_result_t res;
@@ -596,7 +600,11 @@ void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device,
         toGetEuActiveStallIdle(device, driver, MeasurementType::METRIC_EU_ACTIVE);
     } catch (BaseException& e) {
         has_exception = true;
-        XPUM_LOG_WARN("Device {}{} has no EU active, EU stall and EU idle monitoring capability.", props.core.name, bdf_address);
+        if (strcmp(e.what(),"toGetEuActiveStallIdleCore - zetMetricStreamerOpen") == 0) {
+            XPUM_LOG_WARN("Device {}{} has no EU active, EU stall and EU idle monitoring capability. Or because there are other applications on the current machine that are monitoring related data, XPUM cannot monitor these data at the same time.", props.core.name, bdf_address);
+        } else {
+            XPUM_LOG_WARN("Device {}{} has no EU active, EU stall and EU idle monitoring capability.", props.core.name, bdf_address);
+        }
     }
     if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE);
