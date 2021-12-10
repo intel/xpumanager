@@ -2864,7 +2864,7 @@ bool GPUDeviceStub::getFabricPorts(const zes_device_handle_t& device, std::vecto
     uint32_t numPorts = 0;
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &numPorts, nullptr));    
-    if (res != ZE_RESULT_SUCCESS) {
+    if (res != ZE_RESULT_SUCCESS || numPorts == 0) {
         return false;
     }
         
