@@ -2,6 +2,7 @@
 
 #include <map>
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 #include "core_stub.h"
 #include "pretty_table.h"
@@ -107,6 +108,22 @@ void ComletDump::printByLine(std::ostream &out) {
         return;
     }
 
+    // check deviceId and tileId is valid
+    auto res = this->coreStub->getDeviceProperties(this->opts->deviceId);
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    if (this->opts->deviceTileId != -1) {
+        std::stringstream number_of_tiles((*res)["number_of_tiles"].get<std::string>());
+        int num_tiles = 0;
+        number_of_tiles >> num_tiles;
+        if (this->opts->deviceTileId >= num_tiles) {
+            out << "Error: Tile not found" << std::endl;
+            return;
+        }
+    }
+
     out << "Timestamp, DeviceId, ";
     if (tileId != -1) {
         out << "TileId, ";
@@ -119,7 +136,12 @@ void ComletDump::printByLine(std::ostream &out) {
     }
     out << std::endl;
 
-    auto res = run();
+    res = run();
+
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"] << std::endl;
+        return;
+    }
 
     int iter = 0;
 

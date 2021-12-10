@@ -79,6 +79,10 @@ static void createEmptyFile(std::string filePath) {
         }
         grpcTaskInfo->set_begintime(taskInfo.beginTime);
         grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
+    } else if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
+        response->set_errormsg("Device not found");
+    } else if (res == XPUM_RESULT_TILE_NOT_FOUND) {
+        response->set_errormsg("Tile not found");
     } else {
         response->set_errormsg("Error occurs");
     }

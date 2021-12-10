@@ -80,6 +80,7 @@ typedef enum xpum_result_enum {
     XPUM_GENERIC_ERROR,    ///< Function return with unknown errors
     XPUM_BUFFER_TOO_SMALL, ///< The buffer pass to function is too small
     XPUM_RESULT_DEVICE_NOT_FOUND,   ///< Device not found
+    XPUM_RESULT_TILE_NOT_FOUND,   ///< Tile not found
     XPUM_RESULT_GROUP_NOT_FOUND,
     XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT,
     XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE,
