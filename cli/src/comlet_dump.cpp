@@ -49,6 +49,14 @@ void ComletDump::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletDump::run() {
     std::unique_ptr<nlohmann::json> json;
+
+    // check metrics is unique
+    if(std::adjacent_find(this->opts->metricsIdList.begin(), this->opts->metricsIdList.end()) != this->opts->metricsIdList.end()){
+        json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+        (*json)["error"] = "Duplicated metrics type";
+        return json;
+    }
+
     if (this->opts->rawData) {
         if (this->opts->startDumpTask && this->opts->deviceId != -1) {
             int deviceId = this->opts->deviceId;
@@ -124,6 +132,14 @@ void ComletDump::printByLine(std::ostream &out) {
         }
     }
 
+    // try run
+    res = run();
+
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+
     out << "Timestamp, DeviceId, ";
     if (tileId != -1) {
         out << "TileId, ";
@@ -136,13 +152,6 @@ void ComletDump::printByLine(std::ostream &out) {
     }
     out << std::endl;
 
-    res = run();
-
-    if (res->contains("error")) {
-        out << "Error: " << (*res)["error"] << std::endl;
-        return;
-    }
-
     int iter = 0;
 
     while (true) {
@@ -151,7 +160,7 @@ void ComletDump::printByLine(std::ostream &out) {
         res = run();
 
         if (res->contains("error")) {
-            out << "Error: " << (*res)["error"] << std::endl;
+            out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
             return;
         }
 

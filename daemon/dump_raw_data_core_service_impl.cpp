@@ -1,14 +1,15 @@
 #include <pwd.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
- #include <unistd.h>
+#include <unistd.h>
 
 #include <fstream>
 
+#include "logger.h"
 #include "xpum_api.h"
 #include "xpum_core_service_impl.h"
 #include "xpum_structs.h"
-#include "logger.h"
 
 namespace xpum::daemon {
 
@@ -28,9 +29,15 @@ static void createEmptyFile(std::string filePath) {
     // chwon of file
     passwd* pwd = getpwnam("xpum");
     if (pwd != nullptr) {
-        if(chown(filePath.c_str(), pwd->pw_uid, pwd->pw_gid)!=0){
+        if (chown(filePath.c_str(), pwd->pw_uid, pwd->pw_gid) != 0) {
             XPUM_LOG_ERROR("Fail to chown of file \"" + filePath + "\"");
         }
+    }
+}
+
+static void removeFileOnStartTaskFail(std::string filePath) {
+    if (remove(filePath.c_str()) != 0) {
+        XPUM_LOG_ERROR("Fail to remove file \"" + filePath + "\"");
     }
 }
 
@@ -79,12 +86,15 @@ static void createEmptyFile(std::string filePath) {
         }
         grpcTaskInfo->set_begintime(taskInfo.beginTime);
         grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
-    } else if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
-        response->set_errormsg("Device not found");
-    } else if (res == XPUM_RESULT_TILE_NOT_FOUND) {
-        response->set_errormsg("Tile not found");
     } else {
-        response->set_errormsg("Error occurs");
+        removeFileOnStartTaskFail(dumpFilePath);
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
+            response->set_errormsg("Device not found");
+        } else if (res == XPUM_RESULT_TILE_NOT_FOUND) {
+            response->set_errormsg("Tile not found");
+        } else {
+            response->set_errormsg("Error occurs");
+        }
     }
     return grpc::Status::OK;
 }

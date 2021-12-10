@@ -25,6 +25,10 @@ allow_dump_metrics = [
 ]
 
 
+def is_unique(values):
+    if len(set(values)) != len(values):
+        raise ValidationError("Duplicated metrics type")
+
 class StartDumpRawDataTaskSchema(Schema):
     device_id = fields.Int(
         required=True,
@@ -46,7 +50,7 @@ class StartDumpRawDataTaskSchema(Schema):
                 "description": "The metrics type to dump, options are:\n"+"\n".join(allow_dump_metrics)}
         ),
         required=True,
-        validate=validate.Length(1)
+        validate=validate.And(validate.Length(1), is_unique)
     )
 
 
