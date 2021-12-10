@@ -194,6 +194,7 @@ void createDumpFolder() {
         dumpFolder = "/tmp/xpumdump";
     }
     // create dump folder
+    umask(0000);
     int res = mkdir(dumpFolder.c_str(), 0775);
     if (res != 0 && errno != EEXIST) {
         std::cerr << "Fail to create folder" << std::endl;

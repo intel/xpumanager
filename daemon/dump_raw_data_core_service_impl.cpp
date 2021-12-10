@@ -1,9 +1,14 @@
+#include <pwd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+ #include <unistd.h>
+
+#include <fstream>
+
 #include "xpum_api.h"
 #include "xpum_core_service_impl.h"
 #include "xpum_structs.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "logger.h"
 
 namespace xpum::daemon {
 
@@ -18,6 +23,16 @@ static std::string isotimestamp(uint64_t t) {
     return std::string(buf) + "." + std::string(milli_buf) + "Z";
 }
 
+static void createEmptyFile(std::string filePath) {
+    std::ofstream output(filePath);
+    // chwon of file
+    passwd* pwd = getpwnam("xpum");
+    if (pwd != nullptr) {
+        if(chown(filePath.c_str(), pwd->pw_uid, pwd->pw_gid)!=0){
+            XPUM_LOG_ERROR("Fail to chown of file \"" + filePath + "\"");
+        }
+    }
+}
 
 ::grpc::Status XpumCoreServiceImpl::startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response) {
     std::vector<xpum_stats_type_t> metricsTypeList;
@@ -42,6 +57,8 @@ static std::string isotimestamp(uint64_t t) {
     }
 
     std::string dumpFilePath = dumpRawDataFileFolder + "/" + fileName + ".csv";
+
+    createEmptyFile(dumpFilePath);
 
     auto res = xpumStartDumpRawDataTask(
         deviceId,
