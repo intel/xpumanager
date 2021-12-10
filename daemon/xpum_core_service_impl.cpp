@@ -31,7 +31,6 @@ grpc::Status XpumCoreServiceImpl::getVersion(grpc::ServerContext* context, const
                 XpumVersionInfoArray_XpumVersionInfo* info = response->add_versions();
                 info->mutable_version()->set_value(versions[i].version);
                 info->set_versionstring(versions[i].versionString);
-                std::cout << "version: " << versions[i].versionString << std::endl;
             }
         }
     }

@@ -18,7 +18,7 @@
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 #include "level_zero/zet_api.h"
-#include "topology/topology.h"
+#include "topology/xe_link.h"
 
 namespace xpum {
 
@@ -122,6 +122,8 @@ class GPUDeviceStub {
     static void getFreqAvailableClocks(const zes_device_handle_t& device, uint32_t subdevice_id, std::vector<double>& clocks);
 
     static std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device);
+
+    static bool getFabricPorts(const zes_device_handle_t& device, std::vector<port_info>& portInfo);
 
    private:
     GPUDeviceStub();

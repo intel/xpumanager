@@ -14,6 +14,7 @@
 #include "infrastructure/measurement_data.h"
 #include "infrastructure/measurement_type.h"
 #include "infrastructure/device_process.h"
+#include "topology/xe_link.h"
 
 namespace xpum {
 
@@ -83,6 +84,8 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) = 0;
 
     virtual bool setPerformanceFactor(const std::string& id, PerformanceFactor &pf) = 0;
+
+    virtual bool getFabricPorts(const std::string& id, std::vector<port_info>& portInfo) = 0;
 
     virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
 };

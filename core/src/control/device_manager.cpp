@@ -261,4 +261,10 @@ bool DeviceManager::resetDevice(const std::string& id, bool force) {
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().resetDevice(getDeviceHandle(id), (ze_bool_t)force);
 }
+
+bool DeviceManager::getFabricPorts(const std::string& id, std::vector<port_info>& portInfo){
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().getFabricPorts(getDeviceHandle(id), portInfo);
+}
+
 } // end namespace xpum

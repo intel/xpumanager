@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <thread>
+#include <unistd.h>
 
 #include "device/frequency.h"
 #include "device/scheduler.h"
@@ -2854,6 +2855,60 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
         index++;
     }
     data->description[index] = 0;
+}
+
+bool GPUDeviceStub::getFabricPorts(const zes_device_handle_t& device, std::vector<port_info>& portInfo) {
+    if (device == nullptr) {
+        return false;
+    }
+    uint32_t numPorts = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &numPorts, nullptr));    
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+        
+    std::vector<zes_fabric_port_handle_t> fp_handles(numPorts);
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &numPorts, fp_handles.data()));
+    if (res == ZE_RESULT_SUCCESS) {
+        for (auto& hPort : fp_handles) {
+            port_info info;
+            zes_fabric_port_properties_t props;
+            zes_fabric_port_state_t state;
+            zes_fabric_link_type_t link;
+            zes_fabric_port_config_t config;
+            memset(&props, 0, sizeof(props));
+            memset(&state, 0, sizeof(state));
+            memset(&link, 0, sizeof(link));
+            memset(&config, 0, sizeof(config));
+
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetProperties(hPort, &props));
+            if (res != ZE_RESULT_SUCCESS) {
+                continue;
+            }
+            info.portProps = props;
+
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetState(hPort, &state));                
+            if (res != ZE_RESULT_SUCCESS) {
+                continue;
+            }
+            info.portState = state;
+
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetLinkType(hPort, &link));
+            if (res != ZE_RESULT_SUCCESS) {
+                continue;
+            }
+            info.portLink = link;
+
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetConfig(hPort, &config));
+            if (res != ZE_RESULT_SUCCESS) {
+                continue;                    
+            }
+            info.portConf = config;
+            portInfo.push_back(info);
+        }
+    }
+    return true;
 }
 
 } // end namespace xpum
