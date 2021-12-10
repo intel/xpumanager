@@ -53,7 +53,7 @@ std::string Topology::getLocalCpusList(std::string address) {
     return affinity;
 }
 
-bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds) {
+bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds, bool checkDevice) {
     hwloc_topology_t hwtopology;
     hwloc_obj_t obj = nullptr;
     const PcieDevice* pDevice = nullptr;
@@ -83,19 +83,38 @@ bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t
         }
     }
 
-    if (pDevice != nullptr && pDevice->type == DV_GRAPHIC && obj != nullptr) {
-        hwloc_obj_t parentObj = obj->parent;
-        while (parentObj != nullptr) {
-            zes_pci_address_t addr;
-            if (parentObj->type == HWLOC_OBJ_BRIDGE) {
-                addr.bus = parentObj->attr->pcidev.bus;
-                addr.domain = parentObj->attr->pcidev.domain;
-                addr.device = parentObj->attr->pcidev.dev;
-                addr.function = parentObj->attr->pcidev.func;
-                pcieAdds.emplace_back(addr);
-                parentObj = parentObj->parent;
-            } else {
-                break;
+    if(checkDevice){
+        if (pDevice != nullptr && pDevice->type == DV_GRAPHIC && obj != nullptr) {
+            hwloc_obj_t parentObj = obj->parent;
+            while (parentObj != nullptr) {
+                zes_pci_address_t addr;
+                if (parentObj->type == HWLOC_OBJ_BRIDGE) {
+                    addr.bus = parentObj->attr->pcidev.bus;
+                    addr.domain = parentObj->attr->pcidev.domain;
+                    addr.device = parentObj->attr->pcidev.dev;
+                    addr.function = parentObj->attr->pcidev.func;
+                    pcieAdds.emplace_back(addr);
+                    parentObj = parentObj->parent;
+                } else {
+                    break;
+                }
+            }
+        }
+    } else {
+        if (obj != nullptr) {
+            hwloc_obj_t parentObj = obj->parent;
+            while (parentObj != nullptr) {
+                zes_pci_address_t addr;
+                if (parentObj->type == HWLOC_OBJ_BRIDGE) {
+                    addr.bus = parentObj->attr->pcidev.bus;
+                    addr.domain = parentObj->attr->pcidev.domain;
+                    addr.device = parentObj->attr->pcidev.dev;
+                    addr.function = parentObj->attr->pcidev.func;
+                    pcieAdds.emplace_back(addr);
+                    parentObj = parentObj->parent;
+                } else {
+                    break;
+                }
             }
         }
     }
