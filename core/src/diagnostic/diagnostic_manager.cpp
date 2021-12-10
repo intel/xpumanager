@@ -1540,7 +1540,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
         updateMessage(compute_component.message, desc);
     } else {
         compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        std::string desc = "Fass to check computation performance.";
+        std::string desc = "Pass to check computation performance.";
         updateMessage(compute_component.message, desc);
     }
     compute_component.finished = true;
@@ -1553,7 +1553,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
 
     if (power_threshold <= 0) {
         power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        std::string desc = "Pass to check stress power.";
+        std::string desc = "Fail to check stress power.";
         desc += " " + power_detail;
         desc += "  Unconfigured or invalid threshold.";
         updateMessage(power_component.message, desc);
@@ -1564,7 +1564,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
         desc += " Threshold is " + std::to_string(power_threshold) + " W.";
         updateMessage(power_component.message, desc);
     } else {
-        power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
         std::string desc = "Pass to check stress power.";
         updateMessage(power_component.message, desc);
     }
