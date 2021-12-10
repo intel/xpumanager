@@ -1,22 +1,35 @@
+#include <thread>
+
 #include "cli_table.h"
 
 
 namespace xpum::cli {
 
-#define TABLE_DEFAULT_WIDTH         100
-#define TABLE_DEFAULT_COLUMN_TITLE  "TITLE"
+#define TABLE_DEFAULT_WIDTH             100
+#define TABLE_DEFAULT_IDENTATION        2
+#define TABLE_DEFAULT_IDENTATION_LEVEL  0
+#define TABLE_DEFAULT_SHOW_TITLE        true
+#define TABLE_DEFAULT_SUBITEM_ROW       false
+#define TABLE_DEFAULT_COLUMN_TITLE      "TITLE"
 
-#define KEY_TABLE_WIDTH             "width"
-#define KEY_TABLE_COLUMNS           "columns"
-#define KEY_TABLE_COLUMN_SIZE       "size"
-#define KEY_TABLE_COLUMN_TITLE      "title"
-#define KEY_TABLE_ROW_INSTANCE      "instance"
-#define KEY_TABLE_ROWS              "rows"
-#define KEY_TABLE_CELLS             "cells"
-#define KEY_TABLE_CELL_LABEL        "label"
-#define KEY_TABLE_CELL_VALUE        "value"
-#define KEY_TABLE_CELL_SUFFIX       "suffix"
-#define KEY_TABLE_CELL_FIXER        "fixer"
+#define KEY_TABLE_WIDTH                 "width"
+#define KEY_TABLE_INDENTATION           "indentation"
+#define KEY_TABLE_SHOW_TITLE_ROW        "showTitleRow"
+#define KEY_TABLE_COLUMNS               "columns"
+#define KEY_TABLE_COLUMN_SIZE           "size"
+#define KEY_TABLE_COLUMN_TITLE          "title"
+#define KEY_TABLE_ROW_INSTANCE          "instance"
+#define KEY_TABLE_ROWS                  "rows"
+#define KEY_TABLE_CELLS                 "cells"
+#define KEY_TABLE_CELL_ROW_TITLE        "rowTitle"
+#define KEY_TABLE_CELL_LABEL            "label"
+#define KEY_TABLE_CELL_LABEL_TAG        "label_tag"
+#define KEY_TABLE_CELL_VALUE            "value"
+#define KEY_TABLE_CELL_SUB_ITEMS        "subs"
+#define KEY_TABLE_CELL_SUBITEM_ROW      "subrow"
+#define KEY_TABLE_CELL_SUFFIX           "suffix"
+#define KEY_TABLE_CELL_FIXER            "fixer"
+#define KEY_TABLE_CELL_SCALE            "scale"
 
 #define PATH_DELIMITER '.'
 
@@ -33,11 +46,6 @@ unsigned int count_elements(const std::string& str, const char deli) {
 CharTableConfigColumn::CharTableConfigColumn(const nlohmann::json& conf):
 size(conf.value(KEY_TABLE_COLUMN_SIZE, TABLE_COLUMN_AUTO)),
 title(conf.value(KEY_TABLE_COLUMN_TITLE, TABLE_DEFAULT_COLUMN_TITLE)) {
-}
-
-CharTableConfigPathElement::CharTableConfigPathElement(const std::string& confValue):
-is_array(confValue.rfind("[]")==(confValue.length()-2)),
-prop_name((is_array)?confValue.substr(0,confValue.length()-2):confValue) {
 }
 
 CharTableConfigPath::CharTableConfigPath(const std::string& confValue):
@@ -59,11 +67,44 @@ elements(confValue.empty() ? 0 : count_elements(confValue, PATH_DELIMITER)) {
     }
 }
 
+CharTableConfigCellSingleSubItems::CharTableConfigCellSingleSubItems(const nlohmann::json::array_t* conf):
+_enabled(conf != NULL),
+items((_enabled) ? conf->size() : 0) {
+    if (_enabled) {
+        for (unsigned int i=0; i<conf->size(); i++) {
+            items[i] = new CharTableConfigCellSingle(conf->at(i));
+        }
+    }
+}
+
+CharTableConfigCellSingleSubItems::~CharTableConfigCellSingleSubItems() {
+    for (auto it: items) {
+        delete it;
+    }
+}
+
+const bool CharTableConfigCellSingleSubItems::append_value(std::string& res, const nlohmann::json& obj, const bool notFirst) const {
+    bool itNF = false;
+    for (auto it: items) {
+        if (itNF) {
+            res += ", ";
+        }
+        res += it->apply(obj);
+        itNF = true;
+    }
+    return true;
+}
+
 CharTableConfigCellSingle::CharTableConfigCellSingle(const nlohmann::json& conf):
 label(conf.is_object() ? conf.value(KEY_TABLE_CELL_LABEL, "") : ""),
+label_tag(conf.is_object() ? conf.value(KEY_TABLE_CELL_LABEL_TAG, "") : ""),
+row_title(conf.is_object() ? conf.value(KEY_TABLE_CELL_ROW_TITLE, "") : ""),
 value(conf.is_object() ? conf.value(KEY_TABLE_CELL_VALUE, "") : (std::string) conf),
+subs((conf.is_object() && conf.contains(KEY_TABLE_CELL_SUB_ITEMS)) ? conf[KEY_TABLE_CELL_SUB_ITEMS].get_ptr<const nlohmann::json::array_t*>() : NULL),
+subrow(conf.is_object() ? conf.value(KEY_TABLE_CELL_SUBITEM_ROW, TABLE_DEFAULT_SUBITEM_ROW) : TABLE_DEFAULT_SUBITEM_ROW),
 suffix(conf.is_object() ? conf.value(KEY_TABLE_CELL_SUFFIX, "") : ""),
-fixer(conf.is_object() ? conf.value(KEY_TABLE_CELL_FIXER, "") : "") {
+fixer(conf.is_object() ? conf.value(KEY_TABLE_CELL_FIXER, "") : ""),
+scale(conf.is_object() ? conf.value(KEY_TABLE_CELL_SCALE, NAN) : NAN) {
 }
 
 ChatTableConfigCellMulti::ChatTableConfigCellMulti(const nlohmann::json& conf):
@@ -82,7 +123,7 @@ cells(conf.find(KEY_TABLE_CELLS)->size()) {
     auto cellsDef = conf.find(KEY_TABLE_CELLS);
     for (unsigned long i=0; i< cells.size(); i++) {
         auto cellDef = cellsDef->at(i);
-        if (cellDef.is_string()) {
+        if (cellDef.is_string() || cellDef.is_object()) {
             // a path
             cells[i] = new CharTableConfigCellSingle(cellDef);
         } else if (cellDef.is_array()) {
@@ -94,6 +135,8 @@ cells(conf.find(KEY_TABLE_CELLS)->size()) {
 
 CharTableConfig::CharTableConfig(const nlohmann::json& conf):
 width(conf.value(KEY_TABLE_WIDTH, TABLE_DEFAULT_WIDTH)),
+indentation(conf.value(KEY_TABLE_INDENTATION, TABLE_DEFAULT_IDENTATION)),
+show_title_row(conf.value(KEY_TABLE_SHOW_TITLE_ROW, TABLE_DEFAULT_SHOW_TITLE)),
 colWidthMax(conf.find(KEY_TABLE_COLUMNS)->size()),
 colWidthSetting(colWidthMax.size()),
 columns(colWidthMax.size()),
@@ -114,7 +157,7 @@ void CharTableConfig::setCellValue(CharTableRow& row, const unsigned int col, co
     if (valLen > colWidthMax[col]) {
         colWidthMax[col] = valLen;
     }
-    row.setCell(col, value);
+    row.setCell(value, col);
 }
 
 void CharTableConfig::addTitleRow(CharTableRow& row) {
@@ -157,13 +200,17 @@ void CharTableRow::show(std::ostream& out, const std::vector<unsigned int>& colS
     output_repeat_char(out, '|', line);
     for (unsigned int i=0; i<colSetting.size(); i++) {
         const std::string& cStr = *(cells[i]);
-        const unsigned int cLen = cStr.length();
         const unsigned int colWidth = colSetting[i];
         output_repeat_char(out, ' ', margin);
         out << cStr;
-        output_repeat_char(out, ' ', colWidth-cLen+margin);
+        int csLeft = columnSpaceLeft(colWidth, i);
+        if (csLeft > 0) {
+            output_repeat_char(out, ' ', csLeft);
+        }
+        output_repeat_char(out, ' ', margin);
         output_repeat_char(out, '|', line);
     }
+    // std::this_thread::sleep_for(std::chrono::milliseconds(500));
     out << std::endl;
 }
 
@@ -178,14 +225,56 @@ void CharTableRowSeparator::show(std::ostream& out, const std::vector<unsigned i
     out << std::endl;
 }
 
-CharTable::CharTable(CharTableConfig& tableConf, const nlohmann::json& res):
+void CharTable::calculateHangRows() {
+    const unsigned int iw = config.hangIndentation();
+    auto row = rows.begin();
+    while (row != rows.end()) {
+        const int cols = (*row)->numberOfCells();
+        CharTableRow* nRow = (CharTableRow*) (*row);
+        row ++;
+        int ciw = 0;
+        bool hasNewRow;
+        do {
+            hasNewRow = false;
+            CharTableRow* sRow = nRow;
+            for (int i = 0; i < cols; i ++) {
+                int cw = config.getWidthSetting(i);
+                if (sRow->columnSpaceLeft(cw, i) < 0) {
+                    // need to add hang row
+                    int cp = sRow->getCutPositionForHangRow(cw, ciw, i);
+                    const bool newItem = sRow->isNewRow(cp, i);
+                    std::string lStr(sRow->cutCellContentAt(cp, newItem, i));
+                    if (!hasNewRow) {
+                        nRow = new CharTableRow(config.numOfColumns());
+                        rows.insert(row, nRow);
+                        hasNewRow = true;
+                    }
+                    std::string iStr("");
+                    if (!newItem) {
+                        for (unsigned int i=0; i<iw; i++) {
+                            iStr.append(" ");
+                        }
+                    }
+                    nRow->setCell(iStr + lStr, i);
+                }
+            }
+            if (hasNewRow) {
+                ciw = iw;
+            }
+        } while (hasNewRow);
+    }
+}
+
+CharTable::CharTable(CharTableConfig& tableConf, const nlohmann::json& res, const bool cont):
 config(tableConf),
 result(res),
 rows() {
-    addSeparator();
-    CharTableRow& titleRow = addRow();
-    config.addTitleRow(titleRow);
-    addSeparator();
+    if (config.showTitleRow()) {
+        addSeparator();
+        CharTableRow& titleRow = addRow();
+        config.addTitleRow(titleRow);
+    }
+    if (!cont) addSeparator();
 
     for (auto objConf: config.getObjects()) {
         const unsigned int objRows = objConf->maxRowCount();
@@ -210,6 +299,7 @@ rows() {
     }
 
     config.calculateColumnWidth();
+    calculateHangRows();
 }
 
 void CharTable::show(std::ostream& out) {

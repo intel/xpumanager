@@ -1,3 +1,4 @@
+#include <math.h>
 #include <nlohmann/json.hpp>
 #include <vector>
 #include <list>
@@ -5,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <regex>
 
 #define TABLE_COLUMN_AUTO           -1
 
@@ -37,13 +39,43 @@ class CharTableConfigColumn {
     }
 };
 
+class CharTableConfigObjectFilter {
+    private:
+    const bool _enabled;
+    const std::string prop_name;
+    const std::string value_regex_string;
+    const std::regex value_regex;
+
+    public:
+    inline CharTableConfigObjectFilter(const std::string& confValue):
+        _enabled(!confValue.empty()),
+        prop_name((_enabled)?confValue.substr(0,confValue.find("==")):""),
+        value_regex_string((_enabled)?confValue.substr(confValue.find("==")+2):""),
+        value_regex(value_regex_string) {
+    }
+
+    inline const bool match(const nlohmann::json& obj) const {
+        if (_enabled) {
+            std::string prop_value(obj.value(prop_name,""));
+            const bool matched = std::regex_match(prop_value, value_regex);
+            return matched;
+        }
+        return true;
+    }
+};
+
 class CharTableConfigPathElement {
     private:
     const bool is_array;
+    const CharTableConfigObjectFilter object_filter;
     const std::string prop_name;
 
     public:
-    CharTableConfigPathElement(const std::string& confValue);
+    inline CharTableConfigPathElement(const std::string& confValue):
+        is_array(confValue.find("[")!=std::string::npos),
+        object_filter((is_array)?confValue.substr(confValue.find("[")+1,confValue.find("]")-confValue.find("[")-1):""),
+        prop_name((is_array)?confValue.substr(0,confValue.find("[")):confValue) {
+    };
 
     inline const nlohmann::json apply(const nlohmann::json& obj) const {
         nlohmann::json res = nlohmann::json::array();
@@ -53,7 +85,8 @@ class CharTableConfigPathElement {
                 if (is_array) {
                     if (sub->is_array()) {
                         for (auto inn: *sub) {
-                            res.push_back(inn);
+                            if (object_filter.match(inn))
+                                res.push_back(inn);
                         }
                     }
                 } else {
@@ -76,6 +109,10 @@ class CharTableConfigPath {
         for (auto ele: elements) {
             delete ele;
         }
+    }
+
+    inline const bool empty() const {
+        return elements.empty();
     }
 
     inline const nlohmann::json apply(const nlohmann::json& obj) const {
@@ -124,10 +161,10 @@ inline const std::string get_json_value_string(const nlohmann::json& value) {
     return "";
 }
 
-inline auto fix_double_value(const std::string& value, std::function<double(double)> conv) {
+inline auto scale_double_value(const std::string& value, const double scaleValue) {
     std::string procValue = value;
     try {
-        double dv = conv(std::stod(value));
+        double dv = std::stod(value) / scaleValue;
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(2) << dv;
         procValue = oss.str();
@@ -137,31 +174,130 @@ inline auto fix_double_value(const std::string& value, std::function<double(doub
     return procValue;
 }
 
+template <typename T> auto fix_value(const std::string& value, std::function<T(double)> conv) {
+    std::string procValue = value;
+    try {
+        T iv = conv(std::stod(value));
+        std::ostringstream oss;
+        oss << iv;
+        procValue = oss.str();
+    } catch (...) {
+        procValue = value;
+    }
+    return procValue;
+}
+
+class CharTableConfigCellSingleSubItems {
+    private:
+    const bool _enabled;
+    std::vector<CharTableConfigCellSingle*> items;
+
+    public:
+    CharTableConfigCellSingleSubItems(const nlohmann::json::array_t* conf);
+
+    ~CharTableConfigCellSingleSubItems();
+
+    inline const bool isEnabled() const {
+        return _enabled;
+    }
+
+    const bool append_value(std::string& res, const nlohmann::json& obj, const bool notFirst = false) const;
+
+    inline const std::string apply(const nlohmann::json& obj, const std::string& label, const CharTableConfigPath& labelTag, const bool subrow) const {
+        std::string res;
+        if (obj.is_array()) {
+            bool notFirst = false;
+            for (auto it: obj) {
+                if (notFirst) {
+                    if (subrow) {
+                        res += "\n";
+                    } else {
+                        res += "; ";
+                    }
+                }
+                if (!label.empty()) {
+                    res += label;
+                    if (!labelTag.empty()) {
+                        const nlohmann::json& ltag = labelTag.apply(it);
+                        if (ltag.is_array()) {
+                            bool ltNF = false;
+                            for (auto lt: ltag) {
+                                if (ltNF) {
+                                    res += ",";
+                                }
+                                res += get_json_value_string(lt);
+                                ltNF = true;
+                            }
+                        } else {
+                            res += get_json_value_string(ltag);
+                        }
+                    }
+                    res += ": ";
+                }
+                notFirst = append_value(res, it, notFirst);
+            }
+        } else {
+            append_value(res, obj);
+        }
+        return res;
+    }
+};
+
 class CharTableConfigCellSingle : public CharTableConfigCellBase {
     private:
     const std::string label;
+    const CharTableConfigPath label_tag;
+    const std::string row_title;
     const CharTableConfigPath value;
+    const CharTableConfigCellSingleSubItems subs;
+    const bool subrow;
     const std::string suffix;
     const std::string fixer;
+    const double scale;
 
     inline bool append_value(std::string& res, const std::string& value, const bool notFirst = false) {
         bool ret = notFirst;
         if (value.length() > 0) {
             std::string procValue = value;
-            if ("Byte2MiB" == fixer) {
-                procValue = fix_double_value(value,
-                        [](double x) -> double {
-                            return x/1024.0/1024.0;
+            if (!isnan(scale)) {
+                procValue = scale_double_value(value, scale);
+            }
+            if (fixer == "round") {
+                procValue = fix_value<long>(value,
+                        [](double x) -> long {
+                            return (long) round(x);
                         });
             }
             if (notFirst) {
-                res += ",";
+                res += ", ";
             }
             ret = true;
             res += procValue;
             res += suffix;
         }
         return ret;
+    }
+
+    inline const std::string applyObject(const nlohmann::json& obj) {
+        std::string res("");
+        if (!row_title.empty()) {
+            res = row_title;
+            return res;
+        }
+        if (!label.empty()) {
+            res += label;
+            res += ": ";
+        }
+        const nlohmann::json propValue = value.apply(obj);
+        if (propValue.is_array()) {
+            bool notFirst = false;
+            for (auto sVal: propValue) {
+                notFirst = append_value(res, get_json_value_string(sVal), notFirst);
+            }
+        } else {
+            append_value(res, get_json_value_string(propValue));
+        }
+        return res;
     }
 
     public:
@@ -182,21 +318,10 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
     }
 
     inline const std::string apply(const nlohmann::json& obj) {
-        std::string res("");
-        if (!label.empty()) {
-            res += label;
-            res += ": ";
+        if (subs.isEnabled()) {
+            return subs.apply(value.apply(obj), label, label_tag, subrow);
         }
-        const nlohmann::json propValue = value.apply(obj);
-        if (propValue.is_array()) {
-            bool notFirst = false;
-            for (auto sVal: propValue) {
-                notFirst = append_value(res, get_json_value_string(sVal), notFirst);
-            }
-        } else {
-            append_value(res, get_json_value_string(propValue));
-        }
-        return res;
+        return applyObject(obj);
     }
 };
 
@@ -259,6 +384,8 @@ class CharTableConfigRowObject {
 class CharTableConfig {
     private:
     const unsigned int width;
+    const unsigned int indentation;
+    const bool show_title_row;
     std::vector<unsigned int> colWidthMax;
     std::vector<unsigned int> colWidthSetting;
     std::vector<CharTableConfigColumn*> columns;
@@ -280,6 +407,10 @@ class CharTableConfig {
         return columns.size();
     }
 
+    inline const unsigned int hangIndentation() const {
+        return indentation;
+    }
+
     void setCellValue(CharTableRow& row, const unsigned int col, const std::string& value);
 
     void addTitleRow(CharTableRow& row);
@@ -290,8 +421,18 @@ class CharTableConfig {
         return colWidthSetting;
     }
 
+    // colIndex == -1 means last column
+    inline const int getWidthSetting(int colIndex) {
+        if (colIndex < 0) return colWidthSetting[colWidthSetting.size()-1];
+        return colWidthSetting[colIndex];
+    }
+
     inline const std::vector<CharTableConfigRowObject*> getObjects() {
         return objects;
+    }
+
+    inline const bool showTitleRow() const {
+        return show_title_row;
     }
 };
 
@@ -299,6 +440,10 @@ class CharTableRowBase {
     public:
     inline virtual ~CharTableRowBase() {
     }
+
+    virtual inline const int numberOfCells() const = 0;
+
+    virtual const int columnSpaceLeft(const int colWidth, const int colIndex = -1) const = 0;
 
     virtual void show(std::ostream& out, const std::vector<unsigned int>& colSetting) = 0;
 };
@@ -316,9 +461,58 @@ class CharTableRow : public CharTableRowBase {
         }
     }
 
-    inline void setCell(unsigned int colId, const std::string& cellValue) {
+    inline const int numberOfCells() const override {
+        return cells.size();
+    }
+
+    inline void setCell(const std::string& cellValue, const int colIndex = -1) {
+        int colId = (colIndex < 0) ? cells.size()-1:colIndex;
         delete cells[colId];
         cells[colId] = new std::string(cellValue);
+    }
+
+    // colIndex == -1 means last column
+    inline const int columnSpaceLeft(const int colWidth, const int colIndex = -1) const override {
+        int colId = (colIndex < 0) ? cells.size()-1:colIndex;
+        if (cells[colId]->find("\n") != std::string::npos) return -1;
+        return colWidth - cells[colId]->length();
+    }
+
+    inline const int getCutPositionForHangRow(const int colWidth, const int indentation, const int colIndex = -1) const {
+        int cp = colWidth;
+        const std::string& cStr = *(cells[(colIndex < 0) ? cells.size()-1:colIndex]);
+        const unsigned int nrp = cStr.find('\n');
+        if (nrp != std::string::npos && nrp <= (unsigned int) (cp+1)) {
+            return nrp;
+        }
+        const std::string dels(", \t");
+        while (cp > 0) {
+            const char cc = cStr[cp-1];
+            if (dels.find(cc) != std::string::npos) {
+                break;
+            }
+            cp --;
+        }
+        if (cp > indentation) return cp;
+        return colWidth;
+    }
+
+    inline const bool isNewRow(const unsigned int index, const int colIndex = -1) const {
+        const int ci = (colIndex < 0) ? cells.size()-1:colIndex;
+        return index >= 0 && index < cells[ci]->length() && cells[ci]->at(index) == '\n';
+    }
+
+    inline std::string cutCellContentAt(const int len, const bool newRow, int colIndex = -1) {
+        int ci = (colIndex < 0) ? cells.size()-1:colIndex;
+        std::string* oStr = cells[ci];
+        cells[ci] = new std::string(oStr->substr(0,len));
+        int lp = len;
+        if (newRow) {
+            lp ++;
+        }
+        std::string rs(oStr->substr(lp));
+        delete oStr;
+        return rs;
     }
 
     void show(std::ostream& out, const std::vector<unsigned int>& colSetting) override;
@@ -329,7 +523,16 @@ class CharTableRowSeparator : public CharTableRowBase {
     inline CharTableRowSeparator() {
     }
 
+    inline const int numberOfCells() const override {
+        return 1;
+    }
+
     inline ~CharTableRowSeparator() override {
+    }
+
+    // colIndex == -1 means last column
+    inline const int columnSpaceLeft(const int colWidth, const int colIndex = -1) const override {
+        return 0;
     }
 
     void show(std::ostream& out, const std::vector<unsigned int>& colSetting) override;
@@ -341,8 +544,10 @@ class CharTable {
     const nlohmann::json& result;
     std::list<CharTableRowBase*> rows;
 
+    void calculateHangRows();
+
 	public:
-	CharTable(CharTableConfig& tableConf, const nlohmann::json& res);
+	CharTable(CharTableConfig& tableConf, const nlohmann::json& res, const bool cont = false);
 
     inline ~CharTable() {
         for (auto row: rows) {
