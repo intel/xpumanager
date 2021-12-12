@@ -58,9 +58,6 @@ endif()
 add_dependencies(xpum lib_hwloc)
 add_dependencies(test_xpum_api lib_hwloc)
 
-# avoid long time spending in preinstall
-set(CPACK_CMAKE_GENERATOR Ninja)
-
 if(NOT DEFINED CPACK_GENERATOR)
 	if(EXISTS "/etc/debian_version")
 		set(CPACK_GENERATOR "DEB")
