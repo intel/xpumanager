@@ -6,7 +6,7 @@ metadata:
   namespace: jenkins
 spec:
   tolerations:
-  - key: node-role.kubernetes.io/master
+  - key: jenkins-job-only
     effect: NoSchedule
   containers:
     - args:
