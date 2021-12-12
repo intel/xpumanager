@@ -128,8 +128,6 @@ if(CPACK_GENERATOR MATCHES "DEB")
 	set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_LIST_DIR}/install/script/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/prerm;")	
 endif()
 
-INCLUDE(CPack)
-
 install(DIRECTORY	core/include/
     DESTINATION ${CPACK_XPUM_INCLUDE_INSTALL_DIR}
 )
@@ -157,3 +155,5 @@ install(FILES
 	"${SYSTEMD_UNIT_NAME}"
 	"${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service"
 	DESTINATION ".")
+
+INCLUDE(CPack)
