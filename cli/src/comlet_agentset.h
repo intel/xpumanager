@@ -14,12 +14,20 @@ class ComletAgentSet : public ComletBase {
     std::unique_ptr<ComletAgentSetOptions> opts;
 
    public:
-    ComletAgentSet() : ComletBase("agentset", "Get or change some XPU Manager settings.") {
-    }
+    ComletAgentSet();
 
     virtual void setupOptions() override;
 
     virtual std::unique_ptr<nlohmann::json> run() override;
 
+    virtual void getTableResult(std::ostream &out) override;
+
+    inline const bool isListOperation() const {
+        return opts->list;
+    }
+
+    inline const int getSamplingInterval() const {
+        return opts->samplingInterval;
+    }
 };
 } // namespace xpum::cli
