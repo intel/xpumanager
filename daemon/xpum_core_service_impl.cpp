@@ -766,7 +766,9 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         xpum_result_t res = xpumSetPolicy(id, policy);
         if (res != XPUM_OK) {
             response->set_isok(false);
-            if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
+            if(res == XPUM_RESULT_DEVICE_NOT_FOUND){
+                response->set_errormsg("Error: device_id is invalid.");
+            }else if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
                 response->set_errormsg("Error: policy type, condition or action do not match.");
             }else{
                 response->set_errormsg("Error: unknow");
@@ -781,7 +783,9 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         xpum_result_t res = xpumSetPolicyByGroup(id, policy);
         if (res != XPUM_OK) {
             response->set_isok(false);
-            if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
+            if(res == XPUM_RESULT_DEVICE_NOT_FOUND){
+                response->set_errormsg("Error: device_id is invalid.");
+            }else if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
                 response->set_errormsg("Error: policy type, condition or action do not match.");
             }else{
                 response->set_errormsg("Error: unknow");

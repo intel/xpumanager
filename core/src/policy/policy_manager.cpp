@@ -128,6 +128,7 @@ void PolicyManager::handleForOneCyle() {
     //Clear old timer
     if(this->p_timer_old != nullptr && this->p_timer_old->isCanceld()){
         this->p_timer_old = nullptr;
+        XPUM_LOG_INFO("PolicyManager::handleForOneCyle(): old timer has been canceld.");
     }
     //XPUM_LOG_INFO("---PolicyManager::handleForOneCyle()---end--");
 }
@@ -140,6 +141,13 @@ void PolicyManager::checkPolicy() {
 
         //Get devcie metric
         xpum_device_id_t deviceId = it->first;
+
+        // Check device id
+        xpum_result_t result = this->isValidateDeviceId(deviceId);
+        if (result != XPUM_OK) {
+            XPUM_LOG_ERROR("PolicyManager::checkPolicy(): device_id ({}) is not vaild.", deviceId);
+            continue;
+        }
 
         //XPUM_LOG_INFO("---PolicyManager::checkPolicy()---2--deviceId={}",deviceId);
         int count=-1;
@@ -403,6 +411,13 @@ xpum_result_t PolicyManager::xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_
     return xpumSetPolicyByDeviceIds(info.deviceList, info.count, policy);
 }
 
+xpum_result_t PolicyManager::isValidateDeviceId(xpum_device_id_t deviceId) {
+    auto pDevice = this->p_device_manager->getDevice(std::to_string(deviceId));
+    if (pDevice == nullptr)
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    return XPUM_OK;
+}
+
 xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds[], int count, xpum_policy_t policy) {
     //XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds()---1--");
     std::unique_lock<std::mutex> lock(this->mutex);
@@ -428,8 +443,16 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
     } else {
         for (int i = 0; i < count; i++) {
             //XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds()---2-1-");
+            xpum_result_t result;
+            // Check device id
+            result = this->isValidateDeviceId(deviceIds[i]);
+            if (result != XPUM_OK) {
+                XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds(): device_id ({}) is not vaild.", deviceIds[i]);
+                return result;
+            }
+
             // Check policy validation
-            xpum_result_t result = this->checkPolicyValidation(policy);
+            result = this->checkPolicyValidation(policy);
             if (result != XPUM_OK) {
                 XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds(): checkPolicyValidation failed.");
                 return result;
