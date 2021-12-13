@@ -69,6 +69,8 @@ PolicyManager::PolicyManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic), p_group_manager(p_group_manager) {
     XPUM_LOG_DEBUG("PolicyManager()");
     this->freq = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+    this->p_timer = nullptr;
+    this->p_timer_old = nullptr;
 }
 
 PolicyManager::~PolicyManager() {
@@ -76,10 +78,9 @@ PolicyManager::~PolicyManager() {
 }
 
 void PolicyManager::resetCheckFrequency(){
-    int old = this->freq;
     this->stop();
     XPUM_LOG_INFO("PolicyManager::resetCheckFrequency(): stop check with old freq:{}",this->freq);
-    std::this_thread::sleep_for(std::chrono::milliseconds(old*2));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(old*2));
     this->freq = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
     this->start();
     XPUM_LOG_INFO("PolicyManager::resetCheckFrequency(): start check with new freq:{}",this->freq);
@@ -94,15 +95,20 @@ void PolicyManager::close() {
 }
 
 void PolicyManager::stop() {
-    timer.cancel();
+    if(this->p_timer == nullptr){
+        return;
+    }
+    this->p_timer->cancel();
+    this->p_timer_old = this->p_timer;
 }
 
 void PolicyManager::start() {
     long long now = Utility::getCurrentMillisecond();
     long delay = freq - now % freq;
     std::weak_ptr<PolicyManager> this_weak_ptr = shared_from_this();
-
-    timer.scheduleAtFixedRate(delay, freq, [delay, this_weak_ptr]() {
+    // Start new timer
+    this->p_timer = std::make_shared<Timer>();
+    this->p_timer->scheduleAtFixedRate(delay, freq, [delay, this_weak_ptr]() {
         XPUM_LOG_TRACE("PolicyManager::scheduleAtFixedRate(): start cycle policy check.");
         auto p_this = this_weak_ptr.lock();
         if (p_this == nullptr) {
@@ -118,6 +124,11 @@ void PolicyManager::handleForOneCyle() {
     std::unique_lock<std::mutex> lock(this->mutex);
     this->checkPolicy();
     this->savePolicyStatus();
+
+    //Clear old timer
+    if(this->p_timer_old != nullptr && this->p_timer_old->isCanceld()){
+        this->p_timer_old = nullptr;
+    }
     //XPUM_LOG_INFO("---PolicyManager::handleForOneCyle()---end--");
 }
 

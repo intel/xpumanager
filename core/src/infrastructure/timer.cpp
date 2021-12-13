@@ -62,6 +62,9 @@ void Timer::schedule(int delay, std::function<void()> task) {
     }).detach();
 }
 
+bool Timer::isCanceld() {
+    return this->canceled;
+}
 void Timer::cancel() noexcept {
     if (this->canceled) {
         return;
