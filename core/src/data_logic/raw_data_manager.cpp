@@ -26,25 +26,6 @@ RawDataManager::~RawDataManager() {
 
 void RawDataManager::init() {
     std::unique_lock<std::mutex> lock(mutex);
-    data_handlers[MeasurementType::POWER] =
-        std::make_shared<PowerDataHandler>(MeasurementType::POWER, p_persistency);
-    data_handlers[MeasurementType::POWER]->init();
-
-    data_handlers[MeasurementType::FREQUENCY] =
-        std::make_shared<FrequencyDataHandler>(MeasurementType::FREQUENCY, p_persistency);
-    data_handlers[MeasurementType::FREQUENCY]->init();
-
-    data_handlers[MeasurementType::TEMPERATURE] =
-        std::make_shared<TemperatureDataHandler>(MeasurementType::TEMPERATURE, p_persistency);
-    data_handlers[MeasurementType::TEMPERATURE]->init();
-
-    data_handlers[MeasurementType::MEMORY] =
-        std::make_shared<MemoryDataHandler>(MeasurementType::MEMORY, p_persistency);
-    data_handlers[MeasurementType::MEMORY]->init();
-
-    data_handlers[MeasurementType::ENGINE_UTILIZATION] =
-        std::make_shared<EngineUtilizationDataHandler>(MeasurementType::ENGINE_UTILIZATION, p_persistency);
-    data_handlers[MeasurementType::ENGINE_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_TEMPERATURE] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_TEMPERATURE, p_persistency);

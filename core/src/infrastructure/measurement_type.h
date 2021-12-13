@@ -3,12 +3,7 @@
 namespace xpum {
 
 enum MeasurementType {
-    POWER = 0,
-    FREQUENCY,
-    TEMPERATURE,
-    MEMORY,
-    ENGINE_UTILIZATION,
-    METRIC_POWER,
+    METRIC_POWER = 0,
     METRIC_ENERGY,
     METRIC_FREQUENCY,
     METRIC_TEMPERATURE,
