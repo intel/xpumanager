@@ -14,7 +14,7 @@ DumpRawDataManager::DumpRawDataManager() {
 
 DumpRawDataManager::~DumpRawDataManager() {
     pThreadPool->close();
-    std::cout << "DumpRawDataManager::~DumpRawDataManager() called" << std::endl;
+    // std::cout << "DumpRawDataManager::~DumpRawDataManager() called" << std::endl;
 }
 
 void DumpRawDataManager::resetDumpFrequency() {
