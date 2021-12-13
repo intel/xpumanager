@@ -11,7 +11,7 @@
 
 namespace xpum::daemon {
 
-XpumCoreServiceImpl::XpumCoreServiceImpl(void) : XpumCoreService::Service() {
+XpumCoreServiceImpl::XpumCoreServiceImpl(void) : XpumCoreService::Service(), stop(false) {
 }
 
 XpumCoreServiceImpl::~XpumCoreServiceImpl() {
@@ -707,7 +707,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 }
 
 ::grpc::Status XpumCoreServiceImpl::readPolicyNotifyData(::grpc::ServerContext* context, const google::protobuf::Empty* request, ::grpc::ServerWriter<ReadPolicyNotifyDataResponse>* writer) {
-    while (true) {
+    while (!this->stop) {
         // XPUM_LOG_INFO("------readPolicyNotifyData-----1----");
         {
             std::unique_lock<std::mutex> lock(mutexForCallBackDataList);
@@ -717,6 +717,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 condtionForCallBackDataList.wait(lock);
                 // XPUM_LOG_INFO("------readPolicyNotifyData-----after-wait----size={}", callBackDataList.size());
             }
+            if (this->stop) break;
             for (auto it = callBackDataList.begin(); it != callBackDataList.end(); it++) {
                 std::shared_ptr<ReadPolicyNotifyDataResponse> output = *it;
                 writer->Write(*output);
@@ -734,6 +735,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     //     std::this_thread::sleep_for(std::chrono::milliseconds(10 * 1000));
     //     XPUM_LOG_INFO("------readPolicyNotifyData-----i={}----",i);
     // }
+    // XPUM_LOG_INFO("------readPolicyNotifyData exit-----i={}----");
     return grpc::Status::OK;
 }
 
@@ -1146,6 +1148,11 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         }
     }
     return grpc::Status::OK;
+}
+
+void XpumCoreServiceImpl::close() {
+    this->stop = true;
+    condtionForCallBackDataList.notify_all();
 }
 
 } // end namespace xpum::daemon

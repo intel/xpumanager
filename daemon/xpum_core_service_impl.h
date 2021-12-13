@@ -6,6 +6,8 @@
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 
+#include <atomic>
+
 #include "core.grpc.pb.h"
 #include "core.pb.h"
 
@@ -17,6 +19,8 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
 
     XpumCoreServiceImpl(void);
     virtual ~XpumCoreServiceImpl();
+
+    void close();    
 
     virtual grpc::Status getVersion(grpc::ServerContext* context, const google::protobuf::Empty* request,
                                     XpumVersionInfoArray* response) override;
@@ -97,6 +101,9 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
 
     virtual ::grpc::Status setAgentConfig(::grpc::ServerContext* context, const ::SetAgentConfigRequest* request, ::SetAgentConfigResponse* response);
     virtual ::grpc::Status getAgentConfig(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAgentConfigResponse* response);
+
+    private:
+        std::atomic_bool stop;
 };
 
 } // end namespace xpum::daemon
