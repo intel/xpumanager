@@ -263,7 +263,7 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
                 procValue = scale_double_value(value, scale);
             }
             if (fixer == "round") {
-                procValue = fix_value<long>(value,
+                procValue = fix_value<long>(procValue,
                         [](double x) -> long {
                             return (long) round(x);
                         });
