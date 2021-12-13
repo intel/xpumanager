@@ -121,7 +121,7 @@ def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
 def getStatisticsNotForPrometheus(device_id, session_id=0, get_accumulated=False):
     resp = stub.getStatisticsNotForPrometheus(core_pb2.XpumGetStatsRequest(deviceId=device_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
-        return 1, resp.errorMsg, None
+        return resp.status, resp.errorMsg, None
     data = dict()
     data["device_id"] = device_id
 

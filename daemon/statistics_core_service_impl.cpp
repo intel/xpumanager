@@ -128,7 +128,12 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     uint64_t begin, end;
     xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, sessionId);
     if (res != XPUM_OK || count < 0) {
-        response->set_errormsg("Fail to get statistics data");
+        response->set_status(res);
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
+            response->set_errormsg("Device not found");
+        } else {
+            response->set_errormsg("Fail to get statistics data");
+        }
         return grpc::Status::OK;
     }
     response->set_begin(begin);
