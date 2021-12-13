@@ -1,11 +1,13 @@
 from flask import request, jsonify
 import stub
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, ValidationError
 
 
 class CreateGroupSchema(Schema):
     group_name = fields.Str(
-        metadata={"description": "The name for the group to be created"})
+        required=True,
+        metadata={"description": "The name for the group to be created"}
+    )
 
 
 class GroupInfoSchema(Schema):
@@ -14,6 +16,10 @@ class GroupInfoSchema(Schema):
     device_id_list = fields.List(fields.Int(metadata={
                                  "description": "The id of devices belong to this group"}) )
 
+
+class AllGroupInfoSchema(Schema):
+    group_list = fields.Nested(GroupInfoSchema, many=True, metadata={
+        "description": "Group info list"})
 
 def groups():
     """
@@ -48,9 +54,7 @@ def groups():
         responses:
             200:
                 description: OK
-                schema: 
-                    type: array
-                    items: GroupInfoSchema
+                schema: AllGroupInfoSchema
             500:
                 description: Error
     """
@@ -58,24 +62,23 @@ def groups():
         if request.method == 'POST':
             # create group
             req = request.get_json()
-            if (req is None):
-                return "requires group name.", 500
-            if "group_name" in req:
-                groupName = req["group_name"]
-                code, message, data = stub.createGroup(groupName)
-                if code == 0:
-                    return jsonify(data)
-                error = dict(Status=code, Message=message)
-                return jsonify(error), 400
-            else:
-                return "requires group_name.", 500
+            try:
+                CreateGroupSchema().load(req)
+            except ValidationError as err:
+                return jsonify(err.messages), 400
+            groupName = req["group_name"]
+            code, message, data = stub.createGroup(groupName)
+            if code == 0:
+                return jsonify(data)
+            error = dict(status=code, message=message)
+            return jsonify(error), 400
             
         elif request.method == 'GET':
             # get all group ids
             code, message, data = stub.getAllGroups()
             if code == 0:
-                return jsonify(data)
-            error = dict(Status=code, Message=message)
+                return jsonify(dict(group_list=data))
+            error = dict(status=code, message=message)
             return jsonify(error), 500
     except Exception as e:
         #print(e)
@@ -159,14 +162,14 @@ def group_detail(groupId):
             code, message, data = stub.getGroupInfo(groupId)
             if code == 0:
                 return jsonify(data)
-            error = dict(Status=code, Message=message)
+            error = dict(status=code, message=message)
             return jsonify(error), 400
         elif request.method == 'DELETE':
             # destroy group
             code, message, data = stub.destroyGroup(groupId)
             if code == 0:
                 return "", 200
-            error = dict(Status=code, Message=message)
+            error = dict(status=code, message=message)
             return jsonify(error), 400
         elif request.method == 'POST':
             req = request.get_json()

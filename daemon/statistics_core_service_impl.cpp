@@ -15,8 +15,8 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         XPUM_STATS_GPU_FREQUENCY,
         XPUM_STATS_GPU_CORE_TEMPERATURE,
         XPUM_STATS_MEMORY_USED,
-        XPUM_STATS_MEMORY_UTILIZATION,
-        // XPUM_STATS_MEMORY_BANDWIDTH,
+        // XPUM_STATS_MEMORY_UTILIZATION,
+        XPUM_STATS_MEMORY_BANDWIDTH,
         // XPUM_STATS_MEMORY_READ,
         // XPUM_STATS_MEMORY_WRITE,
         XPUM_STATS_MEMORY_READ_THROUGHPUT,
@@ -128,7 +128,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     uint64_t begin, end;
     xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, sessionId);
     if (res != XPUM_OK || count < 0) {
-        response->set_errormsg("Error");
+        response->set_errormsg("Fail to get statistics data");
         return grpc::Status::OK;
     }
     response->set_begin(begin);
