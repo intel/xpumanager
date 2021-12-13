@@ -159,10 +159,10 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Bandwidth (%) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].avg", "scale": 0.01, "fixer": "round" },
-                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].min", "scale": 0.01, "fixer": "round" },
-                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].max", "scale": 0.01, "fixer": "round" },
-                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].value", "scale": 0.01, "fixer": "round" }
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].avg" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].min" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].max" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].value" }
             ]}
         ]]
     }, {
