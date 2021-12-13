@@ -2,11 +2,6 @@
 
 namespace xpum {
 enum class DeviceCapability : int {
-    POWER,
-    FREQUENCY,
-    TEMPERATURE,
-    MEMORY,
-    ENGINE_UTILIZATION,
     METRIC_POWER,
     METRIC_FREQUENCY,
     METRIC_TEMPERATURE,

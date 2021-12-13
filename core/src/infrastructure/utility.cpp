@@ -53,16 +53,6 @@ std::string Utility::getTimeString(long long milliseconds) {
 
 MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capability) {
     switch (capability) {
-        case DeviceCapability::POWER:
-            return MeasurementType::POWER;
-        case DeviceCapability::FREQUENCY:
-            return MeasurementType::FREQUENCY;
-        case DeviceCapability::TEMPERATURE:
-            return MeasurementType::TEMPERATURE;
-        case DeviceCapability::MEMORY:
-            return MeasurementType::MEMORY;
-        case DeviceCapability::ENGINE_UTILIZATION:
-            return MeasurementType::ENGINE_UTILIZATION;
         case DeviceCapability::METRIC_TEMPERATURE:
             return MeasurementType::METRIC_TEMPERATURE;
         case DeviceCapability::METRIC_FREQUENCY:
@@ -126,16 +116,6 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
 
 DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& measurementType) {
     switch (measurementType) {
-        case MeasurementType::POWER:
-            return DeviceCapability::POWER;
-        case MeasurementType::FREQUENCY:
-            return DeviceCapability::FREQUENCY;
-        case MeasurementType::TEMPERATURE:
-            return DeviceCapability::TEMPERATURE;
-        case MeasurementType::MEMORY:
-            return DeviceCapability::MEMORY;
-        case MeasurementType::ENGINE_UTILIZATION:
-            return DeviceCapability::ENGINE_UTILIZATION;
         case MeasurementType::METRIC_TEMPERATURE:
             return DeviceCapability::METRIC_TEMPERATURE;
         case MeasurementType::METRIC_FREQUENCY:
