@@ -58,11 +58,15 @@ def get_statistics(deviceId):
                 description: Error
     """
     code, message, data = stub.getStatisticsNotForPrometheus(deviceId)
-    if code != 0:
-        error = dict(Status=code, Message=message)
+    if code == 0:
+        return jsonify(data)
+    elif code == stub.XpumResult["XPUM_RESULT_DEVICE_NOT_FOUND"].value:
+        error = dict(message=message)
+        return jsonify(error), 400
+    else:
+        error = dict(message="Error code: {}, error message: {}".format(
+            stub.XpumResult(code).name, message))
         return jsonify(error), 500
-    return jsonify(data)
-
 
 class GroupStatisticsSchema(Schema):
     group_id = fields.Int(metadata={"description": "Group id"})
@@ -100,6 +104,6 @@ def get_group_statistics(groupId):
     """
     code, message, data = stub.getStatisticsByGroupNotForPrometheus(groupId)
     if code != 0:
-        error = dict(Status=code, Message=message)
+        error = dict(status=code, message=message)
         return jsonify(error), 500
     return jsonify(data)

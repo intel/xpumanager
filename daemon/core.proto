@@ -258,6 +258,7 @@ message XpumGetStatsResponse {
     uint64 begin=2;
     uint64 end=3;
     string errorMsg = 4;
+    int32 status = 5;
 }
 
 message XpumFirmwareFlashJob {
