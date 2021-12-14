@@ -272,8 +272,21 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
                 res += ", ";
             }
             ret = true;
-            res += procValue;
-            res += suffix;
+            bool normalOut = true;
+            if (fixer == "negint_novalue") {
+                procValue = fix_value<long>(procValue,
+                        [](double x) -> long {
+                            return (x<0)? -1: (long) x;
+                        });
+                if (procValue == "-1") {
+                    res += "none";
+                    normalOut = false;
+                }
+            }
+            if (normalOut) {
+                res += procValue;
+                res += suffix;
+            }
         }
         return ret;
     }

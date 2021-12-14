@@ -3,8 +3,68 @@
 #include <nlohmann/json.hpp>
 
 #include "core_stub.h"
+#include "cli_table.h"
 
 namespace xpum::cli {
+
+static CharTableConfig ComletConfigHealthDevice(R"({
+    "showTitleRow": false,
+    "columns": [{
+        "title": "none"
+    }, {
+        "title": "none"
+    }],
+    "rows": [{
+        "instance": "",
+        "cells": [
+            { "rowTitle": "Device ID" },
+            "device_id"
+        ]
+    }, {
+        "instance": "core_temperature",
+        "cells": [
+            { "rowTitle": "GPU Core Temperature" }, [
+            { "label": "Status", "value": "status" },
+            { "label": "Description", "value": "description" },
+            { "label": "Throttle Threshold", "suffix": " Celsius Degree", "value": "throttle_threshold", "fixer": "negint_novalue" },
+            { "label": "Shutdown Threshold", "suffix": " Celsius Degree", "value": "shutdown_threshold", "fixer": "negint_novalue" },
+            { "label": "Custom Threshold", "suffix": " Celsius Degree", "value": "custom_threshold", "fixer": "negint_novalue" }
+        ]]
+    }, {
+        "instance": "memory_temperature",
+        "cells": [
+            { "rowTitle": "GPU Memory Temperature" }, [
+            { "label": "Status", "value": "status" },
+            { "label": "Description", "value": "description" },
+            { "label": "Throttle Threshold", "suffix": " Celsius Degree", "value": "throttle_threshold", "fixer": "negint_novalue" },
+            { "label": "Shutdown Threshold", "suffix": " Celsius Degree", "value": "shutdown_threshold", "fixer": "negint_novalue" },
+            { "label": "Custom Threshold", "suffix": " Celsius Degree", "value": "custom_threshold", "fixer": "negint_novalue" }
+        ]]
+    }, {
+        "instance": "power",
+        "cells": [
+            { "rowTitle": "GPU Power" }, [
+            { "label": "Status", "value": "status" },
+            { "label": "Description", "value": "description" },
+            { "label": "Throttle Threshold", "suffix": " Celsius Degree", "value": "throttle_threshold", "fixer": "negint_novalue" },
+            { "label": "Custom Threshold", "suffix": " Celsius Degree", "value": "custom_threshold", "fixer": "negint_novalue" }
+        ]]
+    }, {
+        "instance": "memory",
+        "cells": [
+            { "rowTitle": "GPU Memory" }, [
+            { "label": "Status", "value": "status" },
+            { "label": "Description", "value": "description" }
+        ]]
+    }, {
+        "instance": "fabric_port",
+        "cells": [
+            { "rowTitle": "GPU Fabric Port" }, [
+            { "label": "Status", "value": "status" },
+            { "label": "Description", "value": "description" }
+        ]]
+    }]
+})"_json);
 
 void ComletHealth::setupOptions() {
     this->opts = std::unique_ptr<ComletHealthOptions>(new ComletHealthOptions());
@@ -98,5 +158,31 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
     }
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
     return json;
+}
+
+static void showHealth(std::ostream &out, std::shared_ptr<nlohmann::json> json, const bool cont = false) {
+    CharTable table(ComletConfigHealthDevice, *json, cont);
+    table.show(out);
+}
+
+void ComletHealth::getTableResult(std::ostream &out) {
+    auto res = run();
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+    *json = *res;
+    if (this->opts->deviceId >= 0) {
+        showHealth(out, json);
+    } else {
+        auto devices = (*json)["datas"].get<std::vector<nlohmann::json>>();
+        bool cont = false;
+        for (auto device : devices) {
+            showHealth(out, std::make_shared<nlohmann::json>(device), cont);
+            cont = true;
+        }
+    }
+
 }
 } // end namespace xpum::cli

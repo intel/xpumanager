@@ -23,6 +23,12 @@ class ComletHealth : public ComletBase {
 
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
+    
+    virtual void getTableResult(std::ostream &out) override;
+
+    inline const bool isSingleDeviceOperation() const {
+        return opts->deviceId >= 0;
+    }
 
    private:
     std::unique_ptr<ComletHealthOptions> opts;
