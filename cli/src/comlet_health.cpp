@@ -175,8 +175,9 @@ void ComletHealth::getTableResult(std::ostream &out) {
     *json = *res;
     if (this->opts->deviceId >= 0) {
         showHealth(out, json);
-    } else {
-        auto devices = (*json)["datas"].get<std::vector<nlohmann::json>>();
+    }
+    if (this->opts->groupId > 0) {
+        auto devices = (*json)["device_list"].get<std::vector<nlohmann::json>>();
         bool cont = false;
         for (auto device : devices) {
             showHealth(out, std::make_shared<nlohmann::json>(device), cont);

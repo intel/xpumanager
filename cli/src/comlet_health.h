@@ -30,6 +30,10 @@ class ComletHealth : public ComletBase {
         return opts->deviceId >= 0;
     }
 
+    inline const bool isGroupOperation() const {
+        return opts->groupId > 0;
+    }
+
    private:
     std::unique_ptr<ComletHealthOptions> opts;
 };
