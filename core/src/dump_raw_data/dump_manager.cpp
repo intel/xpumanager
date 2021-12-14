@@ -14,7 +14,7 @@ DumpRawDataManager::DumpRawDataManager() {
 
 DumpRawDataManager::~DumpRawDataManager() {
     pThreadPool->close();
-    std::cout << "DumpRawDataManager::~DumpRawDataManager() called" << std::endl;
+    // std::cout << "DumpRawDataManager::~DumpRawDataManager() called" << std::endl;
 }
 
 void DumpRawDataManager::resetDumpFrequency() {
@@ -32,16 +32,6 @@ xpum_result_t DumpRawDataManager::
                          const char *dumpFilePath,
                          xpum_dump_raw_data_task_t *taskInfo) {
     std::lock_guard<std::mutex> lock(dumpMutex);
-
-    auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (pDevice == nullptr)
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
-    if (tileId != -1) {
-        Property prop;
-        pDevice->getProperty(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES, prop);
-        if (tileId < 0 || tileId >= prop.getValueInt())
-            return XPUM_RESULT_TILE_NOT_FOUND;
-    }
 
     // create task
     std::shared_ptr<DumpRawDataTask> p_task = std::make_shared<DumpRawDataTask>(taskIndex++, deviceId, tileId, std::string(dumpFilePath), pThreadPool);

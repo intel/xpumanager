@@ -72,19 +72,22 @@ void static fillAgentConfigReponse(::AgentConfigEntryList* response) {
         auto value = entry.value();
         auto valueCase = value.value_case();
         void* p = nullptr;
+        int64_t intValue;
+        double floatValue;
+        std::string strValue;
         switch (valueCase) {
             case FlexTypeValue::kIntValue: {
-                int64_t intValue = value.intvalue();
+                intValue = value.intvalue();
                 p = (void*)&intValue;
                 break;
             }
             case FlexTypeValue::kFloatValue: {
-                double floatValue = value.floatvalue();
+                floatValue = value.floatvalue();
                 p = (void*)&floatValue;
                 break;
             }
             case FlexTypeValue::kStringValue: {
-                std::string strValue = value.stringvalue();
+                strValue = value.stringvalue();
                 p = (void*)strValue.c_str();
                 break;
             }

@@ -144,9 +144,13 @@ void runRPCServer() {
         // Wait for the stop signal and then shut the server.
         cv.wait(lock);
     }
-
+    
     // Shut down server.
+    XPUM_LOG_INFO("XPUM: Shutting down RPC server...");
+    // must close service before shutdown the server to avoid stuck in server->Shutdown()
+    service.close();
     server->Shutdown();
+    XPUM_LOG_INFO("XPUM: Waiting for RPC server shutdown...");
     grpc_server_thread.join();
 }
 

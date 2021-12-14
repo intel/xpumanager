@@ -159,10 +159,10 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Bandwidth (%) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "label": "avg", "value": "data_list[metrics_type==BAND_WIDTH].avg" },
-                { "label": "min", "value": "data_list[metrics_type==BAND_WIDTH].min" },
-                { "label": "max", "value": "data_list[metrics_type==BAND_WIDTH].max" },
-                { "label": "current", "value": "data_list[metrics_type==BAND_WIDTH].value" }
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].avg" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].min" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].max" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].value" }
             ]}
         ]]
     }, {
@@ -171,10 +171,10 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Used (MiB) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "label": "avg", "value": "data_list[metrics_type==MEMORY_USED].avg" },
-                { "label": "min", "value": "data_list[metrics_type==MEMORY_USED].min" },
-                { "label": "max", "value": "data_list[metrics_type==MEMORY_USED].max" },
-                { "label": "current", "value": "data_list[metrics_type==MEMORY_USED].value" }
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].avg", "scale": 1048576, "fixer": "round" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].min", "scale": 1048576, "fixer": "round" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].max", "scale": 1048576, "fixer": "round" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1048576, "fixer": "round" }
             ]}
         ]]
     }]

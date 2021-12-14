@@ -92,6 +92,24 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
     }
 }
 
+xpum_result_t validateDeviceId(xpum_device_id_t deviceId) {
+    auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (pDevice == nullptr)
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    return XPUM_OK;
+}
+
+xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_tile_id_t tileId) {
+    auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (pDevice == nullptr)
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    Property prop;
+    pDevice->getProperty(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES, prop);
+    if (tileId < 0 || tileId >= prop.getValueInt())
+        return XPUM_RESULT_TILE_NOT_FOUND;
+    return XPUM_OK;
+}
+
 xpum_result_t xpumInit() {
     try {
         XPUM_LOG_INFO("XPU Manager:\t" + Version::getVersion());
@@ -255,6 +273,11 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
         return XPUM_NOT_INITIALIZED;
     }
 
+    xpum_result_t res;
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK)
+        return res;
+
     std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
 
@@ -318,6 +341,10 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
     if (Core::instance().getDataLogic() == nullptr) {
         return XPUM_NOT_INITIALIZED;
     }
+    xpum_result_t res;
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK)
+        return res;
     Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
     return xpum_result_t::XPUM_OK;
 }
@@ -455,7 +482,7 @@ xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
     }
     switch (key) {
         case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
-            Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = *(int64_t *)value;
+            Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = *((int64_t *)value);
             Core::instance().getMonitorManager()->resetMetricTasksFrequency();
             Core::instance().getDumpRawDataManager()->resetDumpFrequency();
             Core::instance().getPolicyManager()->resetCheckFrequency();
@@ -469,7 +496,7 @@ xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
 xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value) {
     switch (key) {
         case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
-            *(int64_t *)value =(int64_t) Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+            *((int64_t *)value) =(int64_t) Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
             return XPUM_OK;
         default:
             break;
@@ -1024,6 +1051,13 @@ xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
                                        const char *dumpFilePath,
                                        xpum_dump_raw_data_task_t *taskInfo) {
     // return XPUM_GENERIC_ERROR;
+    xpum_result_t res;
+    if (tileId == -1)
+        res = validateDeviceId(deviceId);
+    else
+        res = validateDeviceIdAndTileId(deviceId, tileId);
+    if (res != XPUM_OK)
+        return res;
     return Core::instance().getDumpRawDataManager()->startDumpRawDataTask(deviceId, tileId, metricsTypeList, count, dumpFilePath, taskInfo);
 }
 

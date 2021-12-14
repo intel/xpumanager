@@ -37,6 +37,8 @@ def main(*args, **kwargs):
 
     app = Flask(__name__, static_url_path=dump_raw_data_stub.url_prefix, static_folder=dump_raw_data_stub.dump_folder)
 
+    app.url_map.strict_slashes = False
+
     # version
     app.add_url_rule('/rest/v1/version', view_func=versions.get_version, methods=['GET'])
 

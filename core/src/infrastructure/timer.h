@@ -18,6 +18,7 @@ class Timer {
     void schedule(int delay, std::function<void()> task);
 
     void cancel() noexcept;
+    bool isCanceld();
 
    private:
     Timer(const Timer& timer);

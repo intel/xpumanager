@@ -91,7 +91,9 @@ class PolicyManager : public PolicyManagerInterface, public std::enable_shared_f
 
     //
     int freq;
-    Timer timer;
+    //Timer timer;
+    std::shared_ptr<Timer> p_timer;
+    std::shared_ptr<Timer> p_timer_old;
 };
 
 } // end namespace xpum
