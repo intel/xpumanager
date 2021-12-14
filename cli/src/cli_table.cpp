@@ -239,7 +239,8 @@ void CharTable::calculateHangRows() {
             CharTableRow* sRow = nRow;
             for (int i = 0; i < cols; i ++) {
                 int cw = config.getWidthSetting(i);
-                if (sRow->columnSpaceLeft(cw, i) < 0) {
+                int csl = sRow->columnSpaceLeft(cw, i);
+                if (csl < 0) {
                     // need to add hang row
                     int cp = sRow->getCutPositionForHangRow(cw, ciw, i);
                     const bool newItem = sRow->isNewRow(cp, i);

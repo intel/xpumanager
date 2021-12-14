@@ -474,16 +474,18 @@ class CharTableRow : public CharTableRowBase {
     // colIndex == -1 means last column
     inline const int columnSpaceLeft(const int colWidth, const int colIndex = -1) const override {
         int colId = (colIndex < 0) ? cells.size()-1:colIndex;
-        if (cells[colId]->find("\n") != std::string::npos) return -1;
-        return colWidth - cells[colId]->length();
+        const unsigned long rp = cells[colId]->find("\n");
+        if (rp != std::string::npos) return -1;
+        int rdiff = colWidth - cells[colId]->length();
+        return rdiff;
     }
 
     inline const int getCutPositionForHangRow(const int colWidth, const int indentation, const int colIndex = -1) const {
         int cp = colWidth;
         const std::string& cStr = *(cells[(colIndex < 0) ? cells.size()-1:colIndex]);
-        const unsigned int nrp = cStr.find('\n');
-        if (nrp != std::string::npos && nrp <= (unsigned int) (cp+1)) {
-            return nrp;
+        const unsigned long nrp = cStr.find('\n');
+        if (nrp != std::string::npos) {
+            if (nrp <= (unsigned long) cp) return nrp;
         }
         const std::string dels(", \t");
         while (cp > 0) {
@@ -524,7 +526,7 @@ class CharTableRowSeparator : public CharTableRowBase {
     }
 
     inline const int numberOfCells() const override {
-        return 1;
+        return 0;
     }
 
     inline ~CharTableRowSeparator() override {
