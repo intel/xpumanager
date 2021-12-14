@@ -615,7 +615,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId, int componentT
     HealthData response;
     (*json)["device_id"] = deviceId;
     grpc::Status status = grpc::Status::OK;
-    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY};
     if (componentType >= 1 && componentType <= (int)(types.size())) {
         HealthType targetType = types[componentType - 1];
         types.clear();
@@ -699,7 +699,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId, int
     request.set_groupid(groupId);
     HealthDataByGroup response;
     std::vector<nlohmann::json> deviceJsonList;
-    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY};
     if (componentType >= 1 && componentType <= (int)(types.size())) {
         HealthType targetType = types[componentType - 1];
         types.clear();

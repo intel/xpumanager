@@ -15,8 +15,7 @@ void ComletHealth::setupOptions() {
       1. GPU Core Temperature\n\
       2. GPU Memory Temperature\n\
       3. GPU Power\n\
-      4. GPU Memory\n\
-      5. GPU Fabric Port");
+      4. GPU Memory");
     addOption("--threshold", this->opts->threshold, "Set custom threshold for device component");
 }
 

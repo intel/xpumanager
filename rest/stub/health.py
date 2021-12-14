@@ -28,9 +28,9 @@ def appendHealthThreshold(healthData, healthType):
 
 def getHealth(deviceId, healthType):
     types = []
-    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]
+    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory"]
     if healthType == "All":
-        types = [0, 1, 2, 3, 4]
+        types = [0, 1, 2, 3]
     else:
         types.append(healthTypes.index(healthType))
     data = dict()
@@ -58,9 +58,9 @@ def getHealth(deviceId, healthType):
 
 def getHealthByGroup(groupId, healthType):
     types = []
-    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]
+    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory"]
     if healthType == "All":
-        types = [0, 1, 2, 3, 4]
+        types = [0, 1, 2, 3]
     else:
         types.append(healthTypes.index(healthType))
 
