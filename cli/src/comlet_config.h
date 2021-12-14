@@ -12,6 +12,7 @@ struct ComletConfigOptions {
     int32_t tileId = -1;
     std::string scheduler;
     std::string performancefactor;
+    bool resetDevice = false;
     //std::string schedulerTimeslice ="";
     //std::string schedulerTimeout ="";
     //bool schedulerExclusive = false;

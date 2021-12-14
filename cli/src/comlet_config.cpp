@@ -17,11 +17,12 @@ void ComletConfig::setupOptions() {
     //addFlag("--exclusive", this->opts->schedulerExclusive, "set scheduler exclusive mode");
     addOption("--powerlimit", this->opts->powerlimit, "set powerlimit");// --
     addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
-    Valid options: \"compute/media\",factorValue. The factor value should be \
-    between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support.\
-    0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
+Valid options: \"compute/media\",factorValue. The factor value should be \
+between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support.\
+0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
     addOption("--standby", this->opts->standby, "set standby mode. Valid options: \"default\", \"never\"");
-    addOption("--frequencyrange", this->opts->frequencyrange, "set core frequencyrange");
+    addOption("--frequencyrange", this->opts->frequencyrange, "set core frequencyrange.");
+    addFlag("--reset", this->opts->resetDevice, "hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter){
     size_t pos = 0;
@@ -46,6 +47,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         && this->opts->powerlimit.empty()
         && this->opts->standby.empty()
         && this->opts->frequencyrange.empty()
+        && !this->opts->resetDevice
         ) {
         json = this->coreStub->getDeviceConfig(this->opts->deviceId, this->opts->tileId);
         return json;
@@ -169,6 +171,33 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 (*json)["return"] = "Succeed to change the performance factor to " + paralist.at(1) +
                 " on GPU " + std::to_string(this->opts->deviceId) +
                 " tile " + std::to_string(this->opts->tileId) + ".";
+            }
+            return json;
+        } else if (this->opts->tileId == -1 && this->opts->resetDevice) {
+            char confirmed;
+            if (this->opts->deviceId >= 0) {
+                json = this->coreStub->getDeviceProcessState(this->opts->deviceId);
+                std::cout <<"The process(es) below are using this device."<<"\n";
+
+                for(auto it= (*json)["device_process_list"].begin(); it!=(*json)["device_process_list"].end();++it) {
+                    std::cout <<"PID: "<<(*it)["process_id"] <<" ,";
+                    std::cout <<" Command: "<<(*it)["process_name"];
+                    std::cout<<"\n";
+                }
+                //std::cout << json->dump(4) <<"\n";
+                std::cout <<"All process(es) above will be forcibly killed if you reset it. Do you want to continue? (Y/N):";
+                std::cin>>confirmed;
+                if (std::tolower(confirmed) == 'y') {
+                    json = this->coreStub->resetDevice(this->opts->deviceId, true); 
+                } else {
+                    json->clear();
+                    (*json)["status"] = "CANCEL";
+                    (*json)["return"] = "Reset is cancelled";
+                }
+            }
+            if((*json)["status"] == "OK") {
+                //json->clear();
+                (*json)["return"] = "Succeed to reset the GPU "+ std::to_string(this->opts->deviceId);
             }
             return json;
         }

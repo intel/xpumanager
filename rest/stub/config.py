@@ -24,14 +24,16 @@ def getConfig(deviceId, tileId):
             return 1, resp.errorMsg, None
     data = dict()
     data['device_id'] = resp.deviceId
-    data['power_limit'] = resp.powerLimit
-    data['power_average_window'] = resp.interval
+    #data['power_limit'] = resp.powerLimit
+    #data['power_average_window'] = resp.interval
     #data['tileCount'] = resp.tileCount
 
     tilelist = list()
     for i in range(0,resp.tileCount):
         tiledata = dict()
         tiledata['tile_id'] = resp.tileConfigData[i].tileId
+        tiledata['power_limit'] = resp.tileConfigData[i].powerLimit
+        tiledata['power_average_window'] = resp.tileConfigData[i].interval
         tiledata['min_frequency'] = resp.tileConfigData[i].minFreq
         tiledata['max_frequency'] = resp.tileConfigData[i].maxFreq
         tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]

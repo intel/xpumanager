@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletPolicy))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletFirmware))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletConfig))
-        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletReset))
+        //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletReset))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet));
