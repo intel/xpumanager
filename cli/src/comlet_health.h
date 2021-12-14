@@ -34,6 +34,14 @@ class ComletHealth : public ComletBase {
         return opts->groupId > 0;
     }
 
+    inline const bool isListAll() const {
+        return opts->listAll;
+    }
+
+    inline const int getCompType() const {
+        return opts->componentType;
+    }
+
    private:
     std::unique_ptr<ComletHealthOptions> opts;
 };
