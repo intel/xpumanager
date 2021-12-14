@@ -255,6 +255,7 @@ typedef enum xpum_device_config_type_enum {
  */
 typedef enum xpum_firmware_type_enum {
     XPUM_DEVICE_FIRMWARE_GSC = 0, ///< GSC firmware
+    XPUM_DEVICE_FIRMWARE_AMC = 1, ///< GSC firmware
 } xpum_firmware_type_t;
 
 /**

@@ -226,7 +226,7 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         return XPUM_GENERIC_ERROR;
     }
 
-    xpum_firmware_flash_result_t res = device->getFirmwareFlashResult();
+    xpum_firmware_flash_result_t res = device->getFirmwareFlashResult(firmwareType);
 
     result->deviceId = deviceId;
     result->type = XPUM_DEVICE_FIRMWARE_GSC;

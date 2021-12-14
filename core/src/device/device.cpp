@@ -99,7 +99,11 @@ bool Device::runFirmwareFlash(const char* filePath, const std::string& toolPath)
     return false;
 }
 
-xpum_firmware_flash_result_t Device::getFirmwareFlashResult() noexcept {
+bool Device::runFirmwareFlash(const char* filePath) noexcept {
+    return false;
+}
+
+xpum_firmware_flash_result_t Device::getFirmwareFlashResult(xpum_firmware_type_t type) noexcept {
     return XPUM_DEVICE_FIRMWARE_FLASH_OK;
 }
 
