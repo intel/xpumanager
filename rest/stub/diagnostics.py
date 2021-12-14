@@ -71,6 +71,16 @@ def getDiagnosticsResult(deviceId):
         new_component['finished'] = component.finished
         new_component['result'] = diagnosticResultEnumToString[component.result]
         new_component['message'] = component.message
+        if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
+            process_list_resp = stub.getDeviceProcessState(core_pb2.DeviceId(id=deviceId))
+            if len(resp.errorMsg) == 0:
+                processList = []
+                for process in process_list_resp.processlist:
+                    new_process = dict()
+                    new_process["process_id"] = process.processId
+                    new_process["process_name"] = process.processName
+                    processList.append(new_process)
+                new_component['process_list'] = processList
         componentList.append(new_component)
     data['component_list'] = componentList
 
@@ -109,6 +119,16 @@ def getDiagnosticsResultByGroup(groupId):
             new_component['finished'] = component.finished
             new_component['result'] = diagnosticResultEnumToString[component.result]
             new_component['message'] = component.message
+            if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
+                process_list_resp = stub.getDeviceProcessState(core_pb2.DeviceId(id=diagTaskInfo.deviceId))
+                if len(resp.errorMsg) == 0:
+                    processList = []
+                    for process in process_list_resp.processlist:
+                        new_process = dict()
+                        new_process["process_id"] = process.processId
+                        new_process["process_name"] = process.processName
+                        processList.append(new_process)
+                    new_component['process_list'] = processList
             componentList.append(new_component)
         data['component_list'] = componentList
         datas.append(data)

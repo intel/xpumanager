@@ -402,6 +402,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
                 componentJson["finished"] = response.componentinfo(i).finished();
                 componentJson["message"] = response.componentinfo(i).message();
                 componentJson["result"] = diagnosticResultEnumToString(response.componentinfo(i).result());
+                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE
+                    && response.componentinfo(i).result() == DIAG_RESULT_FAIL) {
+                    auto process_list_json = getDeviceProcessState(response.deviceid());
+                    if (process_list_json->contains("device_process_list")) {
+                        componentJson["process_list"] = (*process_list_json)["device_process_list"];
+                    }
+                }
                 componentJsonList.push_back(componentJson);
             }
             (*json)["component_list"] = componentJsonList;
@@ -490,6 +497,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t g
                     componentJson["finished"] = response.taskinfo(i).componentinfo(j).finished();
                     componentJson["message"] = response.taskinfo(i).componentinfo(j).message();
                     componentJson["result"] = diagnosticResultEnumToString(response.taskinfo(i).componentinfo(j).result());
+                    if (response.taskinfo(i).componentinfo(j).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE
+                        && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_FAIL) {
+                        auto process_list_json = getDeviceProcessState(response.taskinfo(i).deviceid());
+                        if (process_list_json->contains("device_process_list")) {
+                            componentJson["process_list"] = (*process_list_json)["device_process_list"];
+                        }
+                    }
                     componentJsonList.push_back(componentJson);
                 }
                 deviceInfoJson["component_list"] = componentJsonList;

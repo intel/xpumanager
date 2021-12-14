@@ -23,8 +23,6 @@ class ComletDiagnostic : public ComletBase {
     virtual std::unique_ptr<nlohmann::json> run() override;
 
    private:
-    void parsedProcessesList(nlohmann::json &json);
-    void parsedProcessesListCore(nlohmann::json &item);
     std::unique_ptr<ComletDiagnosticOptions> opts;
 };
 } // end namespace xpum::cli
