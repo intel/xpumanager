@@ -55,11 +55,11 @@ def getDiagnosticsResult(deviceId):
     data['result'] = diagnosticResultEnumToString[resp.result]
     data['message'] = resp.message
     data['component_count'] = resp.count
-    beginTimestamp = datetime.datetime.fromtimestamp(resp.startTime/1e3)
-    data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
+    beginTimestamp = datetime.datetime.fromtimestamp(resp.startTime/1e3, datetime.timezone.utc)
+    data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
     if resp.finished:
-        endTimestamp = datetime.datetime.fromtimestamp(resp.endTime/1e3)
-        data['end_time'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
+        endTimestamp = datetime.datetime.fromtimestamp(resp.endTime/1e3, datetime.timezone.utc)
+        data['end_time'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
     componentList = []
     i = 0
     for component in resp.componentInfo:
@@ -103,11 +103,11 @@ def getDiagnosticsResultByGroup(groupId):
         data['result'] = diagnosticResultEnumToString[diagTaskInfo.result]
         data['message'] = diagTaskInfo.message
         data['component_count'] = diagTaskInfo.count
-        beginTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.startTime/1e3)
-        data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
+        beginTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.startTime/1e3, datetime.timezone.utc)
+        data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
         if diagTaskInfo.finished:
-            endTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.endTime/1e3)
-            data['end_time'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
+            endTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.endTime/1e3, datetime.timezone.utc)
+            data['end_time'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
         componentList = []
         i = 0
         for component in diagTaskInfo.componentInfo:
