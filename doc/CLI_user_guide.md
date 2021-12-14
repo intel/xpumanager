@@ -148,10 +148,6 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Number of EUs per Sub Slice: 16                                                      |
 |           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
-|           |                                                                                      |
-|           | Number of Xe Link ports: 16                                                          |
-|           | Max Tx/Rx Speed per Xe Link port: 51879.88 MiB/s                                     |
-|           | Number of Lanes per Xe Link port: 4                                                  |
 +-----------+--------------------------------------------------------------------------------------+
 ```
 
@@ -371,7 +367,6 @@ optional arguments:
                                 2. GPU Memory Temperature
                                 3. GPU Power
                                 4. GPU Memory
-                                5. Xe Link Port
   --threshold                 Set custom threshold for device component
 ```
  
@@ -400,9 +395,6 @@ Get the GPU device component health status. There are some build-in thresholds f
 +------------------------------+-------------------------------------------------------------------+
 | 4. GPU Memory                | Status: Ok                                                        |
 |                              | Description: All memory channels are healthy.                     |
-+------------------------------+-------------------------------------------------------------------+
-| 5. Xe Link Port              | Status: Ok                                                        |
-|                              | Description: All ports are healthy.                               |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
@@ -438,10 +430,10 @@ optional arguments:
   -h,--help                   Print this help message and exit
 
   -d,--device                 The device id to query
-  -t,--tile                   The device tile ID to query
+  -t,--tile                   The device tile ID to query. If the device has only one tile, this parameter should not be specified. 
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
                                 0. GPU Utilization (%), GPU active time of the elapsed time, per tile
-                                1. GPU Power (W), per GPU
+                                1. GPU Power (W), per tile
                                 2. GPU Frequency (MHz), per tile
                                 3. GPU Core Temperature (Celsius Degree), per tile
                                 4. GPU Memory Temperature (Celsius Degree), per tile
@@ -544,6 +536,7 @@ Usage: xpumcli fwflash [Options]
 
 Options:
   -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
   -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P card so far.
@@ -573,9 +566,7 @@ Usage: xpumcli config [Options]
   xpumcli config -d [deviceId] -t [tileId] --powerlimit [powerValue,averageWindow]
   xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
   xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
-  xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
-  xpumcli config -d [deviceId] -t [tileId] --xelinkport [portId,value]
-  xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
+  xpumcli config -d [deviceId] --reset
   
 
 
@@ -592,10 +583,6 @@ Options:
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us);
                                 "exclusive".
   --reset                     Hard reset the GPU. All applications that are currently using this device will be forcibly killed. 
-  --performancefactor         Set the tile-level performance factor. Valid options: "compute/media";factorValue. The factor value should be 
-                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
-  --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
-  --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
 ```
 
 show the GPU settings
@@ -621,17 +608,6 @@ show the GPU settings
 |             |                   | Scheduler Mode: timeslice                                      |
 |             |                   |   Interval(us): 5000                                           |
 |             |                   |   Yield Timeout (us): 640000                                   |
-|             |                   |                                                                |
-|             |                   | Engine Type: compute                                           |
-|             |                   |   Performance Factor: 70                                       |
-|             |                   | Engine Type: media                                             |
-|             |                   |   Performance Factor: 50                                       |
-|             |                   |                                                                |
-|             |                   | Xe Link ports:                                                 |
-|             |                   |   Up: 0,1,2,3                                                  |
-|             |                   |   Down: 4,5,6,7                                                |
-|             |                   |   Beaconing On: 0,1,2,3                                        |
-|             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/1               | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 0 to 500                                        |
@@ -649,18 +625,7 @@ show the GPU settings
 |             |                   | Scheduler Mode: timeslice                                      |
 |             |                   |   Interval(us): 5000                                           |
 |             |                   |   Yield Timeout (us): 640000                                   |
-|             |                   |                                                                |
-|             |                   | Engine Type: compute                                           |
-|             |                   |   Performance Factor: 70                                       |
-|             |                   | Engine Type: media                                             |
-|             |                   |   Performance Factor: 50                                       |
-|             |                   |                                                                |
-|             |                   | Xe Link ports:                                                 |
-|             |                   |   Up: 0,1,2,3                                                  |
-|             |                   |   Down: 4,5,6,7                                                |
-|             |                   |   Beaconing On: 0,1,2,3                                        |
-|             |                   |   Beaconing Off: 4,5,6,7                                       |
-+-------------+-------------------+----------------------------------------------------------------+
+ +-------------+-------------------+----------------------------------------------------------------+
 ```
  
 Change the GPU tile core frequency range.
@@ -698,24 +663,6 @@ All process(es) above will be forcibly killed if you reset it. Do you want to co
 Succeed to reset the GPU 0.
 ```
 
-Set the performance factor
-```
-./xpumcli config -d 0 -t 0 --performancefactor compute,70
-Succeed to change the compute performance factor to 70 on GPU 0 tile 0.
-```
-
-Change the Xe Link port status
-```
-./xpumcli config -d 0 -t 0 --xelinkport 0,1
-Succeed to change Xe Link port 0 to up.
-```
-
-Change the Xe Link port beaconing status
-```
-./xpumcli config -d 0 -t 0 --xelinkportbeaconing 0,1
-Succeed to change Xe Link port 0 beaconing to on.
-```
-
 ## Get and set the policy, automatic action triggered by the condition
 The supported policies are list in the table below. For example, if the "GPU Core Temperature" policy is set and one GPU tile temperature is more than the specified threshold, the GPU throttling action will be taken automatically. For "Cache Errors Uncorrectable", if it happens, a resetting GPU action will be taken. The temperature and errors are all based on tile-level.  
 
@@ -726,7 +673,7 @@ The supported policies are list in the table below. For example, if the "GPU Cor
 | 3. Driver Errors              | 1. More than   | 2. Reset GPU            |  
 | 4. Cache Errors Correctable   | 1. More than   | 2. Reset GPU            |  
 | 5. Cache Errors Uncorrectable | 2. When occur  | 2. Reset GPU            |  
-  
+
 
 Help info for GPU policy
 ```
