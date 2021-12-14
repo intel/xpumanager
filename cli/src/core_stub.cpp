@@ -554,17 +554,17 @@ std::string CoreStub::healthTypeEnumToString(HealthType type) {
 nlohmann::json CoreStub::appendHealthThreshold(int deviceId, nlohmann::json json, HealthType type) {
     if (type == HEALTH_POWER) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_POWER_LIMIT);
-        json["shutdown_threshold"] = "150 watts";
+        json["shutdown_threshold"] = 150;
     }
     if (type == HEALTH_CORE_THERMAL) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_CORE_THEARMAL_LIMIT);
-        json["throttle_threshold"] = "105 Celsius Degree";
-        json["shutdown_threshold"] = "130 Celsius Degree";
+        json["throttle_threshold"] = 105;
+        json["shutdown_threshold"] = 130;
     }
     if (type == HEALTH_MEMORY_THERMAL) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_MEMORY_THEARMAL_LIMIT);
-        json["throttle_threshold"] = "85 Celsius Degree";
-        json["shutdown_threshold"] = "100 Celsius Degree";
+        json["throttle_threshold"] = 85;
+        json["shutdown_threshold"] = 100;
     }
     return json;
 }
