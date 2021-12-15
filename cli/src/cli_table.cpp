@@ -10,6 +10,7 @@ namespace xpum::cli {
 #define TABLE_DEFAULT_IDENTATION_LEVEL  0
 #define TABLE_DEFAULT_SHOW_TITLE        true
 #define TABLE_DEFAULT_SUBITEM_ROW       false
+#define TABLE_DEFAULT_ARRAY_ITEM_SEP    true
 #define TABLE_DEFAULT_COLUMN_TITLE      "TITLE"
 
 #define KEY_TABLE_WIDTH                 "width"
@@ -19,6 +20,7 @@ namespace xpum::cli {
 #define KEY_TABLE_COLUMN_SIZE           "size"
 #define KEY_TABLE_COLUMN_TITLE          "title"
 #define KEY_TABLE_ROW_INSTANCE          "instance"
+#define KEY_TABLE_ARRAY_ITEM_SEP        "in_array_sep"
 #define KEY_TABLE_ROWS                  "rows"
 #define KEY_TABLE_CELLS                 "cells"
 #define KEY_TABLE_CELL_ROW_TITLE        "rowTitle"
@@ -119,6 +121,7 @@ cells(conf.size()) {
 
 CharTableConfigRowObject::CharTableConfigRowObject(const nlohmann::json& conf):
 instance(conf.value(KEY_TABLE_ROW_INSTANCE, "")),
+in_array_sep(conf.value(KEY_TABLE_ARRAY_ITEM_SEP, TABLE_DEFAULT_ARRAY_ITEM_SEP)),
 cells(conf.find(KEY_TABLE_CELLS)->size()) {
     auto cellsDef = conf.find(KEY_TABLE_CELLS);
     for (unsigned long i=0; i< cells.size(); i++) {
@@ -294,9 +297,10 @@ rows() {
                     }
                 }
             }
-
-            addSeparator();
+            
+            if (objConf->inArraySeparator()) addSeparator();
         }
+        if (!objConf->inArraySeparator()) addSeparator();
     }
 
     config.calculateColumnWidth();

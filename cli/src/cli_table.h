@@ -366,6 +366,7 @@ class ChatTableConfigCellMulti : public CharTableConfigCellBase {
 class CharTableConfigRowObject {
     private:
     const CharTableConfigPath instance;
+    const bool in_array_sep;
     std::vector<CharTableConfigCellBase*> cells;
 
     public:
@@ -391,6 +392,10 @@ class CharTableConfigRowObject {
             res = std::max(cell->rowCount(), res);
         }
         return res;
+    }
+
+    inline const bool inArraySeparator() const {
+        return in_array_sep;
     }
 };
 
