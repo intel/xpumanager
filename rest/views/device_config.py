@@ -10,15 +10,15 @@ class PowerLimitSchema(Schema):
         metadata={"description": "The power limit value"})
 
 class IntervalSchema(Schema):
-    Interval = fields.Int(
+    interval = fields.Int(
         metadata={"description": "The interval window value"})
 
 class FrequencySchema(Schema):
-    Frequency = fields.Int(
+    frequency = fields.Int(
         metadata={"description": "The frequency value"})
 
 class SchedulerSchema(Schema):
-    Scheduler = fields.Int(
+    scheduler = fields.Int(
         metadata={"description": "The scheduler mode"})
 
 class TileConfigSchema(Schema):
@@ -55,7 +55,7 @@ def set_standby(deviceId):
                 description: Device id
                 type: integer
             -
-                name: tileId
+                name: tile_id
                 in: body
                 description: Tile id
                 type: integer
@@ -69,9 +69,9 @@ def set_standby(deviceId):
         return jsonify("json string is missing"), 500
 
     req = request.get_json()
-    if ("tileId" not in req) or ("standby" not in req):
+    if ("tile_id" not in req) or ("standby" not in req):
         return jsonify("json string is invalid"), 500
-    tileId = req["tileId"]
+    tileId = req["tile_id"]
     standby = req["standby"]
     if type(standby) != str:
         return jsonify("Invalid Parameter"), 500
@@ -98,17 +98,17 @@ def set_powerlimit(deviceId):
         description: Set power limit for device
         parameters:
             -
-                name: powerLimit
+                name: power_limit
                 in: body
                 description: the power limit value
                 schema: PowerLimitSchema
             -
-                name: intervalWindow
+                name: interval_window
                 in: body
                 description: the interval window value
                 schema: IntervalSchema
             -
-                name: deviceId
+                name: device_id
                 in: path
                 description: Device id
                 type: integer
@@ -121,10 +121,10 @@ def set_powerlimit(deviceId):
     if not request.is_json:
         return jsonify("json string is missing"), 500
     req = request.get_json()
-    if ("powerLimit" not in req) or ("intervalWindow" not in req):
+    if ("power_limit" not in req) or ("interval_window" not in req):
         return jsonify("json string is invalid"), 500
-    power = req["powerLimit"]
-    interval = req["intervalWindow"]
+    power = req["power_limit"]
+    interval = req["interval_window"]
     if type(power) != int:
        return jsonify("Invalid Parameter"), 500
     if type(interval) != int:
@@ -150,12 +150,12 @@ def set_frequencyrange(deviceId):
         description: Set frequency range for device
         parameters:
             -
-                name: minFreq
+                name: min_freq
                 in: body
                 description: the min frequency value
                 schema: FrequencySchema
             -
-                name: maxFreq
+                name: max_freq
                 in: body
                 description: the max frequency value
                 schema: FrequencySchema
@@ -165,7 +165,7 @@ def set_frequencyrange(deviceId):
                 description: Device id
                 type: integer
             -
-                name: tileId
+                name: tile_id
                 in: body
                 description: Tile id
                 type: integer
@@ -178,11 +178,11 @@ def set_frequencyrange(deviceId):
     if not request.is_json:
         return jsonify("json string is missing"), 500
     req = request.get_json()
-    if ("tileId" not in req) or ("minFreq" not in req) or ("maxFreq" not in req):
+    if ("tile_id" not in req) or ("min_freq" not in req) or ("max_freq" not in req):
         return jsonify("json string is invalid"), 500
-    tileId = req["tileId"]
-    minFreq = req["minFreq"]
-    maxFreq = req["maxFreq"]
+    tileId = req["tile_id"]
+    minFreq = req["min_freq"]
+    maxFreq = req["max_freq"]
     if type(tileId) != int:
         return jsonify("Invalid Parameter"), 500
     if type(minFreq) != int:
@@ -230,7 +230,7 @@ def set_scheduler(deviceId):
                 description: Device id
                 type: integer
             -
-                name: tileId
+                name: tile_id
                 in: body
                 description: Tile id
                 type: integer
@@ -243,9 +243,9 @@ def set_scheduler(deviceId):
     if not request.is_json:
         return jsonify("json string is missing"), 500
     req = request.get_json()
-    if ("tileId" not in req) or ("mode" not in req) or ("val1" not in req) or ("val2" not in req):
+    if ("tile_id" not in req) or ("mode" not in req) or ("val1" not in req) or ("val2" not in req):
         return jsonify("json string is invalid"), 500
-    tileId = req["tileId"]
+    tileId = req["tile_id"]
     mode = req["mode"]
     val1 = req["val1"]
     val2 = req["val2"]
@@ -290,7 +290,7 @@ def get_config(deviceId):
                 description: Device id
                 type: integer
             -
-                name: tileId
+                name: tile_id
                 in: body
                 description: Tile id
                 type: integer
@@ -304,9 +304,9 @@ def get_config(deviceId):
     if not request.is_json:
         return jsonify("json string is missing"), 500
     req = request.get_json()
-    if ("tileId" not in req):
+    if ("tile_id" not in req):
         return jsonify("json string is invalid"), 500
-    tileId = req["tileId"]
+    tileId = req["tile_id"]
     if type(tileId) != int:
         return jsonify("Invalid Parameter"), 500
     if tileId < -1:
