@@ -41,7 +41,6 @@ class HealthSchema(Schema):
     memory_temperature = fields.Nested(HealthConfigurableComponentSchemaExt)
     power = fields.Nested(HealthConfigurableComponentSchemaBase)
     memory = fields.Nested(HealthComponentSchema)
-    fabric_port = fields.Nested(HealthComponentSchema)
 
 
 def get_health_all(deviceId):
@@ -123,7 +122,7 @@ def get_health(deviceId, healthType):
             -
                 name: healthType
                 in: path
-                description: Health type, coreTemperature, memoryTemperature, power, memory or fabricPort
+                description: Health type, coreTemperature, memoryTemperature, power and memory
                 type: str
         responses:
             200:
@@ -132,7 +131,7 @@ def get_health(deviceId, healthType):
             500:
                 description: Error
     """
-    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]:
+    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory"]:
         return
 
     code, message, data = stub.getHealth(deviceId, healthType)
@@ -159,7 +158,7 @@ def get_group_health(groupId, healthType):
             -
                 name: healthType
                 in: path
-                description: Health type, coreTemperature, memoryTemperature, power, memory or fabricPort
+                description: Health type, coreTemperature, memoryTemperature, power and memory
                 type: str
         responses:
             200:
@@ -168,7 +167,7 @@ def get_group_health(groupId, healthType):
             500:
                 description: Error
     """
-    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]:
+    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory"]:
         return
 
     code, message, data = stub.getHealthByGroup(groupId, healthType)

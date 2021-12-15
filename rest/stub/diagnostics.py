@@ -55,11 +55,11 @@ def getDiagnosticsResult(deviceId):
     data['result'] = diagnosticResultEnumToString[resp.result]
     data['message'] = resp.message
     data['component_count'] = resp.count
-    beginTimestamp = datetime.datetime.fromtimestamp(resp.startTime/1e3)
-    data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
+    beginTimestamp = datetime.datetime.fromtimestamp(resp.startTime/1e3, datetime.timezone.utc)
+    data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
     if resp.finished:
-        endTimestamp = datetime.datetime.fromtimestamp(resp.endTime/1e3)
-        data['end_time'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
+        endTimestamp = datetime.datetime.fromtimestamp(resp.endTime/1e3, datetime.timezone.utc)
+        data['end_time'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
     componentList = []
     i = 0
     for component in resp.componentInfo:
@@ -71,6 +71,16 @@ def getDiagnosticsResult(deviceId):
         new_component['finished'] = component.finished
         new_component['result'] = diagnosticResultEnumToString[component.result]
         new_component['message'] = component.message
+        if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
+            process_list_resp = stub.getDeviceProcessState(core_pb2.DeviceId(id=deviceId))
+            if len(resp.errorMsg) == 0:
+                processList = []
+                for process in process_list_resp.processlist:
+                    new_process = dict()
+                    new_process["process_id"] = process.processId
+                    new_process["process_name"] = process.processName
+                    processList.append(new_process)
+                new_component['process_list'] = processList
         componentList.append(new_component)
     data['component_list'] = componentList
 
@@ -93,11 +103,11 @@ def getDiagnosticsResultByGroup(groupId):
         data['result'] = diagnosticResultEnumToString[diagTaskInfo.result]
         data['message'] = diagTaskInfo.message
         data['component_count'] = diagTaskInfo.count
-        beginTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.startTime/1e3)
-        data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
+        beginTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.startTime/1e3, datetime.timezone.utc)
+        data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
         if diagTaskInfo.finished:
-            endTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.endTime/1e3)
-            data['end_time'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
+            endTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.endTime/1e3, datetime.timezone.utc)
+            data['end_time'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
         componentList = []
         i = 0
         for component in diagTaskInfo.componentInfo:
@@ -109,6 +119,16 @@ def getDiagnosticsResultByGroup(groupId):
             new_component['finished'] = component.finished
             new_component['result'] = diagnosticResultEnumToString[component.result]
             new_component['message'] = component.message
+            if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
+                process_list_resp = stub.getDeviceProcessState(core_pb2.DeviceId(id=diagTaskInfo.deviceId))
+                if len(resp.errorMsg) == 0:
+                    processList = []
+                    for process in process_list_resp.processlist:
+                        new_process = dict()
+                        new_process["process_id"] = process.processId
+                        new_process["process_name"] = process.processName
+                        processList.append(new_process)
+                    new_component['process_list'] = processList
             componentList.append(new_component)
         data['component_list'] = componentList
         datas.append(data)

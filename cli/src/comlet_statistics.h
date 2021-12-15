@@ -31,6 +31,10 @@ class ComletStatistics : public ComletBase {
         return opts->groupId != 0;
     }
 
+    inline const int getDeviceId() const {
+        return opts->deviceId;
+    }
+
    private:
     std::unique_ptr<ComletStatisticsOptions> opts;
 };
