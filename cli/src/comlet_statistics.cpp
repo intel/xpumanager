@@ -214,7 +214,11 @@ static void showDeviceStatistics(std::ostream &out, std::shared_ptr<nlohmann::js
     if (noTile) {
         auto deviceJson = json.find("device_level");
         if (deviceJson != json.end() && deviceJson->is_array()) {
-            tileJson->erase(tileJson->begin(), tileJson->end());
+            if (tileJson != json.end()) {
+                json.erase(tileJson);
+            }
+            json["tile_level"] = nlohmann::json::array();
+            tileJson = json.find("tile_level");
             auto tile0 = nlohmann::json::object();
             tile0["tile_id"] = 0;
             tile0["data_list"] = (*deviceJson);
