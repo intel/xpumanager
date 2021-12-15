@@ -50,11 +50,11 @@ Show Intel XPU Manager version and Level Zero version.
 ./xpumcli -v
 CLI:
     Version: 0.1.0
-    Build Id: 10
+    Build ID: 10
 
 Service:
     Version: 0.1.0
-    Build Id: 10
+    Build ID: 10
     Level Zero Version:
 ```
 
@@ -589,7 +589,7 @@ show the GPU settings
 ```
 ./xpumcli config -d 0
 +-------------+-------------------+----------------------------------------------------------------+
-| Device Type | Device Id/Tile Id | Configuration                                                  |
+| Device Type | Device ID/Tile ID | Configuration                                                  |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/0               | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 0 to 500                                        |
@@ -746,13 +746,14 @@ List all supported policies
 List all policies set on the GPU. 
 ```
 ./xpumcli policy -l -d 0
-+-------------------------------+------------------+-----------------------------------------------+
-| Types                         | Conditions       | Actions                                       |
-+-------------------------------+------------------+-----------------------------------------------+
-| 1. GPU Core Temperature       | 1. More than 95  | 1. Throttle GPU Core frequency                |
-|                               |                  |      min: 300, max: 400                       |
-| 5. Cache Errors Uncorrectable | 2. When occur    | 2. Reset GPU                                  |
-+-------------------------------+------------------+-----------------------------------------------+
++-----------+-------------------------------+------------------+-----------------------------------+
+| Device ID | Types                         | Conditions       | Actions                           |
++-----------+-------------------------------+------------------+-----------------------------------+
+| 0         | 1. GPU Core Temperature       | 1. More than 95  | 1. Throttle GPU Core frequency    |
+|           |                               |                  |      min: 300, max: 400           |
++-----------+-------------------------------+------------------+-----------------------------------+
+| 0         | 5. Cache Errors Uncorrectable | 2. When occur    | 2. Reset GPU                      |
++-----------+-------------------------------+------------------+-----------------------------------+
 ```
   
 Remove a policy.
@@ -793,7 +794,7 @@ Run test to diagnose GPU
 ./xpumcli diag -d 0 -l 1
 Device Type: GPU
 +------------------------+-------------------------------------------------------------------------+
-| Device Id              | 0                                                                       |
+| Device ID              | 0                                                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Level                  | 1                                                                       |
 | Result                 | Fail                                                                    |
