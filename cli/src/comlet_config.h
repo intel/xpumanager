@@ -29,6 +29,18 @@ class ComletConfig : public ComletBase {
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
+    virtual void getTableResult(std::ostream &out) override;
+
+    inline const bool isQuery() const {
+        return this->opts->deviceId >= 0
+            && this->opts->scheduler.empty()
+            && this->opts->performancefactor.empty()
+            && this->opts->powerlimit.empty()
+            && this->opts->standby.empty()
+            && this->opts->frequencyrange.empty()
+            && !this->opts->resetDevice;
+    }
+
    private:
     std::unique_ptr<ComletConfigOptions> opts;
     std::vector<std::string> split(std::string str, std::string delimiter);

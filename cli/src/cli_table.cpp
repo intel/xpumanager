@@ -97,8 +97,17 @@ const bool CharTableConfigCellSingleSubItems::append_value(std::string& res, con
     return true;
 }
 
+static const std::string removeSpaceAfterBk(const std::string& labelConf) {
+    const long ls = labelConf.length();
+    if (ls < 3) return labelConf;
+    if (labelConf[ls-1] == ' ' && labelConf[ls-2] == ')') {
+        return labelConf.substr(0, ls-1);
+    }
+    return labelConf;
+}
+
 CharTableConfigCellSingle::CharTableConfigCellSingle(const nlohmann::json& conf):
-label(conf.is_object() ? conf.value(KEY_TABLE_CELL_LABEL, "") : ""),
+label(removeSpaceAfterBk(conf.is_object() ? conf.value(KEY_TABLE_CELL_LABEL, "") : "")),
 label_tag(conf.is_object() ? conf.value(KEY_TABLE_CELL_LABEL_TAG, "") : ""),
 row_title(conf.is_object() ? conf.value(KEY_TABLE_CELL_ROW_TITLE, "") : ""),
 value(conf.is_object() ? conf.value(KEY_TABLE_CELL_VALUE, "") : (std::string) conf),

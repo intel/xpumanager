@@ -3,9 +3,43 @@
 #include <nlohmann/json.hpp>
 
 #include "core_stub.h"
+#include "cli_table.h"
 
 namespace xpum::cli {
 
+static CharTableConfig ComletConfigShowConfiguration(R"({
+    "indentation": 4,
+    "columns": [{
+        "title": "Device Type"
+    }, {
+        "title": "Device ID/Tile ID"
+    }, {
+        "title": "Configuration"
+    }],
+    "rows": [{
+        "instance": "tile_config_data[]",
+        "cells": [
+            { "rowTitle": "GPU" },
+            "id", [
+                { "label": "Power Limit (w) ", "value": "power_limit" },
+                { "label": "  Valid Range", "value": "power_limit_range" },
+                { "label": "Power Average Window (ms) ", "value": "power_average_window" },
+                { "label": "  Valid Range", "value": "power_average_window_range" },
+                "none",
+                { "label": "GPU Min Frequency (MHz) ", "value": "min_frequency" },
+                { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
+                { "label": "  Valid Options", "value": "frequency_valid_option" },
+                "none",
+                { "label": "Standby Mode", "value": "standby_mode" },
+                { "label": "  Valid Options", "value": "standby_option" },
+                "none",
+                { "label": "Scheduler Mode", "value": "scheduler_mode" },
+                { "label": "  Interval (us) ", "value": "interval" },
+                { "label": "  Yield Timeout (us) ", "value": "yield_timeout" }
+            ]
+        ]
+    }]
+})"_json);
 
 void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
@@ -41,14 +75,7 @@ std::vector<std::string> ComletConfig::split(std::string str, std::string delimi
 std::unique_ptr<nlohmann::json> ComletConfig::run() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     (*json)["return"]="error";
-    if (this->opts->deviceId >= 0 
-        && this->opts->scheduler.empty()
-        && this->opts->performancefactor.empty()
-        && this->opts->powerlimit.empty()
-        && this->opts->standby.empty()
-        && this->opts->frequencyrange.empty()
-        && !this->opts->resetDevice
-        ) {
+    if (isQuery()) {
         json = this->coreStub->getDeviceConfig(this->opts->deviceId, this->opts->tileId);
         return json;
     }
@@ -207,4 +234,29 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
     (*json)["return"]="invalid device Id";
     return json;
 }
+
+static void showConfigurations(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigShowConfiguration, *json);
+    table.show(out);
+}
+
+static void showPureCommandOutput(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+}
+
+void ComletConfig::getTableResult(std::ostream &out) {
+    auto res = run();
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+    *json = *res;
+
+    if (isQuery()) {
+        showConfigurations(out, json);
+    } else {
+        showPureCommandOutput(out, json);
+    }
+}
+
 } // end namespace xpum::cli
