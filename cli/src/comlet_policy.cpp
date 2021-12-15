@@ -26,6 +26,48 @@ static CharTableConfig ComletConfigAllSupported(R"({
     }]
 })"_json);
 
+static CharTableConfig ComletConfigListAll(R"({
+    "columns": [{
+        "title": "Device ID"
+    }, {
+        "title": "Types"
+    }, {
+        "title": "Conditions"
+    }, {
+        "title": "Actions"
+    }],
+    "rows": [{
+        "instance": "all_policy_list[].policy_list[]",
+        "cells": [
+            "device_id",
+            "type",
+            "condition",
+            "action"
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigListDevice(R"({
+    "columns": [{
+        "title": "Device ID"
+    }, {
+        "title": "Types"
+    }, {
+        "title": "Conditions"
+    }, {
+        "title": "Actions"
+    }],
+    "rows": [{
+        "instance": "all_policy_list.policy_list[]",
+        "cells": [
+            "device_id",
+            "type",
+            "condition",
+            "action"
+        ]
+    }]
+})"_json);
+
 void ComletPolicy::setupOptions() {
     this->opts = std::unique_ptr<ComletPolicyOptions>(new ComletPolicyOptions());
     addFlag("-l,--list", this->opts->listAll, "List all policies.");
@@ -270,6 +312,16 @@ static void showAllSupported(std::ostream &out, std::shared_ptr<nlohmann::json> 
     table.show(out);
 }
 
+static void showListDevice(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigListDevice, *json);
+    table.show(out);
+}
+
+static void showListMulti(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigListAll, *json);
+    table.show(out);
+}
+
 static void showCreateResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
 }
 
@@ -286,6 +338,13 @@ void ComletPolicy::getTableResult(std::ostream &out) {
     *json = *res;
 
     if (this->opts->listAll) {
+        if (this->opts->deviceId >= 0){
+            showListDevice(out, json);
+        } else if (this->opts->groupId > 0){
+            showListMulti(out, json);
+        } else{
+            showListMulti(out, json);
+        }  
     }
     if (this->opts->listalltypes) {
         showAllSupported(out, json);

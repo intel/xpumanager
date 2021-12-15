@@ -41,6 +41,15 @@ class ComletPolicy : public ComletBase {
     inline const bool isListSupportedTypes() const {
         return opts->listalltypes;
     }
+    inline const bool isListAll() const {
+        return opts->listAll;
+    }
+    inline const int getDeviceId() const {
+        return opts->deviceId;
+    }
+    inline const int getGroupId() const {
+        return opts->groupId;
+    }
 
    private:
     std::unique_ptr<ComletPolicyOptions> opts;
