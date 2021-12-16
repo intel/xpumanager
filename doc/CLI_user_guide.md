@@ -514,13 +514,16 @@ optional arguments:
 
 Get the info of the CPUs and PCIe switches which are conneted to the GPU
 ```
-/xpumcli topology -d 0
-./Topology:
-    Device ID: 0
-    Local CPU List: 0-23,48-71
-    Local CPUs: 000000ff,ffff0000,00ffffff
-    PCIe Switch Count:1
-    PCIe Switch:/sys/devices/pci0000:4a/0000:4a:02.0/0000:4b:00.0/0000:4c:00.0/0000:4d:00.0/0000:4e:18.0/0000:54:00.0/0000:55:01.0
+./xpumcli topology -d 0
++-----------+--------------------------------------------------------------------------------------+
+| Device ID | Topology Information                                                                 |
++-----------+--------------------------------------------------------------------------------------+
+| 0         | Local CPU List: 0-23,48-71                                                           |
+|           | Local CPUs: 000000ff,ffff0000,00ffffff                                               |
+|           | PCIe Switch Count: 1                                                                 |
+|           | PCIe Switch: /sys/devices/pci0000:4a/0000:4a:02.0/0000:4b:00.0/0000:4c:00.0          |
+|           |   /0000:4d:00.0/0000:4e:18.0/0000:54:00.0/0000:55:01                                 |
++-----------+--------------------------------------------------------------------------------------+
 ```
   
   
@@ -726,7 +729,7 @@ Options:
 Create a policy to throttle GPU when the GPU tile temperature is a little high. 
 ```
 ./xpumcli policy -c -d 0 --type 1 --condition 1 --threshold 95  --action 1 --throttlefrequencymin 300 --throttlefrequencymax 400
-Succeed to set the "GPU Core Temperature" policy.
+Succeed to set the "1. GPU Core Temperature" policy.
 ```
 
 List all supported policies
@@ -759,7 +762,7 @@ List all policies set on the GPU.
 Remove a policy.
 ```
 ./xpumcli policy -r -d 0 --type 1
-Succeed to remove the "GPU Core Temperature" policy.
+Succeed to remove the "1. GPU Core Temperature" policy.
 ```
   
 ## Diagnose GPU with different test suites
