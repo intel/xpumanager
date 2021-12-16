@@ -28,7 +28,9 @@ class Logger {
         spdlog::set_default_logger(logger);
         spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%^%L%$] [%P-%t] %v");
         if (log_level != "") {
-            logger->set_level(spdlog::level::from_str(log_level));
+            auto spdlog_level = spdlog::level::from_str(log_level);
+            logger->set_level(spdlog_level);
+            setenv("SPDLOG_LEVEL", spdlog::level::to_string_view(spdlog_level).data(), 1);
         } else {
             // log_level is not specified, load it from env
             spdlog::cfg::load_env_levels();
