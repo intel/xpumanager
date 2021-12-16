@@ -505,7 +505,7 @@ class CharTableRow : public CharTableRowBase {
         if (nrp != std::string::npos) {
             if (nrp <= (unsigned long) cp) return nrp;
         }
-        const std::string dels(", \t");
+        const std::string dels(", \t/");
         while (cp > 0) {
             const char cc = cStr[cp-1];
             if (dels.find(cc) != std::string::npos) {
