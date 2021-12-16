@@ -10,6 +10,7 @@ namespace xpum {
 #define XPUM_LOG_ERROR(...) spdlog::error(__VA_ARGS__)
 #define XPUM_LOG_DEBUG(...) spdlog::debug(__VA_ARGS__)
 #define XPUM_LOG_TRACE(...) spdlog::trace(__VA_ARGS__)
+#define XPUM_LOG_FATAL(...) spdlog::critical(__VA_ARGS__)
 
 class Logger {
    public:
