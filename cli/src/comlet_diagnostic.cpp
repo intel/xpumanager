@@ -74,10 +74,10 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
     if (this->opts->level >= 1 && this->opts->level <= 3) {
         if (this->opts->deviceId >= 0) {
-            json = this->coreStub->runDiagnostics(this->opts->deviceId, this->opts->level);
+            json = this->coreStub->runDiagnostics(this->opts->deviceId, this->opts->level, this->opts->rawComponentTypeStr);
             return json;
         } else if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
-            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level);
+            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level, this->opts->rawComponentTypeStr);
             return json;
         }
     }
@@ -91,7 +91,9 @@ static void showDeviceDiagnostic(std::ostream &out, std::shared_ptr<nlohmann::js
 }
 
 void ComletDiagnostic::getTableResult(std::ostream &out) {
+    this->opts->rawComponentTypeStr = false;
     auto res = run();
+    this->opts->rawComponentTypeStr = true;
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         return;

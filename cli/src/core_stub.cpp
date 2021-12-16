@@ -292,48 +292,48 @@ std::string CoreStub::diagnosticResultEnumToString(DiagnosticsTaskResult result)
     return ret;
 }
 
-std::string CoreStub::diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type) {
+std::string CoreStub::diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type, bool rawComponentTypeStr) {
     std::string ret;
     switch (type) {
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_ENV_VARIABLES:
-            ret = "XPUM_DIAG_SOFTWARE_ENV_VARIABLES";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_ENV_VARIABLES" : "Software Env Variables");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_LIBRARY:
-            ret = "XPUM_DIAG_SOFTWARE_LIBRARY";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_LIBRARY" : "Software Library");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_PERMISSION:
-            ret = "XPUM_DIAG_SOFTWARE_PERMISSION";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_PERMISSION" : "Software Permission");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE:
-            ret = "XPUM_DIAG_SOFTWARE_EXCLUSIVE";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_EXCLUSIVE" : "Software Exclusive");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_HARDWARE_SYSMAN:
-            ret = "XPUM_DIAG_HARDWARE_SYSMAN";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_HARDWARE_SYSMAN" : "Hardware Sysman");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_INTEGRATION_PCIE:
-            ret = "XPUM_DIAG_INTEGRATION_PCIE";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_INTEGRATION_PCIE" : "Integration PCIe");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC:
-            ret = "XPUM_DIAG_MEDIA_CODEC";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_MEDIA_CODEC" : "Media Codec");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_COMPUTATION:
-            ret = "XPUM_DIAG_PERFORMANCE_COMPUTATION";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_COMPUTATION" : "Performance Computation");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_POWER:
-            ret = "XPUM_DIAG_PERFORMANCE_POWER";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_POWER" : "Performance Power");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY_ALLOCATION:
-            ret = "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION" : "Performance Memory Allocation");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY_BANDWIDTH:
-            ret = "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH" : "Performance Memory Bandwidth");
             break;
         default:
             break;
     }
     return ret;
 }
-std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level) {
+std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -344,7 +344,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
     grpc::Status status = stub->runDiagnostics(&context, request, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
-            json = getDiagnosticsResult(deviceId);
+            json = getDiagnosticsResult(deviceId, rawComponentTypeStr);
             if ((*json).contains("error")) {
                 return json;
             }
@@ -353,7 +353,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
                 std::chrono::system_clock::now().time_since_epoch()).count();
             while ((*json)["finished"] == false) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
-                json = getDiagnosticsResult(deviceId);
+                json = getDiagnosticsResult(deviceId, rawComponentTypeStr);
                 if ((*json).contains("error")) {
                     return json;
                 }
@@ -375,7 +375,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
+std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -398,7 +398,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
             std::vector<nlohmann::json> componentJsonList;
             for (int i = 0; i < response.componentinfo_size(); ++i) {
                 auto componentJson = nlohmann::json();
-                componentJson["component_type"] = diagnosticTypeEnumToString(response.componentinfo(i).type());
+                componentJson["component_type"] = diagnosticTypeEnumToString(response.componentinfo(i).type(), rawComponentTypeStr);
                 componentJson["finished"] = response.componentinfo(i).finished();
                 componentJson["message"] = response.componentinfo(i).message();
                 componentJson["result"] = diagnosticResultEnumToString(response.componentinfo(i).result());
@@ -421,7 +421,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId, int level) {
+std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -432,7 +432,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId
     grpc::Status status = stub->runDiagnosticsByGroup(&context, request, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
-            json = getDiagnosticsResultByGroup(groupId);
+            json = getDiagnosticsResultByGroup(groupId, rawComponentTypeStr);
             if ((*json).contains("error")) {
                 return json;
             }
@@ -441,7 +441,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId
                 std::chrono::system_clock::now().time_since_epoch()).count();
             while ((*json)["finished"] == false) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
-                json = getDiagnosticsResultByGroup(groupId);
+                json = getDiagnosticsResultByGroup(groupId, rawComponentTypeStr);
                 if ((*json).contains("error")) {
                     return json;
                 }
@@ -463,7 +463,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t groupId) {
+std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -493,7 +493,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t g
                 std::vector<nlohmann::json> componentJsonList;
                 for (int j = 0; j < response.taskinfo(i).componentinfo_size(); j++) {
                     auto componentJson = nlohmann::json();
-                    componentJson["component_type"] = diagnosticTypeEnumToString(response.taskinfo(i).componentinfo(j).type());
+                    componentJson["component_type"] = diagnosticTypeEnumToString(response.taskinfo(i).componentinfo(j).type(), rawComponentTypeStr);
                     componentJson["finished"] = response.taskinfo(i).componentinfo(j).finished();
                     componentJson["message"] = response.taskinfo(i).componentinfo(j).message();
                     componentJson["result"] = diagnosticResultEnumToString(response.taskinfo(i).componentinfo(j).result());

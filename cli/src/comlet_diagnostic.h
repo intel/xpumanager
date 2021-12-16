@@ -12,6 +12,7 @@ struct ComletDiagnosticOptions {
     int deviceId = INT_MIN;
     uint32_t groupId = UINT_MAX;
     int level = INT_MIN;
+    bool rawComponentTypeStr = true;
 };
 
 class ComletDiagnostic : public ComletBase {

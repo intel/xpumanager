@@ -31,12 +31,12 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> groupAddDevice(int groupId, int deviceId);
     std::unique_ptr<nlohmann::json> groupRemoveDevice(int groupId, int deviceId);
 
-    std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level);
-    std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId);
-    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level);
-    std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId);
+    std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr);
     std::string diagnosticResultEnumToString(DiagnosticsTaskResult result);
-    std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type);
+    std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type, bool rawComponentTypeStr);
 
     std::unique_ptr<nlohmann::json> getAllHealth();
     std::unique_ptr<nlohmann::json> getHealth(int deviceId, int componentType);

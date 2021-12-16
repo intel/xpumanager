@@ -35,7 +35,7 @@ static CharTableConfig ComletConfigHealthCoreTemp(R"({
     "rows": [{
         "instance": "core_temperature",
         "cells": [
-            { "rowTitle": "GPU Core Temperature" }, [
+            { "rowTitle": "1. GPU Core Temperature" }, [
             { "label": "Status", "value": "status" },
             { "label": "Description", "value": "description" },
             { "label": "Throttle Threshold", "suffix": " Celsius Degree", "value": "throttle_threshold", "fixer": "negint_novalue" },
@@ -56,7 +56,7 @@ static CharTableConfig ComletConfigHealthMemTemp(R"({
     "rows": [{
         "instance": "memory_temperature",
         "cells": [
-            { "rowTitle": "GPU Memory Temperature" }, [
+            { "rowTitle": "2. GPU Memory Temperature" }, [
             { "label": "Status", "value": "status" },
             { "label": "Description", "value": "description" },
             { "label": "Throttle Threshold", "suffix": " Celsius Degree", "value": "throttle_threshold", "fixer": "negint_novalue" },
@@ -77,7 +77,7 @@ static CharTableConfig ComletConfigHealthPower(R"({
     "rows": [{
         "instance": "power",
         "cells": [
-            { "rowTitle": "GPU Power" }, [
+            { "rowTitle": "3. GPU Power" }, [
             { "label": "Status", "value": "status" },
             { "label": "Description", "value": "description" },
             { "label": "Throttle Threshold", "suffix": " Celsius Degree", "value": "throttle_threshold", "fixer": "negint_novalue" },
@@ -97,7 +97,7 @@ static CharTableConfig ComletConfigHealthMemory(R"({
     "rows": [{
         "instance": "memory",
         "cells": [
-            { "rowTitle": "GPU Memory" }, [
+            { "rowTitle": "4. GPU Memory" }, [
             { "label": "Status", "value": "status" },
             { "label": "Description", "value": "description" }
         ]]
@@ -115,7 +115,7 @@ static CharTableConfig ComletConfigHealthFabricPort(R"({
     "rows": [{
         "instance": "fabric_port",
         "cells": [
-            { "rowTitle": "GPU Fabric Port" }, [
+            { "rowTitle": "5. GPU Fabric Port" }, [
             { "label": "Status", "value": "status" },
             { "label": "Description", "value": "description" }
         ]]
