@@ -19,9 +19,13 @@
 #include "comlet_dump.h"
 #include "comlet_agentset.h"
 
+#include "logger.h"
+
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
 
 int main(int argc, char **argv) {
+
+    xpum::cli::Logger::init();
 
     CLI::App app{"Intel XPU Manager Command Line Interface"};
 
