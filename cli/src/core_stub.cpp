@@ -934,8 +934,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllPolicyType() {
     grpc::ClientContext context;
     XpumDeviceBasicInfoArray response;
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
-    if (status.ok()) {
+    //grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    //std::cout << "--Gang---core_stub.cpp--getAllPolicyType---1----status.ok()=" << status.ok() << std::endl;
+    //if (status.ok()) 
+    {
         if (response.errormsg().length() == 0) {
             std::vector<nlohmann::json> healthJsonList;
             {
@@ -1038,6 +1040,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPol
     }else{
         (*json)["group_id"] = id;
     }   
+    //std::cout << "--Gang---1----status.ok() = " << status.ok() << std::endl;
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             //Succeed to set the "GPU Core Temperature" policy.
@@ -1058,11 +1061,19 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPol
         }
     }else{
         (*json)["is_success"] = false; 
-        if(isRemove){
-            (*json)["msg"] = "Faield to remove the "+policyType+" policy. Error message: unknown.";
+        if (response.errormsg().length() == 0) {
+            if(isRemove){
+                (*json)["msg"] = "Faield to remove the "+policyType+" policy. Error message: unknown.";
+            }else{
+                (*json)["msg"] = "Faield to set the "+policyType+" policy. Error message: unknown.";
+            }  
         }else{
-            (*json)["msg"] = "Faield to set the "+policyType+" policy. Error message: unknown.";
-        }  
+            if(isRemove){
+                (*json)["msg"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
+            }else{
+                (*json)["msg"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
+            }  
+        }
     }
     return json;
 }
