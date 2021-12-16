@@ -29,7 +29,7 @@ class ComletDiagnostic : public ComletBase {
     }
 
     inline const bool isGroupOperation() const {
-        return opts->groupId > 0;
+        return opts->groupId > 0 && opts->groupId != UINT_MAX;
     }
 
     inline const int getLevel() const {

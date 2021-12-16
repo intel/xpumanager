@@ -7,6 +7,44 @@
 
 namespace xpum::cli {
 
+static CharTableConfig ComletConfigDiagnosticDevice(R"({
+    "showTitleRow": false,
+    "columns": [{
+        "title": "none"
+    }, {
+        "title": "none"
+    }],
+    "rows": [{
+        "instance": "",
+        "cells": [
+            { "rowTitle": "Device ID" },
+            "device_id"
+        ]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "Level" },
+            { "rowTitle": "Result" },
+            { "rowTitle": "Items" }
+        ], [
+            { "value": "level" },
+            { "value": "result" },
+            { "value": "component_count" }
+        ]]
+    }, {
+        "instance": "component_list[]",
+        "cells": [
+            { "value": "component_type" }, [
+            { "label": "Result", "value": "result" },
+            { "label": "Message", "value": "message" },
+            { "value": "process_list[]", "subrow": true, "subs": [
+                { "label": "  PID", "value": "process_id" },
+                { "label": "Command", "value": "process_name" }
+            ]}
+        ]]
+    }]
+})"_json);
+
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
     addOption("-d,--device", this->opts->deviceId, "The device ID");
@@ -47,6 +85,11 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     return json;
 }
 
+static void showDeviceDiagnostic(std::ostream &out, std::shared_ptr<nlohmann::json> json, const bool cont = false) {
+    CharTable table(ComletConfigDiagnosticDevice, *json, cont);
+    table.show(out);
+}
+
 void ComletDiagnostic::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
@@ -55,5 +98,19 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
     *json = *res;
+
+    if (isGroupOperation()) {
+        auto devices = (*json)["device_list"].get<std::vector<nlohmann::json>>();
+        bool cont = false;
+        for (auto device : devices) {
+            showDeviceDiagnostic(out, std::make_shared<nlohmann::json>(device), cont);
+            cont = true;
+        }
+        return;
+    }
+    if (isDeviceOperation()) {
+        showDeviceDiagnostic(out, json);
+        return;
+    }
 }
 } // end namespace xpum::cli

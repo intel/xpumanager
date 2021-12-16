@@ -297,13 +297,20 @@ rows() {
             for (unsigned int i=0; i<objRows; i++) {
                 CharTableRow& dataRow = addRow();
                 const std::vector<CharTableConfigCellBase*> objCellsConf = objConf->getCells();
+                bool rowHasNoData = true;
                 for (unsigned int j=0; j<objCellsConf.size(); j++) {
                     auto objCol = objCellsConf[j];
                     auto cellConf = objCol->getCellConfigAt(i);
                     if (cellConf != NULL) {
                         const std::string cellValue = cellConf->apply(objIns);
-                        config.setCellValue(dataRow, j, cellValue);
+                        if (!(cellConf->isSubRow() && cellValue.empty())) {
+                            rowHasNoData = false;
+                            config.setCellValue(dataRow, j, cellValue);
+                        }
                     }
+                }
+                if (rowHasNoData) {
+                    rows.pop_back();
                 }
             }
             

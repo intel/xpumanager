@@ -336,6 +336,10 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
         }
         return applyObject(obj);
     }
+
+    inline const bool isSubRow() const {
+        return subrow;
+    }
 };
 
 class ChatTableConfigCellMulti : public CharTableConfigCellBase {
