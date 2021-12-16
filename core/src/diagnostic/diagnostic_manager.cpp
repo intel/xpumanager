@@ -71,7 +71,7 @@ void DiagnosticManager::readConfigFile() {
         
     }
     else {
-        XPUM_LOG_ERROR("couldn't open config file for diagnostics: " + file_name);
+        XPUM_LOG_ERROR("couldn't open config file for diagnostics: {}", file_name);
     }
 }
 
@@ -200,9 +200,15 @@ void DiagnosticManager::doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t 
             break;
     }
     std::string desc = "Error in " + error; 
-    XPUM_LOG_ERROR("Error in diagnostics  " + type_str + " : " + error);
+    XPUM_LOG_ERROR("Error in diagnostics {} : {}",  type_str, error);
     updateMessage(component.message, desc);
     component.finished = true;
+    if (type == XPUM_DIAG_PERFORMANCE_COMPUTATION) {
+        xpum_diag_component_info_t &power_component = p_task_info->componentList[XPUM_DIAG_PERFORMANCE_POWER];
+        power_component.finished = true;
+        power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        updateMessage(power_component.message, "Error in " + type_str); 
+    }
 }
 
 void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver,
@@ -586,7 +592,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
                         desc += " Decoder unsupported.";
                     else
                         desc += " Errors happened when run sample_decode.";
-                    XPUM_LOG_INFO("detail error message:\n" + result_decode);
+                    XPUM_LOG_INFO("detail error message:\n {}", result_decode);
                 }
 
                 if (result_encode.find("Processing finished") == std::string::npos) {
@@ -594,7 +600,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
                         desc += " Encoder unsupported.";
                     else
                         desc += " Errors happened when run sample_encode.";
-                    XPUM_LOG_INFO("detail error message:\n" + result_encode);
+                    XPUM_LOG_INFO("detail error message:\n {}", result_encode);
                        
                 }
                 component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
@@ -1053,7 +1059,7 @@ std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_p
     std::vector<uint8_t> binary_file;
 
     if (!stream.good()) {
-        throw BaseException("Error in load kernel file.");
+        throw BaseException("load kernel file");
     }
 
     std::size_t length = 0;
@@ -1266,7 +1272,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 }
                 if (current_value > power_value) {
                     power_value = current_value;
-                    XPUM_LOG_DEBUG("update peak power value: " + std::to_string(power_value));
+                    XPUM_LOG_DEBUG("update peak power value: {}", power_value);
                 }
             } catch (...) {
                 break;
