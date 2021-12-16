@@ -1092,9 +1092,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie,int id) {
                 XpumPolicyActionType atype = response.policylist(i).action().type();
                 std::string action = policyActionTypeEnumToString(atype);
                 if (atype == XpumPolicyActionType::POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
-                    action += " min:";
+                    action += " \nmin:";
                     action += std::to_string(response.policylist(i).action().throttle_device_frequency_min());
-                    action += " max:";
+                    action += " \nmax:";
                     action += std::to_string(response.policylist(i).action().throttle_device_frequency_max());
                 }
                 component["action"] = action;
