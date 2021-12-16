@@ -121,7 +121,6 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         int id = this->opts->deviceId;
 
         //std::cout << "--GangDebug--id=" << id << std::endl;
-
         if (this->opts->groupId != -1){
             isDevcie = false;
             id = this->opts->groupId;
@@ -200,6 +199,13 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             policy.mutable_action()->set_type(this->policyActionTypeEnumFromString(this->opts->policyActionType));
         }
 
+        //isTypeConditionActionMatch
+        if(!this->isTypeConditionActionMatch()){
+            (*json)["is_success"] = false; 
+            (*json)["msg"] = "Wrong argument: <type> <condition> <ation> do not match. Please list matched items by --listalltypes option";
+            return json;
+        }
+
         //set_notifycallbackurl
         policy.set_notifycallbackurl("NoCallBackFromCli");
         //policy.set_notifycallbackurl("https://www.baidu.com/");
@@ -248,6 +254,35 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         return json;
     }
     return json;
+}
+
+bool ComletPolicy::isTypeConditionActionMatch(){
+        // +-------------------------------+---------------+--------------------------------------------------+
+		// | Types                         | Conditions    | Actions                                          |
+		// +-------------------------------+---------------+--------------------------------------------------+
+		// | 1. GPU Core Temperature       | 1. More than  | 1. Throttle GPU Core                             |
+		// | 2. Programming Errors         | 1. More than  | 2. Reset GPU                                     |
+		// | 3. Driver Errors              | 1. More than  | 2. Reset GPU                                     |
+		// | 4. Cache Errors Correctable   | 1. More than  | 2. Reset GPU                                     |
+		// | 5. Cache Errors Uncorrectable | 2. When occur | 2. Reset GPU                                     |
+		// +-------------------------------+---------------+--------------------------------------------------+
+        bool isMatch = false;
+        if(!isMatch && (this->opts->policyType == "1" && this->opts->policyConditionType == "1" && this->opts->policyActionType == "1")){
+            isMatch = true;
+        }
+        if(!isMatch && (this->opts->policyType == "2" && this->opts->policyConditionType == "1" && this->opts->policyActionType == "2")){
+            isMatch = true;
+        }
+        if(!isMatch && (this->opts->policyType == "3" && this->opts->policyConditionType == "1" && this->opts->policyActionType == "2")){
+            isMatch = true;
+        }
+        if(!isMatch && (this->opts->policyType == "4" && this->opts->policyConditionType == "1" && this->opts->policyActionType == "2")){
+            isMatch = true;
+        }
+        if(!isMatch && (this->opts->policyType == "5" && this->opts->policyConditionType == "2" && this->opts->policyActionType == "2")){
+            isMatch = true;
+        }
+        return isMatch;
 }
 
 XpumPolicyType ComletPolicy::policyTypeEnumFromString(std::string &type) {

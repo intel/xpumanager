@@ -186,9 +186,9 @@ void PolicyManager::checkPolicy() {
 
         //isResetDevice
         if (isResetDevice) {
-            XPUM_LOG_TRACE("PolicyManager::triggerAction():before resetDevice(deviceId={})",deviceId); 
+            XPUM_LOG_INFO("PolicyManager::triggerAction():before resetDevice(deviceId={})",deviceId); 
             this->p_device_manager->resetDevice(std::to_string(deviceId), true);
-            XPUM_LOG_TRACE("PolicyManager::triggerAction():after resetDevice(deviceId={})",deviceId); 
+            XPUM_LOG_INFO("PolicyManager::triggerAction():after resetDevice(deviceId={})",deviceId); 
         }
     }
 }
@@ -343,13 +343,13 @@ bool PolicyManager::triggerAction(std::shared_ptr<xpum_policy_data> p_policy) {
     //XPUM_LOG_INFO("---PolicyManager::triggerAction()---1--deviceId={}",p_policy->deviceId); 
     if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
         Frequency freq(ZES_FREQ_DOMAIN_GPU, p_policy->deviceId, p_policy->action.throttle_device_frequency_min, p_policy->action.throttle_device_frequency_max);
-        XPUM_LOG_TRACE("PolicyManager::triggerAction():before setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})",p_policy->deviceId,p_policy->action.throttle_device_frequency_min,p_policy->action.throttle_device_frequency_max); 
+        XPUM_LOG_INFO("PolicyManager::triggerAction():before setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})",p_policy->deviceId,p_policy->action.throttle_device_frequency_min,p_policy->action.throttle_device_frequency_max); 
         this->p_device_manager->setDeviceFrequencyRange(std::to_string(p_policy->deviceId), freq);
-        XPUM_LOG_TRACE("PolicyManager::triggerAction():after setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})",p_policy->deviceId,p_policy->action.throttle_device_frequency_min,p_policy->action.throttle_device_frequency_max); 
+        XPUM_LOG_INFO("PolicyManager::triggerAction():after setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})",p_policy->deviceId,p_policy->action.throttle_device_frequency_min,p_policy->action.throttle_device_frequency_max); 
         return false;
     } else if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE) {
         // Reset device will lead to reiniti all. So reset it after this device check finished.
-        XPUM_LOG_TRACE("PolicyManager::triggerAction(): do XPUM_POLICY_ACTION_TYPE_RESET_DEVICE for deviceId={}",p_policy->deviceId); 
+        XPUM_LOG_INFO("PolicyManager::triggerAction(): do XPUM_POLICY_ACTION_TYPE_RESET_DEVICE for deviceId={}",p_policy->deviceId); 
         return true;
     } else if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_NULL) {
         //XPUM_LOG_INFO("---PolicyManager::triggerAction()---XPUM_POLICY_ACTION_TYPE_NULL--deviceId={}",p_policy->deviceId);

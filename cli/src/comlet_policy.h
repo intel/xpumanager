@@ -38,6 +38,8 @@ class ComletPolicy : public ComletBase {
     XpumPolicyConditionType policyConditionTypeEnumFromString(std::string& type);
     XpumPolicyType policyTypeEnumFromString(std::string &type);
 
+    bool isTypeConditionActionMatch();
+
     inline const bool isListSupportedTypes() const {
         return opts->listalltypes;
     }

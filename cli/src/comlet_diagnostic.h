@@ -22,6 +22,20 @@ class ComletDiagnostic : public ComletBase {
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
+    virtual void getTableResult(std::ostream &out) override;
+
+    inline const bool isDeviceOperation() const {
+        return opts->deviceId >= 0;
+    }
+
+    inline const bool isGroupOperation() const {
+        return opts->groupId > 0;
+    }
+
+    inline const int getLevel() const {
+        return opts->level;
+    }
+
    private:
     std::unique_ptr<ComletDiagnosticOptions> opts;
 };

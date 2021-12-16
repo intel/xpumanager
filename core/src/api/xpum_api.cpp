@@ -112,9 +112,9 @@ xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_t
 
 xpum_result_t xpumInit() {
     try {
-        XPUM_LOG_INFO("XPU Manager:\t" + Version::getVersion());
-        XPUM_LOG_INFO("Build:\t\t" + Version::getVersionGit());
-        XPUM_LOG_INFO("Level Zero:\t" + Version::getZeLibVersion());
+        XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());
+        XPUM_LOG_INFO("Build:\t\t{}", Version::getVersionGit());
+        XPUM_LOG_INFO("Level Zero:\t{}", Version::getZeLibVersion());
         Core::instance().init();
     } catch (BaseException &e) {
         XPUM_LOG_ERROR("Failed to init xpum core: {}", e.what());

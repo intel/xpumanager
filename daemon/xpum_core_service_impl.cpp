@@ -740,10 +740,10 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 }
 
 ::grpc::Status XpumCoreServiceImpl::setPolicy(::grpc::ServerContext* context, const ::SetPolicyRequest* request, ::SetPolicyResponse* response) {
-    //
     bool isDevcie = request->isdevcie();
     XpumPolicyData policyInput = request->policy();
     xpum_policy_t policy;
+    //XPUM_LOG_INFO("---Gang--xpum_cor_service_impl--0----xpumSetPolicy--isDevcie={}",isDevcie);
 
     //
     policy.type = static_cast<xpum_policy_type_t>(policyInput.type());
@@ -766,6 +766,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         //
         xpum_device_id_t id = request->id();
         xpum_result_t res = xpumSetPolicy(id, policy);
+        //std::cout << "-----xpum_cor_service_impl--1----xpumSetPolicy res = " << res  << std::endl;
         if (res != XPUM_OK) {
             response->set_isok(false);
             if(res == XPUM_RESULT_DEVICE_NOT_FOUND){
@@ -775,7 +776,6 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
             }else{
                 response->set_errormsg("Error: unknow");
             }            
-            response->set_errormsg("Error with res:" + res);
             return grpc::Status::OK;
         }
         response->set_isok(true);
@@ -792,7 +792,6 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
             }else{
                 response->set_errormsg("Error: unknow");
             }    
-            response->set_errormsg("Error with res:" + res);
             return grpc::Status::OK;
         }
         response->set_isok(true);
