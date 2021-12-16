@@ -77,7 +77,7 @@ def run_group_diagnostics(groupId):
 
 
 class DiagnosticsComponentSchema(Schema):
-    component_type = fields.Int(metadata={"description": "Component type"})
+    component_type = fields.Str(metadata={"description": "Component type"})
     finished = fields.Boolean(
         metadata={"description": "Finished or not"})
     result = fields.Str(
@@ -94,9 +94,11 @@ class DiagnosticsInfoSchema(Schema):
         metadata={"description": "Finished or not"})
     message = fields.Str(
         metadata={"description": "Result message"})
+    result = fields.Str(
+        metadata={"description": "Result status"})
     component_count = fields.Int(metadata={"description": "Component count"})
-    start_time = fields.Int(metadata={"description": "Start time"})
-    end_time = fields.Int(metadata={"description": "End time"})
+    start_time = fields.Str(metadata={"description": "Start time"})
+    end_time = fields.Str(metadata={"description": "End time"})
     component_list = fields.List(fields.Nested(DiagnosticsComponentSchema))
 
 
@@ -131,6 +133,7 @@ def get_diagnostics_result(deviceId):
 class DiagnosticsGroupInfoSchema(Schema):
     group_id = fields.Int(metadata={"description": "Group id"})
     device_count = fields.Int(metadata={"description": "Device count"})
+    finished = fields.Boolean(metadata={"description": "Finished or not"})
     device_list = fields.List(fields.Nested(DiagnosticsInfoSchema))
 
 
