@@ -362,7 +362,7 @@ optional arguments:
   -l,--list                   Display health info for all devices
   -d,--device                 The device ID
   -g,--group                  The group ID
-  -c,--component              Commponent types
+  -c,--component              Component types
                                 1. GPU Core Temperature
                                 2. GPU Memory Temperature
                                 3. GPU Power
@@ -720,7 +720,7 @@ Options:
                                 2. When occur
   --threshold                 Threshold
   --action                    Policy action.
-                                1. Throttle GPU
+                                1. Throttle GPU Core Frequency
                                 2. Reset GPU
   --throttlefrequencymin      Throttle GPU frequency to min value
   --throttlefrequencymax      Throttle GPU frequency to max value
@@ -738,7 +738,7 @@ List all supported policies
 +-------------------------------+------------------+-----------------------------------------------+
 | Types                         |Conditions        | Actions                                       |
 +-------------------------------+------------------+-----------------------------------------------+
-| 1. GPU Core Temperature       | 1. More than     | 1. Throttle GPU Core                          |
+| 1. GPU Core Temperature       | 1. More than     | 1. Throttle GPU Core Frequency                |
 | 2. Programming Errors         | 1. More than     | 2. Reset GPU                                  |
 | 3. Driver Errors              | 1. More than     | 2. Reset GPU                                  |
 | 4. Cache Errors Correctable   | 1. More than     | 2. Reset GPU                                  |
@@ -752,7 +752,7 @@ List all policies set on the GPU.
 +-----------+-------------------------------+------------------+-----------------------------------+
 | Device ID | Types                         | Conditions       | Actions                           |
 +-----------+-------------------------------+------------------+-----------------------------------+
-| 0         | 1. GPU Core Temperature       | 1. More than 95  | 1. Throttle GPU Core frequency    |
+| 0         | 1. GPU Core Temperature       | 1. More than 95  | 1. Throttle GPU Core Frequency    |
 |           |                               |                  |      min: 300, max: 400           |
 +-----------+-------------------------------+------------------+-----------------------------------+
 | 0         | 5. Cache Errors Uncorrectable | 2. When occur    | 2. Reset GPU                      |
