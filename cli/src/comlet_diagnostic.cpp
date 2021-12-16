@@ -3,6 +3,7 @@
 #include <nlohmann/json.hpp>
 
 #include "core_stub.h"
+#include "cli_table.h"
 
 namespace xpum::cli {
 
@@ -44,5 +45,15 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
     return json;
+}
+
+void ComletDiagnostic::getTableResult(std::ostream &out) {
+    auto res = run();
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+    *json = *res;
 }
 } // end namespace xpum::cli
