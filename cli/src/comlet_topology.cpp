@@ -21,7 +21,7 @@ static CharTableConfig ComletConfigTopologyDevice(R"({
                 { "label": "Local CPU List", "value": "affinity_localcpulist" },
                 { "label": "Local CPUs", "value": "affinity_localcpus" },
                 { "label": "PCIe Switch Count", "value": "switch_count" },
-                { "label": "PCIe Swicth", "value": "switch_list[]" }
+                { "label": "PCIe Switch", "value": "switch_list[]" }
             ]
         ]
     }]
