@@ -21,7 +21,7 @@ Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model
 Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
  
 Supported devcies: 
-  - Intel ATS-M1/ATS-M3 
+  - Intel ATS-M1/ATS-M3/ATS-P 
  
 Usage: xpumcli [Options]
   xpumcli -v
