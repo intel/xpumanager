@@ -18,19 +18,19 @@ healthStatusEnumToString = {
 
 def appendHealthThreshold(healthData, healthType):
     if healthType == 0:
-        healthData['throttle_threshold'] = "105 Celsius Degree"
-        healthData['shutdown_threshold'] = "130 Celsius Degree"
+        healthData['throttle_threshold'] = 105
+        healthData['shutdown_threshold'] = 130
     elif healthType == 1:
-        healthData['throttle_threshold'] = "85 Celsius Degree"
-        healthData['shutdown_threshold'] = "100 Celsius Degree"
+        healthData['throttle_threshold'] = 85
+        healthData['shutdown_threshold'] = 100
     elif healthType == 2:
-        healthData['shutdown_threshold'] = "150 watts"
+        healthData['shutdown_threshold'] = 150
 
 def getHealth(deviceId, healthType):
     types = []
-    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]
+    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory"]
     if healthType == "All":
-        types = [0, 1, 2, 3, 4]
+        types = [0, 1, 2, 3]
     else:
         types.append(healthTypes.index(healthType))
     data = dict()
@@ -58,9 +58,9 @@ def getHealth(deviceId, healthType):
 
 def getHealthByGroup(groupId, healthType):
     types = []
-    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory", "fabricPort"]
+    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory"]
     if healthType == "All":
-        types = [0, 1, 2, 3, 4]
+        types = [0, 1, 2, 3]
     else:
         types.append(healthTypes.index(healthType))
 

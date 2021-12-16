@@ -402,6 +402,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
                 componentJson["finished"] = response.componentinfo(i).finished();
                 componentJson["message"] = response.componentinfo(i).message();
                 componentJson["result"] = diagnosticResultEnumToString(response.componentinfo(i).result());
+                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE
+                    && response.componentinfo(i).result() == DIAG_RESULT_FAIL) {
+                    auto process_list_json = getDeviceProcessState(response.deviceid());
+                    if (process_list_json->contains("device_process_list")) {
+                        componentJson["process_list"] = (*process_list_json)["device_process_list"];
+                    }
+                }
                 componentJsonList.push_back(componentJson);
             }
             (*json)["component_list"] = componentJsonList;
@@ -490,6 +497,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t g
                     componentJson["finished"] = response.taskinfo(i).componentinfo(j).finished();
                     componentJson["message"] = response.taskinfo(i).componentinfo(j).message();
                     componentJson["result"] = diagnosticResultEnumToString(response.taskinfo(i).componentinfo(j).result());
+                    if (response.taskinfo(i).componentinfo(j).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE
+                        && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_FAIL) {
+                        auto process_list_json = getDeviceProcessState(response.taskinfo(i).deviceid());
+                        if (process_list_json->contains("device_process_list")) {
+                            componentJson["process_list"] = (*process_list_json)["device_process_list"];
+                        }
+                    }
                     componentJsonList.push_back(componentJson);
                 }
                 deviceInfoJson["component_list"] = componentJsonList;
@@ -554,17 +568,17 @@ std::string CoreStub::healthTypeEnumToString(HealthType type) {
 nlohmann::json CoreStub::appendHealthThreshold(int deviceId, nlohmann::json json, HealthType type) {
     if (type == HEALTH_POWER) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_POWER_LIMIT);
-        json["shutdown_threshold"] = "150 watts";
+        json["shutdown_threshold"] = 150;
     }
     if (type == HEALTH_CORE_THERMAL) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_CORE_THEARMAL_LIMIT);
-        json["throttle_threshold"] = "105 Celsius Degree";
-        json["shutdown_threshold"] = "130 Celsius Degree";
+        json["throttle_threshold"] = 105;
+        json["shutdown_threshold"] = 130;
     }
     if (type == HEALTH_MEMORY_THERMAL) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_MEMORY_THEARMAL_LIMIT);
-        json["throttle_threshold"] = "85 Celsius Degree";
-        json["shutdown_threshold"] = "100 Celsius Degree";
+        json["throttle_threshold"] = 85;
+        json["shutdown_threshold"] = 100;
     }
     return json;
 }
@@ -601,7 +615,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId, int componentT
     HealthData response;
     (*json)["device_id"] = deviceId;
     grpc::Status status = grpc::Status::OK;
-    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY};
     if (componentType >= 1 && componentType <= (int)(types.size())) {
         HealthType targetType = types[componentType - 1];
         types.clear();
@@ -685,7 +699,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId, int
     request.set_groupid(groupId);
     HealthDataByGroup response;
     std::vector<nlohmann::json> deviceJsonList;
-    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY};
     if (componentType >= 1 && componentType <= (int)(types.size())) {
         HealthType targetType = types[componentType - 1];
         types.clear();

@@ -50,7 +50,7 @@ class StartDumpRawDataTaskSchema(Schema):
                 "description": "The metrics type to dump, options are:\n"+"\n".join(allow_dump_metrics)}
         ),
         required=True,
-        validate=validate.And(validate.Length(1), is_unique)
+        validate=[validate.Length(1), is_unique]
     )
 
 

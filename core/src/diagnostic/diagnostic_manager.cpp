@@ -439,31 +439,17 @@ void DiagnosticManager::doDeviceDiagnosticExclusive(const zes_device_handle_t &d
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zesDeviceProcessesGetState()");
     }
-    pid_t pid = getpid();
-    std::string pidlist = " Self-PID: " + std::to_string(pid) + ". List: ";
     for (auto process : processes) {
         std::ifstream file("/proc/" + std::to_string(process.processId) + "/cmdline");
         if (!file.good()) {
             process_count -= 1;
             continue;
         }
-        std::string command_name;
-        std::getline(file, command_name);
-        std::string command_name_str;
-        for (std::size_t index = 0; index < command_name.size(); index++) {
-            if (command_name[index] != 0)
-                command_name_str.push_back(command_name[index]);
-        }
-        pidlist += std::to_string(process.processId) + "-" + command_name_str + "# ";
     }
     if (process_count > 1) {
         std::vector<zes_process_state_t> process_statuses(process_count);
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
         std::string desc = "Fail to check the software exclusive. " + std::to_string(process_count) + " processses are using the device.";
-        desc += pidlist;
-        if ((int)desc.size() > XPUM_MAX_STR_LENGTH - 1) {
-            desc = desc.substr(0, XPUM_MAX_STR_LENGTH - 4) + "...";
-        }
         updateMessage(component4.message, desc);
     } else {
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;

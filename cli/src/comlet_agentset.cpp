@@ -3,7 +3,27 @@
 #include <nlohmann/json.hpp>
 
 #include "core_stub.h"
+#include "cli_table.h"
+
 namespace xpum::cli {
+
+static CharTableConfig ComletConfigAgentSetting(R"({
+    "columns": [{
+        "title": "Name"
+    }, {
+        "title": "Value"
+    }],
+    "rows": [{
+        "instance": "",
+        "cells": [
+            { "rowTitle": "Sampling Interval (ms) " },
+            "sampling_interval"
+        ]
+    }]
+})"_json);
+
+ComletAgentSet::ComletAgentSet() : ComletBase("agentset", "Get or change some XPU Manager settings.") {
+}
 
 void ComletAgentSet::setupOptions() {
     this->opts = std::unique_ptr<ComletAgentSetOptions>(new ComletAgentSetOptions());
@@ -27,6 +47,23 @@ std::unique_ptr<nlohmann::json> ComletAgentSet::run() {
         (*json)["error"] = "Unknow operation";
         return json;
     }
+}
+
+static void showResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigAgentSetting, *json);
+    table.show(out);
+}
+
+void ComletAgentSet::getTableResult(std::ostream &out) {
+    auto res = run();
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+    *json = *res;
+
+    showResult(out, json);
 }
 
 } // namespace xpum::cli

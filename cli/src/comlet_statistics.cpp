@@ -37,7 +37,9 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "value": "begin" },
             { "value": "end" },
             { "value": "elapsed_time" },
-            { "value": "device_level[metrics_type==XPUM_STATS_ENERGY].value", "scale": 1000 },
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_ENERGY].value", "scale": 1000 }
+            ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_UTILIZATION].value", "fixer": "round" }
             ]},
@@ -86,11 +88,11 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
         "cells": [[
             { "rowTitle": "GPU Power (W) " }
         ], [
-            { "value": "device_level[metrics_type==XPUM_STATS_POWER]", "subs": [
-                { "label": "avg", "value": "avg", "fixer": "round" },
-                { "label": "min", "value": "min", "fixer": "round" },
-                { "label": "max", "value": "max", "fixer": "round" },
-                { "label": "current", "value": "value", "fixer": "round" }
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_POWER].avg", "fixer": "round" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_POWER].min", "fixer": "round" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_POWER].max", "fixer": "round" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_POWER].value", "fixer": "round" }
             ]}
         ]]
     }, {
@@ -159,10 +161,10 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Bandwidth (%) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].avg", "scale": 0.01, "fixer": "round" },
-                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].min", "scale": 0.01, "fixer": "round" },
-                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].max", "scale": 0.01, "fixer": "round" },
-                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_UTILIZATION].value", "scale": 0.01, "fixer": "round" }
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].avg" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].min" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].max" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].value" }
             ]}
         ]]
     }, {
@@ -199,8 +201,32 @@ std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     return json;
 }
 
-static void showDeviceStatistics(std::ostream &out, std::shared_ptr<nlohmann::json> json, const bool cont = false) {
-    CharTable table(ComletConfigDeviceStatistics, *json, cont);
+static void showDeviceStatistics(std::ostream &out, std::shared_ptr<nlohmann::json> jsonPtr, const bool cont = false) {
+    nlohmann::json& json = *jsonPtr;
+    bool noTile = true;
+    auto tileJson = json.find("tile_level");
+    if (tileJson != json.end()) {
+        if (tileJson->is_array() && tileJson->size() >= 2) {
+            noTile = false;
+        }
+    }
+
+    if (noTile) {
+        auto deviceJson = json.find("device_level");
+        if (deviceJson != json.end() && deviceJson->is_array()) {
+            if (tileJson != json.end()) {
+                json.erase(tileJson);
+            }
+            json["tile_level"] = nlohmann::json::array();
+            tileJson = json.find("tile_level");
+            auto tile0 = nlohmann::json::object();
+            tile0["tile_id"] = 0;
+            tile0["data_list"] = (*deviceJson);
+            tileJson->push_back(tile0);
+        }
+    }
+
+    CharTable table(ComletConfigDeviceStatistics, json, cont);
     table.show(out);
 }
 

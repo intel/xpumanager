@@ -3,8 +3,70 @@
 #include <nlohmann/json.hpp>
 
 #include "core_stub.h"
+#include "cli_table.h"
 
 namespace xpum::cli {
+
+static CharTableConfig ComletConfigAllSupported(R"({
+    "columns": [{
+        "title": "Types"
+    }, {
+        "title": "Conditions"
+    }, {
+        "title": "Actions"
+    }],
+    "rows": [{
+        "instance": "all_policy_type[]",
+        "in_array_sep": false,
+        "cells": [
+            "type",
+            "condition",
+            "action"
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigListAll(R"({
+    "columns": [{
+        "title": "Device ID"
+    }, {
+        "title": "Types"
+    }, {
+        "title": "Conditions"
+    }, {
+        "title": "Actions"
+    }],
+    "rows": [{
+        "instance": "all_policy_list[].policy_list[]",
+        "cells": [
+            "device_id",
+            "type",
+            "condition",
+            "action"
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigListDevice(R"({
+    "columns": [{
+        "title": "Device ID"
+    }, {
+        "title": "Types"
+    }, {
+        "title": "Conditions"
+    }, {
+        "title": "Actions"
+    }],
+    "rows": [{
+        "instance": "all_policy_list.policy_list[]",
+        "cells": [
+            "device_id",
+            "type",
+            "condition",
+            "action"
+        ]
+    }]
+})"_json);
 
 void ComletPolicy::setupOptions() {
     this->opts = std::unique_ptr<ComletPolicyOptions>(new ComletPolicyOptions());
@@ -242,6 +304,60 @@ XpumPolicyActionType ComletPolicy::policyActionTypeEnumFromString(std::string& t
         return POLICY_ACTION_TYPE_RESET_DEVICE;
     }else{
         return POLICY_ACTION_TYPE_NULL;
+    }
+}
+
+static void showAllSupported(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigAllSupported, *json);
+    table.show(out);
+}
+
+static void showListDevice(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigListDevice, *json);
+    table.show(out);
+}
+
+static void showListMulti(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigListAll, *json);
+    table.show(out);
+}
+
+static void showCreateResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+}
+
+static void showRemoveResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+}
+
+void ComletPolicy::getTableResult(std::ostream &out) {
+    auto res = run();
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+    *json = *res;
+
+    if (this->opts->listAll) {
+        if (this->opts->deviceId >= 0){
+            showListDevice(out, json);
+        } else if (this->opts->groupId > 0){
+            showListMulti(out, json);
+        } else{
+            showListMulti(out, json);
+        }  
+    }
+    if (this->opts->listalltypes) {
+        showAllSupported(out, json);
+        return;
+    }
+
+    if (this->opts->create) {
+        showCreateResult(out, json);
+        return;
+    }
+    if (this->opts->remove) {
+        showRemoveResult(out, json);
+        return;
     }
 }
 

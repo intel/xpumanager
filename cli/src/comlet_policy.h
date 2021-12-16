@@ -32,9 +32,24 @@ class ComletPolicy : public ComletBase {
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
+    virtual void getTableResult(std::ostream &out) override;
+
     XpumPolicyActionType policyActionTypeEnumFromString(std::string& type);
     XpumPolicyConditionType policyConditionTypeEnumFromString(std::string& type);
     XpumPolicyType policyTypeEnumFromString(std::string &type);
+
+    inline const bool isListSupportedTypes() const {
+        return opts->listalltypes;
+    }
+    inline const bool isListAll() const {
+        return opts->listAll;
+    }
+    inline const int getDeviceId() const {
+        return opts->deviceId;
+    }
+    inline const int getGroupId() const {
+        return opts->groupId;
+    }
 
    private:
     std::unique_ptr<ComletPolicyOptions> opts;

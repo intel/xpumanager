@@ -10,6 +10,7 @@ namespace xpum::cli {
 #define TABLE_DEFAULT_IDENTATION_LEVEL  0
 #define TABLE_DEFAULT_SHOW_TITLE        true
 #define TABLE_DEFAULT_SUBITEM_ROW       false
+#define TABLE_DEFAULT_ARRAY_ITEM_SEP    true
 #define TABLE_DEFAULT_COLUMN_TITLE      "TITLE"
 
 #define KEY_TABLE_WIDTH                 "width"
@@ -19,6 +20,7 @@ namespace xpum::cli {
 #define KEY_TABLE_COLUMN_SIZE           "size"
 #define KEY_TABLE_COLUMN_TITLE          "title"
 #define KEY_TABLE_ROW_INSTANCE          "instance"
+#define KEY_TABLE_ARRAY_ITEM_SEP        "in_array_sep"
 #define KEY_TABLE_ROWS                  "rows"
 #define KEY_TABLE_CELLS                 "cells"
 #define KEY_TABLE_CELL_ROW_TITLE        "rowTitle"
@@ -95,8 +97,17 @@ const bool CharTableConfigCellSingleSubItems::append_value(std::string& res, con
     return true;
 }
 
+static const std::string removeSpaceAfterBk(const std::string& labelConf) {
+    const long ls = labelConf.length();
+    if (ls < 3) return labelConf;
+    if (labelConf[ls-1] == ' ' && labelConf[ls-2] == ')') {
+        return labelConf.substr(0, ls-1);
+    }
+    return labelConf;
+}
+
 CharTableConfigCellSingle::CharTableConfigCellSingle(const nlohmann::json& conf):
-label(conf.is_object() ? conf.value(KEY_TABLE_CELL_LABEL, "") : ""),
+label(removeSpaceAfterBk(conf.is_object() ? conf.value(KEY_TABLE_CELL_LABEL, "") : "")),
 label_tag(conf.is_object() ? conf.value(KEY_TABLE_CELL_LABEL_TAG, "") : ""),
 row_title(conf.is_object() ? conf.value(KEY_TABLE_CELL_ROW_TITLE, "") : ""),
 value(conf.is_object() ? conf.value(KEY_TABLE_CELL_VALUE, "") : (std::string) conf),
@@ -119,6 +130,7 @@ cells(conf.size()) {
 
 CharTableConfigRowObject::CharTableConfigRowObject(const nlohmann::json& conf):
 instance(conf.value(KEY_TABLE_ROW_INSTANCE, "")),
+in_array_sep(conf.value(KEY_TABLE_ARRAY_ITEM_SEP, TABLE_DEFAULT_ARRAY_ITEM_SEP)),
 cells(conf.find(KEY_TABLE_CELLS)->size()) {
     auto cellsDef = conf.find(KEY_TABLE_CELLS);
     for (unsigned long i=0; i< cells.size(); i++) {
@@ -239,7 +251,8 @@ void CharTable::calculateHangRows() {
             CharTableRow* sRow = nRow;
             for (int i = 0; i < cols; i ++) {
                 int cw = config.getWidthSetting(i);
-                if (sRow->columnSpaceLeft(cw, i) < 0) {
+                int csl = sRow->columnSpaceLeft(cw, i);
+                if (csl < 0) {
                     // need to add hang row
                     int cp = sRow->getCutPositionForHangRow(cw, ciw, i);
                     const bool newItem = sRow->isNewRow(cp, i);
@@ -293,9 +306,10 @@ rows() {
                     }
                 }
             }
-
-            addSeparator();
+            
+            if (objConf->inArraySeparator()) addSeparator();
         }
+        if (!objConf->inArraySeparator()) addSeparator();
     }
 
     config.calculateColumnWidth();
