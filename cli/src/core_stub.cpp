@@ -1030,6 +1030,9 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPol
     SetPolicyResponse response;
     grpc::Status status = stub->setPolicy(&context, request, &response);
     /////
+    bool isRemove = policy.isdeletepolicy();
+    std::string policyType = "\"" + policyTypeEnumToString(policy.type()) +"\"";
+    /////
     if(isDevcie){
         (*json)["device_id"] = id;
     }else{
@@ -1037,12 +1040,29 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPol
     }   
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
-            (*json)["status"] = "set policy successfully.";
+            //Succeed to set the "GPU Core Temperature" policy.
+            //Succeed to remove the "GPU Core Temperature" policy.
+            (*json)["is_success"] = true; 
+            if(isRemove){
+                (*json)["msg"] = "Succeed to remove the "+policyType+" policy.";
+            }else{
+                (*json)["msg"] = "Succeed to set the "+policyType+" policy.";
+            }            
         }else{
-            (*json)["status"] = "set policy failed. Error message: "+response.errormsg();
+            (*json)["is_success"] = false; 
+            if(isRemove){
+                (*json)["msg"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
+            }else{
+                (*json)["msg"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
+            }  
         }
     }else{
-        (*json)["status"] = "set policy failed. Error message: unknown.";
+        (*json)["is_success"] = false; 
+        if(isRemove){
+            (*json)["msg"] = "Faield to remove the "+policyType+" policy. Error message: unknown.";
+        }else{
+            (*json)["msg"] = "Faield to set the "+policyType+" policy. Error message: unknown.";
+        }  
     }
     return json;
 }
