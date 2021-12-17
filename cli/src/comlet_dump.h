@@ -60,6 +60,7 @@ class ComletDump : public ComletBase {
 
    public:
     ComletDump() : ComletBase("dump", "Dump the device statistics") {
+        printHelpWhenNoArgs = true;
         for (std::size_t i = 0; i < metricsOptions.size(); i++) {
             metricsHelpStr += std::to_string(i) + ". " + metricsOptions[i].name;
             if (metricsOptions[i].description.size() > 0) {
