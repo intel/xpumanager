@@ -50,11 +50,11 @@ void ComletConfig::setupOptions() {
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
     //addFlag("--exclusive", this->opts->schedulerExclusive, "set scheduler exclusive mode");
-    addOption("--powerlimit", this->opts->powerlimit, "Tile-level power limit.");// --
-    addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
+    addOption("--powerlimit", this->opts->powerlimit, "Tile-level power limit.");
+    /*addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
 Valid options: \"compute/media\",factorValue. The factor value should be \
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support.\
-0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
+0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");*/
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
