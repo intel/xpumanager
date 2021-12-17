@@ -23,7 +23,14 @@ struct ComletConfigOptions {
 
 class ComletConfig : public ComletBase {
    public:
-    ComletConfig() : ComletBase("config", "get/set configuration of the device") {}
+    ComletConfig() : ComletBase("config", "Get and change the GPU settings.\n\
+Usage: xpumcli config [Options]\n\
+  xpumcli config -d [deviceId]\n\
+  xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]\n\
+  xpumcli config -d [deviceId] -t [tileId] --powerlimit [powerValue,averageWindow]\n\
+  xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]\n\
+  xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]\n\
+  xpumcli config -d [deviceId] --reset") {}
     virtual ~ComletConfig() {}
 
     virtual void setupOptions() override;

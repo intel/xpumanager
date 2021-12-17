@@ -568,7 +568,19 @@ struct xpum_scheduler_data_t {
     xpum_scheduler_mode_t mode;
     xpum_engine_type_flags_t engine_types;
     xpum_scheduler_mode_t supported_modes;
+    uint64_t val1;
+    uint64_t val2;
 };
+struct xpum_power_prop_data_t {
+    bool on_subdevice;
+    uint32_t subdevice_Id;
+    bool can_control;
+    bool is_energy_threshold_supported;
+    int32_t default_limit;
+    int32_t min_limit;
+    int32_t max_limit;
+};
+
 struct xpum_scheduler_timeout_t {
     uint32_t subdevice_Id;
     uint64_t watchdog_timeout;

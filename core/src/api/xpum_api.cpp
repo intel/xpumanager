@@ -661,6 +661,8 @@ void convertScheduleData(Scheduler &src, xpum_scheduler_data_t *des) {
     des->can_control = src.canControl();
     des->on_subdevice = src.onSubdevice();
     des->subdevice_Id = src.getSubdeviceId();
+    des->val1 = src.getVal1();
+    des->val2 = src.getVal2();
 }
 
 xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
@@ -837,6 +839,36 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
     for (auto &sche : schedulers) {
         convertScheduleData(sche, dataArray + i);
         i++;
+    }
+    return XPUM_OK;
+}
+
+xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count){
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_GENERIC_ERROR;
+    }
+
+    std::vector<Power> powers;
+    Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
+
+    if (powers.size() > *count && dataArray != nullptr) {
+        return XPUM_BUFFER_TOO_SMALL;
+    } else {
+        *count = powers.size();
+    }
+    if (dataArray != nullptr) {
+        int i = 0;
+        for (auto &power : powers) {
+            dataArray[i].on_subdevice = power.onSubdevice();
+            dataArray[i].subdevice_Id = power.getSubdeviceId();
+            dataArray[i].can_control = power.canControl();
+            dataArray[i].is_energy_threshold_supported = power.isEnergyThresholdSupported();
+            dataArray[i].default_limit = power.getDefaultLimit();
+            dataArray[i].min_limit = power.getMinLimit();
+            dataArray[i].max_limit = power.getMaxLimit();
+            i++;
+        }
     }
     return XPUM_OK;
 }

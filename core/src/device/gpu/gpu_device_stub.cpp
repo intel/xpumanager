@@ -2169,18 +2169,16 @@ void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector
                     XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetTimeoutModeProperties(sched, false, &timeout));
                     val1 = timeout.watchdogTimeout;
                     val2 = 0;
-                }
-                if (mode == ZES_SCHED_MODE_TIMESLICE) {
+                } else if (mode == ZES_SCHED_MODE_TIMESLICE) {
                     XPUM_ZE_HANDLE_LOCK(device, res = zesSchedulerGetTimesliceModeProperties(sched, false, &timeslice));
                     val1 = timeslice.interval;
                     val2 = timeslice.yieldTimeout;
-                }
-                if (mode == ZES_SCHED_MODE_EXCLUSIVE) {
+                } else if (mode == ZES_SCHED_MODE_EXCLUSIVE) {
                     val1 = 0;
                     val2 = 0;
                 } else {
-                    val1 = 0;
-                    val2 = 0;
+                    val1 = -1;
+                    val2 = -1;
                 }
                 schedulers.push_back(*(new Scheduler(props.onSubdevice,
                                                      props.subdeviceId,
@@ -2354,6 +2352,46 @@ void GPUDeviceStub::getPowerProps(const zes_device_handle_t& device, std::vector
                                              props.defaultLimit,
                                              props.minLimit,
                                              props.maxLimit)));
+            }
+        }
+    }
+}
+
+void GPUDeviceStub::getAllPowerLimits(const zes_device_handle_t& device,
+                                   std::vector<uint32_t>& tileIds,
+                                   std::vector<Power_sustained_limit_t>& sustained_limits,
+                                   std::vector<Power_burst_limit_t>& burst_limits,
+                                   std::vector<Power_peak_limit_t>& peak_limit) {
+    if (device == nullptr) {
+        return;
+    }
+    uint32_t power_domain_count = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
+    std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
+    if (res == ZE_RESULT_SUCCESS) {
+        for (auto& power : power_handles) {
+            zes_power_sustained_limit_t sustained;
+            Power_sustained_limit_t  *sustainedLimit;
+            zes_power_burst_limit_t burst;
+            Power_burst_limit_t * burstLimit;
+            zes_power_peak_limit_t peak;
+            zes_power_properties_t props;
+            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetProperties(power, &props));
+            if (res == ZE_RESULT_SUCCESS) {
+                tileIds.push_back(props.subdeviceId);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetLimits(power, &sustained, &burst, &peak));
+                if (res == ZE_RESULT_SUCCESS) {
+                    sustainedLimit = new Power_sustained_limit_t();
+                    sustainedLimit->enabled = sustained.enabled;
+                    sustainedLimit->power = sustained.power;
+                    sustainedLimit->interval = sustained.interval;
+                    sustained_limits.push_back(*sustainedLimit);
+                    burstLimit = new Power_burst_limit_t();
+                    burstLimit->enabled = burst.enabled;
+                    burstLimit->power = burst.power;
+                }
             }
         }
     }
