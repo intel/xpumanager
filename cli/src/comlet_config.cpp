@@ -20,22 +20,23 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
         "instance": "tile_config_data[]",
         "cells": [
             { "rowTitle": "GPU" },
-            "id", [
+            "tile_id", [
                 { "label": "Power Limit (w) ", "value": "power_limit" },
-                { "label": "  Valid Range", "value": "power_limit_range" },
+                { "label": "  Valid Range", "value": "power_vaild_range" },
                 { "label": "Power Average Window (ms) ", "value": "power_average_window" },
-                { "label": "  Valid Range", "value": "power_average_window_range" },
+                { "label": "  Valid Range", "value": "power_average_window_vaild_range" },
                 { "rowTitle": " " },
                 { "label": "GPU Min Frequency (MHz) ", "value": "min_frequency" },
                 { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
-                { "label": "  Valid Options", "value": "frequency_valid_option" },
-                { "rowTitle": " " },
+                { "label": "  Valid Options", "value": "gpu_frequency_valid_options" },
+                {"rowTitle": " " },
                 { "label": "Standby Mode", "value": "standby_mode" },
-                { "label": "  Valid Options", "value": "standby_option" },
-                { "rowTitle": " " },
+                { "label": "  Valid Options", "value": "standby_mode_valid_options" },
+                {"rowTitle": " " },
                 { "label": "Scheduler Mode", "value": "scheduler_mode" },
-                { "label": "  Interval (us) ", "value": "interval" },
-                { "label": "  Yield Timeout (us) ", "value": "yield_timeout" }
+                { "label": "  timeout mode timeout (us) ", "value": "scheduler_watchdog_timeout" },
+                { "label": "  timeslice mode Interval (us) ", "value": "scheduler_timeslice_interval" },
+                { "label": "  timeslice mode Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
             ]
         ]
     }]
