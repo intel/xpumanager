@@ -51,7 +51,7 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
     std::unique_ptr<nlohmann::json> json;
 
     // check metrics is unique
-    if(std::adjacent_find(this->opts->metricsIdList.begin(), this->opts->metricsIdList.end()) != this->opts->metricsIdList.end()){
+    if (std::adjacent_find(this->opts->metricsIdList.begin(), this->opts->metricsIdList.end()) != this->opts->metricsIdList.end()) {
         json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
         (*json)["error"] = "Duplicated metrics type";
         return json;
@@ -91,7 +91,30 @@ void ComletDump::getJsonResult(std::ostream &out, bool raw) {
 };
 
 void ComletDump::dumpRawDataToFile(std::ostream &out) {
-    out << "Not implemented!" << std::endl;
+    auto json = run();
+    if (json->contains("error")) {
+        out << "Error: " << json->value("error", "") << std::endl;
+        return;
+    }
+    if (this->opts->startDumpTask) {
+        if (!json->contains("task_id") || !json->contains("dump_file_path")) {
+            out << "Error occurs" << std::endl;
+            return;
+        }
+        out << "Task " << (*json)["task_id"] << " is started." << std::endl;
+        out << "Dump file path: " << json->value("dump_file_path", "") << std::endl;
+    } else if (this->opts->listDumpTask) {
+        for (auto taskId : (*json)["dump_task_ids"]) {
+            out << "Task " << taskId.get<int>() << " is running." << std::endl;
+        }
+    } else if (this->opts->dumpTaskId != -1) {
+        if (!json->contains("task_id") || !json->contains("dump_file_path")) {
+            out << "Error occurs" << std::endl;
+            return;
+        }
+        out << "Task " << (*json)["task_id"] << " is stopped." << std::endl;
+        out << "Dump file path: " << json->value("dump_file_path", "") << std::endl;
+    }
 }
 
 void ComletDump::getTableResult(std::ostream &out) {

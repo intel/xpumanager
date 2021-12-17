@@ -18,4 +18,16 @@ std::unique_ptr<nlohmann::json> ComletVersion::run() {
     (*json)["cli_version_git"] = CLI_VERSION_GIT_COMMIT;
     return json;
 }
+
+void ComletVersion::getTableResult(std::ostream &out) {
+    auto res = run();
+    out << "CLI:" << std::endl;
+    out << "    Version: " << res->value("cli_version", "") << std::endl;
+    out << "    Build ID: " << res->value("cli_version_git", "") << std::endl;
+    out << std::endl;
+    out << "Service:" << std::endl;
+    out << "    Version: " << res->value("xpum_version", "") << std::endl;
+    out << "    Build ID: " << res->value("xpum_version_git", "") << std::endl;
+    out << "    Level Zero Version: " << res->value("level_zero_version", "") << std::endl;
+}
 } // end namespace xpum::cli
