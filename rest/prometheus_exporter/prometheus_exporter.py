@@ -16,7 +16,7 @@ counter_values = {}
 class PromMetric(Enum):
 
     # Engine utilization
-    xpum_engine_ratio = ('xpum_engine_ratio', 'Max utilization among all engine groups (in %), per GPU tile')  # nopep8
+    xpum_engine_ratio = ('xpum_engine_ratio', 'GPU active time of the elapsed time (in %), per GPU tile')  # nopep8
     xpum_engine_group_ratio = ('xpum_engine_group_ratio', 'Avg utilization of engine group (in %), per GPU tile', ['type'])  # nopep8
 
     # Power/Energy/Temperature

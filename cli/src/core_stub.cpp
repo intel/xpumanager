@@ -1219,7 +1219,18 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["standby_mode"] = standbyModeEnumToString(response.tileconfigdata(i).standby());
                 tileJson["scheduler_mode"] = schedulerModeEnumToString(response.tileconfigdata(i).scheduler());
                 tileJson["power_limit"] = response.tileconfigdata(i).powerlimit();
+                tileJson["power_vaild_range"] = response.tileconfigdata(i).powerscope();
                 tileJson["power_average_window"] = response.tileconfigdata(i).interval();
+                tileJson["power_average_window_vaild_range"] = response.tileconfigdata(i).intervalscope();
+                tileJson["gpu_frequency_valid_options"] = response.tileconfigdata(i).freqoption();
+                tileJson["standby_mode_valid_options"] = response.tileconfigdata(i).standbyoption();
+                if (response.tileconfigdata(i).schedulertimeout() > 0) {
+                    tileJson["scheduler_watchdog_timeout"] = response.tileconfigdata(i).schedulertimeout();
+                }
+                if (response.tileconfigdata(i).schedulertimesliceinterval() > 0) {
+                    tileJson["scheduler_timeslice_interval"] = response.tileconfigdata(i).schedulertimesliceinterval();
+                    tileJson["scheduler_timeslice_yield_timeout"] = response.tileconfigdata(i).schedulertimesliceyieldtimeout();
+                }
                 tileJsonList.push_back(tileJson);
             }
             (*json)["tile_config_data"] = tileJsonList;
@@ -1232,19 +1243,19 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     return json;
 }
 std::string CoreStub::schedulerModeEnumToString(XpumSchedulerMode mode) {
-    std::string ret = "SCHEDULER_MODE_NULL";
+    std::string ret =  "null";//"SCHEDULER_MODE_NULL";
     switch (mode) {
         case SCHEDULER_TIMEOUT:
-            ret = "SCHEDULER_MODE_TIMEOUT";
+            ret = "timeout";//"SCHEDULER_MODE_TIMEOUT";
             break;
         case SCHEDULER_TIMESLICE:
-            ret = "SCHEDULER_MODE_TIMESLICE";
+            ret = "timeslice";//"SCHEDULER_MODE_TIMESLICE";
             break;
         case SCHEDULER_EXCLUSIVE:
-            ret = "SCHEDULER_MODE_EXCLUSIVE";
+            ret = "exclusive";//"SCHEDULER_MODE_EXCLUSIVE";
             break;
         case SCHEDULER_DEBUG:
-            ret = "SCHEDULER_MODE_DEBUG";
+            ret = "debug";//"SCHEDULER_MODE_DEBUG";
             break;
         default:
             break;
@@ -1252,13 +1263,13 @@ std::string CoreStub::schedulerModeEnumToString(XpumSchedulerMode mode) {
     return ret;
 }
 std::string CoreStub::standbyModeEnumToString(XpumStandbyMode mode) {
-    std::string ret = "STANDBY_MODE_NULL";
+    std::string ret = "null";//"STANDBY_MODE_NULL";
     switch (mode) {
         case STANDBY_DEFAULT:
-            ret = "STANDBY_MODE_DEFAULT";
+            ret = "default";//"STANDBY_MODE_DEFAULT";
             break;
         case STANDBY_NEVER:
-            ret = "STANDBY_MODE_NEVER";
+            ret = "never";//"STANDBY_MODE_NEVER";
             break;
         default:
             break;

@@ -433,6 +433,20 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
 xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
                                                 const xpum_scheduler_timeout_t &sched_timeout);
 /**
+ * @brief Set device the power props mode
+ * @details This function is used to set the power props
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ 
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ */
+xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId,
+                                      xpum_power_prop_data_t *dataArray, uint32_t *count);
+/**
  * @brief Set device the scheduler(time slice) mode
  * @details This function is used to set the scheduler (time slice) mode
  *

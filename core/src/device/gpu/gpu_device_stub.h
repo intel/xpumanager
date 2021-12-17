@@ -84,6 +84,11 @@ class GPUDeviceStub {
                                Power_sustained_limit_t& sustained_limit,
                                Power_burst_limit_t& burst_limit,
                                Power_peak_limit_t& peak_limit);
+    static void getAllPowerLimits(const zes_device_handle_t& device,
+                                   std::vector<uint32_t>& tileIds,
+                                   std::vector<Power_sustained_limit_t>& sustained_limits,
+                                   std::vector<Power_burst_limit_t>& burst_limits,
+                                   std::vector<Power_peak_limit_t>& peak_limit);
 
     static bool setPowerSustainedLimits(const zes_device_handle_t& device, uint32_t tileId,
                                         const Power_sustained_limit_t& sustained_limit);

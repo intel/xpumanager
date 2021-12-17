@@ -33,11 +33,20 @@ def getConfig(deviceId, tileId):
         tiledata = dict()
         tiledata['tile_id'] = resp.tileConfigData[i].tileId
         tiledata['power_limit'] = resp.tileConfigData[i].powerLimit
+        tiledata["power_vaild_range"] = resp.tileconfigdata[i].powerscope
         tiledata['power_average_window'] = resp.tileConfigData[i].interval
+        tiledata['power_average_window_vaild_range'] = resp.tileConfigData[i].intervalscope
+        tiledata["gpu_frequency_valid_options"] = resp.tileconfigdata[i].freqoption
         tiledata['min_frequency'] = resp.tileConfigData[i].minFreq
         tiledata['max_frequency'] = resp.tileConfigData[i].maxFreq
         tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
+        tiledata["standby_mode_valid_options"] = resp.tileconfigdata[i].standbyoption
         tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
+        if resp.tileconfigdata[i].schedulertimeout > 0:
+            tiledata["scheduler_watchdog_timeout"] = resp.tileconfigdata[i].schedulertimeout
+        if resp.tileconfigdata[i].schedulertimesliceinterval() > 0:
+            tiledata["scheduler_timeslice_interval"] = resp.tileconfigdata[i].schedulertimesliceinterval
+            tiledata["scheduler_timeslice_yield_timeout"] = resp.tileconfigdata[i].schedulertimesliceyieldtimeout
         tilelist.append(tiledata)
     data['tile_config_data'] = tilelist
     return 0, "OK", data

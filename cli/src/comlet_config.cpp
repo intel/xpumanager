@@ -25,14 +25,14 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "  Valid Range", "value": "power_limit_range" },
                 { "label": "Power Average Window (ms) ", "value": "power_average_window" },
                 { "label": "  Valid Range", "value": "power_average_window_range" },
-                "none",
+                { "rowTitle": " " },
                 { "label": "GPU Min Frequency (MHz) ", "value": "min_frequency" },
                 { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
                 { "label": "  Valid Options", "value": "frequency_valid_option" },
-                "none",
+                { "rowTitle": " " },
                 { "label": "Standby Mode", "value": "standby_mode" },
                 { "label": "  Valid Options", "value": "standby_option" },
-                "none",
+                { "rowTitle": " " },
                 { "label": "Scheduler Mode", "value": "scheduler_mode" },
                 { "label": "  Interval (us) ", "value": "interval" },
                 { "label": "  Yield Timeout (us) ", "value": "yield_timeout" }
@@ -45,18 +45,18 @@ void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
     addOption("-d,--device", this->opts->deviceId, "device id");
     addOption("-t,--tile", this->opts->tileId, "tile id");
-    addOption("--scheduler", this->opts->scheduler, "set scheduler mode. Valid options: \"timeout\",timeoutValue(us); \"timeslice\",interval(us),yieldtimeout(us);\"exclusive\".");
+    addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeoutc\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\".");
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
     //addFlag("--exclusive", this->opts->schedulerExclusive, "set scheduler exclusive mode");
-    addOption("--powerlimit", this->opts->powerlimit, "set powerlimit");// --
+    addOption("--powerlimit", this->opts->powerlimit, "Tile-level power limit.");// --
     addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
 Valid options: \"compute/media\",factorValue. The factor value should be \
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support.\
 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
-    addOption("--standby", this->opts->standby, "set standby mode. Valid options: \"default\", \"never\"");
-    addOption("--frequencyrange", this->opts->frequencyrange, "set core frequencyrange.");
-    addFlag("--reset", this->opts->resetDevice, "hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
+    addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
+    addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
+    addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter){
     size_t pos = 0;
@@ -95,8 +95,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 val1 = std::stoi(paralist.at(1));
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMEOUT,
                     val1,0);
-            }
-            if (command.compare("timeslice") == 0) {
+            } else if (command.compare("timeslice") == 0) {
                 if (paralist.size() != 3 || paralist.at(1).empty() || paralist.at(2).empty()) {
                    (*json)["return"]="invalid parameter";
                    return json; 
@@ -104,8 +103,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 val1 = std::stoi(paralist.at(1));
                 val2 = std::stoi(paralist.at(2));
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMESLICE, val1, val2);
-            }
-            if (command.compare("exclusive") == 0) {
+            } else if (command.compare("exclusive") == 0) {
                 if (paralist.size() != 1) {
                    (*json)["return"]="invalid parameter";
                    return json; 
@@ -126,7 +124,6 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 int val1 = std::stoi(paralist.at(0));
                 int val2 = std::stoi(paralist.at(1));
                 json = this->coreStub->setDevicePowerlimit(this->opts->deviceId, this->opts->tileId, val1, val2);
-                return json;
                 if((*json)["status"] == "OK") {
                      (*json)["return"] = "Succeed to set the power limit on GPU " + std::to_string(this->opts->deviceId) +
                     " tile " + std::to_string(this->opts->tileId) + ".";
@@ -135,6 +132,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 (*json)["return"]="invalid parameter";
                 return json;
             }
+            return json;
         } else if (this->opts->tileId >= 0 && !this->opts->standby.empty()) {
             XpumStandbyMode mode;
             std::for_each(this->opts->standby.begin(), this->opts->standby.end(), [](char & c) {
