@@ -26,8 +26,9 @@ struct ComletPolicyOptions {
 
 class ComletPolicy : public ComletBase {
    public:
-    //ComletPolicy() : ComletBase("policy", "Manager GPU policies.\n\nUsage: xpumcli policy [Options]\n\txpumcli policy -d [deviceId] -l\n\txpumcli policy -d [deviceId] -l -j\n\txpumcli policy -g [groupId] -l\n\txpumcli policy -g [groupId] -l -j\n\txpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 1 --threshold [threshold]  --action [policyActionValue]\n\txpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 2 --action [policyActionValue]\n\txpumcli policy -c -g [groupId] --type 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]\n\txpumcli policy -r -d [deviceId] --type [policyTypeValue]\n\txpumcli policy -r -g [groupId] --type [policyTypeValue]\n\n") {}
-    ComletPolicy() : ComletBase("policy", "Manager GPU policies.") {}
+    ComletPolicy() : ComletBase("policy", "Manager GPU policies.") {
+        printHelpWhenNoArgs = true;
+    }
     virtual ~ComletPolicy() {}
 
     virtual void setupOptions() override;
