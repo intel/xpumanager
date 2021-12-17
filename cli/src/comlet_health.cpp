@@ -127,7 +127,7 @@ void ComletHealth::setupOptions() {
     addFlag("-l,--list", this->opts->listAll, "Display health info for all devices");
     addOption("-d,--device", this->opts->deviceId, "The device ID");
     addOption("-g,--group", this->opts->groupId, "The group ID");
-    addOption("-c,--component", this->opts->componentType, "Commponent types\n\
+    addOption("-c,--component", this->opts->componentType, "Component types\n\
       1. GPU Core Temperature\n\
       2. GPU Memory Temperature\n\
       3. GPU Power\n\

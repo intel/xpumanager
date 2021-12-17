@@ -596,7 +596,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllHealth() {
                 auto healthJson = (*getHealth(response.info(i).id().id(), -1));
                 healthJsonList.push_back(healthJson);
             }
-            (*json)["all_health_list"] = healthJsonList;
+            (*json)["device_list"] = healthJsonList;
         } else {
             (*json)["error"] = response.errormsg();
         }

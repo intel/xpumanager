@@ -169,7 +169,8 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
         component.type = diagnostic_task_infos.at(deviceId)->componentList[index].type;
         component.finished = diagnostic_task_infos.at(deviceId)->componentList[index].finished;
         component.result = diagnostic_task_infos.at(deviceId)->componentList[index].result;
-        if (diagnostic_task_infos.at(deviceId)->componentList[index].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
+        if (diagnostic_task_infos.at(deviceId)->componentList[index].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL 
+                && diagnostic_task_infos.at(deviceId)->componentList[index].type != XPUM_DIAG_HARDWARE_SYSMAN) {
             result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
         }
         updateMessage(component.message, std::string(diagnostic_task_infos.at(deviceId)->componentList[index].message));
