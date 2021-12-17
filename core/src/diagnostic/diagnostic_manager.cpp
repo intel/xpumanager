@@ -451,8 +451,17 @@ void DiagnosticManager::doDeviceDiagnosticExclusive(const zes_device_handle_t &d
         std::ifstream file("/proc/" + std::to_string(process.processId) + "/cmdline");
         if (!file.good()) {
             process_count -= 1;
+            XPUM_LOG_DEBUG("process pid : {}, process name : unkown", process.processId);
             continue;
         }
+        std::string command_name;
+        std::getline(file, command_name);
+        std::string command_name_str;
+        for (std::size_t index = 0; index < command_name.size(); index++) {
+            if (command_name[index] != 0)
+                command_name_str.push_back(command_name[index]);
+        }
+        XPUM_LOG_DEBUG("process pid : {}, process name : {}", process.processId, command_name_str);
     }
     if (process_count > 1) {
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
@@ -559,7 +568,9 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
                 file_name = file_name.substr(pos + 1);
                 pos = file_name.find_first_of(".");
                 filename_pcie_device = static_cast<u_int32_t>(std::stoul(file_name.substr(0, pos), nullptr, 16));
-                break;
+                if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
+                    break;
+                }
             }
             ent = readdir(dir);
         }
