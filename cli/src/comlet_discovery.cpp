@@ -71,7 +71,7 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
     }]
 })"_json);
 
-ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover devices on the system") {
+ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover the GPU devices installed on this machine and provide the device info.") {
 }
 
 void ComletDiscovery::setupOptions() {

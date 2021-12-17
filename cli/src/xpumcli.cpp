@@ -27,11 +27,15 @@ int main(int argc, char **argv) {
 
     xpum::cli::Logger::init();
 
-    CLI::App app{"Intel XPU Manager Command Line Interface"};
+    CLI::App app{R"(Intel XPU Manager Command Line Interface -- v1.0 
+Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.  
+Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
+ 
+Supported devcies: 
+  - Intel ATS-M1/ATS-M3/ATS-P)"};
 
     xpum::cli::CLIWrapper wrapper(app);
     wrapper
-        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletVersion))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiscovery))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTopology))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletGroup))
@@ -44,9 +48,13 @@ int main(int argc, char **argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet));
-    app.require_subcommand();
+    app.require_subcommand(0, 1);
 
-    CLI11_PARSE(app, argc, argv);
+    if (argc == 1) {
+        std::cout << app.help();
+    } else {
+        CLI11_PARSE(app, argc, argv);
+    }
 
     wrapper.printResult(std::cout);
 

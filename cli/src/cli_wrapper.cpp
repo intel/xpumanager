@@ -8,6 +8,7 @@
 #include "comlet_base.h"
 #include "core_stub.h"
 #include "help_formatter.h"
+#include "comlet_version.h"
 
 namespace xpum::cli {
 
@@ -16,8 +17,8 @@ CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
 
     cliApp.formatter(std::make_shared<HelpFormatter>());
     
-    cliApp.add_flag("-j,--json", this->opts->json, "Print result in format of json");
-    cliApp.add_flag("--raw", this->opts->raw, "Print json output in raw format");
+    // cliApp.add_flag("--raw", this->opts->raw, "Print json output in raw format");
+    cliApp.add_flag("-v, --version", this->opts->version, "Display version information and exit.");
 
     cliApp.fallthrough(true);
 
@@ -26,6 +27,7 @@ CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
 
 CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
     comlet->subCLIApp = this->cliApp.add_subcommand(comlet->command, comlet->description);
+    comlet->subCLIApp->add_flag("-j,--json", this->opts->json, "Print result in JSON format\n");
     comlet->setupOptions();
 
     if (comlet->coreStub == nullptr) {
@@ -38,8 +40,20 @@ CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
 }
 
 void CLIWrapper::printResult(std::ostream &out) {
+    auto versionOpt = this->cliApp.get_option("-v");
+    if (!versionOpt->empty()) {
+        ComletVersion comlet;
+        comlet.coreStub = this->coreStub;
+        comlet.getTableResult(out);
+        return;
+    }
+
     for (auto comlet : comlets) {
         if (comlet->parsed()) {
+            if (comlet->printHelpWhenNoArgs && comlet->isEmpty()) {
+                out << comlet->subCLIApp->help();
+                return;
+            }
             if(this->opts->json){
                 comlet->getJsonResult(out, this->opts->raw);
                 return;

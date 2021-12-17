@@ -23,6 +23,7 @@ static CharTableConfig ComletConfigAgentSetting(R"({
 })"_json);
 
 ComletAgentSet::ComletAgentSet() : ComletBase("agentset", "Get or change some XPU Manager settings.") {
+    printHelpWhenNoArgs = true;
 }
 
 void ComletAgentSet::setupOptions() {
