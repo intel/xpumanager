@@ -17,7 +17,9 @@ struct ComletDiagnosticOptions {
 
 class ComletDiagnostic : public ComletBase {
    public:
-    ComletDiagnostic() : ComletBase("diag", "Run test to diagnose GPU") {}
+    ComletDiagnostic() : ComletBase("diag", "Run test to diagnose GPU") {
+        printHelpWhenNoArgs = true;
+    }
     virtual ~ComletDiagnostic() {}
 
     virtual void setupOptions() override;
