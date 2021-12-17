@@ -70,16 +70,18 @@ static CharTableConfig ComletConfigListDevice(R"({
 
 void ComletPolicy::setupOptions() {
     this->opts = std::unique_ptr<ComletPolicyOptions>(new ComletPolicyOptions());
+    addOption("-d,--device", this->opts->deviceId, "The device ID.");
+    addOption("-g,--group", this->opts->groupId, "The group ID.\n");
+
     addFlag("-l,--list", this->opts->listAll, "List all policies.");
     addFlag("--listalltypes", this->opts->listalltypes, "List all policy types, including the supported condition and action.");
     addFlag("-c,--create", this->opts->create, "Create one policy.");
-    addFlag("-r,--remove", this->opts->remove, "Remove one policy. Only the policy is removed and the changed GPU settings will not be resumed."); 
-    addOption("-d,--device", this->opts->deviceId, "The device ID.");
-    addOption("-g,--group", this->opts->groupId, "The group ID.");
+    addFlag("-r,--remove", this->opts->remove, "Remove one policy. Only the policy is removed and the changed GPU settings will not be resumed.\n"); 
+    
     addOption("--type", this->opts->policyType, "Policy types.\n\t1. GPU Core Temperature\n\t2. Programming Errors\n\t3. Driver Errors\n\t4. Cache Errors Correctable\n\t5. Cache Errors Uncorrectable");
     addOption("--condition", this->opts->policyConditionType, "Conditions.\n\t1. More than\n\t2. When occur");
+    addOption("--threshold", this->opts->threshold, "Threshold");
     addOption("--action", this->opts->policyActionType, "Policy action.\n\t1. Throttle GPU\n\t2. Reset GPU");
-    addOption("-t,--threshold", this->opts->threshold, "Threshold");
     addOption("--throttlefrequencymin", this->opts->throttlefrequencymin, "Throttle GPU frequency to min value");
     addOption("--throttlefrequencymax", this->opts->throttlefrequencymax, "Throttle GPU frequency to max value");
 }

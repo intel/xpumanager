@@ -20,22 +20,23 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
         "instance": "tile_config_data[]",
         "cells": [
             { "rowTitle": "GPU" },
-            "id", [
+            "tile_id", [
                 { "label": "Power Limit (w) ", "value": "power_limit" },
-                { "label": "  Valid Range", "value": "power_limit_range" },
+                { "label": "  Valid Range", "value": "power_vaild_range" },
                 { "label": "Power Average Window (ms) ", "value": "power_average_window" },
-                { "label": "  Valid Range", "value": "power_average_window_range" },
+                { "label": "  Valid Range", "value": "power_average_window_vaild_range" },
                 { "rowTitle": " " },
                 { "label": "GPU Min Frequency (MHz) ", "value": "min_frequency" },
                 { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
-                { "label": "  Valid Options", "value": "frequency_valid_option" },
-                { "rowTitle": " " },
+                { "label": "  Valid Options", "value": "gpu_frequency_valid_options" },
+                {"rowTitle": " " },
                 { "label": "Standby Mode", "value": "standby_mode" },
-                { "label": "  Valid Options", "value": "standby_option" },
-                { "rowTitle": " " },
+                { "label": "  Valid Options", "value": "standby_mode_valid_options" },
+                {"rowTitle": " " },
                 { "label": "Scheduler Mode", "value": "scheduler_mode" },
-                { "label": "  Interval (us) ", "value": "interval" },
-                { "label": "  Yield Timeout (us) ", "value": "yield_timeout" }
+                { "label": "  timeout mode timeout (us) ", "value": "scheduler_watchdog_timeout" },
+                { "label": "  timeslice mode Interval (us) ", "value": "scheduler_timeslice_interval" },
+                { "label": "  timeslice mode Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
             ]
         ]
     }]
@@ -49,11 +50,11 @@ void ComletConfig::setupOptions() {
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
     //addFlag("--exclusive", this->opts->schedulerExclusive, "set scheduler exclusive mode");
-    addOption("--powerlimit", this->opts->powerlimit, "Tile-level power limit.");// --
-    addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
+    addOption("--powerlimit", this->opts->powerlimit, "Tile-level power limit.");
+    /*addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
 Valid options: \"compute/media\",factorValue. The factor value should be \
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support.\
-0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
+0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");*/
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");

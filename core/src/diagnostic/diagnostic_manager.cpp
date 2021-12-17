@@ -169,7 +169,8 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
         component.type = diagnostic_task_infos.at(deviceId)->componentList[index].type;
         component.finished = diagnostic_task_infos.at(deviceId)->componentList[index].finished;
         component.result = diagnostic_task_infos.at(deviceId)->componentList[index].result;
-        if (diagnostic_task_infos.at(deviceId)->componentList[index].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
+        if (diagnostic_task_infos.at(deviceId)->componentList[index].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL 
+                && diagnostic_task_infos.at(deviceId)->componentList[index].type != XPUM_DIAG_HARDWARE_SYSMAN) {
             result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
         }
         updateMessage(component.message, std::string(diagnostic_task_infos.at(deviceId)->componentList[index].message));
@@ -450,8 +451,17 @@ void DiagnosticManager::doDeviceDiagnosticExclusive(const zes_device_handle_t &d
         std::ifstream file("/proc/" + std::to_string(process.processId) + "/cmdline");
         if (!file.good()) {
             process_count -= 1;
+            XPUM_LOG_DEBUG("process pid : {}, process name : unkown", process.processId);
             continue;
         }
+        std::string command_name;
+        std::getline(file, command_name);
+        std::string command_name_str;
+        for (std::size_t index = 0; index < command_name.size(); index++) {
+            if (command_name[index] != 0)
+                command_name_str.push_back(command_name[index]);
+        }
+        XPUM_LOG_DEBUG("process pid : {}, process name : {}", process.processId, command_name_str);
     }
     if (process_count > 1) {
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
@@ -558,7 +568,9 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
                 file_name = file_name.substr(pos + 1);
                 pos = file_name.find_first_of(".");
                 filename_pcie_device = static_cast<u_int32_t>(std::stoul(file_name.substr(0, pos), nullptr, 16));
-                break;
+                if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
+                    break;
+                }
             }
             ent = readdir(dir);
         }

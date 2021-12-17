@@ -596,7 +596,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllHealth() {
                 auto healthJson = (*getHealth(response.info(i).id().id(), -1));
                 healthJsonList.push_back(healthJson);
             }
-            (*json)["all_health_list"] = healthJsonList;
+            (*json)["device_list"] = healthJsonList;
         } else {
             (*json)["error"] = response.errormsg();
         }
@@ -1123,10 +1123,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie,int id) {
                 XpumPolicyActionType atype = response.policylist(i).action().type();
                 std::string action = policyActionTypeEnumToString(atype);
                 if (atype == XpumPolicyActionType::POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
-                    action += " \nmin:";
-                    action += std::to_string(response.policylist(i).action().throttle_device_frequency_min());
-                    action += " \nmax:";
-                    action += std::to_string(response.policylist(i).action().throttle_device_frequency_max());
+                    int min = (int)response.policylist(i).action().throttle_device_frequency_min();
+                    int max = (int)response.policylist(i).action().throttle_device_frequency_max();
+                    action += " \n   min:";
+                    action += std::to_string(min);
+                    action += " max:";
+                    action += std::to_string(max);
                 }
                 component["action"] = action;
 

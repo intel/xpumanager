@@ -33,13 +33,19 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
         return "\nUsage: xpumcli health [Options] \n"
                "   xpumcli health -l \n"
                "   xpumcli health -d [deviceId] \n"
+               "   xpumcli health -d [deviceId] -j \n"
                "   xpumcli health -g [groupId] \n"
+               "   xpumcli health -g [groupId] -j \n"
                "   xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] \n"
-               "   xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold] \n";
+               "   xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] -j \n"
+               "   xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold] \n"
+               "   xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold] -j \n";
     } else if (app->get_name().compare("diag") == 0) {
         return "\nUsage: xpumcli diag [Options] \n"
                "   xpumcli diag -d [deviceId] -l [level] \n"
-               "   xpumcli diag -g [groupId] -l [level] \n";
+               "   xpumcli diag -d [deviceId] -l [level] -j \n"
+               "   xpumcli diag -g [groupId] -l [level] \n"
+               "   xpumcli diag -g [groupId] -l [level] -j \n";
     } else if (app->get_name().compare("dump") == 0) {
         return "\nUsage: xpumcli dump [Options]\n"
                "  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
@@ -62,6 +68,17 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli discovery\n"
                "  xpumcli discovery -d [deviceId]\n"
                "  xpumcli discovery -d [deviceId] -j\n";
+    } else if (app->get_name().compare("policy") == 0) {
+        return "\nUsage: xpumcli policy [Options]\n"
+               "  xpumcli policy -d [deviceId] -l\n"
+               "  xpumcli policy -d [deviceId] -l -j\n"
+               "  xpumcli policy -g [groupId] -l\n"
+               "  xpumcli policy -g [groupId] -l -j\n"
+               "  xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 1 --threshold [threshold]  --action [policyActionValue]\n"
+               "  xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 2 --action [policyActionValue]\n"
+               "  xpumcli policy -c -g [groupId] --type 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]\n"
+               "  xpumcli policy -r -d [deviceId] --type [policyTypeValue]\n"
+               "  xpumcli policy -r -g [groupId] --type [policyTypeValue]\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }
