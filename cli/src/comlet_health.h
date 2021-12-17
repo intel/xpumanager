@@ -18,7 +18,9 @@ struct ComletHealthOptions {
 
 class ComletHealth : public ComletBase {
    public:
-    ComletHealth() : ComletBase("health", "Get the GPU device component health status") {}
+    ComletHealth() : ComletBase("health", "Get the GPU device component health status") {
+        printHelpWhenNoArgs = true;
+    }
     virtual ~ComletHealth() {}
 
     virtual void setupOptions() override;

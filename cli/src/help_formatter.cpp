@@ -32,6 +32,7 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
     } else if (app->get_name().compare("health") == 0) {
         return "\nUsage: xpumcli health [Options] \n"
                "   xpumcli health -l \n"
+               "   xpumcli health -l -j \n"
                "   xpumcli health -d [deviceId] \n"
                "   xpumcli health -d [deviceId] -j \n"
                "   xpumcli health -g [groupId] \n"
