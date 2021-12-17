@@ -59,7 +59,7 @@ class ComletDump : public ComletBase {
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
 
    public:
-    ComletDump() : ComletBase("dump", "Dump the device statistics") {
+    ComletDump() : ComletBase("dump", "Dump device statistics data.") {
         printHelpWhenNoArgs = true;
         for (std::size_t i = 0; i < metricsOptions.size(); i++) {
             metricsHelpStr += std::to_string(i) + ". " + metricsOptions[i].name;
