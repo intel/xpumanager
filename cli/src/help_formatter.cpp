@@ -58,6 +58,17 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli agentset -l\n"
                "  xpumcli agentset -l -j\n"
                "  xpumcli agentset -t 200\n";
+    } else if (app->get_name().compare("policy") == 0) {
+        return "\nUsage: xpumcli policy [Options]\n"
+               "  xpumcli policy -d [deviceId] -l\n"
+               "  xpumcli policy -d [deviceId] -l -j\n"
+               "  xpumcli policy -g [groupId] -l\n"
+               "  xpumcli policy -g [groupId] -l -j\n"
+               "  xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 1 --threshold [threshold]  --action [policyActionValue]\n"
+               "  xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 2 --action [policyActionValue]\n"
+               "  xpumcli policy -c -g [groupId] --type 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]\n"
+               "  xpumcli policy -r -d [deviceId] --type [policyTypeValue]\n"
+               "  xpumcli policy -r -g [groupId] --type [policyTypeValue]\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }
