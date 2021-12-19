@@ -49,13 +49,13 @@ Show Intel XPU Manager version and Level Zero version.
 ```
 ./xpumcli -v
 CLI:
-    Version: 0.1.0
-    Build ID: 10
+    Version: 1.0.0.20211217
+    Build ID: f847c0fa
 
 Service:
-    Version: 0.1.0
-    Build ID: 10
-    Level Zero Version:
+    Version: 1.0.0.20211217
+    Build ID: f847c0fa
+    Level Zero Version: 1.6.2
 ```
 
 ## Discover the devices in this machine
