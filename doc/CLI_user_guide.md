@@ -6,7 +6,7 @@ This guide describes how to use Intel XPU Manager Command Line Interface to mana
 ## Intel XPU Manager Command Line Interface main features 
 * Show the device info. 
 * Manage multiple devices by the group-level. 
-* Get lots of raw and aggregrated device statistics. 
+* Get lots of raw and aggregated device statistics. 
 * Get the health status of the device components. 
 * Get and change the device settings. 
 * Update the device firmware. 
@@ -20,7 +20,7 @@ Intel XPU Manager Command Line Interface -- v1.0
 Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.  
 Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
  
-Supported devcies: 
+Supported devices: 
   - Intel ATS-M1/ATS-M3/ATS-P 
  
 Usage: xpumcli [Options]
@@ -32,17 +32,17 @@ Optional arguments:
   -h, --help                  Print this help message and exit.
   -v, --version               Display version information and exit.
   
-  discovery                   Discover devices on the system.
-  group                       Group management.
-  agentset                    XPUM agent settings.
-  stats                       Display device statistics.
-  health                      Display health status of GPUs.
-  diag                        System validation/diagnostic.
-  updatefw                    Update device firmware.
-  config                      Configure settings for devices.
+  discovery                   Discover the GPU devices installed on this machine and provide the device info.
+  group                       Group the managed GPU devices.
+  agentset                    Get or change some XPU Manager settings. 
+  stats                       List the GPU device aggregated statistics that are collected by XPU Manager.
+  health                      Get the GPU device component health status.
+  diag                        Run some test suites to diagnose GPU.
+  updatefw                    Update GPU firmware.
+  config                      Get and change the GPU settings.
   dump                        Dump device statistics data.
-  topology                    Show CPU/GPU/PCIe switch topology.
-  policy                      Manager GPU policies.
+  topology                    Get the GPU to CPU and GPU to PCIe switch topology info.
+  policy                      Get and set the GPU policies.
 ```
   
 Show Intel XPU Manager version and Level Zero version. 
@@ -111,7 +111,7 @@ Discover the devices in this machine and get the JSON format output
 }
 ```
 
-Show the detailed info of one device. The device info includes the model, frequency, driver/firwmare info, PCI info, memory info and tile/execution unit info. 
+Show the detailed info of one device. The device info includes the model, frequency, driver/firmware info, PCI info, memory info and tile/execution unit info. 
 ```
 ./xpumcli discovery -d 0
 +-----------+--------------------------------------------------------------------------------------+
@@ -275,12 +275,12 @@ Change the XPU Manager sampling period
 ```
 
 
-## Get the aggregrated device statistics
-Help info for getting the GPU device aggregrated statistics 
+## Get the aggregated device statistics
+Help info for getting the GPU device aggregated statistics 
 ```
 ./xpumcli stats -h
 
-List the GPU aggregrated statistics since last execution of this command or XPU Manager daemon is started.
+List the GPU aggregated statistics since last execution of this command or XPU Manager daemon is started.
 
 Usage: xpumcli stats [Options]
   xpumcli stats
@@ -295,7 +295,7 @@ Options:
   -g,--group                  The group ID to query
 ```
  
-List the GPU device aggregrated statistics that are collected by XPU Manager
+List the GPU device aggregated statistics that are collected by XPU Manager
 ```
 ./xpumcli stats -d 0
 +------------------------------+-------------------------------------------------------------------+
@@ -417,7 +417,7 @@ Help info of the device statistics dump.
 ```
 ./xpumcli dump
 
-Dump the device statistics
+Dump device statistics data
 
 Usage: xpumcli dump [Options]
   xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
@@ -448,7 +448,7 @@ optional arguments:
                                 12. Reset Counter, per GPU.
                                 13. Programming Errors, per tile.
                                 14. Driver Errors, per tile.
-                                15. Cache Erros Correctable, per tile.
+                                15. Cache Errors Correctable, per tile.
                                 16. Cache Errors Uncorrectable, per tile. 
                                 17. GPU Memory Bandwidth Utilization. (%)
                                 18. GPU Memory Used (MiB)
@@ -462,7 +462,7 @@ optional arguments:
   --list                      List all the active dump tasks. 
 ```
 
-Dump the devce statistics to screen in CSV format.
+Dump the device statistics to screen in CSV format.
 ```
 ./xpumcli dump -d 0 -t 0 -m 0,1,2 -i 1 -n 5
 Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
@@ -473,7 +473,7 @@ Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
 2021-11-08 13:31:47.100, 00, 0, 000,    , 0300
 ```
 
-Start to dump the devce raw statistics to the CSV file.
+Start to dump the device raw statistics to the CSV file.
 ```
 xpumcli dump --rawdata --start -d 0 -t 0 -m 0,1,2 
 Task 0 is started.
@@ -512,7 +512,7 @@ optional arguments:
   -d,--device                 The device ID to query
 ```
 
-Get the info of the CPUs and PCIe switches which are conneted to the GPU
+Get the info of the CPUs and PCIe switches which are connected to the GPU
 ```
 ./xpumcli topology -d 0
 +-----------+--------------------------------------------------------------------------------------+
@@ -534,7 +534,7 @@ Help info of updating GPU firmware
 
 Update GPU firmware
 
-Usage: xpumcli fwflash [Options]
+Usage: xpumcli updatefw [Options]
   xpumcli updatefw -d [deviceId] -t [firmwareName] -f [imageFilePath]
 
 Options:
@@ -601,7 +601,7 @@ show the GPU settings
 |             |                   |                                                                |
 |             |                   | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
-|             |                   |   Valid Opitons: 300, 350, 400, 450, 500,550, 600, 650, 700    |
+|             |                   |   Valid Options: 300, 350, 400, 450, 500,550, 600, 650, 700    |
 |             |                   |       750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200    |
 |             |                   |       1250, 1300                                               |
 |             |                   |                                                                |
@@ -813,7 +813,7 @@ Device Type: GPU
 |                        | Message: Pass to check permission                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Software Exclusive     | Result: Fail                                                            |
-|                        | Message: Fail to check the software exclusive. 2 processs(es) are       |
+|                        | Message: Fail to check the software exclusive. 2 process(es) are        |
 |                        |   using the device.                                                     |
 |                        |   PID: 633972, Command: ./ze_gemm                                       |
 |                        |   PID: 633973, Command: ./ze_gemm                                       |
