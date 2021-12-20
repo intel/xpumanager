@@ -230,7 +230,11 @@ void ComletGroup::getTableResult(std::ostream &out) {
         showDeleteGroupResult(out, json);
         break;
 	case GO_LIST:
-        showListGroupResult(out, json);
+        if (this->opts->groupId > 0) {
+		    showCreateGroupResult(out, json);
+        } else {
+            showListGroupResult(out, json);
+        }
         break;
 	case GO_ADD:
         showAddDevicToGroupResult(out, json);
