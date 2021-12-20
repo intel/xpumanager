@@ -89,7 +89,7 @@ void ComletPolicy::setupOptions() {
 std::unique_ptr<nlohmann::json> ComletPolicy::run() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     if (this->opts->listAll) {
-        //
+        //std::cout << "--GangDebug----listAll---1---" << std::endl;
         bool isDevcie;
         int id;
         if (this->opts->deviceId != -1){
@@ -397,6 +397,7 @@ void ComletPolicy::getTableResult(std::ostream &out) {
         } else{
             showListMulti(out, json);
         }  
+        return;
     }
     if (this->opts->listalltypes) {
         showAllSupported(out, json);
