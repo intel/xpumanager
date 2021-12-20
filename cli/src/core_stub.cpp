@@ -889,7 +889,7 @@ std::string CoreStub::policyActionTypeEnumToString(XpumPolicyActionType type) {
             ret = "3. Notify";
             break;
         case POLICY_ACTION_TYPE_THROTTLE_DEVICE:
-            ret = "1. Throttle GPU Core";
+            ret = "1. Throttle GPU Core Frequency";
             break;
         case POLICY_ACTION_TYPE_RESET_DEVICE:
             ret = "2. Reset GPU";
@@ -1125,7 +1125,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie,int id) {
                 if (atype == XpumPolicyActionType::POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
                     int min = (int)response.policylist(i).action().throttle_device_frequency_min();
                     int max = (int)response.policylist(i).action().throttle_device_frequency_max();
-                    action += " \n   min:";
+                    action += " min:";
                     action += std::to_string(min);
                     action += " max:";
                     action += std::to_string(max);
