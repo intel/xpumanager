@@ -34,9 +34,9 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "  Valid Options", "value": "standby_mode_valid_options" },
                 {"rowTitle": " " },
                 { "label": "Scheduler Mode", "value": "scheduler_mode" },
-                { "label": "  timeout mode timeout (us) ", "value": "scheduler_watchdog_timeout" },
-                { "label": "  timeslice mode Interval (us) ", "value": "scheduler_timeslice_interval" },
-                { "label": "  timeslice mode Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
+                { "label": "  scheduler watchdog timeout (us) ", "value": "scheduler_watchdog_timeout" },
+                { "label": "  scheduler timeslice interval (us) ", "value": "scheduler_timeslice_interval" },
+                { "label": "  scheduler timeslice yield timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
             ]
         ]
     }]
@@ -46,18 +46,23 @@ void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
     addOption("-d,--device", this->opts->deviceId, "device id");
     addOption("-t,--tile", this->opts->tileId, "tile id");
+    addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
+    addOption("--powerlimit", this->opts->powerlimit, "Tile-level power limit.");
+    addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeoutc\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\".");
+    addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
+    
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
     //addFlag("--exclusive", this->opts->schedulerExclusive, "set scheduler exclusive mode");
-    addOption("--powerlimit", this->opts->powerlimit, "Tile-level power limit.");
+    
     /*addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
 Valid options: \"compute/media\",factorValue. The factor value should be \
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support.\
 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");*/
-    addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
-    addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
-    addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
+    
+    
+    
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter){
     size_t pos = 0;

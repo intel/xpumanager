@@ -18,21 +18,27 @@ class FrequencySchema(Schema):
         metadata={"description": "The frequency value"})
 
 class SchedulerSchema(Schema):
-    scheduler = fields.Int(
+    scheduler = fields.String(
         metadata={"description": "The scheduler mode"})
 
 class TileConfigSchema(Schema):
-    tileId = fields.Int(metadata={"description": "Tile id"})
+    tileId = fields.String(metadata={"description": "Tile id"})
+    powerLimit = fields.Nested(PowerLimitSchema)
+    powerScope = fields.String(metadata={"description": "power's scope"})
+    interval = fields.Nested(IntervalSchema)
+    intervalScope = fields.String(metadata={"description": "power's inteval scope"})
     minFreq = fields.Int(metadata={"description": "min frequency"})
     maxFreq = fields.Int(metadata={"description": "max frequency"})
+    freqOption = fields.String(metadata={"description": "frequency scope"})
     standby = fields.Nested(StandbySchema)
+    standbyOption = fields.String(metadata={"description": "standby option"})
     scheduler = fields.Nested(SchedulerSchema)
-
+    schedulerTimeout = fields.Int(metadata={"description": "scheduler timeout's value"})
+    schedulerTimesliceInterval = fields.Int(metadata={"description": "scheduler timeslice's interval value"})
+    schedulerTimesliceYieldTimeout = fields.Int(metadata={"description": "scheduler timeslice's yield value"})
 class ConfigSchema(Schema):
     deviceId = fields.Int(metadata={"description": "Device id"})
-    powerLimit = fields.Nested(PowerLimitSchema)
-    interval = fields.Nested(IntervalSchema)
-    #tileCount = fields.Int()
+    tileCount = fields.Int()
     tileConfigData = fields.Nested(TileConfigSchema)
 
 def set_standby(deviceId):
