@@ -821,6 +821,11 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     XpumSchedulerMode scheduler = request->scheduler();
     uint32_t val1 = request->val1();
     uint32_t val2 = request->val2();
+    res = validateDeviceIdAndTileId(deviceId, subdevice_Id);
+    if (res != XPUM_OK) {
+        response->set_errormsg("device Id or tile Id is invalid");
+        return grpc::Status::OK;
+    }
 
     if (scheduler == SCHEDULER_TIMEOUT) {
         xpum_scheduler_timeout_t sch_timeout;
@@ -858,6 +863,11 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     sustained_limit.enabled = true;
     sustained_limit.power = val1;
     sustained_limit.interval = val2;
+    res = validateDeviceIdAndTileId(deviceId, tileId);
+    if (res != XPUM_OK) {
+        response->set_errormsg("device Id or tile Id is invalid");
+        return grpc::Status::OK;
+    }
 
     res = xpumSetDevicePowerSustainedLimits(deviceId, tileId, sustained_limit);
     if (res != XPUM_OK) {
@@ -881,6 +891,12 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     freq_range.min = request->minfreq();
     freq_range.max = request->maxfreq();
 
+    res = validateDeviceIdAndTileId(deviceId, subdevice_Id);
+    if (res != XPUM_OK) {
+        response->set_errormsg("device Id or tile Id is invalid");
+        return grpc::Status::OK;
+    }
+
     res = xpumSetDeviceFrequencyRange(deviceId, freq_range);
     if (res != XPUM_OK) {
         response->set_errormsg("Error");
@@ -902,6 +918,13 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     standby.subdevice_Id = subdevice_Id;
     standby.type = XPUM_GLOBAL;
     XpumStandbyMode mode = request->standby();
+
+    res = validateDeviceIdAndTileId(deviceId, subdevice_Id);
+    if (res != XPUM_OK) {
+        response->set_errormsg("device Id or tile Id is invalid");
+        return grpc::Status::OK;
+    }
+
     if (mode == STANDBY_DEFAULT) {
         standby.mode = XPUM_DEFAULT;
     } else if (mode == STANDBY_NEVER) {
@@ -921,6 +944,11 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     xpum_result_t res;
     xpum_device_id_t deviceId = request->deviceid();
     bool force = request->force();
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        response->set_errormsg("device Id or tile Id is invalid");
+        return grpc::Status::OK;
+    }
     //test code
     //response->set_deviceid (deviceId);
     //response->set_retcode(XPUM_OK);
@@ -1058,6 +1086,16 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     int tileCount = -1;
     uint32_t tileTotalCount = 0;
 
+    if (istiledata) {
+        res = validateDeviceIdAndTileId(deviceId, subdevice_Id);
+    }
+    else {
+        res = validateDeviceId(deviceId);
+    }
+    if (res != XPUM_OK) {
+        response->set_errormsg("device Id or tile Id is invalid");
+        return grpc::Status::OK;
+    }
     res = xpumGetDeviceProperties(deviceId, &properties);
     if (res != XPUM_OK) {
         response->set_errormsg("Error");

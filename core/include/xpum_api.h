@@ -532,6 +532,32 @@ xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_p
  */
 xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t devicePF);
 
+/**
+ * @brief validate the device Id
+ * @details This function is used to validate the device Id
+ *
+ * @param deviceId          IN: The device Id
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND if device id is invalid
+ */
+xpum_result_t validateDeviceId(xpum_device_id_t deviceId);
+
+/**
+ * @brief validate the device Id and tile Id
+ * @details This function is used to validate the device Id and tile Id
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId          IN: The tile Id
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND if device id is invalid
+ *      - \ref XPUM_RESULT_TILE_NOT_FOUND if tile id is invalid
+ */
+xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_tile_id_t tileId);
+
 
 /** @} */ // Closing for CONFIGURATION_API
 
