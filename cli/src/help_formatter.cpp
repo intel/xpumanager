@@ -71,6 +71,8 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli discovery -d [deviceId] -j\n";
     } else if (app->get_name().compare("policy") == 0) {
         return "\nUsage: xpumcli policy [Options]\n"
+               "  xpumcli policy -l\n"
+               "  xpumcli policy --listalltypes\n"
                "  xpumcli policy -d [deviceId] -l\n"
                "  xpumcli policy -d [deviceId] -l -j\n"
                "  xpumcli policy -g [groupId] -l\n"
