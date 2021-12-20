@@ -693,7 +693,7 @@ xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
 }
 
 xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
-                                   const xpum_standby_data_t &standby) {
+                                   const xpum_standby_data_t standby) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -734,7 +734,7 @@ xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
 
 xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
                                                 int32_t tileId,
-                                                const xpum_power_sustained_limit_t &sustained_limit) {
+                                                const xpum_power_sustained_limit_t sustained_limit) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -751,7 +751,7 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
 
 xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
                                             int32_t tileId,
-                                            const xpum_power_burst_limit_t &burst_limit) {
+                                            const xpum_power_burst_limit_t burst_limit) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -767,7 +767,7 @@ xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
 
 xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
                                            int32_t tileId,
-                                           const xpum_power_peak_limit_t &peak_limit) {
+                                           const xpum_power_peak_limit_t peak_limit) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -806,7 +806,7 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
 }
 
 xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
-                                          const xpum_frequency_range_t &t) {
+                                          const xpum_frequency_range_t t) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -874,7 +874,7 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
 }
 
 xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
-                                                const xpum_scheduler_timeout_t &sched_timeout) {
+                                                const xpum_scheduler_timeout_t sched_timeout) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -891,7 +891,7 @@ xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
 }
 
 xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
-                                                  const xpum_scheduler_timeslice_t &sched_timeslice) {
+                                                  const xpum_scheduler_timeslice_t sched_timeslice) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -909,7 +909,7 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
 }
 
 xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
-                                                  const xpum_scheduler_exclusive_t &sched_exclusive) {
+                                                  const xpum_scheduler_exclusive_t sched_exclusive) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;

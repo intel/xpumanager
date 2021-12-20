@@ -34,9 +34,9 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "  Valid Options", "value": "standby_mode_valid_options" },
                 {"rowTitle": " " },
                 { "label": "Scheduler Mode", "value": "scheduler_mode" },
-                { "label": "  timeout mode timeout (us) ", "value": "scheduler_watchdog_timeout" },
-                { "label": "  timeslice mode Interval (us) ", "value": "scheduler_timeslice_interval" },
-                { "label": "  timeslice mode Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
+                { "label": "  scheduler watchdog timeout (us) ", "value": "scheduler_watchdog_timeout" },
+                { "label": "  scheduler timeslice interval (us) ", "value": "scheduler_timeslice_interval" },
+                { "label": "  scheduler timeslice yield timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
             ]
         ]
     }]

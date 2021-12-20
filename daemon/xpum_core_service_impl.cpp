@@ -1207,7 +1207,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         }
         tileData->set_freqoption(clockString);
         tileData->set_standbyoption("default, never");
-        tileData->set_intervalscope ("1 to 60000");
+        tileData->set_intervalscope ("1 to 125");
         tileData->set_powerscope ("0 to 500");
 
         for (uint32_t i = 0; i < standbyCount; i++) {
