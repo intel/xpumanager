@@ -112,7 +112,9 @@ def setPolicy(id, isDevcie,input,is_delete_policy):
         policyConditionType = XpumPolicyConditionTypeFromString[input["condition"]["type"]]
         if(policyConditionType == core_pb2.POLICY_CONDITION_TYPE_LESS or policyConditionType == core_pb2.POLICY_CONDITION_TYPE_GREATER):
             if "threshold" not in input["condition"]:
-                return 1, "Invalid Parameter: policy condition threshold is invalid.", 400          
+                return 1, "Invalid Parameter: policy condition threshold is invalid.", 400   
+            if int(input["condition"]["threshold"]) < 0:
+                return 1, "Invalid Parameter: policy condition threshold must be greater than or equal 0.", 400               
             condition = core_pb2.XpumPolicyCondition(type=policyConditionType,threshold=input["condition"]["threshold"])
         else:
             condition = core_pb2.XpumPolicyCondition(type=policyConditionType)

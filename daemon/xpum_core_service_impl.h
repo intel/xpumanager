@@ -10,6 +10,8 @@
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
+#include "xpum_api.h"
+#include "xpum_structs.h"
 
 namespace xpum::daemon {
 
@@ -82,6 +84,7 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status getPolicy(::grpc::ServerContext* context, const ::GetPolicyRequest* request, ::GetPolicyResponse* response) override;
     virtual ::grpc::Status setPolicy(::grpc::ServerContext* context, const ::SetPolicyRequest* request, ::SetPolicyResponse* response) override;
     virtual ::grpc::Status readPolicyNotifyData(::grpc::ServerContext* context, const google::protobuf::Empty* request, grpc::ServerWriter<ReadPolicyNotifyDataResponse>* writer) override;
+    virtual ::grpc::Status handleErrorForGetPolicy(xpum_result_t res,::GetPolicyResponse* response);
     
     
     virtual ::grpc::Status getDeviceConfig(::grpc::ServerContext* context, const ::ConfigDeviceDataRequest* request, ::ConfigDeviceData* response) override;

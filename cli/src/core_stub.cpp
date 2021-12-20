@@ -925,6 +925,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicyById(bool isDevice, int id) {
     XpumDeviceBasicInfoArray response;
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     auto healthJson = (*getPolicy(isDevice,id));
+    if (healthJson.contains("error")) {
+        (*json) = healthJson;
+        return json;
+    }
     (*json)["all_policy_list"] = healthJson;
     return json;
 }
@@ -1054,24 +1058,24 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPol
         }else{
             (*json)["is_success"] = false; 
             if(isRemove){
-                (*json)["msg"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
+                (*json)["error"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
             }else{
-                (*json)["msg"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
+                (*json)["error"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
             }  
         }
     }else{
         (*json)["is_success"] = false; 
         if (response.errormsg().length() == 0) {
             if(isRemove){
-                (*json)["msg"] = "Faield to remove the "+policyType+" policy. Error message: unknown.";
+                (*json)["error"] = "Faield to remove the "+policyType+" policy. Error message: unknown.";
             }else{
-                (*json)["msg"] = "Faield to set the "+policyType+" policy. Error message: unknown.";
+                (*json)["error"] = "Faield to set the "+policyType+" policy. Error message: unknown.";
             }  
         }else{
             if(isRemove){
-                (*json)["msg"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
+                (*json)["error"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
             }else{
-                (*json)["msg"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
+                (*json)["error"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
             }  
         }
     }
@@ -1135,6 +1139,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie,int id) {
                 //
                 componentJsonList.push_back(component);
             }
+        }else{
+            (*json)["is_success"] = false; 
+            (*json)["error"] = "Faield to list policies. Error message: "+response.errormsg();
+            return json;
         }
     }    
     if(isDevcie){

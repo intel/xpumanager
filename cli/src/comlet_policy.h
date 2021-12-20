@@ -57,5 +57,8 @@ class ComletPolicy : public ComletBase {
 
    private:
     std::unique_ptr<ComletPolicyOptions> opts;
+
+    bool isDeviceValid(int deviceId);
+    bool isGroupValid(int groupId);
 };
 } // end namespace xpum::cli

@@ -393,6 +393,11 @@ bool PolicyManager::isInDeviceIds(xpum_device_id_t deviceId, xpum_device_id_t de
 }
 
 xpum_result_t PolicyManager::xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
+    xpum_result_t result = this->isValidateDeviceId(deviceId);
+    if (result != XPUM_OK) {
+        XPUM_LOG_INFO("PolicyManager::xpumSetPolicy(): device_id ({}) is not vaild.", deviceId);
+        return result;
+    }
     //XPUM_LOG_INFO("---PolicyManager::xpumSetPolicy()---1--deviceId={}",deviceId);
     //print_policy_for_demo("xpumSetPolicy", &policy);
     xpum_device_id_t deviceList[] = {deviceId};
@@ -502,6 +507,13 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
 }
 
 xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
+    if(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER
+        ||policy.condition.type == XPUM_POLICY_CONDITION_TYPE_LESS){
+        if(policy.condition.threshold < 0){
+            return XPUM_RESULT_POLICY_INVALID_THRESHOLD;
+        }
+    }
+
     // Only limit policy type support limit action
     if (policy.action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
         if (policy.type != XPUM_POLICY_TYPE_GPU_TEMPERATURE) {
@@ -520,6 +532,12 @@ xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
 
 xpum_result_t PolicyManager::xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[], int* count) {
     //XPUM_LOG_INFO("---PolicyManager::xpumGetPolicy()---1--");
+    // Check device id
+    xpum_result_t result = this->isValidateDeviceId(deviceId);
+    if (result != XPUM_OK) {
+        XPUM_LOG_INFO("PolicyManager::xpumGetPolicy(): device_id ({}) is not vaild.", deviceId);
+        return result;
+    }
     xpum_device_id_t deviceList[] = {deviceId};
     return xpumGetPolicyByDeviceIds(deviceList, 1, resultList, count);
 }

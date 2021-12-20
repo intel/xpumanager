@@ -574,6 +574,18 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::handleErrorForGetPolicy(xpum_result_t res,::GetPolicyResponse* response) {
+    //response->set_isok(false);
+    if(res == XPUM_RESULT_DEVICE_NOT_FOUND){
+        response->set_errormsg("Error: device_id is invalid.");            
+    }else if(res == XPUM_RESULT_GROUP_NOT_FOUND){
+        response->set_errormsg("Error: group_id is invalid.");
+    }else{
+        response->set_errormsg("Error: unknow");
+    }            
+    return grpc::Status::OK;
+}
+
 ::grpc::Status XpumCoreServiceImpl::getPolicy(::grpc::ServerContext* context, const ::GetPolicyRequest* request, ::GetPolicyResponse* response) {
     // return grpc::Status::OK;
     bool isDevcie = request->isdevcie();
@@ -582,7 +594,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         int count;
         xpum_result_t res = xpumGetPolicy(id, nullptr, &count);
         if (res != XPUM_OK) {
-            response->set_errormsg("Error");
+            this->handleErrorForGetPolicy(res,response);
             return grpc::Status::OK;
         }
         if (count <= 0) {
@@ -594,7 +606,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         xpum_policy_t dataList[count];
         res = xpumGetPolicy(id, dataList, &count);
         if (res != XPUM_OK || count < 0) {
-            response->set_errormsg("Error");
+            this->handleErrorForGetPolicy(res,response);
             return grpc::Status::OK;
         }
 
@@ -618,7 +630,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         int count;
         xpum_result_t res = xpumGetPolicyByGroup(id, nullptr, &count);
         if (res != XPUM_OK) {
-            response->set_errormsg("Error");
+            this->handleErrorForGetPolicy(res,response);
             return grpc::Status::OK;
         }
         if (count <= 0) {
@@ -630,7 +642,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         xpum_policy_t dataList[count];
         res = xpumGetPolicyByGroup(id, dataList, &count);
         if (res != XPUM_OK || count < 0) {
-            response->set_errormsg("Error");
+            this->handleErrorForGetPolicy(res,response);
             return grpc::Status::OK;
         }
 
@@ -772,41 +784,35 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     policy.notifyCallBack = xpum_notify_callback_func;
     strcpy(policy.notifyCallBackUrl, policyInput.notifycallbackurl().c_str());
 
+    //xpumSetPolicy
+    xpum_device_id_t id;
+    xpum_result_t res;
     if (isDevcie) {
         //
-        xpum_device_id_t id = request->id();
-        xpum_result_t res = xpumSetPolicy(id, policy);
-        //std::cout << "-----xpum_cor_service_impl--1----xpumSetPolicy res = " << res  << std::endl;
-        if (res != XPUM_OK) {
-            response->set_isok(false);
-            if(res == XPUM_RESULT_DEVICE_NOT_FOUND){
-                response->set_errormsg("Error: device_id is invalid.");
-            }else if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
-                response->set_errormsg("Error: policy type, condition or action do not match.");
-            }else{
-                response->set_errormsg("Error: unknow");
-            }            
-            return grpc::Status::OK;
-        }
-        response->set_isok(true);
-        return grpc::Status::OK;
+        id = request->id();
+        res = xpumSetPolicy(id, policy);        
     } else {
-        xpum_group_id_t id = request->id();
-        xpum_result_t res = xpumSetPolicyByGroup(id, policy);
-        if (res != XPUM_OK) {
-            response->set_isok(false);
-            if(res == XPUM_RESULT_DEVICE_NOT_FOUND){
-                response->set_errormsg("Error: device_id is invalid.");
-            }else if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
-                response->set_errormsg("Error: policy type, condition or action do not match.");
-            }else{
-                response->set_errormsg("Error: unknow");
-            }    
-            return grpc::Status::OK;
-        }
-        response->set_isok(true);
+        id = request->id();
+        res = xpumSetPolicyByGroup(id, policy);
+    }
+    //std::cout << "-----xpum_cor_service_impl--1----xpumSetPolicy res = " << res  << std::endl;
+    if (res != XPUM_OK) {
+        response->set_isok(false);
+        if(res == XPUM_RESULT_DEVICE_NOT_FOUND){
+            response->set_errormsg("Error: device_id is invalid.");            
+        }else if(res == XPUM_RESULT_GROUP_NOT_FOUND){
+            response->set_errormsg("Error: group_id is invalid.");
+        }else if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
+            response->set_errormsg("Error: policy type, condition or action do not match.");
+        }else if(res == XPUM_RESULT_POLICY_INVALID_THRESHOLD){
+            response->set_errormsg("Error: threshold is invalid (threshold must greater than or equal 0).");
+        }else{
+            response->set_errormsg("Error: unknow");
+        }            
         return grpc::Status::OK;
     }
+    response->set_isok(true);
+    return grpc::Status::OK;
 }
 
 ::grpc::Status XpumCoreServiceImpl::setDeviceSchedulerMode(::grpc::ServerContext* context, const ::ConfigDeviceSchdeulerModeRequest* request,
