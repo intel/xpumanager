@@ -393,7 +393,7 @@ void ComletPolicy::getTableResult(std::ostream &out) {
         if (this->opts->deviceId >= 0){
             showListDevice(out, json);
         } else if (this->opts->groupId > 0){
-            showListMulti(out, json);
+            showListDevice(out, json);
         } else{
             showListMulti(out, json);
         }  
