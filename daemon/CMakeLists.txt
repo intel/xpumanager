@@ -76,7 +76,7 @@ target_include_directories(
 
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 
-
+set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/../)
 if (NOT DEFINED WORK_PATH)
   message(STATUS "WORK_PATH not defined!")
   message("PATH = $ENV{PATH}")

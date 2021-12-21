@@ -1,11 +1,11 @@
 FROM ubuntu:20.04
-ADD level-zero-1.5.4.tar.gz /
+ADD level-zero-1.6.2.tar.gz /
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && apt-get upgrade -y && \
     apt-get install -y gcc g++ build-essential \
     dpkg-dev curl cmake nano python3 python3-pip \
     autoconf libtool pkg-config
-RUN cd /level-zero-1.5.4 && \
+RUN cd /level-zero-1.6.2 && \
     mkdir build && \
     cd build && \
     cmake .. && \
@@ -20,7 +20,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y python3-dev liblua5.2-0
 RUN pip3 install grpcio-tools
 RUN apt-get install -y doxygen
-RUN pip3 install apispec apispec_webframeworks \
+RUN pip3 install mistune==0.8.4 apispec apispec_webframeworks \
     Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
     apispec-webframeworks myst-parser marshmallow \
     prometheus-client flask flask_httpauth

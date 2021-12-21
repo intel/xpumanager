@@ -1,16 +1,56 @@
 from flask import request, jsonify
 import stub
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validate, ValidationError
 
+allow_dump_metrics = [
+    "XPUM_STATS_GPU_UTILIZATION",
+    "XPUM_STATS_POWER",
+    "XPUM_STATS_GPU_FREQUENCY",
+    "XPUM_STATS_GPU_CORE_TEMPERATURE",
+    "XPUM_STATS_MEMORY_TEMPERATURE",
+    "XPUM_STATS_MEMORY_UTILIZATION",
+    "XPUM_STATS_MEMORY_READ_THROUGHPUT",
+    "XPUM_STATS_MEMORY_WRITE_THROUGHPUT",
+    "XPUM_STATS_ENERGY",
+    "XPUM_STATS_EU_ACTIVE",
+    "XPUM_STATS_EU_STALL",
+    "XPUM_STATS_EU_IDLE",
+    "XPUM_STATS_RAS_ERROR_CAT_RESET",
+    "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS",
+    "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS",
+    "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE",
+    "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE",
+    "XPUM_STATS_MEMORY_BANDWIDTH",
+    "XPUM_STATS_MEMORY_USED"
+]
+
+
+def is_unique(values):
+    if len(set(values)) != len(values):
+        raise ValidationError("Duplicated metrics type")
 
 class StartDumpRawDataTaskSchema(Schema):
     device_id = fields.Int(
-        metadata={"description": "The device to dump raw data"}, required=True)
+        required=True,
+        strict=True,
+        validate=validate.Range(0),
+        metadata={"description": "The device to dump raw data"}
+    )
     tile_id = fields.Int(
-        metadata={"description": "The tile to dump raw data"}, required=False)
-    metrics_type_list = fields.Int(
-        many=True,
-        metadata={"description": "The metrics types to dump"}, required=True
+        required=False,
+        strict=True,
+        validate=validate.Range(0),
+        metadata={"description": "The tile to dump raw data"}
+    )
+    metrics_type_list = fields.List(
+        fields.String(
+            strict=True,
+            validate=validate.OneOf(allow_dump_metrics),
+            metadata={
+                "description": "The metrics type to dump, options are:\n"+"\n".join(allow_dump_metrics)}
+        ),
+        required=True,
+        validate=[validate.Length(1), is_unique]
     )
 
 
@@ -20,14 +60,10 @@ class DumpRawDataTaskInfoSchema(Schema):
         metadata={"description": "The path to file of dumped data"})
 
 
-class ErrorSchema(Schema):
-    status = fields.Int(metadata={"description": "The error status"})
-    message = fields.Str(metadata={"description": "The error message"})
-
-
 class ListAllDumpRawDataTaskSchema(Schema):
     dump_task_ids = fields.Int(
         many=True, metadata={"description": "The id list of all tasks"})
+
 
 def startDumpRawDataTask():
     """
@@ -53,26 +89,33 @@ def startDumpRawDataTask():
                 schema: DumpRawDataTaskInfoSchema
             400:
                 description: Bad Request
-                schema: ErrorSchema
             500:
                 description: Internal Error
     """
     reqData = request.get_json()
-    deviceId = reqData.get("device_id", None)
-    if deviceId is None:
-        error = dict(message="Device id must be assigned", status=1)
-        return jsonify(error), 400
-    metricsTypeList = reqData.get("metrics_type_list", [])
-    if not metricsTypeList:
-        error = dict(message="`metrics_type_list` can not be empty", status=1)
-        return jsonify(error), 400
+    try:
+        StartDumpRawDataTaskSchema().load(reqData)
+    except ValidationError as err:
+        return jsonify(err.messages), 400
+    deviceId = reqData.get("device_id")
+    metricsTypeList = reqData.get("metrics_type_list")
     tileId = reqData.get("tile_id", -1)
     code, message, data = stub.startDumpRawDataTask(
         deviceId, tileId, metricsTypeList)
-    if code != 0:
-        error = dict(status=code, message=message)
+    if code == 0:
+        return jsonify(data)
+    elif code == stub.XpumResult["XPUM_RESULT_DEVICE_NOT_FOUND"].value:
+        error = dict(
+            message="device_id {} corresponding device not found".format(deviceId))
+        return jsonify(error), 400
+    elif code == stub.XpumResult["XPUM_RESULT_TILE_NOT_FOUND"].value:
+        error = dict(
+            message="tile_id {} corresponding tile not found".format(tileId))
+        return jsonify(error), 400
+    else:
+        error = dict(message="Error code: {}, error message: {}".format(
+            stub.XpumResult(code).name, message))
         return jsonify(error), 500
-    return jsonify(data)
 
 
 def stopDumpRawDataTask(taskId):

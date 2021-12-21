@@ -39,6 +39,15 @@ class ComletBase {
         out << "Only -j/--json option supported for this command" << std::endl;
     }
 
+    bool isEmpty() {
+        bool empty = true;
+        auto options = subCLIApp->get_options();
+        for (auto option : options) {
+            empty = empty && option->empty();
+        }
+        return empty;
+    }
+
    protected:
     template <typename T>
     CLI::Option * addOption(std::string optName, T &variable, std::string optDescription = "", bool required = false) {
@@ -62,5 +71,8 @@ class ComletBase {
     const std::string command;
     const std::string description;
     CLI::App *subCLIApp;
+
+   public:
+    bool printHelpWhenNoArgs = 0;
 };
 } // end namespace xpum::cli

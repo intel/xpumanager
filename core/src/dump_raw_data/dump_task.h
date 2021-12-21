@@ -20,7 +20,7 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
 
     uint64_t dataLastCachedTime[XPUM_STATS_MAX + 5];
    private:
-    std::shared_ptr<ScheduledThreadPool>& pThreadPool;
+    std::shared_ptr<ScheduledThreadPool> pThreadPool;
     std::shared_ptr<ScheduledThreadPoolTask> pThreadPoolTask;
     std::function<void()> lambda;
 

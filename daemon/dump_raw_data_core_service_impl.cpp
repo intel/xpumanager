@@ -1,9 +1,15 @@
+#include <pwd.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <fstream>
+
+#include "logger.h"
 #include "xpum_api.h"
 #include "xpum_core_service_impl.h"
 #include "xpum_structs.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
 
 namespace xpum::daemon {
 
@@ -18,6 +24,22 @@ static std::string isotimestamp(uint64_t t) {
     return std::string(buf) + "." + std::string(milli_buf) + "Z";
 }
 
+static void createEmptyFile(std::string filePath) {
+    std::ofstream output(filePath);
+    // chwon of file
+    passwd* pwd = getpwnam("xpum");
+    if (pwd != nullptr) {
+        if (chown(filePath.c_str(), pwd->pw_uid, pwd->pw_gid) != 0) {
+            XPUM_LOG_ERROR("Fail to chown of file \"" + filePath + "\"");
+        }
+    }
+}
+
+static void removeFileOnStartTaskFail(std::string filePath) {
+    if (remove(filePath.c_str()) != 0) {
+        XPUM_LOG_ERROR("Fail to remove file \"" + filePath + "\"");
+    }
+}
 
 ::grpc::Status XpumCoreServiceImpl::startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response) {
     std::vector<xpum_stats_type_t> metricsTypeList;
@@ -43,6 +65,8 @@ static std::string isotimestamp(uint64_t t) {
 
     std::string dumpFilePath = dumpRawDataFileFolder + "/" + fileName + ".csv";
 
+    createEmptyFile(dumpFilePath);
+
     auto res = xpumStartDumpRawDataTask(
         deviceId,
         tileId,
@@ -63,7 +87,14 @@ static std::string isotimestamp(uint64_t t) {
         grpcTaskInfo->set_begintime(taskInfo.beginTime);
         grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
     } else {
-        response->set_errormsg("Error occurs");
+        removeFileOnStartTaskFail(dumpFilePath);
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
+            response->set_errormsg("Device not found");
+        } else if (res == XPUM_RESULT_TILE_NOT_FOUND) {
+            response->set_errormsg("Tile not found");
+        } else {
+            response->set_errormsg("Error occurs");
+        }
     }
     return grpc::Status::OK;
 }

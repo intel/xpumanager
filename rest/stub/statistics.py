@@ -1,54 +1,25 @@
 from google.protobuf import empty_pb2
-from .grpc_stub import stub
+from .grpc_stub import stub, exit_on_disconnect
 import core_pb2
 import datetime
-from enum import Enum
-
-XpumStatsType = Enum("xpum_stats_type_t", (
-    "XPUM_STATS_GPU_UTILIZATION",
-    "XPUM_STATS_EU_ACTIVE",
-    "XPUM_STATS_EU_STALL",
-    "XPUM_STATS_EU_IDLE",
-    "XPUM_STATS_POWER",
-    "XPUM_STATS_ENERGY",
-    "XPUM_STATS_GPU_FREQUENCY",
-    "XPUM_STATS_GPU_CORE_TEMPERATURE",
-    "XPUM_STATS_MEMORY_USED",
-    "XPUM_STATS_MEMORY_UTILIZATION",
-    "XPUM_STATS_MEMORY_BANDWIDTH",
-    "XPUM_STATS_MEMORY_READ",
-    "XPUM_STATS_MEMORY_WRITE",
-    "XPUM_STATS_MEMORY_READ_THROUGHPUT",
-    "XPUM_STATS_MEMORY_WRITE_THROUGHPUT",
-    "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION",
-    "XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION",
-    "XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION",
-    "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION",
-    "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION",
-    "XPUM_STATS_RAS_ERROR_CAT_RESET",
-    "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS",
-    "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS",
-    "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE",
-    "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE",
-    "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE",
-    "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE",
-    "XPUM_STATS_GPU_REQUEST_FREQUENCY",
-    "XPUM_STATS_MEMORY_TEMPERATURE",
-    "XPUM_STATS_FREQUENCY_THROTTLE"
-), start=0)
+from .xpum_enums import XpumStatsType
 
 
+@exit_on_disconnect
 def getStatistics(device_id, session_id=0, get_accumulated=False):
-    resp = stub.getStatistics(core_pb2.XpumGetStatsRequest(deviceId=device_id, sessionId=session_id))
+    resp = stub.getStatistics(core_pb2.XpumGetStatsRequest(
+        deviceId=device_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     data = dict()
     data["device_id"] = device_id
 
-    beginTimestamp = datetime.datetime.fromtimestamp(resp.begin/1e3)
-    endTimestamp = datetime.datetime.fromtimestamp(resp.end/1e3)
-    data['begin'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
-    data['end'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
+    beginTimestamp = datetime.datetime.fromtimestamp(
+        resp.begin/1e3, datetime.timezone.utc)
+    endTimestamp = datetime.datetime.fromtimestamp(
+        resp.end/1e3, datetime.timezone.utc)
+    data['begin'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+    data['end'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
 
     deviceLevelStatsDataList = []
     tileLevelStatsDataList = []
@@ -90,8 +61,10 @@ def getStatistics(device_id, session_id=0, get_accumulated=False):
     return 0, "OK", data
 
 
+@exit_on_disconnect
 def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
-    resp = stub.getStatisticsByGroup(core_pb2.XpumGetStatsByGroupRequest(groupId=group_id, sessionId=session_id))
+    resp = stub.getStatisticsByGroup(core_pb2.XpumGetStatsByGroupRequest(
+        groupId=group_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
 
@@ -137,29 +110,35 @@ def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
             deviceMap[deviceId]["device_level"] = dataList
 
     datas = []
-    beginTimestamp = datetime.datetime.fromtimestamp(resp.begin/1e3)
-    endTimestamp = datetime.datetime.fromtimestamp(resp.end/1e3)
+    beginTimestamp = datetime.datetime.fromtimestamp(
+        resp.begin/1e3, datetime.timezone.utc)
+    endTimestamp = datetime.datetime.fromtimestamp(
+        resp.end/1e3, datetime.timezone.utc)
     for deviceId in deviceMap:
         data = dict()
         data['device_id'] = deviceId
-        data['begin'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
-        data['end'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
+        data['begin'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        data['end'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
         data["device_level"] = deviceMap[deviceId]["device_level"]
         data["tile_level"] = deviceMap[deviceId]["tile_level"]
         datas.append(data)
     return 0, "OK", dict(group_id=group_id, datas=datas)
 
+
 def getStatisticsNotForPrometheus(device_id, session_id=0, get_accumulated=False):
-    resp = stub.getStatisticsNotForPrometheus(core_pb2.XpumGetStatsRequest(deviceId=device_id, sessionId=session_id))
+    resp = stub.getStatisticsNotForPrometheus(
+        core_pb2.XpumGetStatsRequest(deviceId=device_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
-        return 1, resp.errorMsg, None
+        return resp.status, resp.errorMsg, None
     data = dict()
     data["device_id"] = device_id
 
-    beginTimestamp = datetime.datetime.fromtimestamp(resp.begin/1e3)
-    endTimestamp = datetime.datetime.fromtimestamp(resp.end/1e3)
-    data['begin'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
-    data['end'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
+    beginTimestamp = datetime.datetime.fromtimestamp(
+        resp.begin/1e3, datetime.timezone.utc)
+    endTimestamp = datetime.datetime.fromtimestamp(
+        resp.end/1e3, datetime.timezone.utc)
+    data['begin'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+    data['end'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
 
     deviceLevelStatsDataList = []
     tileLevelStatsDataList = []
@@ -202,7 +181,8 @@ def getStatisticsNotForPrometheus(device_id, session_id=0, get_accumulated=False
 
 
 def getStatisticsByGroupNotForPrometheus(group_id, session_id=0, get_accumulated=False):
-    resp = stub.getStatisticsByGroupNotForPrometheus(core_pb2.XpumGetStatsByGroupRequest(groupId=group_id, sessionId=session_id))
+    resp = stub.getStatisticsByGroupNotForPrometheus(
+        core_pb2.XpumGetStatsByGroupRequest(groupId=group_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
 
@@ -248,13 +228,15 @@ def getStatisticsByGroupNotForPrometheus(group_id, session_id=0, get_accumulated
             deviceMap[deviceId]["device_level"] = dataList
 
     datas = []
-    beginTimestamp = datetime.datetime.fromtimestamp(resp.begin/1e3)
-    endTimestamp = datetime.datetime.fromtimestamp(resp.end/1e3)
+    beginTimestamp = datetime.datetime.fromtimestamp(
+        resp.begin/1e3, datetime.timezone.utc)
+    endTimestamp = datetime.datetime.fromtimestamp(
+        resp.end/1e3, datetime.timezone.utc)
     for deviceId in deviceMap:
         data = dict()
         data['device_id'] = deviceId
-        data['begin'] = beginTimestamp.isoformat(timespec='milliseconds')+"Z"
-        data['end'] = endTimestamp.isoformat(timespec='milliseconds')+"Z"
+        data['begin'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        data['end'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
         data["device_level"] = deviceMap[deviceId]["device_level"]
         data["tile_level"] = deviceMap[deviceId]["tile_level"]
         datas.append(data)

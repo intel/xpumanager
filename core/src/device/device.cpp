@@ -123,19 +123,14 @@ bool Device::isUpgradingFw(void) noexcept {
 
 std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capability, Device* p_device) {
     switch (capability) {
-        case DeviceCapability::POWER:
         case DeviceCapability::METRIC_POWER:
             return [p_device](Callback_t callback) { p_device->getPower(callback); };
-        case DeviceCapability::FREQUENCY:
         case DeviceCapability::METRIC_FREQUENCY:
             return [p_device](Callback_t callback) { p_device->getActuralFrequency(callback); };
-        case DeviceCapability::TEMPERATURE:
         case DeviceCapability::METRIC_TEMPERATURE:
             return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_GPU); };
-        case DeviceCapability::MEMORY:
         case DeviceCapability::METRIC_MEMORY_USED:
             return [p_device](Callback_t callback) { p_device->getMemory(callback); };
-        case DeviceCapability::ENGINE_UTILIZATION:
         case DeviceCapability::METRIC_COMPUTATION:
             return [p_device](Callback_t callback) { p_device->getEngineUtilization(callback); };
         case DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:

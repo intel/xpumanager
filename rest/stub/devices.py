@@ -1,9 +1,10 @@
 from google.protobuf import empty_pb2
 import uuid
 import core_pb2
-from .grpc_stub import stub
+from .grpc_stub import stub, exit_on_disconnect
 
 
+@exit_on_disconnect
 def getDeviceList():
     resp = stub.getDeviceList(empty_pb2.Empty())
     if len(resp.errorMsg) != 0:

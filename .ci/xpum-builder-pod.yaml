@@ -6,7 +6,7 @@ metadata:
   namespace: jenkins
 spec:
   tolerations:
-  - key: node-role.kubernetes.io/master
+  - key: jenkins-job-only
     effect: NoSchedule
   containers:
     - args:
@@ -114,7 +114,7 @@ spec:
   hostNetwork: false
   nodeSelector:
     kubernetes.io/os: "linux"
-    node-role.kubernetes.io/master: ""
+    jenkins-workder: "true"
   restartPolicy: "Never"
   volumes:
     - hostPath:

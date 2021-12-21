@@ -18,11 +18,31 @@ struct ComletHealthOptions {
 
 class ComletHealth : public ComletBase {
    public:
-    ComletHealth() : ComletBase("health", "Get the GPU device component health status") {}
+    ComletHealth() : ComletBase("health", "Get the GPU device component health status") {
+        printHelpWhenNoArgs = true;
+    }
     virtual ~ComletHealth() {}
 
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
+    
+    virtual void getTableResult(std::ostream &out) override;
+
+    inline const bool isSingleDeviceOperation() const {
+        return opts->deviceId >= 0;
+    }
+
+    inline const bool isGroupOperation() const {
+        return opts->groupId > 0;
+    }
+
+    inline const bool isListAll() const {
+        return opts->listAll;
+    }
+
+    inline const int getCompType() const {
+        return opts->componentType;
+    }
 
    private:
     std::unique_ptr<ComletHealthOptions> opts;

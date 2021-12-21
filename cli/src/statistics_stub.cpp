@@ -8,70 +8,48 @@
 
 namespace xpum::cli {
 
+struct MetricsTypeEntry{
+    xpum_stats_type_t key;
+    std::string keyStr;
+};
+
+static MetricsTypeEntry metricsTypeArray[]{
+    {XPUM_STATS_GPU_UTILIZATION, "XPUM_STATS_GPU_UTILIZATION"},
+    {XPUM_STATS_EU_ACTIVE, "XPUM_STATS_EU_ACTIVE"},
+    {XPUM_STATS_EU_STALL, "XPUM_STATS_EU_STALL"},
+    {XPUM_STATS_EU_IDLE, "XPUM_STATS_EU_IDLE"},
+    {XPUM_STATS_POWER, "XPUM_STATS_POWER"},
+    {XPUM_STATS_ENERGY, "XPUM_STATS_ENERGY"},
+    {XPUM_STATS_GPU_FREQUENCY, "XPUM_STATS_GPU_FREQUENCY"},
+    {XPUM_STATS_GPU_CORE_TEMPERATURE, "XPUM_STATS_GPU_CORE_TEMPERATURE"},
+    {XPUM_STATS_MEMORY_USED, "XPUM_STATS_MEMORY_USED"},
+    {XPUM_STATS_MEMORY_UTILIZATION, "XPUM_STATS_MEMORY_UTILIZATION"},
+    {XPUM_STATS_MEMORY_BANDWIDTH, "XPUM_STATS_MEMORY_BANDWIDTH"},
+    {XPUM_STATS_MEMORY_READ, "XPUM_STATS_MEMORY_READ"},
+    {XPUM_STATS_MEMORY_WRITE, "XPUM_STATS_MEMORY_WRITE"},
+    {XPUM_STATS_MEMORY_READ_THROUGHPUT, "XPUM_STATS_MEMORY_READ_THROUGHPUT"},
+    {XPUM_STATS_MEMORY_WRITE_THROUGHPUT, "XPUM_STATS_MEMORY_WRITE_THROUGHPUT"},
+    {XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION"},
+    {XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION"},
+    {XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION"},
+    {XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION"},
+    {XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION"},
+    {XPUM_STATS_RAS_ERROR_CAT_RESET, "XPUM_STATS_RAS_ERROR_CAT_RESET"},
+    {XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS, "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS"},
+    {XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS, "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS"},
+    {XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE"},
+    {XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE"},
+    {XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE"},
+    {XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE"},
+    {XPUM_STATS_GPU_REQUEST_FREQUENCY, "XPUM_STATS_GPU_REQUEST_FREQUENCY"},
+    {XPUM_STATS_MEMORY_TEMPERATURE, "XPUM_STATS_MEMORY_TEMPERATURE"},
+    {XPUM_STATS_FREQUENCY_THROTTLE, "XPUM_STATS_FREQUENCY_THROTTLE"}};
+
 std::string CoreStub::metricsTypeToString(xpum_stats_type_t metricsType) {
-    switch (metricsType) {
-        case XPUM_STATS_GPU_UTILIZATION:
-            return "XPUM_STATS_GPU_UTILIZATION";
-        case XPUM_STATS_EU_ACTIVE:
-            return "XPUM_STATS_EU_ACTIVE";
-        case XPUM_STATS_EU_STALL:
-            return "XPUM_STATS_EU_STALL";
-        case XPUM_STATS_EU_IDLE:
-            return "XPUM_STATS_EU_IDLE";
-        case XPUM_STATS_POWER:
-            return "XPUM_STATS_POWER";
-        case XPUM_STATS_ENERGY:
-            return "XPUM_STATS_ENERGY";
-        case XPUM_STATS_GPU_FREQUENCY:
-            return "XPUM_STATS_GPU_FREQUENCY";
-        case XPUM_STATS_GPU_CORE_TEMPERATURE:
-            return "XPUM_STATS_GPU_CORE_TEMPERATURE";
-        case XPUM_STATS_MEMORY_USED:
-            return "XPUM_STATS_MEMORY_USED";
-        case XPUM_STATS_MEMORY_UTILIZATION:
-            return "XPUM_STATS_MEMORY_UTILIZATION";
-        case XPUM_STATS_MEMORY_BANDWIDTH:
-            return "XPUM_STATS_MEMORY_BANDWIDTH";
-        case XPUM_STATS_MEMORY_READ:
-            return "XPUM_STATS_MEMORY_READ";
-        case XPUM_STATS_MEMORY_WRITE:
-            return "XPUM_STATS_MEMORY_WRITE";
-        case XPUM_STATS_MEMORY_READ_THROUGHPUT:
-            return "XPUM_STATS_MEMORY_READ_THROUGHPUT";
-        case XPUM_STATS_MEMORY_WRITE_THROUGHPUT:
-            return "XPUM_STATS_MEMORY_WRITE_THROUGHPUT";
-        case XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
-            return "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION";
-        case XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
-            return "XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION";
-        case XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION:
-            return "XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION";
-        case XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
-            return "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION";
-        case XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION:
-            return "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION";
-        case XPUM_STATS_RAS_ERROR_CAT_RESET:
-            return "XPUM_STATS_RAS_ERROR_CAT_RESET";
-        case XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
-            return "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS";
-        case XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS:
-            return "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS";
-        case XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
-            return "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE";
-        case XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
-            return "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE";
-        case XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
-            return "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE";
-        case XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
-            return "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE";
-        case XPUM_STATS_GPU_REQUEST_FREQUENCY:
-            return "XPUM_STATS_GPU_REQUEST_FREQUENCY";
-        case XPUM_STATS_MEMORY_TEMPERATURE:
-            return "XPUM_STATS_MEMORY_TEMPERATURE";
-        case XPUM_STATS_FREQUENCY_THROTTLE:
-            return "XPUM_STATS_FREQUENCY_THROTTLE";
-        default:
-            break;
+    for (auto item : metricsTypeArray) {
+        if (item.key == metricsType) {
+            return item.keyStr;
+        }
     }
     return std::to_string(metricsType);
 }
@@ -123,6 +101,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
                     tmp["avg"] = stats_data.avg();
                     tmp["min"] = stats_data.min();
                     tmp["max"] = stats_data.max();
+                } else {
+                    tmp["total"] = stats_data.accumulated();
                 }
             } else {
                 tmp["value"] = (double)stats_data.value() / scale;
@@ -130,6 +110,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
                     tmp["avg"] = (double)stats_data.avg() / scale;
                     tmp["min"] = (double)stats_data.min() / scale;
                     tmp["max"] = (double)stats_data.max() / scale;
+                } else {
+                    tmp["total"] = (double)stats_data.accumulated() / scale;
                 }
             }
             dataList.push_back(tmp);
@@ -201,6 +183,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId)
                     tmp["avg"] = stats_data.avg();
                     tmp["min"] = stats_data.min();
                     tmp["max"] = stats_data.max();
+                } else {
+                    tmp["total"] = stats_data.accumulated();
                 }
             } else {
                 tmp["value"] = (double)stats_data.value() / scale;
@@ -208,6 +192,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId)
                     tmp["avg"] = (double)stats_data.avg() / scale;
                     tmp["min"] = (double)stats_data.min() / scale;
                     tmp["max"] = (double)stats_data.max() / scale;
+                } else {
+                    tmp["total"] = (double)stats_data.accumulated() / scale;
                 }
             }
             dataList.push_back(tmp);

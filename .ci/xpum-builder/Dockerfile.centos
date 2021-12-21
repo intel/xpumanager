@@ -1,11 +1,11 @@
 FROM centos:8.3.2011
-ADD level-zero-1.5.4.tar.gz /
+ADD level-zero-1.6.2.tar.gz /
 RUN dnf update -y && \
     dnf clean all && \
     dnf install -y rpm-build gcc gcc-c++ cmake make python3 libtool dnf-plugins-core && \
     dnf config-manager --set-enabled powertools && \
     dnf install -y glibc-static
-RUN cd /level-zero-1.5.4 && \
+RUN cd /level-zero-1.6.2 && \
     mkdir build && \
     cd build && \
     cmake .. && \
@@ -17,7 +17,7 @@ ADD build_grpc.sh /grpc
 RUN chmod +x /grpc/build_grpc.sh && /grpc/build_grpc.sh
 RUN dnf install -y python3-pip python3-devel && pip3 install grpcio-tools
 RUN dnf install -y lua-devel doxygen
-RUN pip3 install apispec apispec_webframeworks \
+RUN pip3 install mistune==0.8.4 apispec apispec_webframeworks \
     Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
     apispec-webframeworks myst-parser marshmallow \
     prometheus-client flask flask_httpauth

@@ -6,7 +6,7 @@ This guide describes how to use Intel XPU Manager Command Line Interface to mana
 ## Intel XPU Manager Command Line Interface main features 
 * Show the device info. 
 * Manage multiple devices by the group-level. 
-* Get lots of raw and aggregrated device statistics. 
+* Get lots of raw and aggregated device statistics. 
 * Get the health status of the device components. 
 * Get and change the device settings. 
 * Update the device firmware. 
@@ -20,8 +20,8 @@ Intel XPU Manager Command Line Interface -- v1.0
 Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.  
 Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
  
-Supported devcies: 
-  - Intel ATS-M1/ATS-M3 
+Supported devices: 
+  - Intel ATS-M1/ATS-M3/ATS-P 
  
 Usage: xpumcli [Options]
   xpumcli -v
@@ -32,30 +32,30 @@ Optional arguments:
   -h, --help                  Print this help message and exit.
   -v, --version               Display version information and exit.
   
-  discovery                   Discover devices on the system.
-  group                       Group management.
-  agentset                    XPUM agent settings.
-  stats                       Display device statistics.
-  health                      Display health status of GPUs.
-  diag                        System validation/diagnostic.
-  updatefw                    Update device firmware.
-  config                      Configure settings for devices.
+  discovery                   Discover the GPU devices installed on this machine and provide the device info.
+  group                       Group the managed GPU devices.
+  agentset                    Get or change some XPU Manager settings. 
+  stats                       List the GPU device aggregated statistics that are collected by XPU Manager.
+  health                      Get the GPU device component health status.
+  diag                        Run some test suites to diagnose GPU.
+  updatefw                    Update GPU firmware.
+  config                      Get and change the GPU settings.
   dump                        Dump device statistics data.
-  topology                    Show CPU/GPU/PCIe switch topology.
-  policy                      Manager GPU policies.
+  topology                    Get the GPU to CPU and GPU to PCIe switch topology info.
+  policy                      Get and set the GPU policies.
 ```
   
 Show Intel XPU Manager version and Level Zero version. 
 ```
 ./xpumcli -v
 CLI:
-    Version: 0.1.0
-    Build Id: 10
+    Version: 1.0.0.20211217
+    Build ID: f847c0fa
 
 Service:
-    Version: 0.1.0
-    Build Id: 10
-    Level Zero Version:
+    Version: 1.0.0.20211217
+    Build ID: f847c0fa
+    Level Zero Version: 1.6.2
 ```
 
 ## Discover the devices in this machine
@@ -111,7 +111,7 @@ Discover the devices in this machine and get the JSON format output
 }
 ```
 
-Show the detailed info of one device. The device info includes the model, frequency, driver/firwmare info, PCI info, memory info and tile/execution unit info. 
+Show the detailed info of one device. The device info includes the model, frequency, driver/firmware info, PCI info, memory info and tile/execution unit info. 
 ```
 ./xpumcli discovery -d 0
 +-----------+--------------------------------------------------------------------------------------+
@@ -148,10 +148,6 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Number of EUs per Sub Slice: 16                                                      |
 |           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
-|           |                                                                                      |
-|           | Number of Xe Link ports: 16                                                          |
-|           | Max Tx/Rx Speed per Xe Link port: 51879.88 MiB/s                                     |
-|           | Number of Lanes per Xe Link port: 4                                                  |
 +-----------+--------------------------------------------------------------------------------------+
 ```
 
@@ -279,12 +275,12 @@ Change the XPU Manager sampling period
 ```
 
 
-## Get the aggregrated device statistics
-Help info for getting the GPU device aggregrated statistics 
+## Get the aggregated device statistics
+Help info for getting the GPU device aggregated statistics 
 ```
 ./xpumcli stats -h
 
-List the GPU aggregrated statistics since last execution of this command or XPU Manager daemon is started.
+List the GPU aggregated statistics since last execution of this command or XPU Manager daemon is started.
 
 Usage: xpumcli stats [Options]
   xpumcli stats
@@ -299,7 +295,7 @@ Options:
   -g,--group                  The group ID to query
 ```
  
-List the GPU device aggregrated statistics that are collected by XPU Manager
+List the GPU device aggregated statistics that are collected by XPU Manager
 ```
 ./xpumcli stats -d 0
 +------------------------------+-------------------------------------------------------------------+
@@ -366,12 +362,11 @@ optional arguments:
   -l,--list                   Display health info for all devices
   -d,--device                 The device ID
   -g,--group                  The group ID
-  -c,--component              Commponent types
+  -c,--component              Component types
                                 1. GPU Core Temperature
                                 2. GPU Memory Temperature
                                 3. GPU Power
                                 4. GPU Memory
-                                5. Xe Link Port
   --threshold                 Set custom threshold for device component
 ```
  
@@ -401,9 +396,6 @@ Get the GPU device component health status. There are some build-in thresholds f
 | 4. GPU Memory                | Status: Ok                                                        |
 |                              | Description: All memory channels are healthy.                     |
 +------------------------------+-------------------------------------------------------------------+
-| 5. Xe Link Port              | Status: Ok                                                        |
-|                              | Description: All ports are healthy.                               |
-+------------------------------+-------------------------------------------------------------------+
 ```
  
 Change the component custom temperature threshold 
@@ -425,7 +417,7 @@ Help info of the device statistics dump.
 ```
 ./xpumcli dump
 
-Dump the device statistics
+Dump device statistics data
 
 Usage: xpumcli dump [Options]
   xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
@@ -438,10 +430,10 @@ optional arguments:
   -h,--help                   Print this help message and exit
 
   -d,--device                 The device id to query
-  -t,--tile                   The device tile ID to query
+  -t,--tile                   The device tile ID to query. If the device has only one tile, this parameter should not be specified. 
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
                                 0. GPU Utilization (%), GPU active time of the elapsed time, per tile
-                                1. GPU Power (W), per GPU
+                                1. GPU Power (W), per tile
                                 2. GPU Frequency (MHz), per tile
                                 3. GPU Core Temperature (Celsius Degree), per tile
                                 4. GPU Memory Temperature (Celsius Degree), per tile
@@ -456,7 +448,7 @@ optional arguments:
                                 12. Reset Counter, per GPU.
                                 13. Programming Errors, per tile.
                                 14. Driver Errors, per tile.
-                                15. Cache Erros Correctable, per tile.
+                                15. Cache Errors Correctable, per tile.
                                 16. Cache Errors Uncorrectable, per tile. 
                                 17. GPU Memory Bandwidth Utilization. (%)
                                 18. GPU Memory Used (MiB)
@@ -470,7 +462,7 @@ optional arguments:
   --list                      List all the active dump tasks. 
 ```
 
-Dump the devce statistics to screen in CSV format.
+Dump the device statistics to screen in CSV format.
 ```
 ./xpumcli dump -d 0 -t 0 -m 0,1,2 -i 1 -n 5
 Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
@@ -481,7 +473,7 @@ Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
 2021-11-08 13:31:47.100, 00, 0, 000,    , 0300
 ```
 
-Start to dump the devce raw statistics to the CSV file.
+Start to dump the device raw statistics to the CSV file.
 ```
 xpumcli dump --rawdata --start -d 0 -t 0 -m 0,1,2 
 Task 0 is started.
@@ -520,15 +512,18 @@ optional arguments:
   -d,--device                 The device ID to query
 ```
 
-Get the info of the CPUs and PCIe switches which are conneted to the GPU
+Get the info of the CPUs and PCIe switches which are connected to the GPU
 ```
-/xpumcli topology -d 0
-./Topology:
-    Device ID: 0
-    Local CPU List: 0-23,48-71
-    Local CPUs: 000000ff,ffff0000,00ffffff
-    PCIe Switch Count:1
-    PCIe Switch:/sys/devices/pci0000:4a/0000:4a:02.0/0000:4b:00.0/0000:4c:00.0/0000:4d:00.0/0000:4e:18.0/0000:54:00.0/0000:55:01.0
+./xpumcli topology -d 0
++-----------+--------------------------------------------------------------------------------------+
+| Device ID | Topology Information                                                                 |
++-----------+--------------------------------------------------------------------------------------+
+| 0         | Local CPU List: 0-23,48-71                                                           |
+|           | Local CPUs: 000000ff,ffff0000,00ffffff                                               |
+|           | PCIe Switch Count: 1                                                                 |
+|           | PCIe Switch: /sys/devices/pci0000:4a/0000:4a:02.0/0000:4b:00.0/0000:4c:00.0          |
+|           |   /0000:4d:00.0/0000:4e:18.0/0000:54:00.0/0000:55:01                                 |
++-----------+--------------------------------------------------------------------------------------+
 ```
   
   
@@ -539,11 +534,12 @@ Help info of updating GPU firmware
 
 Update GPU firmware
 
-Usage: xpumcli fwflash [Options]
+Usage: xpumcli updatefw [Options]
   xpumcli updatefw -d [deviceId] -t [firmwareName] -f [imageFilePath]
 
 Options:
   -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
   -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P card so far.
@@ -573,9 +569,7 @@ Usage: xpumcli config [Options]
   xpumcli config -d [deviceId] -t [tileId] --powerlimit [powerValue,averageWindow]
   xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
   xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
-  xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
-  xpumcli config -d [deviceId] -t [tileId] --xelinkport [portId,value]
-  xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
+  xpumcli config -d [deviceId] --reset
   
 
 
@@ -592,17 +586,13 @@ Options:
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us);
                                 "exclusive".
   --reset                     Hard reset the GPU. All applications that are currently using this device will be forcibly killed. 
-  --performancefactor         Set the tile-level performance factor. Valid options: "compute/media";factorValue. The factor value should be 
-                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
-  --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
-  --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
 ```
 
 show the GPU settings
 ```
 ./xpumcli config -d 0
 +-------------+-------------------+----------------------------------------------------------------+
-| Device Type | Device Id/Tile Id | Configuration                                                  |
+| Device Type | Device ID/Tile ID | Configuration                                                  |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/0               | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 0 to 500                                        |
@@ -611,7 +601,7 @@ show the GPU settings
 |             |                   |                                                                |
 |             |                   | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
-|             |                   |   Valid Opitons: 300, 350, 400, 450, 500,550, 600, 650, 700    |
+|             |                   |   Valid Options: 300, 350, 400, 450, 500,550, 600, 650, 700    |
 |             |                   |       750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200    |
 |             |                   |       1250, 1300                                               |
 |             |                   |                                                                |
@@ -621,17 +611,6 @@ show the GPU settings
 |             |                   | Scheduler Mode: timeslice                                      |
 |             |                   |   Interval(us): 5000                                           |
 |             |                   |   Yield Timeout (us): 640000                                   |
-|             |                   |                                                                |
-|             |                   | Engine Type: compute                                           |
-|             |                   |   Performance Factor: 70                                       |
-|             |                   | Engine Type: media                                             |
-|             |                   |   Performance Factor: 50                                       |
-|             |                   |                                                                |
-|             |                   | Xe Link ports:                                                 |
-|             |                   |   Up: 0,1,2,3                                                  |
-|             |                   |   Down: 4,5,6,7                                                |
-|             |                   |   Beaconing On: 0,1,2,3                                        |
-|             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/1               | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 0 to 500                                        |
@@ -649,17 +628,6 @@ show the GPU settings
 |             |                   | Scheduler Mode: timeslice                                      |
 |             |                   |   Interval(us): 5000                                           |
 |             |                   |   Yield Timeout (us): 640000                                   |
-|             |                   |                                                                |
-|             |                   | Engine Type: compute                                           |
-|             |                   |   Performance Factor: 70                                       |
-|             |                   | Engine Type: media                                             |
-|             |                   |   Performance Factor: 50                                       |
-|             |                   |                                                                |
-|             |                   | Xe Link ports:                                                 |
-|             |                   |   Up: 0,1,2,3                                                  |
-|             |                   |   Down: 4,5,6,7                                                |
-|             |                   |   Beaconing On: 0,1,2,3                                        |
-|             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
 ```
  
@@ -698,24 +666,6 @@ All process(es) above will be forcibly killed if you reset it. Do you want to co
 Succeed to reset the GPU 0.
 ```
 
-Set the performance factor
-```
-./xpumcli config -d 0 -t 0 --performancefactor compute,70
-Succeed to change the compute performance factor to 70 on GPU 0 tile 0.
-```
-
-Change the Xe Link port status
-```
-./xpumcli config -d 0 -t 0 --xelinkport 0,1
-Succeed to change Xe Link port 0 to up.
-```
-
-Change the Xe Link port beaconing status
-```
-./xpumcli config -d 0 -t 0 --xelinkportbeaconing 0,1
-Succeed to change Xe Link port 0 beaconing to on.
-```
-
 ## Get and set the policy, automatic action triggered by the condition
 The supported policies are list in the table below. For example, if the "GPU Core Temperature" policy is set and one GPU tile temperature is more than the specified threshold, the GPU throttling action will be taken automatically. For "Cache Errors Uncorrectable", if it happens, a resetting GPU action will be taken. The temperature and errors are all based on tile-level.  
 
@@ -726,7 +676,7 @@ The supported policies are list in the table below. For example, if the "GPU Cor
 | 3. Driver Errors              | 1. More than   | 2. Reset GPU            |  
 | 4. Cache Errors Correctable   | 1. More than   | 2. Reset GPU            |  
 | 5. Cache Errors Uncorrectable | 2. When occur  | 2. Reset GPU            |  
-  
+
 
 Help info for GPU policy
 ```
@@ -770,7 +720,7 @@ Options:
                                 2. When occur
   --threshold                 Threshold
   --action                    Policy action.
-                                1. Throttle GPU
+                                1. Throttle GPU Core Frequency
                                 2. Reset GPU
   --throttlefrequencymin      Throttle GPU frequency to min value
   --throttlefrequencymax      Throttle GPU frequency to max value
@@ -779,7 +729,7 @@ Options:
 Create a policy to throttle GPU when the GPU tile temperature is a little high. 
 ```
 ./xpumcli policy -c -d 0 --type 1 --condition 1 --threshold 95  --action 1 --throttlefrequencymin 300 --throttlefrequencymax 400
-Succeed to set the "GPU Core Temperature" policy.
+Succeed to set the "1. GPU Core Temperature" policy.
 ```
 
 List all supported policies
@@ -788,7 +738,7 @@ List all supported policies
 +-------------------------------+------------------+-----------------------------------------------+
 | Types                         |Conditions        | Actions                                       |
 +-------------------------------+------------------+-----------------------------------------------+
-| 1. GPU Core Temperature       | 1. More than     | 1. Throttle GPU Core                          |
+| 1. GPU Core Temperature       | 1. More than     | 1. Throttle GPU Core Frequency                |
 | 2. Programming Errors         | 1. More than     | 2. Reset GPU                                  |
 | 3. Driver Errors              | 1. More than     | 2. Reset GPU                                  |
 | 4. Cache Errors Correctable   | 1. More than     | 2. Reset GPU                                  |
@@ -799,19 +749,20 @@ List all supported policies
 List all policies set on the GPU. 
 ```
 ./xpumcli policy -l -d 0
-+-------------------------------+------------------+-----------------------------------------------+
-| Types                         | Conditions       | Actions                                       |
-+-------------------------------+------------------+-----------------------------------------------+
-| 1. GPU Core Temperature       | 1. More than 95  | 1. Throttle GPU Core frequency                |
-|                               |                  |      min: 300, max: 400                       |
-| 5. Cache Errors Uncorrectable | 2. When occur    | 2. Reset GPU                                  |
-+-------------------------------+------------------+-----------------------------------------------+
++-----------+-------------------------------+------------------+-----------------------------------+
+| Device ID | Types                         | Conditions       | Actions                           |
++-----------+-------------------------------+------------------+-----------------------------------+
+| 0         | 1. GPU Core Temperature       | 1. More than 95  | 1. Throttle GPU Core Frequency    |
+|           |                               |                  |      min: 300, max: 400           |
++-----------+-------------------------------+------------------+-----------------------------------+
+| 0         | 5. Cache Errors Uncorrectable | 2. When occur    | 2. Reset GPU                      |
++-----------+-------------------------------+------------------+-----------------------------------+
 ```
   
 Remove a policy.
 ```
 ./xpumcli policy -r -d 0 --type 1
-Succeed to remove the "GPU Core Temperature" policy.
+Succeed to remove the "1. GPU Core Temperature" policy.
 ```
   
 ## Diagnose GPU with different test suites
@@ -846,7 +797,7 @@ Run test to diagnose GPU
 ./xpumcli diag -d 0 -l 1
 Device Type: GPU
 +------------------------+-------------------------------------------------------------------------+
-| Device Id              | 0                                                                       |
+| Device ID              | 0                                                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Level                  | 1                                                                       |
 | Result                 | Fail                                                                    |
@@ -862,7 +813,7 @@ Device Type: GPU
 |                        | Message: Pass to check permission                                       |
 +------------------------+-------------------------------------------------------------------------+
 | Software Exclusive     | Result: Fail                                                            |
-|                        | Message: Fail to check the software exclusive. 2 processs(es) are       |
+|                        | Message: Fail to check the software exclusive. 2 process(es) are        |
 |                        |   using the device.                                                     |
 |                        |   PID: 633972, Command: ./ze_gemm                                       |
 |                        |   PID: 633973, Command: ./ze_gemm                                       |

@@ -3,36 +3,127 @@
 #include <nlohmann/json.hpp>
 
 #include "core_stub.h"
+#include "cli_table.h"
 
 namespace xpum::cli {
 
+static CharTableConfig ComletConfigAllSupported(R"({
+    "columns": [{
+        "title": "Types"
+    }, {
+        "title": "Conditions"
+    }, {
+        "title": "Actions"
+    }],
+    "rows": [{
+        "instance": "all_policy_type[]",
+        "in_array_sep": false,
+        "cells": [
+            "type",
+            "condition",
+            "action"
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigListAll(R"({
+    "columns": [{
+        "title": "Device ID"
+    }, {
+        "title": "Types"
+    }, {
+        "title": "Conditions"
+    }, {
+        "title": "Actions"
+    }],
+    "rows": [{
+        "instance": "all_policy_list[].policy_list[]",
+        "cells": [
+            "device_id",
+            "type",
+            "condition",
+            "action"
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigListDevice(R"({
+    "columns": [{
+        "title": "Device ID"
+    }, {
+        "title": "Types"
+    }, {
+        "title": "Conditions"
+    }, {
+        "title": "Actions"
+    }],
+    "rows": [{
+        "instance": "all_policy_list.policy_list[]",
+        "cells": [
+            "device_id",
+            "type",
+            "condition",
+            "action"
+        ]
+    }]
+})"_json);
+
 void ComletPolicy::setupOptions() {
     this->opts = std::unique_ptr<ComletPolicyOptions>(new ComletPolicyOptions());
+    addOption("-d,--device", this->opts->deviceId, "The device ID.");
+    addOption("-g,--group", this->opts->groupId, "The group ID.\n");
+
     addFlag("-l,--list", this->opts->listAll, "List all policies.");
     addFlag("--listalltypes", this->opts->listalltypes, "List all policy types, including the supported condition and action.");
     addFlag("-c,--create", this->opts->create, "Create one policy.");
-    addFlag("-r,--remove", this->opts->remove, "Remove one policy. Only the policy is removed and the changed GPU settings will not be resumed."); 
-    addOption("-d,--device", this->opts->deviceId, "The device ID.");
-    addOption("-g,--group", this->opts->groupId, "The group ID.");
+    addFlag("-r,--remove", this->opts->remove, "Remove one policy. Only the policy is removed and the changed GPU settings will not be resumed.\n"); 
+    
     addOption("--type", this->opts->policyType, "Policy types.\n\t1. GPU Core Temperature\n\t2. Programming Errors\n\t3. Driver Errors\n\t4. Cache Errors Correctable\n\t5. Cache Errors Uncorrectable");
     addOption("--condition", this->opts->policyConditionType, "Conditions.\n\t1. More than\n\t2. When occur");
+    addOption("--threshold", this->opts->threshold, "Threshold");
     addOption("--action", this->opts->policyActionType, "Policy action.\n\t1. Throttle GPU\n\t2. Reset GPU");
-    addOption("-t,--threshold", this->opts->threshold, "Threshold");
     addOption("--throttlefrequencymin", this->opts->throttlefrequencymin, "Throttle GPU frequency to min value");
     addOption("--throttlefrequencymax", this->opts->throttlefrequencymax, "Throttle GPU frequency to max value");
+}
+
+bool ComletPolicy::isDeviceValid(int deviceId) {
+     // check deviceId and tileId is valid
+    auto res = this->coreStub->getDeviceProperties(deviceId);
+    if (res->contains("error")) {
+        return false;
+    }
+    return true;
+}
+bool ComletPolicy::isGroupValid(int groupId) {
+    // check deviceId and tileId is valid
+    auto res = this->coreStub->groupList(groupId);
+    if (res->contains("error")) {
+        return false;
+    }
+    return true;
 }
 
 std::unique_ptr<nlohmann::json> ComletPolicy::run() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     if (this->opts->listAll) {
-        //
+        //std::cout << "--GangDebug----listAll---1---" << std::endl;
         bool isDevcie;
         int id;
         if (this->opts->deviceId != -1){
+            // if(!this->isDeviceValid(this->opts->deviceId)){
+            //     (*json)["is_success"] = false; 
+            //     (*json)["error"] = "Wrong argument: <device> is invalid.";
+            //     return json;
+            // }
             isDevcie = true;
             id = this->opts->deviceId;
             json = this->coreStub->getPolicyById(isDevcie,id);
         } else if (this->opts->groupId != -1){
+            // if(!this->isGroupValid(this->opts->deviceId)){
+            //     (*json)["is_success"] = false; 
+            //     (*json)["error"] = "Wrong argument: <group> is invalid.";
+            //     return json;
+            // }
             isDevcie = false;
             id = this->opts->groupId;
             json = this->coreStub->getPolicyById(isDevcie,id);
@@ -49,7 +140,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         if (this->opts->deviceId == -1 && this->opts->groupId == -1) {
             // (*json)["error"] = "Too many operation flags";
             // return json;
-            (*json)["error"] = "Wrong argument: <deviceId> or <groupId> should be specified by -d or -g option";
+            (*json)["is_success"] = false; 
+            (*json)["error"] = "Wrong argument: <device> or <group> should be specified by -d or -g option";
             return json;
         } 
         
@@ -58,7 +150,6 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         int id = this->opts->deviceId;
 
         //std::cout << "--GangDebug--id=" << id << std::endl;
-
         if (this->opts->groupId != -1){
             isDevcie = false;
             id = this->opts->groupId;
@@ -66,7 +157,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         XpumPolicyData policy;  
         policy.set_deviceid(id);
         if (this->opts->policyType.length() == 0) {
-            (*json)["error"] = "Wrong argument: <policyType> should be specified by --type option";
+            (*json)["is_success"] = false; 
+            (*json)["error"] = "Wrong argument: <type> should be specified by --type option";
             return json;
         } 
         if (!(this->opts->policyType == "1"
@@ -75,27 +167,36 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
                 ||this->opts->policyType == "4"
                 ||this->opts->policyType == "5"
             )) {
-            (*json)["error"] = "Wrong argument: <policyType> is invalid";
+            (*json)["is_success"] = false; 
+            (*json)["error"] = "Wrong argument: <type> is invalid";
             return json;
         } 
         policy.set_type(this->policyTypeEnumFromString(this->opts->policyType));
 
         //
         if (this->opts->policyConditionType.length() == 0) {
+            (*json)["is_success"] = false; 
             (*json)["error"] = "Wrong argument: <condition> should be specified by --condition option";
             return json;
         } else {   
             if (!(this->opts->policyConditionType == "1"
                 ||this->opts->policyConditionType == "2"
                 )) {
+                (*json)["is_success"] = false; 
                 (*json)["error"] = "Wrong argument: <condition> is invalid";
                 return json;
             } 
             if(this->opts->policyConditionType == "1" //"POLICY_CONDITION_TYPE_GREATER"
                 || this->opts->policyConditionType == "3" //"POLICY_CONDITION_TYPE_LESS"
                 ){
-                if (this->opts->threshold == -2) {
-                    (*json)["error"] = "Wrong argument: <threshold> should be specified by -t option";
+                // if (this->opts->threshold == -200000) {
+                //     (*json)["is_success"] = false; 
+                //     (*json)["error"] = "Wrong argument: <threshold> should be specified by --threshold option";
+                //     return json;
+                // }
+                if (this->opts->threshold < 0) {
+                    (*json)["is_success"] = false; 
+                    (*json)["error"] = "Wrong argument: <threshold> is invalid (not empty and greater than or equal 0)";
                     return json;
                 }
                 policy.mutable_condition()->set_threshold(this->opts->threshold);
@@ -103,22 +204,26 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             policy.mutable_condition()->set_type(this->policyConditionTypeEnumFromString(this->opts->policyConditionType));
         }
         if (this->opts->policyActionType.length() == 0) {
+            (*json)["is_success"] = false; 
             (*json)["error"] = "Wrong argument: <action> should be specified by --action option";
             return json;
         } else {
             if (!(this->opts->policyActionType == "1"
                 ||this->opts->policyActionType == "2"
                 )) {
+                (*json)["is_success"] = false; 
                 (*json)["error"] = "Wrong argument: <action> is invalid";
                 return json;
             } 
             if(this->opts->policyActionType == "1" //"POLICY_ACTION_TYPE_THROTTLE_DEVICE"
                 ){
                 if (this->opts->throttlefrequencymin == -200000) {
+                    (*json)["is_success"] = false; 
                     (*json)["error"] = "Wrong argument: <throttlefrequencymin> should be specified by --throttlefrequencymin option";
                     return json;
                 }
                 if (this->opts->throttlefrequencymax == -200000) {
+                    (*json)["is_success"] = false; 
                     (*json)["error"] = "Wrong argument: <throttlefrequencymax> should be specified by --throttlefrequencymax option";
                     return json;
                 }
@@ -126,6 +231,13 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
                 policy.mutable_action()->set_throttle_device_frequency_max(this->opts->throttlefrequencymax);
             }
             policy.mutable_action()->set_type(this->policyActionTypeEnumFromString(this->opts->policyActionType));
+        }
+
+        //isTypeConditionActionMatch
+        if(!this->isTypeConditionActionMatch()){
+            (*json)["is_success"] = false; 
+            (*json)["error"] = "Wrong argument: <type> <condition> <action> do not match. Please list matched items by --listalltypes option";
+            return json;
         }
 
         //set_notifycallbackurl
@@ -140,7 +252,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         if (this->opts->deviceId == -1 && this->opts->groupId == -1) {
             // (*json)["error"] = "Too many operation flags";
             // return json;
-            (*json)["error"] = "Wrong argument: <deviceId> or <groupId> should be specified by -d or -g option";
+            (*json)["is_success"] = false; 
+            (*json)["error"] = "Wrong argument: <device> or <group> should be specified by -d or -g option";
             return json;
         } 
         
@@ -154,7 +267,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         XpumPolicyData policy;  
         policy.set_deviceid(id);
         if (this->opts->policyType.length() == 0) {
-            (*json)["error"] = "Wrong argument: <policyType> should be specified by --policyType option";
+            (*json)["is_success"] = false; 
+            (*json)["error"] = "Wrong argument: <type> should be specified by --type option";
             return json;
         } 
         if (!(this->opts->policyType == "1"
@@ -163,7 +277,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
                 ||this->opts->policyType == "4"
                 ||this->opts->policyType == "5"
             )) {
-            (*json)["error"] = "Wrong argument: <policyType> is invalid";
+            (*json)["is_success"] = false; 
+            (*json)["error"] = "Wrong argument: <type> is invalid";
             return json;
         } 
         policy.set_type(this->policyTypeEnumFromString(this->opts->policyType));
@@ -173,6 +288,35 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         return json;
     }
     return json;
+}
+
+bool ComletPolicy::isTypeConditionActionMatch(){
+        // +-------------------------------+---------------+--------------------------------------------------+
+		// | Types                         | Conditions    | Actions                                          |
+		// +-------------------------------+---------------+--------------------------------------------------+
+		// | 1. GPU Core Temperature       | 1. More than  | 1. Throttle GPU Core                             |
+		// | 2. Programming Errors         | 1. More than  | 2. Reset GPU                                     |
+		// | 3. Driver Errors              | 1. More than  | 2. Reset GPU                                     |
+		// | 4. Cache Errors Correctable   | 1. More than  | 2. Reset GPU                                     |
+		// | 5. Cache Errors Uncorrectable | 2. When occur | 2. Reset GPU                                     |
+		// +-------------------------------+---------------+--------------------------------------------------+
+        bool isMatch = false;
+        if(!isMatch && (this->opts->policyType == "1" && this->opts->policyConditionType == "1" && this->opts->policyActionType == "1")){
+            isMatch = true;
+        }
+        if(!isMatch && (this->opts->policyType == "2" && this->opts->policyConditionType == "1" && this->opts->policyActionType == "2")){
+            isMatch = true;
+        }
+        if(!isMatch && (this->opts->policyType == "3" && this->opts->policyConditionType == "1" && this->opts->policyActionType == "2")){
+            isMatch = true;
+        }
+        if(!isMatch && (this->opts->policyType == "4" && this->opts->policyConditionType == "1" && this->opts->policyActionType == "2")){
+            isMatch = true;
+        }
+        if(!isMatch && (this->opts->policyType == "5" && this->opts->policyConditionType == "2" && this->opts->policyActionType == "2")){
+            isMatch = true;
+        }
+        return isMatch;
 }
 
 XpumPolicyType ComletPolicy::policyTypeEnumFromString(std::string &type) {
@@ -242,6 +386,63 @@ XpumPolicyActionType ComletPolicy::policyActionTypeEnumFromString(std::string& t
         return POLICY_ACTION_TYPE_RESET_DEVICE;
     }else{
         return POLICY_ACTION_TYPE_NULL;
+    }
+}
+
+static void showAllSupported(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigAllSupported, *json);
+    table.show(out);
+}
+
+static void showListDevice(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigListDevice, *json);
+    table.show(out);
+}
+
+static void showListMulti(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    CharTable table(ComletConfigListAll, *json);
+    table.show(out);
+}
+
+static void showCreateResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    out << (*json)["msg"].get<std::string>() << std::endl;
+}
+
+static void showRemoveResult(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    out << (*json)["msg"].get<std::string>() << std::endl;
+}
+
+void ComletPolicy::getTableResult(std::ostream &out) {
+    auto res = run();
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+    *json = *res;
+
+    if (this->opts->listAll) {
+        if (this->opts->deviceId >= 0){
+            showListDevice(out, json);
+        } else if (this->opts->groupId > 0){
+            showListDevice(out, json);
+        } else{
+            showListMulti(out, json);
+        }  
+        return;
+    }
+    if (this->opts->listalltypes) {
+        showAllSupported(out, json);
+        return;
+    }
+
+    if (this->opts->create) {
+        showCreateResult(out, json);
+        return;
+    }
+    if (this->opts->remove) {
+        showRemoveResult(out, json);
+        return;
     }
 }
 

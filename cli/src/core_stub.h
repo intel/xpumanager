@@ -31,12 +31,12 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> groupAddDevice(int groupId, int deviceId);
     std::unique_ptr<nlohmann::json> groupRemoveDevice(int groupId, int deviceId);
 
-    std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level);
-    std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId);
-    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level);
-    std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId);
+    std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr);
     std::string diagnosticResultEnumToString(DiagnosticsTaskResult result);
-    std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type);
+    std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type, bool rawComponentTypeStr);
 
     std::unique_ptr<nlohmann::json> getAllHealth();
     std::unique_ptr<nlohmann::json> getHealth(int deviceId, int componentType);
@@ -55,10 +55,13 @@ class CoreStub {
     //config related interface
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2);
-    std::unique_ptr<nlohmann::json> setDevicePowerlimit(int deviceId, int power, int interval);
+    std::unique_ptr<nlohmann::json> setDevicePowerlimit(int deviceId, int tileId, int power, int interval);
     std::unique_ptr<nlohmann::json> setDeviceStandby(int deviceId, int tileId, XpumStandbyMode mode);
     std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq);
     std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId);
+    std::unique_ptr<nlohmann::json> getPerformanceFactor(int deviceId, int tileId);
+    std::unique_ptr<nlohmann::json> setPerformanceFactor(int deviceId, int tileId, xpum_engine_type_flags_t engine, double factor);
+    
     std::unique_ptr<nlohmann::json> resetDevice(int deviceId, bool force);
     std::string schedulerModeEnumToString(XpumSchedulerMode mode);
     std::string standbyModeEnumToString(XpumStandbyMode mode);
@@ -77,13 +80,17 @@ class CoreStub {
 	
     std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath );
 
-    std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<int> metricsTypeList);
+    std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_stats_type_t> metricsTypeList);
     std::unique_ptr<nlohmann::json> stopDumpRawDataTask(int taskId);
     std::unique_ptr<nlohmann::json> listDumpRawDataTasks();
 
     static std::string isotimestamp(uint64_t t);
 
     static std::string metricsTypeToString(xpum_stats_type_t metricsType);
+
+    std::unique_ptr<nlohmann::json> setAgentConfig(std::string key, void* pValue);
+
+    std::unique_ptr<nlohmann::json> getAgentConfig();
     
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;

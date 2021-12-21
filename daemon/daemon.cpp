@@ -7,13 +7,13 @@
 #include <grpc/grpc.h>
 #include <pwd.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include <chrono>
 #include <condition_variable>
+#include <cstdlib>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -48,7 +48,7 @@ char* log_file_name = nullptr;
 char* enabled_metrics = nullptr;
 std::size_t log_max_size = 10 * 1024 * 1024;
 std::size_t log_max_files = 3;
-std::string log_level = "info";
+std::string log_level = "";
 
 std::mutex xpummutex;
 std::atomic_bool stop(false);
@@ -60,46 +60,48 @@ std::string XpumCoreServiceImpl::dumpRawDataFileFolder;
 void print_help(const char* app_name) {
     printf("\n Usage: %s [OPTIONS]\n\n", app_name);
     printf("  Options:\n");
-    printf("   -h, --help                       Print this help\n");
+    printf("   -h, --help                       print this help\n");
     printf("   -p, --pid_file=filename          PID file used by daemonized app\n");
     printf("   -s, --socket_file=filename       socket file used by daemonized app\n");
     printf("   -d, --dump_folder=foldername     dump folder used by daemonized app\n");
+    printf("       --log_level=LEVEL            log level (trace, debug, info, warn, error)\n");
     printf("   -l, --log_file=filename          logfile to write\n");
     printf("       --log_max_size=number        max size of log file in MB\n");
     printf("       --log_max_files=number       max number of log files\n");
-    printf("       --log_level=LEVEL            log level (trace, debug, info, warning, error)\n");
-    printf("       --enable_metrics=METRICS     list enabled metric indexes, seperated by comma\n");
-    printf("                                    Index   Metric                                              Default\n");
-    printf("                                      0     GPU_UTILIZATION                                     on\n");
-    printf("                                      1     EU_ACTIVE                                           off\n");
-    printf("                                      2     EU_STALL                                            off\n");
-    printf("                                      3     EU_IDLE                                             off\n");
-    printf("                                      4     POWER                                               on\n");
-    printf("                                      5     ENERGY                                              on\n");
-    printf("                                      6     GPU_FREQUENCY                                       on\n");
-    printf("                                      7     GPU_CORE_TEMPERATURE                                on\n");
-    printf("                                      8     MEMORY_USED                                         on\n");
-    printf("                                      9     MEMORY_UTILIZATION                                  on\n");
-    printf("                                      10    MEMORY_BANDWIDTH                                    on\n");
-    printf("                                      11    MEMORY_READ                                         on\n");
-    printf("                                      12    MEMORY_WRITE                                        on\n");
-    printf("                                      13    MEMORY_READ_THROUGHPUT                              on\n");
-    printf("                                      14    MEMORY_WRITE_THROUGHPUT                             on\n");
-    printf("                                      15    ENGINE_GROUP_COMPUTE_ALL_UTILIZATION                on\n");
-    printf("                                      16    ENGINE_GROUP_MEDIA_ALL_UTILIZATION                  on\n");
-    printf("                                      17    ENGINE_GROUP_COPY_ALL_UTILIZATION                   on\n");
-    printf("                                      18    ENGINE_GROUP_RENDER_ALL_UTILIZATION                 on\n");
-    printf("                                      19    ENGINE_GROUP_3D_ALL_UTILIZATION                     on\n");
-    printf("                                      20    RAS_ERROR_CAT_RESET                                 on\n");
-    printf("                                      21    RAS_ERROR_CAT_PROGRAMMING_ERRORS                    on\n");
-    printf("                                      22    RAS_ERROR_CAT_DRIVER_ERRORS                         on\n");
-    printf("                                      23    RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE              on\n");
-    printf("                                      24    RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE            on\n");
-    printf("                                      25    RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE            on\n");
-    printf("                                      26    RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE          on\n");
-    printf("                                      27    GPU_REQUEST_FREQUENCY                               on\n");
-    printf("                                      28    MEMORY_TEMPERATURE                                  on\n");
-    printf("                                      29    FREQUENCY_THROTTLE                                  on\n");
+    printf("   -m, --enable_metrics=METRICS     list enabled metric indexes, seperated by comma,\n");
+    printf("                                    use hyphen to indicate a range (e.g., 0,4-7,27-29)\n");
+    printf("        Index   Metric                                              Default\n");
+    printf("        -----   --------------------------------------------------  -------\n");
+    printf("        0       GPU_UTILIZATION                                     on\n");
+    printf("        1       EU_ACTIVE                                           off\n");
+    printf("        2       EU_STALL                                            off\n");
+    printf("        3       EU_IDLE                                             off\n");
+    printf("        4       POWER                                               on\n");
+    printf("        5       ENERGY                                              on\n");
+    printf("        6       GPU_FREQUENCY                                       on\n");
+    printf("        7       GPU_CORE_TEMPERATURE                                on\n");
+    printf("        8       MEMORY_USED                                         on\n");
+    printf("        9       MEMORY_UTILIZATION                                  on\n");
+    printf("        10      MEMORY_BANDWIDTH                                    on\n");
+    printf("        11      MEMORY_READ                                         on\n");
+    printf("        12      MEMORY_WRITE                                        on\n");
+    printf("        13      MEMORY_READ_THROUGHPUT                              on\n");
+    printf("        14      MEMORY_WRITE_THROUGHPUT                             on\n");
+    printf("        15      ENGINE_GROUP_COMPUTE_ALL_UTILIZATION                on\n");
+    printf("        16      ENGINE_GROUP_MEDIA_ALL_UTILIZATION                  on\n");
+    printf("        17      ENGINE_GROUP_COPY_ALL_UTILIZATION                   on\n");
+    printf("        18      ENGINE_GROUP_RENDER_ALL_UTILIZATION                 on\n");
+    printf("        19      ENGINE_GROUP_3D_ALL_UTILIZATION                     on\n");
+    printf("        20      RAS_ERROR_CAT_RESET                                 on\n");
+    printf("        21      RAS_ERROR_CAT_PROGRAMMING_ERRORS                    on\n");
+    printf("        22      RAS_ERROR_CAT_DRIVER_ERRORS                         on\n");
+    printf("        23      RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE              on\n");
+    printf("        24      RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE            on\n");
+    printf("        25      RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE            on\n");
+    printf("        26      RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE          on\n");
+    printf("        27      GPU_REQUEST_FREQUENCY                               on\n");
+    printf("        28      MEMORY_TEMPERATURE                                  on\n");
+    printf("        29      FREQUENCY_THROTTLE                                  on\n");
     printf("\n");
 }
 
@@ -142,9 +144,13 @@ void runRPCServer() {
         // Wait for the stop signal and then shut the server.
         cv.wait(lock);
     }
-
+    
     // Shut down server.
+    XPUM_LOG_INFO("XPUM: Shutting down RPC server...");
+    // must close service before shutdown the server to avoid stuck in server->Shutdown()
+    service.close();
     server->Shutdown();
+    XPUM_LOG_INFO("XPUM: Waiting for RPC server shutdown...");
     grpc_server_thread.join();
 }
 
@@ -192,6 +198,7 @@ void createDumpFolder() {
         dumpFolder = "/tmp/xpumdump";
     }
     // create dump folder
+    umask(0000);
     int res = mkdir(dumpFolder.c_str(), 0775);
     if (res != 0 && errno != EEXIST) {
         std::cerr << "Fail to create folder" << std::endl;
@@ -236,7 +243,7 @@ void parse_opts(int argc, char* argv[]) {
         {"socket_file", required_argument, 0, 's'},
         {"help", no_argument, 0, 'h'},
         {"pid_file", required_argument, 0, 'p'},
-        {"dump_folder", optional_argument, 0, 'd'},
+        {"dump_folder", required_argument, 0, 'd'},
         {"enable_metrics", required_argument, 0, 'm'},
         // log options:
         {"log_file", required_argument, 0, 'l'},
@@ -301,10 +308,8 @@ using namespace xpum::daemon;
 
 int main(int argc, char* argv[]) {
     parse_opts(argc, argv);
-
     umask(S_IXUSR | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
-
-    Logger::init(log_file_name, log_max_size, log_max_files, log_level);
+    Logger::init(log_level, log_file_name, log_max_size, log_max_files);
 
     writePID();
     createDumpFolder();

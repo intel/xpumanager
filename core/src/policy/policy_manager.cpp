@@ -7,6 +7,8 @@
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/logger.h"
+#include "infrastructure/utility.h"
+#include "topology/hwinfo.h"
 #include "xpum_structs.h"
 
 namespace xpum {
@@ -44,6 +46,7 @@ void print_policy_for_demo(const std::string &tag,xpum_policy_t *p_para) {
 }
 
 void print_policy_for_demoEx2(const std::string &tag,std::shared_ptr<xpum_policy_data> p_para) {
+    //XPUM_LOG_TRACE
     XPUM_LOG_TRACE("-----------------{}-----------begin---",tag);
     XPUM_LOG_TRACE("Policy Device Id: {}", p_para->deviceId);
     XPUM_LOG_TRACE("Policy Type: {}", p_para->type);
@@ -51,7 +54,6 @@ void print_policy_for_demoEx2(const std::string &tag,std::shared_ptr<xpum_policy
     XPUM_LOG_TRACE("Policy Condition Threshold: {}", p_para->condition.threshold);
     XPUM_LOG_TRACE("Policy Action type: {}", p_para->action.type);
     XPUM_LOG_TRACE("Policy isDeletePolicy: {}", p_para->isDeletePolicy);
-    //XPUM_LOG_TRACE("Policy timestamp: {}", p_para->timestamp);
     XPUM_LOG_TRACE("Policy curValue: {}", p_para->curValue);
     XPUM_LOG_TRACE("Policy preValue: {}", p_para->preValue);
     XPUM_LOG_TRACE("Policy curTimestamp: {}", p_para->curTimestamp);
@@ -67,10 +69,21 @@ PolicyManager::PolicyManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic), p_group_manager(p_group_manager) {
     XPUM_LOG_DEBUG("PolicyManager()");
     this->freq = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+    this->p_timer = nullptr;
+    this->p_timer_old = nullptr;
 }
 
 PolicyManager::~PolicyManager() {
     // XPUM_LOG_DEBUG("~PolicyManager()");
+}
+
+void PolicyManager::resetCheckFrequency(){
+    this->stop();
+    XPUM_LOG_INFO("PolicyManager::resetCheckFrequency(): stop check with old freq:{}",this->freq);
+    //std::this_thread::sleep_for(std::chrono::milliseconds(old*2));
+    this->freq = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+    this->start();
+    XPUM_LOG_INFO("PolicyManager::resetCheckFrequency(): start check with new freq:{}",this->freq);
 }
 
 void PolicyManager::init() {
@@ -82,15 +95,20 @@ void PolicyManager::close() {
 }
 
 void PolicyManager::stop() {
-    timer.cancel();
+    if(this->p_timer == nullptr){
+        return;
+    }
+    this->p_timer->cancel();
+    this->p_timer_old = this->p_timer;
 }
 
 void PolicyManager::start() {
     long long now = Utility::getCurrentMillisecond();
     long delay = freq - now % freq;
     std::weak_ptr<PolicyManager> this_weak_ptr = shared_from_this();
-
-    timer.scheduleAtFixedRate(delay, freq, [delay, this_weak_ptr]() {
+    // Start new timer
+    this->p_timer = std::make_shared<Timer>();
+    this->p_timer->scheduleAtFixedRate(delay, freq, [delay, this_weak_ptr]() {
         XPUM_LOG_TRACE("PolicyManager::scheduleAtFixedRate(): start cycle policy check.");
         auto p_this = this_weak_ptr.lock();
         if (p_this == nullptr) {
@@ -106,6 +124,12 @@ void PolicyManager::handleForOneCyle() {
     std::unique_lock<std::mutex> lock(this->mutex);
     this->checkPolicy();
     this->savePolicyStatus();
+
+    //Clear old timer
+    if(this->p_timer_old != nullptr && this->p_timer_old->isCanceld()){
+        this->p_timer_old = nullptr;
+        XPUM_LOG_INFO("PolicyManager::handleForOneCyle(): old timer has been canceld.");
+    }
     //XPUM_LOG_INFO("---PolicyManager::handleForOneCyle()---end--");
 }
 
@@ -117,6 +141,13 @@ void PolicyManager::checkPolicy() {
 
         //Get devcie metric
         xpum_device_id_t deviceId = it->first;
+
+        // Check device id
+        xpum_result_t result = this->isValidateDeviceId(deviceId);
+        if (result != XPUM_OK) {
+            XPUM_LOG_ERROR("PolicyManager::checkPolicy(): device_id ({}) is not vaild.", deviceId);
+            continue;
+        }
 
         //XPUM_LOG_INFO("---PolicyManager::checkPolicy()---2--deviceId={}",deviceId);
         int count=-1;
@@ -155,14 +186,50 @@ void PolicyManager::checkPolicy() {
 
         //isResetDevice
         if (isResetDevice) {
-            XPUM_LOG_TRACE("PolicyManager::triggerAction():before resetDevice(deviceId={})",deviceId); 
+            XPUM_LOG_INFO("PolicyManager::triggerAction():before resetDevice(deviceId={})",deviceId); 
             this->p_device_manager->resetDevice(std::to_string(deviceId), true);
-            XPUM_LOG_TRACE("PolicyManager::triggerAction():after resetDevice(deviceId={})",deviceId); 
+            XPUM_LOG_INFO("PolicyManager::triggerAction():after resetDevice(deviceId={})",deviceId); 
         }
     }
 }
 
+bool PolicyManager::isGpuExisted(xpum_device_id_t device_id){
+    // static int count = 1;
+    // if(count++ % 5 == 0){
+    //     XPUM_LOG_INFO("PolicyManager::isGpuExisted(): return false & count = {}",count);
+    //     return false;
+    // }
+    // XPUM_LOG_INFO("PolicyManager::isGpuExisted(): return true & count = {}",count);
+    // return true;
+
+    bool bExist = false;
+    try {
+        //std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        bExist = xpum::HWInfo::isPcieDevExist(device_id);
+        XPUM_LOG_TRACE("PolicyManager::isGpuExisted(): Device={},bExist={}", device_id, bExist);
+    } catch (std::exception& e) {
+        XPUM_LOG_ERROR("PolicyManager::isGpuExisted(): failed to detect GPU missing with exception: {}", e.what());
+    }  
+    return bExist;
+}
+
 bool PolicyManager::isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_policy) {
+    //XPUM_POLICY_TYPE_GPU_MISSING
+    if (p_policy->type == XPUM_POLICY_TYPE_GPU_MISSING) {
+        bool isGpuMissing = !this->isGpuExisted(p_policy->deviceId);
+        p_policy->curValue = isGpuMissing?1:0;
+        p_policy->curTimestamp = Utility::getCurrentMillisecond();
+        p_policy->isTileData = false;
+        p_policy->tileId = 0;
+        if(p_policy->preValue == 0 && p_policy->curValue == 1){
+            //Only care occur
+            XPUM_LOG_INFO("PolicyManager::isPolicyMeetCondition(): XPUM_POLICY_TYPE_GPU_MISSING return true");
+            return true;
+        }
+        XPUM_LOG_INFO("PolicyManager::isPolicyMeetCondition(): XPUM_POLICY_TYPE_GPU_MISSING return false");
+        return false;
+    }
+
     //std::shared_ptr<std::vector<xpum_device_metrics_t>> pMetricCur = std::make_shared<std::vector<xpum_device_metrics_t>>(count);
     auto pMetricCur = p_policy->pMetricCur;
     for (auto itVector = pMetricCur->begin(); itVector != pMetricCur->end(); itVector++) {
@@ -179,33 +246,27 @@ bool PolicyManager::isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_po
             }
         }
 
-        //check condition
+        //save data
         uint64_t curValue = curData->value/curData->scale;
+        p_policy->curValue = curValue;
+        p_policy->curTimestamp = curTimestamp;
+        p_policy->isTileData = (*itVector).isTileData;
+        p_policy->tileId = (*itVector).tileId;
+                
+        //check condition      
         if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER) {
             uint64_t threshold = p_policy->condition.threshold;
             if (curValue > threshold) {
-                p_policy->curValue = curValue;
-                p_policy->curTimestamp = curTimestamp;
-                p_policy->isTileData = (*itVector).isTileData;
-                p_policy->tileId = (*itVector).tileId;
                 return true;
             }
         } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_LESS) {
             uint64_t threshold = p_policy->condition.threshold;
             if (curValue < threshold) {
-                p_policy->curValue = curValue;
-                p_policy->curTimestamp = curTimestamp;
-                p_policy->isTileData = (*itVector).isTileData;
-                p_policy->tileId = (*itVector).tileId;
                 return true;
             }
-        } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_WHEN_INCREASE) {
+        } else if (p_policy->condition.type == XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR) {
             uint64_t preValue = p_policy->preValue;
             if (curValue > preValue) {
-                p_policy->curValue = curValue;
-                p_policy->curTimestamp = curTimestamp;
-                p_policy->isTileData = (*itVector).isTileData;
-                p_policy->tileId = (*itVector).tileId;
                 return true;
             }
         }
@@ -282,13 +343,13 @@ bool PolicyManager::triggerAction(std::shared_ptr<xpum_policy_data> p_policy) {
     //XPUM_LOG_INFO("---PolicyManager::triggerAction()---1--deviceId={}",p_policy->deviceId); 
     if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
         Frequency freq(ZES_FREQ_DOMAIN_GPU, p_policy->deviceId, p_policy->action.throttle_device_frequency_min, p_policy->action.throttle_device_frequency_max);
-        XPUM_LOG_TRACE("PolicyManager::triggerAction():before setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})",p_policy->deviceId,p_policy->action.throttle_device_frequency_min,p_policy->action.throttle_device_frequency_max); 
+        XPUM_LOG_INFO("PolicyManager::triggerAction():before setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})",p_policy->deviceId,p_policy->action.throttle_device_frequency_min,p_policy->action.throttle_device_frequency_max); 
         this->p_device_manager->setDeviceFrequencyRange(std::to_string(p_policy->deviceId), freq);
-        XPUM_LOG_TRACE("PolicyManager::triggerAction():after setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})",p_policy->deviceId,p_policy->action.throttle_device_frequency_min,p_policy->action.throttle_device_frequency_max); 
+        XPUM_LOG_INFO("PolicyManager::triggerAction():after setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})",p_policy->deviceId,p_policy->action.throttle_device_frequency_min,p_policy->action.throttle_device_frequency_max); 
         return false;
     } else if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE) {
         // Reset device will lead to reiniti all. So reset it after this device check finished.
-        XPUM_LOG_TRACE("PolicyManager::triggerAction(): do XPUM_POLICY_ACTION_TYPE_RESET_DEVICE for deviceId={}",p_policy->deviceId); 
+        XPUM_LOG_INFO("PolicyManager::triggerAction(): do XPUM_POLICY_ACTION_TYPE_RESET_DEVICE for deviceId={}",p_policy->deviceId); 
         return true;
     } else if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_NULL) {
         //XPUM_LOG_INFO("---PolicyManager::triggerAction()---XPUM_POLICY_ACTION_TYPE_NULL--deviceId={}",p_policy->deviceId);
@@ -332,6 +393,11 @@ bool PolicyManager::isInDeviceIds(xpum_device_id_t deviceId, xpum_device_id_t de
 }
 
 xpum_result_t PolicyManager::xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
+    xpum_result_t result = this->isValidateDeviceId(deviceId);
+    if (result != XPUM_OK) {
+        XPUM_LOG_INFO("PolicyManager::xpumSetPolicy(): device_id ({}) is not vaild.", deviceId);
+        return result;
+    }
     //XPUM_LOG_INFO("---PolicyManager::xpumSetPolicy()---1--deviceId={}",deviceId);
     //print_policy_for_demo("xpumSetPolicy", &policy);
     xpum_device_id_t deviceList[] = {deviceId};
@@ -348,6 +414,13 @@ xpum_result_t PolicyManager::xpumSetPolicyByGroup(xpum_group_id_t groupId, xpum_
         return XPUM_RESULT_GROUP_NOT_FOUND;
     }
     return xpumSetPolicyByDeviceIds(info.deviceList, info.count, policy);
+}
+
+xpum_result_t PolicyManager::isValidateDeviceId(xpum_device_id_t deviceId) {
+    auto pDevice = this->p_device_manager->getDevice(std::to_string(deviceId));
+    if (pDevice == nullptr)
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    return XPUM_OK;
 }
 
 xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds[], int count, xpum_policy_t policy) {
@@ -375,8 +448,16 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
     } else {
         for (int i = 0; i < count; i++) {
             //XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds()---2-1-");
+            xpum_result_t result;
+            // Check device id
+            result = this->isValidateDeviceId(deviceIds[i]);
+            if (result != XPUM_OK) {
+                XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds(): device_id ({}) is not vaild.", deviceIds[i]);
+                return result;
+            }
+
             // Check policy validation
-            xpum_result_t result = this->checkPolicyValidation(policy);
+            result = this->checkPolicyValidation(policy);
             if (result != XPUM_OK) {
                 XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds(): checkPolicyValidation failed.");
                 return result;
@@ -426,24 +507,83 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
 }
 
 xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
-    // Only limit policy type support limit action
-    if (policy.action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
-        if (policy.type != XPUM_POLICY_TYPE_GPU_TEMPERATURE) {
-            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+    if(policy.type == XPUM_POLICY_TYPE_GPU_TEMPERATURE){
+        if(!(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER
+            ||policy.condition.type == XPUM_POLICY_CONDITION_TYPE_LESS)){
+            return XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT;
         }
-    } else if (policy.action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE) {
-        if (!( policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS 
-                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS 
-                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE 
-                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE)) {
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL
+            ||policy.action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE)){
             return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
         }
     }
+
+    if(policy.type == XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE
+        ||policy.type == XPUM_POLICY_TYPE_GPU_POWER){
+        if(!(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER
+            ||policy.condition.type == XPUM_POLICY_CONDITION_TYPE_LESS)){
+            return XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT;
+        }
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL)){
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
+    if(policy.type == XPUM_POLICY_TYPE_GPU_MISSING){
+        if(!(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR)){
+            return XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT;
+        }
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL)){
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
+    if(policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET){
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL)){
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
+    if(policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE ){
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL
+            ||policy.action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE
+            )){
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
+    //XPUM_RESULT_POLICY_INVALID_FREQUENCY
+    if(policy.action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE){
+        if(policy.action.throttle_device_frequency_min <= 0
+        || policy.action.throttle_device_frequency_max <= 0
+        || (policy.action.throttle_device_frequency_min >= policy.action.throttle_device_frequency_max )
+        ){
+            return XPUM_RESULT_POLICY_INVALID_FREQUENCY;
+        }
+    }
+
+    //XPUM_RESULT_POLICY_INVALID_THRESHOLD
+    if(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER
+        ||policy.condition.type == XPUM_POLICY_CONDITION_TYPE_LESS){
+        if(policy.condition.threshold < 0){
+            return XPUM_RESULT_POLICY_INVALID_THRESHOLD;
+        }
+    }
+    
     return XPUM_OK;
 }
 
 xpum_result_t PolicyManager::xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[], int* count) {
     //XPUM_LOG_INFO("---PolicyManager::xpumGetPolicy()---1--");
+    // Check device id
+    xpum_result_t result = this->isValidateDeviceId(deviceId);
+    if (result != XPUM_OK) {
+        XPUM_LOG_INFO("PolicyManager::xpumGetPolicy(): device_id ({}) is not vaild.", deviceId);
+        return result;
+    }
     xpum_device_id_t deviceList[] = {deviceId};
     return xpumGetPolicyByDeviceIds(deviceList, 1, resultList, count);
 }

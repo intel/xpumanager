@@ -10,9 +10,12 @@ namespace xpum::cli {
 struct ComletConfigOptions {
     int deviceId = -1;
     int32_t tileId = -1;
-    std::string schedulerTimeslice ="";
-    std::string schedulerTimeout ="";
-    bool schedulerExclusive = false;
+    std::string scheduler;
+    std::string performancefactor;
+    bool resetDevice = false;
+    //std::string schedulerTimeslice ="";
+    //std::string schedulerTimeout ="";
+    //bool schedulerExclusive = false;
     std::string powerlimit ="";
     std::string standby ="";
     std::string frequencyrange ="";
@@ -20,11 +23,25 @@ struct ComletConfigOptions {
 
 class ComletConfig : public ComletBase {
    public:
-    ComletConfig() : ComletBase("config", "get/set configuration of the device") {}
+    ComletConfig() : ComletBase("config", "get/set configuration of the device") {
+        printHelpWhenNoArgs = true;
+    }
     virtual ~ComletConfig() {}
 
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
+
+    virtual void getTableResult(std::ostream &out) override;
+
+    inline const bool isQuery() const {
+        return this->opts->deviceId >= 0
+            && this->opts->scheduler.empty()
+            && this->opts->performancefactor.empty()
+            && this->opts->powerlimit.empty()
+            && this->opts->standby.empty()
+            && this->opts->frequencyrange.empty()
+            && !this->opts->resetDevice;
+    }
 
    private:
     std::unique_ptr<ComletConfigOptions> opts;

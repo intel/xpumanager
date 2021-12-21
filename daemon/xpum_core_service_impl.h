@@ -6,8 +6,12 @@
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 
+#include <atomic>
+
 #include "core.grpc.pb.h"
 #include "core.pb.h"
+#include "xpum_api.h"
+#include "xpum_structs.h"
 
 namespace xpum::daemon {
 
@@ -17,6 +21,8 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
 
     XpumCoreServiceImpl(void);
     virtual ~XpumCoreServiceImpl();
+
+    void close();    
 
     virtual grpc::Status getVersion(grpc::ServerContext* context, const google::protobuf::Empty* request,
                                     XpumVersionInfoArray* response) override;
@@ -78,6 +84,7 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status getPolicy(::grpc::ServerContext* context, const ::GetPolicyRequest* request, ::GetPolicyResponse* response) override;
     virtual ::grpc::Status setPolicy(::grpc::ServerContext* context, const ::SetPolicyRequest* request, ::SetPolicyResponse* response) override;
     virtual ::grpc::Status readPolicyNotifyData(::grpc::ServerContext* context, const google::protobuf::Empty* request, grpc::ServerWriter<ReadPolicyNotifyDataResponse>* writer) override;
+    virtual ::grpc::Status handleErrorForGetPolicy(xpum_result_t res,::GetPolicyResponse* response);
     
     
     virtual ::grpc::Status getDeviceConfig(::grpc::ServerContext* context, const ::ConfigDeviceDataRequest* request, ::ConfigDeviceData* response) override;
@@ -87,14 +94,19 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status setDeviceStandbyMode(::grpc::ServerContext* context, const ::ConfigDeviceStandbyRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status getDeviceProcessState(::grpc::ServerContext* context, const ::DeviceId* request, ::DeviceProcessStateResponse* response) override;
     virtual ::grpc::Status resetDevice(::grpc::ServerContext* context, const ::ResetDeviceRequest* request, ::ResetDeviceResponse* response) override;
+    virtual ::grpc::Status getPerformanceFactor(::grpc::ServerContext* context, const ::DeviceDataRequest* request, ::DevicePerformanceFactorResponse* response) override;
+    virtual ::grpc::Status setPerformanceFactor(::grpc::ServerContext* context, const ::PerformanceFactor* request, ::DevicePerformanceFactorSettingResponse* response) override;
     std::string convertEngineId2Num(uint32_t engine);
 
     virtual ::grpc::Status startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response);
     virtual ::grpc::Status stopDumpRawDataTask(::grpc::ServerContext* context, const ::StopDumpRawDataTaskRequest* request, ::StopDumpRawDataTaskReponse* response);
     virtual ::grpc::Status listDumpRawDataTasks(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::ListDumpRawDataTaskResponse* response);
 
-    virtual ::grpc::Status setAgentConfig(::grpc::ServerContext* context, const ::AgentConfigMessage* request, ::AgentConfigResponse* response);
-    virtual ::grpc::Status getAgentConfig(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::AgentConfigResponse* response);
+    virtual ::grpc::Status setAgentConfig(::grpc::ServerContext* context, const ::SetAgentConfigRequest* request, ::SetAgentConfigResponse* response);
+    virtual ::grpc::Status getAgentConfig(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAgentConfigResponse* response);
+
+    private:
+        std::atomic_bool stop;
 };
 
 } // end namespace xpum::daemon

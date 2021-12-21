@@ -10,6 +10,7 @@
 #include "device/power.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
+#include "device/performancefactor.h"
 #include "health/health_data_type.h"
 #include "infrastructure/const.h"
 #include "infrastructure/measurement_data.h"
@@ -17,7 +18,7 @@
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 #include "level_zero/zet_api.h"
-#include "topology/topology.h"
+#include "topology/xe_link.h"
 
 namespace xpum {
 
@@ -76,12 +77,20 @@ class GPUDeviceStub {
 
     static void getPowerProps(const zes_device_handle_t& device, std::vector<Power>& powers);
 
+    static void getPerformanceFactor(const zes_device_handle_t& device, std::vector<PerformanceFactor>& pf);
+    static bool setPerformanceFactor(const zes_device_handle_t& device, PerformanceFactor &pf);
+
     static void getPowerLimits(const zes_device_handle_t& device,
                                Power_sustained_limit_t& sustained_limit,
                                Power_burst_limit_t& burst_limit,
                                Power_peak_limit_t& peak_limit);
+    static void getAllPowerLimits(const zes_device_handle_t& device,
+                                   std::vector<uint32_t>& tileIds,
+                                   std::vector<Power_sustained_limit_t>& sustained_limits,
+                                   std::vector<Power_burst_limit_t>& burst_limits,
+                                   std::vector<Power_peak_limit_t>& peak_limit);
 
-    static bool setPowerSustainedLimits(const zes_device_handle_t& device,
+    static bool setPowerSustainedLimits(const zes_device_handle_t& device, uint32_t tileId,
                                         const Power_sustained_limit_t& sustained_limit);
 
     static bool setPowerBurstLimits(const zes_device_handle_t& device,
@@ -118,6 +127,8 @@ class GPUDeviceStub {
     static void getFreqAvailableClocks(const zes_device_handle_t& device, uint32_t subdevice_id, std::vector<double>& clocks);
 
     static std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device);
+
+    static bool getFabricPorts(const zes_device_handle_t& device, std::vector<port_info>& portInfo);
 
    private:
     GPUDeviceStub();
@@ -189,6 +200,7 @@ class GPUDeviceStub {
     static bool isDevEntry(const std::string& entryName);
 
     static std::string buildErrors(const std::map<std::string, ze_result_t>& exception_msgs, const char* func, uint32_t line);
+    static std::string getProcessName(uint32_t processId);
 
    private:
     bool initialized;

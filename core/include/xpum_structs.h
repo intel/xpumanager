@@ -80,8 +80,12 @@ typedef enum xpum_result_enum {
     XPUM_GENERIC_ERROR,    ///< Function return with unknown errors
     XPUM_BUFFER_TOO_SMALL, ///< The buffer pass to function is too small
     XPUM_RESULT_DEVICE_NOT_FOUND,   ///< Device not found
+    XPUM_RESULT_TILE_NOT_FOUND,   ///< Tile not found
     XPUM_RESULT_GROUP_NOT_FOUND,
     XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT,
+    XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT,
+    XPUM_RESULT_POLICY_INVALID_THRESHOLD,
+    XPUM_RESULT_POLICY_INVALID_FREQUENCY,
     XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE,
     XPUM_GROUP_DEVICE_DUPLICATED,
     XPUM_GROUP_CHANGE_NOT_ALLOWED,
@@ -158,6 +162,11 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH,         ///< The physical EU simd width
     XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME,              ///< AMC string
     XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION,           ///< AMC firmware version
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER,             ///< Number of fabric ports
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_RX_SPEED,       ///< Maximum speed supported by the receive side of the port (sum of all lanes)
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_TX_SPEED,       ///< Maximum speed supported by the transmit side of the port (sum of all lanes)
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_RX_LANES_NUMBER,    ///< The number of lanes per the receive side of the port
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_TX_LANES_NUMBER,    ///< The number of lanes per the transmit side of the port
 } xpum_device_property_name_t;
 
 extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name);
@@ -541,6 +550,14 @@ struct xpum_device_process_t {
     uint64_t memSize;
     uint64_t sharedSize;
     xpum_engine_type_flags_t engine;
+    char processName[XPUM_MAX_STR_LENGTH];
+};
+
+struct xpum_device_performancefactor_t {
+    bool on_subdevice;
+    uint32_t subdevice_id;
+    double factor;
+    xpum_engine_type_flags_t engine;
 };
 
 struct xpum_frequency_range_t {
@@ -557,7 +574,19 @@ struct xpum_scheduler_data_t {
     xpum_scheduler_mode_t mode;
     xpum_engine_type_flags_t engine_types;
     xpum_scheduler_mode_t supported_modes;
+    uint64_t val1;
+    uint64_t val2;
 };
+struct xpum_power_prop_data_t {
+    bool on_subdevice;
+    uint32_t subdevice_Id;
+    bool can_control;
+    bool is_energy_threshold_supported;
+    int32_t default_limit;
+    int32_t min_limit;
+    int32_t max_limit;
+};
+
 struct xpum_scheduler_timeout_t {
     uint32_t subdevice_Id;
     uint64_t watchdog_timeout;
@@ -616,13 +645,14 @@ typedef enum xpum_policy_type_enum {
     XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
     // XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
     // XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
+    XPUM_POLICY_TYPE_GPU_MISSING,
     XPUM_POLICY_TYPE_MAX
 } xpum_policy_type_t;
 
 typedef enum xpum_policy_conditon_type_enum {
     XPUM_POLICY_CONDITION_TYPE_GREATER,
     XPUM_POLICY_CONDITION_TYPE_LESS,
-    XPUM_POLICY_CONDITION_TYPE_WHEN_INCREASE
+    XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR
 } xpum_policy_conditon_type_t;
 
 struct xpum_policy_condition_t {

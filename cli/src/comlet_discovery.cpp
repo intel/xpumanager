@@ -43,25 +43,25 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
                 { "label": "UUID", "value": "uuid" },
                 { "label": "Serial Number", "value": "serial_number" },
                 { "label": "Core Clock Rate", "value": "core_clock_rate_mhz", "suffix": " MHz" },
-                "none",
+                { "rowTitle": " " },
                 { "label": "Driver Version", "value": "driver_version" },
                 { "label": "Firmware Name", "value": "firmware_name" },
                 { "label": "Firmware Version", "value": "firmware_version" },
                 { "label": "Firmware Name", "value": "amc_firmware_name" },
                 { "label": "Firmware Version", "value": "amc_firmware_version" },
-                "none",
+                { "rowTitle": " " },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address" },
                 { "label": "PCI Slot", "value": "pci_slot" },
                 { "label": "PCIe Generation", "value": "pcie_generation" },
                 { "label": "PCIe Max Link Width", "value": "pcie_max_link_width" },
-                "none",
-                { "label": "Memory Physical Size", "value": "memory_physical_size_byte", "suffix": " MiB", "fixer": "Byte2MiB" },
-                { "label": "Max Mem Alloc Size", "value": "max_mem_alloc_size_byte", "suffix": " MiB", "fixer": "Byte2MiB" },
+                { "rowTitle": " " },
+                { "label": "Memory Physical Size", "value": "memory_physical_size_byte", "suffix": " MiB", "scale": 1048576 },
+                { "label": "Max Mem Alloc Size", "value": "max_mem_alloc_size_byte", "suffix": " MiB", "scale": 1048576 },
                 { "label": "Number of Memory Channels", "value": "number_of_memory_channels" },
                 { "label": "Memory Bus Width", "value": "memory_bus_width" },
                 { "label": "Max Hardware Contexts", "value": "max_hardware_contexts" },
                 { "label": "Max Command Queue Priority", "value": "max_command_queue_priority" },
-                "none",
+                { "rowTitle": " " },
                 { "label": "Number of Tiles", "value": "number_of_tiles" },
                 { "label": "Number of Slices", "value": "number_of_slices" },
                 { "label": "Number of Sub Slices per Slice", "value": "number_of_sub_slices_per_slice" },
@@ -73,7 +73,7 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
     }]
 })"_json);
 
-ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover devices on the system") {
+ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover the GPU devices installed on this machine and provide the device info.") {
 }
 
 void ComletDiscovery::setupOptions() {

@@ -17,13 +17,14 @@ XpumPolicyTypeToString = {
     core_pb2.POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE : "XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE",
     # core_pb2.POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE : "XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE",
     # core_pb2.POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE : "XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE",
+    core_pb2.POLICY_TYPE_GPU_MISSING : "XPUM_POLICY_TYPE_GPU_MISSING",
     core_pb2.POLICY_TYPE_MAX : "XPUM_POLICY_TYPE_MAX",
 }
 
 XpumPolicyConditionTypeToString = {  
     core_pb2.POLICY_CONDITION_TYPE_GREATER : "XPUM_POLICY_CONDITION_TYPE_GREATER",
     core_pb2.POLICY_CONDITION_TYPE_LESS : "XPUM_POLICY_CONDITION_TYPE_LESS",
-    core_pb2.POLICY_CONDITION_TYPE_WHEN_INCREASE : "XPUM_POLICY_CONDITION_TYPE_WHEN_INCREASE",
+    core_pb2.POLICY_CONDITION_TYPE_WHEN_INCREASE : "XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR",
 }
 
 XpumPolicyActionTypeToString = {  
@@ -43,13 +44,14 @@ XpumPolicyTypeFromString = {
     "XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE": core_pb2.POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
     # "XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE": core_pb2.POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
     # "XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE": core_pb2.POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
+    "XPUM_POLICY_TYPE_GPU_MISSING": core_pb2.POLICY_TYPE_GPU_MISSING,
     "XPUM_POLICY_TYPE_MAX": core_pb2.POLICY_TYPE_MAX,
 }
 
 XpumPolicyConditionTypeFromString = {  
     "XPUM_POLICY_CONDITION_TYPE_GREATER": core_pb2.POLICY_CONDITION_TYPE_GREATER,
     "XPUM_POLICY_CONDITION_TYPE_LESS": core_pb2.POLICY_CONDITION_TYPE_LESS,
-    "XPUM_POLICY_CONDITION_TYPE_WHEN_INCREASE": core_pb2.POLICY_CONDITION_TYPE_WHEN_INCREASE,
+    "XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR": core_pb2.POLICY_CONDITION_TYPE_WHEN_INCREASE,
 }
 
 XpumPolicyActionTypeFromString = {  
@@ -110,7 +112,9 @@ def setPolicy(id, isDevcie,input,is_delete_policy):
         policyConditionType = XpumPolicyConditionTypeFromString[input["condition"]["type"]]
         if(policyConditionType == core_pb2.POLICY_CONDITION_TYPE_LESS or policyConditionType == core_pb2.POLICY_CONDITION_TYPE_GREATER):
             if "threshold" not in input["condition"]:
-                return 1, "Invalid Parameter: policy condition threshold is invalid.", 400          
+                return 1, "Invalid Parameter: policy condition threshold is invalid.", 400   
+            if int(input["condition"]["threshold"]) < 0:
+                return 1, "Invalid Parameter: policy condition threshold must be greater than or equal 0.", 400               
             condition = core_pb2.XpumPolicyCondition(type=policyConditionType,threshold=input["condition"]["threshold"])
         else:
             condition = core_pb2.XpumPolicyCondition(type=policyConditionType)
@@ -128,6 +132,10 @@ def setPolicy(id, isDevcie,input,is_delete_policy):
             action = core_pb2.XpumPolicyAction(type=policyActionType
                 ,throttle_device_frequency_min=input["action"]["throttle_device_frequency_min"]
                 ,throttle_device_frequency_max=input["action"]["throttle_device_frequency_max"])
+        elif(policyActionType == core_pb2.POLICY_ACTION_TYPE_NULL):
+            if 'notify_callback_url' not in input:
+                return 1, "Invalid Parameter: policy notify_callback_url must be filled when no other actions.", 400  
+            action = core_pb2.XpumPolicyAction(type=policyActionType)
         else:
             action = core_pb2.XpumPolicyAction(type=policyActionType)
         ##########

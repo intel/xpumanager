@@ -324,7 +324,7 @@ xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
-                                   const xpum_standby_data_t &standby);
+                                   const xpum_standby_data_t standby);
 /**
  * @brief Get device power limit
  * @details This function is used to get the power limit of device
@@ -353,7 +353,7 @@ xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
  */
 xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
                                                 int32_t tileId,
-                                                const xpum_power_sustained_limit_t &sustained_limit);
+                                                const xpum_power_sustained_limit_t sustained_limit);
 /**
  * @brief Set device burst power limit
  * @details This function is used to set the burst power limit of device
@@ -367,7 +367,7 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
  */
 xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
                                             int32_t tileId,
-                                            const xpum_power_burst_limit_t &burst_limit);
+                                            const xpum_power_burst_limit_t burst_limit);
 /**
  * @brief Set device peak power limit
  * @details This function is used to set the peak power limit of device
@@ -381,7 +381,7 @@ xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
  */
 xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
                                            int32_t tileId,
-                                           const xpum_power_peak_limit_t &peak_limit);
+                                           const xpum_power_peak_limit_t peak_limit);
 /**
  * @brief Get device frequency ranges
  * @details This function is used to get the frequency ranges
@@ -406,7 +406,7 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
-                                          const xpum_frequency_range_t &t);
+                                          const xpum_frequency_range_t t);
 /**
  * @brief Get device scheduler mode
  * @details This function is used to get the scheduler mode
@@ -431,7 +431,21 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
-                                                const xpum_scheduler_timeout_t &sched_timeout);
+                                                const xpum_scheduler_timeout_t sched_timeout);
+/**
+ * @brief Set device the power props mode
+ * @details This function is used to set the power props
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ 
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ */
+xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId,
+                                      xpum_power_prop_data_t *dataArray, uint32_t *count);
 /**
  * @brief Set device the scheduler(time slice) mode
  * @details This function is used to set the scheduler (time slice) mode
@@ -443,7 +457,7 @@ xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
-                                                  const xpum_scheduler_timeslice_t &sched_timeslice);
+                                                  const xpum_scheduler_timeslice_t sched_timeslice);
 /**
  * @brief Set device the scheduler(exclusive) mode
  * @details This function is used to set the scheduler (exclusive) mode
@@ -455,7 +469,7 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
-                                                  const xpum_scheduler_exclusive_t &sched_exclusive);
+                                                  const xpum_scheduler_exclusive_t sched_exclusive);
 /**
  * @brief Reset device
  *
@@ -492,6 +506,58 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_process_t *dataArray, uint32_t *count);
+
+/**
+ * @brief Get the performance factor of the device
+ * @details This function is used to get the performance factor of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_performancefactor_t * dataArray, uint32_t *count);
+
+/**
+ * @brief Set the performance factor of the device
+ * @details This function is used to set the performance factor of device
+ *
+ * @param deviceId          IN: The device Id
+ * @param performanceFactor     IN: The performanceFactor to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ */
+xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t devicePF);
+
+/**
+ * @brief validate the device Id
+ * @details This function is used to validate the device Id
+ *
+ * @param deviceId          IN: The device Id
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND if device id is invalid
+ */
+xpum_result_t validateDeviceId(xpum_device_id_t deviceId);
+
+/**
+ * @brief validate the device Id and tile Id
+ * @details This function is used to validate the device Id and tile Id
+ *
+ * @param deviceId          IN: The device Id
+ * @param tileId          IN: The tile Id
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND if device id is invalid
+ *      - \ref XPUM_RESULT_TILE_NOT_FOUND if tile id is invalid
+ */
+xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_tile_id_t tileId);
+
 
 /** @} */ // Closing for CONFIGURATION_API
 

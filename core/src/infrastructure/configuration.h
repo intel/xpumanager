@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <vector>
+#include <set>
 #include "measurement_type.h"
 
 namespace xpum {
@@ -28,12 +28,12 @@ class Configuration {
 
     static void initEnabledMetrics();
 
-    static std::vector<MeasurementType>& getEnabledMetrics() {
+    static std::set<MeasurementType>& getEnabledMetrics() {
         return enabled_metrics;
     }
 
    private:
-    static std::vector<MeasurementType> enabled_metrics;
+    static std::set<MeasurementType> enabled_metrics;
 };
 
 } // end namespace xpum

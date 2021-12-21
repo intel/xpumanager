@@ -9,6 +9,7 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <cstdlib>
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
@@ -17,7 +18,8 @@
 namespace xpum::cli {
 
 CoreStub::CoreStub() {
-    std::string unixSockName{"/tmp/xpum.sock"};    
+    char* xpum_socket_file_env = std::getenv("XPUM_SOCKET_FILE");
+    std::string unixSockName{xpum_socket_file_env != NULL ? xpum_socket_file_env : "/tmp/xpum.sock"};
     std::string serverAddr{"unix://" + unixSockName};
     auto channel = grpc::CreateChannel(serverAddr, grpc::InsecureChannelCredentials());
     this->stub = XpumCoreService::NewStub(channel);
@@ -290,48 +292,48 @@ std::string CoreStub::diagnosticResultEnumToString(DiagnosticsTaskResult result)
     return ret;
 }
 
-std::string CoreStub::diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type) {
+std::string CoreStub::diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type, bool rawComponentTypeStr) {
     std::string ret;
     switch (type) {
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_ENV_VARIABLES:
-            ret = "XPUM_DIAG_SOFTWARE_ENV_VARIABLES";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_ENV_VARIABLES" : "Software Env Variables");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_LIBRARY:
-            ret = "XPUM_DIAG_SOFTWARE_LIBRARY";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_LIBRARY" : "Software Library");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_PERMISSION:
-            ret = "XPUM_DIAG_SOFTWARE_PERMISSION";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_PERMISSION" : "Software Permission");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE:
-            ret = "XPUM_DIAG_SOFTWARE_EXCLUSIVE";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_EXCLUSIVE" : "Software Exclusive");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_HARDWARE_SYSMAN:
-            ret = "XPUM_DIAG_HARDWARE_SYSMAN";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_HARDWARE_SYSMAN" : "Hardware Sysman");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_INTEGRATION_PCIE:
-            ret = "XPUM_DIAG_INTEGRATION_PCIE";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_INTEGRATION_PCIE" : "Integration PCIe");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC:
-            ret = "XPUM_DIAG_MEDIA_CODEC";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_MEDIA_CODEC" : "Media Codec");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_COMPUTATION:
-            ret = "XPUM_DIAG_PERFORMANCE_COMPUTATION";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_COMPUTATION" : "Performance Computation");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_POWER:
-            ret = "XPUM_DIAG_PERFORMANCE_POWER";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_POWER" : "Performance Power");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY_ALLOCATION:
-            ret = "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION" : "Performance Memory Allocation");
             break;
         case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY_BANDWIDTH:
-            ret = "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH";
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH" : "Performance Memory Bandwidth");
             break;
         default:
             break;
     }
     return ret;
 }
-std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level) {
+std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -342,7 +344,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
     grpc::Status status = stub->runDiagnostics(&context, request, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
-            json = getDiagnosticsResult(deviceId);
+            json = getDiagnosticsResult(deviceId, rawComponentTypeStr);
             if ((*json).contains("error")) {
                 return json;
             }
@@ -351,7 +353,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
                 std::chrono::system_clock::now().time_since_epoch()).count();
             while ((*json)["finished"] == false) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
-                json = getDiagnosticsResult(deviceId);
+                json = getDiagnosticsResult(deviceId, rawComponentTypeStr);
                 if ((*json).contains("error")) {
                     return json;
                 }
@@ -373,7 +375,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
+std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -396,10 +398,17 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
             std::vector<nlohmann::json> componentJsonList;
             for (int i = 0; i < response.componentinfo_size(); ++i) {
                 auto componentJson = nlohmann::json();
-                componentJson["component_type"] = diagnosticTypeEnumToString(response.componentinfo(i).type());
+                componentJson["component_type"] = diagnosticTypeEnumToString(response.componentinfo(i).type(), rawComponentTypeStr);
                 componentJson["finished"] = response.componentinfo(i).finished();
                 componentJson["message"] = response.componentinfo(i).message();
                 componentJson["result"] = diagnosticResultEnumToString(response.componentinfo(i).result());
+                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE
+                    && response.componentinfo(i).result() == DIAG_RESULT_FAIL) {
+                    auto process_list_json = getDeviceProcessState(response.deviceid());
+                    if (process_list_json->contains("device_process_list")) {
+                        componentJson["process_list"] = (*process_list_json)["device_process_list"];
+                    }
+                }
                 componentJsonList.push_back(componentJson);
             }
             (*json)["component_list"] = componentJsonList;
@@ -412,7 +421,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId, int level) {
+std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -423,7 +432,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId
     grpc::Status status = stub->runDiagnosticsByGroup(&context, request, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
-            json = getDiagnosticsResultByGroup(groupId);
+            json = getDiagnosticsResultByGroup(groupId, rawComponentTypeStr);
             if ((*json).contains("error")) {
                 return json;
             }
@@ -432,7 +441,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId
                 std::chrono::system_clock::now().time_since_epoch()).count();
             while ((*json)["finished"] == false) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
-                json = getDiagnosticsResultByGroup(groupId);
+                json = getDiagnosticsResultByGroup(groupId, rawComponentTypeStr);
                 if ((*json).contains("error")) {
                     return json;
                 }
@@ -454,7 +463,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t groupId) {
+std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -484,10 +493,17 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t g
                 std::vector<nlohmann::json> componentJsonList;
                 for (int j = 0; j < response.taskinfo(i).componentinfo_size(); j++) {
                     auto componentJson = nlohmann::json();
-                    componentJson["component_type"] = diagnosticTypeEnumToString(response.taskinfo(i).componentinfo(j).type());
+                    componentJson["component_type"] = diagnosticTypeEnumToString(response.taskinfo(i).componentinfo(j).type(), rawComponentTypeStr);
                     componentJson["finished"] = response.taskinfo(i).componentinfo(j).finished();
                     componentJson["message"] = response.taskinfo(i).componentinfo(j).message();
                     componentJson["result"] = diagnosticResultEnumToString(response.taskinfo(i).componentinfo(j).result());
+                    if (response.taskinfo(i).componentinfo(j).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE
+                        && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_FAIL) {
+                        auto process_list_json = getDeviceProcessState(response.taskinfo(i).deviceid());
+                        if (process_list_json->contains("device_process_list")) {
+                            componentJson["process_list"] = (*process_list_json)["device_process_list"];
+                        }
+                    }
                     componentJsonList.push_back(componentJson);
                 }
                 deviceInfoJson["component_list"] = componentJsonList;
@@ -552,17 +568,17 @@ std::string CoreStub::healthTypeEnumToString(HealthType type) {
 nlohmann::json CoreStub::appendHealthThreshold(int deviceId, nlohmann::json json, HealthType type) {
     if (type == HEALTH_POWER) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_POWER_LIMIT);
-        json["shutdown_threshold"] = "150 watts";
+        json["shutdown_threshold"] = 150;
     }
     if (type == HEALTH_CORE_THERMAL) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_CORE_THEARMAL_LIMIT);
-        json["throttle_threshold"] = "105 Celsius Degree";
-        json["shutdown_threshold"] = "130 Celsius Degree";
+        json["throttle_threshold"] = 105;
+        json["shutdown_threshold"] = 130;
     }
     if (type == HEALTH_MEMORY_THERMAL) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_MEMORY_THEARMAL_LIMIT);
-        json["throttle_threshold"] = "85 Celsius Degree";
-        json["shutdown_threshold"] = "100 Celsius Degree";
+        json["throttle_threshold"] = 85;
+        json["shutdown_threshold"] = 100;
     }
     return json;
 }
@@ -580,7 +596,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllHealth() {
                 auto healthJson = (*getHealth(response.info(i).id().id(), -1));
                 healthJsonList.push_back(healthJson);
             }
-            (*json)["all_health_list"] = healthJsonList;
+            (*json)["device_list"] = healthJsonList;
         } else {
             (*json)["error"] = response.errormsg();
         }
@@ -599,7 +615,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId, int componentT
     HealthData response;
     (*json)["device_id"] = deviceId;
     grpc::Status status = grpc::Status::OK;
-    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY};
     if (componentType >= 1 && componentType <= (int)(types.size())) {
         HealthType targetType = types[componentType - 1];
         types.clear();
@@ -683,7 +699,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId, int
     request.set_groupid(groupId);
     HealthDataByGroup response;
     std::vector<nlohmann::json> deviceJsonList;
-    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
+    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY};
     if (componentType >= 1 && componentType <= (int)(types.size())) {
         HealthType targetType = types[componentType - 1];
         types.clear();
@@ -873,7 +889,7 @@ std::string CoreStub::policyActionTypeEnumToString(XpumPolicyActionType type) {
             ret = "3. Notify";
             break;
         case POLICY_ACTION_TYPE_THROTTLE_DEVICE:
-            ret = "1. Throttle GPU Core";
+            ret = "1. Throttle GPU Core Frequency";
             break;
         case POLICY_ACTION_TYPE_RESET_DEVICE:
             ret = "2. Reset GPU";
@@ -909,6 +925,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicyById(bool isDevice, int id) {
     XpumDeviceBasicInfoArray response;
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     auto healthJson = (*getPolicy(isDevice,id));
+    if (healthJson.contains("error")) {
+        (*json) = healthJson;
+        return json;
+    }
     (*json)["all_policy_list"] = healthJson;
     return json;
 }
@@ -918,8 +938,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllPolicyType() {
     grpc::ClientContext context;
     XpumDeviceBasicInfoArray response;
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
-    if (status.ok()) {
+    //grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
+    //std::cout << "--Gang---core_stub.cpp--getAllPolicyType---1----status.ok()=" << status.ok() << std::endl;
+    //if (status.ok()) 
+    {
         if (response.errormsg().length() == 0) {
             std::vector<nlohmann::json> healthJsonList;
             {
@@ -1014,19 +1036,48 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPol
     SetPolicyResponse response;
     grpc::Status status = stub->setPolicy(&context, request, &response);
     /////
+    bool isRemove = policy.isdeletepolicy();
+    std::string policyType = "\"" + policyTypeEnumToString(policy.type()) +"\"";
+    /////
     if(isDevcie){
         (*json)["device_id"] = id;
     }else{
         (*json)["group_id"] = id;
     }   
+    //std::cout << "--Gang---1----status.ok() = " << status.ok() << std::endl;
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
-            (*json)["status"] = "set policy successfully.";
+            //Succeed to set the "GPU Core Temperature" policy.
+            //Succeed to remove the "GPU Core Temperature" policy.
+            (*json)["is_success"] = true; 
+            if(isRemove){
+                (*json)["msg"] = "Succeed to remove the "+policyType+" policy.";
+            }else{
+                (*json)["msg"] = "Succeed to set the "+policyType+" policy.";
+            }            
         }else{
-            (*json)["status"] = "set policy failed. Error message: "+response.errormsg();
+            (*json)["is_success"] = false; 
+            if(isRemove){
+                (*json)["error"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
+            }else{
+                (*json)["error"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
+            }  
         }
     }else{
-        (*json)["status"] = "set policy failed. Error message: unknown.";
+        (*json)["is_success"] = false; 
+        if (response.errormsg().length() == 0) {
+            if(isRemove){
+                (*json)["error"] = "Faield to remove the "+policyType+" policy. Error message: unknown.";
+            }else{
+                (*json)["error"] = "Faield to set the "+policyType+" policy. Error message: unknown.";
+            }  
+        }else{
+            if(isRemove){
+                (*json)["error"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
+            }else{
+                (*json)["error"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
+            }  
+        }
     }
     return json;
 }
@@ -1076,16 +1127,22 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie,int id) {
                 XpumPolicyActionType atype = response.policylist(i).action().type();
                 std::string action = policyActionTypeEnumToString(atype);
                 if (atype == XpumPolicyActionType::POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
+                    int min = (int)response.policylist(i).action().throttle_device_frequency_min();
+                    int max = (int)response.policylist(i).action().throttle_device_frequency_max();
                     action += " min:";
-                    action += std::to_string(response.policylist(i).action().throttle_device_frequency_min());
+                    action += std::to_string(min);
                     action += " max:";
-                    action += std::to_string(response.policylist(i).action().throttle_device_frequency_max());
+                    action += std::to_string(max);
                 }
                 component["action"] = action;
 
                 //
                 componentJsonList.push_back(component);
             }
+        }else{
+            (*json)["is_success"] = false; 
+            (*json)["error"] = "Faield to list policies. Error message: "+response.errormsg();
+            return json;
         }
     }    
     if(isDevcie){
@@ -1162,8 +1219,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["device_id"] = deviceId;
-            (*json)["power_limit"] = response.powerlimit();
-            (*json)["power_average_window"] = response.interval();
+            //(*json)["power_limit"] = response.powerlimit();
+            //(*json)["power_average_window"] = response.interval();
             std::vector<nlohmann::json> tileJsonList;
             for (uint i{0}; i < response.tilecount(); ++i) {
                 auto tileJson = nlohmann::json();
@@ -1172,6 +1229,19 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["max_frequency"] = response.tileconfigdata(i).maxfreq();
                 tileJson["standby_mode"] = standbyModeEnumToString(response.tileconfigdata(i).standby());
                 tileJson["scheduler_mode"] = schedulerModeEnumToString(response.tileconfigdata(i).scheduler());
+                tileJson["power_limit"] = response.tileconfigdata(i).powerlimit();
+                tileJson["power_vaild_range"] = response.tileconfigdata(i).powerscope();
+                tileJson["power_average_window"] = response.tileconfigdata(i).interval();
+                tileJson["power_average_window_vaild_range"] = response.tileconfigdata(i).intervalscope();
+                tileJson["gpu_frequency_valid_options"] = response.tileconfigdata(i).freqoption();
+                tileJson["standby_mode_valid_options"] = response.tileconfigdata(i).standbyoption();
+                if (response.tileconfigdata(i).schedulertimeout() > 0) {
+                    tileJson["scheduler_watchdog_timeout"] = response.tileconfigdata(i).schedulertimeout();
+                }
+                if (response.tileconfigdata(i).schedulertimesliceinterval() > 0) {
+                    tileJson["scheduler_timeslice_interval"] = response.tileconfigdata(i).schedulertimesliceinterval();
+                    tileJson["scheduler_timeslice_yield_timeout"] = response.tileconfigdata(i).schedulertimesliceyieldtimeout();
+                }
                 tileJsonList.push_back(tileJson);
             }
             (*json)["tile_config_data"] = tileJsonList;
@@ -1184,19 +1254,19 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     return json;
 }
 std::string CoreStub::schedulerModeEnumToString(XpumSchedulerMode mode) {
-    std::string ret = "SCHEDULER_MODE_NULL";
+    std::string ret =  "null";//"SCHEDULER_MODE_NULL";
     switch (mode) {
         case SCHEDULER_TIMEOUT:
-            ret = "SCHEDULER_MODE_TIMEOUT";
+            ret = "timeout";//"SCHEDULER_MODE_TIMEOUT";
             break;
         case SCHEDULER_TIMESLICE:
-            ret = "SCHEDULER_MODE_TIMESLICE";
+            ret = "timeslice";//"SCHEDULER_MODE_TIMESLICE";
             break;
         case SCHEDULER_EXCLUSIVE:
-            ret = "SCHEDULER_MODE_EXCLUSIVE";
+            ret = "exclusive";//"SCHEDULER_MODE_EXCLUSIVE";
             break;
         case SCHEDULER_DEBUG:
-            ret = "SCHEDULER_MODE_DEBUG";
+            ret = "debug";//"SCHEDULER_MODE_DEBUG";
             break;
         default:
             break;
@@ -1204,13 +1274,13 @@ std::string CoreStub::schedulerModeEnumToString(XpumSchedulerMode mode) {
     return ret;
 }
 std::string CoreStub::standbyModeEnumToString(XpumStandbyMode mode) {
-    std::string ret = "STANDBY_MODE_NULL";
+    std::string ret = "null";//"STANDBY_MODE_NULL";
     switch (mode) {
         case STANDBY_DEFAULT:
-            ret = "STANDBY_MODE_DEFAULT";
+            ret = "default";//"STANDBY_MODE_DEFAULT";
             break;
         case STANDBY_NEVER:
-            ret = "STANDBY_MODE_NEVER";
+            ret = "never";//"STANDBY_MODE_NEVER";
             break;
         default:
             break;
@@ -1248,12 +1318,13 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceSchedulerMode(int deviceId, i
     }
     return json;
 }
-std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int power, int interval){
+std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int tileId, int power, int interval){
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     ConfigDevicePowerLimitRequest request;
     request.set_deviceid(deviceId);
+    request.set_tileid(tileId);
     request.set_powerlimit(power*1000);
     request.set_intervalwindow(interval);
 
@@ -1351,6 +1422,64 @@ std::unique_ptr<nlohmann::json> CoreStub::resetDevice(int deviceId, bool force){
    return json;
 }
 
+std::unique_ptr<nlohmann::json> CoreStub::getPerformanceFactor(int deviceId, int tileId){
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceDataRequest request;
+    DevicePerformanceFactorResponse response;
+    request.set_deviceid(deviceId);
+    request.set_istiledata(true);
+    request.set_tileid(tileId);
+
+    grpc::Status status = stub->getPerformanceFactor(&context, request, &response);
+    if (status.ok()) {
+        std::vector<nlohmann::json> pfList;
+        for (uint i{0}; i < response.count(); ++i) {
+            auto pr = nlohmann::json();
+            pr["tile_id"] = response.pf(i).tileid();
+            pr["engine"] = response.pf(i).engineset();
+            pr["factor"] = response.pf(i).factor();
+            pfList.push_back(pr);
+        }
+        (*json)["performance_factor_list"] = pfList;
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setPerformanceFactor(int deviceId, int tileId, xpum_engine_type_flags_t engine, double factor) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    PerformanceFactor request;
+    request.set_deviceid(deviceId);
+    if (tileId == -1) {
+        request.set_istiledata(false);
+        request.set_tileid(0);
+    } else {
+        request.set_istiledata(true);
+        request.set_tileid(tileId);
+    }
+    request.set_engineset(engine);
+    request.set_factor(factor);
+
+    DevicePerformanceFactorSettingResponse response;
+    grpc::Status status = stub->setPerformanceFactor(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+        } else {
+            (*json)["error"] = response.errormsg();        
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;    
+
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceProcessState(int deviceId){
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -1365,9 +1494,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProcessState(int deviceId){
         for (uint i{0}; i < response.count(); ++i) {
             auto proc = nlohmann::json();
             proc["process_id"] = response.processlist(i).processid();
-            proc["mem_size"] = response.processlist(i).memsize();
-            proc["share_mem_size"] = response.processlist(i).sharedsize();
-            proc["engine"] = response.processlist(i).engine();
+            //proc["mem_size"] = response.processlist(i).memsize();
+            //proc["share_mem_size"] = response.processlist(i).sharedsize();
+            //proc["engine"] = response.processlist(i).engine();
+            proc["process_name"] = response.processlist(i).processname();
             deviceProcessList.push_back(proc);
         }
         (*json)["device_process_list"] = deviceProcessList;

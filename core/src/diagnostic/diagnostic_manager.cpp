@@ -39,7 +39,7 @@ void DiagnosticManager::readConfigFile() {
     ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
     exe_path[len] = '\0';
     std::string current_file = exe_path;
-    std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/config/";
+    std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../config/";
     std::string file_name = config_folder + std::string("diagnostics.conf");
     std::ifstream conf_file(file_name);
     if (conf_file.is_open()) {
@@ -55,7 +55,9 @@ void DiagnosticManager::readConfigFile() {
             if (value.find("#") != std::string::npos)
                 value = value.substr(0, value.find("#"));
             if (name == "MEDIA_CODER_TOOLS_PATH") {
-                MEDIA_CODER_TOOLS_PATH = value;
+                if (value == "/usr/bin/" || value == "/usr/share/mfx/samples/") {
+                    MEDIA_CODER_TOOLS_PATH = value;
+                }
             } else if (name == "MEDIA_CODER_TOOLS_DECODE_FILE") {
                 MEDIA_CODER_TOOLS_DECODE_FILE = value;
             } else if (name == "MEDIA_CODER_TOOLS_ENCODE_FILE") {
@@ -69,7 +71,7 @@ void DiagnosticManager::readConfigFile() {
         
     }
     else {
-        XPUM_LOG_ERROR("couldn't open config file for diagnostics");
+        XPUM_LOG_ERROR("couldn't open config file for diagnostics: {}", file_name);
     }
 }
 
@@ -167,7 +169,8 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
         component.type = diagnostic_task_infos.at(deviceId)->componentList[index].type;
         component.finished = diagnostic_task_infos.at(deviceId)->componentList[index].finished;
         component.result = diagnostic_task_infos.at(deviceId)->componentList[index].result;
-        if (diagnostic_task_infos.at(deviceId)->componentList[index].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
+        if (diagnostic_task_infos.at(deviceId)->componentList[index].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL 
+                && diagnostic_task_infos.at(deviceId)->componentList[index].type != XPUM_DIAG_HARDWARE_SYSMAN) {
             result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
         }
         updateMessage(component.message, std::string(diagnostic_task_infos.at(deviceId)->componentList[index].message));
@@ -198,9 +201,15 @@ void DiagnosticManager::doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t 
             break;
     }
     std::string desc = "Error in " + error; 
-    XPUM_LOG_ERROR("Error in diagnostics  " + type_str + " : " + error);
+    XPUM_LOG_ERROR("Error in diagnostics {} : {}",  type_str, error);
     updateMessage(component.message, desc);
     component.finished = true;
+    if (type == XPUM_DIAG_PERFORMANCE_COMPUTATION) {
+        xpum_diag_component_info_t &power_component = p_task_info->componentList[XPUM_DIAG_PERFORMANCE_POWER];
+        power_component.finished = true;
+        power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        updateMessage(power_component.message, "Error in " + type_str); 
+    }
 }
 
 void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver,
@@ -319,7 +328,7 @@ void DiagnosticManager::doDeviceDiagnosticEnvironmentVariables(std::shared_ptr<x
     bool find_env_varibles = false;
     for (auto it = check_env_varibles.begin(); it != check_env_varibles.end(); it++) {
         std::string check_env_var = *it;
-        if (getenv(check_env_var.c_str()) != nullptr) {
+        if (std::getenv(check_env_var.c_str()) != nullptr) {
             find_env_varibles = true;
             details = check_env_var;
             break;
@@ -437,33 +446,26 @@ void DiagnosticManager::doDeviceDiagnosticExclusive(const zes_device_handle_t &d
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zesDeviceProcessesGetState()");
     }
-    pid_t pid = getpid();
-    std::string pidlist = " Self-PID: " + std::to_string(pid) + ". PID-List: ";
-    int position = 0;
+    uint32_t process_count_origin = process_count;
     for (auto process : processes) {
         std::ifstream file("/proc/" + std::to_string(process.processId) + "/cmdline");
         if (!file.good()) {
             process_count -= 1;
+            XPUM_LOG_DEBUG("process pid : {}, process name : unkown", process.processId);
             continue;
         }
-        if (position > 0)
-            pidlist += ", ";
         std::string command_name;
         std::getline(file, command_name);
-        if ((int)(command_name[command_name.size() - 1]) == 0)
-            command_name = command_name.substr(0, command_name.size() - 1);
-        pidlist += std::to_string(process.processId) + "-" + command_name;
-        position += 1;
-    }
-
-    if (process_count > 1) {
-        std::vector<zes_process_state_t> process_statuses(process_count);
-        component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        std::string desc = "Fail to check the software exclusive. " + std::to_string(process_count) + " processses are using the device.";
-        desc += pidlist;
-        if ((int)desc.size() > XPUM_MAX_STR_LENGTH - 1) {
-            desc = desc.substr(0, XPUM_MAX_STR_LENGTH - 4) + "...";
+        std::string command_name_str;
+        for (std::size_t index = 0; index < command_name.size(); index++) {
+            if (command_name[index] != 0)
+                command_name_str.push_back(command_name[index]);
         }
+        XPUM_LOG_DEBUG("process pid : {}, process name : {}", process.processId, command_name_str);
+    }
+    if (process_count > 1) {
+        component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        std::string desc = "Fail to check the software exclusive. " + std::to_string(process_count_origin) + " processses are using the device.";
         updateMessage(component4.message, desc);
     } else {
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
@@ -566,7 +568,9 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
                 file_name = file_name.substr(pos + 1);
                 pos = file_name.find_first_of(".");
                 filename_pcie_device = static_cast<u_int32_t>(std::stoul(file_name.substr(0, pos), nullptr, 16));
-                break;
+                if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
+                    break;
+                }
             }
             ent = readdir(dir);
         }
@@ -600,7 +604,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
                         desc += " Decoder unsupported.";
                     else
                         desc += " Errors happened when run sample_decode.";
-                    XPUM_LOG_INFO("detail error message:\n" + result_decode);
+                    XPUM_LOG_INFO("detail error message:\n {}", result_decode);
                 }
 
                 if (result_encode.find("Processing finished") == std::string::npos) {
@@ -608,7 +612,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
                         desc += " Encoder unsupported.";
                     else
                         desc += " Errors happened when run sample_encode.";
-                    XPUM_LOG_INFO("detail error message:\n" + result_encode);
+                    XPUM_LOG_INFO("detail error message:\n {}", result_encode);
                        
                 }
                 component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
@@ -1067,7 +1071,7 @@ std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_p
     std::vector<uint8_t> binary_file;
 
     if (!stream.good()) {
-        throw BaseException("Error in load kernel file.");
+        throw BaseException("load kernel file");
     }
 
     std::size_t length = 0;
@@ -1280,7 +1284,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 }
                 if (current_value > power_value) {
                     power_value = current_value;
-                    XPUM_LOG_DEBUG("update peak power value: " + std::to_string(power_value));
+                    XPUM_LOG_DEBUG("update peak power value: {}", power_value);
                 }
             } catch (...) {
                 break;
@@ -1540,7 +1544,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
         updateMessage(compute_component.message, desc);
     } else {
         compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        std::string desc = "Fass to check computation performance.";
+        std::string desc = "Pass to check computation performance.";
         updateMessage(compute_component.message, desc);
     }
     compute_component.finished = true;
@@ -1553,7 +1557,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
 
     if (power_threshold <= 0) {
         power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        std::string desc = "Pass to check stress power.";
+        std::string desc = "Fail to check stress power.";
         desc += " " + power_detail;
         desc += "  Unconfigured or invalid threshold.";
         updateMessage(power_component.message, desc);
@@ -1564,7 +1568,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
         desc += " Threshold is " + std::to_string(power_threshold) + " W.";
         updateMessage(power_component.message, desc);
     } else {
-        power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
         std::string desc = "Pass to check stress power.";
         updateMessage(power_component.message, desc);
     }

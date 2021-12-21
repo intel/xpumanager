@@ -1,4 +1,4 @@
-from .grpc_stub import stub
+from .grpc_stub import stub, exit_on_disconnect
 import core_pb2
 from google.protobuf import empty_pb2
 
@@ -14,6 +14,7 @@ def createGroup(groupName):
     return 0, "OK", data
 
 
+@exit_on_disconnect
 def getAllGroups():
     resp = stub.getAllGroups(empty_pb2.Empty())
     if len(resp.errorMsg) != 0:

@@ -62,6 +62,10 @@ class ComletGroup : public ComletBase {
 		}
 	}
 
+    inline const bool isGroupOperation() const {
+        return opts->groupId > 0;
+    }
+
    private:
     std::unique_ptr<nlohmann::json> destroyGroup();
     std::unique_ptr<nlohmann::json> listGroup();

@@ -175,10 +175,10 @@ void DeviceManager::getDevicePowerLimits(const std::string& id,
     GPUDeviceStub::instance().getPowerLimits(getDeviceHandle(id), sustained_limit, burst_limit, peak_limit);
 }
 
-bool DeviceManager::setDevicePowerSustainedLimits(const std::string& id,
+bool DeviceManager::setDevicePowerSustainedLimits(const std::string& id,uint32_t tileId,
                                                   const Power_sustained_limit_t& sustained_limit) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    return GPUDeviceStub::instance().setPowerSustainedLimits(getDeviceHandle(id), sustained_limit);
+    return GPUDeviceStub::instance().setPowerSustainedLimits(getDeviceHandle(id), tileId, sustained_limit);
 }
 
 bool DeviceManager::setDevicePowerBurstLimits(const std::string& id,
@@ -224,6 +224,16 @@ void DeviceManager::getDeviceProcessState(const std::string& id, std::vector<dev
     GPUDeviceStub::instance().getDeviceProcessState(getDeviceHandle(id), processes);
 }
 
+void DeviceManager::getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf){
+    std::unique_lock<std::mutex> lock(this->mutex);
+    GPUDeviceStub::instance().getPerformanceFactor(getDeviceHandle(id), pf);
+}
+
+bool DeviceManager::setPerformanceFactor(const std::string& id, PerformanceFactor &pf){
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().setPerformanceFactor(getDeviceHandle(id), pf);    
+}
+
 bool DeviceManager::setDeviceStandby(const std::string& id,
                                      const Standby& standby) {
     std::unique_lock<std::mutex> lock(this->mutex);
@@ -251,4 +261,10 @@ bool DeviceManager::resetDevice(const std::string& id, bool force) {
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().resetDevice(getDeviceHandle(id), (ze_bool_t)force);
 }
+
+bool DeviceManager::getFabricPorts(const std::string& id, std::vector<port_info>& portInfo){
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().getFabricPorts(getDeviceHandle(id), portInfo);
+}
+
 } // end namespace xpum

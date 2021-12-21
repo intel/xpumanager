@@ -2,6 +2,7 @@
 
 #include <map>
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 #include "core_stub.h"
 #include "pretty_table.h"
@@ -16,8 +17,11 @@ void ComletDump::setupOptions() {
 
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
     metricsListOpt->delimiter(',');
+    metricsListOpt->check(CLI::Range(0, (int)metricsOptions.size() - 1));
     auto timeIntervalOpt = addOption("-i", this->opts->timeInterval, "Display the device data at seconds interval. Its default value is 1 second if not specified.");
+    timeIntervalOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
     auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "The times to dump the device data. The dumping will not be ended if not specified.\n");
+    dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
 
     auto dumpRawDataFlag = addFlag("--rawdata", this->opts->rawData, "Dump the required raw statistics to a file in background.");
     auto startDumpFlag = addFlag("--start", this->opts->startDumpTask, "Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.");
@@ -41,16 +45,28 @@ void ComletDump::setupOptions() {
     listDumpFlag->excludes(metricsListOpt);
     listDumpFlag->excludes(timeIntervalOpt);
     listDumpFlag->excludes(dumpTimesOpt);
-
 }
 
 std::unique_ptr<nlohmann::json> ComletDump::run() {
     std::unique_ptr<nlohmann::json> json;
+
+    // check metrics is unique
+    if (std::adjacent_find(this->opts->metricsIdList.begin(), this->opts->metricsIdList.end()) != this->opts->metricsIdList.end()) {
+        json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+        (*json)["error"] = "Duplicated metrics type";
+        return json;
+    }
+
     if (this->opts->rawData) {
         if (this->opts->startDumpTask && this->opts->deviceId != -1) {
             int deviceId = this->opts->deviceId;
             int tileId = this->opts->deviceTileId;
-            json = this->coreStub->startDumpRawDataTask(deviceId, tileId, this->opts->metricsIdList);
+            std::vector<xpum_stats_type_t> metricsTypeList;
+            for (auto i : this->opts->metricsIdList) {
+                auto &m = metricsOptions[i];
+                metricsTypeList.push_back(m.metricsType);
+            }
+            json = this->coreStub->startDumpRawDataTask(deviceId, tileId, metricsTypeList);
         } else if (this->opts->listDumpTask) {
             json = this->coreStub->listDumpRawDataTasks();
         } else if (this->opts->dumpTaskId != -1) {
@@ -75,7 +91,30 @@ void ComletDump::getJsonResult(std::ostream &out, bool raw) {
 };
 
 void ComletDump::dumpRawDataToFile(std::ostream &out) {
-    out << "Not implemented!" << std::endl;
+    auto json = run();
+    if (json->contains("error")) {
+        out << "Error: " << json->value("error", "") << std::endl;
+        return;
+    }
+    if (this->opts->startDumpTask) {
+        if (!json->contains("task_id") || !json->contains("dump_file_path")) {
+            out << "Error occurs" << std::endl;
+            return;
+        }
+        out << "Task " << (*json)["task_id"] << " is started." << std::endl;
+        out << "Dump file path: " << json->value("dump_file_path", "") << std::endl;
+    } else if (this->opts->listDumpTask) {
+        for (auto taskId : (*json)["dump_task_ids"]) {
+            out << "Task " << taskId.get<int>() << " is running." << std::endl;
+        }
+    } else if (this->opts->dumpTaskId != -1) {
+        if (!json->contains("task_id") || !json->contains("dump_file_path")) {
+            out << "Error occurs" << std::endl;
+            return;
+        }
+        out << "Task " << (*json)["task_id"] << " is stopped." << std::endl;
+        out << "Dump file path: " << json->value("dump_file_path", "") << std::endl;
+    }
 }
 
 void ComletDump::getTableResult(std::ostream &out) {
@@ -100,6 +139,30 @@ void ComletDump::printByLine(std::ostream &out) {
         return;
     }
 
+    // check deviceId and tileId is valid
+    auto res = this->coreStub->getDeviceProperties(this->opts->deviceId);
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+    if (this->opts->deviceTileId != -1) {
+        std::stringstream number_of_tiles((*res)["number_of_tiles"].get<std::string>());
+        int num_tiles = 0;
+        number_of_tiles >> num_tiles;
+        if (this->opts->deviceTileId >= num_tiles) {
+            out << "Error: Tile not found" << std::endl;
+            return;
+        }
+    }
+
+    // try run
+    res = run();
+
+    if (res->contains("error")) {
+        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        return;
+    }
+
     out << "Timestamp, DeviceId, ";
     if (tileId != -1) {
         out << "TileId, ";
@@ -112,8 +175,6 @@ void ComletDump::printByLine(std::ostream &out) {
     }
     out << std::endl;
 
-    auto res = run();
-
     int iter = 0;
 
     while (true) {
@@ -122,21 +183,22 @@ void ComletDump::printByLine(std::ostream &out) {
         res = run();
 
         if (res->contains("error")) {
-            out << " ";
+            out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+            return;
         }
 
-        std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
+        std::shared_ptr<nlohmann::json> json;
 
         if (tileId == -1) {
             if (res->contains("device_level")) {
-                *json = (*res)["device_level"];
+                json = std::make_shared<nlohmann::json>((*res)["device_level"]);
             }
         } else {
             if (res->contains("tile_level")) {
                 auto tiles = (*res)["tile_level"].get<std::vector<nlohmann::json>>();
                 for (auto tile : tiles) {
-                    if (tile["tile_id"].get<int>() == tileId) {
-                        *json = tile["data_list"];
+                    if (tile.contains("tile_id") && tile["tile_id"].get<int>() == tileId && tile.contains("data_list")) {
+                        json = std::make_shared<nlohmann::json>(tile["data_list"]);
                         break;
                     }
                 }
@@ -148,14 +210,17 @@ void ComletDump::printByLine(std::ostream &out) {
         if (tileId != -1) {
             out << tileId << ", ";
         }
+
         for (std::size_t i = 0; i < this->opts->metricsIdList.size(); i++) {
             int metric = this->opts->metricsIdList[i];
             std::string metricKey = metricsOptions[metric].key;
             std::string value = "";
-            for (auto metricObj : json->get<std::vector<nlohmann::json>>()) {
-                if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
-                    value = std::to_string(metricObj["value"].get<uint64_t>());
-                    break;
+            if (json != nullptr) {
+                for (auto metricObj : json->get<std::vector<nlohmann::json>>()) {
+                    if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
+                        value = std::to_string(metricObj["value"].get<uint64_t>());
+                        break;
+                    }
                 }
             }
             if (value.size() < 4) {

@@ -27,6 +27,9 @@ from stub import dump_raw_data as dump_raw_data_stub
 
 auth = HTTPBasicAuth()
 
+env_exporter_no_auth = True if os.environ.get('XPUM_EXPORTER_NO_AUTH', '') == '1' else False
+env_exporter_only = True if os.environ.get('XPUM_EXPORTER_ONLY', '') == '1' else False
+
 def main(*args, **kwargs):
 
     if "dump_folder" in kwargs:
@@ -34,14 +37,22 @@ def main(*args, **kwargs):
 
     app = Flask(__name__, static_url_path=dump_raw_data_stub.url_prefix, static_folder=dump_raw_data_stub.dump_folder)
 
-
-    # prometheus exporter
-    app.add_url_rule('/metrics',
-                    view_func=auth.login_required(exporter.export_metrics), methods=['GET'])
+    app.url_map.strict_slashes = False
 
     # version
-    app.add_url_rule('/rest/v1/version',
-                    view_func=versions.get_version, methods=['GET'])
+    app.add_url_rule('/rest/v1/version', view_func=versions.get_version, methods=['GET'])
+
+    # prometheus exporter
+    if env_exporter_no_auth:
+        app.add_url_rule('/metrics', view_func=exporter.export_metrics, methods=['GET'])
+        app.add_url_rule('/healtz', view_func=exporter.check_health, methods=['GET'])
+    else:
+        app.add_url_rule('/metrics', view_func=auth.login_required(exporter.export_metrics), methods=['GET'])
+        app.add_url_rule('/healtz', view_func=auth.login_required(exporter.check_health), methods=['GET'])
+
+    # only enable exporter?
+    if env_exporter_only:
+        return app
 
     # devices
     app.add_url_rule('/rest/v1/devices',
@@ -147,7 +158,7 @@ def verify_password(username, password):
         return True
 
 
-def readConfig(path):
+def read_config(path):
     file = path + '/conf/rest.conf'
     config = configparser.ConfigParser()
     if config.read(file):
@@ -166,13 +177,11 @@ def readConfig(path):
         print('No rest.conf found, must run rest_config.py first!')
         sys.exit(1)
 
+if not env_exporter_no_auth or not env_exporter_only:
+    user, salt, pwHash, disableAuth = read_config(os.path.dirname(os.path.realpath(__file__)))
 
-user, salt, pwHash, disableAuth = readConfig(
-    os.path.dirname(os.path.realpath(__file__)))
-
-####
-policy.startPolicyCallBackThread()
-####
+if not env_exporter_only:
+    policy.startPolicyCallBackThread()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -2,14 +2,14 @@ from .grpc_stub import stub
 import core_pb2
 
 StandbyModeEnumToString = {
-    core_pb2.STANDBY_DEFAULT: "STANDBY_MODE_DEFAULT",
-    core_pb2.STANDBY_NEVER: "STANDBY_MODE_NEVER"
+    core_pb2.STANDBY_DEFAULT: "DEFAULT",
+    core_pb2.STANDBY_NEVER: "NEVER"
 }
 
 SchedulerModeEnumToString = {
-    core_pb2.SCHEDULER_TIMEOUT: "SCHEDULER_MODE_TIMEOUT",
-    core_pb2.SCHEDULER_TIMESLICE: "SCHEDULER_MODE_TIMESLICE",
-    core_pb2.SCHEDULER_EXCLUSIVE: "SCHEDULER_MODE_EXCLUSIVE"
+    core_pb2.SCHEDULER_TIMEOUT: "TIMEOUT",
+    core_pb2.SCHEDULER_TIMESLICE: "TIMESLICE",
+    core_pb2.SCHEDULER_EXCLUSIVE: "EXCLUSIVE"
 }
 
 def getConfig(deviceId, tileId):
@@ -24,18 +24,29 @@ def getConfig(deviceId, tileId):
             return 1, resp.errorMsg, None
     data = dict()
     data['device_id'] = resp.deviceId
-    data['power_limit'] = resp.powerLimit
-    data['power_average_window'] = resp.interval
+    #data['power_limit'] = resp.powerLimit
+    #data['power_average_window'] = resp.interval
     #data['tileCount'] = resp.tileCount
 
     tilelist = list()
     for i in range(0,resp.tileCount):
         tiledata = dict()
         tiledata['tile_id'] = resp.tileConfigData[i].tileId
+        tiledata['power_limit'] = resp.tileConfigData[i].powerLimit
+        tiledata['power_vaild_range'] = resp.tileConfigData[i].powerScope
+        tiledata['power_average_window'] = resp.tileConfigData[i].interval
+        tiledata['power_average_window_vaild_range'] = resp.tileConfigData[i].intervalScope
+        tiledata['gpu_frequency_valid_options'] = resp.tileConfigData[i].freqOption
         tiledata['min_frequency'] = resp.tileConfigData[i].minFreq
         tiledata['max_frequency'] = resp.tileConfigData[i].maxFreq
         tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
+        tiledata['standby_mode_valid_options'] = resp.tileConfigData[i].standbyOption
         tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
+        if resp.tileConfigData[i].schedulerTimeout > 0:
+            tiledata['scheduler_watchdog_timeout'] = resp.tileConfigData[i].schedulerTimeout
+        if resp.tileConfigData[i].schedulerTimesliceInterval > 0:
+            tiledata['scheduler_timeslice_interval'] = resp.tileConfigData[i].schedulerTimesliceInterval
+            tiledata['scheduler_timeslice_yield_timeout'] = resp.tileConfigData[i].schedulerTimesliceYieldTimeout
         tilelist.append(tiledata)
     data['tile_config_data'] = tilelist
     return 0, "OK", data

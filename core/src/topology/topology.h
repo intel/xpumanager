@@ -18,7 +18,7 @@ class Topology {
     virtual ~Topology();
 
    public:
-    static bool getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds);
+    static bool getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds, bool checkDevice=true);
     static xpum_result_t getSwitchTopo(std::string bdfAddress, xpum_topology_t* topology, std::size_t* memSize);
     static std::string getLocalCpus(std::string address);
     static std::string getLocalCpusList(std::string address);

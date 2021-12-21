@@ -16,7 +16,7 @@ counter_values = {}
 class PromMetric(Enum):
 
     # Engine utilization
-    xpum_engine_ratio = ('xpum_engine_ratio', 'Max utilization among all engine groups (in %), per GPU tile')  # nopep8
+    xpum_engine_ratio = ('xpum_engine_ratio', 'GPU active time of the elapsed time (in %), per GPU tile')  # nopep8
     xpum_engine_group_ratio = ('xpum_engine_group_ratio', 'Avg utilization of engine group (in %), per GPU tile', ['type'])  # nopep8
 
     # Power/Energy/Temperature
@@ -100,9 +100,8 @@ metrics_map = {
     'XPUM_STATS_MEMORY_USED': Metric(PromMetric.xpum_memory_used_bytes),
     'XPUM_STATS_MEMORY_UTILIZATION': Metric(PromMetric.xpum_memory_ratio, scale=0.01),
     'XPUM_STATS_MEMORY_BANDWIDTH': Metric(PromMetric.xpum_memory_bandwidth_ratio, scale=0.01),
-    ## TODO: set process_counter_wrap=True after underlying counters are stable
-    'XPUM_STATS_MEMORY_READ': Metric(PromMetric.xpum_memory_read_bytes, is_counter=True, process_counter_wrap=False), # nopep8
-    'XPUM_STATS_MEMORY_WRITE': Metric(PromMetric.xpum_memory_write_bytes, is_counter=True, process_counter_wrap=False),# nopep8
+    'XPUM_STATS_MEMORY_READ': Metric(PromMetric.xpum_memory_read_bytes, is_counter=True),  # nopep8
+    'XPUM_STATS_MEMORY_WRITE': Metric(PromMetric.xpum_memory_write_bytes, is_counter=True),  # nopep8
 
     # Errors
     'XPUM_STATS_RAS_ERROR_CAT_RESET': Metric(PromMetric.xpum_resets, is_counter=True),
@@ -161,7 +160,8 @@ def get_metrics(core, pod_resources):
                 # aggregate to card level
                 if card_id is not None:
                     card_data = all_card_data.setdefault(card_id, [])
-                    aggregated_power_from_device = aggregate_power_to_card(card_data, stat_data['device_level'])
+                    aggregated_power_from_device = aggregate_power_to_card(
+                        card_data, stat_data['device_level'])
 
             for tile_data in stat_data.get('tile_level', []):
                 r = convert_to_prometheus_metrics(

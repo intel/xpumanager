@@ -15,7 +15,9 @@ struct ComletStatisticsOptions {
 
 class ComletStatistics : public ComletBase {
    public:
-    ComletStatistics() : ComletBase("stats", "\nList the GPU aggregrated statistics since last execution of this command or XPU Manager daemon is started.\n") {}
+    ComletStatistics() : ComletBase("stats", "List the GPU aggregrated statistics since last execution of this command or XPU Manager daemon is started.") {
+        printHelpWhenNoArgs = true;
+    }
     virtual ~ComletStatistics() {}
 
     virtual void setupOptions() override;
@@ -29,6 +31,10 @@ class ComletStatistics : public ComletBase {
 
     inline const bool isGroupOp() const {
         return opts->groupId != 0;
+    }
+
+    inline const int getDeviceId() const {
+        return opts->deviceId;
     }
 
    private:

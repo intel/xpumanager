@@ -37,4 +37,40 @@ It supports local command line interface, local library call and remote RESFTul 
 <p align="left">
 <img src="https://github.com/intel-sandbox/intel-xpu-manager/blob/main/doc/img/Grafana.PNG">
 </p>
+  
+  
+## Intel XPU Manager Installation
 
+### DEB install
+```
+sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
+```
+
+### DEB uninstall
+```
+sudo dpkg -r xpumanager
+```
+
+### RPM install
+```
+sudo rpm -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+```
+
+### RPM relocation install
+```
+rpm -i --prefix=/opt/abc xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+```
+
+### RPM uninstall
+```
+sudo rpm -e xpumanager
+```
+
+### Change daemon monitor metrics
+1. edit file "/lib/systemd/system/xpum.service"
+   add "-m metric-indexes" to ExecStart. 
+   Use "/opt/xpum/bin/xpumd -h" to get detailed info.
+   Sample:
+   ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 5-8,12
+2. Run command "sudo systemctl daemon-reload"
+3. Run command "sudo systemctl restart xpum"
