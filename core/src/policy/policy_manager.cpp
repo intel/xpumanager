@@ -507,26 +507,72 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
 }
 
 xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
+    if(policy.type == XPUM_POLICY_TYPE_GPU_TEMPERATURE){
+        if(!(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER
+            ||policy.condition.type == XPUM_POLICY_CONDITION_TYPE_LESS)){
+            return XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT;
+        }
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL
+            ||policy.action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE)){
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
+    if(policy.type == XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE
+        ||policy.type == XPUM_POLICY_TYPE_GPU_POWER){
+        if(!(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER
+            ||policy.condition.type == XPUM_POLICY_CONDITION_TYPE_LESS)){
+            return XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT;
+        }
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL)){
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
+    if(policy.type == XPUM_POLICY_TYPE_GPU_MISSING){
+        if(!(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR)){
+            return XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT;
+        }
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL)){
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
+    if(policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET){
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL)){
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
+    if(policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE 
+                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE ){
+        if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL
+            ||policy.action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE
+            )){
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
+    //XPUM_RESULT_POLICY_INVALID_FREQUENCY
+    if(policy.action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE){
+        if(policy.action.throttle_device_frequency_min <= 0
+        || policy.action.throttle_device_frequency_max <= 0
+        || (policy.action.throttle_device_frequency_min >= policy.action.throttle_device_frequency_max )
+        ){
+            return XPUM_RESULT_POLICY_INVALID_FREQUENCY;
+        }
+    }
+
+    //XPUM_RESULT_POLICY_INVALID_THRESHOLD
     if(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER
         ||policy.condition.type == XPUM_POLICY_CONDITION_TYPE_LESS){
         if(policy.condition.threshold < 0){
             return XPUM_RESULT_POLICY_INVALID_THRESHOLD;
         }
     }
-
-    // Only limit policy type support limit action
-    if (policy.action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
-        if (policy.type != XPUM_POLICY_TYPE_GPU_TEMPERATURE) {
-            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
-        }
-    } else if (policy.action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE) {
-        if (!( policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS 
-                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS 
-                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE 
-                || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE)) {
-            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
-        }
-    }
+    
     return XPUM_OK;
 }
 

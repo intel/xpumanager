@@ -19,7 +19,7 @@ struct ComletPolicyOptions {
     std::string policyType = "";
     std::string policyConditionType = "";
     std::string policyActionType = "";
-    int threshold = -2;
+    int threshold = -200000;
     double throttlefrequencymin=-200000;
     double throttlefrequencymax=-200000;
 };

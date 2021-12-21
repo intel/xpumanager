@@ -189,14 +189,14 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             if(this->opts->policyConditionType == "1" //"POLICY_CONDITION_TYPE_GREATER"
                 || this->opts->policyConditionType == "3" //"POLICY_CONDITION_TYPE_LESS"
                 ){
-                if (this->opts->threshold == -2) {
-                    (*json)["is_success"] = false; 
-                    (*json)["error"] = "Wrong argument: <threshold> should be specified by -t option";
-                    return json;
-                }
+                // if (this->opts->threshold == -200000) {
+                //     (*json)["is_success"] = false; 
+                //     (*json)["error"] = "Wrong argument: <threshold> should be specified by --threshold option";
+                //     return json;
+                // }
                 if (this->opts->threshold < 0) {
                     (*json)["is_success"] = false; 
-                    (*json)["error"] = "Wrong argument: <threshold> must be greater than or equal 0";
+                    (*json)["error"] = "Wrong argument: <threshold> is invalid (not empty and greater than or equal 0)";
                     return json;
                 }
                 policy.mutable_condition()->set_threshold(this->opts->threshold);

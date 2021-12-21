@@ -132,6 +132,10 @@ def setPolicy(id, isDevcie,input,is_delete_policy):
             action = core_pb2.XpumPolicyAction(type=policyActionType
                 ,throttle_device_frequency_min=input["action"]["throttle_device_frequency_min"]
                 ,throttle_device_frequency_max=input["action"]["throttle_device_frequency_max"])
+        elif(policyActionType == core_pb2.POLICY_ACTION_TYPE_NULL):
+            if 'notify_callback_url' not in input:
+                return 1, "Invalid Parameter: policy notify_callback_url must be filled when no other actions.", 400  
+            action = core_pb2.XpumPolicyAction(type=policyActionType)
         else:
             action = core_pb2.XpumPolicyAction(type=policyActionType)
         ##########
