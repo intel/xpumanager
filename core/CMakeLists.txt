@@ -64,6 +64,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data DUMP_RAW_DATA_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/ipmi IPMI_SRC)
 
 add_executable(test_xpum_api ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
 add_library(xpum SHARED)
@@ -101,6 +102,7 @@ target_sources(
           ${HEALTH_SRC}
           ${DIAGNOSTIC_SRC}
           ${TOPOLOGY_SRC}
+          ${IPMI_SRC}
           ${DUMP_RAW_DATA_SRC})
 
 target_sources(
@@ -120,6 +122,7 @@ target_sources(
           ${HEALTH_SRC}
           ${DIAGNOSTIC_SRC}
           ${TOPOLOGY_SRC}
+          ${IPMI_SRC}
           ${DUMP_RAW_DATA_SRC})
 
 message(STATUS "version ${PROJECT_VERSION}") 

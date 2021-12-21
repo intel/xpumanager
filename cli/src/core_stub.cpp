@@ -1112,6 +1112,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash( int deviceId, unsign
     if ( status.ok() && response.value() == 0 ) {
         while ( true ) {
             std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
+            std::cout << "." << std::flush;
             grpc::ClientContext ct;
             XpumFirmwareFlashTaskRequest rq;
             rq.mutable_id()->set_id( deviceId );

@@ -77,6 +77,10 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "NUMBER_OF_THREADS_PER_EU";
         case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
             return "PHYSICAL_EU_SIMD_WIDTH";
+        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME:
+            return "AMC_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION:
+            return "AMC_FIRMWARE_VERSION";
         default:
             return "";
     }
@@ -214,7 +218,13 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
         return XPUM_GENERIC_ERROR;
     }
 
-    bool rc = device->runFirmwareFlash(job->filePath, gfxPath);
+    bool rc {false};
+    if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+        rc = device->runFirmwareFlash(job->filePath, gfxPath);
+    }
+    else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC) {
+        rc = device->runFirmwareFlash(job->filePath);
+    }
 
     return rc ? XPUM_OK : XPUM_GENERIC_ERROR;
 }

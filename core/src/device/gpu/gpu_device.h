@@ -1,13 +1,12 @@
 #pragma once
 
 #include <mutex>
+#include <future>
 
 #include "device/device.h"
 #include "stdio.h"
 
-
 namespace xpum {
-
 /*
   GPUDevice class defines various interfaces for communication with GPU devices.
 */
@@ -40,8 +39,10 @@ class GPUDevice : public Device {
     void getRasErrorOnSubdevice(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
     void getFrequencyThrottle(Callback_t callback) noexcept override;
 
-    virtual bool runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept override;
-    virtual xpum_firmware_flash_result_t getFirmwareFlashResult() noexcept override;
+    virtual bool runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept override; //GSC
+    virtual bool runFirmwareFlash(const char* filePath) noexcept override;  //AMC
+    bool getAMCFirmwareVersion(unsigned int versions[4]) noexcept;
+    virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept override;
 
     virtual bool isUpgradingFw(void) noexcept override;
 
@@ -49,11 +50,13 @@ class GPUDevice : public Device {
     void dumpFirmwareFlashLog() noexcept;
 
    private:
-    FILE* commandExec;
+    //FILE* commandExec;
+    std::future<xpum_firmware_flash_result_t>  taskGSC;
+    std::future<xpum_firmware_flash_result_t>  taskAMC;
     std::mutex mtx;
     std::string log;
 
-    static const unsigned int BUFFERSIZE = 64 * 1024;
+    static const unsigned int BUFFERSIZE = 4 * 1024;
     static const std::string logFilePath;
 };
 

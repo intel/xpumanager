@@ -36,7 +36,7 @@ def run_firmware_flash(deviceId):
                 name: deviceId
                 in: path
                 description: Device id
-                type: integer
+                type: GSC, AMC 
         produces: 
             - application/json
         responses:
@@ -53,8 +53,16 @@ def run_firmware_flash(deviceId):
     filePath = req.get('file')
     if not filePath:
         return jsonify({'error': 'missing arguments'})
+    
+    fwType = req.get('type')
+    if not fwType:
+        return jsonify({'error': 'missing arguments'})
+    if not fwType == 'GSC' and not fwType == 'AMC':
+        return jsonify({'error': 'wrong firmware type'})
 
-    rc = stub.runFirmwareFlash(deviceId, 0, filePath)
+    firmwareType = 0 if fwType == 'GSC' else 1
+
+    rc = stub.runFirmwareFlash(deviceId, firmwareType, filePath)
     return jsonify({'result': rc})
 
 
@@ -83,8 +91,13 @@ def get_firmware_flash_result(deviceId):
             500:
                 description: Error
     """
-    #firmwareType = request.args.get('type', type=str, default='')
+    fwType = request.args.get('type', type=str, default='')
+    if fwType == '':
+        return jsonify({'error': 'missing arguments'})
+    if not fwType == 'GSC' and not fwType == 'AMC':
+        return jsonify({'error': 'wrong firmware type'})
+    firmwareType = 0 if fwType == 'GSC' else 1
 
-    rc = stub.getFirmwareFlashResult(deviceId, 0)
+    rc = stub.getFirmwareFlashResult(deviceId, firmwareType)
 
     return jsonify({'result': rc})

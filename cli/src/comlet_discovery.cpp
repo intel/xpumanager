@@ -47,6 +47,8 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
                 { "label": "Driver Version", "value": "driver_version" },
                 { "label": "Firmware Name", "value": "firmware_name" },
                 { "label": "Firmware Version", "value": "firmware_version" },
+                { "label": "Firmware Name", "value": "amc_firmware_name" },
+                { "label": "Firmware Version", "value": "amc_firmware_version" },
                 "none",
                 { "label": "PCI BDF Address", "value": "pci_bdf_address" },
                 { "label": "PCI Slot", "value": "pci_slot" },

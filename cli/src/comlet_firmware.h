@@ -32,6 +32,7 @@ namespace xpum::cli {
 
             virtual void setupOptions() override;
             virtual std::unique_ptr<nlohmann::json> run() override;
+            virtual void getTableResult(std::ostream &out) override;
         
         private:
             std::unique_ptr<FlashFirmwareOptions> opts;

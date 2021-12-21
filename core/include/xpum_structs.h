@@ -156,6 +156,8 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE,    ///< Maximum number of EUs per sub-slice
     XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU,       ///< Maximum number of threads per EU
     XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH,         ///< The physical EU simd width
+    XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME,              ///< AMC string
+    XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION,           ///< AMC firmware version
 } xpum_device_property_name_t;
 
 extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name);

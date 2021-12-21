@@ -1,6 +1,8 @@
 #include "gpu_device.h"
 
+#include <iostream>
 #include <fstream>
+#include <chrono>
 
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/device_property.h"
@@ -10,13 +12,16 @@
 
 
 namespace xpum {
+using namespace std::chrono_literals;
 
-GPUDevice::GPUDevice() : commandExec(nullptr) {
+extern int cmd_firmware(const char* file, unsigned int versions[4]);
+
+GPUDevice::GPUDevice() {
 }
 
 GPUDevice::GPUDevice(const std::string& id,
                      const zes_device_handle_t& zes_device,
-                     std::vector<DeviceCapability>& capabilities) : commandExec(nullptr) {
+                     std::vector<DeviceCapability>& capabilities) {
     this->id = id;
     this->zes_device_handle = zes_device;
     for (DeviceCapability& cap : capabilities) {
@@ -28,7 +33,7 @@ GPUDevice::GPUDevice(const std::string& id,
                      const zes_device_handle_t& zes_device,
                      const ze_device_handle_t& ze_device,
                      const zes_driver_handle_t& ze_driver,
-                     std::vector<DeviceCapability>& capabilities) : commandExec(nullptr) {
+                     std::vector<DeviceCapability>& capabilities) {
     this->id = id;
     this->zes_device_handle = zes_device;
     this->ze_device_handle = ze_device;
@@ -200,10 +205,53 @@ bool GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPa
     std::string command = toolPath + " -Y -Device " + addrForTool + " -F " + filePath;
 
     std::lock_guard<std::mutex> lck(mtx);
-    if (commandExec != nullptr) {
+    if (taskGSC.valid()) {
         return false;
     } else {
-        commandExec = popen(command.c_str(), "r");
+        taskGSC = std::async(std::launch::async, [&, command] {
+            FILE* commandExec = popen(command.c_str(), "r");
+            while (true) {
+                xpum_firmware_flash_result_t rc;
+                char buf[BUFFERSIZE];
+                char* res = fgets(buf, BUFFERSIZE, commandExec);
+                if (res != nullptr) {
+                    log += std::string{res};
+                }
+                else {
+                    dumpFirmwareFlashLog();
+                    log.clear();
+                    if (pclose(commandExec) == 0) {
+                        rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+                    } else {
+                        rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+                    }
+                    commandExec = nullptr;
+                    return rc;
+                }
+            }
+        } );
+
+        return true;
+    }
+}
+
+bool GPUDevice::runFirmwareFlash(const char* filePath) noexcept {
+    std::lock_guard<std::mutex> lck(mtx);
+    if (taskAMC.valid()) {
+        return false;
+    }
+    else {
+        std::string dupPath(filePath);
+        taskAMC = std::async(std::launch::async, [=] {
+            int rc = cmd_firmware(dupPath.c_str(), nullptr);
+            if (rc == 0) {
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+            }
+            else {
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+        });
+
         return true;
     }
 }
@@ -218,44 +266,37 @@ void GPUDevice::dumpFirmwareFlashLog() noexcept {
     logFile.close();
 }
 
-xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult() noexcept {
-    xpum_firmware_flash_result_t rc{XPUM_DEVICE_FIRMWARE_FLASH_OK};
+xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_type_t type) noexcept {
 
-    if (commandExec != nullptr) {
-        for (int i = 0; i < 50; ++i) {
-            char buf[BUFFERSIZE];
-            char* res = fgets(buf, BUFFERSIZE, commandExec);
-            if (res != nullptr) {
-                log += std::string{res};
-            } else {
-                /*
-            if ( log.find( "FPT Operation Successful" ) != string::npos ) {
-                rc = Flash_result_t::OK;
-            }
-            else {
-                rc = Flash_result_t::ERROR;
-            }
-            */
-                dumpFirmwareFlashLog();
-                log.clear();
-                if (pclose(commandExec) == 0) {
-                    rc = XPUM_DEVICE_FIRMWARE_FLASH_OK;
-                } else {
-                    rc = XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
-                }
-                commandExec = nullptr;
-                return rc;
-            }
+    std::future<xpum_firmware_flash_result_t>* task;
+    if ( type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC ) {
+        task = &taskGSC;
+    }
+    else {
+        task = &taskAMC;
+    }
+
+    if (task->valid()) { 
+        auto status = task->wait_for(0ms);
+        if (status == std::future_status::ready) {
+            std::lock_guard<std::mutex> lck(mtx);
+            return task->get();
         }
-
-        return XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
+        else {
+            return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
+        }
     } else {
-        return XPUM_DEVICE_FIRMWARE_FLASH_OK;
+        return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
     }
 }
 
+bool GPUDevice::getAMCFirmwareVersion(unsigned int versions[4]) noexcept {
+    int rc = cmd_firmware(nullptr, versions);
+    return rc == 0 ? true : false;
+}
+
 bool GPUDevice::isUpgradingFw(void) noexcept {
-    return commandExec != nullptr;
+    return taskGSC.valid() || taskAMC.valid();
 }
 
 } // end namespace xpum

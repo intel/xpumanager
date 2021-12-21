@@ -92,7 +92,7 @@ def main(*args, **kwargs):
                     view_func=auth.login_required(groups.group_detail))
 
     # firmware flash
-    app.add_url_rule('/rest/v1/devices/<int:deviceId>/firmwareUpgrade', methods=['POST'],
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/updatefw', methods=['POST'],
                     view_func=auth.login_required(firmwares.run_firmware_flash))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/firmware', methods=['GET'],
                     view_func=auth.login_required(firmwares.get_firmware_flash_result))
