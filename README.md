@@ -74,3 +74,27 @@ sudo rpm -e xpumanager
    ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 5-8,12
 2. Run command "sudo systemctl daemon-reload"
 3. Run command "sudo systemctl restart xpum"
+
+Metric types:  
+  
+0. GPU Utilization (%), GPU active time of the elapsed time, per tile
+1. GPU Power (W), per tile
+2. GPU Frequency (MHz), per tile
+3. GPU Core Temperature (Celsius Degree), per tile
+4. GPU Memory Temperature (Celsius Degree), per tile
+5. GPU Memory Utilization (%), per tile
+6. GPU Memory Read (kB/s), per tile
+7. GPU Memory Write (kB/s), per tile
+8. GPU Energy Consumed (J), per tile
+9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile.
+10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled. Per tile.
+11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile.
+12. Reset Counter, per GPU.
+13. Programming Errors, per tile.
+14. Driver Errors, per tile.
+15. Cache Errors Correctable, per tile.
+16. Cache Errors Uncorrectable, per tile. 
+17. GPU Memory Bandwidth Utilization. (%)
+18. GPU Memory Used (MiB)  
+  
+Please note: if you want to collect the metrics, GPU EU Array Active/Stall/Idle, please set the value of /proc/sys/dev/i915/perf_stream_paranoid to 0. Or else, XPUM daemon can't be started. 

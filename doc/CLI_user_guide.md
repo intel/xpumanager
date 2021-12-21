@@ -193,15 +193,14 @@ Create a group
 +----------+---------------------------------------------------------------------------------------+
 ```
  
-Add device to a group
+Add devices to a group
 ```
-./xpumcli group -a -g 1 -d 0
-Successfully add device [0] to group 1
+./xpumcli group -a -g 1 -d 0 1
 +----------+---------------------------------------------------------------------------------------+
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
 | 1        | Group Name: testgroup                                                                 |
-|          | Device IDs: [0]                                                                       |
+|          | Device IDs: [0,1]                                                                       |
 +----------+---------------------------------------------------------------------------------------+
 ```
  
@@ -685,6 +684,8 @@ Help info for GPU policy
 Get and set the GPU policis.
 
 Usage: xpumcli policy [Options]
+  xpumcli policy -l
+  xpumcli policy --listalltypes 
   xpumcli policy -d [deviceId] -l
   xpumcli policy -d [deviceId] -l -j
   xpumcli policy -g [groupId] -l
