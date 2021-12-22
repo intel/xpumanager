@@ -82,7 +82,16 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli policy -c -g [groupId] --type 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]\n"
                "  xpumcli policy -r -d [deviceId] --type [policyTypeValue]\n"
                "  xpumcli policy -r -g [groupId] --type [policyTypeValue]\n";
-    } else {
+    } else if (app->get_name().compare("config") == 0) {
+        return "\nUsage: xpumcli config [Options]\n"
+                " xpumcli config -d [deviceId]\n"
+                " xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]\n"
+                " xpumcli config -d [deviceId] -t [tileId] --powerlimit [powerValue,averageWindow]\n"
+                " xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]\n"
+                " xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]\n"
+                " xpumcli config -d [deviceId] --reset\n";
+    }
+    else {
         return CLI::Formatter::make_usage(app, name);
     }
 }

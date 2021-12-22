@@ -55,7 +55,7 @@ def setStandby(deviceId, tileId, standby):
     if standby.lower() == "never":
         mode = core_pb2.STANDBY_NEVER
     elif standby.lower() == "default":
-        mode = core_pb2.STANDBY_NEVER
+        mode = core_pb2.STANDBY_DEFAULT
     else:
         return 1, "Invalid Parameter", None
     
