@@ -1,7 +1,7 @@
 #include "data_logic.h"
 
 #include <iostream>
-
+#include <algorithm>
 #include "db_persistency.h"
 #include "infrastructure/const.h"
 #include "infrastructure/exception/ilegal_state_exception.h"
@@ -69,12 +69,25 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
                                      uint64_t* begin,
                                      uint64_t* end,
                                      uint64_t session_id) {
+    if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId)) == nullptr) {
+        return;
+    }
     if (dataList == nullptr) {
         return;
     }
     *count = 0;
     std::map<MeasurementType, MeasurementData> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
+    std::vector<xpum::DeviceCapability> capabilities;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
+    for(auto metric = metric_types.begin(); metric != metric_types.end();) {
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (Utility::measurementTypeFromCapability(cap) == *metric);})){
+            metric = metric_types.erase(metric);
+        } else {
+            metric++;
+        }
+    }
+
     auto metric_types_iter = metric_types.begin();
     uint64_t start_time = Utility::getCurrentMillisecond();
     uint64_t end_time = 0;
@@ -158,6 +171,9 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
 void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
                                  xpum_device_metrics_t dataList[],
                                  int* count) {
+    if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId)) == nullptr) {
+        return;
+    }
     if (dataList == nullptr) {
         Property prop;
         Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES,prop);
@@ -167,6 +183,16 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
     int index = 0;
     std::map<MeasurementType, MeasurementData> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
+    std::vector<xpum::DeviceCapability> capabilities;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
+    for(auto metric = metric_types.begin(); metric != metric_types.end();) {
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (Utility::measurementTypeFromCapability(cap) == *metric);})){
+            metric = metric_types.erase(metric);
+        } else {
+            metric++;
+        }
+    }
+
     auto metric_types_iter = metric_types.begin();
     bool hasDataOnDevice = false;
     uint32_t num_subdevice = 0;
