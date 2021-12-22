@@ -252,55 +252,6 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
 /**************************************************************************/
 
 /**
- * @brief Set device configuration
- * 
- * @param deviceId              IN: Device id
- * @param key                   IN: The key to set
- * @param value                 IN: The pointer to value that to be set, type of value should be documented
- * @return xpum_result_t 
- */
-xpum_result_t xpumSetDeviceConfig(xpum_device_id_t deviceId, xpum_device_config_type_t key, void *value);
-
-/**
- * @brief Set device configuration by group
- * 
- * @param groupId               IN: Group id      
- * @param key                   IN: The key to set  
- * @param value                 IN: The pointer to value that to be set, type of value should be documented      
- * @return xpum_result_t 
- */
-xpum_result_t xpumSetDeviceConfigByGroup(xpum_group_id_t groupId, xpum_device_config_type_t key, void *value);
-
-/**
- * @brief Get device configuration
- * 
- * @param deviceId              IN: Device id    
- * @param key                   IN: The key to get
- * @param value                OUT: The pointer to value that to be set, type of value should be documented    
- * @return xpum_result_t 
- */
-xpum_result_t xpumGetDeviceConfig(xpum_device_id_t deviceId, xpum_device_config_type_t key, void *value);
-
-/**
- * @brief Get device configuration by group
- * 
- * @param groupId               IN: Group id                  
- * @param key                   IN: Configuration key to get      
- * @param deviceIdList      IN/OUT: Array of device ids in this group      
- * @param valueList         IN/OUT: Array to store configuration values for devices' \a key in \a deviceIdList    
- * @param count             IN/OUT: The number of entries that \a deviceIdList and \a valueList array can store, count should equal to or larger than device count of the group ( \a groupid ); 
- *                                  when return, the \a count will store real number of entries returned by \a deviceIdList and \a valueList
- * @return
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group 
- */
-xpum_result_t xpumGetDeviceConfigByGroup(xpum_group_id_t groupId,
-                                         xpum_device_config_type_t key,
-                                         xpum_device_id_t deviceIdList[],
-                                         void *valueList[],
-                                         int *count);
-
-/**
  * @brief Get device standby mode
  * @details This function is used to get the standby mode of device
  *
