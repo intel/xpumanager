@@ -8,6 +8,7 @@
 #include "logger.h"
 #include "xpum_api.h"
 #include "xpum_structs.h"
+#include "internal_api.h"
 
 namespace xpum::daemon {
 
