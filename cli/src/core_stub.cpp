@@ -228,12 +228,10 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
 
             (*json)["device_id_list"] = deviceIdList;
         } else {
-            (*json)["group_id"] = groupId;
             (*json)["device_id"] = deviceId;
             (*json)["error"] = response.errormsg();
         }
     } else {
-        (*json)["group_id"] = groupId;
         (*json)["device_id"] = deviceId;
         (*json)["error"] = response.errormsg();
     }
@@ -262,12 +260,10 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
 
             (*json)["device_id_list"] = deviceIdList;
         } else {
-            (*json)["group_id"] = groupId;
             (*json)["device_id"] = deviceId;
             (*json)["error"] = response.errormsg();
         }
     } else {
-        (*json)["group_id"] = groupId;
         (*json)["device_id"] = deviceId;
         (*json)["error"] = response.errormsg();
     }

@@ -131,13 +131,16 @@ message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")
 set_target_properties(xpum PROPERTIES 
     VERSION ${PROJECT_REAL_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 
+set(LibSpd
+    spdlog$<$<CONFIG:Debug>:d>    
+)
 
 if(HAVE_PCIACCESS_H)
-    target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs pciaccess)
+    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pciaccess)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pciaccess)
 else()
-    target_link_libraries(xpum PRIVATE ze_loader dl spdlog hwloc stdc++fs)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl spdlog hwloc stdc++fs)
+    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs)
 endif()
 
 unset(BUILD_TEST CACHE)
