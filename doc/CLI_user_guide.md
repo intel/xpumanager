@@ -541,8 +541,8 @@ Options:
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for one ATS-P card (AMC firmware version 
-                                is 3.3 or newer) on Intel M50CYP server (BMC firmware version is 2.82 or newer) so far.
+  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for one ATS-P or ATS-M1 card (AMC 
+                                firmware version is 3.7.1 or newer) on Intel M50CYP server (BMC firmware version is 2.82 or newer) so far.
   -f,--file                   The firmware image file path on this server.
 ```
 
