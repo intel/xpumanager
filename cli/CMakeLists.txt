@@ -84,7 +84,7 @@ target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 enable_testing()
 
 if(NOT BUILD_TESTING)
-    set(BUILD_TESTING "On" CACHE STRING "Choose On or off" FORCE)
+    set(BUILD_TESTING "Off" CACHE STRING "Choose On or off" FORCE)
 endif()
 
 if (BUILD_TESTING)
