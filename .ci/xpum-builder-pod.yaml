@@ -8,6 +8,8 @@ spec:
   tolerations:
   - key: jenkins-job-only
     effect: NoSchedule
+  - key: node-role.kubernetes.io/master
+    effect: NoSchedule
   containers:
     - args:
         - "99d"
