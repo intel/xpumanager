@@ -14,13 +14,14 @@ doxygen Doxyfile
 # convert xml to rst by doxyrest
 DOXYREST_FOLDER="./doxyrest"
 
+DOXYREST_PATH=$DOXYREST_FOLDER/bin/doxyrest
+
 cat /etc/os-release | grep 'CentOS' >/dev/null 2>&1
 if [ $? -eq 0 ]; then           
-    mv $DOXYREST_FOLDER/bin/doxyrest $DOXYREST_FOLDER/bin/doxyrest-ubt
-    mv $DOXYREST_FOLDER/bin/doxyrest-rh $DOXYREST_FOLDER/bin/doxyrest
+    DOXYREST_PATH=$DOXYREST_FOLDER/bin/doxyrest-rh
 fi
 
-$DOXYREST_FOLDER/bin/doxyrest \
+$DOXYREST_PATH \
     -c $DOXYREST_FOLDER/share/doxyrest/frame/doxyrest-config.lua \
     -F $DOXYREST_FOLDER/share/doxyrest/frame/cfamily \
     -F $DOXYREST_FOLDER/share/doxyrest/frame/common \
