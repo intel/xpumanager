@@ -3,6 +3,7 @@
 WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 
+cd ${WORK_DIR}
 
 rm -rf build
 mkdir build
@@ -10,7 +11,6 @@ mkdir build
 # generate xml using doxygen
 doxygen Doxyfile
 
-cd ${WORK_DIR}
 # convert xml to rst by doxyrest
 DOXYREST_FOLDER="./doxyrest"
 
