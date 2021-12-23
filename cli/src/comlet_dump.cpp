@@ -13,14 +13,14 @@ namespace xpum::cli {
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device id to query");
-    auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query");
+    auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
 
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
     metricsListOpt->delimiter(',');
     metricsListOpt->check(CLI::Range(0, (int)metricsOptions.size() - 1));
-    auto timeIntervalOpt = addOption("-i", this->opts->timeInterval, "Display the device data at seconds interval. Its default value is 1 second if not specified.");
+    auto timeIntervalOpt = addOption("-i", this->opts->timeInterval, "The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified.");
     timeIntervalOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
-    auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "The times to dump the device data. The dumping will not be ended if not specified.\n");
+    auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.\n");
     dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
 
     auto dumpRawDataFlag = addFlag("--rawdata", this->opts->rawData, "Dump the required raw statistics to a file in background.");
@@ -213,12 +213,17 @@ void ComletDump::printByLine(std::ostream &out) {
 
         for (std::size_t i = 0; i < this->opts->metricsIdList.size(); i++) {
             int metric = this->opts->metricsIdList[i];
-            std::string metricKey = metricsOptions[metric].key;
+            auto metricsConfig = metricsOptions[metric];
+            std::string metricKey = metricsConfig.key;
             std::string value = "";
             if (json != nullptr) {
                 for (auto metricObj : json->get<std::vector<nlohmann::json>>()) {
                     if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
-                        value = std::to_string(metricObj["value"].get<uint64_t>());
+                        uint64_t intValue = metricObj["value"].get<uint64_t>();
+                        if (metricsConfig.scale != 1) {
+                            intValue = round(intValue / metricsConfig.scale);
+                        }
+                        value = std::to_string(intValue);
                         break;
                     }
                 }

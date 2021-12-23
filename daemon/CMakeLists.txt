@@ -70,6 +70,7 @@ add_executable(xpumd ${CMAKE_CURRENT_LIST_DIR}/daemon.cpp)
 target_include_directories(
   xpumd
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../core/include
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../core/src/api
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
 )

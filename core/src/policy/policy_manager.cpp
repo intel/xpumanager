@@ -184,12 +184,12 @@ void PolicyManager::checkPolicy() {
             ++range.first;
         }
 
-        //isResetDevice
-        if (isResetDevice) {
-            XPUM_LOG_INFO("PolicyManager::triggerAction():before resetDevice(deviceId={})",deviceId); 
-            this->p_device_manager->resetDevice(std::to_string(deviceId), true);
-            XPUM_LOG_INFO("PolicyManager::triggerAction():after resetDevice(deviceId={})",deviceId); 
-        }
+        // //isResetDevice
+        // if (isResetDevice) {
+        //     XPUM_LOG_INFO("PolicyManager::triggerAction():before resetDevice(deviceId={})",deviceId); 
+        //     this->p_device_manager->resetDevice(std::to_string(deviceId), true);
+        //     XPUM_LOG_INFO("PolicyManager::triggerAction():after resetDevice(deviceId={})",deviceId); 
+        // }
     }
 }
 
@@ -347,11 +347,13 @@ bool PolicyManager::triggerAction(std::shared_ptr<xpum_policy_data> p_policy) {
         this->p_device_manager->setDeviceFrequencyRange(std::to_string(p_policy->deviceId), freq);
         XPUM_LOG_INFO("PolicyManager::triggerAction():after setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})",p_policy->deviceId,p_policy->action.throttle_device_frequency_min,p_policy->action.throttle_device_frequency_max); 
         return false;
-    } else if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE) {
-        // Reset device will lead to reiniti all. So reset it after this device check finished.
-        XPUM_LOG_INFO("PolicyManager::triggerAction(): do XPUM_POLICY_ACTION_TYPE_RESET_DEVICE for deviceId={}",p_policy->deviceId); 
-        return true;
-    } else if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_NULL) {
+    } 
+    // else if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE) {
+    //     // Reset device will lead to reiniti all. So reset it after this device check finished.
+    //     XPUM_LOG_INFO("PolicyManager::triggerAction(): do XPUM_POLICY_ACTION_TYPE_RESET_DEVICE for deviceId={}",p_policy->deviceId); 
+    //     return true;
+    // } 
+    else if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_NULL) {
         //XPUM_LOG_INFO("---PolicyManager::triggerAction()---XPUM_POLICY_ACTION_TYPE_NULL--deviceId={}",p_policy->deviceId);
         return false;
     }
@@ -429,6 +431,7 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
 
     if (policy.isDeletePolicy) {
         //Delete policy
+        bool isFound = false;
         for (auto it = policyMap.begin(); it != policyMap.end(); it++) {
             xpum_device_id_t deviceId = it->first;
             std::shared_ptr<std::list<std::shared_ptr<xpum_policy_data>>> p_list = it->second;
@@ -437,14 +440,20 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
                     std::shared_ptr<xpum_policy_data> p_policy = *itList;             
                     if (policy.type == p_policy->type) {
                         itList = p_list->erase(itList);
+                        isFound = true;
                     } else {
                         itList++;
                     }
                 }
             }
         }
-        XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds(): Delete policy ok");
-        return XPUM_OK;
+        if(!isFound){
+            XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds(): Delete policy failed because not exist!");
+            return XPUM_RESULT_POLICY_NOT_EXIST;
+        }else{
+            XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds(): Delete policy ok");
+            return XPUM_OK;
+        }        
     } else {
         for (int i = 0; i < count; i++) {
             //XPUM_LOG_INFO("PolicyManager::xpumSetPolicyByDeviceIds()---2-1-");
@@ -549,7 +558,7 @@ xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
                 || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE 
                 || policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE ){
         if(!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL
-            ||policy.action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE
+            //||policy.action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE
             )){
             return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
         }

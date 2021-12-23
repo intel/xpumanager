@@ -1,4 +1,5 @@
 #include "xpum_api.h"
+#include "internal_api.h"
 
 #include <cstring>
 #include <fstream>
