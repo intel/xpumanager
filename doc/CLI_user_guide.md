@@ -569,7 +569,6 @@ Usage: xpumcli config [Options]
   xpumcli config -d [deviceId] -t [tileId] --powerlimit [powerValue,averageWindow]
   xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
   xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
-  xpumcli config -d [deviceId] --reset
   
 
 
@@ -585,7 +584,6 @@ Options:
   --standby                   Tile-level standby mode. Valid options: "default"; "never".
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us);
                                 "exclusive".
-  --reset                     Hard reset the GPU. All applications that are currently using this device will be forcibly killed. 
 ```
 
 show the GPU settings
@@ -655,27 +653,12 @@ Change the GPU tile scheduler mode.
 Succeed to change the scheduler mode on GPU 0 tile 0.
 ```
 
-Reset the GPU.
-```
-./xpumcli config -d 0 --reset
-The process（es） below are using this device. 
-  PID: 633972, Command: ./ze_gemm
-  PID: 633973, Command: ./ze_gemm
-
-All process(es) above will be forcibly killed if you reset it. Do you want to continue? (Y/N) Y
-Succeed to reset the GPU 0.
-```
-
 ## Get and set the policy, automatic action triggered by the condition
-The supported policies are list in the table below. For example, if the "GPU Core Temperature" policy is set and one GPU tile temperature is more than the specified threshold, the GPU throttling action will be taken automatically. For "Cache Errors Uncorrectable", if it happens, a resetting GPU action will be taken. The temperature and errors are all based on tile-level.  
+The supported policies are list in the table below. For example, if the "GPU Core Temperature" policy is set and one GPU tile temperature is more than the specified threshold, the GPU throttling action will be taken automatically. 
 
 | Types                         | Conditions     | Actions                 |  
 |:------------------------------|:---------------|:------------------------|
-| 1. GPU Core Temperature       | 1. More than   | 1. Throttle GPU Core    |  
-| 2. Programming Errors         | 1. More than   | 2. Reset GPU            |  
-| 3. Driver Errors              | 1. More than   | 2. Reset GPU            |  
-| 4. Cache Errors Correctable   | 1. More than   | 2. Reset GPU            |  
-| 5. Cache Errors Uncorrectable | 2. When occur  | 2. Reset GPU            |  
+| 1. GPU Core Temperature       | 1. More than   | 1. Throttle GPU Core    |
 
 
 Help info for GPU policy
@@ -713,17 +696,12 @@ Options:
   
   --type                      Policy types.
                                 1. GPU Core Temperature
-                                2. Programming Errors
-                                3. Driver Errors
-                                4. Cache Errors Correctable
-                                5. Cache Errors Uncorrectable
   --condition                 Conditions.
                                 1. More than
                                 2. When occur
   --threshold                 Threshold
   --action                    Policy action.
                                 1. Throttle GPU Core Frequency
-                                2. Reset GPU
   --throttlefrequencymin      Throttle GPU frequency to min value
   --throttlefrequencymax      Throttle GPU frequency to max value
 ```
@@ -741,10 +719,6 @@ List all supported policies
 | Types                         |Conditions        | Actions                                       |
 +-------------------------------+------------------+-----------------------------------------------+
 | 1. GPU Core Temperature       | 1. More than     | 1. Throttle GPU Core Frequency                |
-| 2. Programming Errors         | 1. More than     | 2. Reset GPU                                  |
-| 3. Driver Errors              | 1. More than     | 2. Reset GPU                                  |
-| 4. Cache Errors Correctable   | 1. More than     | 2. Reset GPU                                  |
-| 5. Cache Errors Uncorrectable | 2. When occur    | 2. Reset GPU                                  |
 +-------------------------------+------------------+-----------------------------------------------+
 ```
 
@@ -756,8 +730,6 @@ List all policies set on the GPU.
 +-----------+-------------------------------+------------------+-----------------------------------+
 | 0         | 1. GPU Core Temperature       | 1. More than 95  | 1. Throttle GPU Core Frequency    |
 |           |                               |                  |      min: 300, max: 400           |
-+-----------+-------------------------------+------------------+-----------------------------------+
-| 0         | 5. Cache Errors Uncorrectable | 2. When occur    | 2. Reset GPU                      |
 +-----------+-------------------------------+------------------+-----------------------------------+
 ```
   
