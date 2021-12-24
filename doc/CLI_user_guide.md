@@ -541,8 +541,9 @@ Options:
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for one ATS-P or ATS-M1 card (AMC 
-                                firmware version is 3.7.1 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.
+  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for one ATS-P or ATS-M card (ATS-P AMC 
+                                firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC 
+                                firmware version is 2.82 or later) so far.
   -f,--file                   The firmware image file path on this server.
 ```
 
@@ -552,7 +553,20 @@ Update GPU GSC firmware
 Start to update firmware:
 Firmware name: GSC
 Image path: /home/test/tools/ATS.PS.B.P.Si.2021.WW41.5_25MHz_Quad_DAMen_IFWI.bin
-Update firmware successfully. 
+Update firmware successfully. Please reboot OS to take effect. 
+```
+
+Update GPU AMC firmware
+```
+./xpumcli updatefw -d 0 -t AMC -f /home/dcm/ats_m_amc_v_3_6_3_0.bin
+CAUTION: update AMC may cause OS reboot
+Please comfirm to proceed ( Y/N ) ?
+Y
+Start to update firmware
+Firmware Name: AMC
+Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
+..............Update firmware successfully. Please reboot OS to take effect. 
+
 ```
  
 
