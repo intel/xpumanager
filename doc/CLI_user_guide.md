@@ -452,7 +452,7 @@ optional arguments:
                                 17. GPU Memory Bandwidth Utilization. (%)
                                 18. GPU Memory Used (MiB)
   
-  -i                          The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified. 
+  -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
   
   --rawdata                   Dump the required raw statistics to a file in background. 
