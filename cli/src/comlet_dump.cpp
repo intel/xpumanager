@@ -18,7 +18,7 @@ void ComletDump::setupOptions() {
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
     metricsListOpt->delimiter(',');
     metricsListOpt->check(CLI::Range(0, (int)metricsOptions.size() - 1));
-    auto timeIntervalOpt = addOption("-i", this->opts->timeInterval, "The interval (in seconds) to dump the device statistics to screen. The interval will be XPU Manager sampling period if this parameter is not specified.");
+    auto timeIntervalOpt = addOption("-i", this->opts->timeInterval, "The interval (in seconds) to dump the device statistics to screen. Default value: 1 second.");
     timeIntervalOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
     auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.\n");
     dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
@@ -27,6 +27,9 @@ void ComletDump::setupOptions() {
     auto startDumpFlag = addFlag("--start", this->opts->startDumpTask, "Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.");
     auto stopDumpOpt = addOption("--stop", this->opts->dumpTaskId, "Stop one active dump task.");
     auto listDumpFlag = addFlag("--list", this->opts->listDumpTask, "List all the active dump tasks.");
+
+    dumpRawDataFlag->excludes(timeIntervalOpt);
+    dumpRawDataFlag->excludes(dumpTimesOpt);
 
     startDumpFlag->needs(deviceIdOpt);
     startDumpFlag->needs(metricsListOpt);
