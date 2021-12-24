@@ -31,9 +31,9 @@ def getFirmwareFlashResult(deviceId, firmwareType):
         data = dict()
         data['device_id'] = resp.id.id
         if resp.type.value == 0:
-            data['device_type'] = 'GSC'
+            data['firmware_name'] = 'GSC'
         else:
-            data['device_type'] = 'AMC'
+            data['firmware_name'] = 'AMC'
 
         if resp.result.value == 0:
             data['firmware_flash_result'] = 'OK'
