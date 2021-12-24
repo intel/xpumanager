@@ -1154,7 +1154,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie,int id) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath ) {
+std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, std::string& filePath) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -1166,7 +1166,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash( int deviceId, unsign
 
     GeneralEnum response;
     grpc::Status status = stub->runFirmwareFlash( &context, request, &response );
-    if ( status.ok() && response.value() == 0 ) {
+    if ( status.ok() && response.value() == xpum_result_t::XPUM_OK ) {
         while ( true ) {
             std::this_thread::sleep_for( std::chrono::seconds( 5 ) );
             std::cout << "." << std::flush;
@@ -1196,11 +1196,16 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash( int deviceId, unsign
             }
         }
     }
+    else if (status.ok() && response.value() == xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED) {
+        (*json)["error"] = "AMC Firmware update unsupported. AMC firmware update just works for one ATS-P card (AMC firmware version is 3.3 or newer) on Intel M50CYP server (BMC firmware version is 2.82 or newer) so far";
+        return json;
+    }
     else {
         (*json)["error"] = "Failed to run firmware flash";
         return json;
     }
 }
+
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tileId) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

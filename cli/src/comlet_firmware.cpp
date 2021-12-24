@@ -6,6 +6,7 @@
 
 namespace xpum::cli {
 ComletFirmware::ComletFirmware() : ComletBase("updatefw", "Update GPU firmware") {
+    this->printHelpWhenNoArgs = true;
 }
 
 ComletFirmware::~ComletFirmware() {
@@ -14,8 +15,10 @@ ComletFirmware::~ComletFirmware() {
 void ComletFirmware::setupOptions() {
     opts = std::unique_ptr<FlashFirmwareOptions>( new FlashFirmwareOptions() );
     addOption( "-d, --device", opts->deviceId, "device ID" );
-    addOption( "-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P card so far" );
+    addOption( "-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for one ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far." );
     addOption( "-f, --file", opts->firmwarePath, "The firmware image file path on this server" );
+
+    opts->deviceId = -1;
 }
 
 std::unique_ptr<nlohmann::json> ComletFirmware::run() {
@@ -31,6 +34,11 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
         return json;
     }
 
+    if (opts->firmwarePath.length() == 0) {
+        (*json)["error"] = "invalid file name";
+        return json;
+    }
+
     int type = opts->firmwareType == "GSC" ? 0 : 1;
     if ( type == 1 ) {
         std::cout << "CAUTION: update AMC may cause OS reboot" << std::endl;
@@ -42,8 +50,10 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
             return json;
         }
     }
+
+
     std::cout << "Start to update firmware" << std::endl;
-    std::cout << "Firmware Type: " << opts->firmwareType << std::endl;
+    std::cout << "Firmware Name: " << opts->firmwareType << std::endl;
     std::cout << "Image path: " << opts->firmwarePath << std::endl;
 
     json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
@@ -51,17 +61,6 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
 }
 
 void ComletFirmware::getTableResult(std::ostream &out) {
-    /*
-    std::string json = this->run()->dump();
-    if (json.find("OK") != std::string::npos) {
-        out << "Update firmware successfully" << std::endl;
-    } else if (json.find("update aborted") != std::string::npos) {
-        out << "Update firmware aborted" << std::endl;
-    } else {
-        out << "Update firmware failed" << std::endl;
-    }
-    */
-
     auto json = this->run();
     auto status = (*json)["error"];
     if (!status.is_null()) {
@@ -72,7 +71,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     status = (*json)["firmware_flash_result"];
     if (!status.is_null()) {
         if (status.get<std::string>().find("OK") != std::string::npos) {
-            out << "Update firmware successfully" << std::endl;
+            out << "Update firmware successfully. Please reboot OS to take effect." << std::endl;
         } else {
             out << "Update firmware failed" << std::endl;
         }

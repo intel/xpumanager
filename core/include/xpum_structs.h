@@ -91,7 +91,8 @@ typedef enum xpum_result_enum {
     XPUM_GROUP_CHANGE_NOT_ALLOWED,
     XPUM_NOT_INITIALIZED,     ///< XPUM is not initialized.
     XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST,   ///< Dump raw data task not exists
-    XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY   ///< The the key for agent setting is unknown
+    XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY,   ///< The the key for agent setting is unknown
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED = 16
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -277,6 +278,7 @@ typedef enum xpum_firmware_flash_result_enum {
     XPUM_DEVICE_FIRMWARE_FLASH_OK = 0,  ///< Firmware flash successfully
     XPUM_DEVICE_FIRMWARE_FLASH_ERROR,   ///< Firmware flash in error
     XPUM_DEVICE_FIRMWARE_FLASH_ONGOING, ///< Firmware flash is on going
+    XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED, ///< Firmware flash is on going
 } xpum_firmware_flash_result_t;
 
 /**

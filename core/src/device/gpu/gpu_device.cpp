@@ -179,18 +179,18 @@ void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
                                                    });
 }
 
-bool GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
+xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
     Property pcieAddrProp;
     bool res = getProperty(XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS, pcieAddrProp);
     if (!res) {
-        return false;
+        return xpum_result_t::XPUM_GENERIC_ERROR;
     }
 
     //remove first "0000"
     std::string address = pcieAddrProp.getValue();
     std::string::size_type begin = address.find(":");
     if (begin == std::string::npos) {
-        return false;
+        return xpum_result_t::XPUM_GENERIC_ERROR;
     }
 
     std::string addrForTool = address.substr(begin + 1, address.length());
@@ -198,7 +198,7 @@ bool GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPa
     //change last "." to ":"
     begin = addrForTool.find(".");
     if (begin == std::string::npos) {
-        return false;
+        return xpum_result_t::XPUM_GENERIC_ERROR;
     }
     addrForTool[begin] = ':';
 
@@ -206,7 +206,7 @@ bool GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPa
 
     std::lock_guard<std::mutex> lck(mtx);
     if (taskGSC.valid()) {
-        return false;
+        return xpum_result_t::XPUM_GENERIC_ERROR;
     } else {
         taskGSC = std::async(std::launch::async, [&, command] {
             FILE* commandExec = popen(command.c_str(), "r");
@@ -231,14 +231,21 @@ bool GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPa
             }
         } );
 
-        return true;
+        return xpum_result_t::XPUM_OK;
     }
 }
 
-bool GPUDevice::runFirmwareFlash(const char* filePath) noexcept {
+xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath) noexcept {
+    Property amcVersion;
+    bool res = getProperty(XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION, amcVersion);
+
+    if (!res || amcVersion.getValue() == "unknown") {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED;
+    }
+
     std::lock_guard<std::mutex> lck(mtx);
     if (taskAMC.valid()) {
-        return false;
+        return xpum_result_t::XPUM_GENERIC_ERROR;
     }
     else {
         std::string dupPath(filePath);
@@ -252,7 +259,7 @@ bool GPUDevice::runFirmwareFlash(const char* filePath) noexcept {
             }
         });
 
-        return true;
+        return xpum_result_t::XPUM_OK;
     }
 }
 

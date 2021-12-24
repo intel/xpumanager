@@ -1,5 +1,6 @@
 from .grpc_stub import stub
 import core_pb2
+from .xpum_enums import XpumResult
 
 
 def runFirmwareFlash(deviceId, firmwareType, filePath):
@@ -8,7 +9,9 @@ def runFirmwareFlash(deviceId, firmwareType, filePath):
     job.type.value = firmwareType
     job.path = filePath
     resp = stub.runFirmwareFlash(job)
-    if resp.value != 0:
+    if resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED'].value:
+        return 1, "AMC Firmware update unsupported; AMC firmware update just works for one ATS-P card (AMC firmware version is 3.3 or newer) on Intel M50CYP server (BMC firmware version is 2.82 or newer) so far", None
+    elif resp.value != XpumResult['XPUM_OK'].value:
         return 1, "Fail to run firmware flash", None
     else:
         data = dict()
@@ -27,7 +30,11 @@ def getFirmwareFlashResult(deviceId, firmwareType):
     else:
         data = dict()
         data['device_id'] = resp.id.id
-        data['device_type'] = resp.type.value
+        if resp.type.value == 0:
+            data['device_type'] = 'GSC'
+        else:
+            data['device_type'] = 'AMC'
+
         if resp.result.value == 0:
             data['firmware_flash_result'] = 'OK'
         elif resp.result.value == 1:

@@ -82,8 +82,8 @@ class Device {
 
     zes_device_handle_t getDeviceHandle();
 
-    virtual bool runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept; //GSC
-    virtual bool runFirmwareFlash(const char* filePath) noexcept; //AMC
+    virtual xpum_result_t runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept; //GSC
+    virtual xpum_result_t runFirmwareFlash(const char* filePath) noexcept; //AMC
     virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept;
 
     ze_device_handle_t getDeviceZeHandle();

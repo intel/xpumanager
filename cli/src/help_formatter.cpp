@@ -82,6 +82,10 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli policy -c -g [groupId] --type 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]\n"
                "  xpumcli policy -r -d [deviceId] --type [policyTypeValue]\n"
                "  xpumcli policy -r -g [groupId] --type [policyTypeValue]\n";
+    } else if (app->get_name().compare("updatefw") == 0) {
+        return "\nUsage: xpumcli updatefw [Options]\n"
+               "  xpumcli updatefw -d [deviceId] -t [firmwareName] -f [imageFilePath]\n"
+               "  xpumcli updatefw -d [deviceId] -t [firmwareName] -f [imageFilePath] -j\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }

@@ -95,12 +95,12 @@ zes_device_handle_t Device::getDeviceHandle() {
     return zes_device_handle;
 }
 
-bool Device::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
-    return false;
+xpum_result_t Device::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
+    return xpum_result_t::XPUM_GENERIC_ERROR;
 }
 
-bool Device::runFirmwareFlash(const char* filePath) noexcept {
-    return false;
+xpum_result_t Device::runFirmwareFlash(const char* filePath) noexcept {
+    return xpum_result_t::XPUM_GENERIC_ERROR;
 }
 
 xpum_firmware_flash_result_t Device::getFirmwareFlashResult(xpum_firmware_type_t type) noexcept {

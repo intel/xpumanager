@@ -246,7 +246,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
         return XPUM_GENERIC_ERROR;
     }
 
-    bool rc {false};
+    xpum_result_t rc;
     if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
         rc = device->runFirmwareFlash(job->filePath, gfxPath);
     }
@@ -254,7 +254,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
         rc = device->runFirmwareFlash(job->filePath);
     }
 
-    return rc ? XPUM_OK : XPUM_GENERIC_ERROR;
+    return rc;
 }
 
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
