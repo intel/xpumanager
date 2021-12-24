@@ -30,7 +30,7 @@ XpumPolicyConditionTypeToString = {
 XpumPolicyActionTypeToString = {  
     core_pb2.POLICY_ACTION_TYPE_NULL : "XPUM_POLICY_ACTION_TYPE_NULL",
     core_pb2.POLICY_ACTION_TYPE_THROTTLE_DEVICE : "XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE",
-    core_pb2.POLICY_ACTION_TYPE_RESET_DEVICE : "XPUM_POLICY_ACTION_TYPE_RESET_DEVICE",   
+    #core_pb2.POLICY_ACTION_TYPE_RESET_DEVICE : "XPUM_POLICY_ACTION_TYPE_RESET_DEVICE",   
 }
 
 XpumPolicyTypeFromString = {
@@ -57,7 +57,7 @@ XpumPolicyConditionTypeFromString = {
 XpumPolicyActionTypeFromString = {  
     "XPUM_POLICY_ACTION_TYPE_NULL": core_pb2.POLICY_ACTION_TYPE_NULL,
     "XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE": core_pb2.POLICY_ACTION_TYPE_THROTTLE_DEVICE,
-    "XPUM_POLICY_ACTION_TYPE_RESET_DEVICE": core_pb2.POLICY_ACTION_TYPE_RESET_DEVICE,   
+    #"XPUM_POLICY_ACTION_TYPE_RESET_DEVICE": core_pb2.POLICY_ACTION_TYPE_RESET_DEVICE,   
 }
 
 
@@ -87,8 +87,8 @@ def getPolicy(id, isDevcie):
         action = {}
         action["type"] = XpumPolicyActionTypeToString[one.action.type]
         if(one.action.type == core_pb2.POLICY_ACTION_TYPE_THROTTLE_DEVICE):
-            condition["throttle_device_frequency_min"] = one.action.throttle_device_frequency_min
-            condition["throttle_device_frequency_max"] = one.action.throttle_device_frequency_max
+            action["throttle_device_frequency_min"] = one.action.throttle_device_frequency_min
+            action["throttle_device_frequency_max"] = one.action.throttle_device_frequency_max
         data['action'] = action
         ####
         data['notify_callback_url'] = one.notifyCallBackUrl

@@ -34,9 +34,9 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "  Valid Options", "value": "standby_mode_valid_options" },
                 {"rowTitle": " " },
                 { "label": "Scheduler Mode", "value": "scheduler_mode" },
-                { "label": "  scheduler watchdog timeout (us) ", "value": "scheduler_watchdog_timeout" },
-                { "label": "  scheduler timeslice interval (us) ", "value": "scheduler_timeslice_interval" },
-                { "label": "  scheduler timeslice yield timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
+                { "label": "  Scheduler Timeout Mode Timeout (us) ", "value": "scheduler_watchdog_timeout" },
+                { "label": "  Scheduler Timeslice Mode Interval (us) ", "value": "scheduler_timeslice_interval" },
+                { "label": "  Scheduler Timeslice Mode Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
             ]
         ]
     }]
@@ -249,7 +249,10 @@ static void showPureCommandOutput(std::ostream &out, std::shared_ptr<nlohmann::j
 
 void ComletConfig::getTableResult(std::ostream &out) {
     auto res = run();
-    if (res->contains("error")) {
+    if (res->contains("return")) {
+        out << "Return: " << (*res)["return"].get<std::string>() << std::endl;
+        return;
+    } else if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         return;
     }

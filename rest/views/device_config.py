@@ -188,7 +188,7 @@ def set_frequencyrange(deviceId):
         return jsonify("json string is invalid"), 500
     tileId = req["tile_id"]
     minFreq = req["min_frequency"]
-    maxFreq = req["-max_frequency"]
+    maxFreq = req["max_frequency"]
     if type(tileId) != int:
         return jsonify("Invalid Parameter"), 500
     if type(minFreq) != int:
@@ -285,7 +285,7 @@ def get_config(deviceId):
     """
     Get all configuration for device
     ---
-    put:
+    get:
         tags:
             - "Config"
         description: Get all configuration for device

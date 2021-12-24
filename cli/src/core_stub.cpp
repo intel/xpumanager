@@ -228,12 +228,10 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
 
             (*json)["device_id_list"] = deviceIdList;
         } else {
-            (*json)["group_id"] = groupId;
             (*json)["device_id"] = deviceId;
             (*json)["error"] = response.errormsg();
         }
     } else {
-        (*json)["group_id"] = groupId;
         (*json)["device_id"] = deviceId;
         (*json)["error"] = response.errormsg();
     }
@@ -262,12 +260,10 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
 
             (*json)["device_id_list"] = deviceIdList;
         } else {
-            (*json)["group_id"] = groupId;
             (*json)["device_id"] = deviceId;
             (*json)["error"] = response.errormsg();
         }
     } else {
-        (*json)["group_id"] = groupId;
         (*json)["device_id"] = deviceId;
         (*json)["error"] = response.errormsg();
     }
@@ -891,9 +887,9 @@ std::string CoreStub::policyActionTypeEnumToString(XpumPolicyActionType type) {
         case POLICY_ACTION_TYPE_THROTTLE_DEVICE:
             ret = "1. Throttle GPU Core Frequency";
             break;
-        case POLICY_ACTION_TYPE_RESET_DEVICE:
-            ret = "2. Reset GPU";
-            break;
+        // case POLICY_ACTION_TYPE_RESET_DEVICE:
+        //     ret = "2. Reset GPU";
+        //     break;
         default:
             break;
     }
@@ -951,34 +947,34 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllPolicyType() {
                 component["type"] = "1. GPU Core Temperature";
                 healthJsonList.push_back(component);
             }
-            {
-                auto component = nlohmann::json();
-                component["action"] = "2. Reset GPU";
-                component["condition"] = "1. More than";
-                component["type"] = "2. Programming Errors";
-                healthJsonList.push_back(component);
-            }
-            {
-                auto component = nlohmann::json();
-                component["action"] = "2. Reset GPU";
-                component["condition"] = "1. More than";
-                component["type"] = "3. Driver Errors";
-                healthJsonList.push_back(component);
-            }
-            {
-                auto component = nlohmann::json();
-                component["action"] = "2. Reset GPU";
-                component["condition"] = "1. More than";
-                component["type"] = "4. Cache Errors Correctable";
-                healthJsonList.push_back(component);
-            }
-            {
-                auto component = nlohmann::json();
-                component["action"] = "2. Reset GPU";
-                component["condition"] = "2. When occur";
-                component["type"] = "5. Cache Errors Uncorrectable";
-                healthJsonList.push_back(component);
-            }
+            // {
+            //     auto component = nlohmann::json();
+            //     component["action"] = "2. Reset GPU";
+            //     component["condition"] = "1. More than";
+            //     component["type"] = "2. Programming Errors";
+            //     healthJsonList.push_back(component);
+            // }
+            // {
+            //     auto component = nlohmann::json();
+            //     component["action"] = "2. Reset GPU";
+            //     component["condition"] = "1. More than";
+            //     component["type"] = "3. Driver Errors";
+            //     healthJsonList.push_back(component);
+            // }
+            // {
+            //     auto component = nlohmann::json();
+            //     component["action"] = "2. Reset GPU";
+            //     component["condition"] = "1. More than";
+            //     component["type"] = "4. Cache Errors Correctable";
+            //     healthJsonList.push_back(component);
+            // }
+            // {
+            //     auto component = nlohmann::json();
+            //     component["action"] = "2. Reset GPU";
+            //     component["condition"] = "2. When occur";
+            //     component["type"] = "5. Cache Errors Uncorrectable";
+            //     healthJsonList.push_back(component);
+            // }
 
             (*json)["all_policy_type"] = healthJsonList;
         }
@@ -1015,7 +1011,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllPolicyActionType() {
             std::vector<nlohmann::json> healthJsonList;
             healthJsonList.push_back("POLICY_ACTION_TYPE_NULL");
             healthJsonList.push_back("POLICY_ACTION_TYPE_THROTTLE_DEVICE");
-            healthJsonList.push_back("POLICY_ACTION_TYPE_RESET_DEVICE");
+            //healthJsonList.push_back("POLICY_ACTION_TYPE_RESET_DEVICE");
             (*json)["all_policy_list"] = healthJsonList;
         }
     }

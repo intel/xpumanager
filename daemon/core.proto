@@ -292,7 +292,7 @@ message XpumPolicyCondition {
 enum XpumPolicyActionType {  
     POLICY_ACTION_TYPE_NULL=0;
     POLICY_ACTION_TYPE_THROTTLE_DEVICE=1;
-    POLICY_ACTION_TYPE_RESET_DEVICE=2;   
+    /*POLICY_ACTION_TYPE_RESET_DEVICE=2; */  
 }
 enum XpumStandbyMode {  
     STANDBY_DEFAULT=0;

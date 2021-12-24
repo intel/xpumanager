@@ -78,10 +78,13 @@ void ComletPolicy::setupOptions() {
     addFlag("-c,--create", this->opts->create, "Create one policy.");
     addFlag("-r,--remove", this->opts->remove, "Remove one policy. Only the policy is removed and the changed GPU settings will not be resumed.\n"); 
     
-    addOption("--type", this->opts->policyType, "Policy types.\n\t1. GPU Core Temperature\n\t2. Programming Errors\n\t3. Driver Errors\n\t4. Cache Errors Correctable\n\t5. Cache Errors Uncorrectable");
-    addOption("--condition", this->opts->policyConditionType, "Conditions.\n\t1. More than\n\t2. When occur");
+    //addOption("--type", this->opts->policyType, "Policy types.\n\t1. GPU Core Temperature\n\t2. Programming Errors\n\t3. Driver Errors\n\t4. Cache Errors Correctable\n\t5. Cache Errors Uncorrectable");
+    addOption("--type", this->opts->policyType, "Policy types.\n\t1. GPU Core Temperature");
+    //addOption("--condition", this->opts->policyConditionType, "Conditions.\n\t1. More than\n\t2. When occur");
+    addOption("--condition", this->opts->policyConditionType, "Conditions.\n\t1. More than");
     addOption("--threshold", this->opts->threshold, "Threshold");
-    addOption("--action", this->opts->policyActionType, "Policy action.\n\t1. Throttle GPU\n\t2. Reset GPU");
+    //addOption("--action", this->opts->policyActionType, "Policy action.\n\t1. Throttle GPU\n\t2. Reset GPU");
+    addOption("--action", this->opts->policyActionType, "Policy action.\n\t1. Throttle GPU");
     addOption("--throttlefrequencymin", this->opts->throttlefrequencymin, "Throttle GPU frequency to min value");
     addOption("--throttlefrequencymax", this->opts->throttlefrequencymax, "Throttle GPU frequency to max value");
 }
@@ -110,20 +113,10 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         bool isDevcie;
         int id;
         if (this->opts->deviceId != -1){
-            // if(!this->isDeviceValid(this->opts->deviceId)){
-            //     (*json)["is_success"] = false; 
-            //     (*json)["error"] = "Wrong argument: <device> is invalid.";
-            //     return json;
-            // }
             isDevcie = true;
             id = this->opts->deviceId;
             json = this->coreStub->getPolicyById(isDevcie,id);
         } else if (this->opts->groupId != -1){
-            // if(!this->isGroupValid(this->opts->deviceId)){
-            //     (*json)["is_success"] = false; 
-            //     (*json)["error"] = "Wrong argument: <group> is invalid.";
-            //     return json;
-            // }
             isDevcie = false;
             id = this->opts->groupId;
             json = this->coreStub->getPolicyById(isDevcie,id);
@@ -162,10 +155,10 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             return json;
         } 
         if (!(this->opts->policyType == "1"
-                ||this->opts->policyType == "2"
-                ||this->opts->policyType == "3"
-                ||this->opts->policyType == "4"
-                ||this->opts->policyType == "5"
+                // ||this->opts->policyType == "2"
+                // ||this->opts->policyType == "3"
+                // ||this->opts->policyType == "4"
+                // ||this->opts->policyType == "5"
             )) {
             (*json)["is_success"] = false; 
             (*json)["error"] = "Wrong argument: <type> is invalid";
@@ -180,7 +173,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             return json;
         } else {   
             if (!(this->opts->policyConditionType == "1"
-                ||this->opts->policyConditionType == "2"
+                //||this->opts->policyConditionType == "2"
                 )) {
                 (*json)["is_success"] = false; 
                 (*json)["error"] = "Wrong argument: <condition> is invalid";
@@ -209,7 +202,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             return json;
         } else {
             if (!(this->opts->policyActionType == "1"
-                ||this->opts->policyActionType == "2"
+                //||this->opts->policyActionType == "2"
                 )) {
                 (*json)["is_success"] = false; 
                 (*json)["error"] = "Wrong argument: <action> is invalid";
@@ -382,9 +375,11 @@ XpumPolicyActionType ComletPolicy::policyActionTypeEnumFromString(std::string& t
     // 2. Reset GPU
     if (type == "1") {
         return POLICY_ACTION_TYPE_THROTTLE_DEVICE;
-    }else if (type == "2") {
-        return POLICY_ACTION_TYPE_RESET_DEVICE;
-    }else{
+    }
+    // else if (type == "2") {
+    //     return POLICY_ACTION_TYPE_RESET_DEVICE;
+    // }
+    else{
         return POLICY_ACTION_TYPE_NULL;
     }
 }

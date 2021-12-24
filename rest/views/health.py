@@ -4,8 +4,8 @@ from flask import jsonify
 from marshmallow import Schema, fields
 
 class ThresholdSchema(Schema):
-    threshold = fields.Int(
-        metadata={"description": "The threshold for coreTemperature, memoryTemperature or power"})
+    custom_threshold = fields.Int(
+        metadata={"description": "The custom threshold for coreTemperature, memoryTemperature or power"})
 
 class HealthComponentSchema(Schema):
     description = fields.Str(
@@ -20,7 +20,7 @@ class HealthConfigurableComponentSchemaBase(Schema):
         metadata={"description": "The status for health"})
     throttle_threshold = fields.Int(
         metadata={"description": "The throttle threshold for health"})
-    custome_threshold = fields.Int(
+    custom_threshold = fields.Int(
             metadata={"description": "The custom threshold for health"})
 
 class HealthConfigurableComponentSchemaExt(Schema):
@@ -32,7 +32,7 @@ class HealthConfigurableComponentSchemaExt(Schema):
         metadata={"description": "The throttle threshold for health"})
     shutdown_threshold = fields.Int(
         metadata={"description": "The shutdown threshold for health"})
-    custome_threshold = fields.Int(
+    custom_threshold = fields.Int(
             metadata={"description": "The custom threshold for health"})
 
 class HealthSchema(Schema):
@@ -187,9 +187,9 @@ def set_health_config(deviceId, healthType):
         description: Set health config for device
         parameters:
             - 
-                name: threshold
+                name: custom_threshold
                 in: body
-                description: The threshold for coreTemperature, memoryTemperature or power
+                description: The custom threshold for coreTemperature, memoryTemperature or power
                 schema: ThresholdSchema
             -
                 name: deviceId
@@ -211,7 +211,7 @@ def set_health_config(deviceId, healthType):
         return
 
     req = request.get_json()
-    threshold = req["threshold"]
+    threshold = req["custom_threshold"]
     code, message, data = stub.setHealthConfig(deviceId, healthType, threshold)
     if code != 0:
         error = dict(Status=code, Message=message)
@@ -229,9 +229,9 @@ def set_group_health_config(groupId, healthType):
         description: Set health config for group
         parameters:
             - 
-                name: threshold
+                name: custom_threshold
                 in: body
-                description: The threshold for coreTemperature, memoryTemperature or power
+                description: The custom threshold for coreTemperature, memoryTemperature or power
                 schema: ThresholdSchema
             -
                 name: groupId
@@ -253,7 +253,7 @@ def set_group_health_config(groupId, healthType):
         return
 
     req = request.get_json()
-    threshold = req["threshold"]
+    threshold = req["custom_threshold"]
     code, message, data = stub.setHealthConfigByGroup(
         groupId, healthType, threshold)
     if code != 0:

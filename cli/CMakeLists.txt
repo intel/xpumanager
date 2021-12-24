@@ -59,7 +59,6 @@ add_custom_command(
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 # Specifiy header file location
-link_directories(/usr/local/lib)
 include_directories(/usr/local/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
@@ -67,6 +66,9 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/CLI11/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/json/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/googletest/googletest/include)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+link_directories(/usr/local/lib)
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/lib)
 
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_SRC)
@@ -81,11 +83,18 @@ target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 
 enable_testing()
 
+if(NOT BUILD_TESTING)
+    set(BUILD_TESTING "Off" CACHE STRING "Choose On or off" FORCE)
+endif()
+
 if (BUILD_TESTING)
 
-  if (NOT DEFINED WORK_PATH)   
-    link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/lib)
-  endif()
+  set(Libraries
+    gtest$<$<CONFIG:Debug>:d>
+    gmock$<$<CONFIG:Debug>:d>
+    gtest_main$<$<CONFIG:Debug>:d>
+    gmock_main$<$<CONFIG:Debug>:d>
+  )
 
   aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TEST_SRC)
   list(REMOVE_ITEM XPUM_CLI_TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
@@ -100,8 +109,7 @@ if (BUILD_TESTING)
 
     target_sources(${testname} PUBLIC ${XPUM_CLI_TEST_SRC} ${GRPC_SRC})
 
-    target_link_libraries(${testname} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF}
-      gtest gmock gtest_main gmock_main)
+    target_link_libraries(${testname} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF} ${Libraries})
 
     include(GoogleTest)
     gtest_discover_tests(${testname})
