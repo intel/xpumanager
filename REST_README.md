@@ -16,3 +16,9 @@
  1. systemctl start xpum_rest.service
  2. systemctl enable xpum_rest.service
 
+##Change rest service binding address & port
+ 1. change service file xpum_rest.service "--bind" parameters in "ExecStart"
+
+##Replace rest service certificate & private key
+ 1. Replace certificate file cert.pem under INSTALLDIR/rest/conf
+ 2. Replace private key file key.pem under INSTALLDIR/rest/conf

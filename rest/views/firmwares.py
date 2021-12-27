@@ -36,7 +36,7 @@ def run_firmware_flash(deviceId):
                 name: deviceId
                 in: path
                 description: Device id
-                type: GSC, AMC 
+                firmware_name: GSC, AMC 
         produces: 
             - application/json
         responses:
@@ -54,11 +54,11 @@ def run_firmware_flash(deviceId):
     if not filePath:
         return jsonify({'error': 'missing arguments'})
     
-    fwType = req.get('type')
+    fwType = req.get('firmware_name')
     if not fwType:
         return jsonify({'error': 'missing arguments'})
     if not fwType == 'GSC' and not fwType == 'AMC':
-        return jsonify({'error': 'invalid firmware type'})
+        return jsonify({'error': 'invalid firmware name'})
 
     firmwareType = 0 if fwType == 'GSC' else 1
 
@@ -81,7 +81,7 @@ def get_firmware_flash_result(deviceId):
                 name: deviceId
                 in: path
                 description: Device id
-                type: GSC, AMC 
+                firmware_name: GSC, AMC 
         produces: 
             - application/json
         responses:
@@ -91,11 +91,11 @@ def get_firmware_flash_result(deviceId):
             500:
                 description: Error
     """
-    fwType = request.args.get('type', type=str, default='')
+    fwType = request.args.get('firmware_name', type=str, default='')
     if fwType == '':
         return jsonify({'error': 'missing arguments'})
     if not fwType == 'GSC' and not fwType == 'AMC':
-        return jsonify({'error': 'invalid firmware type'})
+        return jsonify({'error': 'invalid firmware name'})
     firmwareType = 0 if fwType == 'GSC' else 1
 
     rc = stub.getFirmwareFlashResult(deviceId, firmwareType)
