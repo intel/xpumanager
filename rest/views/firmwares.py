@@ -74,7 +74,7 @@ def get_firmware_flash_result(deviceId):
             -
                 name: firmware_name
                 in: query
-                description: Firmware name, options are: GSC, AMC
+                description: "Firmware name, options are: GSC, AMC"
                 type: string
                 enum: [GSC,AMC]
         produces: 
