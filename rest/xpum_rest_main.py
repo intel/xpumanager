@@ -129,8 +129,8 @@ def main(*args, **kwargs):
                     view_func=auth.login_required(device_config.set_scheduler))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/config', methods=['GET'],
                     view_func=auth.login_required(device_config.get_config))
-    app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
-                    view_func=auth.login_required(device_config.run_reset))
+    #app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
+    #                view_func=auth.login_required(device_config.run_reset))
 
     # topology
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'],

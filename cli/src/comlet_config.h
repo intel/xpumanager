@@ -12,7 +12,8 @@ struct ComletConfigOptions {
     int32_t tileId = -1;
     std::string scheduler;
     std::string performancefactor;
-    bool resetDevice = false;
+    //bool resetDevice = false;
+    
     //std::string schedulerTimeslice ="";
     //std::string schedulerTimeout ="";
     //bool schedulerExclusive = false;
@@ -39,8 +40,8 @@ class ComletConfig : public ComletBase {
             && this->opts->performancefactor.empty()
             && this->opts->powerlimit.empty()
             && this->opts->standby.empty()
-            && this->opts->frequencyrange.empty()
-            && !this->opts->resetDevice;
+            && this->opts->frequencyrange.empty();
+            //&& !this->opts->resetDevice;
     }
 
    private:

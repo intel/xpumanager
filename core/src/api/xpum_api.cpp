@@ -680,7 +680,7 @@ xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
                                     xpum_standby_data_t *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     std::vector<Standby> standbys;
@@ -707,8 +707,13 @@ xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
                                    const xpum_standby_data_t standby) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, standby.subdevice_Id);
+    if (res != XPUM_OK) {
+        return res;
+    }
+
     Standby s((zes_standby_type_t)standby.type, standby.on_subdevice, standby.subdevice_Id, (zes_standby_promo_mode_t)standby.mode);
     if (Core::instance().getDeviceManager()->setDeviceStandby(std::to_string(deviceId), s)) {
         return XPUM_OK;
@@ -721,7 +726,7 @@ xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
                                        xpum_power_limits_t *dataArray) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     if (dataArray == nullptr) {
@@ -748,8 +753,13 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
                                                 const xpum_power_sustained_limit_t sustained_limit) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, tileId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+
     Power_sustained_limit_t sustainedLimit;
     sustainedLimit.enabled = sustained_limit.enabled;
     sustainedLimit.interval = sustained_limit.interval;
@@ -765,7 +775,11 @@ xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
                                             const xpum_power_burst_limit_t burst_limit) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, tileId);
+    if (res != XPUM_OK) {
+        return res;
     }
     Power_burst_limit_t burstLimit;
     burstLimit.enabled = burst_limit.enabled;
@@ -781,7 +795,11 @@ xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
                                            const xpum_power_peak_limit_t peak_limit) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, tileId);
+    if (res != XPUM_OK) {
+        return res;
     }
     Power_peak_limit_t peakLimit;
     peakLimit.power_AC = peak_limit.power_AC;
@@ -796,7 +814,7 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
                                            xpum_frequency_range_t *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     std::vector<Frequency> frequencies;
@@ -820,7 +838,11 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
                                           const xpum_frequency_range_t t) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, t.subdevice_Id);
+    if (res != XPUM_OK) {
+        return res;
     }
 
     Frequency freq((zes_freq_domain_t)t.type, t.subdevice_Id, t.min, t.max);
@@ -834,7 +856,7 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
                                       xpum_scheduler_data_t *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     std::vector<Scheduler> schedulers;
@@ -857,9 +879,9 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
 xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count){
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-
+    
     std::vector<Power> powers;
     Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
 
@@ -888,7 +910,11 @@ xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
                                                 const xpum_scheduler_timeout_t sched_timeout) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, sched_timeout.subdevice_Id);
+    if (res != XPUM_OK) {
+        return res;
     }
 
     SchedulerTimeoutMode mode;
@@ -905,7 +931,11 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
                                                   const xpum_scheduler_timeslice_t sched_timeslice) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, sched_timeslice.subdevice_Id);
+    if (res != XPUM_OK) {
+        return res;
     }
 
     SchedulerTimesliceMode mode;
@@ -923,7 +953,11 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                                                   const xpum_scheduler_exclusive_t sched_exclusive) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, sched_exclusive.subdevice_Id);
+    if (res != XPUM_OK) {
+        return res;
     }
 
     SchedulerExclusiveMode mode;
@@ -934,18 +968,18 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
     }
     return XPUM_GENERIC_ERROR;
 }
-
+/*
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
     if (Core::instance().getDeviceManager()->resetDevice(std::to_string(deviceId), force)) {
         return XPUM_OK;
     }
     return XPUM_GENERIC_ERROR;
 }
-
+*/
 xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topology, long unsigned int *memSize) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
@@ -982,7 +1016,11 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
 xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, tileId);
+    if (res != XPUM_OK) {
+        return res;
     }
     std::vector<double> clocks;
     Core::instance().getDeviceManager()->getFreqAvailableClocks(std::to_string(deviceId), tileId, clocks);
@@ -1005,7 +1043,7 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
 xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_process_t *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
     std::vector<device_process> process;
     Core::instance().getDeviceManager()->getDeviceProcessState(std::to_string(deviceId), process);
@@ -1032,7 +1070,7 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_
 xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_performancefactor_t * dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
     std::vector<PerformanceFactor> pf;
     Core::instance().getDeviceManager()->getPerformanceFactor(std::to_string(deviceId), pf);
@@ -1059,7 +1097,7 @@ xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_p
 xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t devicePF) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     PerformanceFactor pf (devicePF.on_subdevice,
