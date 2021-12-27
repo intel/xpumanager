@@ -245,7 +245,7 @@ def set_scheduler(deviceId):
             -
                 name: scheduler_mode
                 in: body
-                description: the scheduler mode: timeout,timeslice,exclusive mode
+                description: "the scheduler mode: timeout,timeslice,exclusive mode"
                 schema: SchedulerSchema
             -
                 name: deviceId
