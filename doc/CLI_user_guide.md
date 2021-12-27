@@ -690,7 +690,7 @@ Usage: xpumcli policy [Options]
   xpumcli policy -g [groupId] -l -j
   xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 1 --threshold [threshold]  --action [policyActionValue]
   xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 2 --action [policyActionValue]
-  xpumcli policy -c -g [groupId] --type 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]
+  xpumcli policy -c -g [groupId] --type 1 --condition 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]
   xpumcli policy -r -d [deviceId] --type [policyTypeValue]
   xpumcli policy -r -g [groupId] --type [policyTypeValue]
   
