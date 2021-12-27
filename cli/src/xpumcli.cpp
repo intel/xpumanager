@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.  
 Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
  
-Supported devcies: 
+Supported devices: 
   - Intel ATS-M1/ATS-M3/ATS-P)"};
 
     xpum::cli::CLIWrapper wrapper(app);

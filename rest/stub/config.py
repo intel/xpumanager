@@ -65,9 +65,9 @@ def setStandby(deviceId, tileId, standby):
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}
 
-def setPowerLimit(deviceId, power, interval):
+def setPowerLimit(deviceId, tileId, power, interval):
     resp = stub.setDevicePowerLimit(core_pb2.ConfigDevicePowerLimitRequest(
-        deviceId=deviceId, powerLimit=power, intervalWindow=interval))
+        deviceId=deviceId, tileId=tileId, powerLimit=power, intervalWindow=interval))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}

@@ -118,6 +118,11 @@ def set_powerlimit(deviceId):
                 in: path
                 description: Device id
                 type: integer
+            -
+                name: tile_id
+                in: body
+                description: Tile id
+                type: integer
         responses:
             200:
                 description: OK
@@ -127,10 +132,11 @@ def set_powerlimit(deviceId):
     if not request.is_json:
         return jsonify("json string is missing"), 500
     req = request.get_json()
-    if ("power_limit" not in req) or ("power_average_window" not in req):
+    if ("power_limit" not in req) or ("power_average_window" not in req) or ("tile_id" not in req) :
         return jsonify("json string is invalid"), 500
     power = req["power_limit"]
     interval = req["power_average_window"]
+    tileId = req["tile_id"]
     if type(power) != int:
        return jsonify("Invalid Parameter"), 500
     if type(interval) != int:
@@ -140,7 +146,13 @@ def set_powerlimit(deviceId):
     if power<0 or interval<0:
         return jsonify("invalid Parameter"), 500
     
-    code, message, data = stub.setPowerLimit(deviceId, power, interval)
+    if type(tileId) != int:
+        return jsonify("Invalid Parameter"), 500
+    
+    if tileId<0:
+        return jsonify("invalid Parameter"), 500
+    
+    code, message, data = stub.setPowerLimit(deviceId, tileId, power, interval)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
@@ -216,19 +228,24 @@ def set_scheduler(deviceId):
         description: Set scheduler mode for device
         parameters:
             -
-                name: val1
+                name: scheduler_watchdog_timeout
                 in: body
-                description: parameter of scheduler
+                description: parameter of scheduler timeout mode
                 type: integer
             -
-                name: val2
+                name: scheduler_timeslice_interval
                 in: body
-                description: the parameter of scheduler
+                description: parameter of scheduler timeslice mode
+                type: integer
+            -
+                name: scheduler_timeslice_yield_timeout
+                in: body
+                description: the parameter of scheduler timeslice mode
                 type: integer
             -
                 name: scheduler_mode
                 in: body
-                description: the scheduler mode
+                description: the scheduler mode: timeout,timeslice,exclusive mode
                 schema: SchedulerSchema
             -
                 name: deviceId
@@ -249,12 +266,28 @@ def set_scheduler(deviceId):
     if not request.is_json:
         return jsonify("json string is missing"), 500
     req = request.get_json()
-    if ("tile_id" not in req) or ("scheduler_mode" not in req) or ("val1" not in req) or ("val2" not in req):
+    if ("tile_id" not in req) or ("scheduler_mode" not in req):
         return jsonify("json string is invalid"), 500
+    
     tileId = req["tile_id"]
     mode = req["scheduler_mode"]
-    val1 = req["val1"]
-    val2 = req["val2"]
+
+    if mode.lower() == "timeout":
+        if "scheduler_watchdog_timeout" not in req:
+            return jsonify("missing parameter \"scheduler_watchdog_timeout\""), 500
+        val1 = req["scheduler_watchdog_timeout"]
+        val2 = 0
+    elif mode.lower() == "timeslice":
+        if "scheduler_timeslice_interval" not in req or "scheduler_timeslice_yield_timeout" not in req:
+            return jsonify("missing parameter \"scheduler_timeslice_interval\" or \"scheduler_timeslice_yield_timeout\""), 500
+        val1 = req["scheduler_timeslice_interval"]
+        val2 = req["scheduler_timeslice_yield_timeout"]
+    elif mode.lower() == "exclusive":
+        val1 = 0
+        val2 = 0
+    else:
+        return jsonify("invalid scheduler mode"), 500
+    
     if type(tileId) != int:
         return jsonify("Invalid Parameter"), 500
     if type(mode) != str:

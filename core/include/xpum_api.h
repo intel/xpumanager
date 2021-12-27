@@ -422,16 +422,6 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
 xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                                                   const xpum_scheduler_exclusive_t sched_exclusive);
 /**
- * @brief Reset device
- *
- * @param deviceId          IN: The device Id
- * @param force             IN: Reset the device forcibly
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_GENERIC_ERROR       if set failure
- */
-xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
-/**
  * @brief Get device available frequency clocks
  * @details This function is used to get available frequency clocks
  *
