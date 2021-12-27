@@ -1193,7 +1193,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
         }
     }
     else if (status.ok() && response.value() == xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED) {
-        (*json)["error"] = "Can't find the AMC device. AMC firmware update just works for one ATS-P card (AMC firmware version is 3.3 or newer) on Intel M50CYP server (BMC firmware version is 2.82 or newer) so far";
+        (*json)["error"] = "Can't find the AMC device. AMC firmware update just works for one ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.";
         return json;
     }
     else {
