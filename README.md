@@ -14,29 +14,21 @@ It supports local command line interface, local library call and remote RESFTul 
   
 
 ## Intel XPU Manager Architecture
-<p align="center">
-<img src="https://github.com/intel-sandbox/intel-xpu-manager/blob/main/doc/img/architecture.PNG">
-</p>
+![Intel XPU Manager Architecture](doc/img/architecture.PNG)
   
   
 
 ## Intel XPU Manager Command Line Interface
 * Show GPU basic information
-<p align="left">
-<img src="https://github.com/intel-sandbox/intel-xpu-manager/blob/main/doc/img/cli_gpu_info.PNG">
-</p>  
+![Show GPU basic information](doc/img/cli_gpu_info.PNG)
   
 
 * Show GPU settings
-<p align="left">
-<img src="https://github.com/intel-sandbox/intel-xpu-manager/blob/main/doc/img/cli_settings.PNG">
-</p>
+![Show GPU settings](doc/img/cli_settings.PNG)
   
   
 ## GPU telemetries in Grafana exported by Intel XPU Manager
-<p align="left">
-<img src="https://github.com/intel-sandbox/intel-xpu-manager/blob/main/doc/img/Grafana.PNG">
-</p>
+![GPU telemetries in Grafana exported by Intel XPU Manager](doc/img/Grafana.PNG)
   
   
 ## Intel XPU Manager Installation

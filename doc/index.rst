@@ -2,8 +2,8 @@ XPU Manager Documentation
 =========================
 
 .. toctree::
-
-    introduction
-    infrastructure
+    build/README
+    installation
+    CLI_user_guide
     restful
     build/rst/index

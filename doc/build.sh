@@ -34,7 +34,11 @@ cd ${WORK_DIR}
 
 # cp *.rst build/
 
-# cp *.md build/
+cp ../*.md build/
+
+mkdir build/doc
+
+cp -r img build/doc/img
 
 ../rest/gen_grpc_py_files.sh
 

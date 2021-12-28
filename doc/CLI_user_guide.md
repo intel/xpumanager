@@ -201,7 +201,7 @@ Add devices to a group
 | Group ID | Group Properties                                                                      |
 +----------+---------------------------------------------------------------------------------------+
 | 1        | Group Name: testgroup                                                                 |
-|          | Device IDs: [0,1]                                                                       |
+|          | Device IDs: [0,1]                                                                     |
 +----------+---------------------------------------------------------------------------------------+
 ```
  
@@ -412,7 +412,7 @@ Change the component custom temperature threshold
 +------------------------------+-------------------------------------------------------------------+
 ```
  
-# Dump the device statistics in CSV format
+## Dump the device statistics in CSV format
 Help info of the device statistics dump.
 ```
 ./xpumcli dump
