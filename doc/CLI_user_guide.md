@@ -28,10 +28,11 @@ Usage: xpumcli [Options]
   xpumcli -h
   xpumcli discovery
 
-Optional arguments:
+Options:
   -h, --help                  Print this help message and exit.
   -v, --version               Display version information and exit.
-  
+
+Subcommands:
   discovery                   Discover the GPU devices installed on this machine and provide the device info.
   group                       Group the managed GPU devices.
   agentset                    Get or change some XPU Manager settings. 
