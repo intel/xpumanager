@@ -36,7 +36,7 @@ Subcommands:
   discovery                   Discover the GPU devices installed on this machine and provide the device info.
   group                       Group the managed GPU devices.
   agentset                    Get or change some XPU Manager settings. 
-  stats                       List the GPU device aggregated statistics that are collected by XPU Manager.
+  stats                       List the GPU aggregated statistics since last execution of this command or XPU Manager daemon is started.
   health                      Get the GPU device component health status.
   diag                        Run some test suites to diagnose GPU.
   updatefw                    Update GPU firmware.
@@ -417,7 +417,7 @@ Help info of the device statistics dump.
 ```
 ./xpumcli dump
 
-Dump device statistics data
+Dump device statistics data.
 
 Usage: xpumcli dump [Options]
   xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
@@ -499,7 +499,7 @@ Help info of get GPU to CPU and GPU to PCIe switch topology
 ```
 ./xpumcli topology
 
-Get the GPU to CPU and GPU to PCIe switch topology info
+Get the GPU to CPU and GPU to PCIe switch topology info.
 
 Usage: xpumcli topology [Options]
   xpumcli topology -d [deviceId]
@@ -532,7 +532,7 @@ Help info of updating GPU firmware
 ```
 ./xpumcli updatefw
 
-Update GPU firmware
+Update GPU firmware.
 
 Usage: xpumcli updatefw [Options]
   xpumcli updatefw -d [deviceId] -t [firmwareName] -f [imageFilePath]
@@ -680,7 +680,7 @@ Help info for GPU policy
 ```
 ./xpumcli policy
 
-Get and set the GPU policis.
+Get and set the GPU policies.
 
 Usage: xpumcli policy [Options]
   xpumcli policy -l
