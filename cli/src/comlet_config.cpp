@@ -34,9 +34,9 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "  Valid Options", "value": "standby_mode_valid_options" },
                 {"rowTitle": " " },
                 { "label": "Scheduler Mode", "value": "scheduler_mode" },
-                { "label": "  Scheduler Timeout Mode Timeout (us) ", "value": "scheduler_watchdog_timeout" },
-                { "label": "  Scheduler Timeslice Mode Interval (us) ", "value": "scheduler_timeslice_interval" },
-                { "label": "  Scheduler Timeslice Mode Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
+                { "label": "  Timeout (us) ", "value": "scheduler_watchdog_timeout" },
+                { "label": "  Interval (us) ", "value": "scheduler_timeslice_interval" },
+                { "label": "  Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
             ]
         ]
     }]
@@ -49,7 +49,7 @@ void ComletConfig::setupOptions() {
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addOption("--powerlimit", this->opts->powerlimit, "Tile-level power limit.");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
-    addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeoutc\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\".");
+    addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\".");
     //addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
     
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");

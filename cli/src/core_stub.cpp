@@ -1054,24 +1054,24 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPol
         }else{
             (*json)["is_success"] = false; 
             if(isRemove){
-                (*json)["error"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
+                (*json)["error"] = "Failed to remove the "+policyType+" policy. Error message: "+response.errormsg();
             }else{
-                (*json)["error"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
+                (*json)["error"] = "Failed to set the "+policyType+" policy. Error message: "+response.errormsg();
             }  
         }
     }else{
         (*json)["is_success"] = false; 
         if (response.errormsg().length() == 0) {
             if(isRemove){
-                (*json)["error"] = "Faield to remove the "+policyType+" policy. Error message: unknown.";
+                (*json)["error"] = "Failed to remove the "+policyType+" policy. Error message: unknown.";
             }else{
-                (*json)["error"] = "Faield to set the "+policyType+" policy. Error message: unknown.";
+                (*json)["error"] = "Failed to set the "+policyType+" policy. Error message: unknown.";
             }  
         }else{
             if(isRemove){
-                (*json)["error"] = "Faield to remove the "+policyType+" policy. Error message: "+response.errormsg();
+                (*json)["error"] = "Failed to remove the "+policyType+" policy. Error message: "+response.errormsg();
             }else{
-                (*json)["error"] = "Faield to set the "+policyType+" policy. Error message: "+response.errormsg();
+                (*json)["error"] = "Failed to set the "+policyType+" policy. Error message: "+response.errormsg();
             }  
         }
     }
@@ -1137,7 +1137,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie,int id) {
             }
         }else{
             (*json)["is_success"] = false; 
-            (*json)["error"] = "Faield to list policies. Error message: "+response.errormsg();
+            (*json)["error"] = "Failed to list policies. Error message: "+response.errormsg();
             return json;
         }
     }    

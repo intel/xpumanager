@@ -4,8 +4,8 @@ from marshmallow import Schema, fields
 
 
 class FirmwareFlashJobSchema(Schema):
-    #type = fields.Str(metadata={"description": "The firmware type to flash, GSC"})
     file = fields.Str(metadata={"description": "The path of firmware binary file to flash"})
+    firmware_name = fields.Str(metadata={"description": "Firmware name, options are: GSC, AMC"})
 
 
 class FirmwareFlashStateQuerySchema(Schema):
@@ -32,11 +32,6 @@ def run_firmware_flash(deviceId):
                 in: body
                 description: Information needed to flash firmware
                 schema: FirmwareFlashJobSchema
-            -
-                name: deviceId
-                in: path
-                description: Device id
-                firmware_name: GSC, AMC 
         produces: 
             - application/json
         responses:
@@ -75,13 +70,13 @@ def get_firmware_flash_result(deviceId):
         description: Get firmware flash state
         consumes:
             - text/plain; charset=utf-8
-            - application/json
         parameters:
             -
-                name: deviceId
-                in: path
-                description: Device id
-                firmware_name: GSC, AMC 
+                name: firmware_name
+                in: query
+                description: "Firmware name, options are: GSC, AMC"
+                type: string
+                enum: [GSC,AMC]
         produces: 
             - application/json
         responses:

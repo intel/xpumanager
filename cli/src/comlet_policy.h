@@ -26,7 +26,7 @@ struct ComletPolicyOptions {
 
 class ComletPolicy : public ComletBase {
    public:
-    ComletPolicy() : ComletBase("policy", "Manager GPU policies.") {
+    ComletPolicy() : ComletBase("policy", "Get and set the GPU policies.") {
         printHelpWhenNoArgs = true;
     }
     virtual ~ComletPolicy() {}

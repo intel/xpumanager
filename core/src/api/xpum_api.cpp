@@ -687,10 +687,14 @@ xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
 
     Core::instance().getDeviceManager()->getDeviceStandbys(std::to_string(deviceId), standbys);
 
-    if (standbys.size() > *count || dataArray == nullptr) {
+    if (standbys.size() > *count && dataArray != nullptr) {
         return XPUM_BUFFER_TOO_SMALL;
     } else {
         *count = standbys.size();
+    }
+
+    if (dataArray == nullptr) {
+        return XPUM_OK;
     }
 
     int i = 0;
@@ -820,10 +824,14 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
     std::vector<Frequency> frequencies;
     Core::instance().getDeviceManager()->getDeviceFrequencyRanges(std::to_string(deviceId), frequencies);
 
-    if (frequencies.size() > *count || dataArray == nullptr) {
+    if (frequencies.size() > *count && dataArray != nullptr) {
         return XPUM_BUFFER_TOO_SMALL;
     } else {
         *count = frequencies.size();
+    }
+
+    if (dataArray == nullptr) {
+        return XPUM_OK;
     }
 
     int i = 0;
@@ -862,10 +870,14 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
     std::vector<Scheduler> schedulers;
     Core::instance().getDeviceManager()->getDeviceSchedulers(std::to_string(deviceId), schedulers);
 
-    if (schedulers.size() > *count || dataArray == nullptr) {
+    if (schedulers.size() > *count && dataArray != nullptr) {
         return XPUM_BUFFER_TOO_SMALL;
     } else {
         *count = schedulers.size();
+    }
+
+    if (dataArray == nullptr) {
+        return XPUM_OK;
     }
 
     int i = 0;
