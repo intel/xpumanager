@@ -195,7 +195,7 @@ int get_card_list(nrv_list *out_list, int select) {
         err = init_card_list();
         if (err) {
             if (err == NRV_NO_CARD_DETECTED) {
-                XPUM_LOG_ERROR("No available card in system.");
+                XPUM_LOG_ERROR("No available AMC card in system.");
             }
             return err;
         }
