@@ -688,9 +688,8 @@ Usage: xpumcli policy [Options]
   xpumcli policy -d [deviceId] -l
   xpumcli policy -d [deviceId] -l -j
   xpumcli policy -g [groupId] -l
-  xpumcli policy -g [groupId] -l -j
-  xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 1 --threshold [threshold]  --action [policyActionValue]
-  xpumcli policy -c -d [deviceId] --type [policyTypeValue] --condition 2 --action [policyActionValue]
+  xpumcli policy -g [groupId] -l -j  
+  xpumcli policy -c -d [deviceId] --type 1 --condition 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]
   xpumcli policy -c -g [groupId] --type 1 --condition 1 --threshold [threshold]  --action 1 --throttlefrequencymin [frequencyMinValue] --throttlefrequencymax [frequencyMaxValue]
   xpumcli policy -r -d [deviceId] --type [policyTypeValue]
   xpumcli policy -r -g [groupId] --type [policyTypeValue]
@@ -713,7 +712,6 @@ Options:
                                 1. GPU Core Temperature
   --condition                 Conditions.
                                 1. More than
-                                2. When occur
   --threshold                 Threshold
   --action                    Policy action.
                                 1. Throttle GPU Core Frequency
