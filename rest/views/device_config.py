@@ -2,43 +2,63 @@ from flask import request, jsonify
 import stub
 from marshmallow import Schema, fields
 class StandbySchema(Schema):
-    standby = fields.String(
-        metadata={"description": "The standby mode"})
+    tile_id = fields.Integer(
+        metadata={"description": "The tile id"})
+    standby_mode = fields.String(
+        metadata={"description": "The standby mode: never, default"})
 
 class PowerLimitSchema(Schema):
-    powerlimit = fields.Int(
+    tile_id = fields.Integer(
+        metadata={"description": "The tile id"})
+    power_limit = fields.Integer(
         metadata={"description": "The power limit value"})
-
-class IntervalSchema(Schema):
-    interval = fields.Int(
-        metadata={"description": "The interval window value"})
-
+    power_average_window = fields.Integer(
+        metadata={"description": "The interval window"})
 class FrequencySchema(Schema):
-    frequency = fields.Int(
-        metadata={"description": "The frequency value"})
+    tile_id = fields.Integer(
+        metadata={"description": "The tile id"})
+    min_frequency = fields.Integer(
+        metadata={"description": "The min frequency value"})
+    max_frequency = fields.Integer(
+        metadata={"description": "The max frequency value"})
 
 class SchedulerSchema(Schema):
-    scheduler = fields.String(
-        metadata={"description": "The scheduler mode"})
+    tile_id = fields.Integer(
+        metadata={"description": "The tile id"})
+    scheduler_mode= fields.String(
+        metadata={"description": "The scheduler mode: timeout, timeslice and exclusive"})
+    scheduler_watchdog_timeout = fields.Integer(
+        metadata={"description": "The watchdog timeout for timeout mode"})
+    scheduler_timeslice_interval = fields.Integer(
+        metadata={"description": "The interval for timeslice mode"})
+    scheduler_timeslice_yield_timeout = fields.Integer(
+        metadata={"description": "The yield timeout for timeslice mode"})
+
+class ConfigParameterSchema(Schema):
+    tile_id = fields.Integer(
+        metadata={"description": "The tile id"})
 
 class TileConfigSchema(Schema):
     tileId = fields.String(metadata={"description": "Tile id"})
-    powerLimit = fields.Nested(PowerLimitSchema)
-    powerScope = fields.String(metadata={"description": "power's scope"})
-    interval = fields.Nested(IntervalSchema)
-    intervalScope = fields.String(metadata={"description": "power's inteval scope"})
-    minFreq = fields.Int(metadata={"description": "min frequency"})
-    maxFreq = fields.Int(metadata={"description": "max frequency"})
-    freqOption = fields.String(metadata={"description": "frequency scope"})
-    standby = fields.Nested(StandbySchema)
-    standbyOption = fields.String(metadata={"description": "standby option"})
-    scheduler = fields.Nested(SchedulerSchema)
-    schedulerTimeout = fields.Int(metadata={"description": "scheduler timeout's value"})
-    schedulerTimesliceInterval = fields.Int(metadata={"description": "scheduler timeslice's interval value"})
-    schedulerTimesliceYieldTimeout = fields.Int(metadata={"description": "scheduler timeslice's yield value"})
+    power_limit = fields.Integer(
+        metadata={"description": "The power limit value"})
+    power_vaild_range = fields.String(metadata={"description": "power's scope"})
+    power_average_window = fields.Integer(metadata={"description": "The interval window"})
+    power_average_window_vaild_range = fields.String(metadata={"description": "power's inteval scope"})
+    min_frequency = fields.Integer(metadata={"description": "min frequency"})
+    max_frequency = fields.Integer(metadata={"description": "max frequency"})
+    gpu_frequency_valid_options = fields.String(metadata={"description": "frequency scope"})
+    standby_mode = fields.String(
+        metadata={"description": "The standby mode: never, default"})
+    standby_mode_valid_options = fields.String(metadata={"description": "standby option"})
+    scheduler_mode= fields.String(
+        metadata={"description": "The scheduler mode: timeout, timeslice and exclusive"})
+    scheduler_watchdog_timeout = fields.Integer(metadata={"description": "scheduler timeout's value"})
+    scheduler_timeslice_interval = fields.Integer(metadata={"description": "scheduler timeslice's interval value"})
+    scheduler_timeslice_yield_timeout = fields.Integer(metadata={"description": "scheduler timeslice's yield value"})
 class ConfigSchema(Schema):
-    deviceId = fields.Int(metadata={"description": "Device id"})
-    tileCount = fields.Int()
+    deviceId = fields.Integer(metadata={"description": "Device id"})
+    tileCount = fields.Integer(metadata={"description": "Tile count"})
     tileConfigData = fields.Nested(TileConfigSchema)
 
 def set_standby(deviceId):
@@ -51,19 +71,14 @@ def set_standby(deviceId):
         description: Set standby mode for device
         parameters:
             -
-                name: standby_mode
+                name: set_standby
                 in: body
-                description: the standby mode
+                description: set standby mode
                 schema: StandbySchema
             -
                 name: deviceId
                 in: path
                 description: Device id
-                type: integer
-            -
-                name: tile_id
-                in: body
-                description: Tile id
                 type: integer
         responses:
             200:
@@ -104,24 +119,14 @@ def set_powerlimit(deviceId):
         description: Set power limit for device
         parameters:
             -
-                name: power_limit
+                name: set_powerlimit
                 in: body
-                description: the power limit value
+                description: set the power limit
                 schema: PowerLimitSchema
-            -
-                name: power_average_window
-                in: body
-                description: the interval window value
-                schema: IntervalSchema
             -
                 name: device_id
                 in: path
                 description: Device id
-                type: integer
-            -
-                name: tile_id
-                in: body
-                description: Tile id
                 type: integer
         responses:
             200:
@@ -168,24 +173,14 @@ def set_frequencyrange(deviceId):
         description: Set frequency range for device
         parameters:
             -
-                name: min_frequency
+                name: set_frequencyrange
                 in: body
-                description: the min frequency value
-                schema: FrequencySchema
-            -
-                name: max_frequency
-                in: body
-                description: the max frequency value
+                description: set the frequency range
                 schema: FrequencySchema
             -
                 name: deviceId
                 in: path
                 description: Device id
-                type: integer
-            -
-                name: tile_id
-                in: body
-                description: Tile id
                 type: integer
         responses:
             200:
@@ -228,34 +223,14 @@ def set_scheduler(deviceId):
         description: Set scheduler mode for device
         parameters:
             -
-                name: scheduler_watchdog_timeout
+                name: set_scheduler
                 in: body
-                description: parameter of scheduler timeout mode
-                type: integer
-            -
-                name: scheduler_timeslice_interval
-                in: body
-                description: parameter of scheduler timeslice mode
-                type: integer
-            -
-                name: scheduler_timeslice_yield_timeout
-                in: body
-                description: the parameter of scheduler timeslice mode
-                type: integer
-            -
-                name: scheduler_mode
-                in: body
-                description: "the scheduler mode: timeout,timeslice,exclusive mode"
+                description: set the scheduler mode
                 schema: SchedulerSchema
             -
                 name: deviceId
                 in: path
                 description: Device id
-                type: integer
-            -
-                name: tile_id
-                in: body
-                description: Tile id
                 type: integer
         responses:
             200:
@@ -324,15 +299,16 @@ def get_config(deviceId):
         description: Get all configuration for device
         parameters:
             -
+                name: get_config
+                in: body
+                description: get the configuration of device
+                schema: ConfigParameterSchema
+            -
                 name: deviceId
                 in: path
                 description: Device id
                 type: integer
-            -
-                name: tile_id
-                in: body
-                description: Tile id
-                type: integer
+
         responses:
             200:
                 description: OK
