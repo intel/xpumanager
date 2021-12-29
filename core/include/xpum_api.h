@@ -357,7 +357,7 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
-                                          const xpum_frequency_range_t t);
+                                          const xpum_frequency_range_t frequency);
 /**
  * @brief Get device scheduler mode
  * @details This function is used to get the scheduler mode
@@ -402,7 +402,7 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId,
  * @details This function is used to set the scheduler (time slice) mode
  *
  * @param deviceId          IN: The device Id
- * @param sched_timeout     IN: The scheduler time slice mode need to be set
+ * @param sched_timeslice     IN: The scheduler time slice mode need to be set
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
@@ -414,7 +414,7 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
  * @details This function is used to set the scheduler (exclusive) mode
  *
  * @param deviceId          IN: The device Id
- * @param sched_timeout     IN: The scheduler time slice mode need to be set
+ * @param sched_exclusive     IN: The scheduler time slice mode need to be set
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
@@ -471,7 +471,7 @@ xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_p
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
-xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t devicePF);
+xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t performanceFactor);
 
 
 /** @} */ // Closing for CONFIGURATION_API
