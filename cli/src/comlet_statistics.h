@@ -15,7 +15,7 @@ struct ComletStatisticsOptions {
 
 class ComletStatistics : public ComletBase {
    public:
-    ComletStatistics() : ComletBase("stats", "List the GPU aggregrated statistics since last execution of this command or XPU Manager daemon is started.") {
+    ComletStatistics() : ComletBase("stats", "List the GPU aggregated statistics since last execution of this command or XPU Manager daemon is started.") {
         printHelpWhenNoArgs = true;
     }
     virtual ~ComletStatistics() {}

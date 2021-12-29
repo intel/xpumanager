@@ -24,7 +24,7 @@ struct ComletConfigOptions {
 
 class ComletConfig : public ComletBase {
    public:
-    ComletConfig() : ComletBase("config", "get/set configuration of the device") {
+    ComletConfig() : ComletBase("config", "Get and change the GPU settings.") {
         printHelpWhenNoArgs = true;
     }
     virtual ~ComletConfig() {}

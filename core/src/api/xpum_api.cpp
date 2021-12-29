@@ -843,17 +843,17 @@ xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
 }
 
 xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
-                                          const xpum_frequency_range_t t) {
+                                          const xpum_frequency_range_t frequency) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-    xpum_result_t res = validateDeviceIdAndTileId(deviceId, t.subdevice_Id);
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, frequency.subdevice_Id);
     if (res != XPUM_OK) {
         return res;
     }
 
-    Frequency freq((zes_freq_domain_t)t.type, t.subdevice_Id, t.min, t.max);
+    Frequency freq((zes_freq_domain_t)frequency.type, frequency.subdevice_Id, frequency.min, frequency.max);
     if (Core::instance().getDeviceManager()->setDeviceFrequencyRange(std::to_string(deviceId), freq)) {
         return XPUM_OK;
     }
@@ -1106,14 +1106,14 @@ xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_p
     return XPUM_OK;
 }
 
-xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t devicePF) {
+xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t performanceFactor) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
-    PerformanceFactor pf (devicePF.on_subdevice,
-    devicePF.subdevice_id,(zes_engine_type_flags_t) devicePF.engine, devicePF.factor);
+    PerformanceFactor pf (performanceFactor.on_subdevice,
+    performanceFactor.subdevice_id,(zes_engine_type_flags_t) performanceFactor.engine, performanceFactor.factor);
     //(bool on_subdevice, uint32_t subdevice_id, zes_engine_type_flags_t engine, double factor)
 
     if (Core::instance().getDeviceManager()->setPerformanceFactor(std::to_string(deviceId), pf)) {
