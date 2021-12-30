@@ -50,8 +50,8 @@ class CoreStub {
     std::string healthTypeEnumToString(HealthType type);
     nlohmann::json appendHealthThreshold(int deviceId, nlohmann::json, HealthType type);
 
-    std::unique_ptr<nlohmann::json> getStatistics(int deviceId);
-    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId);
+    std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter=false);
+    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter=false);
     //config related interface
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2);

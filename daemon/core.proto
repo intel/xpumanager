@@ -246,11 +246,13 @@ message DeviceStatsInfoArray {
 message XpumGetStatsRequest {
     uint32 deviceId = 1;
     uint64 sessionId = 2;
+    bool enableFilter = 3;
 }
 
 message XpumGetStatsByGroupRequest {
     uint32 groupId = 1;
     uint64 sessionId = 2;
+    bool enableFilter = 3;
 }
 
 message XpumGetStatsResponse {

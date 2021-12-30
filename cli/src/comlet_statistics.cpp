@@ -190,10 +190,10 @@ void ComletStatistics::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     if (isDeviceOp()) {
-        auto json = this->coreStub->getStatistics(this->opts->deviceId);
+        auto json = this->coreStub->getStatistics(this->opts->deviceId, true);
         return json;
     } else if (isGroupOp()) {
-        auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId);
+        auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId, true);
         return json;
     }
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

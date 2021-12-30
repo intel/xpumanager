@@ -54,7 +54,7 @@ std::string CoreStub::metricsTypeToString(xpum_stats_type_t metricsType) {
     return std::to_string(metricsType);
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
+std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enableFilter) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -64,6 +64,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
     XpumGetStatsRequest request;
     request.set_deviceid(deviceId);
     request.set_sessionid(0);
+    request.set_enablefilter(enableFilter);
     grpc::Status status = stub->getStatisticsNotForPrometheus(&context, request, &response);
 
     if (!status.ok()) {
@@ -133,7 +134,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId) {
+std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId, bool enableFilter) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -143,6 +144,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId)
     XpumGetStatsByGroupRequest request;
     request.set_groupid(groupId);
     request.set_sessionid(0);
+    request.set_enablefilter(enableFilter);
     grpc::Status status = stub->getStatisticsByGroupNotForPrometheus(&context, request, &response);
 
     if (!status.ok()) {
