@@ -81,7 +81,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     std::vector<xpum::DeviceCapability> capabilities;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
     for(auto metric = metric_types.begin(); metric != metric_types.end();) {
-        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (Utility::measurementTypeFromCapability(cap) == *metric);})){
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric));})){
             metric = metric_types.erase(metric);
         } else {
             metric++;
@@ -186,7 +186,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
     std::vector<xpum::DeviceCapability> capabilities;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
     for(auto metric = metric_types.begin(); metric != metric_types.end();) {
-        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (Utility::measurementTypeFromCapability(cap) == *metric);})){
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric));})){
             metric = metric_types.erase(metric);
         } else {
             metric++;
