@@ -282,15 +282,14 @@ xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
  *
  * @param deviceId          IN: The device Id
  * @param tileId            IN: The tile Id
- * @param dataArray         IN/OUT: The detailed power limit data.
+ * @param pPowerLimits      IN/OUT: The detailed power limit data.
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a dataArray is NULL
  */
 xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
                                        int32_t tileId,
-                                       xpum_power_limits_t *dataArray);
+                                       xpum_power_limits_t *pPowerLimits);
 /**
  * @brief Set device sustained power limit
  * @details This function is used to set the sustained power limit of device
@@ -384,8 +383,8 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
 xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
                                                 const xpum_scheduler_timeout_t sched_timeout);
 /**
- * @brief Set device the power props mode
- * @details This function is used to set the power props
+ * @brief Get device the power props mode
+ * @details This function is used to get the power props
  *
  * @param deviceId          IN: The device Id
  * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.

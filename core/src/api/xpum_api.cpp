@@ -727,28 +727,28 @@ xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
 
 xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
                                        int32_t tileId,
-                                       xpum_power_limits_t *dataArray) {
+                                       xpum_power_limits_t *pPowerLimits) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
-    if (dataArray == nullptr) {
+    if (pPowerLimits == nullptr) {
         return XPUM_BUFFER_TOO_SMALL;
     }
 
     Power_limits_t limits;
     Core::instance().getDeviceManager()->getDevicePowerLimits(std::to_string(deviceId), limits.sustained_limit, limits.burst_limit, limits.peak_limit);
 
-    dataArray->sustained_limit.enabled = limits.sustained_limit.enabled;
-    dataArray->sustained_limit.interval = limits.sustained_limit.interval;
-    dataArray->sustained_limit.power = limits.sustained_limit.power;
+    pPowerLimits->sustained_limit.enabled = limits.sustained_limit.enabled;
+    pPowerLimits->sustained_limit.interval = limits.sustained_limit.interval;
+    pPowerLimits->sustained_limit.power = limits.sustained_limit.power;
 
-    dataArray->burst_limit.enabled = limits.burst_limit.enabled;
-    dataArray->burst_limit.power = limits.burst_limit.power;
+    pPowerLimits->burst_limit.enabled = limits.burst_limit.enabled;
+    pPowerLimits->burst_limit.power = limits.burst_limit.power;
 
-    dataArray->peak_limit.power_AC = limits.peak_limit.power_AC;
-    dataArray->peak_limit.power_DC = limits.peak_limit.power_DC;
+    pPowerLimits->peak_limit.power_AC = limits.peak_limit.power_AC;
+    pPowerLimits->peak_limit.power_DC = limits.peak_limit.power_DC;
     return XPUM_OK;
 }
 
