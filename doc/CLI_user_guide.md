@@ -413,7 +413,7 @@ Change the component custom temperature threshold
 ```
  
 ## Dump the device statistics in CSV format
-Help info of the device statistics dump.
+Help info of the device statistics dump. Please note that the metrics 'GPU Energy Consumed', 'Reset Counter', 'Programming Errors', 'Driver Errors', 'Cache Errors Correctable' and 'Cache Errors Uncorrectable' are not implemented in dump sub-command so far. Please do not dump these metrics. 
 ```
 ./xpumcli dump
 
