@@ -80,8 +80,8 @@ static CharTableConfig ComletConfigHealthPower(R"({
             { "rowTitle": "3. GPU Power" }, [
             { "label": "Status", "value": "status" },
             { "label": "Description", "value": "description" },
-            { "label": "Throttle Threshold", "suffix": " Celsius Degree", "value": "throttle_threshold", "fixer": "negint_novalue" },
-            { "label": "Custom Threshold", "suffix": " Celsius Degree", "value": "custom_threshold", "fixer": "negint_novalue" }
+            { "label": "Throttle Threshold", "suffix": " watts", "value": "throttle_threshold", "fixer": "negint_novalue" },
+            { "label": "Custom Threshold", "suffix": " watts", "value": "custom_threshold", "fixer": "negint_novalue" }
         ]]
     }]
 })"_json);

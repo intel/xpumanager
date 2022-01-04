@@ -24,7 +24,7 @@ def appendHealthThreshold(healthData, healthType):
         healthData['throttle_threshold'] = 85
         healthData['shutdown_threshold'] = 100
     elif healthType == 2:
-        healthData['shutdown_threshold'] = 150
+        healthData['throttle_threshold'] = 150
 
 def getHealth(deviceId, healthType):
     types = []
