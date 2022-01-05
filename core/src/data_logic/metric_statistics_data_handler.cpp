@@ -63,7 +63,9 @@ void MetricStatisticsDataHandler::updateStatistics(std::shared_ptr<SharedData>& 
                         iter_subdevice_statistics->second.avg = (iter_subdevice_statistics->second.avg * (iter_subdevice_statistics->second.count - 1) + iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first)) * 1.0 / iter_subdevice_statistics->second.count;
                     }
                 } else {
-                    statistics_datas[session].find(iter->first)->second.subdevice_datas.insert(std::make_pair(iter_subdevice->first, Statistics_subdevice_data(iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first))));
+                    if (iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first) != std::numeric_limits<uint64_t>::max()) {
+                        statistics_datas[session].find(iter->first)->second.subdevice_datas.insert(std::make_pair(iter_subdevice->first, Statistics_subdevice_data(iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first))));
+                    }
                 }
                 ++iter_subdevice;
             }
