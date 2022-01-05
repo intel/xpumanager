@@ -7,18 +7,18 @@ import time, threading
 import datetime
 
 class PolicyConditionSchema(Schema):
-    type = fields.Str(metadata={"description": "Policy conditon type"})
+    type = fields.Str(metadata={"description": "Policy conditon type. Supported types: XPUM_POLICY_CONDITION_TYPE_GREATER, XPUM_POLICY_CONDITION_TYPE_LESS, XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR"})
     threshold = fields.Int(metadata={"description": "The threshold for policy"})
 
 class PolicyActionSchema(Schema):
-    type = fields.Str(metadata={"description": "Policy conditon type"})
+    type = fields.Str(metadata={"description": "Policy action type. Supported types: XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE, XPUM_POLICY_ACTION_TYPE_NULL"})
     throttle_device_frequency_min = fields.Int(metadata={"description": "The throttle_device_frequency_min value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type."})
     throttle_device_frequency_max = fields.Int(metadata={"description": "The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type."})
 
 
 class PolicySchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
-    type = fields.Str(metadata={"description": "Policy type"})
+    type = fields.Str(metadata={"description": "Policy type. Supported types: XPUM_POLICY_TYPE_GPU_TEMPERATURE, XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE, XPUM_POLICY_TYPE_GPU_POWER, XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET, XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, XPUM_POLICY_TYPE_GPU_MISSING"})
     notify_callback_url = fields.Str(metadata={"description": "Policy notify callback url"})
     action = fields.Nested(PolicyActionSchema)
     condition = fields.Nested(PolicyConditionSchema)
