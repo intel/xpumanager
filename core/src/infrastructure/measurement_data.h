@@ -19,6 +19,10 @@ struct SubdeviceData {
     uint64_t current;
     uint64_t raw_data;
     uint64_t raw_timestamp;
+    SubdeviceData() {
+        avg = min = max = current = raw_data = std::numeric_limits<uint64_t>::max();
+        raw_timestamp = 0;
+    }
 };
 
 struct ExtendedMeasurementData {
@@ -34,7 +38,15 @@ class MeasurementData {
     ~MeasurementData() {
     }
 
-    MeasurementData() : avg(-1), min(-1), max(-1), current(-1), raw_data(-1), scale(1), bHasDataOnDevice(false), raw_timestamp(0), timestamp(0) {
+    MeasurementData() : avg(std::numeric_limits<uint64_t>::max()), 
+                        min(std::numeric_limits<uint64_t>::max()), 
+                        max(std::numeric_limits<uint64_t>::max()), 
+                        current(std::numeric_limits<uint64_t>::max()), 
+                        raw_data(std::numeric_limits<uint64_t>::max()), 
+                        scale(1), 
+                        bHasDataOnDevice(false), 
+                        raw_timestamp(0), 
+                        timestamp(0) {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
     }
@@ -43,7 +55,7 @@ class MeasurementData {
                                       min(value),
                                       max(value),
                                       current(value),
-                                      raw_data(-1),
+                                      raw_data(std::numeric_limits<uint64_t>::max()),
                                       scale(1),
                                       bHasDataOnDevice(true),
                                       raw_timestamp(0),
@@ -56,7 +68,7 @@ class MeasurementData {
                                                       min(value),
                                                       max(value),
                                                       current(value),
-                                                      raw_data(-1),
+                                                      raw_data(std::numeric_limits<uint64_t>::max()),
                                                       scale(scale),
                                                       bHasDataOnDevice(true),
                                                       raw_timestamp(0),
@@ -68,8 +80,8 @@ class MeasurementData {
     MeasurementData(uint64_t avg, uint64_t min, uint64_t max) : avg(avg),
                                                                 min(min),
                                                                 max(max),
-                                                                current(-1),
-                                                                raw_data(-1),
+                                                                current(std::numeric_limits<uint64_t>::max()),
+                                                                raw_data(std::numeric_limits<uint64_t>::max()),
                                                                 scale(1),
                                                                 bHasDataOnDevice(true),
                                                                 raw_timestamp(0),
@@ -82,7 +94,7 @@ class MeasurementData {
                                                                                                   min(min),
                                                                                                   max(max),
                                                                                                   current(current),
-                                                                                                  raw_data(-1),
+                                                                                                  raw_data(std::numeric_limits<uint64_t>::max()),
                                                                                                   scale(scale),
                                                                                                   bHasDataOnDevice(true),
                                                                                                   raw_timestamp(0),
