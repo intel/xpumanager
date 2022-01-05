@@ -78,8 +78,8 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
                 if (e == nullptr && ret != nullptr) {
                     std::string id = p_device->getId();
                     auto p_mdata = std::static_pointer_cast<MeasurementData>(ret);
-                    (*datas)[id] = p_mdata;
                     if (p_mdata->getErrors().empty()) {
+                        (*datas)[id] = p_mdata;
                         // everything is ok, no error messages reported in executing the underlying task, clear the log reported flag
                         p_this->monitor_task_log_status[p_device] = false;
                     } else {

@@ -34,42 +34,42 @@ uint64_t MeasurementData::getSubdeviceDataCurrent(uint32_t subdevice_id) {
     if (p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end()) {
         return (*p_subdevice_datas)[subdevice_id].current;
     }
-    return -1;
+    return std::numeric_limits<uint64_t>::max();
 }
 
 uint64_t MeasurementData::getSubdeviceDataMin(uint32_t subdevice_id) {
     if (p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end()) {
         return (*p_subdevice_datas)[subdevice_id].min;
     }
-    return -1;
+    return std::numeric_limits<uint64_t>::max();
 }
 
 uint64_t MeasurementData::getSubdeviceDataMax(uint32_t subdevice_id) {
     if (p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end()) {
         return (*p_subdevice_datas)[subdevice_id].max;
     }
-    return -1;
+    return std::numeric_limits<uint64_t>::max();
 }
 
 uint64_t MeasurementData::getSubdeviceDataAvg(uint32_t subdevice_id) {
     if (p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end()) {
         return (*p_subdevice_datas)[subdevice_id].avg;
     }
-    return -1;
+    return std::numeric_limits<uint64_t>::max();
 }
 
 uint64_t MeasurementData::getSubdeviceDataRawTimestamp(uint32_t subdevice_id) {
     if (p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end()) {
         return (*p_subdevice_datas)[subdevice_id].raw_timestamp;
     }
-    return -1;
+    return std::numeric_limits<uint64_t>::max();
 }
 
 uint64_t MeasurementData::getSubdeviceRawData(uint32_t subdevice_id) {
     if (p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end()) {
         return (*p_subdevice_datas)[subdevice_id].raw_data;
     }
-    return -1;
+    return std::numeric_limits<uint64_t>::max();
 }
 
 const std::shared_ptr<std::map<uint32_t, SubdeviceData>> MeasurementData::getSubdeviceDatas() {

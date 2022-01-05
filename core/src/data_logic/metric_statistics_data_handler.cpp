@@ -51,15 +51,17 @@ void MetricStatisticsDataHandler::updateStatistics(std::shared_ptr<SharedData>& 
             while (iter_subdevice != iter->second.getSubdeviceDatas()->end()) {
                 std::map<uint32_t, Statistics_subdevice_data>::iterator iter_subdevice_statistics = statistics_datas[session].find(iter->first)->second.subdevice_datas.find(iter_subdevice->first);
                 if (iter_subdevice_statistics != statistics_datas[session].find(iter->first)->second.subdevice_datas.end()) {
-                    iter_subdevice_statistics->second.count++;
-                    uint64_t current_data = iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first);
-                    if (current_data < iter_subdevice_statistics->second.min) {
-                        iter_subdevice_statistics->second.min = current_data;
+                    if (iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first) != std::numeric_limits<uint64_t>::max()) {
+                        iter_subdevice_statistics->second.count++;
+                        uint64_t current_data = iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first);
+                        if (current_data < iter_subdevice_statistics->second.min) {
+                            iter_subdevice_statistics->second.min = current_data;
+                        }
+                        if (current_data > iter_subdevice_statistics->second.max) {
+                            iter_subdevice_statistics->second.max = current_data;
+                        }
+                        iter_subdevice_statistics->second.avg = (iter_subdevice_statistics->second.avg * (iter_subdevice_statistics->second.count - 1) + iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first)) * 1.0 / iter_subdevice_statistics->second.count;
                     }
-                    if (current_data > iter_subdevice_statistics->second.max) {
-                        iter_subdevice_statistics->second.max = current_data;
-                    }
-                    iter_subdevice_statistics->second.avg = (iter_subdevice_statistics->second.avg * (iter_subdevice_statistics->second.count - 1) + iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first)) * 1.0 / iter_subdevice_statistics->second.count;
                 } else {
                     statistics_datas[session].find(iter->first)->second.subdevice_datas.insert(std::make_pair(iter_subdevice->first, Statistics_subdevice_data(iter->second.getSubdeviceDataCurrent(iter_subdevice_statistics->first))));
                 }

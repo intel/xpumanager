@@ -41,8 +41,10 @@ void TimeWeightedAverageDataHandler::calculateData(std::shared_ptr<SharedData>& 
                 uint64_t pre_data_raw_timestamp = p_preData->getData()[iter->first].getSubdeviceDataRawTimestamp(iter_subdevice->first);
                 uint64_t cur_data = iter_subdevice->second.raw_data;
                 uint64_t cur_data_raw_timestamp = iter_subdevice->second.raw_timestamp;
-                if (cur_data_raw_timestamp - pre_data_raw_timestamp != 0) {
-                    p_data->getData()[iter->first].setSubdeviceDataCurrent(iter_subdevice->first, (cur_data - pre_data) / (cur_data_raw_timestamp - pre_data_raw_timestamp));
+                if (pre_data != std::numeric_limits<uint64_t>::max() && cur_data != std::numeric_limits<uint64_t>::max()) {
+                    if (cur_data_raw_timestamp - pre_data_raw_timestamp != 0) {
+                        p_data->getData()[iter->first].setSubdeviceDataCurrent(iter_subdevice->first, (cur_data - pre_data) / (cur_data_raw_timestamp - pre_data_raw_timestamp));
+                    }
                 }
                 ++iter_subdevice;
             }
