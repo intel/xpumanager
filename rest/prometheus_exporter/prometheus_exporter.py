@@ -4,6 +4,7 @@ import os
 import traceback
 
 from enum import Enum, unique
+from itertools import filterfalse, groupby
 
 from dev_file_converter import get_dev_file
 import xpum_logger as logger
@@ -112,27 +113,32 @@ metrics_map = {
 }
 
 
+def avg(x):
+    return sum(x)/len(x) if len(x) > 0 else 0
+
+
+tile_to_device_aggregators = {
+    'XPUM_STATS_POWER': {'avg': sum},
+    'XPUM_STATS_RAS_ERROR_CAT_RESET': {'acc': sum},
+    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': {'acc': sum},
+    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': {'acc': sum},
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': {'acc': sum},
+    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': {'acc': sum},
+    'XPUM_STATS_MEMORY_UTILIZATION': {'avg': avg},
+    'XPUM_STATS_MEMORY_BANDWIDTH': {'avg': avg},
+    'XPUM_STATS_GPU_UTILIZATION': {'avg': avg}
+}
+
+device_to_card_aggregators = {
+    'XPUM_STATS_POWER': {'avg': sum},
+}
+
+
 def get_metrics(core, pod_resources):
 
-    all_card_data = {}
-    device_to_card_map = {}
+    all_device_data = {}
 
     try:
-        # construct mapping "device->card"
-        code, _, data = core.getAllGroups()
-        if code != 0:
-            return f'#nodata: failed to get cards ({code})', 500
-
-        for group in data:
-            group_id = group.get('group_id')
-            # only process built-in groups (i.e., cards) whose group id has 1 as the highest bit
-            if group_id is None or group_id & 0x80000000 != 0x80000000:
-                continue
-
-            for device_id in group.get('device_id_list', []):
-                # a device should be belong to one card at most , no check here
-                device_to_card_map[device_id] = group_id
-
         # processing device metrics
         code, _, data = core.getDeviceList()
         if code != 0:
@@ -149,31 +155,27 @@ def get_metrics(core, pod_resources):
             if stat_code != 0:
                 continue
 
-            card_id = device_to_card_map.get(device_id)
-            aggregated_power_from_device = False
+            # aggregate tile metrics so that they will be exported at device level
+            aggregate_tile_to_device(stat_data)
 
             if 'device_level' in stat_data:
+
+                # store all device data in dict for later card level aggregation
+                all_device_data[device_id] = stat_data['device_level']
+
+                # export device metrics to Prometheus registry
                 r = convert_to_prometheus_metrics(
                     pod_resources, dev, stat_data['device_level'], device_id)
                 resp = resp + r
 
-                # aggregate to card level
-                if card_id is not None:
-                    card_data = all_card_data.setdefault(card_id, [])
-                    aggregated_power_from_device = aggregate_power_to_card(
-                        card_data, stat_data['device_level'])
-
+            # export tile metrics to Prometheus registry
             for tile_data in stat_data.get('tile_level', []):
                 r = convert_to_prometheus_metrics(
                     pod_resources, dev, tile_data['data_list'], device_id, tile_data['tile_id'])
                 resp = resp + r
 
-                # aggregate to card level from tile if it has not yet be aggregated from device level
-                if card_id is not None and not aggregated_power_from_device:
-                    card_data = all_card_data.setdefault(card_id, [])
-                    aggregate_power_to_card(card_data, tile_data['data_list'])
-
-        # export card metrcis
+        # export card metrics
+        all_card_data = aggregate_device_to_card(core, all_device_data)
         for card_id, card_data in all_card_data.items():
             r = convert_to_prometheus_metrics(
                 pod_resources, dev=None, datalist=card_data, card_id=card_id)
@@ -184,21 +186,80 @@ def get_metrics(core, pod_resources):
         traceback.print_exc()
         return "#nodata: due to unexpected failure", 500
 
+def aggregate_device_to_card(core, all_device_data):
 
-def aggregate_power_to_card(card_data: list, device_or_tile_data):
-    for metric in device_or_tile_data:
-        metric_type = metric['metrics_type']
-        if metric_type == 'XPUM_STATS_POWER':
-            try:
-                card_metric = next(
-                    x for x in card_data if x['metrics_type'] == metric_type)
-            except StopIteration:
-                card_metric = {'metrics_type': metric_type, 'avg': 0}
-                card_data.append(card_metric)
-            card_metric['avg'] = card_metric['avg'] + metric.get('avg')
-            return True
-    return False
+    INVALID_GROUP_ID = 0
+    device_to_card_map = {}
+    # construct mapping "device->card"
+    code, _, data = core.getAllGroups()
+    if code != 0:
+        return f'#nodata: failed to get cards ({code})', 500
 
+    for group in data:
+        group_id = group.get('group_id')
+        # only process built-in groups (i.e., cards) whose group id has 1 as the highest bit
+        if group_id is None or group_id & 0x80000000 != 0x80000000:
+            continue
+
+        for device_id in group.get('device_id_list', []):
+            # a device should belong to one card at most, no check here
+            device_to_card_map[device_id] = group_id
+
+    # group all device data by card
+    groups_data = [(device_to_card_map.get(x, INVALID_GROUP_ID),all_device_data[x]) for x in all_device_data]
+    key_func = lambda x: x[0]
+    groups_data = sorted(groups_data, key=key_func)
+    groups_data = groupby(groups_data, key_func)
+    def filter_func(x): return x[0] == INVALID_GROUP_ID
+    valid_groups_data = filterfalse(filter_func, groups_data)
+
+    all_card_data = {}
+    for card_id, data_list in valid_groups_data:
+        # group card data by metric type
+        group_data = [x[1] for x in list(data_list)]
+        group_data = [item for sublist in group_data for item in sublist]
+        def key_func(x): return x['metrics_type']
+        group_data_by_type = groupby(sorted(group_data, key=key_func), key_func)
+        def filter_func(x): return x[0] not in device_to_card_aggregators
+        group_data_by_type = filterfalse(filter_func, group_data_by_type)
+
+        # aggregate device data to card
+        aggregate_data(group_data_by_type, device_to_card_aggregators, all_card_data.setdefault(card_id, []))
+
+    return all_card_data
+
+def aggregate_tile_to_device(stat_data):
+
+    device_level = stat_data.get('device_level', {})
+    device_metrics = [x['metrics_type'] for x in device_level]
+    # group tile data by metrics_type
+    tile_level = [x['data_list'] for x in stat_data.get('tile_level', [])]
+    # groupby needs sorted list by the same key_func
+    def key_func(x): return x['metrics_type']
+    tile_level = sorted(
+        [item for sublist in tile_level for item in sublist], key=key_func)
+    tiles_data_by_type = groupby(tile_level, key_func)
+    # device_level already has this metric, skip aggregation from tile
+    def filter_func(x): return x[0] not in tile_to_device_aggregators or x[0] in device_metrics
+    tiles_data_by_type = filterfalse(filter_func, tiles_data_by_type)
+
+    # aggregate tile data to device
+    aggregate_data(tiles_data_by_type, tile_to_device_aggregators, device_level)
+
+    stat_data['device_level'] = device_level
+
+    
+def aggregate_data(data_by_type, data_aggregators, target_list):
+    for metric_type, data in data_by_type:
+        data = list(data)
+        device_data = {'metrics_type': metric_type}
+        for value_type in data[0]:
+            if value_type in data_aggregators[metric_type]:
+                agg = tile_to_device_aggregators[metric_type][value_type]
+                value_list = [x[value_type] for x in data]
+                agg_value = agg(value_list)
+                device_data[value_type] = agg_value
+        target_list.append(device_data)
 
 def tidy_response(resp):
     resp_str = resp.decode('UTF-8')
