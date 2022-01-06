@@ -21,6 +21,8 @@ from views import device_config
 from views import topology
 from views import dump_raw_data
 
+import xpum_logger as logger
+
 import argparse
 
 from stub import dump_raw_data as dump_raw_data_stub
@@ -148,11 +150,14 @@ def main(*args, **kwargs):
 
 @auth.verify_password
 def verify_password(username, password):
+    # store username in threadlocal for audit log
+    logger.set_audit_username(username)
     if not disableAuth:
         tmpHash = hashlib.pbkdf2_hmac('sha512', password.encode('ASCII'), salt.encode('ASCII'), 10000).hex()
         if username == user and tmpHash == pwHash:
             return True
         else:
+            logger.audit('Authentication', 'Failed', "The username '{}' doesn't exist or the password is incorrect", username)
             return False
     else:
         return True
