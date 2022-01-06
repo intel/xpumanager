@@ -61,6 +61,8 @@ def get_health_all(deviceId):
             200:
                 description: OK
                 schema: HealthSchema
+            404:
+                description: Device not found or health type not supported
             500:
                 description: Error
     """
@@ -95,6 +97,8 @@ def get_group_health_all(groupId):
             200:
                 description: OK
                 schema: HealthGroupSchema
+            404:
+                description: Device not found or health type not supported
             500:
                 description: Error
     """
@@ -128,11 +132,14 @@ def get_health(deviceId, healthType):
             200:
                 description: OK
                 schema: HealthSchema
+            404:
+                description: Device not found or health type not supported
             500:
                 description: Error
     """
     if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory"]:
-        return
+        error = dict(Status=1, Message="health type not supported")
+        return jsonify(error), 404
 
     code, message, data = stub.getHealth(deviceId, healthType)
     if code != 0:
@@ -164,11 +171,14 @@ def get_group_health(groupId, healthType):
             200:
                 description: OK
                 schema: HealthGroupSchema
+            404:
+                description: Device not found or health type not supported
             500:
                 description: Error
     """
     if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory"]:
-        return
+        error = dict(Status=1, Message="health type not supported")
+        return jsonify(error), 404
 
     code, message, data = stub.getHealthByGroup(groupId, healthType)
     if code != 0:
@@ -204,11 +214,14 @@ def set_health_config(deviceId, healthType):
         responses:
             200:
                 description: OK
+            404:
+                description: Device not found or health type not supported
             500:
                 description: Error
     """
     if healthType not in ["coreTemperature", "memoryTemperature", "power"]:
-        return
+        error = dict(Status=1, Message="health type not supported")
+        return jsonify(error), 404
 
     req = request.get_json()
     threshold = req["custom_threshold"]
@@ -246,11 +259,14 @@ def set_group_health_config(groupId, healthType):
         responses:
             200:
                 description: OK
+            404:
+                description: Device not found or health type not supported
             500:
                 description: Error
     """
     if healthType not in ["coreTemperature", "memoryTemperature", "power"]:
-        return
+        error = dict(Status=1, Message="health type not supported")
+        return jsonify(error), 404
 
     req = request.get_json()
     threshold = req["custom_threshold"]
