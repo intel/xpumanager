@@ -749,8 +749,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 // p_gpu->addProperty(Property(DeviceProperty::KERNEL_TIMESTAMP_VALID_BITS,std::to_string(props.core.kernelTimestampValidBits)));
                 // p_gpu->addProperty(Property(DeviceProperty::FLAGS,std::to_string(props.core.flags)));
 
-                uint32_t tileCount = props.numSubdevices == 0 ? 1 : props.numSubdevices;
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES, std::to_string(tileCount)));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES, std::to_string(props.numSubdevices)));
 
                 zes_pci_properties_t pci_props;
 
@@ -2029,15 +2028,15 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
                     || props.type == ZES_ENGINE_GROUP_COPY_SINGLE
                     || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE
                     || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
-                        zes_engine_stats_t snap1 = {};
-                        XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetActivity(engine, &snap1));
+                        zes_engine_stats_t snap = {};
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetActivity(engine, &snap));
                         if (res == ZE_RESULT_SUCCESS) {
                             ExtendedMeasurementData data;
                             data.on_subdevice = props.onSubdevice;
                             data.subdevice_id = props.subdeviceId;
                             data.type = props.type;
-                            data.active_time = snap1.activeTime;
-                            data.timestamp = snap1.timestamp;
+                            data.active_time = snap.activeTime;
+                            data.timestamp = snap.timestamp;
                             ret->addExtendedData(uint64_t(engine), data);
                             data_acquired = true;
                         } else {
