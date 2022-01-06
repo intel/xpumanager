@@ -99,6 +99,21 @@ MeasurementData MetricStatisticsDataHandler::getLatestStatistics(std::string& de
     }
 
     auto datas = p_latestData->getData();
+    if (datas.find(device_id) != datas.end()) {
+        datas[device_id].setAvg(datas[device_id].getCurrent());
+        datas[device_id].setMin(datas[device_id].getCurrent());
+        datas[device_id].setMax(datas[device_id].getCurrent());
+        datas[device_id].setStartTime(datas[device_id].getTimestamp());
+        datas[device_id].setLatestTime(datas[device_id].getTimestamp());
+        auto sub = datas[device_id].getSubdeviceDatas()->begin();
+        while (sub != datas[device_id].getSubdeviceDatas()->end()) {
+            sub->second.avg = sub->second.current;
+            sub->second.min = sub->second.current;
+            sub->second.max = sub->second.current;
+            sub++;
+        }
+    }
+
     if (statistics_datas.find(session_id) != statistics_datas.end()) {
         std::map<std::string, Statistics_data>::iterator iter = statistics_datas[session_id].find(device_id);
         if (iter != statistics_datas[session_id].end()) {
