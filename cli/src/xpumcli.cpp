@@ -25,7 +25,8 @@
 
 int main(int argc, char **argv) {
 
-    xpum::cli::Logger::init();
+    xpum::cli::init_logger();
+    // XPUM_LOG_AUDIT("XPUM CLI (ver.%s) Started", "1.0.0.0");
 
     CLI::App app{R"(Intel XPU Manager Command Line Interface -- v1.0 
 Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.  
