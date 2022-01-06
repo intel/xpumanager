@@ -831,6 +831,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &
         updateMessage(component.message, desc);
     } else {
         std::string desc = "Pass to check PCIe bandwidth.";
+        desc += bandwidth_detail;
         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
         updateMessage(component.message, desc);
     }
@@ -1545,6 +1546,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
     } else {
         compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
         std::string desc = "Pass to check computation performance.";
+        desc += " " + compute_detail;
         updateMessage(compute_component.message, desc);
     }
     compute_component.finished = true;
@@ -1570,6 +1572,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
     } else {
         power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
         std::string desc = "Pass to check stress power.";
+        desc += " " + power_detail;
         updateMessage(power_component.message, desc);
     }
     power_component.finished = true;
@@ -2042,6 +2045,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
     } else {
         memorybandwidth_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
         std::string desc = "Pass to check memory bandwidth.";
+        desc += " " + memorybandwidth_detail;
         updateMessage(memorybandwidth_component.message, desc);        
     }
     memorybandwidth_component.finished = true;
