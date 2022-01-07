@@ -27,7 +27,7 @@ app_logger.addHandler(ch)
 # logger.addHandler(fh)
 
 # set up syslog
-opensyslog('xpumrest', LOG_PID | LOG_CONS, LOG_USER)
+opensyslog('xpumrest_audit', LOG_PID | LOG_CONS, LOG_USER)
 
 # logging function wrappers
 
