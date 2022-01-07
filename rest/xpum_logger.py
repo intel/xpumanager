@@ -65,7 +65,20 @@ def set_audit_username(username):
 
 
 def audit(action, result_code, ext_fmt=None, *args, **kwargs):
+    """Write logs for audit. This function adds the username and the remote address of the http request automatically.
+
+    Args:
+        action (str): action that user performed
+        result_code (any): result of the action
+        ext_fmt (str, optional): format of the extra message. Defaults to None.
+    """
     username = getattr(thread_local, 'username', 'n/a')
     ext_msg = '' if not ext_fmt else f', ExtraMsg: {ext_fmt.format(*args, **kwargs)}'
-    msg = f'[{username}@{request.remote_addr}] Action:{action}, Result:{result_code}{ext_msg}'
+    addr = 'n/a'
+    try:
+        addr = request.remote_addr
+    except:
+        # not in request context
+        pass
+    msg = f'[{username}@{addr}] Action:{action}, Result:{result_code}{ext_msg}'
     syslog(msg)
