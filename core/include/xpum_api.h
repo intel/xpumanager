@@ -305,34 +305,6 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
                                                 int32_t tileId,
                                                 const xpum_power_sustained_limit_t sustained_limit);
 /**
- * @brief Set device burst power limit
- * @details This function is used to set the burst power limit of device
- *
- * @param deviceId          IN: The device Id
- * @param tileId            IN: The tile Id
- * @param burst_limit       IN: The burstr power limit need to be set
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_GENERIC_ERROR       if set failure
- */
-xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
-                                            int32_t tileId,
-                                            const xpum_power_burst_limit_t burst_limit);
-/**
- * @brief Set device peak power limit
- * @details This function is used to set the peak power limit of device
- *
- * @param deviceId          IN: The device Id
- * @param tileId            IN: The tile Id
- * @param peak_limit       IN: The peak power limit need to be set
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_GENERIC_ERROR       if set failure
- */
-xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
-                                           int32_t tileId,
-                                           const xpum_power_peak_limit_t peak_limit);
-/**
  * @brief Get device frequency ranges
  * @details This function is used to get the frequency ranges
  *

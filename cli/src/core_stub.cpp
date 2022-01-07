@@ -1236,6 +1236,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["power_average_window_vaild_range"] = response.tileconfigdata(i).intervalscope();
                 tileJson["gpu_frequency_valid_options"] = response.tileconfigdata(i).freqoption();
                 tileJson["standby_mode_valid_options"] = response.tileconfigdata(i).standbyoption();
+                tileJson["performance_factor"] = response.tileconfigdata(i).performancefactor();
                 if (response.tileconfigdata(i).schedulertimeout() > 0) {
                     tileJson["scheduler_watchdog_timeout"] = response.tileconfigdata(i).schedulertimeout();
                 }

@@ -36,7 +36,8 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "Scheduler Mode", "value": "scheduler_mode" },
                 { "label": "  Timeout (us) ", "value": "scheduler_watchdog_timeout" },
                 { "label": "  Interval (us) ", "value": "scheduler_timeslice_interval" },
-                { "label": "  Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" }
+                { "label": "  Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" },
+                { "label": "Performance Factor ", "value": "performance_factor" }
             ]
         ]
     }]
@@ -56,10 +57,10 @@ void ComletConfig::setupOptions() {
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
     //addFlag("--exclusive", this->opts->schedulerExclusive, "set scheduler exclusive mode");
     
-    /*addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
+    addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
 Valid options: \"compute/media\",factorValue. The factor value should be \
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support.\
-0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");*/
+0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
     
     
     

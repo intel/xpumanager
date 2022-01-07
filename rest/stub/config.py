@@ -42,6 +42,7 @@ def getConfig(deviceId, tileId):
         tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
         tiledata['standby_mode_valid_options'] = resp.tileConfigData[i].standbyOption
         tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
+        tiledata['performance_factor'] = resp.tileConfigData[i].performanceFactor
         if resp.tileConfigData[i].schedulerTimeout > 0:
             tiledata['scheduler_watchdog_timeout'] = resp.tileConfigData[i].schedulerTimeout
         if resp.tileConfigData[i].schedulerTimesliceInterval > 0:

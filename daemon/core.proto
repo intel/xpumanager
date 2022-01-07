@@ -379,7 +379,7 @@ message ConfigTileData {
     uint32 schedulerTimeout = 12;
     uint32 schedulerTimesliceInterval = 13;
     uint32 schedulerTimesliceYieldTimeout = 14;
-    repeated PerformanceFactor pf = 15;
+    double performanceFactor = 15;
 }
 message ConfigDeviceData{
     uint32 deviceId = 1;    

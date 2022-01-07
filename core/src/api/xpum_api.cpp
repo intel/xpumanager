@@ -780,7 +780,7 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
     }
     return XPUM_GENERIC_ERROR;
 }
-
+/*
 xpum_result_t xpumSetDevicePowerBurstLimits(xpum_device_id_t deviceId,
                                             int32_t tileId,
                                             const xpum_power_burst_limit_t burst_limit) {
@@ -820,7 +820,7 @@ xpum_result_t xpumSetDevicePowerPeakLimits(xpum_device_id_t deviceId,
     }
     return XPUM_GENERIC_ERROR;
 }
-
+*/
 xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
                                            xpum_frequency_range_t *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));

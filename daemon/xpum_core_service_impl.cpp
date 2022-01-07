@@ -876,7 +876,25 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     uint32_t val2 = request->intervalwindow();
     xpum_result_t res;
     xpum_power_sustained_limit_t sustained_limit;
+    xpum_power_prop_data_t powerRangeArray[32];
+    uint32_t powerRangeCount = 32;
 
+    res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+
+    for (uint32_t i = 0; i < powerRangeCount; i++) {
+        if (powerRangeArray[i].subdevice_Id == tileId) {
+            XPUM_LOG_WARN("val1 {} ",val1);
+            XPUM_LOG_WARN("default_limit {} ",powerRangeArray[i].default_limit/1000);
+            if(val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit)) {
+                response->set_errormsg("Invalid Parameter");
+                return grpc::Status::OK;
+            }
+        }
+    }
     sustained_limit.enabled = true;
     sustained_limit.power = val1;
     sustained_limit.interval = val2;
@@ -1177,6 +1195,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     xpum_standby_data_t standbyArray[32];
     xpum_scheduler_data_t schedulerArray[32];
     xpum_power_prop_data_t powerRangeArray[32];
+    xpum_device_performancefactor_t performanceFactorArray[32];
     double availableClocksArray[255];
 
     
@@ -1184,6 +1203,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     uint32_t standbyCount = 32;
     uint32_t schedulerCount = 32;
     uint32_t powerRangeCount = 32;
+    uint32_t performanceFactorCount = 32;
     uint32_t clockCount = 255;
    
     res = xpumGetDeviceFrequencyRanges(deviceId, freqArray, &freqCount);
@@ -1207,6 +1227,12 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         return grpc::Status::OK;
     }
 
+    res = xpumGetPerformanceFactor(deviceId, performanceFactorArray, &performanceFactorCount);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+
     for (int j{0}; j < tileCount; ++j) {
         uint32_t tileId = tileList.at(j);
         std::string clockString = "";
@@ -1222,6 +1248,14 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
                 break;
             }
         }
+
+        for (uint32_t i = 0; i < performanceFactorCount; i++) {
+            if (performanceFactorArray[i].subdevice_id == tileId) {
+                tileData->set_performancefactor(performanceFactorArray[i].factor);
+                break;
+            }
+        }
+
         /*
         for (uint32_t i = 0; i < powerRangeCount; i++) {
             if (powerRangeArray[i].subdevice_Id == tileId) {
@@ -1232,6 +1266,13 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
             }
         }
         */
+        for (uint32_t i = 0; i < powerRangeCount; i++) {
+            if (powerRangeArray[i].subdevice_Id == tileId) {
+                std::string scope = "1 to " + std::to_string(powerRangeArray[i].default_limit/1000);
+                tileData->set_powerscope(scope);
+                break;
+            }
+        }
         xpumGetFreqAvailableClocks(deviceId, tileId, availableClocksArray,&clockCount);
         
         for (uint32_t i= 0; i < clockCount; i++) {
@@ -1242,8 +1283,8 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         }
         tileData->set_freqoption(clockString);
         tileData->set_standbyoption("default, never");
-        tileData->set_intervalscope ("1 to 125");
-        tileData->set_powerscope ("0 to 500");
+        tileData->set_intervalscope ("1 to 124");
+        //tileData->set_powerscope ("0 to 500");
 
         for (uint32_t i = 0; i < standbyCount; i++) {
             if (standbyArray[i].type == XPUM_GLOBAL /*&& standbyArray[i].on_subdevice == true */ && standbyArray[i].subdevice_Id == tileId) {
