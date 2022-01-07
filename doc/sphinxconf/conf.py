@@ -14,11 +14,12 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import sphinx_rtd_theme
 
 # -- Project information -----------------------------------------------------
 
 project = 'XPU Manager'
-copyright = '2021, intel'
+copyright = '2022, intel'
 author = 'yupengzh'
 
 
@@ -30,7 +31,7 @@ sys.path.insert(1, os.path.abspath("../doxyrest/share/doxyrest/sphinx"))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'doxyrest', 'cpplexer', 'sphinxcontrib.openapi', 'myst_parser'
+    'doxyrest', 'cpplexer', 'sphinxcontrib.openapi', 'myst_parser', 'sphinx_rtd_theme'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

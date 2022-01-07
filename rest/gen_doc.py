@@ -27,4 +27,5 @@ with app.test_request_context():
         # print(rule.rule,rule.endpoint)
         if rule.rule.startswith("/rest/v1"):
             spec.path(view=app.view_functions.get(rule.endpoint))
-    print(json.dumps(spec.to_dict(), indent=4))
+    # print(json.dumps(spec.to_dict(), indent=4))
+    print(spec.to_yaml())

@@ -42,7 +42,7 @@ cp -r img build/doc/img
 
 ../rest/gen_grpc_py_files.sh
 
-python3 ../rest/gen_doc.py > build/schema.json
+python3 ../rest/gen_doc.py > build/schema.yml
 
 # build rst to html by sphinx
 sphinx-build -c sphinxconf/ . build/html
