@@ -41,6 +41,7 @@ class HealthSchema(Schema):
     memory_temperature = fields.Nested(HealthConfigurableComponentSchemaExt)
     power = fields.Nested(HealthConfigurableComponentSchemaBase)
     memory = fields.Nested(HealthComponentSchema)
+    xe_link_port = fields.Nested(HealthComponentSchema)
 
 
 def get_health_all(deviceId):
@@ -126,7 +127,7 @@ def get_health(deviceId, healthType):
             -
                 name: healthType
                 in: path
-                description: Health type, coreTemperature, memoryTemperature, power and memory
+                description: Health type, coreTemperature, memoryTemperature, power, memory or xeLinkPort
                 type: str
         responses:
             200:
@@ -137,7 +138,7 @@ def get_health(deviceId, healthType):
             500:
                 description: Error
     """
-    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory"]:
+    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory", "xeLinkPort"]:
         error = dict(Status=1, Message="health type not supported")
         return jsonify(error), 404
 
@@ -165,7 +166,7 @@ def get_group_health(groupId, healthType):
             -
                 name: healthType
                 in: path
-                description: Health type, coreTemperature, memoryTemperature, power and memory
+                description: Health type, coreTemperature, memoryTemperature, power, memory or xeLinkPort
                 type: str
         responses:
             200:
@@ -176,7 +177,7 @@ def get_group_health(groupId, healthType):
             500:
                 description: Error
     """
-    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory"]:
+    if healthType not in ["coreTemperature", "memoryTemperature", "power", "memory", "xeLinkPort"]:
         error = dict(Status=1, Message="health type not supported")
         return jsonify(error), 404
 

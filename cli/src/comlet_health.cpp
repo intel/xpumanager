@@ -113,9 +113,9 @@ static CharTableConfig ComletConfigHealthFabricPort(R"({
         "title": "none"
     }],
     "rows": [{
-        "instance": "fabric_port",
+        "instance": "xe_link_port",
         "cells": [
-            { "rowTitle": "5. GPU Fabric Port" }, [
+            { "rowTitle": "5. Xe Link Port" }, [
             { "label": "Status", "value": "status" },
             { "label": "Description", "value": "description" }
         ]]
@@ -131,7 +131,8 @@ void ComletHealth::setupOptions() {
       1. GPU Core Temperature\n\
       2. GPU Memory Temperature\n\
       3. GPU Power\n\
-      4. GPU Memory");
+      4. GPU Memory\n\
+      5. Xe Link Port");
     addOption("--threshold", this->opts->threshold, "Set custom threshold for device component");
 }
 
