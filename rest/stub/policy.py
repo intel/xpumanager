@@ -5,6 +5,7 @@ import datetime
 import traceback
 import json
 import urllib
+import xpum_logger as logger
 
 XpumPolicyTypeToString = {
     core_pb2.POLICY_TYPE_GPU_TEMPERATURE : "XPUM_POLICY_TYPE_GPU_TEMPERATURE",
@@ -101,7 +102,9 @@ def setPolicy(id, isDevcie,input,is_delete_policy):
         return 1, "Invalid Parameter: policy type is invalid.", 400
     policyType = XpumPolicyTypeFromString[input["type"]]
     ##########
+    actionTag = "set"
     if is_delete_policy:
+        actionTag = "remove"
         policy = core_pb2.XpumPolicyData(type=policyType,isDeletePolicy=is_delete_policy)
     else:
         ##########
@@ -146,9 +149,13 @@ def setPolicy(id, isDevcie,input,is_delete_policy):
         policy = core_pb2.XpumPolicyData(type=policyType,condition=condition,action=action,notifyCallBackUrl=notify_callback_url)
     ##########
     resp = stub.setPolicy(core_pb2.SetPolicyRequest(id=id,isDevcie=isDevcie,policy=policy))
-    if len(resp.errorMsg) != 0:
+    ##########    
+    if len(resp.errorMsg) != 0:        
+        logger.audit("{}Policy".format(actionTag), 'Failed', "Failed to {} the {} policy. Error message: {}", actionTag, input["type"],resp.errorMsg)
         return 2, resp.errorMsg, 500
-    return 0, "OK", 200
+    else:
+        logger.audit("{}Policy".format(actionTag), 'Success', "Succeed to {} the {} policy. ", actionTag, input["type"])
+        return 0, "OK", 200
 
 def readPolicyNotifyData(): 
     notifys = stub.readPolicyNotifyData(empty_pb2.Empty())

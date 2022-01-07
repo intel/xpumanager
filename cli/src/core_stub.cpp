@@ -14,6 +14,7 @@
 #include "core.grpc.pb.h"
 #include "core.pb.h"
 #include "xpum_structs.h"
+#include "logger.h"
 
 namespace xpum::cli {
 
@@ -1048,15 +1049,19 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPol
             (*json)["is_success"] = true; 
             if(isRemove){
                 (*json)["msg"] = "Succeed to remove the "+policyType+" policy.";
+                XPUM_LOG_AUDIT("Succeed to remove the %s policy.",policyType.c_str());
             }else{
                 (*json)["msg"] = "Succeed to set the "+policyType+" policy.";
+                XPUM_LOG_AUDIT("Succeed to set the %s policy.",policyType.c_str());
             }            
         }else{
             (*json)["is_success"] = false; 
             if(isRemove){
                 (*json)["error"] = "Failed to remove the "+policyType+" policy. Error message: "+response.errormsg();
+                XPUM_LOG_AUDIT("Failed to remove the %s policy. Error message: %s",policyType.c_str(),response.errormsg().c_str());
             }else{
                 (*json)["error"] = "Failed to set the "+policyType+" policy. Error message: "+response.errormsg();
+                XPUM_LOG_AUDIT("Failed to set the %s policy. Error message: %s",policyType.c_str(),response.errormsg().c_str());
             }  
         }
     }else{
@@ -1064,14 +1069,18 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPol
         if (response.errormsg().length() == 0) {
             if(isRemove){
                 (*json)["error"] = "Failed to remove the "+policyType+" policy. Error message: unknown.";
+                XPUM_LOG_AUDIT("Failed to remove the %s policy. Error message: unknown.",policyType.c_str());
             }else{
                 (*json)["error"] = "Failed to set the "+policyType+" policy. Error message: unknown.";
+                XPUM_LOG_AUDIT("Failed to set the %s policy. Error message: unknown.",policyType.c_str());
             }  
         }else{
             if(isRemove){
                 (*json)["error"] = "Failed to remove the "+policyType+" policy. Error message: "+response.errormsg();
+                XPUM_LOG_AUDIT("Failed to remove the %s policy. Error message: %s",policyType.c_str(),response.errormsg().c_str());
             }else{
                 (*json)["error"] = "Failed to set the "+policyType+" policy. Error message: "+response.errormsg();
+                XPUM_LOG_AUDIT("Failed to set the %s policy. Error message: %s",policyType.c_str(),response.errormsg().c_str());
             }  
         }
     }
