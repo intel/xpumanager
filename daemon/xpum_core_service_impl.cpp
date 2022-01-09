@@ -844,12 +844,20 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         xpum_scheduler_timeout_t sch_timeout;
         sch_timeout.subdevice_Id = subdevice_Id;
         sch_timeout.watchdog_timeout = val1;
+        if (val1 < 5000 || val1 > 100000000) {
+            response->set_errormsg("Invalid Parameter");
+            return grpc::Status::OK;
+        }
         res = xpumSetDeviceSchedulerTimeoutMode(deviceId, sch_timeout);
     } else if (scheduler == SCHEDULER_TIMESLICE) {
         xpum_scheduler_timeslice_t sch_timeslice;
         sch_timeslice.subdevice_Id = subdevice_Id;
         sch_timeslice.interval = val1;
         sch_timeslice.yield_timeout = val2;
+        if (val1 < 5000 || val1 > 100000000 || val2 < 5000 || val2 > 100000000) {
+            response->set_errormsg("Invalid Parameter");
+            return grpc::Status::OK;
+        }
         res = xpumSetDeviceSchedulerTimesliceMode(deviceId, sch_timeslice);
     } else if (scheduler == SCHEDULER_EXCLUSIVE) {
         xpum_scheduler_exclusive_t sch_exclusive;
@@ -887,9 +895,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].subdevice_Id == tileId) {
-            XPUM_LOG_WARN("val1 {} ",val1);
-            XPUM_LOG_WARN("default_limit {} ",powerRangeArray[i].default_limit/1000);
-            if(val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit)) {
+            if(val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit) || val2 > 124 || val2 < 1 ) {
                 response->set_errormsg("Invalid Parameter");
                 return grpc::Status::OK;
             }
