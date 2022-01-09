@@ -42,7 +42,7 @@ Subcommands:
   updatefw                    Update GPU firmware.
   config                      Get and change the GPU settings.
   dump                        Dump device statistics data.
-  topology                    Get the GPU to CPU and GPU to PCIe switch topology info.
+  topology                    get the system topology
   policy                      Get and set the GPU policies.
 ```
   
@@ -149,6 +149,10 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Number of EUs per Sub Slice: 16                                                      |
 |           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
+|           |                                                                                      |
+|           | Number of Xe Link ports: 16                                                          |
+|           | Max Tx/Rx Speed per Xe Link port: 51879.88 MiB/s                                     |
+|           | Number of Lanes per Xe Link port: 4                                                  |
 +-----------+--------------------------------------------------------------------------------------+
 ```
 
@@ -340,6 +344,12 @@ List the GPU device aggregated statistics that are collected by XPU Manager
 | GPU Memory Used (MiB)        | Tile 0: avg: 500, min: 100, max: 700, current: 400                |
 |                              | Tile 1: avg: 500, min: 100, max: 700, current: 400                |
 +------------------------------+-------------------------------------------------------------------+
+| Xe Link Receive (kB/s)       | Tile 0 -> GPU 1 Tile 1: avg: 500, min: 100, max: 700, current: 400|
+|                              | Tile 1 -> GPU 1 Tile 0: avg: 500, min: 100, max: 700, current: 400|
++------------------------------+-------------------------------------------------------------------+
+| Xe Link Transmit (kB/s)      | Tile 0 -> GPU 1 Tile 1: avg: 500, min: 100, max: 700, current: 400|
+|                              | Tile 1 -> GPU 1 Tile 0: avg: 500, min: 100, max: 700, current: 400|
++------------------------------+-------------------------------------------------------------------+
 ```
  
 ## Get the device health status
@@ -367,6 +377,7 @@ optional arguments:
                                 2. GPU Memory Temperature
                                 3. GPU Power
                                 4. GPU Memory
+                                5. Xe Link Port
   --threshold                 Set custom threshold for device component
 ```
  
@@ -395,6 +406,9 @@ Get the GPU device component health status. There are some build-in thresholds f
 +------------------------------+-------------------------------------------------------------------+
 | 4. GPU Memory                | Status: Ok                                                        |
 |                              | Description: All memory channels are healthy.                     |
++------------------------------+-------------------------------------------------------------------+
+| 5. Xe Link Port              | Status: Ok                                                        |
+|                              | Description: All ports are healthy.                               |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
@@ -494,25 +508,28 @@ Task 0 is stopped.
 Dump file path: /opt/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
 ```
 
-## Get the device topology
-Help info of get GPU to CPU and GPU to PCIe switch topology
+## Get the system topology
+Help info of get the system topology
 ```
 ./xpumcli topology
 
-Get the GPU to CPU and GPU to PCIe switch topology info.
+Get the system topology info.
 
 Usage: xpumcli topology [Options]
   xpumcli topology -d [deviceId]
   xpumcli topology -d [deviceId] -j
+  xpumcli topology -f [filename]
 
 optional arguments:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID to query
+  -f,--file                   Generate the system topology with the GPU info to a file. The filename determines the format of the output, including 
+                                XML and PNG. 
 ```
 
-Get the info of the CPUs and PCIe switches which are connected to the GPU
+Get the hardware topology info which is related to the GPU
 ```
 ./xpumcli topology -d 0
 +-----------+--------------------------------------------------------------------------------------+
@@ -524,6 +541,12 @@ Get the info of the CPUs and PCIe switches which are connected to the GPU
 |           | PCIe Switch: /sys/devices/pci0000:4a/0000:4a:02.0/0000:4b:00.0/0000:4c:00.0          |
 |           |   /0000:4d:00.0/0000:4e:18.0/0000:54:00.0/0000:55:01                                 |
 +-----------+--------------------------------------------------------------------------------------+
+```
+  
+Generage the system hardware topology to a XML file. 
+```
+./xpumcli topology -f topo.xml
+The system topology is generated to the file topo.xml. 
 ```
   
   
@@ -584,9 +607,11 @@ Usage: xpumcli config [Options]
   xpumcli config -d [deviceId] -t [tileId] --powerlimit [powerValue,averageWindow]
   xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
   xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
+  xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
+  xpumcli config -d [deviceId] -t [tileId] --xelinkport [portId,value]
+  xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
   
-
-
+  
 Options:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
@@ -599,6 +624,11 @@ Options:
   --standby                   Tile-level standby mode. Valid options: "default"; "never".
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us);
                                 "exclusive".
+  --performancefactor         Set the tile-level performance factor. Valid options: "compute/media";factorValue. The factor value should be 
+                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
+  --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
+  --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
+
 ```
 
 show the GPU settings
@@ -624,6 +654,17 @@ show the GPU settings
 |             |                   | Scheduler Mode: timeslice                                      |
 |             |                   |   Interval(us): 5000                                           |
 |             |                   |   Yield Timeout (us): 640000                                   |
+|             |                   |                                                                |
+|             |                   | Engine Type: compute                                           |
+|             |                   |   Performance Factor: 70                                       |
+|             |                   | Engine Type: media                                             |
+|             |                   |   Performance Factor: 50                                       |
+|             |                   |                                                                |
+|             |                   | Xe Link ports:                                                 |
+|             |                   |   Up: 0,1,2,3                                                  |
+|             |                   |   Down: 4,5,6,7                                                |
+|             |                   |   Beaconing On: 0,1,2,3                                        |
+|             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/1               | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 0 to 500                                        |
@@ -641,6 +682,17 @@ show the GPU settings
 |             |                   | Scheduler Mode: timeslice                                      |
 |             |                   |   Interval(us): 5000                                           |
 |             |                   |   Yield Timeout (us): 640000                                   |
+|             |                   |                                                                |
+|             |                   | Engine Type: compute                                           |
+|             |                   |   Performance Factor: 70                                       |
+|             |                   | Engine Type: media                                             |
+|             |                   |   Performance Factor: 50                                       |
+|             |                   |                                                                |
+|             |                   | Xe Link ports:                                                 |
+|             |                   |   Up: 0,1,2,3                                                  |
+|             |                   |   Down: 4,5,6,7                                                |
+|             |                   |   Beaconing On: 0,1,2,3                                        |
+|             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
 ```
  
@@ -667,7 +719,25 @@ Change the GPU tile scheduler mode.
 ./xpumcli config -d 0 -t 0 --scheduler timeout,640000
 Succeed to change the scheduler mode on GPU 0 tile 0.
 ```
+  
+Set the performance factor
+```
+./xpumcli config -d 0 -t 0 --performancefactor compute,70
+Succeed to change the compute performance factor to 70 on GPU 0 tile 0.
+```
 
+Change the Xe Link port status
+```
+./xpumcli config -d 0 -t 0 --xelinkport 0,1
+Succeed to change Xe Link port 0 to up.
+```
+
+Change the Xe Link port beaconing status
+```
+./xpumcli config -d 0 -t 0 --xelinkportbeaconing 0,1
+Succeed to change Xe Link port 0 beaconing to on.
+```
+  
 ## Get and set the policy, automatic action triggered by the condition
 The supported policies are list in the table below. For example, if the "GPU Core Temperature" policy is set and one GPU tile temperature is more than the specified threshold, the GPU throttling action will be taken automatically. 
 

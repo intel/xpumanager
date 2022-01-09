@@ -4,6 +4,7 @@
 
 #include "CLI/App.hpp"
 #include "cli_wrapper.h"
+#include "cli_resource.h"
 
 #include "comlet_diagnostic.h"
 #include "comlet_discovery.h"
@@ -28,12 +29,7 @@ int main(int argc, char **argv) {
     xpum::cli::init_logger();
     // XPUM_LOG_AUDIT("XPUM CLI (ver.%s) Started", "1.0.0.0");
 
-    CLI::App app{R"(Intel XPU Manager Command Line Interface -- v1.0 
-Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.  
-Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
- 
-Supported devices: 
-  - Intel ATS-M1/ATS-M3/ATS-P)"};
+    CLI::App app{xpum::cli::getResourceString("CLI_APP_DESC")};
 
     xpum::cli::CLIWrapper wrapper(app);
     wrapper
