@@ -19,8 +19,9 @@ def getDeviceList():
         device['pci_device_id'] = d.pcieDeviceId
         device['pci_bdf_address'] = d.pciBdfAddress
         device['vendor_name'] = d.vendorName
+        device['@odata.id']="/rest/v1/devices/{}".format(d.id.id)
         data.append(device)
-    return 0, "OK", data
+    return 0, "OK", dict(devices=data)
 
 
 def getDeviceProperties(deviceId):
@@ -30,4 +31,7 @@ def getDeviceProperties(deviceId):
     data = dict()
     for prop in resp.properties:
         data[prop.name.lower()] = prop.value
+    # links
+    data["health"] = {"@odata.id":"/rest/v1/devices/{}/health".format(deviceId)}
+    data["topology"] = {"@odata.id":"/rest/v1/devices/{}/topology".format(deviceId)}
     return 0, "OK", data
