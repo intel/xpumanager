@@ -9,11 +9,11 @@ namespace xpum {
 HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                              std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {
-    XPUM_LOG_DEBUG("HealthManager()");
+    XPUM_LOG_TRACE("HealthManager()");
 }
 
 HealthManager::~HealthManager() {
-    XPUM_LOG_DEBUG("~HealthManager()");
+    XPUM_LOG_TRACE("~HealthManager()");
 }
 
 void HealthManager::init() {

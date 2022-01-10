@@ -23,11 +23,11 @@ Core::Core()
       p_dump_raw_data_manager(nullptr),
       initialized(false) {
     Logger::init();
-    XPUM_LOG_DEBUG("core()");
+    XPUM_LOG_TRACE("core()");
 }
 
 Core::~Core() {
-    XPUM_LOG_DEBUG("~core()");
+    XPUM_LOG_TRACE("~core()");
     close();
 }
 
