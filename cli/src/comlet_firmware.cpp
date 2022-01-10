@@ -68,14 +68,13 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
                     auto deviceIdList = groupJson["device_id_list"];
                     for (auto deviceIdInGroup : deviceIdList) {
                         if (deviceIdInGroup.get<int>() == opts->deviceId) {
-                            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) ";
+                            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) "<< std::endl;
                             std::string confirm;
                             std::cin >> confirm;
                             if (confirm != "Y" && confirm != "y") {
                                 (*json)["error"] = "update aborted";
                                 return json;
                             }
-                            std::cout << confirm << std::endl;
                         }
                     }
                 }

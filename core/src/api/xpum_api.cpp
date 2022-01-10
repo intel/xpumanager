@@ -242,6 +242,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
     std::ifstream fwFile(job->filePath);
     if (!fwFile.is_open()) {
         //setResultError( apiResult, ErrorCode::OPERATION_FAILED, std::string{ "invalid file" } );
+        XPUM_LOG_INFO("invalid file");
         fwFile.close();
         return XPUM_GENERIC_ERROR;
     }
@@ -251,6 +252,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
     fwFile.open(gfxPath);
     if (!fwFile.is_open()) {
         //setResultError( apiResult, ErrorCode::OPERATION_FAILED, std::string{ "flash tool not exists" } );
+        XPUM_LOG_INFO("flash tool not exists");
         fwFile.close();
         return XPUM_GENERIC_ERROR;
     }
