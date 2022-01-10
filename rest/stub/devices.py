@@ -21,7 +21,7 @@ def getDeviceList():
         device['vendor_name'] = d.vendorName
         device['@odata.id']="/rest/v1/devices/{}".format(d.id.id)
         data.append(device)
-    return 0, "OK", dict(devices=data)
+    return 0, "OK", data
 
 
 def getDeviceProperties(deviceId):
@@ -31,6 +31,8 @@ def getDeviceProperties(deviceId):
     data = dict()
     for prop in resp.properties:
         data[prop.name.lower()] = prop.value
+    # device_id
+    data["device_id"] = deviceId
     # links
     data["health"] = {"@odata.id":"/rest/v1/devices/{}/health".format(deviceId)}
     data["topology"] = {"@odata.id":"/rest/v1/devices/{}/topology".format(deviceId)}

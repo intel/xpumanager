@@ -39,7 +39,7 @@ def get_devices():
     """
     code, message, data = stub.getDeviceList()
     if code == 0:
-        return jsonify(data)
+        return jsonify(dict(devices=data))
     else:
         return message, 500
 
