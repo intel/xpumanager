@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <fstream>
+#include <thread>
 
 #include "logger.h"
 #include "xpum_api.h"
