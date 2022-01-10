@@ -55,7 +55,7 @@ void ScheduledThreadPool::init(uint32_t& size) {
         };
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         this->workers.emplace_back(std::thread(worker_thread_proc));
-        XPUM_LOG_DEBUG("workder thread created in scheduled thread pool");
+        XPUM_LOG_TRACE("workder thread created in scheduled thread pool");
     }
 }
 
