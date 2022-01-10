@@ -52,9 +52,13 @@ static void removeFileOnStartTaskFail(std::string filePath) {
     int32_t deviceId = request->deviceid();
     int tileId = request->tileid();
 
+    dumpRawDataFilenameMtx.lock();
     int64_t milli_sec = std::chrono::duration_cast<std::chrono::milliseconds>(
                             std::chrono::system_clock::now().time_since_epoch())
                             .count();
+    // make sure milli_sec different
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    dumpRawDataFilenameMtx.unlock();
 
     std::string fileName;
     if (tileId != -1) {

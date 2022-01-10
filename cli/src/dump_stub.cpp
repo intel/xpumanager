@@ -5,6 +5,8 @@
 #include "core.pb.h"
 #include "core_stub.h"
 #include "xpum_structs.h"
+#include "logger.h"
+
 
 namespace xpum::cli {
 
@@ -27,10 +29,13 @@ std::unique_ptr<nlohmann::json> CoreStub::startDumpRawDataTask(uint32_t deviceId
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Failed to start dump raw data task on device %d tile %d", deviceId, tileId);
+        return json;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        XPUM_LOG_AUDIT("Failed to start dump raw data task on device %d tile %d", deviceId, tileId);
         return json;
     }
 
@@ -42,6 +47,8 @@ std::unique_ptr<nlohmann::json> CoreStub::startDumpRawDataTask(uint32_t deviceId
 
     (*json)["task_id"] = taskId;
     (*json)["dump_file_path"] = dumpFilePath;
+
+    XPUM_LOG_AUDIT("Succeed to start dump raw data task %d, on device %d tile %d, file path: %s", taskId, deviceId, tileId, dumpFilePath.c_str());
 
     return json;
 }
@@ -59,10 +66,13 @@ std::unique_ptr<nlohmann::json> CoreStub::stopDumpRawDataTask(int taskId) {
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Failed to stop dump raw data task %d", taskId);
+        return json;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        XPUM_LOG_AUDIT("Failed to stop dump raw data task %d", taskId);
         return json;
     }
 
@@ -72,6 +82,8 @@ std::unique_ptr<nlohmann::json> CoreStub::stopDumpRawDataTask(int taskId) {
 
     (*json)["task_id"] = taskInfo.dumptaskid();
     (*json)["dump_file_path"] = dumpFilePath;
+
+    XPUM_LOG_AUDIT("Succeed to stop dump raw data task %d", taskId);
 
     return json;
 }

@@ -2,6 +2,7 @@ from google.protobuf import empty_pb2
 import core_pb2
 from .grpc_stub import stub
 from .xpum_enums import XpumStatsType
+import xpum_logger as logger
 
 url_prefix = "/download"
 
@@ -20,6 +21,8 @@ def startDumpRawDataTask(deviceId, tileId, metricsTypeList):
     ))
 
     if len(resp.errorMsg) != 0:
+        logger.audit("Dump", "Failed",
+                     "Start dump raw data task on device {} tile {}", deviceId, tileId)
         return resp.status, resp.errorMsg, None
 
     taskInfo = resp.taskInfo
@@ -29,6 +32,9 @@ def startDumpRawDataTask(deviceId, tileId, metricsTypeList):
     data["task_id"] = taskInfo.dumpTaskId
     data["dump_file_path"] = taskInfo.dumpFilePath.replace(
         dump_folder, url_prefix, 1)
+
+    logger.audit("Dump", "Succeed",
+                 "Start dump raw data task {} on device {} tile {}, filename: {}", data["task_id"], deviceId, tileId, data["dump_file_path"])
 
     return 0, "OK", data
 
@@ -37,6 +43,8 @@ def stopDumpRawDataTask(taskId):
     resp = stub.stopDumpRawDataTask(
         core_pb2.StopDumpRawDataTaskRequest(dumpTaskId=taskId))
     if len(resp.errorMsg) != 0:
+        logger.audit("Dump", "Failed",
+                     "Stop dump raw data task {}", taskId)
         return resp.status, resp.errorMsg, None
     taskInfo = resp.taskInfo
     data = dict()
@@ -44,6 +52,9 @@ def stopDumpRawDataTask(taskId):
     data["task_id"] = taskInfo.dumpTaskId
     data["dump_file_path"] = taskInfo.dumpFilePath.replace(
         dump_folder, url_prefix, 1)
+
+    logger.audit("Dump", "Succeed",
+                 "Stop dump raw data task {}", taskId)
 
     return 0, "OK", data
 

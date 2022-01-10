@@ -107,6 +107,7 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
 
     private:
         std::atomic_bool stop;
+        std::mutex dumpRawDataFilenameMtx;
 };
 
 } // end namespace xpum::daemon
