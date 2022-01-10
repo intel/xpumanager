@@ -568,7 +568,7 @@ xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
     if(policy.action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE){
         if(policy.action.throttle_device_frequency_min <= 0
         || policy.action.throttle_device_frequency_max <= 0
-        || (policy.action.throttle_device_frequency_min >= policy.action.throttle_device_frequency_max )
+        || (policy.action.throttle_device_frequency_min > policy.action.throttle_device_frequency_max )
         ){
             return XPUM_RESULT_POLICY_INVALID_FREQUENCY;
         }
