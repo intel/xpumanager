@@ -193,7 +193,7 @@ class GPUDeviceStub {
 
     static void addCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
 
-    static void addEgnineCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
+    static void addEngineCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities);
 
     static void checkInitDependency();
 
