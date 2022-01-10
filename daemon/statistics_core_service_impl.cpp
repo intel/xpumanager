@@ -36,6 +36,8 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         // XPUM_STATS_GPU_REQUEST_FREQUENCY,
         XPUM_STATS_MEMORY_TEMPERATURE,
         XPUM_STATS_FREQUENCY_THROTTLE,
+        XPUM_STATS_PCIE_READ_THROUGHPUT,        
+        XPUM_STATS_PCIE_WRITE_THROUGHPUT,
     };
     return std::find(allowList.begin(), allowList.end(), metricsType) != allowList.end();
 }

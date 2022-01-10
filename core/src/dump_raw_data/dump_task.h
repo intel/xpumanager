@@ -35,6 +35,8 @@ static DumpMetricConfigEntry dumpMetricsConfigList[]{
     {XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, "Cache Errors Uncorrectable"},
     {XPUM_STATS_MEMORY_BANDWIDTH, "GPU Memory Bandwidth Utilization (%)"},
     {XPUM_STATS_MEMORY_USED, "GPU Memory Used (MiB)"},
+    {XPUM_STATS_PCIE_READ_THROUGHPUT, "PCIe Read (kB/s)"},
+    {XPUM_STATS_PCIE_WRITE_THROUGHPUT, "PCIe Write (kB/s)"},
 };
 
 bool supportedMetrics(xpum_stats_type_t metricsType);

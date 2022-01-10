@@ -19,6 +19,7 @@ class Configuration {
     static u_int32_t CACHE_SIZE_LIMIT;
     static int EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD;
     static int EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
+    static bool INITIALIZE_PCIE_MANAGER;
     static uint32_t DEFAULT_MEASUREMENT_DATA_SCALE;
 
    public:

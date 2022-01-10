@@ -134,6 +134,14 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE] =
         std::make_shared<FrequencyThrottleTimeDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE, p_persistency);
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE]->init();
+
+    data_handlers[MeasurementType::METRIC_PCIE_READ_THROUGHPUT] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_READ_THROUGHPUT, p_persistency);
+    data_handlers[MeasurementType::METRIC_PCIE_READ_THROUGHPUT]->init();
+
+    data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT, p_persistency);
+    data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT]->init();
 }
 
 void RawDataManager::close() {

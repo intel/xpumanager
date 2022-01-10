@@ -19,6 +19,7 @@
 #include "level_zero/zes_api.h"
 #include "level_zero/zet_api.h"
 #include "topology/xe_link.h"
+#include "device/pcie_manager.h"
 
 namespace xpum {
 
@@ -70,6 +71,10 @@ class GPUDeviceStub {
     void getRasError(const zes_device_handle_t& device, uint64_t errorCategory[XPUM_RAS_ERROR_MAX]) noexcept;
 
     void getFrequencyThrottle(const zes_device_handle_t& device, Callback_t callback) noexcept;
+  
+    void getPCIeReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
+    void getPCIeWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     static void getSchedulers(const zes_device_handle_t& device, std::vector<Scheduler>& schedulers);
 
@@ -179,6 +184,10 @@ class GPUDeviceStub {
 
     static std::shared_ptr<MeasurementData> toGetFrequencyThrottle(const zes_device_handle_t& device);
 
+    static std::shared_ptr<MeasurementData> toGetPCIeReadThroughput(const zes_device_handle_t& device);
+
+    static std::shared_ptr<MeasurementData> toGetPCIeWriteThroughput(const zes_device_handle_t& device);
+
     static std::string to_string(ze_device_uuid_t val);
 
     static std::string to_hex_string(uint32_t val);
@@ -204,6 +213,8 @@ class GPUDeviceStub {
 
    private:
     bool initialized;
+
+    static PCIeManager pcie_manager;
 
     std::mutex mutex;
 

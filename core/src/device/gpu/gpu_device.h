@@ -38,6 +38,8 @@ class GPUDevice : public Device {
     void getRasError(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
     void getRasErrorOnSubdevice(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
     void getFrequencyThrottle(Callback_t callback) noexcept override;
+    void getPCIeReadThroughput(Callback_t callback) noexcept override;
+    void getPCIeWriteThroughput(Callback_t callback) noexcept override;
 
     virtual xpum_result_t runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept override; //GSC
     virtual xpum_result_t runFirmwareFlash(const char* filePath) noexcept override;  //AMC

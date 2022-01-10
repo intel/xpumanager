@@ -416,6 +416,8 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_GPU_REQUEST_FREQUENCY,                ///< Gpu Request Frequency
     XPUM_STATS_MEMORY_TEMPERATURE,                   ///< Memory Temeperature
     XPUM_STATS_FREQUENCY_THROTTLE,                   ///< Frequency Throttle
+    XPUM_STATS_PCIE_READ_THROUGHPUT,                 ///< PCIe read throughput
+    XPUM_STATS_PCIE_WRITE_THROUGHPUT,                ///< PCIe write throughput
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 

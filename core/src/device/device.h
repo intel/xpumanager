@@ -71,6 +71,10 @@ class Device {
     virtual void getRasErrorOnSubdevice(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept = 0;
 
     virtual void getFrequencyThrottle(Callback_t callback) noexcept = 0;
+  
+    virtual void getPCIeReadThroughput(Callback_t callback) noexcept = 0;
+
+    virtual void getPCIeWriteThroughput(Callback_t callback) noexcept = 0;
 
     void addCapability(DeviceCapability& capability);
 

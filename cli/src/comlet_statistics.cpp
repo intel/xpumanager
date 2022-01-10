@@ -179,6 +179,30 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
                 { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1048576, "fixer": "round" }
             ]}
         ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "PCIe Read (kB/s) " }
+        ], [
+            { "value": "", "subs": [
+                { "label": "avg", "value": "device_level[metrics_type==XPUM_STATS_PCIE_READ_THROUGHPUT].avg" },
+                { "label": "min", "value": "device_level[metrics_type==XPUM_STATS_PCIE_READ_THROUGHPUT].min" },
+                { "label": "max", "value": "device_level[metrics_type==XPUM_STATS_PCIE_READ_THROUGHPUT].max" },
+                { "label": "current", "value": "device_level[metrics_type==XPUM_STATS_PCIE_READ_THROUGHPUT].value" }
+            ]}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "PCIe Write (kB/s) " }
+        ], [
+            { "value": "", "subs": [
+                { "label": "avg", "value": "device_level[metrics_type==XPUM_STATS_PCIE_WRITE_THROUGHPUT].avg" },
+                { "label": "min", "value": "device_level[metrics_type==XPUM_STATS_PCIE_WRITE_THROUGHPUT].min" },
+                { "label": "max", "value": "device_level[metrics_type==XPUM_STATS_PCIE_WRITE_THROUGHPUT].max" },
+                { "label": "current", "value": "device_level[metrics_type==XPUM_STATS_PCIE_WRITE_THROUGHPUT].value" }
+            ]}
+        ]]
     }]
 })"_json);
 

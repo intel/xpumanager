@@ -306,4 +306,18 @@ bool GPUDevice::isUpgradingFw(void) noexcept {
     return taskGSC.valid() || taskAMC.valid();
 }
 
+void GPUDevice::getPCIeReadThroughput(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getPCIeReadThroughput(zes_device_handle,
+                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                       callback(ret, e);
+                                                   });    
+}
+
+void GPUDevice::getPCIeWriteThroughput(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getPCIeWriteThroughput(zes_device_handle,
+                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                       callback(ret, e);
+                                                   });
+}
+
 } // end namespace xpum

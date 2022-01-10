@@ -21,6 +21,7 @@ uint32_t Configuration::CACHE_SIZE_LIMIT = 5000;
 uint32_t Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX = 16;
 int Configuration::EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD = 50;
 int Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD = 20000000;
+bool Configuration::INITIALIZE_PCIE_MANAGER = false;
 uint32_t Configuration::DEFAULT_MEASUREMENT_DATA_SCALE = 100;
 std::set<MeasurementType> Configuration::enabled_metrics;
 
@@ -46,6 +47,11 @@ void Configuration::initEnabledMetrics() {
                     } else {
                         break;
                     }
+
+                    if ((int)type == MeasurementType::METRIC_PCIE_READ_THROUGHPUT 
+                        || (int)type == MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT) {
+                        INITIALIZE_PCIE_MANAGER = true;
+                    }
                     start_type_id++;
                 }
             } else {
@@ -57,7 +63,8 @@ void Configuration::initEnabledMetrics() {
         }
     } else {
         for (int metric = 0; metric < (int)MeasurementType::METRIC_MAX; metric++) {
-            if (metric != (int)MeasurementType::METRIC_EU_ACTIVE && metric != (int)MeasurementType::METRIC_EU_IDLE && metric != (int)MeasurementType::METRIC_EU_STALL) {
+            if (metric != (int)MeasurementType::METRIC_EU_ACTIVE && metric != (int)MeasurementType::METRIC_EU_IDLE && metric != (int)MeasurementType::METRIC_EU_STALL
+                && metric != (int)MeasurementType::METRIC_PCIE_READ_THROUGHPUT && metric != (int)MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT) {
                 enabled_metrics.emplace((MeasurementType)metric);
             }
         }

@@ -151,6 +151,14 @@ install(
     DESTINATION /usr/local/bin
 )
 
+install(
+    FILES
+		install/tools/pcmGpuPCIe/pcm-iio-gpu.x
+    PERMISSIONS
+		OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+    DESTINATION /usr/local/bin
+)
+
 install(FILES
 	"${SYSTEMD_UNIT_NAME}"
 	"${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service"
