@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
+#include <set>
 #include <sstream>
 #include <thread>
 #include <unistd.h>
@@ -409,39 +410,40 @@ void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device,
                     [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
         return;
     }
-    bool has_exception = false;
     zes_pci_properties_t pci_props;
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
     std::string bdf_address;
-    if (res == ZE_RESULT_SUCCESS) {
+    if (res == ZE_RESULT_SUCCESS)
         bdf_address = to_string(pci_props.address);
-    }
+    else
+        XPUM_LOG_WARN("Failed to get to device properties, zesDevicePciGetProperties returned: {}", res);
     try {
         toGetEuActiveStallIdle(device, driver, MeasurementType::METRIC_EU_ACTIVE);
-    } catch (BaseException& e) {
-        has_exception = true;
-        if (strcmp(e.what(),"toGetEuActiveStallIdleCore - zetMetricStreamerOpen") == 0) {
-            XPUM_LOG_WARN("Device {}{} has no EU active, EU stall and EU idle monitoring capability. Or because there are other applications on the current machine that are monitoring related data, XPUM cannot monitor these data at the same time.", props.core.name, bdf_address);
-        } else {
-            XPUM_LOG_WARN("Device {}{} has no EU active, EU stall and EU idle monitoring capability.", props.core.name, bdf_address);
-        }
-    }
-    if (!has_exception) {
         capabilities.push_back(DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE);
+    } catch (BaseException& e) {
+        if (strcmp(e.what(),"toGetEuActiveStallIdleCore - zetMetricStreamerOpen") == 0) {
+            XPUM_LOG_WARN("Device {}{} has no Active/Stall/Idle monitoring capability. Or because there are other applications on the current machine that are monitoring related data, XPUM cannot monitor these data at the same time.", props.core.name, bdf_address);
+        } else {
+            XPUM_LOG_WARN("Device {}{} has no Active/Stall/Idle monitoring capability.", props.core.name, bdf_address);
+        }
+        XPUM_LOG_DEBUG("Capability EU Active/Stall/Idle detetion returned: {}", e.what());
     }
 }
 
-void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities) {
+void GPUDeviceStub::addEngineCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities) {
     ze_result_t res;
     uint32_t engine_grp_count = 0;
     zes_pci_properties_t pci_props;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
     std::string bdf_address;
-    if (res == ZE_RESULT_SUCCESS) {
+    if (res == ZE_RESULT_SUCCESS)
         bdf_address = to_string(pci_props.address);
-    }
+    else
+        XPUM_LOG_WARN("Failed to get to device properties, zesDevicePciGetProperties returned: {}", res);
+
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+    std::set<zes_engine_group_t> engine_caps;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_engine_handle_t> engines(engine_grp_count);
@@ -451,54 +453,37 @@ void GPUDeviceStub::addEgnineCapabilities(zes_device_handle_t device, const zes_
                 zes_engine_properties_t props;
                 XPUM_ZE_HANDLE_LOCK(device, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    switch (props.type) {
-                        case ZES_ENGINE_GROUP_COMPUTE_ALL:
-                            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION) == capabilities.end()) {
-                                capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
-                            }
-                            break;
-                        case ZES_ENGINE_GROUP_MEDIA_ALL:
-                            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION) == capabilities.end()) {
-                                capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
-                            }
-                            break;
-                        case ZES_ENGINE_GROUP_COPY_ALL:
-                            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) == capabilities.end()) {
-                                capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
-                            }
-                            break;
-                        case ZES_ENGINE_GROUP_RENDER_ALL:
-                            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) == capabilities.end()) {
-                                capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
-                            }
-                            break;
-                        case ZES_ENGINE_GROUP_3D_ALL:
-                            if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION) == capabilities.end()) {
-                                capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
-                            }
-                            break;
-                        default:
-                            break;
-                    }
+                    engine_caps.emplace(props.type);
+                } else {
+                    XPUM_LOG_WARN("Failed to get to get engine properties, zesEngineGetProperties returned: {}", res);
                 }
             }
+        } else {
+            XPUM_LOG_WARN("Failed to get to enum engine groups properties, zesDeviceEnumEngineGroups returned: {}", res);
         }
+    } else {
+        XPUM_LOG_WARN("Failed to get to enum engine groups properties, zesDeviceEnumEngineGroups returned: {}", res);
     }
-    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION) == capabilities.end()) {
-        XPUM_LOG_WARN("Device {}{} has no compute engine group utilization monitoring capability.", props.core.name, bdf_address);
-    }
-    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION) == capabilities.end()) {
-        XPUM_LOG_WARN("Device {}{} has no media engine group utilization monitoring capability.", props.core.name, bdf_address);
-    }
-    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION) == capabilities.end()) {
-        XPUM_LOG_WARN("Device {}{} has no copy engine group utilization monitoring capability.", props.core.name, bdf_address);
-    }
-    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION) == capabilities.end()) {
-        XPUM_LOG_WARN("Device {}{} has no render engine group utilization monitoring capability.", props.core.name, bdf_address);
-    }
-    if (std::find(capabilities.begin(), capabilities.end(), DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION) == capabilities.end()) {
-        XPUM_LOG_WARN("Device {}{} has no 3D engine group utilization monitoring capability.", props.core.name, bdf_address);
-    }
+    if (engine_caps.find(ZES_ENGINE_GROUP_COMPUTE_ALL) != engine_caps.end())
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
+    else
+        XPUM_LOG_WARN("Device {}{} has no Compute Engine Group Utilization monitoring capability.", props.core.name, bdf_address);
+    if (engine_caps.find(ZES_ENGINE_GROUP_MEDIA_ALL) != engine_caps.end())
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
+    else
+        XPUM_LOG_WARN("Device {}{} has no Media Engine Group Utilization monitoring capability.", props.core.name, bdf_address);
+    if (engine_caps.find(ZES_ENGINE_GROUP_COPY_ALL) != engine_caps.end())
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
+    else
+        XPUM_LOG_WARN("Device {}{} has no Copy Engine Group Utilization monitoring capability.", props.core.name, bdf_address);
+    if (engine_caps.find(ZES_ENGINE_GROUP_RENDER_ALL) != engine_caps.end())
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION);
+    else
+        XPUM_LOG_WARN("Device {}{} has no Render Engine Group Utilization monitoring capability.", props.core.name, bdf_address);
+    if (engine_caps.find(ZES_ENGINE_GROUP_3D_ALL) != engine_caps.end())
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION);
+    else
+        XPUM_LOG_WARN("Device {}{} has no 3D Engine Group Utilization monitoring capability.", props.core.name, bdf_address);
 }
 
 void addPCIeProperties(ze_device_handle_t& device, std::shared_ptr<GPUDevice> p_gpu) {
@@ -536,7 +521,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
             XPUM_ZE_HANDLE_LOCK(zes_device, zesDeviceGetProperties(zes_device, &props));
             if (props.core.type == ZE_DEVICE_TYPE_GPU) {
                 addCapabilities(device, props, capabilities);
-                addEgnineCapabilities(device, props, capabilities);
+                addEngineCapabilities(device, props, capabilities);
                 addEuActiveStallIdleCapabilities(device, props, p_driver, capabilities);
                 auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_DEVICE_TYPE, std::string("GPU")));
