@@ -9,6 +9,16 @@
 #include "infrastructure/configuration.h"
 
 namespace xpum {
+
+bool supportedMetrics(xpum_stats_type_t metricsType) {
+    for (auto entry : dumpMetricsConfigList) {
+        if (entry.metricsType == metricsType) {
+            return true;
+        }
+    }
+    return false;
+}
+
 DumpRawDataTask::DumpRawDataTask(xpum_dump_task_id_t taskId,
                                  xpum_device_id_t deviceId,
                                  xpum_device_tile_id_t tileId,
@@ -37,48 +47,12 @@ void DumpRawDataTask::writeToFile(std::string text) {
 }
 
 static std::string translate(xpum_stats_type_t metricsType) {
-    switch (metricsType) {
-        case XPUM_STATS_GPU_UTILIZATION:
-            return "GPU Utilization (%)";
-        case XPUM_STATS_POWER:
-            return "GPU Power (W)";
-        case XPUM_STATS_GPU_FREQUENCY:
-            return "GPU Frequency (MHz)";
-        case XPUM_STATS_GPU_CORE_TEMPERATURE:
-            return "GPU Core Temperature (Celsius Degree)";
-        case XPUM_STATS_MEMORY_TEMPERATURE:
-            return "GPU Memory Temperature (Celsius Degree)";
-        case XPUM_STATS_MEMORY_UTILIZATION:
-            return "GPU Memory Utilization (%)";
-        case XPUM_STATS_MEMORY_READ_THROUGHPUT:
-            return "GPU Memory Read (kB/s)";
-        case XPUM_STATS_MEMORY_WRITE_THROUGHPUT:
-            return "GPU Memory Write (kB/s)";
-        case XPUM_STATS_ENERGY:
-            return "GPU Energy Consumed (J)";
-        case XPUM_STATS_EU_ACTIVE:
-            return "GPU EU Array Active (%)";
-        case XPUM_STATS_EU_STALL:
-            return "GPU EU Array Stall (%)";
-        case XPUM_STATS_EU_IDLE:
-            return "GPU EU Array Idle (%)";
-        case XPUM_STATS_RAS_ERROR_CAT_RESET:
-            return "Reset Counter";
-        case XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
-            return "Programming Errors";
-        case XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS:
-            return "Driver Errors";
-        case XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
-            return "Cache Erros Correctable";
-        case XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
-            return "Cache Errors Uncorrectable";
-        case XPUM_STATS_MEMORY_BANDWIDTH:
-            return "GPU Memory Bandwidth Utilization (%)";
-        case XPUM_STATS_MEMORY_USED:
-            return "GPU Memory Used (MiB)";
-        default:
-            return "";
+    for (auto entry : dumpMetricsConfigList) {
+        if (entry.metricsType == metricsType) {
+            return entry.columnName;
+        }
     }
+    return "";
 }
 
 void DumpRawDataTask::writeHeader() {

@@ -6,6 +6,8 @@
 
 #include "core/core.h"
 
+#include "dump_task.h"
+
 namespace xpum {
 
 DumpRawDataManager::DumpRawDataManager() {
@@ -32,6 +34,12 @@ xpum_result_t DumpRawDataManager::
                          const char *dumpFilePath,
                          xpum_dump_raw_data_task_t *taskInfo) {
     std::lock_guard<std::mutex> lock(dumpMutex);
+
+    for (int i = 0; i < count; i++) {
+        auto metricsType = metricsTypeList[i];
+        if (!supportedMetrics(metricsType))
+            return XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT;
+    }
 
     // create task
     std::shared_ptr<DumpRawDataTask> p_task = std::make_shared<DumpRawDataTask>(taskIndex++, deviceId, tileId, std::string(dumpFilePath), pThreadPool);

@@ -94,7 +94,8 @@ typedef enum xpum_result_enum {
     XPUM_NOT_INITIALIZED,     ///< XPUM is not initialized.
     XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST,   ///< Dump raw data task not exists
     XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY,   ///< The the key for agent setting is unknown
-    XPUM_UPDATE_FIRMWARE_UNSUPPORTED = 16
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED = 16,
+    XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

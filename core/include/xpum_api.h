@@ -635,6 +635,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
  * @param taskInfo      OUT: The info of the task just created
  * @return xpum_result_t 
  *      - \ref XPUM_OK  if query successfully
+ *      - \ref XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT  if not supported metrics type passed in
  *      - \ref XPUM_GENERIC_ERROR if other error happens
  */
 xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
