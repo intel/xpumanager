@@ -558,16 +558,16 @@ Help info of updating GPU firmware
 Update GPU firmware.
 
 Usage: xpumcli updatefw [Options]
-  xpumcli updatefw -d [deviceId] -t [firmwareName] -f [imageFilePath]
+  xpumcli updatefw -d [deviceId] -t GSC -f [imageFilePath]
+  xpumcli updatefw -t AMC -f [imageFilePath]
 
 Options:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for one ATS-P or ATS-M card (ATS-P AMC 
-                                firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC 
-                                firmware version is 2.82 or later) so far.
+  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M
+                                card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
   -f,--file                   The firmware image file path on this server.
 ```
 
@@ -582,8 +582,8 @@ Update firmware successfully. Please reboot OS to take effect.
 
 Update GPU AMC firmware
 ```
-./xpumcli updatefw -d 0 -t AMC -f /home/dcm/ats_m_amc_v_3_6_3_0.bin
-CAUTION: update AMC may cause OS reboot
+./xpumcli updatefw -t AMC -f /home/dcm/ats_m_amc_v_3_6_3_0.bin
+CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model. Updating AMC firmware may cause OS to reboot.
 Please comfirm to proceed ( Y/N ) ?
 Y
 Start to update firmware
@@ -622,8 +622,8 @@ Options:
   --frequencyrange            GPU tile-level core frequency range.
   --powerlimit                Tile-level power limit. 
   --standby                   Tile-level standby mode. Valid options: "default"; "never".
-  --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); "timeslice",interval (us),yieldtimeout (us);
-                                "exclusive".
+  --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); 
+                                "timeslice",interval (us),yieldtimeout (us); "exclusive". The valid range of all time values (us) is from 5000 to 100,000,000.
   --performancefactor         Set the tile-level performance factor. Valid options: "compute/media";factorValue. The factor value should be 
                                 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
@@ -638,9 +638,9 @@ show the GPU settings
 | Device Type | Device ID/Tile ID | Configuration                                                  |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/0               | Power Limit (w): 300.0                                         |
-|             |                   |   Valid Range: 0 to 500                                        |
+|             |                   |   Valid Range: 1 to 500                                        |
 |             |                   | Power Average Window (ms): 1                                   |
-|             |                   |   Valid Range: 1 to 60000                                      |
+|             |                   |   Valid Range: 1 to 124                                        |
 |             |                   |                                                                |
 |             |                   | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
@@ -667,9 +667,9 @@ show the GPU settings
 |             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/1               | Power Limit (w): 300.0                                         |
-|             |                   |   Valid Range: 0 to 500                                        |
+|             |                   |   Valid Range: 1 to 500                                        |
 |             |                   | Power Average Window (ms): 1                                   |
-|             |                   |   Valid Range: 1 to 60000                                      |
+|             |                   |   Valid Range: 1 to 124                                        |
 |             |                   |                                                                |
 |             |                   | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
