@@ -16,12 +16,12 @@ namespace xpum {
 
 DeviceManager::DeviceManager(std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_data_logic(p_data_logic) {
-    XPUM_LOG_DEBUG("DeviceManager()");
+    XPUM_LOG_TRACE("DeviceManager()");
 }
 
 DeviceManager::~DeviceManager() {
     close();
-    XPUM_LOG_DEBUG("~DeviceManager()");
+    XPUM_LOG_TRACE("~DeviceManager()");
 }
 
 void DeviceManager::init() {

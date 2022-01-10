@@ -13,11 +13,11 @@ namespace xpum {
 GroupManager::GroupManager(std::shared_ptr<DeviceManagerInterface>& p_device_manager,
                            std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_devicemanager(p_device_manager), p_datalogic(p_data_logic), groupSequence(1), internalSequence(1) {
-    XPUM_LOG_DEBUG("GroupManager()");
+    XPUM_LOG_TRACE("GroupManager()");
 }
 
 GroupManager::~GroupManager() {
-    XPUM_LOG_DEBUG("~GroupManager()");
+    XPUM_LOG_TRACE("~GroupManager()");
     groupMap.clear();
 }
 
@@ -29,7 +29,7 @@ xpum_result_t GroupManager::createGroup(const char* pGroupName, xpum_group_id_t*
     std::string name = std::string(pGroupName);
     std::size_t buildInCount = internalSequence - 1;
 
-    XPUM_LOG_DEBUG("GroupManager::createGroup");
+    XPUM_LOG_TRACE("GroupManager::createGroup");
 
     if (pGroupName == nullptr) {
         XPUM_LOG_DEBUG("GroupManager::createGroup-groupName is nullptr.");
@@ -72,7 +72,7 @@ xpum_result_t GroupManager::destroyGroup(xpum_group_id_t groupId) {
     std::unique_lock<std::mutex> lock(this->mutex);
     std::shared_ptr<GroupUnit> pGroupInfo;
 
-    XPUM_LOG_DEBUG("GroupManager::destroyGroup");
+    XPUM_LOG_TRACE("GroupManager::destroyGroup");
 
     if ((groupId & BUILD_IN_GROUP_MASK) == BUILD_IN_GROUP_MASK) {
         XPUM_LOG_DEBUG("GroupManager::destroyGroup- can not destory build-in group {}", groupId);

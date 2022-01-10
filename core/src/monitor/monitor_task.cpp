@@ -21,7 +21,7 @@ MonitorTask::MonitorTask(
       p_data_logic(p_data_logic),
       type(MonitorTaskType::DEFAULT_TELEMETRY),
       p_scheduled_task(nullptr) {
-    XPUM_LOG_DEBUG("MonitorTask()");
+    XPUM_LOG_TRACE("MonitorTask(), capability: {}", capability);
 }
 
 MonitorTask::MonitorTask(
@@ -35,11 +35,11 @@ MonitorTask::MonitorTask(
       p_data_logic(p_data_logic),
       type(type),
       p_scheduled_task(nullptr) {
-    XPUM_LOG_DEBUG("MonitorTask()");
+    XPUM_LOG_TRACE("MonitorTask(), capability: {}", capability);
 }
 
 MonitorTask::~MonitorTask() {
-    XPUM_LOG_DEBUG("~MonitorTask()");
+    XPUM_LOG_TRACE("~MonitorTask(), capability: {}", capability);
 }
 
 void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {

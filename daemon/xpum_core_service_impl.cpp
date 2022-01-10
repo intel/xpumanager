@@ -20,7 +20,7 @@ XpumCoreServiceImpl::~XpumCoreServiceImpl() {
 
 grpc::Status XpumCoreServiceImpl::getVersion(grpc::ServerContext* context, const google::protobuf::Empty* request,
                                              XpumVersionInfoArray* response) {
-    XPUM_LOG_DEBUG("call get version");
+    XPUM_LOG_TRACE("call get version");
 
     int count{0};
     xpum_result_t res = xpumVersionInfo(nullptr, &count);
@@ -91,7 +91,7 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
 
 grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, const DeviceId* request,
                                               XpumTopologyInfo* response) {
-    XPUM_LOG_DEBUG("call get topology");
+    XPUM_LOG_TRACE("call get topology");
     std::shared_ptr<xpum_topology_t> topo(static_cast<xpum_topology_t*>(malloc(sizeof(xpum_topology_t))), free);
     std::shared_ptr<xpum_topology_t> topology = topo;
 
@@ -122,7 +122,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupCreate(::grpc::ServerContext* context, const ::GroupName* request,
                                                 ::GroupInfo* response) {
-    XPUM_LOG_DEBUG("call group create");
+    XPUM_LOG_TRACE("call group create");
     xpum_group_id_t id;
     xpum_result_t res = xpumGroupCreate(request->name().c_str(), &id);
     if (res == XPUM_OK) {
@@ -138,7 +138,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupDestory(::grpc::ServerContext* context, const ::GroupId* request,
                                                  ::GroupInfo* response) {
-    XPUM_LOG_DEBUG("call group destory");
+    XPUM_LOG_TRACE("call group destory");
     xpum_result_t res = xpumGroupDestroy(request->id());
 
     if (res == XPUM_OK) {
@@ -156,7 +156,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupAddDevice(::grpc::ServerContext* context, const ::GroupAddRemoveDevice* request,
                                                    ::GroupInfo* response) {
-    XPUM_LOG_DEBUG("call group add device");
+    XPUM_LOG_TRACE("call group add device");
 
     xpum_result_t res = xpumGroupAddDevice(request->groupid(), request->deviceid());
     if (res == XPUM_OK) {
@@ -188,7 +188,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupRemoveDevice(::grpc::ServerContext* context, const ::GroupAddRemoveDevice* request,
                                                       ::GroupInfo* response) {
-    XPUM_LOG_DEBUG("call group remove device");
+    XPUM_LOG_TRACE("call group remove device");
 
     xpum_result_t res = xpumGroupRemoveDevice(request->groupid(), request->deviceid());
     if (res == XPUM_OK) {
@@ -219,7 +219,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::groupGetInfo(::grpc::ServerContext* context, const ::GroupId* request,
                                                  ::GroupInfo* response) {
-    XPUM_LOG_DEBUG("call group get info");
+    XPUM_LOG_TRACE("call group get info");
 
     xpum_group_info_t info;
     xpum_result_t res = xpumGroupGetInfo(request->id(), &info);
@@ -243,7 +243,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 ::grpc::Status XpumCoreServiceImpl::getAllGroups(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                                  ::GroupArray* response) {
-    XPUM_LOG_DEBUG("call get all group id");
+    XPUM_LOG_TRACE("call get all group id");
 
     xpum_group_id_t groups[XPUM_MAX_NUM_GROUPS];
     int count = XPUM_MAX_NUM_GROUPS;
@@ -844,12 +844,20 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         xpum_scheduler_timeout_t sch_timeout;
         sch_timeout.subdevice_Id = subdevice_Id;
         sch_timeout.watchdog_timeout = val1;
+        if (val1 < 5000 || val1 > 100000000) {
+            response->set_errormsg("Invalid Parameter");
+            return grpc::Status::OK;
+        }
         res = xpumSetDeviceSchedulerTimeoutMode(deviceId, sch_timeout);
     } else if (scheduler == SCHEDULER_TIMESLICE) {
         xpum_scheduler_timeslice_t sch_timeslice;
         sch_timeslice.subdevice_Id = subdevice_Id;
         sch_timeslice.interval = val1;
         sch_timeslice.yield_timeout = val2;
+        if (val1 < 5000 || val1 > 100000000 || val2 < 5000 || val2 > 100000000) {
+            response->set_errormsg("Invalid Parameter");
+            return grpc::Status::OK;
+        }
         res = xpumSetDeviceSchedulerTimesliceMode(deviceId, sch_timeslice);
     } else if (scheduler == SCHEDULER_EXCLUSIVE) {
         xpum_scheduler_exclusive_t sch_exclusive;
@@ -887,9 +895,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].subdevice_Id == tileId) {
-            XPUM_LOG_WARN("val1 {} ",val1);
-            XPUM_LOG_WARN("default_limit {} ",powerRangeArray[i].default_limit/1000);
-            if(val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit)) {
+            if(val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit) || val2 > 124 || val2 < 1 ) {
                 response->set_errormsg("Invalid Parameter");
                 return grpc::Status::OK;
             }

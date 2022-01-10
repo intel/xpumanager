@@ -13,7 +13,7 @@
 namespace xpum {
 
 PciDatabase::PciDatabase() {
-    XPUM_LOG_DEBUG("PciDatabase()");
+    XPUM_LOG_TRACE("PciDatabase()");
 }
 
 PciDatabase::~PciDatabase() {

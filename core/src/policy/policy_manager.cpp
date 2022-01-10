@@ -67,14 +67,14 @@ PolicyManager::PolicyManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
                              std::shared_ptr<DataLogicInterface>& p_data_logic,
                              std::shared_ptr<GroupManagerInterface>& p_group_manager)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic), p_group_manager(p_group_manager) {
-    XPUM_LOG_DEBUG("PolicyManager()");
+    XPUM_LOG_TRACE("PolicyManager()");
     this->freq = Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
     this->p_timer = nullptr;
     this->p_timer_old = nullptr;
 }
 
 PolicyManager::~PolicyManager() {
-    // XPUM_LOG_DEBUG("~PolicyManager()");
+    // XPUM_LOG_TRACE("~PolicyManager()");
 }
 
 void PolicyManager::resetCheckFrequency(){
