@@ -1,6 +1,7 @@
 import core_pb2
 from .grpc_stub import stub
 import datetime
+import xpum_logger as logger
 
 diagnosticTypeEnumToString = {
     core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_ENV_VARIABLES: "XPUM_DIAG_SOFTWARE_ENV_VARIABLES",
@@ -29,7 +30,9 @@ def runDiagnostics(deviceId, level):
     resp = stub.runDiagnostics(
         core_pb2.RunDiagnosticsRequest(deviceId=deviceId, level=level))
     if len(resp.errorMsg) != 0:
+        logger.audit("Diagnostics", "Failed", "Failed to run level-{} diagnostics on device {}", level, deviceId)
         return 1, resp.errorMsg, None
+    logger.audit("Diagnostics", "Succeed", "Succeed to run level-{} diagnostics on device {}", level, deviceId)
     return 0, "OK", {"result": "OK"}
 
 
@@ -39,7 +42,9 @@ def runDiagnosticsByGroup(groupId, level):
     resp = stub.runDiagnosticsByGroup(
         core_pb2.RunDiagnosticsByGroupRequest(groupId=groupId, level=level))
     if len(resp.errorMsg) != 0:
+        logger.audit("Diagnostics", "Failed", "Failed to run level-{} diagnostics on group {}", level, groupId)
         return 1, resp.errorMsg, None
+    logger.audit("Diagnostics", "Succeed", "Succeed to run level-{} diagnostics on group {}", level, groupId)
     return 0, "OK", {"result": "OK"}
 
 
