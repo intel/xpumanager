@@ -320,8 +320,8 @@ List the GPU device aggregated statistics that are collected by XPU Manager
 | Cache Errors Correctable     | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
 | Cache Errors Uncorrectable   | Tile 0: 0, total: 0; Tile 1: 0, total: 0                          |
 +------------------------------+-------------------------------------------------------------------+
-| GPU Power (W)                | Tile 0: avg: 88, min: 88, max: 90， current: 89                   |
-|                              | Tile 1: avg: 88, min: 88, max: 90， current: 89                   |
+| GPU Power (W)                | Tile 0: avg: 88, min: 88, max: 90, current: 89                   |
+|                              | Tile 1: avg: 88, min: 88, max: 90, current: 89                   |
 +------------------------------+-------------------------------------------------------------------+
 | GPU Frequency (MHz)          | Tile 0: avg: 1400, min: 1400, max: 1400, current: 1400            |
 |                              | Tile 1: avg: 300, min: 300, max: 300, current: 300                |
