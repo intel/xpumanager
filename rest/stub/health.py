@@ -1,5 +1,6 @@
 from .grpc_stub import stub
 import core_pb2
+import xpum_logger as logger
 
 healthTypeEnumToString = {
     core_pb2.HEALTH_CORE_THERMAL: "core_temperature",
@@ -102,7 +103,10 @@ def setHealthConfig(deviceId, healthType, threshold):
     resp = stub.setHealthConfig(core_pb2.HealthConfigRequest(
         deviceId=deviceId, configType=t, threshold=threshold))
     if len(resp.errorMsg) != 0:
+        logger.audit("Health", "Failed", "Failed to set health threshold on device {} type {} threshold {}", deviceId, healthType, threshold)
         return 1, resp.errorMsg, None
+
+    logger.audit("Health", "Succeed", "Succeed to set health threshold on device {} type {} threshold {}", deviceId, healthType, threshold)
     return 0, "OK", {"result": "OK"}
 
 
@@ -114,5 +118,8 @@ def setHealthConfigByGroup(groupId, healthType, threshold):
     resp = stub.setHealthConfigByGroup(core_pb2.HealthConfigByGroupRequest(
         groupId=groupId, configType=t, threshold=threshold))
     if len(resp.errorMsg) != 0:
+        logger.audit("Health", "Failed", "Failed to set health threshold on group {} type {} threshold {}", groupId, healthType, threshold)
         return 1, resp.errorMsg, None
+    
+    logger.audit("Health", "Succeed", "Succeed to set health threshold on group {} type {} threshold {}", groupId, healthType, threshold)
     return 0, "OK", {"result": "OK"}

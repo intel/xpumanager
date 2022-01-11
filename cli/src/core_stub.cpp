@@ -365,10 +365,13 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
             }
         } else {
             (*json)["error"] = response.errormsg();     
+            XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on device %d", level, deviceId);     
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on device %d", level, deviceId);
     }
+    XPUM_LOG_AUDIT("Succeed to run level-%d diagnostics on device %d", level, deviceId);
     return json;
 }
 
@@ -453,10 +456,13 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId
             }
         } else {
             (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on group %d", level, groupId);
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on group %d", level, groupId);
     }
+    XPUM_LOG_AUDIT("Succeed to run level-%d diagnostics on group %d", level, groupId);
     return json;
 }
 
@@ -675,15 +681,19 @@ std::unique_ptr<nlohmann::json> CoreStub::setHealthConfig(int deviceId, HealthCo
     request.set_threshold(threshold);
     HealthConfigInfo response;
     grpc::Status status = stub->setHealthConfig(&context, request, &response);
+    std::string healthTypeStr = healthTypeEnumToString((HealthType)cfgtype);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
         } else {
             (*json)["error"] = response.errormsg();        
+            XPUM_LOG_AUDIT("Failed to set health threshold on device %d type %s threshold %d", deviceId, healthTypeStr.c_str(), threshold);        
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Failed to set health threshold on device %d type %s threshold %d", deviceId, healthTypeStr.c_str(), threshold);
     }
+    XPUM_LOG_AUDIT("Succeed to set health threshold on device %d type %s threshold %d", deviceId, healthTypeStr.c_str(), threshold);
     return json;
 }
 
@@ -780,15 +790,19 @@ std::unique_ptr<nlohmann::json> CoreStub::setHealthConfigByGroup(uint32_t groupI
     request.set_threshold(threshold);
     HealthConfigByGroupInfo response;
     grpc::Status status = stub->setHealthConfigByGroup(&context, request, &response);
+    std::string healthTypeStr = healthTypeEnumToString((HealthType)cfgtype);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
         } else {
             (*json)["error"] = response.errormsg();        
+            XPUM_LOG_AUDIT("Failed to set health threshold on group %d type %s threshold %d", groupId, healthTypeStr.c_str(), threshold);
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Failed to set health threshold on group %d type %s threshold %d", groupId, healthTypeStr.c_str(), threshold);
     }
+    XPUM_LOG_AUDIT("Succeed to set health threshold on group %d type %s threshold %d", groupId, healthTypeStr.c_str(), threshold);
     return json;
 }
 
