@@ -7,7 +7,7 @@
 
 #include "logger.h"
 
-// #define TRACE_SCHEDULED_TASK_RUN
+#define TRACE_SCHEDULED_TASK_RUN
 
 namespace xpum {
 
@@ -97,7 +97,8 @@ bool ScheduledThreadPoolTask::next() {
 
 void ScheduledThreadPoolTask::run() {
 #ifdef TRACE_SCHEDULED_TASK_RUN
-    auto start = std::chrono::steady_clock::now() auto delay = start - this->scheduled_time;
+    auto start = std::chrono::steady_clock::now();
+    auto delay = start - this->scheduled_time;
     XPUM_LOG_WARN("calling user function in worker thread, scheduled_time delayed: {}us",
                   std::chrono::duration_cast<std::chrono::microseconds>(delay).count());
 
