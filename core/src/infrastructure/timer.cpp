@@ -35,14 +35,15 @@ void Timer::scheduleAtFixedRate(long delay, int interval,
 
     std::thread([this, delay, interval, task]() {
         int wait = delay;
+        std::this_thread::sleep_for(std::chrono::milliseconds(wait));
         while (!this->to_cancel) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(wait));
             long begin = Utility::getCurrentMillisecond();
             task();
             long end = Utility::getCurrentMillisecond();
             long spent = end - begin;
             if (interval >= spent) {
                 wait = interval - spent;
+                std::this_thread::sleep_for(std::chrono::milliseconds(wait));        
             } else {
                 XPUM_LOG_DEBUG("The timer interval will not be accurate");
                 wait = 0;
