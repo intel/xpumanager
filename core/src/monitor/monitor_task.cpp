@@ -81,19 +81,19 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
                     (*datas)[id] = p_mdata;
                     if (p_mdata->getErrors().empty()) {
                         // everything is ok, no error messages reported in executing the underlying task, clear the log reported flag
-                        p_this->monitor_task_log_status[p_device] = false;
+                        p_this->monitor_task_log_status[p_device->getId()] = false;
                     } else {
                         // errors happened in executing the underlying task though partial data has been collected successfully, log the error if it has not been logged before
-                        if (!p_this->monitor_task_log_status[p_device]) {
+                        if (!p_this->monitor_task_log_status[p_device->getId()]) {
                             XPUM_LOG_WARN("partial monitoring failure: {}", p_mdata->getErrors());
-                            p_this->monitor_task_log_status[p_device] = true;
+                            p_this->monitor_task_log_status[p_device->getId()] = true;
                         }
                     }
                 } else if (e != nullptr) {
                     // errors happened in executing the underlying task, log the error if it has not been logged before
-                    if (!p_this->monitor_task_log_status[p_device]) {
+                    if (!p_this->monitor_task_log_status[p_device->getId()]) {
                         XPUM_LOG_WARN("monitoring failure: {}", e->what());
-                        p_this->monitor_task_log_status[p_device] = true;
+                        p_this->monitor_task_log_status[p_device->getId()] = true;
                     }
                 }
             });
