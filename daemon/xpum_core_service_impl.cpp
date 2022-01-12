@@ -810,7 +810,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         }else if(res == XPUM_RESULT_POLICY_NOT_EXIST){
             response->set_errormsg("Error: policy not exist.");
         }else if(res == XPUM_RESULT_POLICY_INVALID_FREQUENCY){
-            response->set_errormsg("Error: frequency is invalid (frequency must greater than 0 and max must greater than min).");
+            response->set_errormsg("Error: frequency is invalid (frequency must greater than 0 and max must greater than or equal min).");
         }else if(res == XPUM_RESULT_POLICY_INVALID_THRESHOLD){
             response->set_errormsg("Error: threshold is invalid (threshold must greater than or equal 0).");
         }else{
