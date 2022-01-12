@@ -1272,10 +1272,10 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 if (res == ZE_RESULT_SUCCESS) {
                     for (auto& power : power_handles) {
                         zes_power_energy_counter_t snap1, snap2;
-                        XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap1));
+                        XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
                         if (res == ZE_RESULT_SUCCESS) {
                             std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
-                            XPUM_ZE_HANDLE_LOCK(device, res = zesPowerGetEnergyCounter(power, &snap2));
+                            XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 int power_value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                                 current_value += power_value;
