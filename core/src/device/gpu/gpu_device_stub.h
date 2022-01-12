@@ -135,6 +135,9 @@ class GPUDeviceStub {
 
     static bool getFabricPorts(const zes_device_handle_t& device, std::vector<port_info>& portInfo);
 
+    static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
+
+
    private:
     GPUDeviceStub();
 
@@ -178,7 +181,7 @@ class GPUDeviceStub {
 
     static void toGetEuActiveStallIdleCore(const ze_device_handle_t& device, uint32_t subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data);
 
-    static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
+    //static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
 
     static std::shared_ptr<MeasurementData> toGetRasErrorOnSubdevice(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
 
