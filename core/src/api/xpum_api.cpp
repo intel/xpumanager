@@ -106,19 +106,12 @@ xpum_result_t validateDeviceId(xpum_device_id_t deviceId) {
 
 xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_tile_id_t tileId) {
     auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (pDevice == nullptr) {
+    if (pDevice == nullptr)
         return XPUM_RESULT_DEVICE_NOT_FOUND;
-    }
-    
     Property prop;
     pDevice->getProperty(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES, prop);
-    int32_t  numSubdevices = prop.getValueInt();
-    if (numSubdevices == 0 && tileId != 0) {
+    if (tileId < 0 || tileId >= prop.getValueInt())
         return XPUM_RESULT_TILE_NOT_FOUND;
-    }
-    if (numSubdevices != 0 && (tileId < 0 || tileId >= numSubdevices)) {
-        return XPUM_RESULT_TILE_NOT_FOUND;
-    }
     return XPUM_OK;
 }
 

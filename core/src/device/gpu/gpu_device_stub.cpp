@@ -563,7 +563,9 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 // p_gpu->addProperty(Property(DeviceProperty::KERNEL_TIMESTAMP_VALID_BITS,std::to_string(props.core.kernelTimestampValidBits)));
                 // p_gpu->addProperty(Property(DeviceProperty::FLAGS,std::to_string(props.core.flags)));
 
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES, std::to_string(props.numSubdevices)));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_SUBDEVICE, std::to_string(props.numSubdevices)));
+                uint32_t tileCount = props.numSubdevices == 0 ? 1 : props.numSubdevices;
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES, std::to_string(tileCount)));
 
                 zes_pci_properties_t pci_props;
 
