@@ -158,6 +158,7 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_MEMORY_BUS_WIDTH,               ///< Memory bus width
     XPUM_DEVICE_PROPERTY_MAX_HARDWARE_CONTEXTS,          ///< Maximum number of logical hardware contexts
     XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY,     ///< Maximum priority for command queues. Higher value is higher priority
+    XPUM_DEVICE_PROPERTY_NUMBER_OF_SUBDEVICE,            ///< The number of subdevices
     XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES,                ///< The number of tiles
     XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES,               ///< Maximum number of slices
     XPUM_DEVICE_PROPERTY_NUMBER_OF_SUB_SLICES_PER_SLICE, ///< Maximum number of sub-slices per slice
