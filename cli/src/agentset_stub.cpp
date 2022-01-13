@@ -4,6 +4,7 @@
 #include "core.grpc.pb.h"
 #include "core.pb.h"
 #include "core_stub.h"
+#include "logger.h"
 
 namespace xpum::cli {
 
@@ -92,12 +93,15 @@ std::unique_ptr<nlohmann::json> CoreStub::setAgentConfig(std::string jsonName, v
     switch (pConfigType->valueType) {
         case VALUE_TYPE_INT64:
             flexTypeValue->set_intvalue(*((int64_t*)pValue));
+            XPUM_LOG_AUDIT("Set agent %s to value %d", pConfigType->keyStr.c_str(), flexTypeValue->intvalue());
             break;
         case VALUE_TYPE_DOUBLE:
             flexTypeValue->set_floatvalue(*((double*)pValue));
+            XPUM_LOG_AUDIT("Set agent %s to value %f", pConfigType->keyStr.c_str(), flexTypeValue->floatvalue());
             break;
         case VALUE_TYPE_STRING:
             flexTypeValue->set_stringvalue(std::string((char*)pValue));
+            XPUM_LOG_AUDIT("Set agent %s to value %s", pConfigType->keyStr.c_str(), flexTypeValue->stringvalue().c_str());
             break;
     }
 
