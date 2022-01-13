@@ -6,7 +6,20 @@ class StandbySchema(Schema):
         metadata={"description": "The tile id"})
     standby_mode = fields.String(
         metadata={"description": "The standby mode: never, default"})
-
+class PortEnabledSchema(Schema):
+    tile_id = fields.Integer(
+        metadata={"description": "The tile id"})
+    port = fields.Integer(
+        metadata={"description": "The port number"})
+    enabled =fields.Integer(
+        metadata={"description": "The enabled 1; disabled 0"})
+class PortBeaconingSchema(Schema):
+    tile_id = fields.Integer(
+        metadata={"description": "The tile id"})
+    port = fields.Integer(
+        metadata={"description": "The port number"})
+    beaconing =fields.Integer(
+        metadata={"description": "The beaconing on 1; off 0"})
 class PowerLimitSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
@@ -276,6 +289,108 @@ def set_scheduler(deviceId):
         return jsonify("invalid Parameter"), 500
     
     code, message, data = stub.setScheduler(deviceId, tileId, mode, val1, val2)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+def set_portenabled(deviceId):
+    """
+    Set port enabled for device
+    ---
+    put:
+        tags:
+            - "Config"
+        description: Set port enabled for device
+        parameters:
+            -
+                name: set_portenabled
+                in: body
+                description: set the port enabled
+                schema: PortEnabledSchema
+            -
+                name: deviceId
+                in: path
+                description: Device id
+                type: integer
+        responses:
+            200:
+                description: OK
+            500:
+                description: Error
+    """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
+    req = request.get_json()
+    if ("tile_id" not in req) or ("port" not in req) or ("enabled" not in req):
+        return jsonify("json string is invalid"), 500
+    
+    tileId = req["tile_id"]
+    port = req["port"]
+    enabled = req["enabled"]
+   
+    if type(tileId) != int:
+        return jsonify("Invalid Parameter"), 500
+    if type(port) != int:
+        return jsonify("Invalid Parameter"), 500
+    if type(enabled) != int:
+        return jsonify("Invalid Parameter"), 500
+
+    if tileId<0 or port <0 or (enabled != 0 and enabled != 1):
+        return jsonify("invalid Parameter"), 500
+    
+    code, message, data = stub.setPortEnabled(deviceId, tileId, port, enabled)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+def set_portbeaconing(deviceId):
+    """
+    Set port beaconing for device
+    ---
+    put:
+        tags:
+            - "Config"
+        description: Set port beaconing for device
+        parameters:
+            -
+                name: set_portbeaconing
+                in: body
+                description: set the port beaconing
+                schema: PortBeaconingSchema
+            -
+                name: deviceId
+                in: path
+                description: Device id
+                type: integer
+        responses:
+            200:
+                description: OK
+            500:
+                description: Error
+    """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
+    req = request.get_json()
+    if ("tile_id" not in req) or ("port" not in req) or ("beaconing" not in req):
+        return jsonify("json string is invalid"), 500
+    
+    tileId = req["tile_id"]
+    port = req["port"]
+    beaconing = req["beaconing"]
+   
+    if type(tileId) != int:
+        return jsonify("Invalid Parameter"), 500
+    if type(port) != int:
+        return jsonify("Invalid Parameter"), 500
+    if type(beaconing) != int:
+        return jsonify("Invalid Parameter"), 500
+
+    if tileId<0 or port <0 or (beaconing != 0 and beaconing != 1):
+        return jsonify("invalid Parameter"), 500
+    
+    code, message, data = stub.setPortBeaconing(deviceId, tileId, port, beaconing)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

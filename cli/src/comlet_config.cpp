@@ -37,7 +37,15 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "  Timeout (us) ", "value": "scheduler_watchdog_timeout" },
                 { "label": "  Interval (us) ", "value": "scheduler_timeslice_interval" },
                 { "label": "  Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" },
-                { "label": "Performance Factor ", "value": "performance_factor" }
+                { "label": "Engine Type", "value": "compute" },
+                { "label": "  Performance Factor", "value": "compute_performance_factor" },
+                { "label": "Engine Type", "value": "media" },
+                { "label": "  Performance Factor", "value": "media_performance_factor" },
+                { "label": " Xe Link ports", "value": " " },
+                { "label": "  Up", "value": "port_up" },
+                { "label": "  Down", "value": "port_down" },
+                { "label": "  Beaconing On", "value": "beaconing_on" },
+                { "label": "  Beaconing Off", "value": "beaconing_off" }
             ]
         ]
     }]
@@ -57,13 +65,10 @@ void ComletConfig::setupOptions() {
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
     //addFlag("--exclusive", this->opts->schedulerExclusive, "set scheduler exclusive mode");
     
-    addOption("--performancefactor", this->opts->performancefactor, "Set the performance factor.\
-Valid options: \"compute/media\",factorValue. The factor value should be \
-between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support.\
-0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
-    
-    
-    
+    addOption("--performancefactor", this->opts->performancefactor, "Set the tile-level performance factor. Valid options: \"compute/media\";factorValue. The factor value should be\n\
+between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
+    addOption("--xelinkport", this->opts->xelinkportEnable,"Change the Xe Link port status. The value 0 means down and 1 means up.");
+    addOption("--xelinkportbeaconing", this->opts->xelinkportBeaconing,"Change the Xe Link port beaconing status. The value 0 means off and 1 means on.");
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter){
     size_t pos = 0;
@@ -200,12 +205,41 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             json = this->coreStub->setPerformanceFactor(this->opts->deviceId, this->opts->tileId, engineType, val1);
             if((*json)["status"] == "OK") {
-                (*json)["return"] = "Succeed to change the performance factor to " + paralist.at(1) +
+                (*json)["return"] = "Succeed to change the "+ engine +" performance factor to " + paralist.at(1) +
                 " on GPU " + std::to_string(this->opts->deviceId) +
                 " tile " + std::to_string(this->opts->tileId) + ".";
             }
             return json;
-        } /*else if (this->opts->tileId == -1 && this->opts->resetDevice) {
+        } else if (this->opts->tileId >= 0 && !this->opts->xelinkportEnable.empty()) {
+            std::vector<std::string> paralist = split(this->opts->xelinkportEnable, ",");
+            if (paralist.size() != 2 || paralist.at(1).empty()) {
+                (*json)["return"]="invalid parameter";
+                return json;
+            }
+
+            int port = std::stoi(paralist.at(0));
+            int enabled = std::stoi(paralist.at(1));
+            json = this->coreStub->setFabricPortEnabled(this->opts->deviceId, this->opts->tileId, port, enabled);
+            if((*json)["status"] == "OK") {
+                (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " to " + (enabled == 1 ? "up":"down") + " .";
+            }
+            return json;
+        } else if (this->opts->tileId >= 0 && !this->opts->xelinkportBeaconing.empty()) {
+            std::vector<std::string> paralist = split(this->opts->xelinkportBeaconing, ",");
+            if (paralist.size() != 2 || paralist.at(1).empty()) {
+                (*json)["return"]="invalid parameter";
+                return json;
+            }
+
+            int port = std::stoi(paralist.at(0));
+            int beaconing = std::stoi(paralist.at(1));
+            json = this->coreStub->setFabricPortBeaconing(this->opts->deviceId, this->opts->tileId, port, beaconing);
+            if((*json)["status"] == "OK") {
+                (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " beaconing to " + (beaconing == 1 ? "on":"off") + " .";
+            }
+            return json;
+        }
+         /*else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             char confirmed;
             if (this->opts->deviceId >= 0) {
                 json = this->coreStub->getDeviceProcessState(this->opts->deviceId);

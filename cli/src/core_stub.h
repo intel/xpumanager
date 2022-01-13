@@ -61,6 +61,8 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId);
     std::unique_ptr<nlohmann::json> getPerformanceFactor(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setPerformanceFactor(int deviceId, int tileId, xpum_engine_type_flags_t engine, double factor);
+    std::unique_ptr<nlohmann::json> setFabricPortEnabled(int deviceId, int tileId, uint32_t port, uint32_t enabled);
+    std::unique_ptr<nlohmann::json> setFabricPortBeaconing(int deviceId, int tileId, uint32_t port, uint32_t beaconing);
     
     std::unique_ptr<nlohmann::json> resetDevice(int deviceId, bool force);
     std::string schedulerModeEnumToString(XpumSchedulerMode mode);

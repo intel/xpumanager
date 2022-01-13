@@ -1259,7 +1259,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["power_average_window_vaild_range"] = response.tileconfigdata(i).intervalscope();
                 tileJson["gpu_frequency_valid_options"] = response.tileconfigdata(i).freqoption();
                 tileJson["standby_mode_valid_options"] = response.tileconfigdata(i).standbyoption();
-                tileJson["performance_factor"] = response.tileconfigdata(i).performancefactor();
+                tileJson["media_performance_factor"] = response.tileconfigdata(i).mediaperformancefactor();
+                tileJson["compute_performance_factor"] = response.tileconfigdata(i).computeperformancefactor();
+                tileJson["compute"] = "compute";
+                tileJson["port_up"] = response.tileconfigdata(i).portenabled();
+                tileJson["port_down"] = response.tileconfigdata(i).portdisabled();
+                tileJson["beaconing_on"] = response.tileconfigdata(i).portbeaconingon();
+                tileJson["beaconing_off"] = response.tileconfigdata(i).portbeaconingoff();
                 if (response.tileconfigdata(i).schedulertimeout() > 0) {
                     tileJson["scheduler_watchdog_timeout"] = response.tileconfigdata(i).schedulertimeout();
                 }
@@ -1492,6 +1498,67 @@ std::unique_ptr<nlohmann::json> CoreStub::setPerformanceFactor(int deviceId, int
 
     DevicePerformanceFactorSettingResponse response;
     grpc::Status status = stub->setPerformanceFactor(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+        } else {
+            (*json)["error"] = response.errormsg();        
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;    
+
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setFabricPortEnabled(int deviceId, int tileId, uint32_t port, uint32_t enabled) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    ConfigDeviceFabricPortEnabledRequest request;
+    request.set_deviceid(deviceId);
+    if (tileId == -1) {
+        request.set_istiledata(false);
+        request.set_tileid(0);
+    } else {
+        request.set_istiledata(true);
+        request.set_tileid(tileId);
+    }
+    request.set_fabricid(port);
+    request.set_enabled(enabled);
+
+    ConfigDeviceResultData response;
+    grpc::Status status = stub->setDeviceFabricPortEnabled(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+        } else {
+            (*json)["error"] = response.errormsg();
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setFabricPortBeaconing(int deviceId, int tileId, uint32_t port, uint32_t beaconing) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    ConfigDeviceFabricPortBeconingRequest request;
+    request.set_deviceid(deviceId);
+    if (tileId == -1) {
+        request.set_istiledata(false);
+        request.set_tileid(0);
+    } else {
+        request.set_istiledata(true);
+        request.set_tileid(tileId);
+    }
+    request.set_fabricid(port);
+    request.set_beaconing(beaconing);
+
+    ConfigDeviceResultData response;
+    grpc::Status status = stub->setDeviceFabricPortBeaconing(&context, request, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";

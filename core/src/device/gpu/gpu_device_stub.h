@@ -132,11 +132,12 @@ class GPUDeviceStub {
     static void getFreqAvailableClocks(const zes_device_handle_t& device, uint32_t subdevice_id, std::vector<double>& clocks);
 
     static std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device);
+	
+	static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
 
     static bool getFabricPorts(const zes_device_handle_t& device, std::vector<port_info>& portInfo);
-
-    static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
-
+    
+    static bool setFabricPorts(const zes_device_handle_t& device, const port_info_set& portInfoSet);
 
    private:
     GPUDeviceStub();

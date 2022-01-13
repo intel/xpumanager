@@ -379,7 +379,16 @@ message ConfigTileData {
     uint32 schedulerTimeout = 12;
     uint32 schedulerTimesliceInterval = 13;
     uint32 schedulerTimesliceYieldTimeout = 14;
-    double performanceFactor = 15;
+    double otherPerformanceFactor = 15;
+    double computePerformanceFactor = 16;
+    double threedPerformanceFactor = 17;
+    double mediaPerformanceFactor = 18;
+    double dmaPerformanceFactor = 19;
+    double renderPerformanceFactor = 20;
+    string portEnabled = 21;
+    string portDisabled = 22;
+    string portBeaconingOn = 23;
+    string portBeaconingOff = 24;
 }
 message ConfigDeviceData{
     uint32 deviceId = 1;    
@@ -414,6 +423,27 @@ message ConfigDeviceStandbyRequest{
     uint32 tileId = 3;
     XpumStandbyMode standby = 4;
 }
+
+message ConfigDeviceFabricPortEnabledRequest{
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    uint32 tileId = 3;
+    uint32 fabricId = 4;
+    uint32 attachId = 5;
+    uint32 portNumber = 6;
+    bool enabled = 7;
+}
+
+message ConfigDeviceFabricPortBeconingRequest{
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    uint32 tileId = 3;
+    uint32 fabricId = 4;
+    uint32 attachId = 5;
+    uint32 portNumber = 6;
+    bool beaconing = 7;
+}
+
 message ConfigDeviceResultData {
     uint32 deviceId = 1;
     bool isTileData = 2;
@@ -600,6 +630,8 @@ service XpumCoreService {
     rpc setDevicePowerLimit( ConfigDevicePowerLimitRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceFrequencyRange( ConfigDeviceFrequencyRangeRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceStandbyMode( ConfigDeviceStandbyRequest ) returns ( ConfigDeviceResultData );
+    rpc setDeviceFabricPortEnabled( ConfigDeviceFabricPortEnabledRequest ) returns ( ConfigDeviceResultData );
+    rpc setDeviceFabricPortBeaconing( ConfigDeviceFabricPortBeconingRequest ) returns ( ConfigDeviceResultData );
     rpc startDumpRawDataTask( StartDumpRawDataTaskRequest ) returns ( StartDumpRawDataTaskResponse );
     rpc stopDumpRawDataTask( StopDumpRawDataTaskRequest ) returns ( StopDumpRawDataTaskReponse );
     rpc listDumpRawDataTasks( google.protobuf.Empty ) returns ( ListDumpRawDataTaskResponse );
