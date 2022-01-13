@@ -83,6 +83,8 @@ class DeviceManager : public DeviceManagerInterface,
 
     bool getFabricPorts(const std::string& id, std::vector<port_info>& portInfo);
 
+    bool setFabricPorts(const std::string& id, const port_info_set& portInfoSet);
+
     std::shared_ptr<Device> getDevice(const std::string& id);
 
    private:

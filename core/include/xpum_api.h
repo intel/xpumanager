@@ -444,6 +444,30 @@ xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_p
  */
 xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t performanceFactor);
 
+/**
+ * @brief Get the fabric port configuration of the device
+ * @details This function is used to get the fabric port configuration of the device
+ *
+ * @param deviceId          IN: The device Id
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of available entries, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t * dataArray, uint32_t *count);
+/**
+ * @brief Set the fabric port configuration of the device
+ * @details This function is used to set the fabric port configuration of the device
+ *
+ * @param deviceId          IN: The device Id
+ * @param fabricPortConfig     IN: The fabric port configuration to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ */
+xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t fabricPortConfig);
+
 
 /** @} */ // Closing for CONFIGURATION_API
 

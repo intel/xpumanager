@@ -87,6 +87,8 @@ class DeviceManagerInterface : public InitCloseInterface {
 
     virtual bool getFabricPorts(const std::string& id, std::vector<port_info>& portInfo) = 0;
 
+    virtual bool setFabricPorts(const std::string& id, const port_info_set& portInfoSet) = 0;
+
     virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
 };
 

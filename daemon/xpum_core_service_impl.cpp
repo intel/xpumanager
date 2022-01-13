@@ -1134,6 +1134,57 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     }
     return std::to_string(engine);
 }
+::grpc::Status XpumCoreServiceImpl::setDeviceFabricPortEnabled(::grpc::ServerContext* context, const ::ConfigDeviceFabricPortEnabledRequest* request, ::ConfigDeviceResultData* response) {
+    xpum_result_t res;
+    if (!request->istiledata()) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    xpum_fabric_port_config_t portConfig;
+
+    portConfig.onSubdevice = request->istiledata();
+    portConfig.subdeviceId = subdevice_Id;
+    portConfig.fabricId = request->fabricid();
+    portConfig.attachId = request->attachid();
+    portConfig.portNumber = uint8_t(request->portnumber());
+    portConfig.setting_enabled = true;
+    portConfig.setting_beaconing = false;
+    portConfig.enabled = request->enabled();
+
+    res = xpumSetFabricPortConfig(deviceId,portConfig);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::setDeviceFabricPortBeaconing(::grpc::ServerContext* context, const ::ConfigDeviceFabricPortBeconingRequest* request, ::ConfigDeviceResultData* response) {
+    xpum_result_t res;
+    if (!request->istiledata()) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t subdevice_Id = request->tileid();
+    xpum_fabric_port_config_t portConfig;
+
+    portConfig.onSubdevice = request->istiledata();
+    portConfig.subdeviceId = subdevice_Id;
+    portConfig.fabricId = request->fabricid();
+    portConfig.attachId = request->attachid();
+    portConfig.portNumber = uint8_t(request->portnumber());
+    portConfig.setting_enabled = false;
+    portConfig.setting_beaconing = true;
+    portConfig.beaconing = request->beaconing();
+
+    res = xpumSetFabricPortConfig(deviceId,portConfig);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    return grpc::Status::OK;
+}
 
 ::grpc::Status XpumCoreServiceImpl::getDeviceConfig(::grpc::ServerContext* context, const ::ConfigDeviceDataRequest* request, ::ConfigDeviceData* response) {
     xpum_result_t res;
@@ -1202,6 +1253,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     xpum_scheduler_data_t schedulerArray[32];
     xpum_power_prop_data_t powerRangeArray[32];
     xpum_device_performancefactor_t performanceFactorArray[32];
+    xpum_fabric_port_config_t portConfig[32];
     double availableClocksArray[255];
 
     
@@ -1210,6 +1262,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     uint32_t schedulerCount = 32;
     uint32_t powerRangeCount = 32;
     uint32_t performanceFactorCount = 32;
+    uint32_t portConfigCount =32;
     uint32_t clockCount = 255;
    
     res = xpumGetDeviceFrequencyRanges(deviceId, freqArray, &freqCount);
@@ -1239,6 +1292,12 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         return grpc::Status::OK;
     }
 
+    res = xpumGetFabricPortConfig(deviceId, portConfig, &portConfigCount);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+
     for (int j{0}; j < tileCount; ++j) {
         uint32_t tileId = tileList.at(j);
         std::string clockString = "";
@@ -1257,10 +1316,67 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
 
         for (uint32_t i = 0; i < performanceFactorCount; i++) {
             if (performanceFactorArray[i].subdevice_id == tileId) {
-                tileData->set_performancefactor(performanceFactorArray[i].factor);
-                break;
+                if (performanceFactorArray[i].engine == XPUM_UNDEFINED) {
+                    tileData->set_otherperformancefactor(performanceFactorArray[i].factor);
+                }
+                if (performanceFactorArray[i].engine == XPUM_COMPUTE) {
+                    tileData->set_computeperformancefactor(performanceFactorArray[i].factor);
+                }
+                if (performanceFactorArray[i].engine == XPUM_THREE_D) {
+                    tileData->set_threedperformancefactor(performanceFactorArray[i].factor);
+                }
+                if (performanceFactorArray[i].engine == XPUM_MEDIA) {
+                    tileData->set_mediaperformancefactor(performanceFactorArray[i].factor);
+                }
+                if (performanceFactorArray[i].engine == XPUM_COPY) {
+                    tileData->set_dmaperformancefactor(performanceFactorArray[i].factor);
+                }
+                if (performanceFactorArray[i].engine == XPUM_RENDER) {
+                    tileData->set_renderperformancefactor(performanceFactorArray[i].factor);
+                }
             }
         }
+
+        std::string enabled_str = "";
+        std::string disabled_str = "";
+        std::string beaconing_on_str = "";
+        std::string beaconing_off_str = "";
+
+        for (uint32_t i = 0; i < portConfigCount; i++) {
+            if (portConfig[i].subdeviceId == tileId) {
+                std::string id_str = std::to_string(portConfig[i].fabricId);
+                if( portConfig[i].enabled == true) {
+                    if (enabled_str.empty()) {
+                        enabled_str = id_str;
+                    } else {
+                        enabled_str = ", "+id_str;
+                    }
+                } else {
+                    if (disabled_str.empty()) {
+                        disabled_str = id_str;
+                    } else {
+                        disabled_str = ", "+id_str;
+                    }
+                }
+                if( portConfig[i].beaconing == true) {
+                    if (beaconing_on_str.empty()) {
+                        beaconing_on_str = id_str;
+                    } else {
+                        beaconing_on_str = ", "+id_str;
+                    }
+                } else {
+                    if (beaconing_off_str.empty()) {
+                        beaconing_off_str = id_str;
+                    } else {
+                        beaconing_off_str = ", "+id_str;
+                    }
+                }
+            }
+        }
+        tileData->set_portenabled(enabled_str);
+        tileData->set_portdisabled(enabled_str);
+        tileData->set_portbeaconingon(beaconing_on_str);
+        tileData->set_portbeaconingoff(beaconing_off_str);
 
         /*
         for (uint32_t i = 0; i < powerRangeCount; i++) {

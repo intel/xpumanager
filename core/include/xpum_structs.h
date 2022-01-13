@@ -486,6 +486,18 @@ typedef struct xpum_device_metrics_t {
     xpum_device_metric_data_t dataList[XPUM_STATS_MAX];
 } xpum_device_metrics_t;
 
+typedef struct xpum_fabric_port_config_t {
+    bool onSubdevice;
+    uint32_t subdeviceId;
+    uint32_t fabricId;
+    uint32_t attachId;
+    uint8_t portNumber;
+    bool enabled;
+    bool beaconing;
+    bool setting_enabled;
+    bool setting_beaconing;
+} xpum_fabric_port_config_t;
+
 typedef enum xpum_engine_type_flags_t {
     XPUM_UNDEFINED = 1 << 0,
     XPUM_COMPUTE = 1 << 1,

@@ -42,7 +42,13 @@ def getConfig(deviceId, tileId):
         tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
         tiledata['standby_mode_valid_options'] = resp.tileConfigData[i].standbyOption
         tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
-        tiledata['performance_factor'] = resp.tileConfigData[i].performanceFactor
+        tiledata['compute_performance_factor'] = resp.tileConfigData[i].computePerformanceFactor
+        tiledata['media_performance_factor'] = resp.tileConfigData[i].mediaPerformanceFactor
+        tiledata['fabric_port_enabled'] = resp.tileConfigData[i].portenabled
+        tiledata['fabric_port_disabled'] = resp.tileConfigData[i].portdisabled
+        tiledata['fabric_port_beaconing_on'] = resp.tileConfigData[i].portbeaconingon
+        tiledata['fabric_port_beaconing_off'] = resp.tileConfigData[i].portbeaconingoff
+
         if resp.tileConfigData[i].schedulerTimeout > 0:
             tiledata['scheduler_watchdog_timeout'] = resp.tileConfigData[i].schedulerTimeout
         if resp.tileConfigData[i].schedulerTimesliceInterval > 0:
@@ -62,6 +68,20 @@ def setStandby(deviceId, tileId, standby):
     
     resp = stub.setDeviceStandbyMode(core_pb2.ConfigDeviceStandbyRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, standby=mode))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    return 0, "OK", {"result": "OK"}
+
+def setPortEnabled(deviceId, tileId, port, enabled):
+    resp = stub.setDeviceFabricPortEnabled(core_pb2.ConfigDeviceFabricPortEnabledRequest(
+        deviceId=deviceId, isTileData=True, tileId=tileId, fabricId=port, enabled=enabled))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    return 0, "OK", {"result": "OK"}
+
+def setPortBeaconing(deviceId, tileId, port, beaconing):
+    resp = stub.setDeviceFabricPortBeaconing(core_pb2.ConfigDeviceFabricPortBeconingRequest(
+        deviceId=deviceId, isTileData=True, tileId=tileId, fabricId=port, beaconing=beaconing))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}

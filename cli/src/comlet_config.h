@@ -12,6 +12,8 @@ struct ComletConfigOptions {
     int32_t tileId = -1;
     std::string scheduler;
     std::string performancefactor;
+    std::string xelinkportEnable;
+    std::string xelinkportBeaconing;
     //bool resetDevice = false;
     
     //std::string schedulerTimeslice ="";
@@ -40,7 +42,10 @@ class ComletConfig : public ComletBase {
             && this->opts->performancefactor.empty()
             && this->opts->powerlimit.empty()
             && this->opts->standby.empty()
-            && this->opts->frequencyrange.empty();
+            && this->opts->frequencyrange.empty()
+            && this->opts->xelinkportBeaconing.empty()
+            && this->opts->xelinkportEnable.empty()
+            && this->opts->performancefactor.empty();
             //&& !this->opts->resetDevice;
     }
 

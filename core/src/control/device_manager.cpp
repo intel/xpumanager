@@ -267,4 +267,9 @@ bool DeviceManager::getFabricPorts(const std::string& id, std::vector<port_info>
     return GPUDeviceStub::instance().getFabricPorts(getDeviceHandle(id), portInfo);
 }
 
+bool DeviceManager::setFabricPorts(const std::string& id, const port_info_set& portInfoSet){
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().setFabricPorts(getDeviceHandle(id), portInfoSet);
+}
+
 } // end namespace xpum

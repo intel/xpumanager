@@ -1121,6 +1121,62 @@ xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_pe
     }
     return XPUM_GENERIC_ERROR;
 }
+xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t * dataArray, uint32_t *count){
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    //std::vector<xpum_fabric_port_config_t> portConfig;
+    std::vector<port_info> pi;
+
+    Core::instance().getDeviceManager()->getFabricPorts(std::to_string(deviceId),pi);
+
+    if (pi.size() > *count && dataArray != nullptr) {
+        return XPUM_BUFFER_TOO_SMALL;
+    } else {
+        *count = pi.size();
+    }
+
+    if (dataArray != nullptr) {
+        int i = 0;
+        for (auto &item : pi) {
+            dataArray[i].onSubdevice = item.portProps.onSubdevice;
+            dataArray[i].subdeviceId = item.portProps.subdeviceId;
+            dataArray[i].fabricId = item.portProps.portId.fabricId;
+            dataArray[i].attachId = item.portProps.portId.attachId;
+            dataArray[i].portNumber = item.portProps.portId.portNumber;
+            dataArray[i].enabled = item.portConf.enabled;
+            dataArray[i].beaconing = item.portConf.beaconing;
+            dataArray[i].setting_enabled = false;
+            dataArray[i].setting_beaconing = false;
+            i++;
+        }
+    }
+    return XPUM_OK;
+}
+
+xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t fabricPortConfig) {
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    port_info_set pis;
+    pis.onSubdevice = fabricPortConfig.onSubdevice;
+    pis.subdeviceId = fabricPortConfig.subdeviceId;
+    pis.portId.fabricId = fabricPortConfig.fabricId;
+    pis.portId.attachId = fabricPortConfig.attachId;
+    pis.portId.portNumber = fabricPortConfig.portNumber;
+    pis.enabled = fabricPortConfig.enabled;
+    pis.beaconing = fabricPortConfig.beaconing;
+    pis.setting_enabled = fabricPortConfig.setting_enabled;
+    pis.setting_beaconing = fabricPortConfig.setting_beaconing;
+
+    if (Core::instance().getDeviceManager()->setFabricPorts(std::to_string(deviceId), pis)) {
+        return XPUM_OK;
+    }
+    return XPUM_GENERIC_ERROR;
+}
 
 ///////////////////Policy//////////////////////
 xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
