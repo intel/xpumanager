@@ -4,9 +4,9 @@
 #include "logger.h"
 #endif
 
-#include <map>
 #include <memory>
 #include <mutex>
+#include <unordered_map>
 
 namespace xpum {
 class HandleLock {
@@ -14,11 +14,8 @@ class HandleLock {
     template <typename T>
     static std::shared_ptr<std::mutex> getHandleMutex(T& handle) {
         auto p = (void*)(handle);
-
         std::lock_guard<std::mutex> lock(handle_mutexes_mutex);
-
         auto it = handle_mutexes.find(p);
-
         if (it != handle_mutexes.end()) {
             return it->second;
         } else {
@@ -29,7 +26,7 @@ class HandleLock {
 
    private:
     static std::mutex handle_mutexes_mutex;
-    static std::map<void*, std::shared_ptr<std::mutex>> handle_mutexes;
+    static std::unordered_map<void*, std::shared_ptr<std::mutex>> handle_mutexes;
 };
 
 } // namespace xpum
