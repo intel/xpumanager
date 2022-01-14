@@ -53,11 +53,17 @@ def http_query(url):
     if disableTLS:
         conn = http.client.HTTPConnection(host, port)
     else:
-        conn = http.client.HTTPSConnection(host, port, context = ssl._create_unverified_context())
+        conn = http.client.HTTPSConnection(
+            host, port, context=ssl._create_unverified_context())
     headers = {
         'Authorization': genBasicAuthKey(username, password)
     }
-    conn.request("GET", url, "", headers)
+    try:
+        conn.request("GET", url, "", headers)
+    except Exception as e:
+        print("Critical: Connection fail")
+        print(e)
+        exit(2)
     res = conn.getresponse()
     if res.status != 200:
         print("Critical: Connection fail")
@@ -92,7 +98,7 @@ def checkTelemetry():
             m_type = d['metrics_type']
             for k in telemetry_type_dict:
                 v = telemetry_type_dict[k]
-                if v["key"]== m_type and "scale" in v:
+                if v["key"] == m_type and "scale" in v:
                     scale = v["scale"]
                     if "value" in d:
                         d['value'] /= scale
@@ -180,8 +186,64 @@ def checkTelemetry():
     exit(exit_code)
 
 
-def getHealth():
-    pass
+health_type_list = [
+    ("core_temperature", dict(name="GPU core temperature health")),
+    ("memory", dict(name="GPU memory health")),
+    ("memory_temperature", dict(name="GPU memory temperature health")),
+    ("power", dict(name="GPU power health")),
+    ("xe_link_port", dict(name="GPU Xe Link port health"))
+]
+
+health_type_dict = dict(health_type_list)
+
+
+def checkHealth():
+    url = "/rest/v1/devices"
+    data = http_query(url)
+    deviceId = None
+    for d in data['devices']:
+        if d["pci_bdf_address"] == bdfaddr:
+            deviceId = d['device_id']
+    if deviceId is None:
+        print("Unknown: No device found according to the BDF Address")
+        exit(3)
+    url = "/rest/v1/devices/{}/health".format(deviceId)
+    data = http_query(url)
+    ok_list = []
+    warning_list = []
+    critical_list = []
+    unknown_list = []
+    detail_list = []
+    for k in health_type_dict:
+        health_type = health_type_dict[k]
+        status = data[k]['status']
+        description = data[k]['description']
+        detail_list.append("{}, status: {}, description: {}".format(
+            health_type['name'], status, description))
+        if status == "Critical":
+            critical_list.append(k)
+        elif status == "Warning":
+            warning_list.append(k)
+        elif status == "Unknown":
+            unknown_list.append(k)
+        elif status == "OK":
+            ok_list.append(k)
+
+    if len(critical_list) > 0:
+        print("Critical: GPU health is Critical")
+        exit_code = 2
+    elif len(warning_list) > 0:
+        print("Warning: GPU health is Warning")
+        exit_code = 1
+    elif len(ok_list) > 0:
+        print("OK: GPU health is good")
+        exit_code = 0
+    else:
+        print("Unknown: GPU health is Unknown")
+        exit_code = 3
+
+    print("\n".join(detail_list))
+    exit(exit_code)
 
 
 def arg():
@@ -202,6 +264,9 @@ def arg():
 
     parser.add_argument('--disableTLS', action="store_true",
                         help="Use http instead of https")
+
+    parser.add_argument('-T', '--Type', required=True,
+                        choices=['telemetry', 'health'], help="The gpu info type to check")
 
     for k in telemetry_type_dict:
         v = telemetry_type_dict[k]
@@ -224,7 +289,6 @@ def arg():
     username = parsed.Username
     password = parsed.Password
     bdfaddr = parsed.BDFAddr
-    print(parsed)
     disableTLS = parsed.disableTLS
 
     global warning_threshold
@@ -250,7 +314,10 @@ def arg():
 
 def main():
     parsed = arg()
-    checkTelemetry()
+    if parsed.Type == "telemetry":
+        checkTelemetry()
+    elif parsed.Type == "health":
+        checkHealth()
 
 
 if __name__ == "__main__":
