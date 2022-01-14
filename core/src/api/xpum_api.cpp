@@ -747,12 +747,17 @@ xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
     pPowerLimits->sustained_limit.enabled = limits.sustained_limit.enabled;
     pPowerLimits->sustained_limit.interval = limits.sustained_limit.interval;
     pPowerLimits->sustained_limit.power = limits.sustained_limit.power;
+    //typedef struct xpum_power_limits_t {
+    //xpum_power_sustained_limit_t sustained_limit;
+    //xpum_power_burst_limit_t burst_limit;
+    //xpum_power_peak_limit_t peak_limit;
+    //} xpum_power_limits_t;
 
-    pPowerLimits->burst_limit.enabled = limits.burst_limit.enabled;
-    pPowerLimits->burst_limit.power = limits.burst_limit.power;
+    //pPowerLimits->burst_limit.enabled = limits.burst_limit.enabled;
+    //pPowerLimits->burst_limit.power = limits.burst_limit.power;
 
-    pPowerLimits->peak_limit.power_AC = limits.peak_limit.power_AC;
-    pPowerLimits->peak_limit.power_DC = limits.peak_limit.power_DC;
+    //pPowerLimits->peak_limit.power_AC = limits.peak_limit.power_AC;
+    //pPowerLimits->peak_limit.power_DC = limits.peak_limit.power_DC;
     return XPUM_OK;
 }
 

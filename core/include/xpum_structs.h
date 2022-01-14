@@ -547,8 +547,6 @@ typedef struct xpum_standby_data_t {
 
 typedef struct xpum_power_limits_t {
     xpum_power_sustained_limit_t sustained_limit;
-    xpum_power_burst_limit_t burst_limit;
-    xpum_power_peak_limit_t peak_limit;
 } xpum_power_limits_t;
 
 typedef enum xpum_frequency_type_t {
