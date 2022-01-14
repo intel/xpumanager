@@ -302,6 +302,10 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
             for (size_t i = 0; i < properties.size(); i++) {
                 auto &prop = properties[i];
                 xpum_device_property_name_t name = prop.getName();
+                if (name == XPUM_DEVICE_PROPERTY_NUMBER_OF_SUBDEVICE) {
+                    pXpumProperties->propertyLen -= 1;
+                    continue;
+                }
                 std::string value = prop.getValue();
 
                 if (name == XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION) {
