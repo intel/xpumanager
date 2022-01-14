@@ -2,10 +2,10 @@
 import argparse
 import json
 import http.client
-import urllib.request
 import sys
 
 import base64
+import ssl
 
 __version__ = '0.0.1'
 
@@ -53,7 +53,7 @@ def http_query(url):
     if disableTLS:
         conn = http.client.HTTPConnection(host, port)
     else:
-        conn = http.client.HTTPSConnection(host, port)
+        conn = http.client.HTTPSConnection(host, port, context = ssl._create_unverified_context())
     headers = {
         'Authorization': genBasicAuthKey(username, password)
     }
@@ -164,17 +164,20 @@ def checkTelemetry():
 
     if len(critical_list) > 0:
         print("Critical: Some telemetry is Critical")
+        exit_code = 2
     elif len(warning_list) > 0:
         print("Warning: Some telemetry is Warning")
+        exit_code = 1
     elif len(ok_list) > 0:
         print("OK: Telemetry is good")
+        exit_code = 0
     else:
         print("Unknown: All telemetry is Unknown")
+        exit_code = 3
 
     print("\n".join(detail_list))
     print("| "+" ".join(perf_data_list))
-
-    return
+    exit(exit_code)
 
 
 def getHealth():
@@ -221,8 +224,8 @@ def arg():
     username = parsed.Username
     password = parsed.Password
     bdfaddr = parsed.BDFAddr
-    if parsed.disableTLS is not None:
-        disableTLS = True
+    print(parsed)
+    disableTLS = parsed.disableTLS
 
     global warning_threshold
     global critical_threshold
