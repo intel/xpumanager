@@ -9,13 +9,38 @@ import base64
 
 __version__ = '0.0.1'
 
-host = "localhost"
-port = 30000
-disableTLS = True
-deviceId = 0
-tileId = None
-username = "xpumadmin"
-password = "user@123"
+host = None
+port = None
+bdfaddr = None
+disableTLS = False
+username = None
+password = None
+
+warning_threshold = None
+critical_threshold = None
+
+telemetry_type_list = [
+    ("gpu_utilization", dict(key="XPUM_STATS_GPU_UTILIZATION",
+     name="GPU Utilization", unit="%", convert=float)),
+    ("gpu_power", dict(key="XPUM_STATS_POWER",
+     name="GPU Power", unit="W", convert=float)),
+    ("gpu_core_temperature", dict(key="XPUM_STATS_GPU_CORE_TEMPERATURE",
+     name="GPU Core Temperature", unit="C", convert=float)),
+    ("gpu_memory_temperature", dict(key="XPUM_STATS_MEMORY_TEMPERATURE",
+     name="GPU Memory Temperature", unit="C", convert=float)),
+    ("gpu_energy_consumed", dict(key="XPUM_STATS_ENERGY",
+     name="GPU Energy Consumed", unit="J", convert=int, counter=True)),
+    ("driver_errors", dict(key="XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS",
+     name="Driver Errors", convert=int, counter=True)),
+    ("cache_errors_correctable", dict(key="XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE",
+     name="Cache Errors Correctable", convert=int, counter=True)),
+    ("cache_errors_uncorrectable", dict(key="XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE",
+     name="Cache Errors Uncorrectable", convert=int, counter=True)),
+    ("gpu_memory_used", dict(key="XPUM_STATS_MEMORY_USED",
+     name="GPU Memory Used", unit="MiB", scale=2**20, convert=int))
+]
+
+telemetry_type_dict = dict(telemetry_type_list)
 
 
 def genBasicAuthKey(username, password):
@@ -24,7 +49,7 @@ def genBasicAuthKey(username, password):
     return 'Basic %s' % encoded_credentials.decode("ascii")
 
 
-def getStats():
+def http_query(url):
     if disableTLS:
         conn = http.client.HTTPConnection(host, port)
     else:
@@ -32,11 +57,124 @@ def getStats():
     headers = {
         'Authorization': genBasicAuthKey(username, password)
     }
-    url = "/rest/v1/devices/{}/stats".format(deviceId)
     conn.request("GET", url, "", headers)
     res = conn.getresponse()
-    data = res.read()
-    print(json.loads(data.decode("utf-8")))
+    if res.status != 200:
+        print("Critical: Connection fail")
+        exit(2)
+    raw_data = res.read().decode("utf-8")
+    return json.loads(raw_data)
+
+
+def checkTelemetry():
+    url = "/rest/v1/devices"
+    data = http_query(url)
+    deviceId = None
+    for d in data['devices']:
+        if d["pci_bdf_address"] == bdfaddr:
+            deviceId = d['device_id']
+    if deviceId is None:
+        print("Unknown: No device found according to the BDF Address")
+        exit(3)
+    url = "/rest/v1/devices/{}/stats".format(deviceId)
+    data = http_query(url)
+
+    ok_list = []
+    warning_list = []
+    critical_list = []
+    unknown_list = []
+
+    # process scale
+    for tile in data["tile_level"]:
+        tileId = tile["tile_id"]
+        tile_data_list = tile['data_list']
+        for d in tile_data_list:
+            m_type = d['metrics_type']
+            for k in telemetry_type_dict:
+                v = telemetry_type_dict[k]
+                if v["key"]== m_type and "scale" in v:
+                    scale = v["scale"]
+                    if "value" in d:
+                        d['value'] /= scale
+                    if "min" in d:
+                        d['min'] /= scale
+                    if "max" in d:
+                        d['max'] /= scale
+                    if "avg" in d:
+                        d['avg'] /= scale
+
+    perf_data_list = []
+    detail_list = []
+
+    for tile in data["tile_level"]:
+        tileId = tile["tile_id"]
+        tile_data_list = tile['data_list']
+        tile_data_dict = {v["metrics_type"]: v for v in tile_data_list}
+        for k in telemetry_type_dict:
+            metric_type = telemetry_type_dict[k]
+            d = tile_data_dict.get(metric_type["key"], None)
+            if d is None:
+                detail_list.append("Tile {} {} status: Unknown".format(
+                    tileId, metric_type["name"]))
+                unknown_list.append(k)
+            else:
+                value = d['value'] if "counter" in metric_type else d["avg"]
+                if k in critical_threshold and critical_threshold[k] < value:
+                    detail_list.append("Tile {} {} status: Critical ({}{} > {}{} threshold)".format(
+                        tileId,
+                        metric_type["name"],
+                        value,
+                        metric_type.get('unit', ""),
+                        critical_threshold[k],
+                        metric_type.get('unit', "")))
+                    critical_list.append(k)
+                elif k in warning_threshold and warning_threshold[k] < value:
+                    detail_list.append("Tile {} {} status: Warning ({}{} > {}{} threshold)".format(
+                        tileId,
+                        metric_type["name"],
+                        value,
+                        metric_type.get('unit', ""),
+                        warning_threshold[k],
+                        metric_type.get('unit', "")))
+                    warning_list.append(k)
+                else:
+                    detail_list.append("Tile {} {} status: OK".format(
+                        tileId, metric_type["name"]))
+                    ok_list.append(k)
+                if "counter" in metric_type:
+                    perf_data_list.append(
+                        "'Tile {} {}'={}{};{};{};;".format(
+                            tileId,
+                            metric_type['name'],
+                            d['value'],
+                            metric_type.get('unit', ""),
+                            warning_threshold.get(k, ""),
+                            critical_threshold.get(k, "")))
+                else:
+                    perf_data_list.append(
+                        "'Tile {} {}'={}{};{};{};{};{}".format(
+                            tileId,
+                            metric_type['name'],
+                            d['avg'],
+                            metric_type.get('unit', ""),
+                            warning_threshold.get(k, ""),
+                            critical_threshold.get(k, ""),
+                            d['min'],
+                            d['max']))
+
+    if len(critical_list) > 0:
+        print("Critical: Some telemetry is Critical")
+    elif len(warning_list) > 0:
+        print("Warning: Some telemetry is Warning")
+    elif len(ok_list) > 0:
+        print("OK: Telemetry is good")
+    else:
+        print("Unknown: All telemetry is Unknown")
+
+    print("\n".join(detail_list))
+    print("| "+" ".join(perf_data_list))
+
+    return
 
 
 def getHealth():
@@ -47,24 +185,69 @@ def arg():
     parser = argparse.ArgumentParser()
     parser.add_argument('-V', '--version', action='version',
                         version='%(prog)s v' + sys.modules[__name__].__version__)
-    subparsers = parser.add_subparsers(
-        title="Subcommand options", dest="subcommand")
-    # telemetry
-    telemetry_parser = subparsers.add_parser("telemetry", help="")
-    # health
-    health_parser = subparsers.add_parser("health", help="")
-
     parser.add_argument(
-        '-H', '--host', help="The ip address or hostname of the host that runs XPU Manager Restful API service")
+        '-H', '--host', required=True, help="The ip address or hostname of the host that runs XPU Manager Restful API service")
     parser.add_argument(
-        '-p', '--port', help="The port of XPU Manager Restful API service")
+        '-p', '--port', required=True, help="The port of XPU Manager Restful API service")
+    parser.add_argument(
+        '-U', '--Username', required=True, help="The username of XPU Manager Restful API service")
+    parser.add_argument(
+        '-P', '--Password', required=True, help="The password")
 
-    return parser.parse_args()
+    parser.add_argument('-B', '--BDFAddr', required=True,
+                        help="The PCI BDF Address of the gpu")
+
+    parser.add_argument('--disableTLS', action="store_true",
+                        help="Use http instead of https")
+
+    for k in telemetry_type_dict:
+        v = telemetry_type_dict[k]
+        parser.add_argument('--{}_warning'.format(k), type=v['convert'],
+                            help='The warning threshold of {}'.format(v['name']))
+        parser.add_argument('--{}_critical'.format(k), type=v['convert'],
+                            help='The critical threshold of {}'.format(v['name']))
+
+    parsed = parser.parse_args()
+
+    global host
+    global port
+    global bdfaddr
+    global disableTLS
+    global username
+    global password
+
+    host = parsed.host
+    port = parsed.port
+    username = parsed.Username
+    password = parsed.Password
+    bdfaddr = parsed.BDFAddr
+    if parsed.disableTLS is not None:
+        disableTLS = True
+
+    global warning_threshold
+    global critical_threshold
+
+    warning_threshold = dict()
+    critical_threshold = dict()
+
+    parsed_dict = vars(parsed)
+    # print(parsed_dict)
+    for k in telemetry_type_dict:
+        v = telemetry_type_dict[k]
+        warning_key = '{}_warning'.format(k)
+        if warning_key in parsed_dict and parsed_dict[warning_key] is not None:
+            warning_threshold[k] = parsed_dict[warning_key]
+        critical_key = '{}_critical'.format(k)
+        if critical_key in parsed_dict and parsed_dict[critical_key] is not None:
+            critical_threshold[k] = parsed_dict[critical_key]
+    # print(warning_threshold)
+    # print(critical_threshold)
+    return parsed
 
 
 def main():
     parsed = arg()
-    getStats()
+    checkTelemetry()
 
 
 if __name__ == "__main__":
