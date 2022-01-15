@@ -248,7 +248,7 @@ def aggregate_tile_to_device(stat_data):
 
     stat_data['device_level'] = device_level
 
-    
+
 def aggregate_data(data_by_type, data_aggregators, target_list):
     for metric_type, data in data_by_type:
         data = list(data)
@@ -259,6 +259,7 @@ def aggregate_data(data_by_type, data_aggregators, target_list):
                 value_list = [x[value_type] for x in data]
                 agg_value = agg(value_list)
                 device_data[value_type] = agg_value
+                device_data['agg_func'] = agg.__name__
         target_list.append(device_data)
 
 def tidy_response(resp):
@@ -297,6 +298,8 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
 
             all_labelnames, all_labelvalues = attach_ext_labels(
                 labels, label_values, metric.prom_metric.ext_labelnames, metric.ext_labels)
+
+            attach_src_label(all_labelnames, all_labelvalues, stat.get('agg_func', 'direct'))
 
             if metric_name not in metrics:
                 if metric.is_counter:
@@ -387,6 +390,9 @@ def attach_card_labels(labels, label_values, card_id):
         labels.append('card')
         label_values.append(card_id)
 
+def attach_src_label(labels, label_values, src):
+    labels.append('src')
+    label_values.append(src)
 
 def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels):
     if ext_labelnames is not None and len(ext_labelnames) > 0:
@@ -394,4 +400,4 @@ def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels):
         all_labelvalues = label_values + \
             [ext_labels.get(key, 'n/a') for key in ext_labelnames]
         return all_labelnames, all_labelvalues
-    return labels, label_values
+    return labels.copy(), label_values.copy()
