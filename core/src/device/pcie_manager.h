@@ -31,5 +31,6 @@ private:
     std::map<std::string, uint64_t> pcie_read_throughputs;
     std::map<std::string, uint64_t> pcie_write_throughputs;
     bool interrupted;
+    std::atomic<bool> initialized;
 };
 }

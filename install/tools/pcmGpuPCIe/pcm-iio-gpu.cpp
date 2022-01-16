@@ -181,8 +181,9 @@ vector<struct data> prepare_data(const vector<uint64_t> &values, const vector<st
     return v;
 }
 
-void display(vector<struct iio_stacks_on_socket>& iios, vector<struct counter>& ctrs)
+bool display(vector<struct iio_stacks_on_socket>& iios, vector<struct counter>& ctrs)
 {
+    bool findGPU = false;
     vector<string> headers;
     vector<struct data> data;
     for (auto socket = iios.cbegin(); socket != iios.cend(); ++socket) {
@@ -210,6 +211,8 @@ void display(vector<struct iio_stacks_on_socket>& iios, vector<struct counter>& 
                     }
                 }
             }
+	        if (!findGPU && countGPU > 0)
+                findGPU = true;
             if (countGPU == 0)
                 continue;
             cachedSocketIdToStackId[socket->socket_id].insert(stack->iio_unit_id);
@@ -252,6 +255,7 @@ void display(vector<struct iio_stacks_on_socket>& iios, vector<struct counter>& 
         }
     }
     cacheSocketStack = true;
+    return findGPU;
 }
 
 
@@ -931,6 +935,8 @@ int main()
     cerr.clear();
     while (true) {
         collect_data(m, delay, iios, counters);
-        display(iios, counters);
+        bool findGPU = display(iios, counters);
+        if (!findGPU)
+            break;
     };
 }

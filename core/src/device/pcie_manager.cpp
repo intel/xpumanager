@@ -15,8 +15,8 @@ PCIeManager::~PCIeManager() {
 
 void PCIeManager::init() {
     XPUM_LOG_DEBUG("start PCIeManager init");
-    std::atomic<bool> initialized(false);
-    auto pcie_thread = std::thread([this, &initialized]() {
+    initialized.store(false);
+    auto pcie_thread = std::thread([this]() {
         const std::string pcm_command{"/usr/local/bin/pcm-iio-gpu.x"};
         try {
             std::ifstream infile(pcm_command);
@@ -31,7 +31,6 @@ void PCIeManager::init() {
             std::string result;
             FILE *pipe = popen(pcm_command.c_str(), "r");
             while (fgets(buffer.data(), 256, pipe) != nullptr) {
-                initialized.store(true);
                 result = buffer.data();
                 std::stringstream sstream(result);
                 std::vector<std::string> line;
@@ -42,7 +41,10 @@ void PCIeManager::init() {
                 }
                 pcie_read_throughputs[line[1]] = std::stoull(line[2].c_str());
                 pcie_write_throughputs[line[1]] = std::stoull(line[3].c_str());
+                if (!initialized.load())
+                    initialized.store(true);
             }
+            interrupted = true;
             pclose(pipe);
         } catch (std::exception& e) {
             interrupted = true;
@@ -50,7 +52,7 @@ void PCIeManager::init() {
         }
     });
     pcie_thread.detach();
-    while (!initialized.load()) {
+    while (!interrupted && !initialized.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
     XPUM_LOG_DEBUG("PCIeManager init done");
