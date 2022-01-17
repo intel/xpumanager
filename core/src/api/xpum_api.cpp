@@ -1034,6 +1034,10 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
     return Topology::getSwitchTopo(bdfAddress, topo, memSize);
 }
 
+xpum_result_t xpumExportTopology2XML(char *xmlBuffer, int *memSize){
+    return Topology::topo2xml(xmlBuffer, memSize);
+}
+
 xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {

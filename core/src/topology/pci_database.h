@@ -23,6 +23,7 @@ struct PcieDevice {
     int32_t device_id;
     int32_t sub_v_id;
     int32_t sub_d_id;
+    std::string device_name;
     std::string tostring() {
         return std::string("verdor_id:") + std::to_string(vendor_id) + std::string(" device_id:") + std::to_string(device_id) + std::string(" sub_vendor_id:") + std::to_string(sub_v_id) + std::string(" sub_device_id:") + std::to_string(sub_d_id);
     }
@@ -57,7 +58,7 @@ class PciDatabase {
     bool parse_level_2(const std::string &info, int len, id_type *type, int *sub_vendor_id,
                        int *sub_device_id, std::size_t *idx);
 
-    void parse_switch_config(std::ifstream &fstream);
+    void parse_device_config(std::ifstream &fstream);
 
     bool is_blank_space(const char c);
 

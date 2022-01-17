@@ -719,6 +719,22 @@ xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int
  */
 xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topology, long unsigned int *memSize);
 
+/**
+ * @brief Export topology by node
+ * 
+ * @param xmlBuffer      OUT: The topology on node
+ * @param memSize        IN/OUT: When \a xmlBuffer is NULL,  \a memSize will be filled with the size of needed by
+ *                               \a XML, and return.
+ *                               When \a xmlBuffer is not NULL, \a memSize denotes the size of \a xmlBuffer,
+ *                               \a memsize should be equal to or large than the size of \a XML,
+ *                               when return, the \a memSize will store real size of XML
+ *                               returned by \a xmlBuffer
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a memSize is smaller real memory size of \a topology
+ */
+xpum_result_t xpumExportTopology2XML(char *xmlBuffer, int *memSize);
+
 /** @} */ // Closing for TOPOLOGY_API
 
 /**************************************************************************/

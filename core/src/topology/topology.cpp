@@ -279,4 +279,58 @@ void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch* pSwitch
         obj = obj->parent;
     }
 }
+
+
+void Topology::export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj)
+{
+  int err;
+  size_t len = strlen((char*)obj->userdata);
+  err = hwloc_export_obj_userdata(reserved, topo, obj, "Device Name", (char*)obj->userdata, len);
+  assert(err >= 0);
+}
+
+xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
+    xpum_result_t result = XPUM_OK;
+    hwloc_topology_t hwtopology;
+    hwloc_obj_t obj = nullptr;
+    char *xmlbuf;
+    int  xmlbuflen;
+
+    hwloc_topology_init(&hwtopology);
+    hwloc_topology_set_userdata_export_callback(hwtopology, export_cb);
+    hwloc_topology_set_flags(hwtopology, HWLOC_TOPOLOGY_FLAG_IS_THISSYSTEM);
+    hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_IMPORTANT);
+    hwloc_topology_set_cache_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_NONE);
+    hwloc_topology_set_type_filter(hwtopology, HWLOC_OBJ_CORE, HWLOC_TYPE_FILTER_KEEP_NONE);
+
+    hwloc_topology_load(hwtopology);
+
+    while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
+        assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
+        const PcieDevice* pDevice = PciDatabase::instance().getDevice(
+                obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
+        if(pDevice!= nullptr && !pDevice->device_name.empty()){
+            obj->userdata = (void*)pDevice->device_name.c_str();
+        }
+    }
+
+    if (hwloc_topology_export_xmlbuffer(hwtopology, &xmlbuf, &xmlbuflen, HWLOC_TOPOLOGY_EXPORT_XML_FLAG_V1) < 0){
+        XPUM_LOG_ERROR("XML buffer export failed {}", strerror(errno));
+        result = XPUM_GENERIC_ERROR;
+    } else {
+        if(*buflen<xmlbuflen){
+            *buflen = xmlbuflen;
+            result = XPUM_BUFFER_TOO_SMALL;
+        } else {
+            *buflen = xmlbuflen;
+            memcpy(buffer, xmlbuf, xmlbuflen);
+            buffer[xmlbuflen] = 0;
+        }
+        hwloc_free_xmlbuffer(hwtopology, xmlbuf);
+    }
+
+    hwloc_topology_destroy(hwtopology);
+    return result;
+}
+
 } // end namespace xpum

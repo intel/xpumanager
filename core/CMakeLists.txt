@@ -141,11 +141,11 @@ set(LibSpd
 )
 
 if(HAVE_PCIACCESS_H)
-    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} libhwloc_embedded.a stdc++fs pciaccess)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} libhwloc_embedded.a stdc++fs pciaccess)
+    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pciaccess)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pciaccess)
 else()
-    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} libhwloc_embedded.a stdc++fs)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} libhwloc_embedded.a stdc++fs)
+    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs)
 endif()
 
 unset(BUILD_TEST CACHE)
