@@ -158,7 +158,6 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_MEMORY_BUS_WIDTH,               ///< Memory bus width
     XPUM_DEVICE_PROPERTY_MAX_HARDWARE_CONTEXTS,          ///< Maximum number of logical hardware contexts
     XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY,     ///< Maximum priority for command queues. Higher value is higher priority
-    XPUM_DEVICE_PROPERTY_NUMBER_OF_SUBDEVICE,            ///< The number of subdevices
     XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES,                ///< The number of tiles
     XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES,               ///< Maximum number of slices
     XPUM_DEVICE_PROPERTY_NUMBER_OF_SUB_SLICES_PER_SLICE, ///< Maximum number of sub-slices per slice
@@ -168,10 +167,9 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME,              ///< AMC string
     XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION,           ///< AMC firmware version
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER,             ///< Number of fabric ports
-    XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_RX_SPEED,       ///< Maximum speed supported by the receive side of the port (sum of all lanes)
-    XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_TX_SPEED,       ///< Maximum speed supported by the transmit side of the port (sum of all lanes)
-    XPUM_DEVICE_PROPERTY_FABRIC_PORT_RX_LANES_NUMBER,    ///< The number of lanes per the receive side of the port
-    XPUM_DEVICE_PROPERTY_FABRIC_PORT_TX_LANES_NUMBER,    ///< The number of lanes per the transmit side of the port
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED,          ///< Maximum speed supported by the port (sum of all lanes)
+    XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER,       ///< The number of lanes of the port
+    XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 
 extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name);

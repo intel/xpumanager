@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "../include/xpum_structs.h"
+#include "api/api_types.h"
 
 namespace xpum {
 
@@ -10,32 +10,32 @@ class Property {
    public:
     Property() {}
 
-    Property(xpum_device_property_name_t name, const std::string& value) : name(name), value(value) {
+    Property(xpum_device_internal_property_name_t name, const std::string& value) : name(name), value(value) {
     }
 
-    Property(xpum_device_property_name_t name, int value) : name(name) {
+    Property(xpum_device_internal_property_name_t name, int value) : name(name) {
         this->value = std::to_string(value);
     }
 
-    Property(xpum_device_property_name_t name, long value) : name(name) {
+    Property(xpum_device_internal_property_name_t name, long value) : name(name) {
         this->value = std::to_string(value);
     }
 
-    Property(xpum_device_property_name_t name, bool value) : name(name) {
+    Property(xpum_device_internal_property_name_t name, bool value) : name(name) {
         int int_value = value ? 1 : 0;
         this->value = std::to_string(int_value);
     }
 
-    Property(xpum_device_property_name_t name, float value) : name(name) {
+    Property(xpum_device_internal_property_name_t name, float value) : name(name) {
         this->value = std::to_string(value);
     }
 
-    Property(xpum_device_property_name_t name, double value) : name(name) {
+    Property(xpum_device_internal_property_name_t name, double value) : name(name) {
         this->value = std::to_string(value);
     }
 
    public:
-    xpum_device_property_name_t getName() {
+    xpum_device_internal_property_name_t getName() {
         return name;
     }
 
@@ -63,7 +63,7 @@ class Property {
         return std::stod(value);
     }
 
-    void setName(xpum_device_property_name_t name) {
+    void setName(xpum_device_internal_property_name_t name) {
         this->name = name;
     }
 
@@ -89,7 +89,7 @@ class Property {
     }
 
    private:
-    xpum_device_property_name_t name;
+    xpum_device_internal_property_name_t name;
 
     std::string value;
 };

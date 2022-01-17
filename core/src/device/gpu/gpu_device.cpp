@@ -181,7 +181,7 @@ void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
 
 xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
     Property pcieAddrProp;
-    bool res = getProperty(XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS, pcieAddrProp);
+    bool res = getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, pcieAddrProp);
     if (!res) {
         return xpum_result_t::XPUM_GENERIC_ERROR;
     }
@@ -237,7 +237,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
 
 xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath) noexcept {
     Property amcVersion;
-    bool res = getProperty(XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION, amcVersion);
+    bool res = getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, amcVersion);
 
     if (!res || amcVersion.getValue() == "unknown") {
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED;

@@ -251,17 +251,17 @@ void GroupManager::createBuildInGroup() {
         p_device->getProperties(properties);
 
         for (Property& prop : properties) {
-            xpum_device_property_name_t name = prop.getName();
+            xpum_device_internal_property_name_t name = prop.getName();
             std::string value = prop.getValue();
 
             switch (name) {
-                case XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID:
                     vendorId = std::stoi(value, nullptr, 16);
                     break;
-                case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID:
                     deviceId = std::stoi(value, nullptr, 16);
                     break;
-                case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS:
                     bdfAddress = value;
                     break;
                 default:

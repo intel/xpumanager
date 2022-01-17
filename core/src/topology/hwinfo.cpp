@@ -35,7 +35,7 @@ bool HWInfo::isPcieDevExist(xpum_device_id_t deviceId){
         XPUM_LOG_ERROR("isPcieDevExist, device {} not exist", deviceId);
         throw IlegalParameterException("device does not exist");
     }
-    if(!p_device->getProperty(XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS, prop)){
+    if(!p_device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop)){
 
         throw BaseException(ErrorCode::UNKNOWN, "PCI_BDF_ADDRESS not exist");
     }

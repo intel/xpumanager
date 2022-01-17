@@ -84,14 +84,10 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "AMC_FIRMWARE_VERSION";
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
             return "NUMBER_OF_FABRIC_PORTS";
-        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_RX_SPEED:
-            return "MAX_FABRIC_PORT_RX_SPEED";
-        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_TX_SPEED:
-            return "MAX_FABRIC_PORT_TX_SPEED";
-        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_RX_LANES_NUMBER:
-            return "NUMBER_OF_LANES_PER_FABRIC_PORT_RX";
-        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_TX_LANES_NUMBER:
-            return "NUMBER_OF_LANES_PER_FABRIC_PORT_TX";
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED:
+            return "MAX_FABRIC_PORT_SPEED";
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER:
+            return "NUMBER_OF_LANES_PER_FABRIC_PORT";
         default:
             return "";
     }
@@ -109,7 +105,7 @@ xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_t
     if (pDevice == nullptr)
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     Property prop;
-    pDevice->getProperty(XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES, prop);
+    pDevice->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
     if (tileId < 0 || tileId >= prop.getValueInt())
         return XPUM_RESULT_TILE_NOT_FOUND;
     return XPUM_OK;
@@ -277,7 +273,80 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
 static bool invalidChar (char c) 
 {  
     return !(c>=32 && c <128);   
-} 
+}
+
+xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_property_name_t propName) {
+    switch (propName) {
+        case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_TYPE;
+        case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME;
+        case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME;
+        case XPUM_DEVICE_PROPERTY_UUID:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_UUID;
+        case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID;
+        case XPUM_DEVICE_PROPERTY_PCI_VENDOR_ID:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID;
+        case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS;
+        case XPUM_DEVICE_PROPERTY_PCI_SLOT:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT;
+        case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION;
+        case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH;
+        case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION;
+        case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER;
+        case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ;
+        case XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE;
+        case XPUM_DEVICE_PROPERTY_MEMORY_FREE_SIZE_BYTE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_FREE_SIZE_BYTE;
+        case XPUM_DEVICE_PROPERTY_MAX_MEM_ALLOC_SIZE_BYTE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_MAX_MEM_ALLOC_SIZE_BYTE;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEMORY_CHANNELS:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEMORY_CHANNELS;
+        case XPUM_DEVICE_PROPERTY_MEMORY_BUS_WIDTH:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_BUS_WIDTH;
+        case XPUM_DEVICE_PROPERTY_MAX_HARDWARE_CONTEXTS:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_MAX_HARDWARE_CONTEXTS;
+        case XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_MAX_COMMAND_QUEUE_PRIORITY;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SLICES;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_SUB_SLICES_PER_SLICE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUB_SLICES_PER_SLICE;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS_PER_SUB_SLICE;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_THREADS_PER_EU;
+        case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_PHYSICAL_EU_SIMD_WIDTH;
+        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_NUMBER;
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_RX_SPEED;
+        case XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_RX_LANES_NUMBER;
+        default:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_MAX;
+    }
+}
 
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties) {
     if (Core::instance().getDeviceManager() == nullptr) {
@@ -297,25 +366,36 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
             pXpumProperties->deviceId = deviceId;
             std::vector<Property> properties;
             p_device->getProperties(properties);
-            pXpumProperties->propertyLen = properties.size();
+
+            std::map<xpum_device_internal_property_name_t, Property> prop_map;
 
             for (size_t i = 0; i < properties.size(); i++) {
                 auto &prop = properties[i];
-                xpum_device_property_name_t name = prop.getName();
-                if (name == XPUM_DEVICE_PROPERTY_NUMBER_OF_SUBDEVICE) {
-                    pXpumProperties->propertyLen -= 1;
+                xpum_device_internal_property_name_t name = prop.getName();
+                prop_map[name] = prop;
+            }
+            int propertyLen = 0;
+            for (int i = 0; i < XPUM_DEVICE_PROPERTY_MAX; i++) {
+                xpum_device_property_name_t propName = static_cast<xpum_device_property_name_t>(i);
+                auto propNameInternal = getDeviceInternalProperty(propName);
+                if (prop_map.find(propNameInternal) == prop_map.end()) {
                     continue;
                 }
+                propertyLen++;
+                auto &prop = prop_map[propNameInternal];
                 std::string value = prop.getValue();
 
-                if (name == XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION) {
+                if (propName == XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION) {
                     value.erase(remove_if(value.begin(), value.end(), invalidChar), value.end());
                 }
                 auto &copy = pXpumProperties->properties[i];
-                copy.name = name;
+                copy.name = propName;
                 value.copy(copy.value, value.size());
                 copy.value[value.size()] = 0;
             }
+
+            pXpumProperties->propertyLen = propertyLen;
+
             return XPUM_OK;
         }
     }
@@ -1010,7 +1090,7 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
     xpum_topology_t *topo = nullptr;
     std::string bdfAddress;
     Property prop;
-    if (!device->getProperty(XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS, prop)) {
+    if (!device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop)) {
         return XPUM_GENERIC_ERROR;
     }
     bdfAddress = prop.getValue();

@@ -111,7 +111,7 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
     this->p_device_manager->getDeviceList(devices);
     for (auto device: devices) {
         Property property;
-        if (device->getProperty(XPUM_DEVICE_PROPERTY_DEVICE_NAME, property)) {
+        if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, property)) {
             std::string device_name = property.getValue();
             device_name.erase(std::remove_if(device_name.begin(), device_name.end(), isspace), device_name.end());
             device_names.insert(std::pair<ze_device_handle_t, std::string>(device->getDeviceHandle(), device_name));

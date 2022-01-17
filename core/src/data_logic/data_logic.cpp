@@ -73,7 +73,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         return;
     }
     Property prop;
-    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_NUMBER_OF_SUBDEVICE,prop);
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUBDEVICE,prop);
     uint32_t num_subdevice = prop.getValueInt();
     *count = num_subdevice + 1;
     if (dataList == nullptr) {
@@ -180,7 +180,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
         return;
     }
     Property prop;
-    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_NUMBER_OF_SUBDEVICE,prop);
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUBDEVICE,prop);
     uint32_t num_subdevice = prop.getValueInt();
     *count = num_subdevice + 1;
     if (dataList == nullptr) {
