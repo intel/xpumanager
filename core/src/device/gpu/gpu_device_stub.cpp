@@ -47,6 +47,9 @@ void invokeTask(Callback_t callback, F&& f, Args&&... args) {
     }
 }
 
+// used for exclusively runing the RAS APIs to avoid two issues: 1) invalid read/write memory in zesRasGetState; 2) kernel error msg "mei-gsc mei-gscfi.3.auto: id exceeded 256"
+std::mutex ras_m;
+
 template <class F, class... Args>
 bool checkCapability(const char* device_name, const std::string& bdf_address, const char* capability_name, F&& f, Args&&... args) {
     auto detect_func = std::bind(std::forward<F>(f), std::forward<Args>(args)...);
@@ -1677,6 +1680,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasError(const zes_device_h
         if (res == ZE_RESULT_SUCCESS) {
             uint64_t rasCounter = 0;
             for (auto& rasHandle : phRasErrorSets) {
+                // globally lock for RAS APIs to avoid two issues: 1) invalid read/write memory in zesRasGetState; 2) kernel error msg "mei-gsc mei-gscfi.3.auto: id exceeded 256"
+                std::lock_guard<std::mutex> lock(ras_m);
                 zes_ras_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
@@ -1724,6 +1729,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const z
         if (res == ZE_RESULT_SUCCESS) {
             //uint64_t rasCounter = 0;
             for (auto& rasHandle : phRasErrorSets) {
+                // globally lock for RAS APIs to avoid two issues: 1) invalid read/write memory in zesRasGetState; 2) kernel error msg "mei-gsc mei-gscfi.3.auto: id exceeded 256"
+                std::lock_guard<std::mutex> lock(ras_m);
                 zes_ras_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
@@ -1770,6 +1777,8 @@ void GPUDeviceStub::getRasError(const zes_device_handle_t& device, uint64_t erro
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, phRasErrorSets.data()));
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& rasHandle : phRasErrorSets) {
+                // globally lock for RAS APIs to avoid two issues: 1) invalid read/write memory in zesRasGetState; 2) kernel error msg "mei-gsc mei-gscfi.3.auto: id exceeded 256"
+                std::lock_guard<std::mutex> lock(ras_m);
                 zes_ras_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
