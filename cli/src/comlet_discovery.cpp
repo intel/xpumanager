@@ -70,8 +70,8 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
                 { "label": "Physical EU SIMD Width", "value": "physical_eu_simd_width" },
                 { "rowTitle": " " },
                 { "label": "Number of Xe Link ports", "value": "number_of_fabric_ports" },
-                { "label": "Max Tx/Rx Speed per Xe Link port", "value": "max_fabric_port_rx_speed", "suffix": " MiB/s", "scale": 1048576 },
-                { "label": "Number of Lanes per Xe Link port", "value": "number_of_lanes_per_fabric_port_rx" }
+                { "label": "Max Tx/Rx Speed per Xe Link port", "value": "max_fabric_port_speed", "suffix": " MiB/s", "scale": 1048576 },
+                { "label": "Number of Lanes per Xe Link port", "value": "number_of_lanes_per_fabric_port" }
             ]
         ]
     }]
