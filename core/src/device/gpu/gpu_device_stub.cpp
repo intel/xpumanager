@@ -2737,6 +2737,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                 status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
                 description = "All ports are up and operating as expected.";
             } else {
+                description = "";
                 status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
                 if (!failed_fabric_ports.empty()) {
                     status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
