@@ -2699,29 +2699,66 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
         uint32_t fabric_ports_count = 0;
         ze_result_t res;
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, nullptr));
-        std::vector<zes_fabric_port_handle_t> fabric_ports(fabric_ports_count);
-        if (res == ZE_RESULT_SUCCESS) {
+        if (res == ZE_RESULT_SUCCESS && fabric_ports_count > 0) {
+            std::vector<zes_fabric_port_handle_t> fabric_ports(fabric_ports_count);
+            std::vector<std::string> failed_fabric_ports, degraded_fabric_ports, disabled_fabric_ports;
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_ports_count, fabric_ports.data()));
             for (auto& fabric_port : fabric_ports) {
+                zes_fabric_port_properties_t fabric_port_properties;
+                fabric_port_properties.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(fabric_port, res = zesFabricPortGetProperties(fabric_port, &fabric_port_properties));
+                if (res != ZE_RESULT_SUCCESS) {
+                    continue;
+                }
                 zes_fabric_port_state_t fabric_port_state;
+                fabric_port_state.stype = ZES_STRUCTURE_TYPE_FABRIC_PORT_STATE;
                 XPUM_ZE_HANDLE_LOCK(fabric_port, res = zesFabricPortGetState(fabric_port, &fabric_port_state));
-                if (res == ZE_RESULT_SUCCESS) {
-                    if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_HEALTHY && (int)status < ZES_FABRIC_PORT_STATUS_HEALTHY) {
-                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
-                        description = "All ports are up and operating as expected.";
+                if (res != ZE_RESULT_SUCCESS) {
+                    continue;
+                }
+                if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_FAILED) {
+                    failed_fabric_ports.emplace_back(std::to_string(fabric_port_properties.portId.fabricId) + "-" 
+                                                + std::to_string(fabric_port_properties.portId.attachId) + "-"
+                                                + std::to_string((int)(fabric_port_properties.portId.portNumber)));
+                }
+                if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_DEGRADED) {
+                    degraded_fabric_ports.emplace_back(std::to_string(fabric_port_properties.portId.fabricId) + "-" 
+                                                + std::to_string(fabric_port_properties.portId.attachId) + "-"
+                                                + std::to_string((int)(fabric_port_properties.portId.portNumber)));
+                }
+                if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_DISABLED) {
+                    disabled_fabric_ports.emplace_back(std::to_string(fabric_port_properties.portId.fabricId) + "-" 
+                                                + std::to_string(fabric_port_properties.portId.attachId) + "-"
+                                                + std::to_string((int)(fabric_port_properties.portId.portNumber)));
+                }
+            }
+
+            if (failed_fabric_ports.empty() && degraded_fabric_ports.empty() && disabled_fabric_ports.empty()) {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
+                description = "All ports are up and operating as expected.";
+            } else {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
+                if (!failed_fabric_ports.empty()) {
+                    status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
+                    description += "Ports ";
+                    for (auto port : failed_fabric_ports) {
+                        description += port + " ";
                     }
-                    if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_DEGRADED && (int)status < ZES_FABRIC_PORT_STATUS_DEGRADED) {
-                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
-                        description = "The port " + std::to_string(fabric_port_state.remotePortId.fabricId) + " is up but has quality and/or speed degradation.";
+                    description += "connection instabilities are preventing workloads making forward progress. ";
+                }
+                if (!degraded_fabric_ports.empty()) {
+                    description += "Ports ";
+                    for (auto port : degraded_fabric_ports) {
+                        description += port + " ";
                     }
-                    if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_FAILED && (int)status < ZES_FABRIC_PORT_STATUS_FAILED) {
-                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
-                        description = "The port " + std::to_string(fabric_port_state.remotePortId.fabricId) + " connection instabilities are preventing workloads making forward progress.";
+                    description += "are up but have quality and/or speed degradation. ";
+                }
+                if (!disabled_fabric_ports.empty()) {
+                    description += "Ports ";
+                    for (auto port : disabled_fabric_ports) {
+                        description += port + " ";
                     }
-                    if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_DISABLED && (int)status < ZES_FABRIC_PORT_STATUS_FAILED) {
-                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_CRITICAL;
-                        description = "The port " + std::to_string(fabric_port_state.remotePortId.fabricId) + " is configured down.";
-                    }
+                    description += "are configured down. ";
                 }
             }
         }
@@ -2729,7 +2766,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
 
     data->status = status;
     int index = 0;
-    while (index < (int)description.size()) {
+    while (index < (int)description.size() && index < XPUM_MAX_STR_LENGTH - 1) {
         data->description[index] = description[index];
         index++;
     }
