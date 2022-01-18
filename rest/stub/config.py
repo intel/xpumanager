@@ -44,10 +44,10 @@ def getConfig(deviceId, tileId):
         tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
         tiledata['compute_performance_factor'] = resp.tileConfigData[i].computePerformanceFactor
         tiledata['media_performance_factor'] = resp.tileConfigData[i].mediaPerformanceFactor
-        tiledata['fabric_port_enabled'] = resp.tileConfigData[i].portenabled
-        tiledata['fabric_port_disabled'] = resp.tileConfigData[i].portdisabled
-        tiledata['fabric_port_beaconing_on'] = resp.tileConfigData[i].portbeaconingon
-        tiledata['fabric_port_beaconing_off'] = resp.tileConfigData[i].portbeaconingoff
+        tiledata['fabric_port_enabled'] = resp.tileConfigData[i].portEnabled
+        tiledata['fabric_port_disabled'] = resp.tileConfigData[i].portDisabled
+        tiledata['fabric_port_beaconing_on'] = resp.tileConfigData[i].portBeaconingOn
+        tiledata['fabric_port_beaconing_off'] = resp.tileConfigData[i].portBeaconingOff
 
         if resp.tileConfigData[i].schedulerTimeout > 0:
             tiledata['scheduler_watchdog_timeout'] = resp.tileConfigData[i].schedulerTimeout
