@@ -11,7 +11,8 @@ __version__ = '0.0.1'
 
 host = None
 port = None
-bdfaddr = None
+# bdfaddr = None
+deviceId = None
 disableTLS = False
 username = None
 password = None
@@ -73,15 +74,15 @@ def http_query(url):
 
 
 def checkTelemetry():
-    url = "/rest/v1/devices"
-    data = http_query(url)
-    deviceId = None
-    for d in data['devices']:
-        if d["pci_bdf_address"] == bdfaddr:
-            deviceId = d['device_id']
-    if deviceId is None:
-        print("Unknown: No device found according to the BDF Address")
-        exit(3)
+    # url = "/rest/v1/devices"
+    # data = http_query(url)
+    # deviceId = None
+    # for d in data['devices']:
+    #     if d["pci_bdf_address"] == bdfaddr:
+    #         deviceId = d['device_id']
+    # if deviceId is None:
+    #     print("Unknown: No device found according to the BDF Address")
+    #     exit(3)
     url = "/rest/v1/devices/{}/stats".format(deviceId)
     data = http_query(url)
 
@@ -198,15 +199,15 @@ health_type_dict = dict(health_type_list)
 
 
 def checkHealth():
-    url = "/rest/v1/devices"
-    data = http_query(url)
-    deviceId = None
-    for d in data['devices']:
-        if d["pci_bdf_address"] == bdfaddr:
-            deviceId = d['device_id']
-    if deviceId is None:
-        print("Unknown: No device found according to the BDF Address")
-        exit(3)
+    # url = "/rest/v1/devices"
+    # data = http_query(url)
+    # deviceId = None
+    # for d in data['devices']:
+    #     if d["pci_bdf_address"] == bdfaddr:
+    #         deviceId = d['device_id']
+    # if deviceId is None:
+    #     print("Unknown: No device found according to the BDF Address")
+    #     exit(3)
     url = "/rest/v1/devices/{}/health".format(deviceId)
     data = http_query(url)
     ok_list = []
@@ -259,8 +260,10 @@ def arg():
     parser.add_argument(
         '-P', '--Password', required=True, help="The password")
 
-    parser.add_argument('-B', '--BDFAddr', required=True,
-                        help="The PCI BDF Address of the gpu")
+    # parser.add_argument('-B', '--BDFAddr', required=True,
+    #                     help="The PCI BDF Address of the gpu")
+    parser.add_argument('-d', '--deviceId', required=True,
+                        help="The xpum device id of the gpu")
 
     parser.add_argument('--disableTLS', action="store_true",
                         help="Use http instead of https")
@@ -279,7 +282,8 @@ def arg():
 
     global host
     global port
-    global bdfaddr
+    # global bdfaddr
+    global deviceId
     global disableTLS
     global username
     global password
@@ -288,7 +292,8 @@ def arg():
     port = parsed.port
     username = parsed.Username
     password = parsed.Password
-    bdfaddr = parsed.BDFAddr
+    # bdfaddr = parsed.BDFAddr
+    deviceId = parsed.deviceId
     disableTLS = parsed.disableTLS
 
     global warning_threshold
