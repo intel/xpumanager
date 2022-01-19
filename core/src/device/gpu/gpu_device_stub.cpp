@@ -2717,17 +2717,17 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                     continue;
                 }
                 if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_FAILED) {
-                    failed_fabric_ports.emplace_back(std::to_string(fabric_port_properties.portId.fabricId) + "-" 
+                    failed_fabric_ports.emplace_back("Tile"
                                                 + std::to_string(fabric_port_properties.portId.attachId) + "-"
                                                 + std::to_string((int)(fabric_port_properties.portId.portNumber)));
                 }
                 if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_DEGRADED) {
-                    degraded_fabric_ports.emplace_back(std::to_string(fabric_port_properties.portId.fabricId) + "-" 
+                    degraded_fabric_ports.emplace_back("Tile"
                                                 + std::to_string(fabric_port_properties.portId.attachId) + "-"
                                                 + std::to_string((int)(fabric_port_properties.portId.portNumber)));
                 }
                 if (fabric_port_state.status == ZES_FABRIC_PORT_STATUS_DISABLED) {
-                    disabled_fabric_ports.emplace_back(std::to_string(fabric_port_properties.portId.fabricId) + "-" 
+                    disabled_fabric_ports.emplace_back("Tile"
                                                 + std::to_string(fabric_port_properties.portId.attachId) + "-"
                                                 + std::to_string((int)(fabric_port_properties.portId.portNumber)));
                 }
