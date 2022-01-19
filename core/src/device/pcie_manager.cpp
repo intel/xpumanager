@@ -15,6 +15,9 @@ PCIeManager::~PCIeManager() {
 
 void PCIeManager::init() {
     XPUM_LOG_DEBUG("start PCIeManager init");
+    if (std::system("modprobe msr") != 0) {
+        XPUM_LOG_ERROR("Failed to load msr kernel module");
+    }
     initialized.store(false);
     auto pcie_thread = std::thread([this]() {
         const std::string pcm_command{"/usr/local/bin/pcm-iio-gpu.x"};

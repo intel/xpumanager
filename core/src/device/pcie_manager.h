@@ -10,6 +10,7 @@
 #include <atomic>
 #include <sstream>
 #include <fstream>
+#include <cstdlib>
 
 namespace xpum {
 
