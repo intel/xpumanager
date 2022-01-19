@@ -1599,4 +1599,17 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProcessState(int deviceId){
     return json;
 }
 
+std::string CoreStub::getTopoXMLBuffer(){
+    assert(this->stub != nullptr);
+    std::string result;
+    grpc::ClientContext context;
+    TopoXMLResponse response;
+    grpc::Status status = stub->getTopoXMLBuffer(&context, google::protobuf::Empty(), &response);
+
+    if (status.ok()) {
+        result = response.xmlstring();
+    } 
+    return result;
+}
+
 } // end namespace xpum::cli

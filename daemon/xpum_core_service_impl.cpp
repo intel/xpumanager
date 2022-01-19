@@ -1437,6 +1437,27 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::getTopoXMLBuffer(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, 
+            ::TopoXMLResponse* response){
+    XPUM_LOG_TRACE("call exportTopoXML");
+    int size = 0;
+    xpum_result_t res = xpumExportTopology2XML(nullptr, &size);
+    if (res == XPUM_BUFFER_TOO_SMALL) {
+        std::shared_ptr<char> newBuffer(static_cast<char*>(malloc(size)), free);
+        res = xpumExportTopology2XML(newBuffer.get(), &size);
+        if (res == XPUM_OK) {
+            response->set_length(size);
+            response->set_xmlstring(newBuffer.get());
+        }
+    }
+
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+
+    return grpc::Status::OK;
+}
+
 void XpumCoreServiceImpl::close() {
     this->stop = true;
     condtionForCallBackDataList.notify_all();

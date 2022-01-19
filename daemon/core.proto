@@ -588,6 +588,12 @@ message GetAgentConfigResponse{
     string errorMsg = 3;
 }
 
+message TopoXMLResponse {
+    uint32 length = 1;
+    string xmlString = 2;
+    string errorMsg = 5;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -637,4 +643,5 @@ service XpumCoreService {
     rpc listDumpRawDataTasks( google.protobuf.Empty ) returns ( ListDumpRawDataTaskResponse );
     rpc setAgentConfig( SetAgentConfigRequest ) returns ( SetAgentConfigResponse );
     rpc getAgentConfig( google.protobuf.Empty ) returns ( GetAgentConfigResponse );
+    rpc getTopoXMLBuffer( google.protobuf.Empty ) returns ( TopoXMLResponse );
 }

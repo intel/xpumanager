@@ -107,6 +107,8 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status setAgentConfig(::grpc::ServerContext* context, const ::SetAgentConfigRequest* request, ::SetAgentConfigResponse* response);
     virtual ::grpc::Status getAgentConfig(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAgentConfigResponse* response);
 
+    virtual ::grpc::Status getTopoXMLBuffer(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::TopoXMLResponse* response);
+
     private:
         std::atomic_bool stop;
         std::mutex dumpRawDataFilenameMtx;

@@ -2,6 +2,8 @@
 
 #include <map>
 #include <nlohmann/json.hpp>
+#include <iostream>
+#include <fstream>
 
 #include "core_stub.h"
 #include "cli_table.h"
@@ -29,13 +31,33 @@ static CharTableConfig ComletConfigTopologyDevice(R"({
 
 void ComletTopology::setupOptions() {
     this->opts = std::unique_ptr<ComletTopologyOptions>(new ComletTopologyOptions());
-    addOption("-d,--device", this->opts->deviceId, "The device ID to query", true);
+    auto d = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
+    auto e = addOption("-e,--export", this->opts->xmlFile, "Export node topology to xml file");
+    d->excludes(e);
+    e->excludes(d);
 }
 
 std::unique_ptr<nlohmann::json> ComletTopology::run() {
-    auto json = this->coreStub->getTopology(this->opts->deviceId);
+    auto result = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (isDeviceOperation()){
+        auto json = this->coreStub->getTopology(this->opts->deviceId);
 
-    return json;
+        return json;
+    } else if(!this->opts->xmlFile.empty()) {
+        std::ofstream xmlfile;
+        xmlfile.open(this->opts->xmlFile);
+        std::string xmlBuffer = this->coreStub->getTopoXMLBuffer();
+        if(!xmlBuffer.empty()){
+            xmlfile << xmlBuffer;
+            std::cout << "Export topology to xml:" << opts->xmlFile << " sucessfully." << std::endl;
+        } else {
+            std::cout << "Fail to get topology xml buffer." << std::endl;
+        }
+        xmlfile.close();        
+    } else {        
+        (*result)["error"] = "Wrong argument or unknow operation, run with --help for more information.";
+    }
+    return result;
 }
 
 static void showDeviceTopology(std::ostream &out, std::shared_ptr<nlohmann::json> json, const bool cont = false) {

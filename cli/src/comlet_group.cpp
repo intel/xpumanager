@@ -125,7 +125,7 @@ std::unique_ptr<nlohmann::json> ComletGroup::run() {
     //std::cout << "Wrong argument or unknow operation\nRun with --help for more information.\n";
     //exit(1);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    (*json)["error message"] = "Wrong argument or unknow operation, run with --help for more information.";
+    (*json)["error"] = "Wrong argument or unknow operation, run with --help for more information.";
     return json;
 }
 

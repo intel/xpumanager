@@ -93,6 +93,8 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> setAgentConfig(std::string key, void* pValue);
 
     std::unique_ptr<nlohmann::json> getAgentConfig();
+
+    std::string getTopoXMLBuffer();
     
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
