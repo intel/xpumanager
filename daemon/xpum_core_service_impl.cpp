@@ -1344,7 +1344,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
 
         for (uint32_t i = 0; i < portConfigCount; i++) {
             if (portConfig[i].subdeviceId == tileId) {
-                std::string id_str = std::to_string(portConfig[i].fabricId);
+                std::string id_str = std::to_string(portConfig[i].portNumber);
                 if( portConfig[i].enabled == true) {
                     if (enabled_str.empty()) {
                         enabled_str = id_str;

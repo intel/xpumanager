@@ -2815,7 +2815,7 @@ bool GPUDeviceStub::setFabricPorts(const zes_device_handle_t& device, const port
                 continue;
             }
             if (props.subdeviceId == portInfoSet.subdeviceId
-                && props.portId.fabricId == portInfoSet.portId.fabricId) {
+                && props.portId.portNumber == portInfoSet.portId.portNumber) {
                 XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetConfig(hPort, &config));
                 if (res != ZE_RESULT_SUCCESS) {
                     return false;

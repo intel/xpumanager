@@ -74,14 +74,14 @@ def setStandby(deviceId, tileId, standby):
 
 def setPortEnabled(deviceId, tileId, port, enabled):
     resp = stub.setDeviceFabricPortEnabled(core_pb2.ConfigDeviceFabricPortEnabledRequest(
-        deviceId=deviceId, isTileData=True, tileId=tileId, fabricId=port, enabled=enabled))
+        deviceId=deviceId, isTileData=True, tileId=tileId, portNumber=port, enabled=enabled))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}
 
 def setPortBeaconing(deviceId, tileId, port, beaconing):
     resp = stub.setDeviceFabricPortBeaconing(core_pb2.ConfigDeviceFabricPortBeconingRequest(
-        deviceId=deviceId, isTileData=True, tileId=tileId, fabricId=port, beaconing=beaconing))
+        deviceId=deviceId, isTileData=True, tileId=tileId, portNumber=port, beaconing=beaconing))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}

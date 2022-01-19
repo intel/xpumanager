@@ -1524,7 +1524,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setFabricPortEnabled(int deviceId, int
         request.set_istiledata(true);
         request.set_tileid(tileId);
     }
-    request.set_fabricid(port);
+    request.set_portnumber(port);
     request.set_enabled(enabled);
 
     ConfigDeviceResultData response;
@@ -1554,7 +1554,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setFabricPortBeaconing(int deviceId, i
         request.set_istiledata(true);
         request.set_tileid(tileId);
     }
-    request.set_fabricid(port);
+    request.set_portnumber(port);
     request.set_beaconing(beaconing);
 
     ConfigDeviceResultData response;
