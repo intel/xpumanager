@@ -2125,8 +2125,7 @@ bool GPUDeviceStub::setPerformanceFactor(const zes_device_handle_t& device, Perf
                 zes_perf_properties_t prop;
                 XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorGetProperties(perf, &prop));
                 if (res == ZE_RESULT_SUCCESS) {
-                    if (prop.onSubdevice == pf.getSubdeviceId() && prop.subdeviceId == pf.getSubdeviceId() &&
-                        (prop.engines & pf.getEngine()) > 0) {
+                    if (prop.subdeviceId == pf.getSubdeviceId() && prop.engines == pf.getEngine()) {
                         XPUM_ZE_HANDLE_LOCK(perf, res = zesPerformanceFactorSetConfig(perf, pf.getFactor()));
                         if (res == ZE_RESULT_SUCCESS) {
                             return true;
