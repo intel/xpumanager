@@ -2,7 +2,7 @@
 
 Assume you have icinga environment setup, just copy `check_intel_gpu.py` into icinga PluginDir.
 
-The gpu.conf is an example of icinga configuration, you can write your own.
+The gpu.conf is an example of icinga configuration, you can write your own, remember replace placeholders quoted by `$`, like `$HOST_ADDRESS$`.
 
 ## check_intel_gpu.py plugin help
 
