@@ -48,6 +48,8 @@ def getConfig(deviceId, tileId):
         tiledata['fabric_port_disabled'] = resp.tileConfigData[i].portDisabled
         tiledata['fabric_port_beaconing_on'] = resp.tileConfigData[i].portBeaconingOn
         tiledata['fabric_port_beaconing_off'] = resp.tileConfigData[i].portBeaconingOff
+        tiledata["compute_engine"] = "compute"
+        tiledata["media_engine"] = "media"
 
         if resp.tileConfigData[i].schedulerTimeout > 0:
             tiledata['scheduler_watchdog_timeout'] = resp.tileConfigData[i].schedulerTimeout

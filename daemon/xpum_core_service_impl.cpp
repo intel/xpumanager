@@ -1349,26 +1349,26 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
                     if (enabled_str.empty()) {
                         enabled_str = id_str;
                     } else {
-                        enabled_str = ", "+id_str;
+                        enabled_str += ", "+id_str;
                     }
                 } else {
                     if (disabled_str.empty()) {
                         disabled_str = id_str;
                     } else {
-                        disabled_str = ", "+id_str;
+                        disabled_str += ", "+id_str;
                     }
                 }
                 if( portConfig[i].beaconing == true) {
                     if (beaconing_on_str.empty()) {
                         beaconing_on_str = id_str;
                     } else {
-                        beaconing_on_str = ", "+id_str;
+                        beaconing_on_str += ", "+id_str;
                     }
                 } else {
                     if (beaconing_off_str.empty()) {
                         beaconing_off_str = id_str;
                     } else {
-                        beaconing_off_str = ", "+id_str;
+                        beaconing_off_str += ", "+id_str;
                     }
                 }
             }

@@ -1261,7 +1261,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["standby_mode_valid_options"] = response.tileconfigdata(i).standbyoption();
                 tileJson["media_performance_factor"] = response.tileconfigdata(i).mediaperformancefactor();
                 tileJson["compute_performance_factor"] = response.tileconfigdata(i).computeperformancefactor();
-                tileJson["compute"] = "compute";
+                tileJson["compute_engine"] = "compute";
+                tileJson["media_engine"] = "media";
                 tileJson["port_up"] = response.tileconfigdata(i).portenabled();
                 tileJson["port_down"] = response.tileconfigdata(i).portdisabled();
                 tileJson["beaconing_on"] = response.tileconfigdata(i).portbeaconingon();
