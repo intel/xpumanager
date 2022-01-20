@@ -141,6 +141,8 @@ def main(*args, **kwargs):
     # topology
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'],
                     view_func=auth.login_required(topology.get_topology))
+    app.add_url_rule('/rest/v1/topology', methods=['GET'],
+                    view_func=auth.login_required(topology.export_topology))
 
     # dump raw data
     app.add_url_rule('/rest/v1/dump', methods=['POST'],

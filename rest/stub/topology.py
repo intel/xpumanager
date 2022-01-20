@@ -14,3 +14,11 @@ def getTopology(deviceId):
   if resp.switchCount > 0:
     data["switch_list"] = [s.switchDevicePath for s in resp.switchInfo]
   return 0, "OK", data
+
+
+def exportTopology():
+  resp = stub.getTopoXMLBuffer()
+  if len(resp.errorMsg) != 0:
+    return 1, resp.errorMsg, None
+  
+  return 0, "OK", resp.xmlstring

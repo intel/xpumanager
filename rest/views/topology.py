@@ -36,3 +36,29 @@ def get_topology(deviceId):
     error = dict(Status=code, Message=message)
     return jsonify(error), 400
     
+def export_topology():
+    """
+    Get device topology.
+    ---
+    get:
+        tags:
+            - "Topology"
+        description: Get device topology
+        parameters: 
+            -
+                name: deviceId
+                in: path
+                description: Device id
+                type: integer
+        responses:
+            200:
+                description: OK
+                schema: TopologyInfoSchema
+            500:
+                description: Error
+    """
+    code, message, data = stub.exportTopology()
+    if code == 0:
+        return jsonify(data)
+    error = dict(Status=code, Message=message)
+    return jsonify(error), 400
