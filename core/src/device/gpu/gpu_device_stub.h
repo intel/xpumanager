@@ -215,6 +215,8 @@ class GPUDeviceStub {
     static std::string buildErrors(const std::map<std::string, ze_result_t>& exception_msgs, const char* func, uint32_t line);
     static std::string getProcessName(uint32_t processId);
 
+    static void logSupportedMetrics(zes_device_handle_t device, const zes_device_properties_t& props, const std::vector<DeviceCapability>& capabilities);
+
    private:
     bool initialized;
 

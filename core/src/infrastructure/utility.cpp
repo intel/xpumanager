@@ -385,4 +385,75 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
     }
 }
 
+std::string Utility::getXpumStatsTypeString(MeasurementType type) {
+    switch (type) {
+        case MeasurementType::METRIC_TEMPERATURE:
+            return std::string("temperature");
+        case MeasurementType::METRIC_FREQUENCY:
+            return std::string("frequency");
+        case MeasurementType::METRIC_POWER:
+            return std::string("power");
+        case MeasurementType::METRIC_MEMORY_USED:
+            return std::string("memory used");
+        case MeasurementType::METRIC_MEMORY_UTILIZATION:
+            return std::string("memory utilization");
+        case MeasurementType::METRIC_MEMORY_BANDWIDTH:
+            return std::string("memory bandwidth");
+        case MeasurementType::METRIC_MEMORY_READ:
+            return std::string("memory read");
+        case MeasurementType::METRIC_MEMORY_WRITE:
+            return std::string("memory write");
+        case MeasurementType::METRIC_MEMORY_READ_THROUGHPUT:
+            return std::string("memory read throughput");
+        case MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT:
+            return std::string("memory write throughput");
+        case MeasurementType::METRIC_COMPUTATION:
+            return std::string("GPU utilization");
+        case MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
+            return std::string("compute engine group utilization");
+        case MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
+            return std::string("media engine group utilization");
+        case MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION:
+            return std::string("copy engine group utilization");
+        case MeasurementType::METRIC_ENGINE_GROUP_RENDER_ALL_UTILIZATION:
+            return std::string("render engine group utilization");
+        case MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
+            return std::string("3D engine group utilization");
+        case MeasurementType::METRIC_ENERGY:
+            return std::string("energy");
+        case MeasurementType::METRIC_EU_ACTIVE:
+            return std::string("EU active");
+        case MeasurementType::METRIC_EU_STALL:
+            return std::string("EU stall");
+        case MeasurementType::METRIC_EU_IDLE:
+            return std::string("EU idle");
+        case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
+            return std::string("RAS reset");
+        case MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+            return std::string("RAS programming errors");
+        case MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS:
+            return std::string("RAS driver errors");
+        case MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+            return std::string("RAS cache correctable errors");
+        case MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+            return std::string("RAS cache uncorrectable errors");
+        case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+            return std::string("RAS display correctable errors");
+        case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+            return std::string("RAS display uncorrectable errors");
+        case MeasurementType::METRIC_REQUEST_FREQUENCY:
+            return std::string("request frequency");
+        case MeasurementType::METRIC_MEMORY_TEMPERATURE:
+            return std::string("memory temperature");
+        case MeasurementType::METRIC_FREQUENCY_THROTTLE:
+            return std::string("throttle frequency");
+        case MeasurementType::METRIC_PCIE_READ_THROUGHPUT:
+            return std::string("PCIE read throughput");
+        case MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT:
+            return std::string("PCIE write throughput");
+        default:
+            return std::string("");
+    }
+}
+
 } // end namespace xpum

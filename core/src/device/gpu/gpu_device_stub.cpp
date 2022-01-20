@@ -510,6 +510,37 @@ void addPCIeProperties(ze_device_handle_t& device, std::shared_ptr<GPUDevice> p_
     }
 }
 
+void GPUDeviceStub::logSupportedMetrics(zes_device_handle_t device, const zes_device_properties_t& props, const std::vector<DeviceCapability>& capabilities) {
+    auto metric_types = Configuration::getEnabledMetrics();
+    for(auto metric = metric_types.begin(); metric != metric_types.end();) {
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric));})){
+            metric = metric_types.erase(metric);
+        } else {
+            metric++;
+        }
+    }
+    zes_pci_properties_t pci_props;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+    std::string bdf_address;
+    if (res == ZE_RESULT_SUCCESS)
+        bdf_address = to_string(pci_props.address);
+    else
+        XPUM_LOG_WARN("Failed to get to device properties, zesDevicePciGetProperties returned: {}", res);
+
+    std::string log_content;
+    std::vector<std::string> metric_names;
+    for (auto iter = metric_types.begin(); iter != metric_types.end(); ++iter){
+        if (std::next(iter) != metric_types.end()) {
+            log_content += (Utility::getXpumStatsTypeString(*iter) + std::string(", "));
+        } else {
+            log_content += (Utility::getXpumStatsTypeString(*iter) + std::string("."));
+        }
+        
+    }
+    XPUM_LOG_INFO("Device {}{} has the following monitoring metric types: {}",props.core.name, bdf_address, log_content);
+}
+
 std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover() {
     auto p_devices = std::make_shared<std::vector<std::shared_ptr<Device>>>();
     uint32_t driver_count = 0;
@@ -536,6 +567,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 addCapabilities(device, props, capabilities);
                 addEngineCapabilities(device, props, capabilities);
                 addEuActiveStallIdleCapabilities(device, props, p_driver, capabilities);
+                logSupportedMetrics(device, props, capabilities);
                 auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_TYPE, std::string("GPU")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));

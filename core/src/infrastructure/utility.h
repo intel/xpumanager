@@ -37,6 +37,8 @@ class Utility {
     static bool isCounterMetric(MeasurementType type);
 
     static void getMetricsTypes(std::vector<MeasurementType>& metrics);
+
+    static std::string getXpumStatsTypeString(MeasurementType type);
 };
 
 } // end namespace xpum
