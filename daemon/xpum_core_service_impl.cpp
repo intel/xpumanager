@@ -1374,7 +1374,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
             }
         }
         tileData->set_portenabled(enabled_str);
-        tileData->set_portdisabled(enabled_str);
+        tileData->set_portdisabled(disabled_str);
         tileData->set_portbeaconingon(beaconing_on_str);
         tileData->set_portbeaconingoff(beaconing_off_str);
 
