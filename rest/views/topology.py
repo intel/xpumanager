@@ -9,6 +9,10 @@ class TopologyInfoSchema(Schema):
     switch_count = fields.Int(metadata={"description": "Device parent switch count"})
     switch_list = fields.String(metadata={"description": "list of switch device path"})
 
+class TopologyXMLSchema(Schema):
+    length = fields.Int(metadata={"description": "XML buffer length"})
+    xmlstring = fields.String(metadata={"description": "XML sting of node topology"})
+
 def get_topology(deviceId):
     """
     Get device topology.
@@ -38,22 +42,18 @@ def get_topology(deviceId):
     
 def export_topology():
     """
-    Get device topology.
+    Export node topology xml string.
     ---
-    get:
+    export:
         tags:
             - "Topology"
-        description: Get device topology
-        parameters: 
-            -
-                name: deviceId
-                in: path
-                description: Device id
-                type: integer
+        description: Export node topology
+        produces: 
+            - application/json
         responses:
             200:
                 description: OK
-                schema: TopologyInfoSchema
+                schema: TopologyXMLSchema
             500:
                 description: Error
     """

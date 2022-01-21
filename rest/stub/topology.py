@@ -17,8 +17,15 @@ def getTopology(deviceId):
 
 
 def exportTopology():
-  resp = stub.getTopoXMLBuffer()
-  if len(resp.errorMsg) != 0:
-    return 1, resp.errorMsg, None
-  
-  return 0, "OK", resp.xmlstring
+  try:
+    resp = stub.getTopoXMLBuffer(empty_pb2.Empty())
+    if len(resp.errorMsg) != 0:
+      return 1, resp.errorMsg, None
+    data = dict()
+    data["length"] = resp.length
+    data["xmlstring"] = resp.xmlString
+    return 0, "OK", data
+  except Exception as ex:
+    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+    message = template.format(type(ex).__name__, ex.args)
+    return 1, message, None
