@@ -307,23 +307,29 @@ void PciDatabase::parse_device_config(std::ifstream &fstream) {
                     start++;
                     device.type = DV_GRAPHIC;
 
-                    while(is_blank_space(info.at(start)) && start<len){
-                        start++;
+                    while(start<len){
+                        if(is_blank_space(info.at(start))){
+                            start++;
+                        } else {
+                            break;
+                        }                            
                     }
 
                     if(info.at(start) != '0'){
                         device.grouped = true;
                     } 
                     start++;
-                    if(start<len){
-                        while(is_blank_space(info.at(start)) && start<len){
+                    while(start<len){
+                        if(is_blank_space(info.at(start))){
                             start++;
-                        }
-                        if(start<len){
-                            device.device_name = info.substr(start);
-                            XPUM_LOG_TRACE("PciDatabase::parse_switch_config()- device_name:{}", device.device_name);
-                        }                                           
+                        } else {
+                            break;
+                        }  
                     }
+                    if(start<len){
+                        device.device_name = info.substr(start);
+                        XPUM_LOG_TRACE("PciDatabase::parse_switch_config()- device_name:{}", device.device_name);
+                    }                                           
                     devices[std::make_pair(vendor_id, device_id)] = device;
                 } else {
                     XPUM_LOG_DEBUG("PciDatabase::parse_switch_config() error- unknow value.");

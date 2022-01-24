@@ -33,5 +33,6 @@ class Topology {
     static std::string pci2RegxString(hwloc_obj_t obj);
 
     static void export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj);
+    static std::string getDeviceName(int vendorId, int deviceId);
 };
 } // end namespace xpum

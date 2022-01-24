@@ -9,9 +9,10 @@
 #include <sstream>
 #include <vector>
 
-#include "hwinfo.h"
+#include "core/core.h"
 #include "infrastructure/device_property.h"
 #include "infrastructure/logger.h"
+#include "hwinfo.h"
 #include "pci_database.h"
 
 namespace xpum {
@@ -309,8 +310,15 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
         assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
         const PcieDevice* pDevice = PciDatabase::instance().getDevice(
                 obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
-        if(pDevice!= nullptr && !pDevice->device_name.empty()){
-            obj->userdata = (void*)pDevice->device_name.c_str();
+        if(pDevice!= nullptr){
+            if(!pDevice->device_name.empty()){
+                obj->userdata = (void*)pDevice->device_name.c_str();
+            } else {
+                std::string name = getDeviceName(obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
+                if(!name.empty()){
+                    obj->userdata = (void*)pDevice->device_name.c_str();
+                } 
+            }            
         }
     }
 
@@ -330,6 +338,42 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
     }
 
     hwloc_topology_destroy(hwtopology);
+    return result;
+}
+
+std::string Topology::getDeviceName(int vendorId, int deviceId)
+{
+    std::string result;
+    if (Core::instance().getDeviceManager() != nullptr) {
+        std::vector<std::shared_ptr<Device>> devices;
+        Core::instance().getDeviceManager()->getDeviceList(devices);
+        for (size_t i = 0; i < devices.size(); i++) {
+            auto &p_device = devices[i];
+            Property propVenId, propDevId;
+            if( p_device->getProperty(
+                xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID, propVenId)
+                && p_device->getProperty(
+                xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, propDevId)
+            ){
+                if( vendorId == std::stoi(propVenId.getValue(), nullptr, 16) 
+                && deviceId == std::stoi(propDevId.getValue(), nullptr, 16) ){
+                    Property propName;
+                    if( p_device->getProperty(
+                        xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, propName)
+                    ) {
+                        result = propName.getValue();
+                        break;
+                    }                    
+                }
+            }
+        }
+    }
+
+    if(result.empty()) {
+        std::stringstream stream;
+        stream << "Intel(R) Graphics [0x" << std::hex << deviceId << "]";
+        result = stream.str();
+    }
     return result;
 }
 
