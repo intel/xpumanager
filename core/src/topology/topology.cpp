@@ -316,7 +316,7 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
             } else {
                 std::string name = getDeviceName(obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
                 if(!name.empty()){
-                    obj->userdata = (void*)pDevice->device_name.c_str();
+                    obj->userdata = (void*)name.c_str();
                 } 
             }            
         }
