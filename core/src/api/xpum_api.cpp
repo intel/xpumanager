@@ -1177,6 +1177,10 @@ xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_p
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+    xpum_result_t res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
     std::vector<PerformanceFactor> pf;
     Core::instance().getDeviceManager()->getPerformanceFactor(std::to_string(deviceId), pf);
 
@@ -1204,6 +1208,10 @@ xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_pe
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, performanceFactor.subdevice_id);
+    if (res != XPUM_OK) {
+        return res;
+    }
 
     PerformanceFactor pf (performanceFactor.on_subdevice,
     performanceFactor.subdevice_id,(zes_engine_type_flags_t) performanceFactor.engine, performanceFactor.factor);
@@ -1218,6 +1226,11 @@ xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    xpum_result_t res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
     }
     //std::vector<xpum_fabric_port_config_t> portConfig;
     std::vector<port_info> pi;
@@ -1252,6 +1265,11 @@ xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    xpum_result_t res = validateDeviceIdAndTileId(deviceId, fabricPortConfig.subdeviceId);
+    if (res != XPUM_OK) {
+        return res;
     }
 
     port_info_set pis;

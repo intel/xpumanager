@@ -8,7 +8,7 @@ from .groups import createGroup, getAllGroups, getGroupInfo, destroyGroup, addDe
 from .firmwares import runFirmwareFlash, getFirmwareFlashResult
 from .topology import getTopology, exportTopology
 from .policy import getPolicy, setPolicy, readPolicyNotifyData
-from .config import setStandby, setPowerLimit, setFrequencyRange, setScheduler, runReset, getConfig
+from .config import setStandby, setPowerLimit, setFrequencyRange, setScheduler, runReset, getConfig, setPortEnabled, setPortBeaconing
 from .dump_raw_data import startDumpRawDataTask, stopDumpRawDataTask, listDumpRawDataTasks
 from .agent_settings import getAllAgentConfig, setAgentConfig
 from .xpum_enums import XpumStatsType, XpumResult

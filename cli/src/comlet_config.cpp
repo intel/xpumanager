@@ -219,6 +219,10 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
 
             int port = std::stoi(paralist.at(0));
             int enabled = std::stoi(paralist.at(1));
+            if ((enabled != 0 && enabled != 1) || port < 0 ) {
+                (*json)["return"]="invalid parameter";
+                return json;
+            }
             json = this->coreStub->setFabricPortEnabled(this->opts->deviceId, this->opts->tileId, port, enabled);
             if((*json)["status"] == "OK") {
                 (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " to " + (enabled == 1 ? "up":"down") + " .";
