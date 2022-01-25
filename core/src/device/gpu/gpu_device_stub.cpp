@@ -2674,7 +2674,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                         }
                         if (power_val >= power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
                             status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
-                            description = "Find an unhealthy power domains. Its power is " + std::to_string(power_val) + " and exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(power_threshold) + ".";
+                            description = "Find an unhealthy power domains. Its power is " + std::to_string(power_val) + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(power_threshold) + ".";
                         }
                     }
                 }
@@ -2720,7 +2720,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                         status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
                         std::stringstream temp_buffer;
                         temp_buffer << std::fixed << std::setprecision(2) << temp_val;
-                        description = "Find an unhealthy temperature sensor. Its temperature is " + temp_buffer.str() + " and exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(thermal_threshold) + ".";
+                        description = "Find an unhealthy temperature sensor. Its temperature is " + temp_buffer.str() + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(thermal_threshold) + ".";
                     }
                 }
             }
