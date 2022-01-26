@@ -29,7 +29,7 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "Usage: xpumcli topology [Options] \n"
                "   xpumcli topology -d [deviceId] \n"
                "   xpumcli topology -d [deviceId] -j \n"
-               "   xpumcli topology -e [xmlFileName]  \n";
+               "   xpumcli topology -f [filename]  \n";
     } else if (app->get_name().compare("health") == 0) {
         return "\nUsage: xpumcli health [Options] \n"
                "   xpumcli health -l \n"

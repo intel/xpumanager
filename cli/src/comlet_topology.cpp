@@ -32,7 +32,8 @@ static CharTableConfig ComletConfigTopologyDevice(R"({
 void ComletTopology::setupOptions() {
     this->opts = std::unique_ptr<ComletTopologyOptions>(new ComletTopologyOptions());
     auto d = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
-    auto e = addOption("-e,--export", this->opts->xmlFile, "Export node topology to xml file");
+    auto e = addOption("-f,--file", this->opts->xmlFile, 
+    "Generate the system topology with the GPU info to a file. The filename determines the format of the output, including \nXML and PNG.");
     d->excludes(e);
     e->excludes(d);
 }
