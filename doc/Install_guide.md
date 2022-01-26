@@ -24,7 +24,7 @@ By default, Intel XPU Manager has provided as many GPU metrics as possible witho
   
 1. edit file "/lib/systemd/system/xpum.service"
    add "-m metric-indexes" to ExecStart. 
-   Use "/opt/xpum/bin/xpumd -h" to get detailed info.
+   Use "/opt/xpum/bin/xpumd -h" to get detailed info.  
    Sample:
    ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-29
 2. Run command "sudo systemctl daemon-reload"
@@ -62,6 +62,9 @@ Metric types:
 27. GPU Requsted Frequency, per tile
 28. GPU Memory Temperature, per tile
 29. GPU Frequency Throttle Ratio, per tile. (Not supported so far)
+30. GPU PCIe Read Throughput (kB/s), per GPU. (Disabled by default)
+31. GPU PCIe Write Throughput (kB/s), per GPU. (Disabled by default)
 
-### Change the system settings to enable some GPU metrics
-* GPU EU Array Active/Stall/Idle：before enable these metrics, set the value of /proc/sys/dev/i915/perf_stream_paranoid to 0. Or else, XPUM daemon can't be started. 
+### Change the system settings to enable some GPU advanced metrics
+* GPU EU Array Active/Stall/Idle：before enable these metrics, run the command 'echo 0 > /proc/sys/dev/i915/perf_stream_paranoid' to set the value of this system setting to 0. Or else, XPUM daemon can't be started. If you need not use it, you may set its value back to 1. 
+* GPU PCIe Read/Write Throughput: if these metrics are enabled, XPU Manager automatically loads MSR module by command 'modprobe msr', but XPU Manager will not automatically unload the MSR module. If you want to unload it, please run the command 'modprobe -r msr'.
