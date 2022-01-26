@@ -1076,10 +1076,12 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     pf.factor = request->factor();
 
     res = xpumSetPerformanceFactor(deviceId,pf);
-    if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-            response->set_errormsg("device Id or tile Id is invalid");
-    } else {
-        response->set_errormsg("Error");
+    if (res != XPUM_OK) {
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
+                response->set_errormsg("device Id or tile Id is invalid");
+        } else {
+            response->set_errormsg("Error");
+        }
     }
     return grpc::Status::OK;
 }
@@ -1156,10 +1158,12 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     portConfig.enabled = request->enabled();
 
     res = xpumSetFabricPortConfig(deviceId,portConfig);
-    if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-        response->set_errormsg("device Id or tile Id is invalid");
-    } else {
-        response->set_errormsg("Error");
+    if (res != XPUM_OK) {
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
+            response->set_errormsg("device Id or tile Id is invalid");
+        } else {
+            response->set_errormsg("Error");
+        }
     }
     return grpc::Status::OK;
 }
@@ -1184,10 +1188,12 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     portConfig.beaconing = request->beaconing();
 
     res = xpumSetFabricPortConfig(deviceId,portConfig);
-    if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-        response->set_errormsg("device Id or tile Id is invalid");
-    } else {
-        response->set_errormsg("Error");
+    if (res != XPUM_OK) {
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
+            response->set_errormsg("device Id or tile Id is invalid");
+        } else {
+            response->set_errormsg("Error");
+        }
     }
     return grpc::Status::OK;
 }

@@ -81,6 +81,13 @@ def setPortEnabled(deviceId, tileId, port, enabled):
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}
 
+def setPerformanceFactor(deviceId, tileId, engineValue, factor):
+    resp = stub.setPerformanceFactor(core_pb2.PerformanceFactor(
+        deviceId=deviceId, isTileData=True, tileId=tileId, engineSet=engineValue, factor=factor))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    return 0, "OK", {"result": "OK"}
+
 def setPortBeaconing(deviceId, tileId, port, beaconing):
     resp = stub.setDeviceFabricPortBeaconing(core_pb2.ConfigDeviceFabricPortBeconingRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, portNumber=port, beaconing=beaconing))
