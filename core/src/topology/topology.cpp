@@ -287,7 +287,6 @@ void Topology::export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj)
   int err;
   size_t len = strlen((char*)obj->userdata);
   err = hwloc_export_obj_userdata(reserved, topo, obj, "Device Name", (char*)obj->userdata, len);
-  XPUM_LOG_INFO("export userdata - {} len-{}", (char*)obj->userdata, len);
   assert(err >= 0);
 }
 
@@ -315,7 +314,6 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
                 obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
         if(pDevice!= nullptr){
             if(!pDevice->device_name.empty()){
-                XPUM_LOG_INFO("DeviceName - {}", pDevice->device_name);
                 name = pDevice->device_name.c_str();
             } else {
                 name = getDeviceName(obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
@@ -323,8 +321,8 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
 
             if(!name.empty()){
                 strncpy(tmpBuffer.get(), name.c_str(), name.length());
-            }
-            obj->userdata = (void*)tmpBuffer.get();        
+                obj->userdata = (void*)tmpBuffer.get();  
+            }                  
         }
     }    
 
@@ -368,7 +366,6 @@ std::string Topology::getDeviceName(int vendorId, int deviceId)
                         xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, propName)
                     ) {
                         result = propName.getValue();
-                        XPUM_LOG_INFO("getDeviceName 1 {}", result);
                         break;
                     }                    
                 }
@@ -380,7 +377,6 @@ std::string Topology::getDeviceName(int vendorId, int deviceId)
         std::stringstream stream;
         stream << "Intel(R) Graphics [0x" << std::hex << deviceId << "]";
         result = stream.str();
-        XPUM_LOG_INFO("getDeviceName 2 {}", result);
     }
     return result;
 }
