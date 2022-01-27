@@ -80,7 +80,7 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie,int id,XpumPolicyData &policy);
     bool isCliSupportedPolicyType(XpumPolicyType type);
 	
-    std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, std::string& filePath );
+    std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, const std::string& filePath );
 
     std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_stats_type_t> metricsTypeList);
     std::unique_ptr<nlohmann::json> stopDumpRawDataTask(int taskId);
@@ -98,5 +98,7 @@ class CoreStub {
     
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
+
+    std::string getCardUUID(const std::string& rawUUID);
 };
 } // end namespace xpum::cli

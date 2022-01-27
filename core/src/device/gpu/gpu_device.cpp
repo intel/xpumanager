@@ -240,7 +240,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath) noexcept {
     bool res = getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, amcVersion);
 
     if (!res || amcVersion.getValue() == "unknown") {
-        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED;
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
     }
 
     std::lock_guard<std::mutex> lck(mtx);

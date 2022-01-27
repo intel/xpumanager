@@ -698,14 +698,21 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
     if ( p_devices->size() > 0 ) {
         unsigned int amc_versions[4];
         std::shared_ptr<GPUDevice> gpu = std::dynamic_pointer_cast<GPUDevice>((*p_devices)[0]);
-        bool rc = gpu->getAMCFirmwareVersion(amc_versions);
-        gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME, std::string{"AMC"}));
-        if (rc) {
-            std::string version = std::to_string(amc_versions[0]) + "." + std::to_string(amc_versions[1]) + "."
-                    + std::to_string(amc_versions[2]) + "." + std::to_string(amc_versions[3]);
-            gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, version));
+
+        bool rc;
+        for (int i{0}; i < 3; ++i) {
+            rc = gpu->getAMCFirmwareVersion(amc_versions);
+            if (rc) {
+                gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME, std::string{"AMC"}));
+                std::string version = std::to_string(amc_versions[0]) + "." + std::to_string(amc_versions[1]) + "." + std::to_string(amc_versions[2]) + "." + std::to_string(amc_versions[3]);
+                gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, version));
+                break;
+            }
+            else {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
         }
-        else {
+        if (!rc) {
             gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, std::string{"unknown"}));
         }
     }

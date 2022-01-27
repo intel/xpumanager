@@ -2,7 +2,7 @@
 
 ## Installation
  1. install python3, may need to soft link python if your python package doesn't auto generate one.
- 2. install python3-devel
+ 2. install python3-devel ( Redhat or CentOS only )
  3. install pip3.
  4. install python packages as root for all user.  
     `umask 022`  

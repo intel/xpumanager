@@ -42,7 +42,7 @@ class GPUDevice : public Device {
     void getPCIeWriteThroughput(Callback_t callback) noexcept override;
 
     virtual xpum_result_t runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept override; //GSC
-    virtual xpum_result_t runFirmwareFlash(const char* filePath) noexcept override;  //AMC
+    xpum_result_t runFirmwareFlash(const char* filePath) noexcept;  //AMC
     bool getAMCFirmwareVersion(unsigned int versions[4]) noexcept;
     virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept override;
 

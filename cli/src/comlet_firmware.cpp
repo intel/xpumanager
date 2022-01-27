@@ -14,11 +14,11 @@ ComletFirmware::~ComletFirmware() {
 
 void ComletFirmware::setupOptions() {
     opts = std::unique_ptr<FlashFirmwareOptions>( new FlashFirmwareOptions() );
-    addOption( "-d, --device", opts->deviceId, "device ID" );
-    addOption( "-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for one ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far." );
+    addOption( "-d, --device", opts->deviceId, "device ID, optinal" );
+    addOption( "-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far." );
     addOption( "-f, --file", opts->firmwarePath, "The firmware image file path on this server" );
 
-    opts->deviceId = -1;
+    opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
 }
 
 std::unique_ptr<nlohmann::json> ComletFirmware::run() {
@@ -39,6 +39,16 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
         return json;
     }
 
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType == "GSC") {
+        (*json)["error"] = "upgrading GSC firmware on all devices is not supported";
+        return json;
+    }
+
+    if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType == "AMC") {
+        (*json)["error"] = "upgrading AMC firmware only supports on single device";
+        return json;
+    }
+
     int type = opts->firmwareType == "GSC" ? 0 : 1;
     if ( type == 1 ) {
         std::cout << "CAUTION: update AMC may cause OS reboot" << std::endl;
@@ -50,7 +60,6 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
             return json;
         }
     }
-
 
     std::cout << "Start to update firmware" << std::endl;
     std::cout << "Firmware Name: " << opts->firmwareType << std::endl;
@@ -71,6 +80,10 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     status = (*json)["firmware_flash_result"];
     if (!status.is_null()) {
         if (status.get<std::string>().find("OK") != std::string::npos) {
+            auto other_devices = (*json)["other_devices"];
+            if (!other_devices.is_null()) {
+                out << "CAUTIONS: Please also upgrade GSC firmware on device " << other_devices.get<std::string>() << "if not upgraded" << std::endl;
+            }
             out << "Update firmware successfully. Please reboot OS to take effect." << std::endl;
         } else {
             out << "Update firmware failed" << std::endl;

@@ -49,6 +49,11 @@ extern "C" {
 #define XPUM_MAX_CACHED_METRICS_TASK_NUM 16
 
 /**
+ * The device id stand for all devices
+ */
+#define XPUM_DEVICE_ID_ALL_DEVICES  1024
+
+/**
  * Device id
  */
 typedef int32_t xpum_device_id_t;
@@ -94,7 +99,10 @@ typedef enum xpum_result_enum {
     XPUM_NOT_INITIALIZED,     ///< XPUM is not initialized.
     XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST,   ///< Dump raw data task not exists
     XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY,   ///< The the key for agent setting is unknown
-    XPUM_UPDATE_FIRMWARE_UNSUPPORTED = 16,
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC,
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
+    XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
     XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT
 } xpum_result_t;
 

@@ -109,6 +109,10 @@ def main(*args, **kwargs):
                     view_func=auth.login_required(firmwares.run_firmware_flash))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/firmware', methods=['GET'],
                     view_func=auth.login_required(firmwares.get_firmware_flash_result))
+    app.add_url_rule('/rest/v1/devices/updatefw', methods=['POST'],
+                    view_func=auth.login_required(firmwares.run_firmware_flash_all))
+    app.add_url_rule('/rest/v1/devices/firmware', methods=['GET'],
+                    view_func=auth.login_required(firmwares.get_firmware_flash_result_all))
 
     # agent settings
     app.add_url_rule('/rest/v1/agentSettings', methods=['GET', 'POST'],

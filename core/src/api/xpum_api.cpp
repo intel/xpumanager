@@ -217,8 +217,26 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
     return XPUM_OK;
 }
 
+static const std::string gfxPath{"/usr/local/bin/GfxFwFPT"};
+
+static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmware_flash_job* job) {
+    if (device == nullptr) {
+        return XPUM_GENERIC_ERROR;
+    }
+
+    xpum_result_t rc;
+    if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+        rc = device->runFirmwareFlash(job->filePath, gfxPath);
+    }
+    else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC) {
+        rc = device->runFirmwareFlash(job->filePath);
+        //rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED;
+    }
+
+    return rc;
+}
+
 xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job) {
-    const std::string gfxPath{"/usr/local/bin/GfxFwFPT"};
 
     std::ifstream fwFile(job->filePath);
     if (!fwFile.is_open()) {
@@ -238,24 +256,55 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
 
     fwFile.close();
 
-    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
-    }
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        xpum_result_t rc;
 
-    xpum_result_t rc;
-    if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
-        rc = device->runFirmwareFlash(job->filePath, gfxPath);
-    }
-    else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC) {
-        rc = device->runFirmwareFlash(job->filePath);
-    }
+        std::vector<std::shared_ptr<Device>> devices;
+        Core::instance().getDeviceManager()->getDeviceList(devices);
 
-    return rc;
+        // check if same model
+        std::string previousModel;
+        for (std::shared_ptr<Device> device : devices) {
+            // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
+            Property model;
+            device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, model);
+            if (previousModel.empty()) {
+                previousModel = model.getValue();
+            } else {
+                if (previousModel != model.getValue()) {
+                    XPUM_LOG_ERROR("Upgrade all AMC fail, inconsistent model:{}, {}", previousModel, model.getValue());
+                    return XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE;
+                } else {
+                    // nothing yet
+                }
+            }
+        }
+
+        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+            rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
+        } else {
+            std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(0));
+            rc = runFirmwareFlash(device, job);
+        }
+
+        return rc;
+    } else {
+        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+            std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+            return runFirmwareFlash(device, job);
+        }
+        else {
+            return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
+        }
+    }
 }
 
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
                                          xpum_firmware_type_t firmwareType, xpum_firmware_flash_task_result_t *result) {
+    if(deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+        deviceId = 0;
+    }
+
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;

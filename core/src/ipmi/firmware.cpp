@@ -532,9 +532,9 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
 #endif
 
     /* BSMC firmware update */
-    //TODO for all cards: for (int i = 0; i < cards.count; i++) {
-    if ( cards.count > 0 ) { //only one card now
-        int i = 0;
+    //TODO for all cards:
+    for (int i = 0; i < cards.count; i++) {
+    //if ( cards.count > 0 ) { //only one card now
         nrv_card *card = &cards.card[i];
 
         err = get_fw_version(&card->ipmi_address, &prev_ver[i]);
@@ -587,9 +587,12 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
     }
 
     /* Firmware update completion check */
-    //TODO for all cards: for (int i = 0; i < cards.count; i++) {
+    //TODO for all cards: 
+    for (int i = 0; i < cards.count; i++) {
+        /*
     if ( cards.count > 0 ) {
         int i = 0;
+        */
         struct firmware_versions curr_ver = {{0}};
 
         if (bsmc_data) {

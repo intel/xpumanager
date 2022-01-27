@@ -16,6 +16,8 @@ class FirmwareFlashStateQuerySchema(Schema):
 class FirmwareFlashResultSchema(Schema):
     result = fields.Str(metadata={"description": "Firmware flash state, OK/FAILED/ONGOING"})
 
+def run_firmware_flash_all():
+    return run_firmware_flash(1024)
 
 def run_firmware_flash(deviceId):
     """Run firmware flash
@@ -54,12 +56,18 @@ def run_firmware_flash(deviceId):
         return jsonify({'error': 'missing arguments'})
     if not fwType == 'GSC' and not fwType == 'AMC':
         return jsonify({'error': 'invalid firmware name'})
+    if fwType == 'GSC' and deviceId == 1024:
+        return jsonify({'error': 'upgrading GSC firmware on all devices is not supported'})
+    if fwType == 'AMC' and not deviceId == 1024:
+        return jsonify({'error': 'upgrading AMC firmware only supports on single device'})
 
     firmwareType = 0 if fwType == 'GSC' else 1
 
     rc = stub.runFirmwareFlash(deviceId, firmwareType, filePath)
     return jsonify({'result': rc})
 
+def get_firmware_flash_result_all():
+    return get_firmware_flash_result(1024)
 
 def get_firmware_flash_result(deviceId):
     """Get firmware flash state
@@ -91,6 +99,12 @@ def get_firmware_flash_result(deviceId):
         return jsonify({'error': 'missing arguments'})
     if not fwType == 'GSC' and not fwType == 'AMC':
         return jsonify({'error': 'invalid firmware name'})
+
+    if fwType == "GSC" and deviceId == 1024:
+        return jsonify({'error': 'upgrading GSC firmware on all devices is not supported'})
+    if fwType == "AMC" and not deviceId == 1024:
+        return jsonify({'error': 'upgrading AMC firmware only supports on single device'})
+
     firmwareType = 0 if fwType == 'GSC' else 1
 
     rc = stub.getFirmwareFlashResult(deviceId, firmwareType)
