@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 
 #include "api_types.h"
 #include "core/core.h"
@@ -1115,7 +1116,46 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
 }
 
 xpum_result_t xpumExportTopology2XML(char *xmlBuffer, int *memSize){
-    return Topology::topo2xml(xmlBuffer, memSize);
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+    std::map<device_pair, GraphicDevice> device_map;
+    std::string result;
+    std::vector<std::shared_ptr<Device>> devices;
+    
+    Core::instance().getDeviceManager()->getDeviceList(devices);
+    for (size_t i = 0; i < devices.size(); i++) {
+        auto &p_device = devices[i];
+        Property propVenId, propDevId;
+        if( p_device->getProperty(
+                xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID, propVenId)
+                && p_device->getProperty(
+                xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, propDevId)
+        ){
+            int vendorId = std::stoi(propVenId.getValue(), nullptr, 16);
+            int devideId = std::stoi(propDevId.getValue(), nullptr, 16);
+            device_pair newPare = std::make_pair(vendorId, devideId);
+            std::map<device_pair, GraphicDevice>::iterator it = device_map.find(newPare);
+            if (it == device_map.end()) {
+                Property propName;
+                if( p_device->getProperty(
+                        xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, propName)
+                ) {
+                    std::string name = propName.getValue();
+                    if(name.empty()) {
+                        std::stringstream stream;
+                        stream << "Intel(R) Graphics [0x" << std::hex << devideId << "]";
+                        name = stream.str();
+                    }
+                    GraphicDevice device = {vendorId, devideId, name};
+                    device_map[newPare] = device;
+                }   
+                
+            }
+        }
+    }
+
+    return Topology::topo2xml(xmlBuffer, memSize, device_map);
 }
 
 xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count) {

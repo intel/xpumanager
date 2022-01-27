@@ -1,12 +1,22 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 
 #include "../include/xpum_structs.h"
 #include "hwloc.h"
 #include "level_zero/zes_api.h"
 
 namespace xpum {
+
+
+struct GraphicDevice {
+    int32_t vendor_id;
+    int32_t device_id;
+    std::string device_name;
+};
+
+typedef std::pair<int32_t, int32_t> device_pair;
 
 /**
  * Class used to get CPU-ffinity/topology of a device 
@@ -23,7 +33,7 @@ class Topology {
     static std::string getLocalCpus(std::string address);
     static std::string getLocalCpusList(std::string address);
 
-    static xpum_result_t topo2xml(char * buffer, int * buflen);
+    static xpum_result_t topo2xml(char * buffer, int * buflen, std::map<device_pair, GraphicDevice>& device_map);
 
    private:
     static bool hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, int32_t device, int32_t function);
@@ -33,6 +43,5 @@ class Topology {
     static std::string pci2RegxString(hwloc_obj_t obj);
 
     static void export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj);
-    static std::string getDeviceName(int vendorId, int deviceId);
 };
 } // end namespace xpum

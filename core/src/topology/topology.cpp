@@ -290,7 +290,7 @@ void Topology::export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj)
     XPUM_LOG_INFO("hwloc_export_obj_userdata  data-{} len-{} result-{}", (char*)obj->userdata, len, err);
 }
 
-xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
+xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pair, GraphicDevice>& device_map){
     xpum_result_t result = XPUM_OK;
     hwloc_topology_t hwtopology;
     hwloc_obj_t obj = nullptr;
@@ -310,21 +310,28 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
 
     while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
         std::string name;
-        assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
-        const PcieDevice* pDevice = PciDatabase::instance().getDevice(
+        device_pair pare = std::make_pair(obj->attr->pcidev.vendor_id, 
+                obj->attr->pcidev.device_id);
+        std::map<device_pair, GraphicDevice>::iterator it = device_map.find(pare);
+        if (it != device_map.end()){
+            const PcieDevice* pDevice = PciDatabase::instance().getDevice(
                 obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
-        if(pDevice!= nullptr){
-            if(!pDevice->device_name.empty()){
-                name = pDevice->device_name.c_str();
-            } else {
-                name = getDeviceName(obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
-            }    
 
+            if(pDevice!= nullptr) {
+                if(!pDevice->device_name.empty()){
+                    name = pDevice->device_name.c_str();
+                } 
+            }
+
+            if(name.empty()){
+                name = it->second.device_name;
+            }   
+            
             if(!name.empty()){
                 strncpy(tmpBuffer.get(), name.c_str(), name.length());
                 obj->userdata = (void*)tmpBuffer.get();  
-            }                  
-        }
+            }  
+        }  
     }    
 
     if (hwloc_topology_export_xmlbuffer(hwtopology, &xmlbuf, &xmlbuflen, HWLOC_TOPOLOGY_EXPORT_XML_FLAG_V1) < 0){
@@ -343,42 +350,6 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
     }
 
     hwloc_topology_destroy(hwtopology);
-    return result;
-}
-
-std::string Topology::getDeviceName(int vendorId, int deviceId)
-{
-    std::string result;
-    if (Core::instance().getDeviceManager() != nullptr) {
-        std::vector<std::shared_ptr<Device>> devices;
-        Core::instance().getDeviceManager()->getDeviceList(devices);
-        for (size_t i = 0; i < devices.size(); i++) {
-            auto &p_device = devices[i];
-            Property propVenId, propDevId;
-            if( p_device->getProperty(
-                xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID, propVenId)
-                && p_device->getProperty(
-                xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, propDevId)
-            ){
-                if( vendorId == std::stoi(propVenId.getValue(), nullptr, 16) 
-                && deviceId == std::stoi(propDevId.getValue(), nullptr, 16) ){
-                    Property propName;
-                    if( p_device->getProperty(
-                        xpum_device_internal_property_name_enum::XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, propName)
-                    ) {
-                        result = propName.getValue();
-                        break;
-                    }                    
-                }
-            }
-        }
-    }
-
-    if(result.empty()) {
-        std::stringstream stream;
-        stream << "Intel(R) Graphics [0x" << std::hex << deviceId << "]";
-        result = stream.str();
-    }
     return result;
 }
 
