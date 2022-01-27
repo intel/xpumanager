@@ -20,6 +20,13 @@ class PortBeaconingSchema(Schema):
         metadata={"description": "The port number"})
     beaconing =fields.Integer(
         metadata={"description": "The beaconing on 1; off 0"})
+class PerformancefactorSchema(Schema):
+    tile_id = fields.Integer(
+        metadata={"description": "The tile id"})
+    engine = fields.String(
+        metadata={"description": "engine name"})
+    factor =fields.Float(
+        metadata={"description": "performance factor"})
 class PowerLimitSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
@@ -339,6 +346,7 @@ def set_portenabled(deviceId):
     if tileId<0 or port <0 or (enabled != 0 and enabled != 1):
         return jsonify("invalid Parameter"), 500
     
+    
     code, message, data = stub.setPortEnabled(deviceId, tileId, port, enabled)
     if code != 0:
         error = dict(Status=code, Message=message)
@@ -391,6 +399,62 @@ def set_portbeaconing(deviceId):
         return jsonify("invalid Parameter"), 500
     
     code, message, data = stub.setPortBeaconing(deviceId, tileId, port, beaconing)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+def set_performancefactor(deviceId):
+    """
+    Set performance factor for device
+    ---
+    put:
+        tags:
+            - "Config"
+        description: Set performance factor for device
+        parameters:
+            -
+                name: set_performancefactor
+                in: body
+                description: set the performance factor
+                schema: PerformancefactorSchema
+            -
+                name: deviceId
+                in: path
+                description: Device id
+                type: integer
+        responses:
+            200:
+                description: OK
+            500:
+                description: Error
+    """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
+    req = request.get_json()
+    if ("tile_id" not in req) or ("engine" not in req) or ("factor" not in req):
+        return jsonify("json string is invalid"), 500
+    
+    tileId = req["tile_id"]
+    engine = req["engine"]
+    factor = req["factor"]
+   
+    if type(tileId) != int:
+        return jsonify("Invalid Parameter tileId"), 500
+    if type(engine) != str:
+        return jsonify("Invalid Parameter engine"), 500
+    if type(factor) != float and type(factor)!= int:
+        return jsonify("Invalid Parameter factor"), 500
+
+    if tileId<0 or factor <0 :
+        return jsonify("invalid Parameter value"), 500
+    
+    if engine.lower() == "media":
+        engineValue = 1<<3
+    elif engine.lower() == "compute":
+        engineValue = 1<<1
+    
+    code, message, data = stub.setPerformanceFactor(deviceId, tileId, engineValue, factor)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

@@ -34,7 +34,9 @@ struct ComletGroupOptions {
 
 class ComletGroup : public ComletBase {
    public:
-    ComletGroup() : ComletBase("group", "Group the managed GPU devices.") {}
+    ComletGroup() : ComletBase("group", "Group the managed GPU devices.") {
+		printHelpWhenNoArgs = true;
+	}
     virtual ~ComletGroup() {}
 
     virtual void setupOptions() override;

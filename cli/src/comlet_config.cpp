@@ -37,11 +37,13 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "  Timeout (us) ", "value": "scheduler_watchdog_timeout" },
                 { "label": "  Interval (us) ", "value": "scheduler_timeslice_interval" },
                 { "label": "  Yield Timeout (us) ", "value": "scheduler_timeslice_yield_timeout" },
-                { "label": "Engine Type", "value": "compute" },
+                {"rowTitle": " " },
+                { "label": "Engine Type", "value": "compute_engine" },
                 { "label": "  Performance Factor", "value": "compute_performance_factor" },
-                { "label": "Engine Type", "value": "media" },
+                { "label": "Engine Type", "value": "media_engine" },
                 { "label": "  Performance Factor", "value": "media_performance_factor" },
-                { "label": " Xe Link ports", "value": " " },
+                {"rowTitle": " " },
+                { "label": "Xe Link ports", "value": " " },
                 { "label": "  Up", "value": "port_up" },
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
@@ -219,6 +221,10 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
 
             int port = std::stoi(paralist.at(0));
             int enabled = std::stoi(paralist.at(1));
+            if ((enabled != 0 && enabled != 1) || port < 0 ) {
+                (*json)["return"]="invalid parameter";
+                return json;
+            }
             json = this->coreStub->setFabricPortEnabled(this->opts->deviceId, this->opts->tileId, port, enabled);
             if((*json)["status"] == "OK") {
                 (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " to " + (enabled == 1 ? "up":"down") + " .";

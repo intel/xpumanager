@@ -135,6 +135,8 @@ def main(*args, **kwargs):
                     view_func=auth.login_required(device_config.set_scheduler))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/config', methods=['GET'],
                     view_func=auth.login_required(device_config.get_config))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/performancefactor', methods=['PUT'],
+                    view_func=auth.login_required(device_config.set_performancefactor))
     #app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
     #                view_func=auth.login_required(device_config.run_reset))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/portenabled', methods=['PUT'],
@@ -145,6 +147,8 @@ def main(*args, **kwargs):
     # topology
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'],
                     view_func=auth.login_required(topology.get_topology))
+    app.add_url_rule('/rest/v1/topology', methods=['GET'],
+                    view_func=auth.login_required(topology.export_topology))
 
     # dump raw data
     app.add_url_rule('/rest/v1/dump', methods=['POST'],

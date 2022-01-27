@@ -9,9 +9,10 @@
 #include <sstream>
 #include <vector>
 
-#include "hwinfo.h"
+#include "core/core.h"
 #include "infrastructure/device_property.h"
 #include "infrastructure/logger.h"
+#include "hwinfo.h"
 #include "pci_database.h"
 
 namespace xpum {
@@ -283,18 +284,20 @@ void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch* pSwitch
 
 void Topology::export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj)
 {
-  int err;
-  size_t len = strlen((char*)obj->userdata);
-  err = hwloc_export_obj_userdata(reserved, topo, obj, "Device Name", (char*)obj->userdata, len);
-  assert(err >= 0);
+    int err;
+    size_t len = strlen((char*)obj->userdata);
+    err = hwloc_export_obj_userdata(reserved, topo, obj, "Device Name", (char*)obj->userdata, len);
+    XPUM_LOG_INFO("hwloc_export_obj_userdata  data-{} len-{} result-{}", (char*)obj->userdata, len, err);
 }
 
-xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
+xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pair, GraphicDevice>& device_map){
     xpum_result_t result = XPUM_OK;
     hwloc_topology_t hwtopology;
     hwloc_obj_t obj = nullptr;
     char *xmlbuf;
     int  xmlbuflen;
+    std::shared_ptr<char> tmpBuffer(static_cast<char*>(malloc(512)), free);    
+    memset(tmpBuffer.get(), 0, 512);
 
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_userdata_export_callback(hwtopology, export_cb);
@@ -306,13 +309,30 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
     hwloc_topology_load(hwtopology);
 
     while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
-        assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
-        const PcieDevice* pDevice = PciDatabase::instance().getDevice(
+        std::string name;
+        device_pair pare = std::make_pair(obj->attr->pcidev.vendor_id, 
+                obj->attr->pcidev.device_id);
+        std::map<device_pair, GraphicDevice>::iterator it = device_map.find(pare);
+        if (it != device_map.end()){
+            const PcieDevice* pDevice = PciDatabase::instance().getDevice(
                 obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
-        if(pDevice!= nullptr && !pDevice->device_name.empty()){
-            obj->userdata = (void*)pDevice->device_name.c_str();
-        }
-    }
+
+            if(pDevice!= nullptr) {
+                if(!pDevice->device_name.empty()){
+                    name = pDevice->device_name.c_str();
+                } 
+            }
+
+            if(name.empty()){
+                name = it->second.device_name;
+            }   
+            
+            if(!name.empty()){
+                strncpy(tmpBuffer.get(), name.c_str(), name.length());
+                obj->userdata = (void*)tmpBuffer.get();  
+            }  
+        }  
+    }    
 
     if (hwloc_topology_export_xmlbuffer(hwtopology, &xmlbuf, &xmlbuflen, HWLOC_TOPOLOGY_EXPORT_XML_FLAG_V1) < 0){
         XPUM_LOG_ERROR("XML buffer export failed {}", strerror(errno));

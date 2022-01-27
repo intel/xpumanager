@@ -32,7 +32,8 @@ static CharTableConfig ComletConfigTopologyDevice(R"({
 void ComletTopology::setupOptions() {
     this->opts = std::unique_ptr<ComletTopologyOptions>(new ComletTopologyOptions());
     auto d = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
-    auto e = addOption("-e,--export", this->opts->xmlFile, "Export node topology to xml file");
+    auto e = addOption("-f,--file", this->opts->xmlFile, 
+    "Generate the system topology with the GPU info to a XML file.");
     d->excludes(e);
     e->excludes(d);
 }
@@ -46,14 +47,18 @@ std::unique_ptr<nlohmann::json> ComletTopology::run() {
     } else if(!this->opts->xmlFile.empty()) {
         std::ofstream xmlfile;
         xmlfile.open(this->opts->xmlFile);
-        std::string xmlBuffer = this->coreStub->getTopoXMLBuffer();
-        if(!xmlBuffer.empty()){
-            xmlfile << xmlBuffer;
-            std::cout << "Export topology to xml:" << opts->xmlFile << " sucessfully." << std::endl;
+        if(xmlfile.is_open()) {
+            std::string xmlBuffer = this->coreStub->getTopoXMLBuffer();
+            if(!xmlBuffer.empty()){
+                xmlfile << xmlBuffer;
+                std::cout << "Export topology to " << opts->xmlFile << " sucessfully." << std::endl;
+            } else {
+                std::cout << "Fail to get topology xml buffer." << std::endl;
+            }
+            xmlfile.close();        
         } else {
-            std::cout << "Fail to get topology xml buffer." << std::endl;
+            std::cout << "Error opening file: " << opts->xmlFile << std::endl;
         }
-        xmlfile.close();        
     } else {        
         (*result)["error"] = "Wrong argument or unknow operation, run with --help for more information.";
     }

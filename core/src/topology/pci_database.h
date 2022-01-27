@@ -19,6 +19,7 @@ enum DeviceType {
 
 struct PcieDevice {
     DeviceType type;
+    bool    grouped;
     int32_t vendor_id;
     int32_t device_id;
     int32_t sub_v_id;

@@ -42,12 +42,14 @@ def getConfig(deviceId, tileId):
         tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
         tiledata['standby_mode_valid_options'] = resp.tileConfigData[i].standbyOption
         tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
-        tiledata['compute_performance_factor'] = resp.tileConfigData[i].computePerformanceFactor
-        tiledata['media_performance_factor'] = resp.tileConfigData[i].mediaPerformanceFactor
+        tiledata['compute_performance_factor'] = str(resp.tileConfigData[i].computePerformanceFactor)
+        tiledata['media_performance_factor'] = str(resp.tileConfigData[i].mediaPerformanceFactor)
         tiledata['fabric_port_enabled'] = resp.tileConfigData[i].portEnabled
         tiledata['fabric_port_disabled'] = resp.tileConfigData[i].portDisabled
         tiledata['fabric_port_beaconing_on'] = resp.tileConfigData[i].portBeaconingOn
         tiledata['fabric_port_beaconing_off'] = resp.tileConfigData[i].portBeaconingOff
+        tiledata["compute_engine"] = "compute"
+        tiledata["media_engine"] = "media"
 
         if resp.tileConfigData[i].schedulerTimeout > 0:
             tiledata['scheduler_watchdog_timeout'] = resp.tileConfigData[i].schedulerTimeout
@@ -75,6 +77,13 @@ def setStandby(deviceId, tileId, standby):
 def setPortEnabled(deviceId, tileId, port, enabled):
     resp = stub.setDeviceFabricPortEnabled(core_pb2.ConfigDeviceFabricPortEnabledRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, portNumber=port, enabled=enabled))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    return 0, "OK", {"result": "OK"}
+
+def setPerformanceFactor(deviceId, tileId, engineValue, factor):
+    resp = stub.setPerformanceFactor(core_pb2.PerformanceFactor(
+        deviceId=deviceId, isTileData=True, tileId=tileId, engineSet=engineValue, factor=factor))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}

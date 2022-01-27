@@ -1271,6 +1271,12 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
                 if (res == ZE_RESULT_SUCCESS) {
                     for (auto& power : power_handles) {
+                        zes_power_properties_t props;
+                        props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+                        XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
+                        if (res != ZE_RESULT_SUCCESS) {
+                            continue;
+                        }
                         zes_power_energy_counter_t snap1, snap2;
                         XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
                         if (res == ZE_RESULT_SUCCESS) {
@@ -1278,7 +1284,13 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
                                 int power_value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
-                                current_value += power_value;
+                                if (!props.onSubdevice) {
+                                    current_value = power_value;
+                                    break;
+                                }
+                                else {
+                                    current_value += power_value;
+                                }
                             }
                         }
                     }
