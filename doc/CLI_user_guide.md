@@ -525,8 +525,7 @@ optional arguments:
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID to query
-  -f,--file                   Generate the system topology with the GPU info to a file. The filename determines the format of the output, including 
-                                XML and PNG. 
+  -f,--file                   Generate the system topology with the GPU info to a XML file. 
 ```
 
 Get the hardware topology info which is related to the GPU
