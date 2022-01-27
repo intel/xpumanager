@@ -12,14 +12,14 @@ MEMORY_USED,"Used GPU memory (in bytes), per GPU tile",xpum_memory_used_bytes,ze
 MEMORY_UTILIZATION,"Used GPU memory / Total used GPU memory (in %), per GPU tile",xpum_memory_ratio,zesMemoryGetState
 ENERGY,"Total GPU energy consumption since boot (in J), per GPU",xpum_energy_joules,zesPowerGetEnergyCounter 
 POWER,"Avg GPU power (in watts), per GPU and per card",xpum_power_watts,zesPowerGetEnergyCounter
-RAS_ERROR_CAT_RESET," Total number of GPU reset since boot, per GPU",xpum_resets,zesRasGetState
+RAS_ERROR_CAT_RESET," Total number of GPU reset since Sysman init, per GPU",xpum_resets,zesRasGetState
 GPU_TEMPERATURE,"Avg GPU temperature (in Celsius degree), per tile","xpum_temperature_celsius { location=""gpu"" }",zesTemperatureGetState
 GPU_MEMORY_TEMPERATURE,"Avg GPU Memory temperature (in Celsius degree), per tile","xpum_temperature_celsius { location=""mem"" }",zesTemperatureGetState
 GPU_MAX_TEMPERATURE,"Max GPU temperature (in Celsius degree), per tile","xpum_max_temperature_celsius { location=""gpu"" }",zesTemperatureGetState
 GPU_MEMORY_MAX_TEMPERATURE,"Max GPU Memory temperature (in Celsius degree), per tile","xpum_max_temperature_celsius { location=""mem"" }",zesTemperatureGetState
 GPU_UTILIZATION,"GPU active time of the elapsed time (in %), per GPU tile",xpum_engine_ratio,zesEngineGetActivity *
 MEMORY_BANDWIDTH,"Avg memory throughput / max memory bandwidth (in %), per GPU tile",xpum_memory_bandwidth_ratio,zesMemoryGetBandwidth *
-RAS_ERROR_CAT_PROGRAMMING_ERRORS,"Total number of GPU programming errors since boot, per GPU",xpum_programming_errors,zesRasGetState
-RAS_ERROR_CAT_DRIVER_ERRORS,"Total number of GPU driver errors since boot, per GPU",xpum_driver_errors,zesRasGetState
-RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,"Total number of  GPU cache correctable errors since boot, per GPU","xpum_cache_errors { type=""correctable""}",zesRasGetState
-RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,"Total number of GPU cache uncorrectable errors since boot, per GPU","xpum_cache_errors { type=""uncorrectable""}",zesRasGetState
+RAS_ERROR_CAT_PROGRAMMING_ERRORS,"Total number of GPU programming errors since Sysman init, per GPU",xpum_programming_errors,zesRasGetState
+RAS_ERROR_CAT_DRIVER_ERRORS,"Total number of GPU driver errors since Sysman init, per GPU",xpum_driver_errors,zesRasGetState
+RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,"Total number of  GPU cache correctable errors since Sysman init, per GPU","xpum_cache_errors { type=""correctable""}",zesRasGetState
+RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,"Total number of GPU cache uncorrectable errors since Sysman init, per GPU","xpum_cache_errors { type=""uncorrectable""}",zesRasGetState

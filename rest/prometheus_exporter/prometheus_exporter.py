@@ -38,11 +38,11 @@ class PromMetric(Enum):
     xpum_memory_write_bytes = ('xpum_memory_write_bytes', 'Total memory write bytes (in bytes), per GPU tile')  # nopep8
 
     # Errors
-    xpum_resets = ('xpum_resets', 'Total number of GPU reset since boot, per GPU')  # nopep8
-    xpum_programming_errors = ('xpum_programming_errors', 'Total number of GPU programming errors since boot, per GPU')  # nopep8
-    xpum_driver_errors = ('xpum_driver_errors', 'Total number of GPU driver errors since boot, per GPU')  # nopep8
-    xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since boot, per GPU', ['type'])  # nopep8
-    # xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since boot, per GPU', ['type'])  # nopep8
+    xpum_resets = ('xpum_resets', 'Total number of GPU reset since Sysman init, per GPU')  # nopep8
+    xpum_programming_errors = ('xpum_programming_errors', 'Total number of GPU programming errors since Sysman init, per GPU')  # nopep8
+    xpum_driver_errors = ('xpum_driver_errors', 'Total number of GPU driver errors since Sysman init, per GPU')  # nopep8
+    xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since Sysman init, per GPU', ['type'])  # nopep8
+    # xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since Sysman init, per GPU', ['type'])  # nopep8
 
     # Eu Active Stall Idle
     xpum_eu_active_ratio = ('xpum_eu_active_ratio')  # nopep8
