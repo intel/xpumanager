@@ -284,10 +284,10 @@ void Topology::get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch* pSwitch
 
 void Topology::export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj)
 {
-  int err;
-  size_t len = strlen((char*)obj->userdata);
-  err = hwloc_export_obj_userdata(reserved, topo, obj, "Device Name", (char*)obj->userdata, len);
-  assert(err >= 0);
+    int err;
+    size_t len = strlen((char*)obj->userdata);
+    err = hwloc_export_obj_userdata(reserved, topo, obj, "Device Name", (char*)obj->userdata, len);
+    XPUM_LOG_INFO("hwloc_export_obj_userdata  data-{} len-{} result-{}", (char*)obj->userdata, len, err);
 }
 
 xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
@@ -297,6 +297,7 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen){
     char *xmlbuf;
     int  xmlbuflen;
     std::shared_ptr<char> tmpBuffer(static_cast<char*>(malloc(512)), free);    
+    memset(tmpBuffer.get(), 0, 512);
 
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_userdata_export_callback(hwtopology, export_cb);
