@@ -59,7 +59,7 @@ bool checkCapability(const char* device_name, const std::string& bdf_address, co
         return true;
     } catch (BaseException& e) {
         XPUM_LOG_WARN("Device {}{} has no {} capability.", device_name, bdf_address, capability_name);
-        XPUM_LOG_DEBUG("Capability {} detetion returned: {}", capability_name, e.what());
+        XPUM_LOG_DEBUG("Capability {} detection returned: {}", capability_name, e.what());
     }
     return false;
 }
@@ -440,7 +440,7 @@ void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device,
         } else {
             XPUM_LOG_WARN("Device {}{} has no Active/Stall/Idle monitoring capability.", props.core.name, bdf_address);
         }
-        XPUM_LOG_DEBUG("Capability EU Active/Stall/Idle detetion returned: {}", e.what());
+        XPUM_LOG_DEBUG("Capability EU Active/Stall/Idle detection returned: {}", e.what());
     }
 }
 
