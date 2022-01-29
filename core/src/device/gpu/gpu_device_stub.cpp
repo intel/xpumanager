@@ -716,6 +716,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
             gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, std::string{"unknown"}));
         }
     }
+
     return p_devices;
 }
 

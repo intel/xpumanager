@@ -14,7 +14,7 @@ ComletFirmware::~ComletFirmware() {
 
 void ComletFirmware::setupOptions() {
     opts = std::unique_ptr<FlashFirmwareOptions>( new FlashFirmwareOptions() );
-    addOption( "-d, --device", opts->deviceId, "device ID, optinal" );
+    addOption( "-d, --device", opts->deviceId, "device ID, optional" );
     addOption( "-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far." );
     addOption( "-f, --file", opts->firmwarePath, "The firmware image file path on this server" );
 
@@ -45,7 +45,7 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
     }
 
     if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType == "AMC") {
-        (*json)["error"] = "upgrading AMC firmware only supports on single device";
+        (*json)["error"] = "upgrading AMC firmware on single device is not supported";
         return json;
     }
 
