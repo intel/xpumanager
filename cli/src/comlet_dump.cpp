@@ -10,6 +10,11 @@
 
 namespace xpum::cli {
 
+bool isNumber(const std::string& str)
+{
+    return str.find_first_not_of("0123456789") == std::string::npos;
+}
+
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device id to query");
@@ -19,7 +24,16 @@ void ComletDump::setupOptions() {
     metricsListOpt->delimiter(',');
     metricsListOpt->check(CLI::Range(0, (int)metricsOptions.size() - 1));
     auto timeIntervalOpt = addOption("-i", this->opts->timeInterval, "The interval (in seconds) to dump the device statistics to screen. Default value: 1 second.");
-    timeIntervalOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
+    // timeIntervalOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
+    timeIntervalOpt->check(
+        [](const std::string &str) {
+            if (isNumber(str)) {
+                int value = std::stoi(str);
+                if (value >= 1)
+                    return std::string();
+            }
+            return std::string("Value should be integer larger than or equal to 1");
+        });
     auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.\n");
     dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
 
