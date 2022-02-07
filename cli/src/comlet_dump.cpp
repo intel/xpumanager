@@ -29,7 +29,7 @@ void ComletDump::setupOptions() {
         [](const std::string &str) {
             if (isNumber(str)) {
                 int value = std::stoi(str);
-                if (value >= 1)
+                if (value >= 1 && value < std::numeric_limits<int>::max())
                     return std::string();
             }
             return std::string("Value should be integer larger than or equal to 1");
