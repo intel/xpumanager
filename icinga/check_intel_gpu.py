@@ -66,10 +66,20 @@ def http_query(url):
         print(e)
         exit(2)
     res = conn.getresponse()
-    if res.status != 200:
-        print("Critical: Connection fail")
-        exit(2)
     raw_data = res.read().decode("utf-8")
+    data = None
+    if raw_data is not None:
+        try:
+            data = json.loads(raw_data)
+        except Exception as e:
+            pass
+    if res.status != 200:
+        if data is not None and "message" in data:
+            print("Critical: {}".format(data["message"]))
+        else:
+            print("Critical: Error occurs, http status: {}, message: {}".format(
+                res.status, raw_data))
+        exit(2)
     return json.loads(raw_data)
 
 
@@ -92,10 +102,28 @@ def checkTelemetry():
     unknown_list = []
 
     # process scale
-    for tile in data["tile_level"]:
-        tileId = tile["tile_id"]
-        tile_data_list = tile['data_list']
-        for d in tile_data_list:
+    if "tile_level" in data:
+        for tile in data["tile_level"]:
+            tileId = tile["tile_id"]
+            tile_data_list = tile['data_list']
+            for d in tile_data_list:
+                m_type = d['metrics_type']
+                for k in telemetry_type_dict:
+                    v = telemetry_type_dict[k]
+                    if v["key"] == m_type and "scale" in v:
+                        scale = v["scale"]
+                        if "value" in d:
+                            d['value'] /= scale
+                        if "min" in d:
+                            d['min'] /= scale
+                        if "max" in d:
+                            d['max'] /= scale
+                        if "avg" in d:
+                            d['avg'] /= scale
+                        break
+    elif "device_level" in data:
+        data_list = data["device_level"]
+        for d in data_list:
             m_type = d['metrics_type']
             for k in telemetry_type_dict:
                 v = telemetry_type_dict[k]
@@ -109,14 +137,30 @@ def checkTelemetry():
                         d['max'] /= scale
                     if "avg" in d:
                         d['avg'] /= scale
+                    break
+    else:
+        print("Critical: No data")
+        exit(2)
 
     perf_data_list = []
     detail_list = []
+    tile_data_dict_list = []
 
-    for tile in data["tile_level"]:
-        tileId = tile["tile_id"]
-        tile_data_list = tile['data_list']
-        tile_data_dict = {v["metrics_type"]: v for v in tile_data_list}
+    if "tile_level" in data:
+        for tile in data["tile_level"]:
+            tileId = tile["tile_id"]
+            tile_data_list = tile['data_list']
+            tile_data_dict = {v["metrics_type"]: v for v in tile_data_list}
+            tile_data_dict_list.append((tileId, tile_data_dict))
+    else:
+        tile_data_dict = {v["metrics_type"]: v for v in data["device_level"]}
+        tile_data_dict_list.append((0, tile_data_dict))
+
+    # for tile in data["tile_level"]:
+    #     tileId = tile["tile_id"]
+    #     tile_data_list = tile['data_list']
+    #     tile_data_dict = {v["metrics_type"]: v for v in tile_data_list}
+    for tileId, tile_data_dict in tile_data_dict_list:
         for k in telemetry_type_dict:
             metric_type = telemetry_type_dict[k]
             d = tile_data_dict.get(metric_type["key"], None)
@@ -126,8 +170,8 @@ def checkTelemetry():
                 unknown_list.append(k)
             else:
                 value = d['value'] if "counter" in metric_type else d["avg"]
-                if k in critical_threshold and critical_threshold[k] < value:
-                    detail_list.append("Tile {} {} status: Critical ({}{} > {}{} threshold)".format(
+                if k in critical_threshold and critical_threshold[k] <= value:
+                    detail_list.append("Tile {} {} status: Critical ({}{} >= {}{} threshold)".format(
                         tileId,
                         metric_type["name"],
                         value,
@@ -135,8 +179,8 @@ def checkTelemetry():
                         critical_threshold[k],
                         metric_type.get('unit', "")))
                     critical_list.append(k)
-                elif k in warning_threshold and warning_threshold[k] < value:
-                    detail_list.append("Tile {} {} status: Warning ({}{} > {}{} threshold)".format(
+                elif k in warning_threshold and warning_threshold[k] <= value:
+                    detail_list.append("Tile {} {} status: Warning ({}{} >= {}{} threshold)".format(
                         tileId,
                         metric_type["name"],
                         value,
@@ -256,9 +300,9 @@ def arg():
     parser.add_argument(
         '-p', '--port', required=True, help="The port of XPU Manager Restful API service")
     parser.add_argument(
-        '-U', '--Username', required=True, help="The username of XPU Manager Restful API service")
+        '-U', '--Username', help="The username of XPU Manager Restful API service")
     parser.add_argument(
-        '-P', '--Password', required=True, help="The password")
+        '-P', '--Password', help="The password")
 
     # parser.add_argument('-B', '--BDFAddr', required=True,
     #                     help="The PCI BDF Address of the gpu")
@@ -312,6 +356,10 @@ def arg():
         critical_key = '{}_critical'.format(k)
         if critical_key in parsed_dict and parsed_dict[critical_key] is not None:
             critical_threshold[k] = parsed_dict[critical_key]
+        if k in warning_threshold and k in critical_threshold and warning_threshold[k] >= critical_threshold[k]:
+            print("Critical: {} should higher than {}".format(
+                critical_key, warning_key))
+            exit(2)
     # print(warning_threshold)
     # print(critical_threshold)
     return parsed

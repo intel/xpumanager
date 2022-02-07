@@ -1,6 +1,6 @@
 # XPUM Icinga Integration
 
-Assume you have icinga environment setup, just copy `check_intel_gpu.py` into icinga PluginDir.
+Assume you have icinga environment setup, just copy `check_intel_gpu.py` into icinga `PluginDir` (`PluginDir` usually can be found in icinga configuration file `constants.conf`). And change `check_intel_gpu.py` file permission to 755.
 
 The gpu.conf is an example of icinga configuration, you can write your own, remember replace placeholders quoted by `$`, like `$HOST_ADDRESS$`.
 
