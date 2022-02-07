@@ -115,12 +115,12 @@ def set_standby(deviceId):
     tileId = req["tile_id"]
     standby = req["standby_mode"]
     if type(standby) != str:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter standby mode"), 500
     if type(tileId) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter tileId"), 500
     
     if tileId<0:
-        return jsonify("invalid Parameter"), 500
+        return jsonify("invalid Parameter tileId"), 500
     
     code, message, data = stub.setStandby(
         deviceId, tileId, standby)
@@ -163,19 +163,19 @@ def set_powerlimit(deviceId):
     interval = req["power_average_window"]
     tileId = req["tile_id"]
     if type(power) != int:
-       return jsonify("Invalid Parameter"), 500
+       return jsonify("Invalid Parameter power_limit"), 500
     if type(interval) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter power_average_window"), 500
     power = power *1000
     
     if power<0 or interval<0:
-        return jsonify("invalid Parameter"), 500
+        return jsonify("invalid Parameter value"), 500
     
     if type(tileId) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter tileId"), 500
     
     if tileId<0:
-        return jsonify("invalid Parameter"), 500
+        return jsonify("invalid Parameter tileId"), 500
     
     code, message, data = stub.setPowerLimit(deviceId, tileId, power, interval)
     if code != 0:
@@ -217,14 +217,14 @@ def set_frequencyrange(deviceId):
     minFreq = req["min_frequency"]
     maxFreq = req["max_frequency"]
     if type(tileId) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter tileId"), 500
     if type(minFreq) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter min_frequency"), 500
     if type(maxFreq) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter max_frequency"), 500
     
     if tileId<0 or minFreq<0 or maxFreq<0 :
-        return jsonify("invalid Parameter"), 500
+        return jsonify("invalid Parameter value"), 500
     
     code, message, data = stub.setFrequencyRange(
         deviceId, tileId, minFreq, maxFreq)
@@ -284,16 +284,16 @@ def set_scheduler(deviceId):
         return jsonify("invalid scheduler mode"), 500
     
     if type(tileId) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter tileId"), 500
     if type(mode) != str:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter scheduler_mode"), 500
     if type(val1) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter value"), 500
     if type(val2) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter value"), 500
 
     if tileId<0 or val1<0 or val2 <0:
-        return jsonify("invalid Parameter"), 500
+        return jsonify("invalid Parameter value"), 500
     
     code, message, data = stub.setScheduler(deviceId, tileId, mode, val1, val2)
     if code != 0:
@@ -337,14 +337,14 @@ def set_portenabled(deviceId):
     enabled = req["enabled"]
    
     if type(tileId) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter tileId"), 500
     if type(port) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter port"), 500
     if type(enabled) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter enabled"), 500
 
     if tileId<0 or port <0 or (enabled != 0 and enabled != 1):
-        return jsonify("invalid Parameter"), 500
+        return jsonify("invalid Parameter value"), 500
     
     
     code, message, data = stub.setPortEnabled(deviceId, tileId, port, enabled)
@@ -389,14 +389,14 @@ def set_portbeaconing(deviceId):
     beaconing = req["beaconing"]
    
     if type(tileId) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter tileId"), 500
     if type(port) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter port"), 500
     if type(beaconing) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter beaconing"), 500
 
     if tileId<0 or port <0 or (beaconing != 0 and beaconing != 1):
-        return jsonify("invalid Parameter"), 500
+        return jsonify("invalid Parameter value"), 500
     
     code, message, data = stub.setPortBeaconing(deviceId, tileId, port, beaconing)
     if code != 0:
@@ -502,9 +502,9 @@ def get_config(deviceId):
         return jsonify("json string is invalid"), 500
     tileId = req["tile_id"]
     if type(tileId) != int:
-        return jsonify("Invalid Parameter"), 500
+        return jsonify("Invalid Parameter tileId"), 500
     if tileId < -1:
-        return jsonify("invalid Parameter"), 500
+        return jsonify("invalid Parameter tileId"), 500
     code, message, data = stub.getConfig(deviceId, tileId)
     if code != 0:
         error = dict(Status=code, Message=message)

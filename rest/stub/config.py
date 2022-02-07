@@ -66,7 +66,7 @@ def setStandby(deviceId, tileId, standby):
     elif standby.lower() == "default":
         mode = core_pb2.STANDBY_DEFAULT
     else:
-        return 1, "Invalid Parameter", None
+        return 1, "Invalid Parameter: standby mode", None
     
     resp = stub.setDeviceStandbyMode(core_pb2.ConfigDeviceStandbyRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, standby=mode))
@@ -120,7 +120,7 @@ def setScheduler(deviceId, tileId, mode, val1, val2):
     elif mode.lower() == "exclusive":
         scheduler = core_pb2.SCHEDULER_EXCLUSIVE
     else:
-        return 1, "Invalid Parameter", None
+        return 1, "Invalid Parameter: scheduler mode", None
     resp = stub.setDeviceSchedulerMode(core_pb2.ConfigDeviceSchdeulerModeRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, scheduler=scheduler, val1=val1, val2=val2))
     if len(resp.errorMsg) != 0:

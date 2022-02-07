@@ -103,7 +103,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             });
             if (command.compare("timeout") == 0) {
                 if (paralist.size() != 2 || paralist.at(1).empty()) {
-                   (*json)["return"]="invalid parameter";
+                   (*json)["return"]="invalid parameter: timeout";
                    return json; 
                 }
                 val1 = std::stoi(paralist.at(1));
@@ -111,7 +111,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                     val1,0);
             } else if (command.compare("timeslice") == 0) {
                 if (paralist.size() != 3 || paralist.at(1).empty() || paralist.at(2).empty()) {
-                   (*json)["return"]="invalid parameter";
+                   (*json)["return"]="invalid parameter: timeslice";
                    return json; 
                 }
                 val1 = std::stoi(paralist.at(1));
@@ -119,7 +119,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMESLICE, val1, val2);
             } else if (command.compare("exclusive") == 0) {
                 if (paralist.size() != 1) {
-                   (*json)["return"]="invalid parameter";
+                   (*json)["return"]="invalid parameter: exclusive";
                    return json; 
                 }
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_EXCLUSIVE, 0, 0);
@@ -143,7 +143,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                     " tile " + std::to_string(this->opts->tileId) + ".";
                 }
             }else {
-                (*json)["return"]="invalid parameter";
+                (*json)["return"]="invalid parameter: please check help information";
                 return json;
             }
             return json;
@@ -157,7 +157,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             } else if (this->opts->standby.compare("default") == 0) {
                 mode = STANDBY_DEFAULT;
             } else {
-                (*json)["return"]="invalid parameter";
+                (*json)["return"]="invalid parameter: standby mode";
                 return json;    
             }
             json = this->coreStub->setDeviceStandby(this->opts->deviceId, this->opts->tileId, mode);
@@ -178,13 +178,13 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 }
                 return json;
             }else {
-                (*json)["return"]="invalid parameter";
+                (*json)["return"]="invalid parameter: please check help information";
                 return json;
             }
         } else if (this->opts->tileId >= 0 && !this->opts->performancefactor.empty()) {
             std::vector<std::string> paralist = split(this->opts->performancefactor, ",");
             if (paralist.size() != 2 || paralist.at(1).empty()) {
-                (*json)["return"]="invalid parameter";
+                (*json)["return"]="invalid parameter: please check help information";
                 return json;
             }
             std::string engine = paralist.at(0);
@@ -215,14 +215,14 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         } else if (this->opts->tileId >= 0 && !this->opts->xelinkportEnable.empty()) {
             std::vector<std::string> paralist = split(this->opts->xelinkportEnable, ",");
             if (paralist.size() != 2 || paralist.at(1).empty()) {
-                (*json)["return"]="invalid parameter";
+                (*json)["return"]="invalid parameter: please check help information";
                 return json;
             }
 
             int port = std::stoi(paralist.at(0));
             int enabled = std::stoi(paralist.at(1));
             if ((enabled != 0 && enabled != 1) || port < 0 ) {
-                (*json)["return"]="invalid parameter";
+                (*json)["return"]="invalid parameter enabled";
                 return json;
             }
             json = this->coreStub->setFabricPortEnabled(this->opts->deviceId, this->opts->tileId, port, enabled);
@@ -233,7 +233,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         } else if (this->opts->tileId >= 0 && !this->opts->xelinkportBeaconing.empty()) {
             std::vector<std::string> paralist = split(this->opts->xelinkportBeaconing, ",");
             if (paralist.size() != 2 || paralist.at(1).empty()) {
-                (*json)["return"]="invalid parameter";
+                (*json)["return"]="invalid parameter: please check help information";
                 return json;
             }
 
