@@ -30,7 +30,7 @@ telemetry_type_list = [
     ("gpu_memory_temperature", dict(key="XPUM_STATS_MEMORY_TEMPERATURE",
      name="GPU Memory Temperature", unit="C", convert=float)),
     ("gpu_energy_consumed", dict(key="XPUM_STATS_ENERGY",
-     name="GPU Energy Consumed", unit="J", convert=int, counter=True)),
+     name="GPU Energy Consumed", unit="J", scale=1000, convert=int, counter=True)),
     ("driver_errors", dict(key="XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS",
      name="Driver Errors", convert=int, counter=True)),
     ("cache_errors_correctable", dict(key="XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE",
