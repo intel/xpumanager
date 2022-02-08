@@ -292,7 +292,7 @@ def checkHealth():
 
 
 def arg():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Use Intel XPU Manager to check GPU telemetries and status for a remote host.')
     parser.add_argument('-V', '--version', action='version',
                         version='%(prog)s v' + sys.modules[__name__].__version__)
     parser.add_argument(
