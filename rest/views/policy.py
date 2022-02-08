@@ -26,7 +26,7 @@ class PolicySchema(Schema):
 
 class PolicyGetSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
-    poliy_list = fields.Nested(PolicySchema,many=True)
+    policy_list = fields.Nested(PolicySchema,many=True)
 
 class PolicyRespSchema(Schema):  
     status = fields.Int(metadata={"description": "status code, 0 is success, other is error."})
@@ -56,7 +56,7 @@ def get_device_policy(deviceId):
                     items: PolicyGetSchema
                 examples: 
                     application/json:
-                        [ { "device_id": 0, "poliy_list": [ { "action": { "type": "XPUM_POLICY_ACTION_TYPE_NULL" }, "condition": { "threshold": 11, "type": "XPUM_POLICY_CONDITION_TYPE_LESS" }, "device_id": 0, "notify_callback_url": "http://abc.test.com:6443", "type": "XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS" } ] } ]
+                        [ { "device_id": 0, "policy_list": [ { "action": { "type": "XPUM_POLICY_ACTION_TYPE_NULL" }, "condition": { "threshold": 11, "type": "XPUM_POLICY_CONDITION_TYPE_LESS" }, "device_id": 0, "notify_callback_url": "http://abc.test.com:6443", "type": "XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS" } ] } ]
             500:
                 description: Error
                 schema: PolicyRespSchema
@@ -72,7 +72,7 @@ def get_device_policy(deviceId):
         return jsonify(error), httpCode
     retOne = {}
     retOne["device_id"] = id
-    retOne["poliy_list"] = data
+    retOne["policy_list"] = data
     ret.append(retOne)
     return jsonify(ret),200
 
@@ -192,7 +192,7 @@ def get_group_policy(groupId):
                     items: PolicyGetSchema
                 examples: 
                     application/json:
-                        [ { "device_id": 0, "poliy_list": [ { "action": { "type": "XPUM_POLICY_ACTION_TYPE_NULL" }, "condition": { "threshold": 11, "type": "XPUM_POLICY_CONDITION_TYPE_LESS" }, "device_id": 0, "notify_callback_url": "http://abc.test.com:6443", "type": "XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS" } ] } ]
+                        [ { "device_id": 0, "policy_list": [ { "action": { "type": "XPUM_POLICY_ACTION_TYPE_NULL" }, "condition": { "threshold": 11, "type": "XPUM_POLICY_CONDITION_TYPE_LESS" }, "device_id": 0, "notify_callback_url": "http://abc.test.com:6443", "type": "XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS" } ] } ]
             400:
                 description: Request Error
                 schema: PolicyRespSchema
@@ -214,7 +214,7 @@ def get_group_policy(groupId):
         return jsonify(error), httpCode
     retOne = {}
     retOne["group_id"] = id
-    retOne["poliy_list"] = data
+    retOne["policy_list"] = data
     ret.append(retOne)
     return jsonify(ret), 200
 
@@ -328,7 +328,7 @@ def get_all_policy():
                     items: PolicyGetSchema
                 examples: 
                     application/json:
-                        [ { "device_id": 0, "poliy_list": [ { "action": { "type": "XPUM_POLICY_ACTION_TYPE_NULL" }, "condition": { "threshold": 11, "type": "XPUM_POLICY_CONDITION_TYPE_LESS" }, "device_id": 0, "notify_callback_url": "http://abc.test.com:6443", "type": "XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS" } ] } ]
+                        [ { "device_id": 0, "policy_list": [ { "action": { "type": "XPUM_POLICY_ACTION_TYPE_NULL" }, "condition": { "threshold": 11, "type": "XPUM_POLICY_CONDITION_TYPE_LESS" }, "device_id": 0, "notify_callback_url": "http://abc.test.com:6443", "type": "XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS" } ] } ]
             400:
                 description: Request Error
                 schema: PolicyRespSchema
@@ -357,7 +357,7 @@ def get_all_policy():
             return jsonify(error), httpCode
         retOne = {}
         retOne["device_id"] = id
-        retOne["poliy_list"] = data
+        retOne["policy_list"] = data
         ret.append(retOne)
     #####
     return jsonify(ret), 200

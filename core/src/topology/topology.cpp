@@ -302,9 +302,9 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_userdata_export_callback(hwtopology, export_cb);
     hwloc_topology_set_flags(hwtopology, HWLOC_TOPOLOGY_FLAG_IS_THISSYSTEM);
-    hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_IMPORTANT);
-    hwloc_topology_set_cache_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_NONE);
-    hwloc_topology_set_type_filter(hwtopology, HWLOC_OBJ_CORE, HWLOC_TYPE_FILTER_KEEP_NONE);
+    hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
+    //hwloc_topology_set_cache_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_NONE);
+    //hwloc_topology_set_type_filter(hwtopology, HWLOC_OBJ_CORE, HWLOC_TYPE_FILTER_KEEP_NONE);
 
     hwloc_topology_load(hwtopology);
 
