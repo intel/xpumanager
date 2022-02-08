@@ -71,6 +71,7 @@ def http_query(url):
     if raw_data is not None:
         try:
             data = json.loads(raw_data)
+            data = {k.lower(): v for k, v in data.items()}
         except Exception as e:
             pass
     if res.status != 200:

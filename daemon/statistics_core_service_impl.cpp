@@ -132,9 +132,9 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     if (res != XPUM_OK || count < 0) {
         response->set_status(res);
         if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
-            response->set_errormsg("Device not found");
+            response->set_errormsg("device not found");
         } else {
-            response->set_errormsg("Fail to get statistics data");
+            response->set_errormsg("fail to get statistics data");
         }
         return grpc::Status::OK;
     }
