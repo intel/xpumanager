@@ -353,14 +353,20 @@ def get_all_policy():
         id = one["device_id"]
         code, message, data, httpCode = stub.getPolicy(id, True)
         if code != 0:
-            error = dict(status=code, message=message)
-            return jsonify(error), httpCode
+            # error = dict(status=code, message=message)
+            # return jsonify(error), httpCode
+            continue
         retOne = {}
         retOne["device_id"] = id
         retOne["policy_list"] = data
         ret.append(retOne)
     #####
-    return jsonify(ret), 200
+    if len(ret) == 0:
+        code, message, data, httpCode = 1, "There is no data", None, 400
+        error = dict(status=code, message=message)
+        return jsonify(error), httpCode
+    else:
+        return jsonify(ret), 200
 
 def policyCallBackThread():
     while True:
