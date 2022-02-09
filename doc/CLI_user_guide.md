@@ -447,7 +447,7 @@ optional arguments:
   -t,--tile                   The device tile ID to query. If the device has only one tile, this parameter should not be specified. 
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
                                 0. GPU Utilization (%), GPU active time of the elapsed time, per tile
-                                1. GPU Power (W), per tile
+                                1. GPU Power (W), per GPU and per tile
                                 2. GPU Frequency (MHz), per tile
                                 3. GPU Core Temperature (Celsius Degree), per tile
                                 4. GPU Memory Temperature (Celsius Degree), per tile
