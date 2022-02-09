@@ -936,9 +936,18 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicyById(bool isDevice, int id) {
     XpumDeviceBasicInfoArray response;
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     auto healthJson = (*getPolicy(isDevice,id));
+    //std::cout << "--Gang---core_stub.cpp--getPolicyById---1----healthJson=" << healthJson << std::endl;
     if (healthJson.contains("error")) {
-        (*json) = healthJson;
-        return json;
+        std::string jsonStr = healthJson.dump();
+        std::string::size_type position = jsonStr.find("There is no data");
+        if (position != jsonStr.npos) {
+            std::vector<nlohmann::json> dataList;
+            (*json)["all_policy_list"] = dataList;
+            return json;                      
+        }else{
+            (*json) = healthJson;
+            return json;  
+        }
     }
     (*json)["all_policy_list"] = healthJson;
     return json;
