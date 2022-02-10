@@ -86,6 +86,7 @@ PCIeManager GPUDeviceStub::pcie_manager;
 void GPUDeviceStub::init() {
     initialized = true;
     putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
+    putenv(const_cast<char*>("ZE_ENABLE_PCI_ID_DEVICE_ORDER=1"));
     if (std::getenv("ZET_ENABLE_METRICS") == NULL && std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(), 
                                                                 [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
         putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
