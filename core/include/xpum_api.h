@@ -263,7 +263,7 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetDeviceStandbys(xpum_device_id_t deviceId,
-                                    xpum_standby_data_t *dataArray, uint32_t *count);
+                                    xpum_standby_data_t dataArray[], uint32_t *count);
 /**
  * @brief Set device standby mode
  * @details This function is used to set the standby mode of device
@@ -316,7 +316,7 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetDeviceFrequencyRanges(xpum_device_id_t deviceId,
-                                           xpum_frequency_range_t *dataArray, uint32_t *count);
+                                           xpum_frequency_range_t dataArray[], uint32_t *count);
 /**
  * @brief Set device frequency ranges
  * @details This function is used to set the frequency ranges
@@ -341,7 +341,7 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId,
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
-                                      xpum_scheduler_data_t *dataArray, uint32_t *count);
+                                      xpum_scheduler_data_t dataArray[], uint32_t *count);
 /**
  * @brief Set device the scheduler(timeout) mode
  * @details This function is used to set the scheduler (timeout) mode
@@ -367,7 +367,7 @@ xpum_result_t xpumSetDeviceSchedulerTimeoutMode(xpum_device_id_t deviceId,
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
 xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId,
-                                      xpum_power_prop_data_t *dataArray, uint32_t *count);
+                                      xpum_power_prop_data_t dataArray[], uint32_t *count);
 /**
  * @brief Set device the scheduler(time slice) mode
  * @details This function is used to set the scheduler (time slice) mode
@@ -404,7 +404,7 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count);
+xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double dataArray[], uint32_t *count);
 
 /**
  * @brief Get the client processes of the device
@@ -417,7 +417,7 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_process_t *dataArray, uint32_t *count);
+xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_process_t dataArray[], uint32_t *count);
 
 /**
  * @brief Get the performance factor of the device
@@ -430,7 +430,7 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_performancefactor_t * dataArray, uint32_t *count);
+xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_performancefactor_t dataArray[], uint32_t *count);
 
 /**
  * @brief Set the performance factor of the device
@@ -455,7 +455,7 @@ xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_pe
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t * dataArray, uint32_t *count);
+xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t dataArray[], uint32_t *count);
 /**
  * @brief Set the fabric port configuration of the device
  * @details This function is used to set the fabric port configuration of the device
@@ -733,7 +733,7 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a memSize is smaller real memory size of \a topology
  */
-xpum_result_t xpumExportTopology2XML(char *xmlBuffer, int *memSize);
+xpum_result_t xpumExportTopology2XML(char xmlBuffer[], int *memSize);
 
 /** @} */ // Closing for TOPOLOGY_API
 
