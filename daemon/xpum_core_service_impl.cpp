@@ -845,7 +845,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         sch_timeout.subdevice_Id = subdevice_Id;
         sch_timeout.watchdog_timeout = val1;
         if (val1 < 5000 || val1 > 100000000) {
-            response->set_errormsg("invalid parameter value");
+            response->set_errormsg("Invalid scheduler timeout value");
             return grpc::Status::OK;
         }
         res = xpumSetDeviceSchedulerTimeoutMode(deviceId, sch_timeout);
@@ -855,7 +855,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         sch_timeslice.interval = val1;
         sch_timeslice.yield_timeout = val2;
         if (val1 < 5000 || val1 > 100000000 || val2 < 5000 || val2 > 100000000) {
-            response->set_errormsg("Invalid Parameter value");
+            response->set_errormsg("Invalid scheduler timeslice value");
             return grpc::Status::OK;
         }
         res = xpumSetDeviceSchedulerTimesliceMode(deviceId, sch_timeslice);
@@ -896,7 +896,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].subdevice_Id == tileId) {
             if(val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit) || val2 > 124 || val2 < 1 ) {
-                response->set_errormsg("Invalid Parameter value");
+                response->set_errormsg("Invalid power limit value");
                 return grpc::Status::OK;
             }
         }
@@ -1325,6 +1325,13 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
                 break;
             }
         }
+        
+        tileData->set_otherperformancefactor(-1);
+        tileData->set_computeperformancefactor(-1);
+        tileData->set_threedperformancefactor(-1);
+        tileData->set_mediaperformancefactor(-1);
+        tileData->set_dmaperformancefactor(-1);
+        tileData->set_renderperformancefactor(-1);
 
         for (uint32_t i = 0; i < performanceFactorCount; i++) {
             if (performanceFactorArray[i].subdevice_id == tileId) {

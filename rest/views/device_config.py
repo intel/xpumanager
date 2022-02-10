@@ -169,7 +169,7 @@ def set_powerlimit(deviceId):
     power = power *1000
     
     if power<0 or interval<0:
-        return jsonify("invalid Parameter value"), 500
+        return jsonify("invalid power_limit or power_average_window value"), 500
     
     if type(tileId) != int:
         return jsonify("Invalid Parameter tileId"), 500
@@ -224,7 +224,7 @@ def set_frequencyrange(deviceId):
         return jsonify("Invalid Parameter max_frequency"), 500
     
     if tileId<0 or minFreq<0 or maxFreq<0 :
-        return jsonify("invalid Parameter value"), 500
+        return jsonify("invalid min_frequency or max_frequency value"), 500
     
     code, message, data = stub.setFrequencyRange(
         deviceId, tileId, minFreq, maxFreq)
@@ -288,12 +288,12 @@ def set_scheduler(deviceId):
     if type(mode) != str:
         return jsonify("Invalid Parameter scheduler_mode"), 500
     if type(val1) != int:
-        return jsonify("Invalid Parameter value"), 500
+        return jsonify("Invalid Parameter type"), 500
     if type(val2) != int:
-        return jsonify("Invalid Parameter value"), 500
+        return jsonify("Invalid Parameter type"), 500
 
     if tileId<0 or val1<0 or val2 <0:
-        return jsonify("invalid Parameter value"), 500
+        return jsonify("invalid Parameter or out of range"), 500
     
     code, message, data = stub.setScheduler(deviceId, tileId, mode, val1, val2)
     if code != 0:
@@ -344,7 +344,7 @@ def set_portenabled(deviceId):
         return jsonify("Invalid Parameter enabled"), 500
 
     if tileId<0 or port <0 or (enabled != 0 and enabled != 1):
-        return jsonify("invalid Parameter value"), 500
+        return jsonify("invalid Parameter value or out of range"), 500
     
     
     code, message, data = stub.setPortEnabled(deviceId, tileId, port, enabled)
@@ -396,7 +396,7 @@ def set_portbeaconing(deviceId):
         return jsonify("Invalid Parameter beaconing"), 500
 
     if tileId<0 or port <0 or (beaconing != 0 and beaconing != 1):
-        return jsonify("invalid Parameter value"), 500
+        return jsonify("invalid Parameter value or out of range"), 500
     
     code, message, data = stub.setPortBeaconing(deviceId, tileId, port, beaconing)
     if code != 0:
@@ -447,7 +447,7 @@ def set_performancefactor(deviceId):
         return jsonify("Invalid Parameter factor"), 500
 
     if tileId<0 or factor <0 :
-        return jsonify("invalid Parameter value"), 500
+        return jsonify("invalid Parameter value or out of range"), 500
     
     if engine.lower() == "media":
         engineValue = 1<<3

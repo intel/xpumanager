@@ -1330,8 +1330,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["power_average_window_vaild_range"] = response.tileconfigdata(i).intervalscope();
                 tileJson["gpu_frequency_valid_options"] = response.tileconfigdata(i).freqoption();
                 tileJson["standby_mode_valid_options"] = response.tileconfigdata(i).standbyoption();
-                tileJson["media_performance_factor"] = int(response.tileconfigdata(i).mediaperformancefactor());
-                tileJson["compute_performance_factor"] = int(response.tileconfigdata(i).computeperformancefactor());
+                if (int(response.tileconfigdata(i).mediaperformancefactor())!= -1){
+                    tileJson["media_performance_factor"] = int(response.tileconfigdata(i).mediaperformancefactor());
+                }
+                if (int(response.tileconfigdata(i).computeperformancefactor())!= -1){
+                    tileJson["compute_performance_factor"] = int(response.tileconfigdata(i).computeperformancefactor());
+                }
                 tileJson["compute_engine"] = "compute";
                 tileJson["media_engine"] = "media";
                 tileJson["port_up"] = response.tileconfigdata(i).portenabled();
@@ -1413,11 +1417,14 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceSchedulerMode(int deviceId, i
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set scheduler mode %d,%d,%d",mode,val1,val2);
         } else {
-            (*json)["error"] = response.errormsg();        
+            (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s",mode,response.errormsg());
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Fail to set scheduler mode %s,%s",mode,status.error_message());
     }
     return json;
 }
@@ -1436,11 +1443,14 @@ std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int 
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set power limit %d,%d", power, interval);
         } else {
-            (*json)["error"] = response.errormsg();        
+            (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Fail to set power limit %s",response.errormsg());
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Fail to set power limit %s",status.error_message());
     }
     return json;
 }
@@ -1465,11 +1475,14 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceStandby(int deviceId, int til
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set standby mode %d", mode);
         } else {
-            (*json)["error"] = response.errormsg();        
+            (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Fail to set standby mode %s",response.errormsg());
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Fail to set standby mode %s",status.error_message());
     }
     return json;
 }
@@ -1494,11 +1507,14 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceFrequencyRange(int deviceId, 
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set frequency range %d,%d", minFreq,maxFreq);
         } else {
-            (*json)["error"] = response.errormsg();        
+            (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Fail to set frequency range %s",response.errormsg());
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Fail to set frequency range %s",status.error_message());
     }
     return json;
 }
@@ -1515,12 +1531,15 @@ std::unique_ptr<nlohmann::json> CoreStub::resetDevice(int deviceId, bool force){
    grpc::Status status = stub->resetDevice(&context, request, &response);
    if (status.ok()) {
        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
+           (*json)["status"] = "OK";
+           XPUM_LOG_AUDIT("Succeed to set frequency range %d", force);
         } else {
             (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Fail to reset device %s",response.errormsg());
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Fail to reset device %s",status.error_message());
    }
    return json;
 }
@@ -1573,11 +1592,14 @@ std::unique_ptr<nlohmann::json> CoreStub::setPerformanceFactor(int deviceId, int
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set performance factor %d,%f", engine ,factor);
         } else {
-            (*json)["error"] = response.errormsg();        
+            (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Fail to set performance factor %s",response.errormsg()); 
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Fail to set performance factor %s",status.error_message());
     }
     return json;    
 
@@ -1604,11 +1626,14 @@ std::unique_ptr<nlohmann::json> CoreStub::setFabricPortEnabled(int deviceId, int
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set fabric port Enabled %d,%d", port,enabled);
         } else {
             (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Fail to set fabric port Enabled %s",response.errormsg()); 
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Fail to set performance factor Enabled %s",status.error_message());
     }
     return json;
 }
@@ -1634,11 +1659,14 @@ std::unique_ptr<nlohmann::json> CoreStub::setFabricPortBeaconing(int deviceId, i
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set fabric port Beaconing %d,%d", port,beaconing);
         } else {
-            (*json)["error"] = response.errormsg();        
+            (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s",response.errormsg()); 
         }
     } else {
         (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s",status.error_message());
     }
     return json;    
 

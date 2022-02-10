@@ -42,8 +42,10 @@ def getConfig(deviceId, tileId):
         tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
         tiledata['standby_mode_valid_options'] = resp.tileConfigData[i].standbyOption
         tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
-        tiledata['compute_performance_factor'] = str(resp.tileConfigData[i].computePerformanceFactor)
-        tiledata['media_performance_factor'] = str(resp.tileConfigData[i].mediaPerformanceFactor)
+        if int(resp.tileConfigData[i].computePerformanceFactor)!= -1:
+            tiledata['compute_performance_factor'] = str(resp.tileConfigData[i].computePerformanceFactor)
+        if int(resp.tileConfigData[i].mediaPerformanceFactor)!= -1:
+            tiledata['media_performance_factor'] = str(resp.tileConfigData[i].mediaPerformanceFactor)
         tiledata['fabric_port_enabled'] = resp.tileConfigData[i].portEnabled
         tiledata['fabric_port_disabled'] = resp.tileConfigData[i].portDisabled
         tiledata['fabric_port_beaconing_on'] = resp.tileConfigData[i].portBeaconingOn
