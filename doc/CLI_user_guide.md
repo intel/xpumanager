@@ -344,11 +344,10 @@ List the GPU device aggregated statistics that are collected by XPU Manager
 | GPU Memory Used (MiB)        | Tile 0: avg: 500, min: 100, max: 700, current: 400                |
 |                              | Tile 1: avg: 500, min: 100, max: 700, current: 400                |
 +------------------------------+-------------------------------------------------------------------+
-| Xe Link Receive (kB/s)       | Tile 0 -> GPU 1 Tile 1: avg: 500, min: 100, max: 700, current: 400|
-|                              | Tile 1 -> GPU 1 Tile 0: avg: 500, min: 100, max: 700, current: 400|
-+------------------------------+-------------------------------------------------------------------+
-| Xe Link Transmit (kB/s)      | Tile 0 -> GPU 1 Tile 1: avg: 500, min: 100, max: 700, current: 400|
-|                              | Tile 1 -> GPU 1 Tile 0: avg: 500, min: 100, max: 700, current: 400|
+| Xe Link Throughput (kB/s)    | 0/0 -> 1/1: avg: 500, min: 100, max: 700, current: 400            |
+|                              | 0/1 -> 1/0: avg: 500, min: 100, max: 700, current: 400            |
+|                              | 1/1 -> 0/0: avg: 500, min: 100, max: 700, current: 400            |
+|                              | 1/0 -> 0/1: avg: 500, min: 100, max: 700, current: 400            |
 +------------------------------+-------------------------------------------------------------------+
 ```
  
@@ -456,8 +455,7 @@ optional arguments:
                                 7. GPU Memory Write (kB/s), per tile
                                 8. GPU Energy Consumed (J), per tile
                                 9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile.
-                                10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile.
-                                    At least one thread is loaded, but the EU is stalled. Per tile.
+                                10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled. Per tile.
                                 11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile.
                                 12. Reset Counter, per GPU.
                                 13. Programming Errors, per tile.
@@ -466,6 +464,9 @@ optional arguments:
                                 16. Cache Errors Uncorrectable, per tile. 
                                 17. GPU Memory Bandwidth Utilization. (%)
                                 18. GPU Memory Used (MiB)
+                                19. PCIe Read (kB/s), per GPU
+                                20. PCIe Write (kB/s), per GPU
+                                21. Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput. 
   
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
@@ -478,13 +479,13 @@ optional arguments:
 
 Dump the device statistics to screen in CSV format.
 ```
-./xpumcli dump -d 0 -t 0 -m 0,1,2 -i 1 -n 5
-Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz)
-2021-11-08 13:31:43.100, 00, 0, 000,    , 0300
-2021-11-08 13:31:44.100, 00, 0, 000,    , 0300
-2021-11-08 13:31:45.100, 00, 0, 046,    , 1100
-2021-11-08 13:31:46.100, 00, 0, 000,    , 0300
-2021-11-08 13:31:47.100, 00, 0, 000,    , 0300
+./xpumcli dump -d 0 -t 0 -m 0,1,2,21 -i 1 -n 5
+Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz),XL 0/0->1/1 (kB/s),XL 0/1->1/0 (kB/s),XL 1/1->0/0 (kB/s),XL 1/0->0/1 (kB/s)
+2021-11-08 13:31:43.100, 00, 0, 000,    , 0300, 400, 700, 450, 500
+2021-11-08 13:31:44.100, 00, 0, 000,    , 0300, 400, 700, 450, 500
+2021-11-08 13:31:45.100, 00, 0, 046,    , 1100, 400, 700, 450, 500
+2021-11-08 13:31:46.100, 00, 0, 000,    , 0300, 400, 700, 450, 500
+2021-11-08 13:31:47.100, 00, 0, 000,    , 0300, 400, 700, 450, 500
 ```
 
 Start to dump the device raw statistics to the CSV file.
