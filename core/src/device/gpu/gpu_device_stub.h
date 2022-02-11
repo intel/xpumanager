@@ -31,6 +31,8 @@ class GPUDeviceStub {
    public:
     static GPUDeviceStub& instance();
 
+    static PCIeManager pcie_manager;
+
    public:
     void discoverDevices(Callback_t callback);
 
@@ -75,6 +77,10 @@ class GPUDeviceStub {
     void getPCIeReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getPCIeWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
+    void getPCIeRead(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
+    void getPCIeWrite(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     static void getSchedulers(const zes_device_handle_t& device, std::vector<Scheduler>& schedulers);
 
@@ -192,6 +198,10 @@ class GPUDeviceStub {
 
     static std::shared_ptr<MeasurementData> toGetPCIeWriteThroughput(const zes_device_handle_t& device);
 
+    static std::shared_ptr<MeasurementData> toGetPCIeRead(const zes_device_handle_t& device);
+
+    static std::shared_ptr<MeasurementData> toGetPCIeWrite(const zes_device_handle_t& device);
+
     static std::string to_string(ze_device_uuid_t val);
 
     static std::string to_hex_string(uint32_t val);
@@ -219,8 +229,6 @@ class GPUDeviceStub {
 
    private:
     bool initialized;
-
-    static PCIeManager pcie_manager;
 
     std::mutex mutex;
 

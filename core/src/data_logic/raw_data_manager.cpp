@@ -142,6 +142,14 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT]->init();
+
+    data_handlers[MeasurementType::METRIC_PCIE_READ] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_READ, p_persistency);
+    data_handlers[MeasurementType::METRIC_PCIE_READ]->init();
+
+    data_handlers[MeasurementType::METRIC_PCIE_WRITE] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_WRITE, p_persistency);
+    data_handlers[MeasurementType::METRIC_PCIE_WRITE]->init();
 }
 
 void RawDataManager::close() {

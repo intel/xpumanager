@@ -40,6 +40,8 @@ class GPUDevice : public Device {
     void getFrequencyThrottle(Callback_t callback) noexcept override;
     void getPCIeReadThroughput(Callback_t callback) noexcept override;
     void getPCIeWriteThroughput(Callback_t callback) noexcept override;
+    void getPCIeRead(Callback_t callback) noexcept override;
+    void getPCIeWrite(Callback_t callback) noexcept override;
 
     virtual xpum_result_t runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept override; //GSC
     xpum_result_t runFirmwareFlash(const char* filePath) noexcept;  //AMC

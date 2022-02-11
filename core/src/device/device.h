@@ -75,6 +75,10 @@ class Device {
     virtual void getPCIeReadThroughput(Callback_t callback) noexcept = 0;
 
     virtual void getPCIeWriteThroughput(Callback_t callback) noexcept = 0;
+  
+    virtual void getPCIeRead(Callback_t callback) noexcept = 0;
+
+    virtual void getPCIeWrite(Callback_t callback) noexcept = 0;
 
     void addCapability(DeviceCapability& capability);
 

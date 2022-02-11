@@ -183,6 +183,10 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getPCIeReadThroughput(callback); };
         case DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT:
             return [p_device](Callback_t callback) { p_device->getPCIeWriteThroughput(callback); };
+        case DeviceCapability::METRIC_PCIE_READ:
+            return [p_device](Callback_t callback) { p_device->getPCIeRead(callback); };
+        case DeviceCapability::METRIC_PCIE_WRITE:
+            return [p_device](Callback_t callback) { p_device->getPCIeWrite(callback); };
         default:
             break;
     }

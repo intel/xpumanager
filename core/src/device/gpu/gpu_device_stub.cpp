@@ -417,6 +417,10 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_PCIE_READ_THROUGHPUT);
     if (checkCapability(props.core.name, bdf_address, "PCIe write throughput", toGetPCIeWriteThroughput, device)) 
         capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT);
+    if (checkCapability(props.core.name, bdf_address, "PCIe read", toGetPCIeRead, device)) 
+        capabilities.push_back(DeviceCapability::METRIC_PCIE_READ);
+    if (checkCapability(props.core.name, bdf_address, "PCIe write", toGetPCIeWrite, device)) 
+        capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE);
 }
 
 void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
@@ -2964,6 +2968,58 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeWriteThroughput(const z
     bdf_address = to_string(pci_props.address);
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
     auto value = pcie_manager.getLatestPCIeWriteThroughput(bdf_address.substr(5));
+    ret->setCurrent(value);
+    return ret;
+}
+
+void GPUDeviceStub::getPCIeRead(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetPCIeRead, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeRead(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetPCIeRead error");
+    }
+
+    ze_result_t res;
+    zes_pci_properties_t pci_props;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+    std::string bdf_address;
+    if (res != ZE_RESULT_SUCCESS) {
+        throw BaseException("toGetPCIeRead error");
+    }
+    bdf_address = to_string(pci_props.address);
+    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+    auto value = pcie_manager.getLatestPCIeRead(bdf_address.substr(5));
+    ret->setCurrent(value);
+    return ret;
+}
+
+void GPUDeviceStub::getPCIeWrite(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetPCIeWrite, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeWrite(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetPCIeWrite error");
+    }
+
+    ze_result_t res;
+    zes_pci_properties_t pci_props;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+    std::string bdf_address;
+    if (res != ZE_RESULT_SUCCESS) {
+        throw BaseException("toGetPCIeWrite error");
+    }
+    bdf_address = to_string(pci_props.address);
+    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+    auto value = pcie_manager.getLatestPCIeWrite(bdf_address.substr(5));
     ret->setCurrent(value);
     return ret;
 }

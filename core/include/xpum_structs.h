@@ -425,6 +425,8 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_FREQUENCY_THROTTLE,                   ///< Frequency Throttle
     XPUM_STATS_PCIE_READ_THROUGHPUT,                 ///< PCIe read throughput
     XPUM_STATS_PCIE_WRITE_THROUGHPUT,                ///< PCIe write throughput
+    XPUM_STATS_PCIE_READ,                            ///< PCIe read
+    XPUM_STATS_PCIE_WRITE,                           ///< PCIe write
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 

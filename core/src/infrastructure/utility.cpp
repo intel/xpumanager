@@ -113,6 +113,10 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_PCIE_READ_THROUGHPUT;
         case DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT:
             return MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT;
+        case DeviceCapability::METRIC_PCIE_READ:
+            return MeasurementType::METRIC_PCIE_READ;
+        case DeviceCapability::METRIC_PCIE_WRITE:
+            return MeasurementType::METRIC_PCIE_WRITE;
         default:
             return MeasurementType::METRIC_MAX;
     }
@@ -184,6 +188,10 @@ DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& m
             return DeviceCapability::METRIC_PCIE_READ_THROUGHPUT;
         case MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT:
             return DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT;
+        case MeasurementType::METRIC_PCIE_READ:
+            return DeviceCapability::METRIC_PCIE_READ;
+        case MeasurementType::METRIC_PCIE_WRITE:
+            return DeviceCapability::METRIC_PCIE_WRITE;
         default:
             return DeviceCapability::DEVICE_CAPABILITY_MAX;
     }
@@ -241,6 +249,8 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
     metric_types.push_back(MeasurementType::METRIC_FREQUENCY_THROTTLE);
     metric_types.push_back(MeasurementType::METRIC_PCIE_READ_THROUGHPUT);
     metric_types.push_back(MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT);
+    metric_types.push_back(MeasurementType::METRIC_PCIE_READ);
+    metric_types.push_back(MeasurementType::METRIC_PCIE_WRITE);
 }
 
 MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpum_stats_type) {
@@ -309,6 +319,10 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
             return MeasurementType::METRIC_PCIE_READ_THROUGHPUT;
         case xpum_stats_type_enum::XPUM_STATS_PCIE_WRITE_THROUGHPUT:
             return MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT;
+        case xpum_stats_type_enum::XPUM_STATS_PCIE_READ:
+            return MeasurementType::METRIC_PCIE_READ;
+        case xpum_stats_type_enum::XPUM_STATS_PCIE_WRITE:
+            return MeasurementType::METRIC_PCIE_WRITE;
         default:
             return MeasurementType::METRIC_MAX;
     }
@@ -380,6 +394,10 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
             return xpum_stats_type_enum::XPUM_STATS_PCIE_READ_THROUGHPUT;
         case MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT:
             return xpum_stats_type_enum::XPUM_STATS_PCIE_WRITE_THROUGHPUT;
+        case MeasurementType::METRIC_PCIE_READ:
+            return xpum_stats_type_enum::XPUM_STATS_PCIE_READ;
+        case MeasurementType::METRIC_PCIE_WRITE:
+            return xpum_stats_type_enum::XPUM_STATS_PCIE_WRITE;
         default:
             return xpum_stats_type_enum::XPUM_STATS_MAX;
     }
@@ -451,6 +469,10 @@ std::string Utility::getXpumStatsTypeString(MeasurementType type) {
             return std::string("PCIE read throughput");
         case MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT:
             return std::string("PCIE write throughput");
+        case MeasurementType::METRIC_PCIE_READ:
+            return std::string("PCIE read");
+        case MeasurementType::METRIC_PCIE_WRITE:
+            return std::string("PCIE write");
         default:
             return std::string("");
     }
