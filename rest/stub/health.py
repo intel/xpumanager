@@ -17,15 +17,15 @@ healthStatusEnumToString = {
     core_pb2.HEALTH_STATUS_CRITICAL: "Critical"
 }
 
-def appendHealthThreshold(healthData, healthType):
+def appendHealthThreshold(healthData, healthType, throttleValue, shudownValue):
     if healthType == 0:
-        healthData['throttle_threshold'] = 105
-        healthData['shutdown_threshold'] = 130
+        healthData['throttle_threshold'] = throttleValue
+        healthData['shutdown_threshold'] = shudownValue
     elif healthType == 1:
-        healthData['throttle_threshold'] = 85
-        healthData['shutdown_threshold'] = 100
+        healthData['throttle_threshold'] = throttleValue
+        healthData['shutdown_threshold'] = shudownValue
     elif healthType == 2:
-        healthData['throttle_threshold'] = 150
+        healthData['throttle_threshold'] = throttleValue
 
 def getHealth(deviceId, healthType):
     types = []
@@ -47,7 +47,7 @@ def getHealth(deviceId, healthType):
         data[key]['status'] = healthStatusEnumToString[resp.statusType]
         data[key]['description'] = resp.description
         if t == 0 or t == 1 or t == 2:
-            appendHealthThreshold(data[key], t)
+            appendHealthThreshold(data[key], t, resp.throttleThreshold, resp.shutdownThreshold)
             resp = stub.getHealthConfig(
                 core_pb2.HealthConfigRequest(deviceId=deviceId, configType=t))
             if len(resp.errorMsg) != 0:
@@ -85,7 +85,7 @@ def getHealthByGroup(groupId, healthType):
                     data[key]['status'] = healthStatusEnumToString[healthData.statusType]
                     data[key]['description'] = healthData.description
                     if t == 0 or t == 1 or t == 2:
-                        appendHealthThreshold(data[key], t)
+                        appendHealthThreshold(data[key], t, healthData.throttleThreshold, healthData.shutdownThreshold)
                         resp = stub.getHealthConfig(core_pb2.HealthConfigRequest(
                             deviceId=data['device_id'], configType=t))
                         if len(resp.errorMsg) != 0:

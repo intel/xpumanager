@@ -3,6 +3,7 @@
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/logger.h"
+#include <algorithm>
 
 namespace xpum {
 
@@ -10,6 +11,8 @@ HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
                              std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {
     XPUM_LOG_TRACE("HealthManager()");
+    p_health_device_to_tdps = { {"0x0205", 150}, {"0x020A", 300}, 
+                                {"0x56C0", 150}, {"0x56C1", 37.5}, {"0x0BD5", 600}};
 }
 
 HealthManager::~HealthManager() {
@@ -106,6 +109,21 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
     data->type = type;
     data->status = xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN;
 
+    if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
+        data->throttleThreshold = 105;
+        data->shutdownThreshold = 130;
+    } else if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THEARMAL) {
+        data->throttleThreshold = 85;
+        data->shutdownThreshold = 100;
+    } else if (type == xpum_health_type_t::XPUM_HEALTH_POWER) {
+        Property prop;
+        std::string deviceName;
+        if (this->p_device_manager->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, prop)) {
+            deviceName = prop.getValue();
+        }
+        data->throttleThreshold = getThrottlePower(deviceName);
+    }
+
     bool global_default_limit = true;
     int core_thermal_thresold = Configuration::CORE_TEMPERATURE_HEALTH_DEFAULT_LIMIT;
     if (p_health_core_thermal_configs.find(deviceId) != p_health_core_thermal_configs.end()) {
@@ -129,5 +147,24 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
         this->p_device_manager->getDevice(std::to_string(deviceId))->getDeviceHandle(), type, data, core_thermal_thresold, memory_thermal_thresold, power_threshold, global_default_limit);
 
     return XPUM_OK;
+}
+
+uint64_t HealthManager::getThrottlePower(std::string deviceName) {
+    uint64_t value = 300; // default throttle power
+
+    if (deviceName.empty()) {
+        return value;
+    }
+
+    std::transform(deviceName.begin(), deviceName.end(), deviceName.begin(), ::toupper);
+    for (auto item : p_health_device_to_tdps) {
+        auto pciDeviceId = item.first;
+        std::transform(pciDeviceId.begin(), pciDeviceId.end(), pciDeviceId.begin(), ::toupper);
+        if (deviceName.find(pciDeviceId) != std::string::npos) {
+            value = p_health_device_to_tdps[item.first];
+            break;
+        }
+    }
+    return value;
 }
 } // end namespace xpum

@@ -242,6 +242,8 @@ typedef struct xpum_health_data_t {
     xpum_health_type_t type;
     xpum_health_status_t status;
     char description[XPUM_MAX_STR_LENGTH];
+    uint64_t throttleThreshold;
+    uint64_t shutdownThreshold;
 } xpum_health_data_t;
 
 /**************************************************************************/

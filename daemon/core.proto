@@ -179,7 +179,9 @@ message HealthData{
     HealthType type = 2;
     HealthStatusType statusType = 3;
     string description = 4;
-    string errorMsg = 5;
+    uint64 throttleThreshold = 5;
+    uint64 shutdownThreshold = 6;
+    string errorMsg = 7;
 }
 
 
