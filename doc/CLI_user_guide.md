@@ -532,6 +532,7 @@ Usage: xpumcli topology [Options]
   xpumcli topology -d [deviceId]
   xpumcli topology -d [deviceId] -j
   xpumcli topology -f [filename]
+  xpumcli topology -m
 
 optional arguments:
   -h,--help                   Print this help message and exit
@@ -539,6 +540,12 @@ optional arguments:
 
   -d,--device                 The device ID to query
   -f,--file                   Generate the system topology with the GPU info to a XML file. 
+  -m,--matrix                 Print the CPU/GPU topology matrix. 
+                                S: Self
+                                XL#: Connected with Xe Link.  Xe Link LAN count is also provided.
+                                SYS: Connected with PCIe between NUMA nodes
+                                NODE: Connected with PCIe within a NUMA node
+                                MDF: Connected with Multi-Die Fabric Interface
 ```
 
 Get the hardware topology info which is related to the GPU
@@ -555,10 +562,21 @@ Get the hardware topology info which is related to the GPU
 +-----------+--------------------------------------------------------------------------------------+
 ```
   
-Generage the system hardware topology to a XML file. 
+Generate the system hardware topology to a XML file. 
 ```
 ./xpumcli topology -f topo.xml
 The system topology is generated to the file topo.xml. 
+```
+
+Generate the CPU/GPU topology matrix. 
+```
+./xpumcli topology -m
+
+         GPU 0/0|GPU 0/1|GPU 1/0|GPU 1/1|CPU Affinity
+GPU 0/0 |S      |MDF    |SYS    |XL8    |0-23,48-71
+GPU 0/1 |MDF    |S      |XL8    |SYS    |0-23,48-71
+GPU 1/0 |SYS    |XL8    |S      |MDF    |24-47,72-95
+GPU 1/1 |XL8    |SYS    |MDF    |S      |24-47,72-95
 ```
   
   
@@ -585,10 +603,11 @@ Options:
 
 Update GPU GSC firmware
 ```
-./xpumcli updatefw -d 0 -t GSC -f /home/test/tools/ATS.PS.B.P.Si.2021.WW41.5_25MHz_Quad_DAMen_IFWI.bin
+./xpumcli updatefw -d 0 -t GSC -f /home/test/tools/ATS_M3.bin
+This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) y
 Start to update firmware:
 Firmware name: GSC
-Image path: /home/test/tools/ATS.PS.B.P.Si.2021.WW41.5_25MHz_Quad_DAMen_IFWI.bin
+Image path: /home/test/tools/ATS_M3.bin
 Update firmware successfully. Please reboot OS to take effect. 
 ```
 
