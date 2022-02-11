@@ -1,5 +1,6 @@
 from .grpc_stub import stub
 import core_pb2
+import xpum_logger as logger
 
 StandbyModeEnumToString = {
     core_pb2.STANDBY_DEFAULT: "DEFAULT",
@@ -73,35 +74,45 @@ def setStandby(deviceId, tileId, standby):
     resp = stub.setDeviceStandbyMode(core_pb2.ConfigDeviceStandbyRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, standby=mode))
     if len(resp.errorMsg) != 0:
+        logger.audit("Config", "Failed", "Failed to set standby mode {} to device {}", mode, deviceId)
         return 1, resp.errorMsg, None
+    logger.audit("Config", "Succeed", "Succeed to set standby mode {} to device {}", mode, deviceId)
     return 0, "OK", {"result": "OK"}
 
 def setPortEnabled(deviceId, tileId, port, enabled):
     resp = stub.setDeviceFabricPortEnabled(core_pb2.ConfigDeviceFabricPortEnabledRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, portNumber=port, enabled=enabled))
     if len(resp.errorMsg) != 0:
+        logger.audit("Config", "Failed", "Failed to set fabric port enable mode {} to device {}", enabled, deviceId)
         return 1, resp.errorMsg, None
+    logger.audit("Config", "Succeed", "Succeed to set fabric port enable mode {} to device {}", enabled, deviceId)
     return 0, "OK", {"result": "OK"}
 
 def setPerformanceFactor(deviceId, tileId, engineValue, factor):
     resp = stub.setPerformanceFactor(core_pb2.PerformanceFactor(
         deviceId=deviceId, isTileData=True, tileId=tileId, engineSet=engineValue, factor=factor))
     if len(resp.errorMsg) != 0:
+        logger.audit("Config", "Failed", "Failed to set engine {} performance factor {} to device {}", engineValue,factor,deviceId)
         return 1, resp.errorMsg, None
+    logger.audit("Config", "Succeed", "Succeed to set engine {} performance factor {} to device {}", engineValue,factor,deviceId)
     return 0, "OK", {"result": "OK"}
 
 def setPortBeaconing(deviceId, tileId, port, beaconing):
     resp = stub.setDeviceFabricPortBeaconing(core_pb2.ConfigDeviceFabricPortBeconingRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, portNumber=port, beaconing=beaconing))
     if len(resp.errorMsg) != 0:
+        logger.audit("Config", "Failed", "Failed to set port {} beaconing {} to device {}", port,beaconing,deviceId)
         return 1, resp.errorMsg, None
+    logger.audit("Config", "Succeed", "Succeed to set port {} beaconing {} to device {}", port,beaconing,deviceId)
     return 0, "OK", {"result": "OK"}
 
 def setPowerLimit(deviceId, tileId, power, interval):
     resp = stub.setDevicePowerLimit(core_pb2.ConfigDevicePowerLimitRequest(
         deviceId=deviceId, tileId=tileId, powerLimit=power, intervalWindow=interval))
     if len(resp.errorMsg) != 0:
+        logger.audit("Config", "Failed", "Failed to set power {} interval {} to device {}", power,interval,deviceId)
         return 1, resp.errorMsg, None
+    logger.audit("Config", "Succeed", "Succeed to set power {} interval {} to device {}", power,interval,deviceId)
     return 0, "OK", {"result": "OK"}
 
 def setFrequencyRange(deviceId, tileId, minFreq, maxFreq):
@@ -111,7 +122,9 @@ def setFrequencyRange(deviceId, tileId, minFreq, maxFreq):
     resp = stub.setDeviceFrequencyRange(core_pb2.ConfigDeviceFrequencyRangeRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, minFreq=minFreq, maxFreq=maxFreq))
     if len(resp.errorMsg) != 0:
+        logger.audit("Config", "Failed", "Failed to set min_frequency {} max_frequency {} to device {}", minFreq,maxFreq,deviceId)
         return 1, resp.errorMsg, None
+    logger.audit("Config", "Succeed", "Succeed to set min_frequency {} max_frequency {} to device {}", minFreq,maxFreq,deviceId)
     return 0, "OK", {"result": "OK"}
 
 def setScheduler(deviceId, tileId, mode, val1, val2):
@@ -126,7 +139,9 @@ def setScheduler(deviceId, tileId, mode, val1, val2):
     resp = stub.setDeviceSchedulerMode(core_pb2.ConfigDeviceSchdeulerModeRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, scheduler=scheduler, val1=val1, val2=val2))
     if len(resp.errorMsg) != 0:
+        logger.audit("Config", "Failed", "Failed to set scheduler mode {} parameter1 {} parameter2 {} to device {}", mode,val1,val2,deviceId)
         return 1, resp.errorMsg, None
+    logger.audit("Config", "Succeed", "Succeed to set scheduler mode {} parameter1 {} parameter2 {} to device {}", mode,val1,val2,deviceId)
     return 0, "OK", {"result": "OK"}
 
 def runReset(deviceId):
