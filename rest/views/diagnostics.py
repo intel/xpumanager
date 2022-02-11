@@ -28,8 +28,12 @@ def run_diagnostics(deviceId):
                 description: Device id
                 type: integer
         responses:
-            200:
+            201:
                 description: OK
+            400:
+                description: Bad Request, for example invalid level
+            404:
+                description: Device not found
             500:
                 description: Error
     """
@@ -38,8 +42,12 @@ def run_diagnostics(deviceId):
     code, message, data = stub.runDiagnostics(deviceId, level)
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "device not found":
+            return jsonify(error), 404
+        elif message == "invalid level":
+            return jsonify(error), 400
         return jsonify(error), 500
-    return jsonify(data)
+    return jsonify(data), 201
 
 
 def run_group_diagnostics(groupId):
@@ -62,8 +70,12 @@ def run_group_diagnostics(groupId):
                 description: Group id
                 type: integer
         responses:
-            200:
+            201:
                 description: OK
+            400:
+                description: Bad Request, for example invalid level
+            404:
+                description: Group not found
             500:
                 description: Error
     """
@@ -72,8 +84,12 @@ def run_group_diagnostics(groupId):
     code, message, data = stub.runDiagnosticsByGroup(groupId, level)
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "group not found":
+            return jsonify(error), 404
+        elif message == "invalid level":
+            return jsonify(error), 400
         return jsonify(error), 500
-    return jsonify(data)
+    return jsonify(data), 201
 
 
 class DiagnosticsComponentSchema(Schema):
@@ -120,12 +136,16 @@ def get_diagnostics_result(deviceId):
             200:
                 description: OK
                 schema: DiagnosticsInfoSchema
+            404:
+                description: Device not found
             500:
                 description: Error
     """
     code, message, data = stub.getDiagnosticsResult(deviceId)
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "device not found":
+            return jsonify(error), 404
         return jsonify(error), 500
     return jsonify(data)
 
@@ -155,11 +175,15 @@ def get_group_diagnostics_result(groupId):
             200:
                 description: OK
                 schema: DiagnosticsGroupInfoSchema
+            404:
+                description: Group not found
             500:
                 description: Error
     """
     code, message, data = stub.getDiagnosticsResultByGroup(groupId)
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "group not found":
+            return jsonify(error), 404
         return jsonify(error), 500
     return jsonify(data)

@@ -63,13 +63,15 @@ def get_health_all(deviceId):
                 description: OK
                 schema: HealthSchema
             404:
-                description: Device not found or health type not supported
+                description: Device not found
             500:
                 description: Error
     """
     code, message, data = stub.getHealth(deviceId, "All")
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "device not found":
+            return jsonify(error), 404
         return jsonify(error), 500
     return jsonify(data)
 
@@ -99,13 +101,15 @@ def get_group_health_all(groupId):
                 description: OK
                 schema: HealthGroupSchema
             404:
-                description: Device not found or health type not supported
+                description: Group not found
             500:
                 description: Error
     """
     code, message, data = stub.getHealthByGroup(groupId, "All")
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "group not found":
+            return jsonify(error), 404
         return jsonify(error), 500
     return jsonify(data)
 
@@ -145,6 +149,8 @@ def get_health(deviceId, healthType):
     code, message, data = stub.getHealth(deviceId, healthType)
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "device not found":
+            return jsonify(error), 404
         return jsonify(error), 500
     return jsonify(data)
 
@@ -173,7 +179,7 @@ def get_group_health(groupId, healthType):
                 description: OK
                 schema: HealthGroupSchema
             404:
-                description: Device not found or health type not supported
+                description: Group not found or health type not supported
             500:
                 description: Error
     """
@@ -184,6 +190,8 @@ def get_group_health(groupId, healthType):
     code, message, data = stub.getHealthByGroup(groupId, healthType)
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "group not found":
+            return jsonify(error), 404
         return jsonify(error), 500
     return jsonify(data)
 
@@ -215,6 +223,8 @@ def set_health_config(deviceId, healthType):
         responses:
             200:
                 description: OK
+            400:
+                description: Bad Request, for example invalid threshold
             404:
                 description: Device not found or health type not supported
             500:
@@ -229,6 +239,10 @@ def set_health_config(deviceId, healthType):
     code, message, data = stub.setHealthConfig(deviceId, healthType, threshold)
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "invalid threshold":
+            return jsonify(error), 400
+        elif message == "device not found":
+            return jsonify(error), 404
         return jsonify(error), 500
     return jsonify(data)
 
@@ -260,8 +274,10 @@ def set_group_health_config(groupId, healthType):
         responses:
             200:
                 description: OK
+            400:
+                description: Bad Request, for example invalid threshold
             404:
-                description: Device not found or health type not supported
+                description: Group not found or health type not supported
             500:
                 description: Error
     """
@@ -275,5 +291,9 @@ def set_group_health_config(groupId, healthType):
         groupId, healthType, threshold)
     if code != 0:
         error = dict(Status=code, Message=message)
+        if message == "invalid threshold":
+            return jsonify(error), 400
+        elif message == "group not found":
+            return jsonify(error), 404
         return jsonify(error), 500
     return jsonify(data)
