@@ -397,7 +397,7 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
     if (checkCapability(props.core.name, bdf_address, "Energy", toGetEnergy, device)) 
         capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-    if (checkCapability(props.core.name, bdf_address, "Reset Count", toGetRasError, device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE)) 
+    if (checkCapability(props.core.name, bdf_address, "Reset Count", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE)) 
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
     if (checkCapability(props.core.name, bdf_address, "Programming Error", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE)) 
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
@@ -1749,14 +1749,14 @@ void GPUDeviceStub::getRasErrorOnSubdevice(const zes_device_handle_t& device, Ca
     if (device == nullptr) {
         return;
     }
-    //invokeTask(callback, toGetRasError, device,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+    //invokeTask(callback, toGetRasErrorOnSubdevice, device,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
     invokeTask(callback, toGetRasErrorOnSubdevice, device, rasCat, rasType);
 }
 
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) {
     //rasCat: ZES_RAS_ERROR_CAT_RESET; rasType: ZES_RAS_ERROR_TYPE_CORRECTABLE,ZES_RAS_ERROR_TYPE_UNCORRECTABLE
     if (device == nullptr) {
-        throw BaseException("toGetRasError error");
+        throw BaseException("toGetRasErrorOnSubdevice error");
     }
     bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
