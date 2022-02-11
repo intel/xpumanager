@@ -45,7 +45,9 @@ void Configuration::initEnabledMetrics() {
                     if ((int)type >= 0 && (int)type < MeasurementType::METRIC_MAX) {
                         enabled_metrics.emplace(Utility::measurementTypeFromXpumStatsType(type));
                         if ((int)type == MeasurementType::METRIC_PCIE_READ_THROUGHPUT 
-                            || (int)type == MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT) {
+                            || (int)type == MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT
+                            || (int)type == MeasurementType::METRIC_PCIE_READ
+                            || (int)type == MeasurementType::METRIC_PCIE_WRITE) {
                             INITIALIZE_PCIE_MANAGER = true;
                         }
                     } else {
@@ -58,7 +60,9 @@ void Configuration::initEnabledMetrics() {
                 if ((int)type >= 0 && (int)type < MeasurementType::METRIC_MAX) {
                     enabled_metrics.emplace(Utility::measurementTypeFromXpumStatsType(type));
                     if ((int)type == MeasurementType::METRIC_PCIE_READ_THROUGHPUT 
-                        || (int)type == MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT) {
+                        || (int)type == MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT
+                        || (int)type == MeasurementType::METRIC_PCIE_READ
+                        || (int)type == MeasurementType::METRIC_PCIE_WRITE) {
                         INITIALIZE_PCIE_MANAGER = true;
                     }
                 }
@@ -67,7 +71,8 @@ void Configuration::initEnabledMetrics() {
     } else {
         for (int metric = 0; metric < (int)MeasurementType::METRIC_MAX; metric++) {
             if (metric != (int)MeasurementType::METRIC_EU_ACTIVE && metric != (int)MeasurementType::METRIC_EU_IDLE && metric != (int)MeasurementType::METRIC_EU_STALL
-                && metric != (int)MeasurementType::METRIC_PCIE_READ_THROUGHPUT && metric != (int)MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT) {
+                && metric != (int)MeasurementType::METRIC_PCIE_READ_THROUGHPUT && metric != (int)MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT
+                && metric != (int)MeasurementType::METRIC_PCIE_READ && metric != (int)MeasurementType::METRIC_PCIE_WRITE) {
                 enabled_metrics.emplace((MeasurementType)metric);
             }
         }

@@ -48,6 +48,7 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/infrastructure/xpum_config.h.in
 # Specifiy link file location
 link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/lib)
 link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/spdlog)
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/pcm)
 
 # Specifiy header file location
 
@@ -80,6 +81,7 @@ target_include_directories(
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
           ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/include
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 
 target_include_directories(
@@ -88,6 +90,7 @@ target_include_directories(
   PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
           ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/ 
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/include
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 
 target_sources(
@@ -141,11 +144,11 @@ set(LibSpd
 )
 
 if(HAVE_PCIACCESS_H)
-    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pciaccess)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pciaccess)
+    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pcm-iio-gpu pciaccess)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pcm-iio-gpu pciaccess)
 else()
-    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs)
+    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu stdc++fs)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu stdc++fs)
 endif()
 
 unset(BUILD_TEST CACHE)

@@ -386,6 +386,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_type(request->type());
         response->set_statustype(static_cast<HealthStatusType>(data.status));
         response->set_description(data.description);
+        response->set_throttlethreshold(data.throttleThreshold);
+        response->set_shutdownthreshold(data.shutdownThreshold);
     } else {
         if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
             response->set_errormsg("device not found");
@@ -410,6 +412,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             data->set_type(static_cast<HealthType>(healthDatas[i].type));
             data->set_statustype(static_cast<HealthStatusType>(healthDatas[i].status));
             data->set_description(healthDatas[i].description);
+            data->set_throttlethreshold(healthDatas[i].throttleThreshold);
+            data->set_shutdownthreshold(healthDatas[i].shutdownThreshold);
         }
     } else {
         if (res == XPUM_RESULT_GROUP_NOT_FOUND)

@@ -62,9 +62,9 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "Cache Errors Correctable" },
             { "rowTitle": "Cache Errors Uncorrectable" }
         ], [
-            { "value": "", "subs": [
-                { "value": "device_level[metrics_type==XPUM_STATS_RAS_ERROR_CAT_RESET].value" },
-                { "label": "total", "value": "device_level[metrics_type==XPUM_STATS_RAS_ERROR_CAT_RESET].total" }
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_RESET].value" },
+                { "label": "total", "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_RESET].total" }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS].value" },

@@ -10,6 +10,7 @@
 #include "infrastructure/logger.h"
 #include "monitor/monitor_manager.h"
 #include "policy/policy_manager.h"
+#include "device/gpu/gpu_device_stub.h"
 
 namespace xpum {
 
@@ -145,6 +146,7 @@ void Core::close() {
           "Failed to close device manager");
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_data_logic),
           "Failed to close data logic");
+    GPUDeviceStub::pcie_manager.close();
 }
 
 void Core::close(const std::shared_ptr<InitCloseInterface>& p_init_close_interface,

@@ -242,6 +242,8 @@ typedef struct xpum_health_data_t {
     xpum_health_type_t type;
     xpum_health_status_t status;
     char description[XPUM_MAX_STR_LENGTH];
+    uint64_t throttleThreshold;
+    uint64_t shutdownThreshold;
 } xpum_health_data_t;
 
 /**************************************************************************/
@@ -425,6 +427,8 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_FREQUENCY_THROTTLE,                   ///< Frequency Throttle
     XPUM_STATS_PCIE_READ_THROUGHPUT,                 ///< PCIe read throughput
     XPUM_STATS_PCIE_WRITE_THROUGHPUT,                ///< PCIe write throughput
+    XPUM_STATS_PCIE_READ,                            ///< PCIe read
+    XPUM_STATS_PCIE_WRITE,                           ///< PCIe write
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 

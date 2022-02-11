@@ -320,4 +320,18 @@ void GPUDevice::getPCIeWriteThroughput(Callback_t callback) noexcept {
                                                    });
 }
 
+void GPUDevice::getPCIeRead(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getPCIeRead(zes_device_handle,
+                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                       callback(ret, e);
+                                                   });    
+}
+
+void GPUDevice::getPCIeWrite(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getPCIeWrite(zes_device_handle,
+                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                       callback(ret, e);
+                                                   });
+}
+
 } // end namespace xpum

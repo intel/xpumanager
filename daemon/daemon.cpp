@@ -104,6 +104,8 @@ void print_help(const char* app_name) {
     printf("        29      FREQUENCY_THROTTLE                                  on\n");
     printf("        30      PCIE_READ_THROUGHPUT                                off\n");
     printf("        31      PCIE_WRITE_THROUGHPUT                               off\n");
+    printf("        32      PCIE_READ                                           off\n");
+    printf("        33      PCIE_WRITE                                          off\n");
     printf("\n");
 }
 

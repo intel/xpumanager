@@ -568,20 +568,21 @@ std::string CoreStub::healthTypeEnumToString(HealthType type) {
     return ret;
 }
 
-nlohmann::json CoreStub::appendHealthThreshold(int deviceId, nlohmann::json json, HealthType type) {
+nlohmann::json CoreStub::appendHealthThreshold(int deviceId, nlohmann::json json, HealthType type, 
+                                        uint64_t throttleValue, uint64_t shutdownValue) {
     if (type == HEALTH_POWER) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_POWER_LIMIT);
-        json["throttle_threshold"] = 150;
+        json["throttle_threshold"] = throttleValue;
     }
     if (type == HEALTH_CORE_THERMAL) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_CORE_THEARMAL_LIMIT);
-        json["throttle_threshold"] = 105;
-        json["shutdown_threshold"] = 130;
+        json["throttle_threshold"] = throttleValue;
+        json["shutdown_threshold"] = shutdownValue;
     }
     if (type == HEALTH_MEMORY_THERMAL) {
         json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_MEMORY_THEARMAL_LIMIT);
-        json["throttle_threshold"] = 85;
-        json["shutdown_threshold"] = 100;
+        json["throttle_threshold"] = throttleValue;
+        json["shutdown_threshold"] = shutdownValue;
     }
     return json;
 }
@@ -661,7 +662,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealth(int deviceId, HealthType typ
             (*json)["type"] = healthTypeEnumToString(response.type());
             (*json)["status"] = healthStatusEnumToString(response.statustype());
             (*json)["description"] = response.description();
-            (*json) = appendHealthThreshold(deviceId, (*json), response.type());
+            (*json) = appendHealthThreshold(deviceId, (*json), response.type(),
+                                    response.throttlethreshold(), response.shutdownthreshold());
         } else {
             (*json)["error"] = response.errormsg();
         }
@@ -766,7 +768,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getHealthByGroup(uint32_t groupId, Hea
                 component["device_id"] = response.healthdata(i).deviceid();
                 component["status"] = healthStatusEnumToString(response.healthdata(i).statustype());
                 component["description"] = response.healthdata(i).description();
-                component = appendHealthThreshold(response.healthdata(i).deviceid(), component, response.type());
+                component = appendHealthThreshold(response.healthdata(i).deviceid(), component, response.type(),
+                                        response.healthdata(i).throttlethreshold(), response.healthdata(i).shutdownthreshold());
 
                 componentJsonList.push_back(component);
             }
