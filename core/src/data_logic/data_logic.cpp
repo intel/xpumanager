@@ -100,12 +100,14 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     bool hasDataOnDevice = false;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
-        std::shared_ptr<MeasurementData> p_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
-        if (p_data != nullptr) {
-            hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
-            m_datas.insert(std::make_pair(*metric_types_iter, p_data));
-            start_time = (uint64_t)p_data->getStartTime() < start_time ? p_data->getStartTime() : start_time;
-            end_time = (uint64_t)p_data->getLatestTime() > end_time ? p_data->getLatestTime() : end_time;
+        if (*metric_types_iter != METRIC_ENGINE_UTILIZATION) {
+            std::shared_ptr<MeasurementData> p_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
+            if (p_data != nullptr) {
+                hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
+                m_datas.insert(std::make_pair(*metric_types_iter, p_data));
+                start_time = (uint64_t)p_data->getStartTime() < start_time ? p_data->getStartTime() : start_time;
+                end_time = (uint64_t)p_data->getLatestTime() > end_time ? p_data->getLatestTime() : end_time;
+            }
         }
         ++metric_types_iter;
     }
