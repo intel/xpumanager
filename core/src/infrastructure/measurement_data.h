@@ -64,45 +64,6 @@ class MeasurementData {
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
     }
 
-    MeasurementData(uint64_t value, uint64_t scale) : avg(value),
-                                                      min(value),
-                                                      max(value),
-                                                      current(value),
-                                                      raw_data(std::numeric_limits<uint64_t>::max()),
-                                                      scale(scale),
-                                                      bHasDataOnDevice(true),
-                                                      raw_timestamp(0),
-                                                      timestamp(0) {
-        p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
-        p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
-    }
-
-    MeasurementData(uint64_t avg, uint64_t min, uint64_t max) : avg(avg),
-                                                                min(min),
-                                                                max(max),
-                                                                current(std::numeric_limits<uint64_t>::max()),
-                                                                raw_data(std::numeric_limits<uint64_t>::max()),
-                                                                scale(1),
-                                                                bHasDataOnDevice(true),
-                                                                raw_timestamp(0),
-                                                                timestamp(0) {
-        p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
-        p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
-    }
-
-    MeasurementData(uint64_t avg, uint64_t min, uint64_t max, uint64_t current, uint64_t scale) : avg(avg),
-                                                                                                  min(min),
-                                                                                                  max(max),
-                                                                                                  current(current),
-                                                                                                  raw_data(std::numeric_limits<uint64_t>::max()),
-                                                                                                  scale(scale),
-                                                                                                  bHasDataOnDevice(true),
-                                                                                                  raw_timestamp(0),
-                                                                                                  timestamp(0) {
-        p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
-        p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
-    }
-
     MeasurementData(const MeasurementData& other) {
         device_id = other.device_id;
         avg = other.avg;

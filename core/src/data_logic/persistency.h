@@ -14,7 +14,7 @@ class Persistency {
     virtual void storeMeasurementData(
         MeasurementType type,
         Timestamp_t time,
-        std::map<std::string, MeasurementData>& datas) = 0;
+        std::map<std::string, std::shared_ptr<MeasurementData>>& datas) = 0;
 };
 
 } // end namespace xpum

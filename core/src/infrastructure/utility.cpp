@@ -79,6 +79,8 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT;
         case DeviceCapability::METRIC_COMPUTATION:
             return MeasurementType::METRIC_COMPUTATION;
+        case DeviceCapability::METRIC_ENGINE_UTILIZATION:
+            return MeasurementType::METRIC_ENGINE_UTILIZATION;
         case DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
             return MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
         case DeviceCapability::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
@@ -148,6 +150,8 @@ DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& m
             return DeviceCapability::METRIC_MEMORY_WRITE_THROUGHPUT;
         case MeasurementType::METRIC_COMPUTATION:
             return DeviceCapability::METRIC_COMPUTATION;
+        case MeasurementType::METRIC_ENGINE_UTILIZATION:
+            return DeviceCapability::METRIC_ENGINE_UTILIZATION;
         case MeasurementType::METRIC_ENERGY:
             return DeviceCapability::METRIC_ENERGY;
         case MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
@@ -229,6 +233,7 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
     metric_types.push_back(MeasurementType::METRIC_MEMORY_READ_THROUGHPUT);
     metric_types.push_back(MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT);
     metric_types.push_back(MeasurementType::METRIC_COMPUTATION);
+    metric_types.push_back(MeasurementType::METRIC_ENGINE_UTILIZATION);
     metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION);
     metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION);
     metric_types.push_back(MeasurementType::METRIC_ENGINE_GROUP_COPY_ALL_UTILIZATION);
@@ -277,6 +282,8 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
             return MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT;
         case xpum_stats_type_enum::XPUM_STATS_GPU_UTILIZATION:
             return MeasurementType::METRIC_COMPUTATION;
+        case xpum_stats_type_enum::XPUM_STATS_ENGINE_UTILIZATION:
+            return MeasurementType::METRIC_ENGINE_UTILIZATION;
         case xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
             return MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
         case xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:
@@ -352,6 +359,8 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
             return xpum_stats_type_enum::XPUM_STATS_MEMORY_WRITE_THROUGHPUT;
         case MeasurementType::METRIC_COMPUTATION:
             return xpum_stats_type_enum::XPUM_STATS_GPU_UTILIZATION;
+        case MeasurementType::METRIC_ENGINE_UTILIZATION:
+            return xpum_stats_type_enum::XPUM_STATS_ENGINE_UTILIZATION;
         case MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
             return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION;
         case MeasurementType::METRIC_ENGINE_GROUP_MEDIA_ALL_UTILIZATION:

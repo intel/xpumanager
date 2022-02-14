@@ -10,7 +10,7 @@ class DBPersistency : public Persistency {
     virtual void storeMeasurementData(
         MeasurementType type,
         Timestamp_t time,
-        std::map<std::string, MeasurementData>& datas) override;
+        std::map<std::string, std::shared_ptr<MeasurementData>>& datas) override;
 };
 
 } // end namespace xpum

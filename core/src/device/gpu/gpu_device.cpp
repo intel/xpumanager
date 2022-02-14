@@ -156,6 +156,13 @@ void GPUDevice::getRasErrorOnSubdevice(Callback_t callback, const zes_ras_error_
         rasCat, rasType);
 }
 
+void GPUDevice::getGPUUtilization(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getGPUUtilization(zes_device_handle,
+                                                [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                    callback(ret, e);
+                                                });
+}
+
 void GPUDevice::getEngineUtilization(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getEngineUtilization(zes_device_handle,
                                                    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {

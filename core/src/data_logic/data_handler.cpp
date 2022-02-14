@@ -35,7 +35,7 @@ void DataHandler::preHandleData(std::shared_ptr<SharedData>& p_data) noexcept {
     this->p_latestData = p_data;
     auto iter = this->p_latestData->getData().begin();
     while (iter != this->p_latestData->getData().end()) {
-        iter->second.setTimestamp(p_data->getTime());
+        iter->second->setTimestamp(p_data->getTime());
         ++iter;
     }
     lock.unlock();
@@ -54,27 +54,27 @@ void DataHandler::preHandleData(std::shared_ptr<SharedData>& p_data) noexcept {
     }
 }
 
-MeasurementData DataHandler::getLatestData(std::string& device_id) noexcept {
+std::shared_ptr<MeasurementData> DataHandler::getLatestData(std::string& device_id) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (p_latestData == nullptr) {
-        return MeasurementData();
+        return nullptr;
     }
 
     auto datas = p_latestData->getData();
     return datas[device_id];
 }
 
-MeasurementData DataHandler::getLatestStatistics(std::string& device_id, uint64_t session_id) noexcept {
+std::shared_ptr<MeasurementData> DataHandler::getLatestStatistics(std::string& device_id, uint64_t session_id) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (p_latestData == nullptr) {
-        return MeasurementData();
+        return nullptr;
     }
 
     auto datas = p_latestData->getData();
     return datas[device_id];
 }
 
-void DataHandler::getLatestData(std::map<std::string, MeasurementData>& datas) noexcept {
+void DataHandler::getLatestData(std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (p_latestData == nullptr) {
         return;

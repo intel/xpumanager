@@ -29,15 +29,15 @@ uint32_t EngineGroupUtilizationDataHandler::getAverage(std::vector<uint32_t>& da
 void EngineGroupUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_data) {
     std::unique_lock<std::mutex> lock(this->mutex);
       
-    std::map<std::string, MeasurementData>::iterator iter = p_data->getData().begin();
+    std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
         std::map<uint32_t, std::vector<uint32_t>> group_utilizations;
-        auto extended_data = iter->second.getExtendedDatas()->begin();
-        while(extended_data != iter->second.getExtendedDatas()->end()) {
+        auto extended_data = iter->second->getExtendedDatas()->begin();
+        while(extended_data != iter->second->getExtendedDatas()->end()) {
             auto pre_data = p_preData->getData().find(iter->first);;
             if (pre_data != p_preData->getData().end()) {
-                auto pre_extended = pre_data->second.getExtendedDatas()->find(extended_data->first);
-                if (pre_extended != pre_data->second.getExtendedDatas()->end()) {
+                auto pre_extended = pre_data->second->getExtendedDatas()->find(extended_data->first);
+                if (pre_extended != pre_data->second->getExtendedDatas()->end()) {
                     uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 * (extended_data->second.active_time - pre_extended->second.active_time) / (extended_data->second.timestamp - pre_extended->second.timestamp);
                     if (val > Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
                         val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
@@ -50,19 +50,19 @@ void EngineGroupUtilizationDataHandler::calculateData(std::shared_ptr<SharedData
 
         std::map<uint32_t, std::vector<uint64_t>> utilizations;
         uint32_t i = 0;
-        uint32_t num_subdevice = p_data->getData()[iter->first].getNumSubdevices();
+        uint32_t num_subdevice = p_data->getData()[iter->first]->getNumSubdevices();
         do {
             utilizations[i].push_back(getAverage(group_utilizations[i]));
             i++;
         } while (i < num_subdevice);
         if (num_subdevice != 0) {
             for (uint32_t i = 0; i < num_subdevice; ++i) {
-                p_data->getData()[iter->first].setSubdeviceDataCurrent(i, *std::max_element(utilizations[i].begin(), utilizations[i].end()));
-                p_data->getData()[iter->first].setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                p_data->getData()[iter->first]->setSubdeviceDataCurrent(i, *std::max_element(utilizations[i].begin(), utilizations[i].end()));
+                p_data->getData()[iter->first]->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
             }
         } else {
-            p_data->getData()[iter->first].setCurrent(*std::max_element(utilizations[0].begin(), utilizations[0].end()));
-            p_data->getData()[iter->first].setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+            p_data->getData()[iter->first]->setCurrent(*std::max_element(utilizations[0].begin(), utilizations[0].end()));
+            p_data->getData()[iter->first]->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
         }
         ++iter;
     }
@@ -76,4 +76,5 @@ void EngineGroupUtilizationDataHandler::handleData(std::shared_ptr<SharedData>& 
     calculateData(p_data);
     updateStatistics(p_data);
 }
+
 } // end namespace xpum

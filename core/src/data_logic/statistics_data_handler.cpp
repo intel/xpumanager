@@ -21,7 +21,7 @@ void StatisticsDataHandler::getCacheMinMaxAvg(std::string& device_id, int& min, 
     std::deque<std::shared_ptr<SharedData>>::const_iterator iter = cache.begin();
     while (iter != cache.end()) {
         if ((*iter)->getData().find(device_id) != (*iter)->getData().end()) {
-            int data = (*iter)->getData()[device_id].getCurrent();
+            int data = (*iter)->getData()[device_id]->getCurrent();
             if (data > temp_max) {
                 temp_max = data;
             }
@@ -54,10 +54,10 @@ void StatisticsDataHandler::handleData(std::shared_ptr<SharedData>& p_data) noex
     }
 }
 
-MeasurementData StatisticsDataHandler::getLatestData(std::string& device_id) noexcept {
+std::shared_ptr<MeasurementData> StatisticsDataHandler::getLatestData(std::string& device_id) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (p_latestData == nullptr) {
-        return MeasurementData();
+        return nullptr;
     }
 
     auto datas = p_latestData->getData();
@@ -65,13 +65,13 @@ MeasurementData StatisticsDataHandler::getLatestData(std::string& device_id) noe
     int max = 0;
     int avg = 0;
     getCacheMinMaxAvg(device_id, min, max, avg);
-    datas[device_id].setMin(min);
-    datas[device_id].setMax(max);
-    datas[device_id].setAvg(avg);
+    datas[device_id]->setMin(min);
+    datas[device_id]->setMax(max);
+    datas[device_id]->setAvg(avg);
     return datas[device_id];
 }
 
-void StatisticsDataHandler::getLatestData(std::map<std::string, MeasurementData>& datas) noexcept {
+void StatisticsDataHandler::getLatestData(std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (p_latestData == nullptr) {
         return;
@@ -85,9 +85,9 @@ void StatisticsDataHandler::getLatestData(std::map<std::string, MeasurementData>
         int max = 0;
         int avg = 0;
         getCacheMinMaxAvg(device_id, min, max, avg);
-        datas[device_id].setMin(min);
-        datas[device_id].setMax(max);
-        datas[device_id].setAvg(avg);
+        datas[device_id]->setMin(min);
+        datas[device_id]->setMax(max);
+        datas[device_id]->setAvg(avg);
     }
 }
 } // end namespace xpum

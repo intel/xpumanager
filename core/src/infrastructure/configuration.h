@@ -21,6 +21,7 @@ class Configuration {
     static int EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
     static bool INITIALIZE_PCIE_MANAGER;
     static uint32_t DEFAULT_MEASUREMENT_DATA_SCALE;
+    static uint32_t MAX_STATISTICS_SESSION_NUM;
 
    public:
     static void init() {

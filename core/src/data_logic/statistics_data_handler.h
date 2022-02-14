@@ -12,9 +12,9 @@ class StatisticsDataHandler : public DataHandler {
 
     virtual void handleData(std::shared_ptr<SharedData>& p_data) noexcept;
 
-    virtual MeasurementData getLatestData(std::string& device_id) noexcept;
+    virtual std::shared_ptr<MeasurementData> getLatestData(std::string& device_id) noexcept;
 
-    virtual void getLatestData(std::map<std::string, MeasurementData>& datas) noexcept;
+    virtual void getLatestData(std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept;
 
     void getCacheMinMaxAvg(std::string& device_id, int& min, int& max, int& avg);
 

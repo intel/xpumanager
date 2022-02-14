@@ -14,14 +14,14 @@ class SharedData {
     virtual ~SharedData();
 
    public:
-    std::map<std::string, MeasurementData>& getData() noexcept;
+    std::map<std::string, std::shared_ptr<MeasurementData>>& getData() noexcept;
 
     Timestamp_t getTime() noexcept;
 
    private:
     Timestamp_t time;
 
-    std::map<std::string, MeasurementData> datas;
+    std::map<std::string, std::shared_ptr<MeasurementData>> datas;
 };
 
 } // end namespace xpum

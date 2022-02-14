@@ -27,15 +27,15 @@ class DataLogic : public DataLogicInterface {
         Timestamp_t time,
         std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas) override;
 
-    MeasurementData getLatestData(
+    std::shared_ptr<MeasurementData> getLatestData(
         MeasurementType type,
         std::string& device_id) override;
 
     void getLatestData(
         MeasurementType type,
-        std::map<std::string, MeasurementData>& datas) override;
+        std::map<std::string, std::shared_ptr<MeasurementData>>& datas) override;
 
-    MeasurementData getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) override;
+    std::shared_ptr<MeasurementData> getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) override;
 
     void getMetricsStatistics(xpum_device_id_t device_id,
                               xpum_device_stats_t data_list[],
@@ -43,6 +43,13 @@ class DataLogic : public DataLogicInterface {
                               uint64_t* begin,
                               uint64_t* end,
                               uint64_t session_id);
+    
+    void getEngineStatistics(xpum_device_id_t device_id,
+                             xpum_device_stats_t data_list[],
+                             int* count,
+                             uint64_t* begin,
+                             uint64_t* end,
+                             uint64_t session_id);
 
     void getLatestMetrics(xpum_device_id_t deviceId,
                           xpum_device_metrics_t dataList[],

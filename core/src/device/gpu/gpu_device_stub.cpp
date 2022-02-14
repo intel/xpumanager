@@ -393,8 +393,10 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ_THROUGHPUT);
     if (checkCapability(props.core.name, bdf_address, "Memory Write Throughput", toGetMemoryWriteThroughput, device)) 
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE_THROUGHPUT);
-    if (checkCapability(props.core.name, bdf_address, "GPU Utilization", toGetEngineUtilization, device)) 
+    if (checkCapability(props.core.name, bdf_address, "GPU Utilization", toGetGPUUtilization, device))
         capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
+    if (checkCapability(props.core.name, bdf_address, "Engine Utilization", toGetEngineUtilization, device))
+        capabilities.push_back(DeviceCapability::METRIC_ENGINE_UTILIZATION);
     if (checkCapability(props.core.name, bdf_address, "Energy", toGetEnergy, device)) 
         capabilities.push_back(DeviceCapability::METRIC_ENERGY);
     if (checkCapability(props.core.name, bdf_address, "Reset Count", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE)) 
@@ -688,6 +690,18 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_TX_SPEED, props.maxTxSpeed.bitRate));
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_RX_LANES_NUMBER, props.maxRxSpeed.width));
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_TX_LANES_NUMBER, props.maxTxSpeed.width));
+                        }
+                    }
+                }
+
+                uint32_t engine_grp_count;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
+                if (res == ZE_RESULT_SUCCESS) {
+                    std::vector<zes_engine_handle_t> engines(engine_grp_count);
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data()));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        for (auto& engine : engines) {
+                            p_gpu->addEngine(engine);
                         }
                     }
                 }
@@ -1856,16 +1870,16 @@ void GPUDeviceStub::getRasError(const zes_device_handle_t& device, uint64_t erro
     //throw BaseException("getRasError error");
 }
 
-void GPUDeviceStub::getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept {
+void GPUDeviceStub::getGPUUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept {
     if (device == nullptr) {
         return;
     }
-    invokeTask(callback, toGetEngineUtilization, device);
+    invokeTask(callback, toGetGPUUtilization, device);
 }
 
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes_device_handle_t& device) {
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetGPUUtilization(const zes_device_handle_t& device) {
     if (device == nullptr) {
-        throw BaseException("toGetEngineUtilization error");
+        throw BaseException("toGetGPUUtilization error");
     }
 
     std::map<std::string, ze_result_t> exception_msgs;
@@ -1913,6 +1927,69 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes
                         } else {
                             exception_msgs["zesEngineGetActivity"] = res;
                         }
+                    }
+                } else {
+                    exception_msgs["zesEngineGetProperties"] = res;
+                }
+            }
+        } else {
+            exception_msgs["zesDeviceEnumEngineGroups"] = res;
+        }
+    } else {
+        exception_msgs["zesDeviceEnumEngineGroups"] = res;
+    }
+    if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
+        return ret;
+    } else {
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
+    }
+}
+
+void GPUDeviceStub::getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetEngineUtilization, device);
+}
+
+std::shared_ptr<EngineCollectionMeasurementData> GPUDeviceStub::toGetEngineUtilization(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetEngineUtilization error");
+    }
+
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
+    uint32_t engine_count = 0;
+    std::shared_ptr<EngineCollectionMeasurementData> ret = std::make_shared<EngineCollectionMeasurementData>();
+    ze_result_t res;
+    zes_device_properties_t props = {};
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
+    if (res == ZE_RESULT_SUCCESS) {
+        ret->setNumSubdevices(props.numSubdevices);
+    } else {
+        exception_msgs["zesDeviceGetProperties"] = res;
+    }
+
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_engine_handle_t> engines(engine_count);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data()));
+        if (res == ZE_RESULT_SUCCESS) {
+            for (auto& engine : engines) {
+                zes_engine_properties_t props;
+                props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
+                if (res == ZE_RESULT_SUCCESS) {
+                    zes_engine_stats_t snap = {};
+                    XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        //XPUM_LOG_INFO("engine={}, type={}, onSubdevice={}, subdeviceId={}, activeTime={}, timestamp={}",(uint64_t)engine, props.type,(bool)props.onSubdevice,props.subdeviceId,snap.activeTime,snap.timestamp);
+                        ret->addRawData(uint64_t(engine),props.type,(bool)props.onSubdevice,props.subdeviceId,snap.activeTime,snap.timestamp);
+                        data_acquired = true;
+                    } else {
+                        exception_msgs["zesEngineGetActivity"] = res;
                     }
                 } else {
                     exception_msgs["zesEngineGetProperties"] = res;

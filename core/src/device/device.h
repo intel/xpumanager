@@ -60,6 +60,8 @@ class Device {
 
     virtual void getEngineUtilization(Callback_t callback) noexcept = 0;
 
+    virtual void getGPUUtilization(Callback_t callback) noexcept = 0;
+
     virtual void getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept = 0;
 
     virtual void getEnergy(Callback_t callback) noexcept = 0;
@@ -102,6 +104,10 @@ class Device {
 
     static std::function<void(Callback_t)> getDeviceMethod(DeviceCapability& capability, Device* p_device);
 
+    void addEngine(zes_engine_handle_t engine);
+
+    void getEngines(std::vector<zes_engine_handle_t>& engines) noexcept;
+
    public:
     virtual ~Device() {}
 
@@ -119,6 +125,8 @@ class Device {
     std::vector<DeviceCapability> capabilities;
 
     std::vector<Property> properties;
+
+    std::vector<zes_engine_handle_t> engines;
 };
 
 } // end namespace xpum

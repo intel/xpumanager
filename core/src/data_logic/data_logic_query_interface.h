@@ -6,6 +6,7 @@
 
 #include "../include/xpum_structs.h"
 #include "infrastructure/measurement_cache_data.h"
+#include "infrastructure/measurement_data.h"
 
 namespace xpum {
 
@@ -13,13 +14,13 @@ class DataLogicQueryInterface {
    public:
     virtual ~DataLogicQueryInterface(){};
 
-    virtual MeasurementData getLatestData(MeasurementType type,
+    virtual std::shared_ptr<MeasurementData> getLatestData(MeasurementType type,
                                           std::string &device_id) = 0;
 
     virtual void getLatestData(MeasurementType type,
-                               std::map<std::string, MeasurementData> &datas) = 0;
+                               std::map<std::string, std::shared_ptr<MeasurementData>> &datas) = 0;
 
-    virtual MeasurementData getLatestStatistics(MeasurementType type, std::string &device_id, uint64_t session_id) = 0;
+    virtual std::shared_ptr<MeasurementData> getLatestStatistics(MeasurementType type, std::string &device_id, uint64_t session_id) = 0;
 
     virtual void getMetricsStatistics(xpum_device_id_t deviceId,
                                       xpum_device_stats_t dataList[],
@@ -27,6 +28,13 @@ class DataLogicQueryInterface {
                                       uint64_t *begin,
                                       uint64_t *end,
                                       uint64_t session_id) = 0;
+    
+    virtual void getEngineStatistics(xpum_device_id_t deviceId,
+                                     xpum_device_stats_t dataList[],
+                                     int *count,
+                                     uint64_t *begin,
+                                     uint64_t *end,
+                                     uint64_t session_id) = 0;
 
     virtual void getLatestMetrics(xpum_device_id_t deviceId,
                                   xpum_device_metrics_t dataList[],

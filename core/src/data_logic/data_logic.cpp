@@ -8,6 +8,8 @@
 #include "infrastructure/utility.h"
 #include "infrastructure/configuration.h"
 #include "core/core.h"
+#include "engine_measurement_data.h"
+#include <iomanip>
 
 namespace xpum {
 
@@ -40,7 +42,7 @@ void DataLogic::storeMeasurementData(MeasurementType type, Timestamp_t time,
     p_raw_data_manager->storeMeasurementData(type, time, datas);
 }
 
-MeasurementData DataLogic::getLatestData(MeasurementType type,
+std::shared_ptr<MeasurementData> DataLogic::getLatestData(MeasurementType type,
                                          std::string& device_id) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
@@ -49,14 +51,14 @@ MeasurementData DataLogic::getLatestData(MeasurementType type,
 }
 
 void DataLogic::getLatestData(MeasurementType type,
-                              std::map<std::string, MeasurementData>& datas) {
+                              std::map<std::string, std::shared_ptr<MeasurementData>>& datas) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
     }
     return p_raw_data_manager->getLatestData(type, datas);
 }
 
-MeasurementData DataLogic::getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) {
+std::shared_ptr<MeasurementData> DataLogic::getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
     }
@@ -80,7 +82,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         return;
     }
 
-    std::map<MeasurementType, MeasurementData> m_datas;
+    std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
     std::vector<xpum::DeviceCapability> capabilities;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
@@ -98,38 +100,40 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     bool hasDataOnDevice = false;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
-        MeasurementData m_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
-        hasDataOnDevice = hasDataOnDevice || m_data.hasDataOnDevice();
-        m_datas.insert(std::make_pair(*metric_types_iter, m_data));
-        start_time = (uint64_t)m_data.getStartTime() < start_time ? m_data.getStartTime() : start_time;
-        end_time = (uint64_t)m_data.getLatestTime() > end_time ? m_data.getLatestTime() : end_time;
+        std::shared_ptr<MeasurementData> p_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
+        if (p_data != nullptr) {
+            hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
+            m_datas.insert(std::make_pair(*metric_types_iter, p_data));
+            start_time = (uint64_t)p_data->getStartTime() < start_time ? p_data->getStartTime() : start_time;
+            end_time = (uint64_t)p_data->getLatestTime() > end_time ? p_data->getLatestTime() : end_time;
+        }
         ++metric_types_iter;
     }
     *begin = start_time;
     *end = end_time;
 
-    std::map<MeasurementType, MeasurementData>::iterator datas_iter = m_datas.begin();
+    std::map<MeasurementType, std::shared_ptr<MeasurementData>>::iterator datas_iter = m_datas.begin();
     xpum_device_stats_t device_stats;
     device_stats.deviceId = deviceId;
     device_stats.isTileData = false;
     device_stats.count = 0;
     if (hasDataOnDevice) {
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second.hasDataOnDevice()) {
+            if (datas_iter->second->hasDataOnDevice()) {
                 xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                stats_data.scale = datas_iter->second.getScale();
+                stats_data.scale = datas_iter->second->getScale();
                 if (Utility::isCounterMetric(type)) {
                     stats_data.isCounter = true;
-                    stats_data.accumulated = datas_iter->second.getCurrent();
-                    stats_data.value = datas_iter->second.getCurrent() - datas_iter->second.getMin();
+                    stats_data.accumulated = datas_iter->second->getCurrent();
+                    stats_data.value = datas_iter->second->getCurrent() - datas_iter->second->getMin();
                 } else {
                     stats_data.isCounter = false;
-                    stats_data.avg = datas_iter->second.getAvg();
-                    stats_data.min = datas_iter->second.getMin();
-                    stats_data.max = datas_iter->second.getMax();
-                    stats_data.value = datas_iter->second.getCurrent();
+                    stats_data.avg = datas_iter->second->getAvg();
+                    stats_data.min = datas_iter->second->getMin();
+                    stats_data.max = datas_iter->second->getMax();
+                    stats_data.value = datas_iter->second->getCurrent();
                 }
                 device_stats.dataList[device_stats.count++] = stats_data;
             }
@@ -147,23 +151,23 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         subdevice_stats.count = 0;
         datas_iter = m_datas.begin();
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second.hasSubdeviceData() 
-            && datas_iter->second.getSubdeviceDatas()->find(i) != datas_iter->second.getSubdeviceDatas()->end() 
-            && datas_iter->second.getSubdeviceDataCurrent(i) != std::numeric_limits<uint64_t>::max()) {
+            if (datas_iter->second->hasSubdeviceData() 
+            && datas_iter->second->getSubdeviceDatas()->find(i) != datas_iter->second->getSubdeviceDatas()->end() 
+            && datas_iter->second->getSubdeviceDataCurrent(i) != std::numeric_limits<uint64_t>::max()) {
                 xpum_device_stats_data_t stats_data;
                 MeasurementType type = datas_iter->first;
                 stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
-                stats_data.scale = datas_iter->second.getScale();
+                stats_data.scale = datas_iter->second->getScale();
                 if (Utility::isCounterMetric(type)) {
                     stats_data.isCounter = true;
-                    stats_data.accumulated = datas_iter->second.getSubdeviceDataCurrent(i);
-                    stats_data.value = datas_iter->second.getSubdeviceDataCurrent(i) - datas_iter->second.getSubdeviceDataMin(i);
+                    stats_data.accumulated = datas_iter->second->getSubdeviceDataCurrent(i);
+                    stats_data.value = datas_iter->second->getSubdeviceDataCurrent(i) - datas_iter->second->getSubdeviceDataMin(i);
                 } else {
                     stats_data.isCounter = false;
-                    stats_data.avg = datas_iter->second.getSubdeviceDataAvg(i);
-                    stats_data.min = datas_iter->second.getSubdeviceDataMin(i);
-                    stats_data.max = datas_iter->second.getSubdeviceDataMax(i);
-                    stats_data.value = datas_iter->second.getSubdeviceDataCurrent(i);
+                    stats_data.avg = datas_iter->second->getSubdeviceDataAvg(i);
+                    stats_data.min = datas_iter->second->getSubdeviceDataMin(i);
+                    stats_data.max = datas_iter->second->getSubdeviceDataMax(i);
+                    stats_data.value = datas_iter->second->getSubdeviceDataCurrent(i);
                 }
                 subdevice_stats.dataList[subdevice_stats.count++] = stats_data;
             }
@@ -187,7 +191,7 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
         return;
     }
 
-    std::map<MeasurementType, MeasurementData> m_datas;
+    std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
     std::vector<xpum::DeviceCapability> capabilities;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
@@ -203,27 +207,29 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
     bool hasDataOnDevice = false;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
-        MeasurementData m_data = getLatestData(*metric_types_iter, device_id);
-        hasDataOnDevice = hasDataOnDevice || m_data.hasDataOnDevice();
-        m_datas.insert(std::make_pair(*metric_types_iter, m_data));
+        std::shared_ptr<MeasurementData> m_data = getLatestData(*metric_types_iter, device_id);
+        if (m_data != nullptr) {
+            hasDataOnDevice = hasDataOnDevice || m_data->hasDataOnDevice();
+            m_datas.insert(std::make_pair(*metric_types_iter, m_data));
+        }
         ++metric_types_iter;
     }
 
-    std::map<MeasurementType, MeasurementData>::iterator datas_iter = m_datas.begin();
+    std::map<MeasurementType, std::shared_ptr<MeasurementData>>::iterator datas_iter = m_datas.begin();
     xpum_device_metrics_t device_metrics;
     device_metrics.deviceId = deviceId;
     device_metrics.isTileData = false;
     device_metrics.count = 0;
     if (hasDataOnDevice) {
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second.hasDataOnDevice()) {
+            if (datas_iter->second->hasDataOnDevice()) {
                 xpum_device_metric_data_t metric_data;
                 MeasurementType type = datas_iter->first;
                 metric_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
                 metric_data.isCounter = Utility::isCounterMetric(type) ? true : false;
-                metric_data.value = datas_iter->second.getCurrent();
-                metric_data.timestamp =  datas_iter->second.getTimestamp();
-                metric_data.scale = datas_iter->second.getScale();
+                metric_data.value = datas_iter->second->getCurrent();
+                metric_data.timestamp =  datas_iter->second->getTimestamp();
+                metric_data.scale = datas_iter->second->getScale();
                 device_metrics.dataList[device_metrics.count++] = metric_data;
             }
             ++datas_iter;
@@ -240,22 +246,31 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
         subdevice_metrics.count = 0;
         datas_iter = m_datas.begin();
         while (datas_iter != m_datas.end()) {
-            if (datas_iter->second.hasSubdeviceData() 
-            && datas_iter->second.getSubdeviceDatas()->find(i) != datas_iter->second.getSubdeviceDatas()->end()
-            && datas_iter->second.getSubdeviceDataCurrent(i) != std::numeric_limits<uint64_t>::max()) {
+            if (datas_iter->second->hasSubdeviceData() 
+            && datas_iter->second->getSubdeviceDatas()->find(i) != datas_iter->second->getSubdeviceDatas()->end()
+            && datas_iter->second->getSubdeviceDataCurrent(i) != std::numeric_limits<uint64_t>::max()) {
                 xpum_device_metric_data_t metric_data;
                 MeasurementType type = datas_iter->first;
                 metric_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
                 metric_data.isCounter = Utility::isCounterMetric(type) ? true : false;
-                metric_data.value = datas_iter->second.getSubdeviceDataCurrent(i);
-                metric_data.timestamp = datas_iter->second.getTimestamp();
-                metric_data.scale = datas_iter->second.getScale();
+                metric_data.value = datas_iter->second->getSubdeviceDataCurrent(i);
+                metric_data.timestamp = datas_iter->second->getTimestamp();
+                metric_data.scale = datas_iter->second->getScale();
                 subdevice_metrics.dataList[subdevice_metrics.count++] = metric_data;
             }
             ++datas_iter;
         }
         dataList[index++] = subdevice_metrics;
     }
+}
+
+void DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
+                                    xpum_device_stats_t dataList[],
+                                    int* count,
+                                    uint64_t* begin,
+                                    uint64_t* end,
+                                    uint64_t session_id) {
+
 }
 
 uint32_t DataLogic::startRawDataCollectionTask(xpum_device_id_t deviceId, std::vector<MeasurementType> types) {

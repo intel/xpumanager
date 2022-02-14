@@ -13,6 +13,7 @@
 #include "temperature_data_handler.h"
 #include "throughput_data_handler.h"
 #include "frequency_throttle_time_data_handler.h"
+#include "gpu_utilization_data_handler.h"
 
 namespace xpum {
 
@@ -75,8 +76,12 @@ void RawDataManager::init() {
         std::make_shared<ThroughputDataHandler>(MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT]->init();
 
+    data_handlers[MeasurementType::METRIC_ENGINE_UTILIZATION] =
+        std::make_shared<EngineUtilizationDataHandler>(MeasurementType::METRIC_ENGINE_UTILIZATION, p_persistency);
+    data_handlers[MeasurementType::METRIC_ENGINE_UTILIZATION]->init();
+
     data_handlers[MeasurementType::METRIC_COMPUTATION] =
-        std::make_shared<EngineUtilizationDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);
+        std::make_shared<GPUUtilizationDataHandler>(MeasurementType::METRIC_COMPUTATION, p_persistency);
     data_handlers[MeasurementType::METRIC_COMPUTATION]->init();
 
     data_handlers[MeasurementType::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION] =
@@ -142,8 +147,8 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT]->init();
-
-    data_handlers[MeasurementType::METRIC_PCIE_READ] =
+	
+	data_handlers[MeasurementType::METRIC_PCIE_READ] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_READ, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_READ]->init();
 
@@ -171,29 +176,27 @@ void RawDataManager::storeMeasurementData(
     }
 }
 
-MeasurementData RawDataManager::getLatestData(
+std::shared_ptr<MeasurementData> RawDataManager::getLatestData(
     MeasurementType type,
     std::string& device_id) noexcept {
     std::unique_lock<std::mutex> lock(mutex);
     auto& p_handler = data_handlers[type];
     lock.unlock();
 
-    return p_handler == nullptr ? MeasurementData()
-                                : p_handler->getLatestData(device_id);
+    return p_handler == nullptr ? nullptr : p_handler->getLatestData(device_id);
 }
 
-MeasurementData RawDataManager::getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) noexcept {
+std::shared_ptr<MeasurementData> RawDataManager::getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) noexcept {
     std::unique_lock<std::mutex> lock(mutex);
     auto& p_handler = data_handlers[type];
     lock.unlock();
 
-    return p_handler == nullptr ? MeasurementData()
-                                : p_handler->getLatestStatistics(device_id, session_id);
+    return p_handler == nullptr ? nullptr : p_handler->getLatestStatistics(device_id, session_id);
 }
 
 void RawDataManager::getLatestData(
     MeasurementType type,
-    std::map<std::string, MeasurementData>& datas) noexcept {
+    std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept {
     std::unique_lock<std::mutex> lock(mutex);
     auto& p_handler = data_handlers[type];
     lock.unlock();
@@ -266,16 +269,16 @@ void RawDataManager::updateCaches(MeasurementType type, std::shared_ptr<SharedDa
         if (iter->running) {
             bool added = false;
             if (iter->time_frames_count[type] < Configuration::CACHE_SIZE_LIMIT) {
-                std::map<std::string, MeasurementData>::iterator iter_p_data = p_data->getData().begin();
+                std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter_p_data = p_data->getData().begin();
                 while (iter_p_data != p_data->getData().end()) {
                     if (iter_p_data->first == iter->device_id) {
-                        if (iter_p_data->second.hasDataOnDevice()) {
-                            MeasurementCacheData data(iter_p_data->first, type, iter_p_data->second.getCurrent(), p_data->getTime(), false, 0);
+                        if (iter_p_data->second->hasDataOnDevice()) {
+                            MeasurementCacheData data(iter_p_data->first, type, iter_p_data->second->getCurrent(), p_data->getTime(), false, 0);
                             caches[iter->task_id][type].push_back(data);
                             added = true;
                         }
-                        std::map<uint32_t, SubdeviceData>::const_iterator iter_p_data_sub = iter_p_data->second.getSubdeviceDatas()->begin();
-                        while (iter_p_data_sub != iter_p_data->second.getSubdeviceDatas()->end()) {
+                        std::map<uint32_t, SubdeviceData>::const_iterator iter_p_data_sub = iter_p_data->second->getSubdeviceDatas()->begin();
+                        while (iter_p_data_sub != iter_p_data->second->getSubdeviceDatas()->end()) {
                             MeasurementCacheData data(iter_p_data->first, type, iter_p_data_sub->second.current, p_data->getTime(), true, iter_p_data_sub->first);
                             caches[iter->task_id][type].push_back(data);
                             added = true;

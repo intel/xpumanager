@@ -1,115 +1,51 @@
 #include "engine_utilization_data_handler.h"
+
 #include <algorithm>
 #include <iostream>
+
 #include "infrastructure/configuration.h"
+#include "infrastructure/engine_measurement_data.h"
 
 namespace xpum {
 
 EngineUtilizationDataHandler::EngineUtilizationDataHandler(MeasurementType type,
                                                            std::shared_ptr<Persistency>& p_persistency)
-    : MetricStatisticsDataHandler(type, p_persistency) {
+    : MetricCollectionStatisticsDataHandler(type, p_persistency) {
 }
 
 EngineUtilizationDataHandler::~EngineUtilizationDataHandler() {
     close();
 }
 
-uint32_t EngineUtilizationDataHandler::getAverage(std::vector<uint32_t>& datas) {
-    uint32_t sum = 0;
-    for (auto& data : datas) {
-        sum += data;
-    }
-    if (datas.size() != 0) {
-        return sum / datas.size();
-    } else {
-        return 0;
-    }
-}
-
 void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_data) {
     std::unique_lock<std::mutex> lock(this->mutex);
-
-    std::map<std::string, MeasurementData>::iterator iter = p_data->getData().begin();
+    std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
-        std::map<uint32_t, std::vector<uint32_t>> compute_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> render_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> decode_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> encode_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> copy_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> media_enhancement_utilizations;
-        std::map<uint32_t, std::vector<uint32_t>> three_d_utilizations;
-        auto extended_data = iter->second.getExtendedDatas()->begin();
-        while(extended_data != iter->second.getExtendedDatas()->end()) {
-            auto pre_data = p_preData->getData().find(iter->first);;
-            if (pre_data != p_preData->getData().end()) {
-                auto pre_extended = pre_data->second.getExtendedDatas()->find(extended_data->first);
-                if (pre_extended != pre_data->second.getExtendedDatas()->end()) {
-                    uint64_t val =  (extended_data->second.active_time - pre_extended->second.active_time) > 0 ? Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 : 0;
-                    switch (extended_data->second.type) {
-                        case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
-                            compute_utilizations[(extended_data->second.on_subdevice ? extended_data->second.subdevice_id : 0)].push_back(val);
-                            break;
-                        case ZES_ENGINE_GROUP_RENDER_SINGLE:
-                            render_utilizations[(extended_data->second.on_subdevice ? extended_data->second.subdevice_id : 0)].push_back(val);
-                            break;
-                        case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
-                            decode_utilizations[(extended_data->second.on_subdevice ? extended_data->second.subdevice_id : 0)].push_back(val);
-                            break;
-                        case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
-                            encode_utilizations[(extended_data->second.on_subdevice ? extended_data->second.subdevice_id : 0)].push_back(val);
-                            break;
-                        case ZES_ENGINE_GROUP_COPY_SINGLE:
-                            copy_utilizations[(extended_data->second.on_subdevice ? extended_data->second.subdevice_id : 0)].push_back(val);
-                            break;
-                        case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
-                            media_enhancement_utilizations[(extended_data->second.on_subdevice ? extended_data->second.subdevice_id : 0)].push_back(val);
-                            break;
-                        case ZES_ENGINE_GROUP_3D_SINGLE:
-                            three_d_utilizations[(extended_data->second.on_subdevice ? extended_data->second.subdevice_id : 0)].push_back(val);
-                            break;
-                        default:
-                            break;
+        auto pre_iter = p_preData->getData().find(iter->first);
+        if (pre_iter != p_preData->getData().end()) {
+
+            auto cur_engine_datas = std::static_pointer_cast<EngineCollectionMeasurementData>(iter->second)->getEngineRawDatas();
+            auto pre_engine_datas = std::static_pointer_cast<EngineCollectionMeasurementData>(pre_iter->second)->getEngineRawDatas();
+            auto cur_engine_datas_iter = cur_engine_datas->begin();
+            while (cur_engine_datas_iter != cur_engine_datas->end()) {
+                auto pre_engine_datas_iter = pre_engine_datas->find(cur_engine_datas_iter->first);
+                if (pre_engine_datas_iter != pre_engine_datas->end()) {
+                    auto cur_active_time = cur_engine_datas_iter->second.raw_active_time;
+                    auto cur_timestamp = cur_engine_datas_iter->second.raw_timestamp;
+                    auto pre_active_time = pre_engine_datas_iter->second.raw_active_time;
+                    auto pre_timestamp = pre_engine_datas_iter->second.raw_timestamp;
+                    if (cur_timestamp - pre_timestamp != 0) {
+                        uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 * (cur_active_time - pre_active_time) / (cur_timestamp - pre_timestamp);
+                        if (val > Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
+                            val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
+                        }
+                        std::static_pointer_cast<EngineCollectionMeasurementData>(iter->second)->setDataCur(cur_engine_datas_iter->first, val);
+                        iter->second->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                     }
                 }
+                
+                ++cur_engine_datas_iter;
             }
-            ++extended_data;
-        }
-
-        std::map<uint32_t, std::vector<uint64_t>> utilizations;
-        uint32_t i = 0;
-        uint32_t num_subdevice = p_data->getData()[iter->first].getNumSubdevices();
-        do {
-            if (compute_utilizations.size() > 0) {
-                utilizations[i].push_back(*std::max_element(compute_utilizations[i].begin(), compute_utilizations[i].end()));
-            }
-            if (render_utilizations.size() > 0) {
-                utilizations[i].push_back(*std::max_element(render_utilizations[i].begin(), render_utilizations[i].end()));
-            }
-            if (decode_utilizations.size() > 0) {
-                utilizations[i].push_back(*std::max_element(decode_utilizations[i].begin(), decode_utilizations[i].end()));
-            }
-            if (encode_utilizations.size() > 0) {
-                utilizations[i].push_back(*std::max_element(encode_utilizations[i].begin(), encode_utilizations[i].end()));
-            }
-            if (copy_utilizations.size() > 0) {
-                utilizations[i].push_back(*std::max_element(copy_utilizations[i].begin(), copy_utilizations[i].end()));
-            }
-            if (media_enhancement_utilizations.size() > 0) {
-                utilizations[i].push_back(*std::max_element(media_enhancement_utilizations[i].begin(), media_enhancement_utilizations[i].end()));
-            }
-            if (three_d_utilizations.size() > 0) {
-                utilizations[i].push_back(*std::max_element(three_d_utilizations[i].begin(), three_d_utilizations[i].end()));
-            }
-            i++;
-        } while (i < num_subdevice);
-        if (num_subdevice != 0) {
-            for (uint32_t i = 0; i < num_subdevice; ++i) {
-                p_data->getData()[iter->first].setSubdeviceDataCurrent(i, *std::max_element(utilizations[i].begin(), utilizations[i].end()));
-                p_data->getData()[iter->first].setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
-            }
-        } else {
-            p_data->getData()[iter->first].setCurrent(*std::max_element(utilizations[0].begin(), utilizations[0].end()));
-            p_data->getData()[iter->first].setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
         }
         ++iter;
     }
@@ -119,8 +55,9 @@ void EngineUtilizationDataHandler::handleData(std::shared_ptr<SharedData>& p_dat
     if (p_preData == nullptr || p_data == nullptr) {
         return;
     }
-    
+
     calculateData(p_data);
     updateStatistics(p_data);
 }
+
 } // end namespace xpum

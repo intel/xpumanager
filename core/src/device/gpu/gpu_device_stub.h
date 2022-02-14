@@ -20,6 +20,7 @@
 #include "level_zero/zet_api.h"
 #include "topology/xe_link.h"
 #include "device/pcie_manager.h"
+#include "infrastructure/engine_measurement_data.h"
 
 namespace xpum {
 
@@ -57,6 +58,8 @@ class GPUDeviceStub {
     void getMemoryReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getMemoryWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
+    void getGPUUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getEngineUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
@@ -178,7 +181,9 @@ class GPUDeviceStub {
 
     static std::shared_ptr<MeasurementData> toGetMemoryWriteThroughput(const zes_device_handle_t& device);
 
-    static std::shared_ptr<MeasurementData> toGetEngineUtilization(const zes_device_handle_t& device);
+    static std::shared_ptr<MeasurementData> toGetGPUUtilization(const zes_device_handle_t& device);
+
+    static std::shared_ptr<EngineCollectionMeasurementData> toGetEngineUtilization(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetEngineGroupUtilization(const zes_device_handle_t& device, zes_engine_group_t group_type);
 

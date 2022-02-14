@@ -132,6 +132,8 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
         case DeviceCapability::METRIC_MEMORY_USED:
             return [p_device](Callback_t callback) { p_device->getMemory(callback); };
         case DeviceCapability::METRIC_COMPUTATION:
+            return [p_device](Callback_t callback) { p_device->getGPUUtilization(callback); };
+        case DeviceCapability::METRIC_ENGINE_UTILIZATION:
             return [p_device](Callback_t callback) { p_device->getEngineUtilization(callback); };
         case DeviceCapability::METRIC_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION:
             return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_COMPUTE_ALL); };
@@ -191,6 +193,24 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             break;
     }
     return nullptr;
+}
+
+void Device::addEngine(zes_engine_handle_t engine) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    for (auto& e : engines) {
+        if (engine == e) {
+            return;
+        }
+    }
+
+    this->engines.push_back(engine);
+}
+
+void Device::getEngines(std::vector<zes_engine_handle_t>& engines) noexcept {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    for (auto& engine : this->engines) {
+        engines.push_back(engine);
+    }
 }
 
 } // end namespace xpum

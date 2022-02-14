@@ -23,6 +23,8 @@ int Configuration::EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD = 50;
 int Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD = 20000000;
 bool Configuration::INITIALIZE_PCIE_MANAGER = false;
 uint32_t Configuration::DEFAULT_MEASUREMENT_DATA_SCALE = 100;
+uint32_t Configuration::MAX_STATISTICS_SESSION_NUM = 2;
+
 std::set<MeasurementType> Configuration::enabled_metrics;
 
 void Configuration::initEnabledMetrics() {

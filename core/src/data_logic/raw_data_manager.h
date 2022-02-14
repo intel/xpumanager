@@ -42,15 +42,15 @@ class RawDataManager {
         Timestamp_t time,
         std::shared_ptr<std::map<std::string, std::shared_ptr<MeasurementData>>> datas);
 
-    MeasurementData getLatestData(
+    std::shared_ptr<MeasurementData> getLatestData(
         MeasurementType type,
         std::string& device_id) noexcept;
 
     void getLatestData(
         MeasurementType type,
-        std::map<std::string, MeasurementData>& datas) noexcept;
+        std::map<std::string, std::shared_ptr<MeasurementData>>& datas) noexcept;
 
-    MeasurementData getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) noexcept;
+    std::shared_ptr<MeasurementData> getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) noexcept;
 
     uint32_t startRawDataCollectionTask(std::string& device_id, std::vector<MeasurementType>& types);
 

@@ -29,11 +29,11 @@ class DataHandler : public std::enable_shared_from_this<DataHandler> {
 
     virtual void handleData(std::shared_ptr<SharedData> &p_data) noexcept = 0;
 
-    virtual MeasurementData getLatestData(std::string &device_id) noexcept;
+    virtual std::shared_ptr<MeasurementData> getLatestData(std::string &device_id) noexcept;
 
-    virtual void getLatestData(std::map<std::string, MeasurementData> &datas) noexcept;
+    virtual void getLatestData(std::map<std::string, std::shared_ptr<MeasurementData>> &datas) noexcept;
 
-    virtual MeasurementData getLatestStatistics(std::string &device_id, uint64_t session_id) noexcept;
+    virtual std::shared_ptr<MeasurementData> getLatestStatistics(std::string &device_id, uint64_t session_id) noexcept;
 
    protected:
     std::mutex mutex;
