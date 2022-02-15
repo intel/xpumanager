@@ -239,6 +239,10 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
 
             int port = std::stoi(paralist.at(0));
             int beaconing = std::stoi(paralist.at(1));
+            if (beaconing != 0 && beaconing != 1){
+                (*json)["return"]="invalid parameter value: beaconing";
+                return json;
+            }
             json = this->coreStub->setFabricPortBeaconing(this->opts->deviceId, this->opts->tileId, port, beaconing);
             if((*json)["status"] == "OK") {
                 (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " beaconing to " + (beaconing == 1 ? "on":"off") + " .";
@@ -273,7 +277,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;
         }*/
-        (*json)["return"]="unknonw or invalid command, parameter or device/tile Id";
+        (*json)["return"]="unknown or invalid command, parameter or device/tile Id";
         return json;
     }
     (*json)["return"]="invalid device Id";
