@@ -9,6 +9,8 @@
 #include "infrastructure/logger.h"
 #include "stdio.h"
 #include "unistd.h"
+#include "core/core.h"
+#include "group/group_manager.h"
 
 
 namespace xpum {
@@ -186,57 +188,103 @@ void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
                                                    });
 }
 
-xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
+static std::vector<std::string> getSiblingDeviceBDFAddr(GPUDevice* device) {
+    xpum::Core& core = xpum::Core::instance();
+    auto groupManager = core.getGroupManager();
+    xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS];
+    std::vector<std::string> result;
     Property pcieAddrProp;
-    bool res = getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, pcieAddrProp);
-    if (!res) {
+    int count;
+    groupManager->getAllGroupIds(groupIds, &count);
+    xpum_device_id_t deviceId = std::stoi(device->getId());
+    for (int i = 0; i < count; i++) {
+        auto groupId = groupIds[i];
+        if (groupId & BUILD_IN_GROUP_MASK) {
+            xpum_group_info_t groupInfo;
+            groupManager->getGroupInfo(groupId, &groupInfo);
+
+            for (int j = 0; j < groupInfo.count; j++) {
+                // device in build in group
+                if (groupInfo.deviceList[j] == deviceId) {
+                    auto deviceManager = core.getDeviceManager();
+                    for (int k = 0; k < groupInfo.count; k++) {
+                        auto siblingId = groupInfo.deviceList[k];
+                        std::string siblingIdStr = std::to_string(siblingId);
+                        auto pSiblingDevice = deviceManager->getDevice(siblingIdStr);
+                        pSiblingDevice->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, pcieAddrProp);
+                        result.push_back(pcieAddrProp.getValue());
+                    }
+                    return result;
+                }
+            }
+        }
+    }
+    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, pcieAddrProp);
+    result.push_back(pcieAddrProp.getValue());
+    return result;
+}
+
+xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
+
+    auto bdfAddrs = getSiblingDeviceBDFAddr(this);
+
+    std::vector<std::string> commands;
+
+    for (auto address : bdfAddrs) {
+        // remove first "0000"
+        std::string::size_type begin = address.find(":");
+        if (begin == std::string::npos) {
+            return xpum_result_t::XPUM_GENERIC_ERROR;
+        }
+
+        std::string addrForTool = address.substr(begin + 1, address.length());
+
+        // change last "." to ":"
+        begin = addrForTool.find(".");
+        if (begin == std::string::npos) {
+            return xpum_result_t::XPUM_GENERIC_ERROR;
+        }
+        addrForTool[begin] = ':';
+
+        std::string command = toolPath + " -Y -Device " + addrForTool + " -F " + filePath;
+        commands.push_back(command);
+    }
+    if (commands.size() == 0) {
         return xpum_result_t::XPUM_GENERIC_ERROR;
     }
-
-    //remove first "0000"
-    std::string address = pcieAddrProp.getValue();
-    std::string::size_type begin = address.find(":");
-    if (begin == std::string::npos) {
-        return xpum_result_t::XPUM_GENERIC_ERROR;
-    }
-
-    std::string addrForTool = address.substr(begin + 1, address.length());
-
-    //change last "." to ":"
-    begin = addrForTool.find(".");
-    if (begin == std::string::npos) {
-        return xpum_result_t::XPUM_GENERIC_ERROR;
-    }
-    addrForTool[begin] = ':';
-
-    std::string command = toolPath + " -Y -Device " + addrForTool + " -F " + filePath;
 
     std::lock_guard<std::mutex> lck(mtx);
     if (taskGSC.valid()) {
         return xpum_result_t::XPUM_GENERIC_ERROR;
     } else {
-        taskGSC = std::async(std::launch::async, [&, command] {
-            FILE* commandExec = popen(command.c_str(), "r");
-            while (true) {
-                xpum_firmware_flash_result_t rc;
-                char buf[BUFFERSIZE];
-                char* res = fgets(buf, BUFFERSIZE, commandExec);
-                if (res != nullptr) {
-                    log += std::string{res};
-                }
-                else {
-                    dumpFirmwareFlashLog();
-                    log.clear();
-                    if (pclose(commandExec) == 0) {
-                        rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+        taskGSC = std::async(std::launch::async, [&, commands] {
+            bool ok = true;
+            for (std::string command : commands) {
+                FILE* commandExec = popen(command.c_str(), "r");
+                while (true) {
+                    char buf[BUFFERSIZE];
+                    char* res = fgets(buf, BUFFERSIZE, commandExec);
+                    if (res != nullptr) {
+                        log += std::string{res};
                     } else {
-                        rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+                        ok = ok && pclose(commandExec) == 0;
+                        commandExec = nullptr;
+                        break;
                     }
-                    commandExec = nullptr;
-                    return rc;
                 }
+                // break when previous update fail
+                if (!ok) break;
             }
-        } );
+            dumpFirmwareFlashLog();
+            log.clear();
+            xpum_firmware_flash_result_t rc;
+            if (ok) {
+                rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+            } else {
+                rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+            return rc;
+        });
 
         return xpum_result_t::XPUM_OK;
     }
