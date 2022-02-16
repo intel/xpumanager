@@ -32,7 +32,9 @@ XpumStatsType = Enum("xpum_stats_type_t", (
     "XPUM_STATS_MEMORY_TEMPERATURE",
     "XPUM_STATS_FREQUENCY_THROTTLE",
     "XPUM_STATS_PCIE_READ_THROUGHPUT",
-    "XPUM_STATS_PCIE_WRITE_THROUGHPUT"
+    "XPUM_STATS_PCIE_WRITE_THROUGHPUT",
+    "XPUM_STATS_PCIE_READ",
+    "XPUM_STATS_PCIE_WRITE"
 ), start=0)
 
 XpumResult = Enum("xpum_result_t", (

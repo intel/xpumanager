@@ -38,8 +38,8 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         XPUM_STATS_FREQUENCY_THROTTLE,
         XPUM_STATS_PCIE_READ_THROUGHPUT,        
         XPUM_STATS_PCIE_WRITE_THROUGHPUT,
-        // XPUM_STATS_PCIE_READ,                            
-        // XPUM_STATS_PCIE_WRITE,
+        XPUM_STATS_PCIE_READ,                            
+        XPUM_STATS_PCIE_WRITE,
     };
     return std::find(allowList.begin(), allowList.end(), metricsType) != allowList.end();
 }
