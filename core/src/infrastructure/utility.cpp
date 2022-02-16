@@ -217,7 +217,9 @@ bool Utility::isCounterMetric(MeasurementType type) {
            type == MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE ||
            type == MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE ||
            type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE ||
-           type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+           type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE||
+           type == MeasurementType::METRIC_PCIE_READ||
+           type == MeasurementType::METRIC_PCIE_WRITE;
 }
 
 void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
