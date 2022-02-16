@@ -195,22 +195,24 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
     return nullptr;
 }
 
-void Device::addEngine(zes_engine_handle_t engine) {
+void Device::addEngine(uint64_t engine) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    for (auto& e : engines) {
-        if (engine == e) {
-            return;
-        }
+    if (engines.find(engine) == engines.end()) {
+        uint32_t size = engines.size();
+        engines[engine] = size;
     }
-
-    this->engines.push_back(engine);
 }
 
-void Device::getEngines(std::vector<zes_engine_handle_t>& engines) noexcept {
+uint32_t Device::getEngineCount() noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
-    for (auto& engine : this->engines) {
-        engines.push_back(engine);
+    return engines.size();
+}
+
+uint32_t Device::getEngineID(uint64_t handle) {
+    if (engines.find(handle) != engines.end()) {
+        return engines[handle];
     }
+    return std::numeric_limits<uint32_t>::max();
 }
 
 } // end namespace xpum

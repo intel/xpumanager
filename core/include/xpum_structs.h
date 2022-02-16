@@ -461,6 +461,37 @@ typedef struct xpum_device_stats_t {
 } xpum_device_stats_t;
 
 /**
+ * @brief Engine types
+ * 
+ */
+typedef enum xpum_engine_type_enum {
+    XPUM_ENGINE_TYPE_COMPUTE,
+    XPUM_ENGINE_TYPE_RENDER,
+    XPUM_ENGINE_TYPE_DECODE,
+    XPUM_ENGINE_TYPE_ENCODE,
+    XPUM_ENGINE_TYPE_COPY,
+    XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT,
+    XPUM_ENGINE_TYPE_3D,
+    XPUM_ENGINE_TYPE_UNKNOWN,
+} xpum_engine_type_t;
+
+/**
+ * @brief Struct to store device engine statistics data
+ * 
+ */
+typedef struct xpum_device_engine_stats_t {
+    bool isTileData;                ///< If this statistics data is tile level
+    int32_t tileId;                 ///< The tile id, only valid if isTileData is true
+    uint64_t id;                    ///< The id of the engine
+    xpum_engine_type_t type;        ///< The type of the engine
+    uint64_t value;                 ///< The value of engine utilization
+    uint64_t min;                   ///< The min value since last call
+    uint64_t avg;                   ///< The average value since last call
+    uint64_t max;                   ///< The max value since last call
+    uint32_t scale;                 ///< The magnification of the value, accumulated, min, avg, and max fields
+} xpum_device_engine_stats_t;
+
+/**
  * @brief Struct to store raw statistics data, not aggregated yet
  * 
  */

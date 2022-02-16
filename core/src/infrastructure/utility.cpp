@@ -487,4 +487,26 @@ std::string Utility::getXpumStatsTypeString(MeasurementType type) {
     }
 }
 
+xpum_engine_type_t Utility::toXPUMEngineType(zes_engine_group_t type) {
+    switch (type)
+    {
+    case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
+        return XPUM_ENGINE_TYPE_COMPUTE;
+    case ZES_ENGINE_GROUP_RENDER_SINGLE:
+        return XPUM_ENGINE_TYPE_RENDER;
+    case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
+        return XPUM_ENGINE_TYPE_DECODE;
+    case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
+        return XPUM_ENGINE_TYPE_ENCODE;
+    case ZES_ENGINE_GROUP_COPY_SINGLE:
+        return XPUM_ENGINE_TYPE_COPY;
+    case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
+        return XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT;
+    case ZES_ENGINE_GROUP_3D_SINGLE:
+        return XPUM_ENGINE_TYPE_3D;    
+    default:
+        return XPUM_ENGINE_TYPE_UNKNOWN;
+    }
+}
+
 } // end namespace xpum

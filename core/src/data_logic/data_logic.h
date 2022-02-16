@@ -44,12 +44,12 @@ class DataLogic : public DataLogicInterface {
                               uint64_t* end,
                               uint64_t session_id);
     
-    void getEngineStatistics(xpum_device_id_t device_id,
-                             xpum_device_stats_t data_list[],
-                             int* count,
-                             uint64_t* begin,
-                             uint64_t* end,
-                             uint64_t session_id);
+    xpum_result_t getEngineStatistics(xpum_device_id_t device_id,
+                                      xpum_device_engine_stats_t data_list[],
+                                      uint32_t* count,
+                                      uint64_t* begin,
+                                      uint64_t* end,
+                                      uint64_t session_id);
 
     void getLatestMetrics(xpum_device_id_t deviceId,
                           xpum_device_metrics_t dataList[],

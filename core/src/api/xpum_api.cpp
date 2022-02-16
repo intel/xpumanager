@@ -494,6 +494,22 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
     return xpum_result_t::XPUM_OK;
 }
 
+xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
+                                 xpum_device_engine_stats_t dataList[],
+                                 uint32_t *count,
+                                 uint64_t *begin,
+                                 uint64_t *end,
+                                 uint64_t sessionId) {
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+    xpum_result_t res;
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK)
+        return res;
+    return Core::instance().getDataLogic()->getEngineStatistics(deviceId, dataList, count, begin, end, sessionId);
+}
+
 xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
                              xpum_device_metrics_t dataList[],
                              int *count) {

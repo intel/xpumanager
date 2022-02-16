@@ -29,12 +29,12 @@ class DataLogicQueryInterface {
                                       uint64_t *end,
                                       uint64_t session_id) = 0;
     
-    virtual void getEngineStatistics(xpum_device_id_t deviceId,
-                                     xpum_device_stats_t dataList[],
-                                     int *count,
-                                     uint64_t *begin,
-                                     uint64_t *end,
-                                     uint64_t session_id) = 0;
+    virtual xpum_result_t getEngineStatistics(xpum_device_id_t deviceId,
+                                              xpum_device_engine_stats_t dataList[],
+                                              uint32_t *count,
+                                              uint64_t *begin,
+                                              uint64_t *end,
+                                              uint64_t session_id) = 0;
 
     virtual void getLatestMetrics(xpum_device_id_t deviceId,
                                   xpum_device_metrics_t dataList[],

@@ -5,6 +5,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <map>
 
 #include "../include/xpum_structs.h"
 #include "infrastructure/device_capability.h"
@@ -104,9 +105,11 @@ class Device {
 
     static std::function<void(Callback_t)> getDeviceMethod(DeviceCapability& capability, Device* p_device);
 
-    void addEngine(zes_engine_handle_t engine);
+    void addEngine(uint64_t engine);
 
-    void getEngines(std::vector<zes_engine_handle_t>& engines) noexcept;
+    uint32_t getEngineCount() noexcept;
+
+    uint32_t getEngineID(uint64_t handle);
 
    public:
     virtual ~Device() {}
@@ -126,7 +129,7 @@ class Device {
 
     std::vector<Property> properties;
 
-    std::vector<zes_engine_handle_t> engines;
+    std::map<uint64_t,uint32_t> engines;
 };
 
 } // end namespace xpum

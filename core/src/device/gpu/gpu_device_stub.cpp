@@ -701,7 +701,20 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, engines.data()));
                     if (res == ZE_RESULT_SUCCESS) {
                         for (auto& engine : engines) {
-                            p_gpu->addEngine(engine);
+                            zes_engine_properties_t props;
+                            props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                            XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
+                            if (res == ZE_RESULT_SUCCESS) {
+                                if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE 
+                                 || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE 
+                                 || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE 
+                                 || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE 
+                                 || props.type == ZES_ENGINE_GROUP_COPY_SINGLE 
+                                 || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE 
+                                 || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
+                                    p_gpu->addEngine((uint64_t)engine);
+                                }
+                            }
                         }
                     }
                 }
