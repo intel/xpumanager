@@ -38,6 +38,7 @@ class GPUDevice : public Device {
     void getEuActiveStallIdle(Callback_t callback, MeasurementType type) noexcept override;
     void getRasError(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
     void getRasErrorOnSubdevice(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
+    void getRasErrorOnSubdevice(Callback_t callback) noexcept override;
     void getFrequencyThrottle(Callback_t callback) noexcept override;
     void getPCIeReadThroughput(Callback_t callback) noexcept override;
     void getPCIeWriteThroughput(Callback_t callback) noexcept override;

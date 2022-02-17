@@ -72,6 +72,7 @@ class GPUDeviceStub {
     void getRasError(const zes_device_handle_t& device, Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept;
 
     void getRasErrorOnSubdevice(const zes_device_handle_t& device, Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept;
+    void getRasErrorOnSubdevice(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getRasError(const zes_device_handle_t& device, uint64_t errorCategory[XPUM_RAS_ERROR_MAX]) noexcept;
 
@@ -195,7 +196,8 @@ class GPUDeviceStub {
 
     //static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
 
-    static std::shared_ptr<MeasurementData> toGetRasErrorOnSubdevice(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
+    static std::shared_ptr<MeasurementData> toGetRasErrorOnSubdeviceOld(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
+    static std::shared_ptr<MeasurementData> toGetRasErrorOnSubdevice(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetFrequencyThrottle(const zes_device_handle_t& device);
 

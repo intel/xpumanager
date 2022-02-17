@@ -161,20 +161,8 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getMemoryBandwidth(callback); };
         case DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE:
             return [p_device](Callback_t callback) { p_device->getEuActiveStallIdle(callback, MeasurementType::METRIC_EU_ACTIVE); };
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
-            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
-            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS:
-            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
-            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE); };
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
-            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
-            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE); };
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
-            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE); };
+        case DeviceCapability::METRIC_RAS_ERROR:
+            return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback); };
         case DeviceCapability::METRIC_REQUEST_FREQUENCY:
             return [p_device](Callback_t callback) { p_device->getRequestFrequency(callback); };
         case DeviceCapability::METRIC_MEMORY_TEMPERATURE:

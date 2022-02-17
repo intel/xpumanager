@@ -93,20 +93,8 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION;
         case DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE:
             return MeasurementType::METRIC_EU_ACTIVE;
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_RESET:
+        case DeviceCapability::METRIC_RAS_ERROR:
             return MeasurementType::METRIC_RAS_ERROR_CAT_RESET;
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
-            return MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS:
-            return MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS;
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
-            return MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
-            return MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
-            return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
-        case DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
-            return MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
         case DeviceCapability::METRIC_MEMORY_TEMPERATURE:
             return MeasurementType::METRIC_MEMORY_TEMPERATURE;
         case DeviceCapability::METRIC_FREQUENCY_THROTTLE:
@@ -171,19 +159,23 @@ DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& m
         case MeasurementType::METRIC_EU_IDLE:
             return DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE;
         case MeasurementType::METRIC_RAS_ERROR_CAT_RESET:
-            return DeviceCapability::METRIC_RAS_ERROR_CAT_RESET;
+            return DeviceCapability::METRIC_RAS_ERROR;
         case MeasurementType::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
-            return DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
+            return DeviceCapability::METRIC_RAS_ERROR;
         case MeasurementType::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS:
-            return DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS;
+            return DeviceCapability::METRIC_RAS_ERROR;
         case MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
-            return DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
+            return DeviceCapability::METRIC_RAS_ERROR;
         case MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
-            return DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
+            return DeviceCapability::METRIC_RAS_ERROR;
         case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
-            return DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
+            return DeviceCapability::METRIC_RAS_ERROR;
         case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
-            return DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+            return DeviceCapability::METRIC_RAS_ERROR;
+        case MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE:
+            return DeviceCapability::METRIC_RAS_ERROR;
+        case MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE:
+            return DeviceCapability::METRIC_RAS_ERROR;
         case MeasurementType::METRIC_MEMORY_TEMPERATURE:
             return DeviceCapability::METRIC_MEMORY_TEMPERATURE;
         case MeasurementType::METRIC_FREQUENCY_THROTTLE:
@@ -393,6 +385,10 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
             return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE;
         case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
             return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+        case MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE:
+            return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE;
+        case MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE:
+            return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE;
         case MeasurementType::METRIC_REQUEST_FREQUENCY:
             return xpum_stats_type_enum::XPUM_STATS_GPU_REQUEST_FREQUENCY;
         case MeasurementType::METRIC_MEMORY_TEMPERATURE:
@@ -468,6 +464,10 @@ std::string Utility::getXpumStatsTypeString(MeasurementType type) {
             return std::string("RAS display correctable errors");
         case MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
             return std::string("RAS display uncorrectable errors");
+        case MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE:
+            return std::string("RAS non compute correctable errors");
+        case MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE:
+            return std::string("RAS non compute uncorrectable errors");
         case MeasurementType::METRIC_REQUEST_FREQUENCY:
             return std::string("request frequency");
         case MeasurementType::METRIC_MEMORY_TEMPERATURE:

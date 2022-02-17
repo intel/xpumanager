@@ -399,20 +399,8 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_UTILIZATION);
     if (checkCapability(props.core.name, bdf_address, "Energy", toGetEnergy, device)) 
         capabilities.push_back(DeviceCapability::METRIC_ENERGY);
-    if (checkCapability(props.core.name, bdf_address, "Reset Count", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_UNCORRECTABLE)) 
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_RESET);
-    if (checkCapability(props.core.name, bdf_address, "Programming Error", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE)) 
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
-    if (checkCapability(props.core.name, bdf_address, "Driver Error", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE)) 
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
-    if (checkCapability(props.core.name, bdf_address, "Correctable Cache Error", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE)) 
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
-    if (checkCapability(props.core.name, bdf_address, "Uncorrectable Cache Error", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE)) 
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
-    if (checkCapability(props.core.name, bdf_address, "Correctable Display Error", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE)) 
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
-    if (checkCapability(props.core.name, bdf_address, "Uncorrectable Display Error", toGetRasErrorOnSubdevice, device, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE)) 
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
+    if (checkCapability(props.core.name, bdf_address, "Ras Error", toGetRasErrorOnSubdevice, device)) 
+        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);    
     if (checkCapability(props.core.name, bdf_address, "Frequency Throttle", toGetFrequencyThrottle, device)) 
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
     if (checkCapability(props.core.name, bdf_address, "PCIe read throughput", toGetPCIeReadThroughput, device)) 
@@ -1763,25 +1751,30 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasError(const zes_device_h
     throw BaseException("toGetRasError error");
 }
 
-void GPUDeviceStub::getRasErrorOnSubdevice(const zes_device_handle_t& device, Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept {
+void GPUDeviceStub::getRasErrorOnSubdevice(const zes_device_handle_t& device, Callback_t callback) noexcept {
     if (device == nullptr) {
         return;
     }
     //invokeTask(callback, toGetRasErrorOnSubdevice, device,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
-    invokeTask(callback, toGetRasErrorOnSubdevice, device, rasCat, rasType);
+    invokeTask(callback, toGetRasErrorOnSubdevice, device);
 }
 
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) {
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const zes_device_handle_t& device) {
     //rasCat: ZES_RAS_ERROR_CAT_RESET; rasType: ZES_RAS_ERROR_TYPE_CORRECTABLE,ZES_RAS_ERROR_TYPE_UNCORRECTABLE
     if (device == nullptr) {
         throw BaseException("toGetRasErrorOnSubdevice error");
     }
+    
+    ////
     bool dataAcquired = false;
     std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-
-    ////
+    uint32_t subdeviceId = UINT32_MAX;
+    uint64_t rasCounter = 0;
     uint32_t numRasErrorSets = 0;
     ze_result_t res;
+    zes_ras_state_t errorDetails;
+    
+    ////
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, nullptr));
     if (res == ZE_RESULT_SUCCESS && numRasErrorSets > 0) {
         std::vector<zes_ras_handle_t> phRasErrorSets(numRasErrorSets);
@@ -1795,17 +1788,51 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const z
                 props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    //if (props.supported && props.enabled) {
-                    if (props.type == rasType) {
-                        zes_ras_state_t errorDetails;
+                    //if (props.supported && props.enabled) {                    
+                    if (props.type == ZES_RAS_ERROR_TYPE_UNCORRECTABLE) {
                         XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetState(rasHandle, 0, &errorDetails));
                         if (res == ZE_RESULT_SUCCESS) {
-                            uint64_t rasCounter = errorDetails.category[rasCat];
-                            props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, rasCounter) : ret->setCurrent(rasCounter);
+                            subdeviceId = props.onSubdevice ? props.subdeviceId : UINT32_MAX;
+                            //
+                            rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_RESET];
+                            props.onSubdevice ? ret->setSubdeviceDataCurrent(subdeviceId, rasCounter) : ret->setCurrent(rasCounter);
+                            //
+                            rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS];
+                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS,rasCounter);
+                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
+                            rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_DRIVER_ERRORS];
+                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_DRIVER_ERRORS,rasCounter);
+                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
+                            //
+                            rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_CACHE_ERRORS];
+                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,rasCounter);
+                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
+                            rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_DISPLAY_ERRORS];
+                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,rasCounter);
+                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
+                            rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS];
+                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE,rasCounter);
+                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE);
+                            dataAcquired = true;
+                        }
+                    } else if (props.type == ZES_RAS_ERROR_TYPE_CORRECTABLE) {
+                        XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetState(rasHandle, 0, &errorDetails));
+                        if (res == ZE_RESULT_SUCCESS) {
+                            subdeviceId = props.onSubdevice ? props.subdeviceId : UINT32_MAX;
+                            //
+                            rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_CACHE_ERRORS];
+                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,rasCounter);
+                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
+                            rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_DISPLAY_ERRORS];
+                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,rasCounter);
+                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
+                            rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS];
+                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE,rasCounter);
+                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE);
                             dataAcquired = true;
                         }
                     }
-                    //}
+                    //}                    
                 }
             }
             //return std::make_shared<MeasurementData>(rasCounter);
@@ -1869,6 +1896,63 @@ void GPUDeviceStub::getRasError(const zes_device_handle_t& device, uint64_t erro
     }
     //throw BaseException("getRasError error");
 }
+
+void GPUDeviceStub::getRasErrorOnSubdevice(const zes_device_handle_t& device, Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    //invokeTask(callback, toGetRasErrorOnSubdevice, device,ZES_RAS_ERROR_CAT_RESET,ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+    invokeTask(callback, toGetRasErrorOnSubdeviceOld, device, rasCat, rasType);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdeviceOld(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) {
+    //rasCat: ZES_RAS_ERROR_CAT_RESET; rasType: ZES_RAS_ERROR_TYPE_CORRECTABLE,ZES_RAS_ERROR_TYPE_UNCORRECTABLE
+    if (device == nullptr) {
+        throw BaseException("toGetRasErrorOnSubdevice error");
+    }
+    bool dataAcquired = false;
+    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+
+    ////
+    uint32_t numRasErrorSets = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, nullptr));
+    if (res == ZE_RESULT_SUCCESS && numRasErrorSets > 0) {
+        std::vector<zes_ras_handle_t> phRasErrorSets(numRasErrorSets);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumRasErrorSets(device, &numRasErrorSets, phRasErrorSets.data()));
+        if (res == ZE_RESULT_SUCCESS) {
+            //uint64_t rasCounter = 0;
+            for (auto& rasHandle : phRasErrorSets) {
+                // globally lock for RAS APIs to avoid two issues: 1) invalid read/write memory in zesRasGetState; 2) kernel error msg "mei-gsc mei-gscfi.3.auto: id exceeded 256"
+                std::lock_guard<std::mutex> lock(ras_m);
+                zes_ras_properties_t props;
+                props.stype = ZES_STRUCTURE_TYPE_RAS_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetProperties(rasHandle, &props));
+                if (res == ZE_RESULT_SUCCESS) {
+                    //if (props.supported && props.enabled) {
+                    if (props.type == rasType) {
+                        zes_ras_state_t errorDetails;
+                        XPUM_ZE_HANDLE_LOCK(rasHandle, res = zesRasGetState(rasHandle, 0, &errorDetails));
+                        if (res == ZE_RESULT_SUCCESS) {
+                            uint64_t rasCounter = errorDetails.category[rasCat];
+                            props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, rasCounter) : ret->setCurrent(rasCounter);
+                            dataAcquired = true;
+                        }
+                    }
+                    //}
+                }
+            }
+            //return std::make_shared<MeasurementData>(rasCounter);
+        }
+    }
+    if (res == ZE_RESULT_SUCCESS && dataAcquired) {
+        return ret;
+    } else {
+        throw BaseException("toGetMemory error");
+    }
+}
+
+
 
 void GPUDeviceStub::getGPUUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept {
     if (device == nullptr) {
