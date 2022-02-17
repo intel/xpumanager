@@ -39,6 +39,8 @@ class Utility {
     static void getMetricsTypes(std::vector<MeasurementType>& metrics);
 
     static std::string getXpumStatsTypeString(MeasurementType type);
+
+    static xpum_engine_type_t toXPUMEngineType(zes_engine_group_t type);
 };
 
 } // end namespace xpum

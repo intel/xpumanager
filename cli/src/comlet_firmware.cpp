@@ -50,14 +50,35 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
     }
 
     int type = opts->firmwareType == "GSC" ? 0 : 1;
-    if ( type == 1 ) {
-        std::cout << "CAUTION: update AMC may cause OS reboot" << std::endl;
+    if (type == 1) {
+        std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model. Updating AMC firmware may cause OS to reboot." << std::endl;
         std::cout << "Please comfirm to proceed ( Y/N ) ?" << std::endl;
         std::string confirm;
         std::cin >> confirm;
         if (confirm != "Y" && confirm != "y") {
             (*json)["error"] = "update aborted";
             return json;
+        }
+    } else {
+        auto allGroups = coreStub->groupListAll();
+        if (allGroups != nullptr && allGroups->contains("group_list")) {
+            for (auto groupJson : (*allGroups)["group_list"]) {
+                int groupId = groupJson["group_id"].get<int>();
+                if (groupId & 0x80000000) {
+                    auto deviceIdList = groupJson["device_id_list"];
+                    for (auto deviceIdInGroup : deviceIdList) {
+                        if (deviceIdInGroup.get<int>() == opts->deviceId) {
+                            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) "<< std::endl;
+                            std::string confirm;
+                            std::cin >> confirm;
+                            if (confirm != "Y" && confirm != "y") {
+                                (*json)["error"] = "update aborted";
+                                return json;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

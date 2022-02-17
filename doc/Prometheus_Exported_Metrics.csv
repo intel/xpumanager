@@ -23,3 +23,8 @@ RAS_ERROR_CAT_PROGRAMMING_ERRORS,"Total number of GPU programming errors since S
 RAS_ERROR_CAT_DRIVER_ERRORS,"Total number of GPU driver errors since Sysman init, per GPU",xpum_driver_errors,zesRasGetState
 RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,"Total number of  GPU cache correctable errors since Sysman init, per GPU","xpum_cache_errors { type=""correctable""}",zesRasGetState
 RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,"Total number of GPU cache uncorrectable errors since Sysman init, per GPU","xpum_cache_errors { type=""uncorrectable""}",zesRasGetState
+XPUM_STATS_EU_ACTIVE,"GPU EU Array Active (in %), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile.",xpum_eu_active_ratio,zetMetricGetProperties
+XPUM_STATS_EU_STALL,"GPU EU Array Stall (in %), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled. Per tile.",xpum_eu_stall_ratio,zetMetricGetProperties
+XPUM_STATS_EU_IDLE,"GPU EU Array Idle (in %), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile.",xpum_eu_idle_ratio,zetMetricGetProperties
+XPUM_STATS_PCIE_READ,"Total PCIe read bytes (in bytes), per GPU",xpum_pcie_read_bytes,N/A (pcm)
+XPUM_STATS_PCIE_WRITE,"Total PCIe write bytes (in bytes), per GPU",xpum_pcie_write_bytes,N/A (pcm)

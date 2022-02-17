@@ -45,9 +45,13 @@ class PromMetric(Enum):
     # xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since Sysman init, per GPU', ['type'])  # nopep8
 
     # Eu Active Stall Idle
-    xpum_eu_active_ratio = ('xpum_eu_active_ratio')  # nopep8
-    xpum_eu_stall_ratio = ('xpum_eu_stall_ratio')  # nopep8
-    xpum_eu_idle_ratio = ('xpum_eu_idle_ratio')  # nopep8
+    xpum_eu_active_ratio = ('xpum_eu_active_ratio', 'GPU EU Array Active (in %), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile.')  # nopep8
+    xpum_eu_stall_ratio = ('xpum_eu_stall_ratio', 'GPU EU Array Stall (in %), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled. Per tile.')  # nopep8
+    xpum_eu_idle_ratio = ('xpum_eu_idle_ratio', 'GPU EU Array Idle (in %), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile.')  # nopep8
+
+    # PCIe
+    xpum_pcie_read_bytes = ('xpum_pcie_read_bytes', 'Total PCIe read bytes (in bytes), per GPU')  # nopep8
+    xpum_pcie_write_bytes = ('xpum_pcie_write_bytes', 'Total PCIe write bytes (in bytes), per GPU')  # nopep8
 
     def __new__(cls, name, desc=None, ext_labelnames=[]):
         obj = object.__new__(cls)
@@ -110,6 +114,10 @@ metrics_map = {
     'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': Metric(PromMetric.xpum_driver_errors, is_counter=True),
     'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_cache_errors, is_counter=True, ext_labels={'type': 'correctable'}),
     'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_cache_errors, is_counter=True, ext_labels={'type': 'uncorrectable'}),
+
+    # PCIe
+    'XPUM_STATS_PCIE_READ': Metric(PromMetric.xpum_pcie_read_bytes, is_counter=True),  # nopep8
+    'XPUM_STATS_PCIE_WRITE': Metric(PromMetric.xpum_pcie_write_bytes, is_counter=True),  # nopep8
 }
 
 

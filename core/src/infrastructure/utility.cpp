@@ -209,7 +209,9 @@ bool Utility::isCounterMetric(MeasurementType type) {
            type == MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE ||
            type == MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE ||
            type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE ||
-           type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE;
+           type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE||
+           type == MeasurementType::METRIC_PCIE_READ||
+           type == MeasurementType::METRIC_PCIE_WRITE;
 }
 
 void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
@@ -484,6 +486,28 @@ std::string Utility::getXpumStatsTypeString(MeasurementType type) {
             return std::string("PCIE write");
         default:
             return std::string("");
+    }
+}
+
+xpum_engine_type_t Utility::toXPUMEngineType(zes_engine_group_t type) {
+    switch (type)
+    {
+    case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
+        return XPUM_ENGINE_TYPE_COMPUTE;
+    case ZES_ENGINE_GROUP_RENDER_SINGLE:
+        return XPUM_ENGINE_TYPE_RENDER;
+    case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
+        return XPUM_ENGINE_TYPE_DECODE;
+    case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
+        return XPUM_ENGINE_TYPE_ENCODE;
+    case ZES_ENGINE_GROUP_COPY_SINGLE:
+        return XPUM_ENGINE_TYPE_COPY;
+    case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
+        return XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT;
+    case ZES_ENGINE_GROUP_3D_SINGLE:
+        return XPUM_ENGINE_TYPE_3D;    
+    default:
+        return XPUM_ENGINE_TYPE_UNKNOWN;
     }
 }
 
