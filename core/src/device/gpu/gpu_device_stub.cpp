@@ -1854,7 +1854,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const z
     if (res == ZE_RESULT_SUCCESS && dataAcquired) {
         return ret;
     } else {
-        throw BaseException("toGetMemory error");
+        throw BaseException("toGetRasErrorOnSubdevice error");
     }
 }
 
@@ -1961,7 +1961,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdeviceOld(cons
     if (res == ZE_RESULT_SUCCESS && dataAcquired) {
         return ret;
     } else {
-        throw BaseException("toGetMemory error");
+        throw BaseException("toGetRasErrorOnSubdevice error");
     }
 }
 
