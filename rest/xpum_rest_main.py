@@ -4,6 +4,7 @@ import configparser
 import os
 import sys
 import hashlib
+import time
 from flask import Flask
 from flask_httpauth import HTTPBasicAuth
 
@@ -166,10 +167,18 @@ def verify_password(username, password):
     logger.set_audit_username(username)
     if not disableAuth:
         tmpHash = hashlib.pbkdf2_hmac('sha512', password.encode('ASCII'), salt.encode('ASCII'), 10000).hex()
+        global login_failure_count
         if username == user and tmpHash == pwHash:
+            login_failure_count = 0
             return True
         else:
-            logger.audit('Authentication', 'Failed', "The username '{}' doesn't exist or the password is incorrect", username)
+            login_failure_count += 1
+            if login_failure_count > 30:
+                login_failure_count = 30
+
+            logger.audit('Authentication', 'Failed', "The username '{}' doesn't exist or the password is incorrect for {} times", username, str(login_failure_count))
+
+            time.sleep( 3 * login_failure_count )
             return False
     else:
         return True
@@ -196,6 +205,7 @@ def read_config(path):
 
 if not env_exporter_no_auth or not env_exporter_only:
     user, salt, pwHash, disableAuth = read_config(os.path.dirname(os.path.realpath(__file__)))
+    login_failure_count = 0
 
 if not env_exporter_only:
     policy.startPolicyCallBackThread()
