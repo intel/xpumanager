@@ -210,6 +210,8 @@ bool Utility::isCounterMetric(MeasurementType type) {
            type == MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE ||
            type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE ||
            type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE||
+           type == MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE ||
+           type == MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE||
            type == MeasurementType::METRIC_PCIE_READ||
            type == MeasurementType::METRIC_PCIE_WRITE;
 }
@@ -243,6 +245,8 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
     metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
     metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
     metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
+    metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE);
+    metric_types.push_back(MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE);
     metric_types.push_back(MeasurementType::METRIC_REQUEST_FREQUENCY);
     metric_types.push_back(MeasurementType::METRIC_MEMORY_TEMPERATURE);
     metric_types.push_back(MeasurementType::METRIC_FREQUENCY_THROTTLE);
