@@ -169,14 +169,16 @@ def verify_password(username, password):
         tmpHash = hashlib.pbkdf2_hmac('sha512', password.encode('ASCII'), salt.encode('ASCII'), 10000).hex()
         global login_failure_count
         if username == user and tmpHash == pwHash:
-            login_failure_count = 0
+            login_failure_count -= 1
+            if login_failure_count < 0:
+                login_failure_count = 0
             return True
         else:
             login_failure_count += 1
             if login_failure_count > 30:
                 login_failure_count = 30
 
-            logger.audit('Authentication', 'Failed', "The username '{}' doesn't exist or the password is incorrect for {} times", username, str(login_failure_count))
+            logger.audit('Authentication', 'Failed', "The username '{}' doesn't exist or the password is incorrect", username)
 
             time.sleep( 3 * login_failure_count )
             return False
