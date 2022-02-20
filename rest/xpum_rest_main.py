@@ -175,12 +175,12 @@ def verify_password(username, password):
             return True
         else:
             login_failure_count += 1
-            if login_failure_count > 30:
-                login_failure_count = 30
+            if login_failure_count > 8:
+                login_failure_count = 8
 
             logger.audit('Authentication', 'Failed', "The username '{}' doesn't exist or the password is incorrect", username)
 
-            time.sleep( 3 * login_failure_count )
+            time.sleep( 2 ** login_failure_count )
             return False
     else:
         return True
