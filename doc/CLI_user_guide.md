@@ -466,7 +466,7 @@ optional arguments:
                                 9. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile.
                                 10. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled. Per tile.
                                 11. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile.
-                                12. Reset Counter, per GPU.
+                                12. Reset Counter, per tile.
                                 13. Programming Errors, per tile.
                                 14. Driver Errors, per tile.
                                 15. Cache Errors Correctable, per tile.
@@ -477,8 +477,10 @@ optional arguments:
                                 20. PCIe Write (kB/s), per GPU
                                 21. Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput. 
                                 22. Compute engine utilizations (%), per tile.
-                                22. Media engine utilizations (%), per tile.
-                                22. Copy engine utilizations (%), per tile.
+                                23. Media engine utilizations (%), per tile.
+                                24. Copy engine utilizations (%), per tile.
+                                25. GPU Memory Errors Correctable, per tile. Other non-compute correctable errors are also included. 
+                                26. GPU Memory Errors Uncorrectable, per tile. Other non-compute uncorrectable errors are also included. 
   
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
