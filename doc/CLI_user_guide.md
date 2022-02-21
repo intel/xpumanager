@@ -354,10 +354,19 @@ List the GPU device aggregated statistics that are collected by XPU Manager
 | Comupte Engine Util (%)      | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
 |                              | Engine 4: 0, Engne 5: 100, Engine 6: 0, Engine 7: 50              |
 +------------------------------+-------------------------------------------------------------------+
-| Media Engine Util (%)        | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
+| Render Engine Util (%)       | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
++------------------------------+-------------------------------------------------------------------+
+| Decoder Engine Util (%)      | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
++------------------------------+-------------------------------------------------------------------+
+| Encoder Engine Util (%)      | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
 +------------------------------+-------------------------------------------------------------------+
 | Copy Engine Util (%)         | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
 +------------------------------+-------------------------------------------------------------------+
+| Media EM Engine Util (%)     | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
++------------------------------+-------------------------------------------------------------------+
+| 3D Engine Util (%)           | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
++------------------------------+-------------------------------------------------------------------+
+
 ```
  
 ## Get the device health status
@@ -477,10 +486,14 @@ optional arguments:
                                 20. PCIe Write (kB/s), per GPU
                                 21. Xe Link Throughput (kB/s), a list of tile-to-tile Xe Link throughput. 
                                 22. Compute engine utilizations (%), per tile.
-                                23. Media engine utilizations (%), per tile.
-                                24. Copy engine utilizations (%), per tile.
-                                25. GPU Memory Errors Correctable, per tile. Other non-compute correctable errors are also included. 
-                                26. GPU Memory Errors Uncorrectable, per tile. Other non-compute uncorrectable errors are also included. 
+                                23. Render engine utilizations (%), per tile.
+                                24. Media decoder engine utilizations (%), per tile.
+                                25. Media encoder engine utilizations (%), per tile.
+                                26. Copy engine utilizations (%), per tile.
+                                27. Media enhancement engine utilizations (%), per tile.
+                                28. 3D engine utilizations (%), per tile.
+                                29. GPU Memory Errors Correctable, per tile. Other non-compute correctable errors are also included. 
+                                30. GPU Memory Errors Uncorrectable, per tile. Other non-compute uncorrectable errors are also included. 
   
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
