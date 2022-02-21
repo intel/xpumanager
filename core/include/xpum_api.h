@@ -634,7 +634,7 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
  */
 xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
                                  xpum_device_engine_stats_t dataList[],
-                                 int *count,
+                                 uint32_t *count,
                                  uint64_t *begin,
                                  uint64_t *end,
                                  uint64_t sessionId);
