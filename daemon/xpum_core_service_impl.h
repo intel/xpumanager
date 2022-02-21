@@ -109,6 +109,8 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
 
     virtual ::grpc::Status getTopoXMLBuffer(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::TopoXMLResponse* response);
 
+    virtual ::grpc::Status getEngineStatistics(::grpc::ServerContext* context, const ::XpumGetEngineStatsRequest* request, ::XpumGetEngineStatsResponse* response) override;
+
     private:
         std::atomic_bool stop;
         std::mutex dumpRawDataFilenameMtx;

@@ -596,6 +596,32 @@ message TopoXMLResponse {
     string errorMsg = 5;
 }
 
+message XpumGetEngineStatsRequest {
+    uint32 deviceId = 1;
+    uint64 sessionId = 2;
+}
+
+message DeviceEngineStatsInfo {
+    uint32 deviceId = 1;
+    bool isTileData = 2;
+    int32 tileId = 3;
+    uint64 engineId = 4;
+    int32 engineType = 5;
+    uint64 value = 6;
+    uint64 min = 7;
+    uint64 avg = 8;
+    uint64 max = 9;
+    uint64 scale = 10;
+}
+
+message XpumGetEngineStatsResponse {
+    repeated DeviceEngineStatsInfo dataList = 1;
+    uint64 begin = 2;
+    uint64 end = 3;
+    string errorMsg = 4;
+    int32 status = 5;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -621,6 +647,7 @@ service XpumCoreService {
     rpc getMetrics( DeviceId ) returns ( DeviceStatsInfoArray );
     rpc getMetricsByGroup( GroupId ) returns ( DeviceStatsInfoArray );
     rpc getStatistics( XpumGetStatsRequest ) returns ( XpumGetStatsResponse );
+    rpc getEngineStatistics( XpumGetEngineStatsRequest ) returns ( XpumGetEngineStatsResponse );
     rpc getStatisticsByGroup( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );
     rpc getStatisticsNotForPrometheus( XpumGetStatsRequest ) returns ( XpumGetStatsResponse );
     rpc getStatisticsByGroupNotForPrometheus( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );

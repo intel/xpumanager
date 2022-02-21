@@ -71,10 +71,27 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        return json;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        return json;
+    }
+
+    grpc::ClientContext engineContext;
+    XpumGetEngineStatsRequest engineRequest;
+    XpumGetEngineStatsResponse engineResponse;
+    engineRequest.set_deviceid(deviceId);
+    engineRequest.set_sessionid(0);
+    status = stub->getEngineStatistics(&engineContext, engineRequest, &engineResponse);
+    if (!status.ok()) {
+        (*json)["error"] = status.error_message();
+        return json;
+    }
+
+    if (engineResponse.errormsg().length() != 0) {
+        (*json)["error"] = engineResponse.errormsg();
         return json;
     }
 
@@ -133,6 +150,71 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
         (*json)["tile_level"] = tileLevelStatsDataList;
 
     (*json)["device_id"] = deviceId;
+
+    // engine data
+    nlohmann::json computeEngineUtil;
+    nlohmann::json renderEngineUtil;
+    nlohmann::json decoderEngineUtil;
+    nlohmann::json encoderEngineUtil;
+    nlohmann::json copyEngineUtil;
+    nlohmann::json mediaEmEngineUtil;
+    nlohmann::json threeDEngineUtil;
+    for( auto& engineInfo :engineResponse.datalist()){
+        xpum_engine_type_t engineType = (xpum_engine_type_t)engineInfo.enginetype();
+        nlohmann::json obj;
+        obj["value"] = engineInfo.value();
+        obj["min"] = engineInfo.min();
+        obj["max"] = engineInfo.max();
+        obj["avg"] = engineInfo.avg();
+        int engineId;
+        switch(engineType){
+            case XPUM_ENGINE_TYPE_COMPUTE:
+                engineId = computeEngineUtil.size();
+                obj["engine_id"] = engineId;
+                computeEngineUtil.push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_RENDER:
+                engineId = renderEngineUtil.size();
+                obj["engine_id"] = engineId;
+                renderEngineUtil.push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_DECODE:
+                engineId = decoderEngineUtil.size();
+                obj["engine_id"] = engineId;
+                decoderEngineUtil.push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_ENCODE:
+                engineId = encoderEngineUtil.size();
+                obj["engine_id"] = engineId;
+                encoderEngineUtil.push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_COPY:
+                engineId = copyEngineUtil.size();
+                obj["engine_id"] = engineId;
+                copyEngineUtil.push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT:
+                engineId = mediaEmEngineUtil.size();
+                obj["engine_id"] = engineId;
+                mediaEmEngineUtil.push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_3D:
+                engineId = threeDEngineUtil.size();
+                obj["engine_id"] = engineId;
+                threeDEngineUtil.push_back(obj);
+                break;
+            default:
+                break;
+        }
+    }
+    (*json)["compute_engine_util"] = computeEngineUtil;
+    (*json)["render_engine_util"] = renderEngineUtil;
+    (*json)["decoder_engine_util"] = decoderEngineUtil;
+    (*json)["encoder_engine_util"] = encoderEngineUtil;
+    (*json)["copy_engine_util"] = copyEngineUtil;
+    (*json)["media_engine_util"] = mediaEmEngineUtil;
+    (*json)["3d_engine_util"] = threeDEngineUtil;
+
     return json;
 }
 

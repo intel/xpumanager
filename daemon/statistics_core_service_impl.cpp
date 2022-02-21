@@ -210,4 +210,41 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     return grpc::Status::OK;
 }
+
+::grpc::Status XpumCoreServiceImpl::getEngineStatistics(::grpc::ServerContext* context, const ::XpumGetEngineStatsRequest* request, ::XpumGetEngineStatsResponse* response) {
+    xpum_device_id_t deviceId = request->deviceid();
+    uint64_t sessionId = request->sessionid();
+    uint32_t count;
+    uint64_t begin, end;
+    xpum_result_t res = xpumGetEngineStats(deviceId, nullptr, &count, &begin, &end, sessionId);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Fail to get engine statistics data count");
+        response->set_status(res);
+        return grpc::Status::OK;
+    }
+    xpum_device_engine_stats_t dataList[count];
+    res = xpumGetEngineStats(deviceId, dataList, &count, &begin, &end, sessionId);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Fail to get engine statistics");
+        response->set_status(res);
+        return grpc::Status::OK;
+    }
+    response->set_begin(begin);
+    response->set_end(end);
+    for (uint32_t i = 0; i < count; i++) {
+        DeviceEngineStatsInfo* engineStatsInfo = response->add_datalist();
+        xpum_device_engine_stats_t& stats = dataList[i];
+        engineStatsInfo->set_deviceid(deviceId);
+        engineStatsInfo->set_istiledata(stats.isTileData);
+        engineStatsInfo->set_tileid(stats.tileId);
+        engineStatsInfo->set_engineid(stats.id);
+        engineStatsInfo->set_enginetype(stats.type);
+        engineStatsInfo->set_value(stats.type);
+        engineStatsInfo->set_min(stats.min);
+        engineStatsInfo->set_avg(stats.avg);
+        engineStatsInfo->set_max(stats.max);
+        engineStatsInfo->set_scale(stats.scale);
+    }
+    return grpc::Status::OK;
+}
 }
