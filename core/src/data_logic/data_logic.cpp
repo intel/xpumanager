@@ -209,10 +209,12 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
     bool hasDataOnDevice = false;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
-        std::shared_ptr<MeasurementData> m_data = getLatestData(*metric_types_iter, device_id);
-        if (m_data != nullptr) {
-            hasDataOnDevice = hasDataOnDevice || m_data->hasDataOnDevice();
-            m_datas.insert(std::make_pair(*metric_types_iter, m_data));
+        if (*metric_types_iter != METRIC_ENGINE_UTILIZATION) {
+            std::shared_ptr<MeasurementData> m_data = getLatestData(*metric_types_iter, device_id);
+            if (m_data != nullptr) {
+                hasDataOnDevice = hasDataOnDevice || m_data->hasDataOnDevice();
+                m_datas.insert(std::make_pair(*metric_types_iter, m_data));
+            }
         }
         ++metric_types_iter;
     }
