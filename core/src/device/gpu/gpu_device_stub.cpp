@@ -2003,7 +2003,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetGPUUtilization(const zes_de
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE 
+                    if (props.type == ZES_ENGINE_GROUP_ALL
+                    || props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE 
                     || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE
                     || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE
                     || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE
@@ -2082,7 +2083,6 @@ std::shared_ptr<EngineCollectionMeasurementData> GPUDeviceStub::toGetEngineUtili
                     zes_engine_stats_t snap = {};
                     XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap));
                     if (res == ZE_RESULT_SUCCESS) {
-                        //XPUM_LOG_INFO("engine={}, type={}, onSubdevice={}, subdeviceId={}, activeTime={}, timestamp={}",(uint64_t)engine, props.type,(bool)props.onSubdevice,props.subdeviceId,snap.activeTime,snap.timestamp);
                         ret->addRawData(uint64_t(engine),props.type,(bool)props.onSubdevice,props.subdeviceId,snap.activeTime,snap.timestamp);
                         data_acquired = true;
                     } else {
@@ -2144,42 +2144,42 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
                 if (res == ZE_RESULT_SUCCESS) {
                     switch (engine_group_type) {
                         case ZES_ENGINE_GROUP_COMPUTE_ALL:
-                            if (props.type != ZES_ENGINE_GROUP_COMPUTE_SINGLE) {
+                            if (props.type != ZES_ENGINE_GROUP_COMPUTE_SINGLE && props.type != ZES_ENGINE_GROUP_COMPUTE_ALL) {
                                 continue;
                             }
                             break;
                         case ZES_ENGINE_GROUP_RENDER_ALL:
-                            if (props.type != ZES_ENGINE_GROUP_RENDER_SINGLE) {
+                            if (props.type != ZES_ENGINE_GROUP_RENDER_SINGLE && props.type != ZES_ENGINE_GROUP_RENDER_ALL) {
                                 continue;
                             }
                             break;
                         case ZES_ENGINE_GROUP_MEDIA_ALL:
-                            if (!(props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE)) {
+                            if (props.type == ZES_ENGINE_GROUP_MEDIA_ALL && !(props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE)) {
                                 continue;
                             }
                             break;
                         case ZES_ENGINE_GROUP_COPY_ALL:
-                            if (props.type != ZES_ENGINE_GROUP_COPY_SINGLE) {
+                            if (props.type != ZES_ENGINE_GROUP_COPY_SINGLE && props.type != ZES_ENGINE_GROUP_COPY_ALL) {
                                 continue;
                             }
                             break;
                         case ZES_ENGINE_GROUP_3D_ALL:
-                            if (props.type != ZES_ENGINE_GROUP_3D_SINGLE) {
+                            if (props.type != ZES_ENGINE_GROUP_3D_SINGLE && props.type != ZES_ENGINE_GROUP_3D_ALL) {
                                 continue;
                             }
                             break;
                         default:
                             break;
                     }
-                    zes_engine_stats_t snap1 = {};
-                    XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap1));
+                    zes_engine_stats_t snap = {};
+                    XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap));
                     if (res == ZE_RESULT_SUCCESS) {
                         ExtendedMeasurementData data;
                         data.on_subdevice = props.onSubdevice;
                         data.subdevice_id = props.subdeviceId;
                         data.type = props.type;
-                        data.active_time = snap1.activeTime;
-                        data.timestamp = snap1.timestamp;
+                        data.active_time = snap.activeTime;
+                        data.timestamp = snap.timestamp;
                         ret->addExtendedData(uint64_t(engine), data);
                         data_acquired = true;
                     } else {

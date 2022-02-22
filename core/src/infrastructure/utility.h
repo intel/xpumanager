@@ -41,6 +41,8 @@ class Utility {
     static std::string getXpumStatsTypeString(MeasurementType type);
 
     static xpum_engine_type_t toXPUMEngineType(zes_engine_group_t type);
+
+    static bool isATSPlatform(std::string device_name);
 };
 
 } // end namespace xpum

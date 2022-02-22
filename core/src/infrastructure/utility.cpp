@@ -519,4 +519,10 @@ xpum_engine_type_t Utility::toXPUMEngineType(zes_engine_group_t type) {
     }
 }
 
+bool Utility::isATSPlatform(std::string device_name) {
+    return device_name == "Intel(R) Graphics [0x020a]"
+    || device_name == "Intel(R) Graphics [0x56c0]"
+    || device_name == "Intel(R) Graphics [0x56c1]";
+}
+
 } // end namespace xpum
