@@ -37,6 +37,8 @@ static DumpMetricConfigEntry dumpMetricsConfigList[]{
     {XPUM_STATS_MEMORY_USED, "GPU Memory Used (MiB)"},
     {XPUM_STATS_PCIE_READ_THROUGHPUT, "PCIe Read (kB/s)"},
     {XPUM_STATS_PCIE_WRITE_THROUGHPUT, "PCIe Write (kB/s)"},
+    {XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, "GPU Memory Errors Correctable"},
+    {XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, "GPU Memory Errors Uncorrectable"}
 };
 
 bool supportedMetrics(xpum_stats_type_t metricsType);
