@@ -60,7 +60,9 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "Programming Errors" },
             { "rowTitle": "Driver Errors" },
             { "rowTitle": "Cache Errors Correctable" },
-            { "rowTitle": "Cache Errors Uncorrectable" }
+            { "rowTitle": "Cache Errors Uncorrectable" },
+            { "rowTitle": "Mem Errors Correctable" },
+            { "rowTitle": "Mem Errors Uncorrectable" }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_RESET].value" },
@@ -81,6 +83,14 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE].value" },
                 { "label": "total", "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE].total" }
+            ]},
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE].value" },
+                { "label": "total", "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE].total" }
+            ]},
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE].value" },
+                { "label": "total", "value": "data_list[metrics_type==XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE].total" }
             ]}
         ]]
     }, {

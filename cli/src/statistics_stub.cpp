@@ -41,11 +41,16 @@ static MetricsTypeEntry metricsTypeArray[]{
     {XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE"},
     {XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE"},
     {XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE"},
+    {XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE"},
+    {XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE"},
     {XPUM_STATS_GPU_REQUEST_FREQUENCY, "XPUM_STATS_GPU_REQUEST_FREQUENCY"},
     {XPUM_STATS_MEMORY_TEMPERATURE, "XPUM_STATS_MEMORY_TEMPERATURE"},
     {XPUM_STATS_FREQUENCY_THROTTLE, "XPUM_STATS_FREQUENCY_THROTTLE"},
     {XPUM_STATS_PCIE_READ_THROUGHPUT, "XPUM_STATS_PCIE_READ_THROUGHPUT"},
-    {XPUM_STATS_PCIE_WRITE_THROUGHPUT, "XPUM_STATS_PCIE_WRITE_THROUGHPUT"}};
+    {XPUM_STATS_PCIE_WRITE_THROUGHPUT, "XPUM_STATS_PCIE_WRITE_THROUGHPUT"},
+    {XPUM_STATS_PCIE_READ, "XPUM_STATS_PCIE_READ"},
+    {XPUM_STATS_PCIE_WRITE, "XPUM_STATS_PCIE_WRITE"},
+    {XPUM_STATS_ENGINE_UTILIZATION, "XPUM_STATS_ENGINE_UTILIZATION"}};
 
 std::string CoreStub::metricsTypeToString(xpum_stats_type_t metricsType) {
     for (auto item : metricsTypeArray) {
@@ -152,13 +157,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
     (*json)["device_id"] = deviceId;
 
     // engine data
-    nlohmann::json computeEngineUtil;
-    nlohmann::json renderEngineUtil;
-    nlohmann::json decoderEngineUtil;
-    nlohmann::json encoderEngineUtil;
-    nlohmann::json copyEngineUtil;
-    nlohmann::json mediaEmEngineUtil;
-    nlohmann::json threeDEngineUtil;
+    nlohmann::json computeEngineUtil = nlohmann::json::array();
+    nlohmann::json renderEngineUtil = nlohmann::json::array();
+    nlohmann::json decoderEngineUtil = nlohmann::json::array();
+    nlohmann::json encoderEngineUtil = nlohmann::json::array();
+    nlohmann::json copyEngineUtil = nlohmann::json::array();
+    nlohmann::json mediaEmEngineUtil = nlohmann::json::array();
+    nlohmann::json threeDEngineUtil = nlohmann::json::array();
     for( auto& engineInfo :engineResponse.datalist()){
         xpum_engine_type_t engineType = (xpum_engine_type_t)engineInfo.enginetype();
         nlohmann::json obj;
