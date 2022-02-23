@@ -242,7 +242,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         engineStatsInfo->set_tileid(stats.tileId);
         engineStatsInfo->set_engineid(stats.id);
         engineStatsInfo->set_enginetype(stats.type);
-        engineStatsInfo->set_value(stats.type);
+        engineStatsInfo->set_value(stats.value);
         engineStatsInfo->set_min(stats.min);
         engineStatsInfo->set_avg(stats.avg);
         engineStatsInfo->set_max(stats.max);

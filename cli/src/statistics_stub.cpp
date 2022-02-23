@@ -86,10 +86,18 @@ std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
     for (auto &engineInfo : engineResponse.datalist()) {
         xpum_engine_type_t engineType = (xpum_engine_type_t)engineInfo.enginetype();
         nlohmann::json obj;
-        obj["value"] = engineInfo.value();
-        obj["min"] = engineInfo.min();
-        obj["max"] = engineInfo.max();
-        obj["avg"] = engineInfo.avg();
+        int32_t scale = engineInfo.scale();
+        if (scale == 1) {
+            obj["value"] = engineInfo.value();
+            obj["min"] = engineInfo.min();
+            obj["max"] = engineInfo.max();
+            obj["avg"] = engineInfo.avg();
+        } else {
+            obj["value"] = engineInfo.value() / scale;
+            obj["min"] = engineInfo.min() / scale;
+            obj["max"] = engineInfo.max() / scale;
+            obj["avg"] = engineInfo.avg() / scale;
+        }
         obj["engine_id"] = engineInfo.engineid();
         std::string tileId = engineInfo.istiledata() ? std::to_string(engineInfo.tileid()) : "device";
         switch (engineType) {
