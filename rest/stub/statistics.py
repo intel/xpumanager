@@ -2,7 +2,7 @@ from google.protobuf import empty_pb2
 from .grpc_stub import stub, exit_on_disconnect
 import core_pb2
 import datetime
-from .xpum_enums import XpumStatsType
+from .xpum_enums import XpumStatsType, XpumEngineType
 
 
 @exit_on_disconnect
@@ -124,6 +124,69 @@ def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
         datas.append(data)
     return 0, "OK", dict(group_id=group_id, datas=datas)
 
+
+def getEngineStatistics(device_id, session_id=0):
+    resp = stub.getEngineStatistics(core_pb2.XpumGetEngineStatsRequest(
+        deviceId=device_id, sessionId=session_id))
+    if len(resp.errorMsg) != 0:
+        return resp.status, resp.errorMsg, None
+    data = dict()
+    data["device_id"] = device_id
+    beginTimestamp = datetime.datetime.fromtimestamp(
+        resp.begin/1e3, datetime.timezone.utc)
+    endTimestamp = datetime.datetime.fromtimestamp(
+        resp.end/1e3, datetime.timezone.utc)
+    data['begin'] = beginTimestamp.isoformat(
+        timespec='milliseconds').replace('+00:00', 'Z')
+    data['end'] = endTimestamp.isoformat(
+        timespec='milliseconds').replace('+00:00', 'Z')
+    engine_stats = dict()
+    for stats_info in resp.dataList:
+        tmp = dict()
+        try:
+            engineType = XpumEngineType(stats_info.engineType).name
+        except:
+            engineType = stats_info.engineType
+        tmp["engine_id"] = stats_info.engineId
+        scale = stats_info.scale
+        if scale == 1:
+            tmp["value"] = stats_info.value
+            tmp["avg"] = stats_info.avg
+            tmp["min"] = stats_info.min
+            tmp["max"] = stats_info.max
+        else:
+            tmp["value"] = stats_info.value / scale
+            tmp["avg"] = stats_info.avg / scale
+            tmp["min"] = stats_info.min / scale
+            tmp["max"] = stats_info.max / scale
+        tileId = stats_info.tileId if stats_info.isTileData else "device_level"
+        if tileId not in engine_stats:
+            engine_stats[tileId] = dict()
+            engine_stats[tileId]["compute"] = []
+            engine_stats[tileId]["render"] = []
+            engine_stats[tileId]["decoder"] = []
+            engine_stats[tileId]["encoder"] = []
+            engine_stats[tileId]["copy"] = []
+            engine_stats[tileId]["media_enhancement"] = []
+            engine_stats[tileId]["3d"] = []
+        if engineType == "XPUM_ENGINE_TYPE_COMPUTE":
+            engine_stats[tileId]["compute"].append(tmp)
+        elif engineType == "XPUM_ENGINE_TYPE_RENDER":
+            engine_stats[tileId]["render"].append(tmp)
+        elif engineType == "XPUM_ENGINE_TYPE_DECODE":
+            engine_stats[tileId]["decoder"].append(tmp)
+        elif engineType == "XPUM_ENGINE_TYPE_ENCODE":
+            engine_stats[tileId]["encoder"].append(tmp)
+        elif engineType == "XPUM_ENGINE_TYPE_COPY":
+            engine_stats[tileId]["copy"].append(tmp)
+        elif engineType == "XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT":
+            engine_stats[tileId]["media_enhancement"].append(tmp)
+        elif engineType == "XPUM_ENGINE_TYPE_3D":
+            engine_stats[tileId]["3d"].append(tmp)
+
+    data["engine_util"] = engine_stats
+    return 0, "OK", data
+    
 
 def getStatisticsNotForPrometheus(device_id, session_id=0, get_accumulated=False):
     resp = stub.getStatisticsNotForPrometheus(

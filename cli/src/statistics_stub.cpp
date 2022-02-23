@@ -61,6 +61,92 @@ std::string CoreStub::metricsTypeToString(xpum_stats_type_t metricsType) {
     return std::to_string(metricsType);
 }
 
+std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
+    grpc::ClientContext engineContext;
+    XpumGetEngineStatsRequest engineRequest;
+    XpumGetEngineStatsResponse engineResponse;
+    engineRequest.set_deviceid(deviceId);
+    engineRequest.set_sessionid(0);
+    grpc::Status status = stub->getEngineStatistics(&engineContext, engineRequest, &engineResponse);
+
+    // std::shared_ptr<nlohmann::json> json;
+    nlohmann::json json;
+
+    if (!status.ok()) {
+        json["error"] = status.error_message();
+        return std::make_shared<nlohmann::json>(json);
+    }
+
+    if (engineResponse.errormsg().length() != 0) {
+        json["error"] = engineResponse.errormsg();
+        std::make_shared<nlohmann::json>(json);
+    }
+
+    // engine data
+    for (auto &engineInfo : engineResponse.datalist()) {
+        xpum_engine_type_t engineType = (xpum_engine_type_t)engineInfo.enginetype();
+        nlohmann::json obj;
+        obj["value"] = engineInfo.value();
+        obj["min"] = engineInfo.min();
+        obj["max"] = engineInfo.max();
+        obj["avg"] = engineInfo.avg();
+        obj["engine_id"] = engineInfo.engineid();
+        std::string tileId = engineInfo.istiledata() ? std::to_string(engineInfo.tileid()) : "device";
+        switch (engineType) {
+            case XPUM_ENGINE_TYPE_COMPUTE:
+                json[tileId]["compute"].push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_RENDER:
+                json[tileId]["render"].push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_DECODE:
+                json[tileId]["decoder"].push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_ENCODE:
+                json[tileId]["encoder"].push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_COPY:
+                json[tileId]["copy"].push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT:
+                json[tileId]["media_enhancement"].push_back(obj);
+                break;
+            case XPUM_ENGINE_TYPE_3D:
+                json[tileId]["3d"].push_back(obj);
+                break;
+            default:
+                break;
+        }
+    }
+    for (auto &item : json.items()) {
+        auto key = item.key();
+        auto &obj = json[key];
+        if (!obj.contains("compute")) {
+            obj["compute"] = nlohmann::json::array();
+        }
+        if (!obj.contains("render")) {
+            obj["render"] = nlohmann::json::array();
+        }
+        if (!obj.contains("decoder")) {
+            obj["decoder"] = nlohmann::json::array();
+        }
+        if (!obj.contains("encoder")) {
+            obj["encoder"] = nlohmann::json::array();
+        }
+        if (!obj.contains("copy")) {
+            obj["copy"] = nlohmann::json::array();
+        }
+        if (!obj.contains("media_enhancement")) {
+            obj["media_enhancement"] = nlohmann::json::array();
+        }
+        if (!obj.contains("3d")) {
+            obj["3d"] = nlohmann::json::array();
+        }
+    }
+
+    return std::make_shared<nlohmann::json>(json);
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enableFilter) {
     assert(this->stub != nullptr);
 
@@ -84,20 +170,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
         return json;
     }
 
-    grpc::ClientContext engineContext;
-    XpumGetEngineStatsRequest engineRequest;
-    XpumGetEngineStatsResponse engineResponse;
-    engineRequest.set_deviceid(deviceId);
-    engineRequest.set_sessionid(0);
-    status = stub->getEngineStatistics(&engineContext, engineRequest, &engineResponse);
-    if (!status.ok()) {
-        (*json)["error"] = status.error_message();
-        return json;
-    }
-
-    if (engineResponse.errormsg().length() != 0) {
-        (*json)["error"] = engineResponse.errormsg();
-        return json;
+    // get engine stats
+    auto engineStatsJson = getEngineStatistics(deviceId);
+    if (engineStatsJson->contains("error")) {
+        return std::make_unique<nlohmann::json>(*engineStatsJson);
     }
 
     std::vector<nlohmann::json> deviceJsonList;
@@ -145,80 +221,23 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
             auto tmp = nlohmann::json();
             tmp["tile_id"] = stats_info.tileid();
             tmp["data_list"] = dataList;
+            auto strTileId = std::to_string(stats_info.tileid());
+            if(engineStatsJson->contains(strTileId)){
+                tmp["engine_util"] = (*engineStatsJson)[strTileId];
+            }
             tileLevelStatsDataList.push_back(tmp);
         } else {
             deviceLevelStatsDataList.insert(deviceLevelStatsDataList.end(), dataList.begin(), dataList.end());
         }
+    }
+    if(engineStatsJson->contains("device")){
+        (*json)["engine_util"] = (*engineStatsJson)["device"];
     }
     (*json)["device_level"] = deviceLevelStatsDataList;
     if (tileLevelStatsDataList.size() > 0)
         (*json)["tile_level"] = tileLevelStatsDataList;
 
     (*json)["device_id"] = deviceId;
-
-    // engine data
-    nlohmann::json computeEngineUtil = nlohmann::json::array();
-    nlohmann::json renderEngineUtil = nlohmann::json::array();
-    nlohmann::json decoderEngineUtil = nlohmann::json::array();
-    nlohmann::json encoderEngineUtil = nlohmann::json::array();
-    nlohmann::json copyEngineUtil = nlohmann::json::array();
-    nlohmann::json mediaEmEngineUtil = nlohmann::json::array();
-    nlohmann::json threeDEngineUtil = nlohmann::json::array();
-    for( auto& engineInfo :engineResponse.datalist()){
-        xpum_engine_type_t engineType = (xpum_engine_type_t)engineInfo.enginetype();
-        nlohmann::json obj;
-        obj["value"] = engineInfo.value();
-        obj["min"] = engineInfo.min();
-        obj["max"] = engineInfo.max();
-        obj["avg"] = engineInfo.avg();
-        int engineId;
-        switch(engineType){
-            case XPUM_ENGINE_TYPE_COMPUTE:
-                engineId = computeEngineUtil.size();
-                obj["engine_id"] = engineId;
-                computeEngineUtil.push_back(obj);
-                break;
-            case XPUM_ENGINE_TYPE_RENDER:
-                engineId = renderEngineUtil.size();
-                obj["engine_id"] = engineId;
-                renderEngineUtil.push_back(obj);
-                break;
-            case XPUM_ENGINE_TYPE_DECODE:
-                engineId = decoderEngineUtil.size();
-                obj["engine_id"] = engineId;
-                decoderEngineUtil.push_back(obj);
-                break;
-            case XPUM_ENGINE_TYPE_ENCODE:
-                engineId = encoderEngineUtil.size();
-                obj["engine_id"] = engineId;
-                encoderEngineUtil.push_back(obj);
-                break;
-            case XPUM_ENGINE_TYPE_COPY:
-                engineId = copyEngineUtil.size();
-                obj["engine_id"] = engineId;
-                copyEngineUtil.push_back(obj);
-                break;
-            case XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT:
-                engineId = mediaEmEngineUtil.size();
-                obj["engine_id"] = engineId;
-                mediaEmEngineUtil.push_back(obj);
-                break;
-            case XPUM_ENGINE_TYPE_3D:
-                engineId = threeDEngineUtil.size();
-                obj["engine_id"] = engineId;
-                threeDEngineUtil.push_back(obj);
-                break;
-            default:
-                break;
-        }
-    }
-    (*json)["compute_engine_util"] = computeEngineUtil;
-    (*json)["render_engine_util"] = renderEngineUtil;
-    (*json)["decoder_engine_util"] = decoderEngineUtil;
-    (*json)["encoder_engine_util"] = encoderEngineUtil;
-    (*json)["copy_engine_util"] = copyEngineUtil;
-    (*json)["media_engine_util"] = mediaEmEngineUtil;
-    (*json)["3d_engine_util"] = threeDEngineUtil;
 
     return json;
 }
@@ -251,6 +270,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
         auto &stats_info = response.datalist(i);
 
         std::string key = std::to_string(stats_info.deviceid());
+
+        // get engine stats
+        auto engineStatsJson = getEngineStatistics(stats_info.deviceid());
+        if (engineStatsJson->contains("error")) {
+            return std::make_unique<nlohmann::json>(*engineStatsJson);
+        }
 
         if (!deviceMap.contains(key)) {
             auto tmp = nlohmann::json();
@@ -294,9 +319,16 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
             auto tmp = nlohmann::json();
             tmp["tile_id"] = stats_info.tileid();
             tmp["data_list"] = dataList;
+            auto strTileId = std::to_string(stats_info.tileid());
+            if(engineStatsJson->contains(strTileId)){
+                tmp["engine_util"] = (*engineStatsJson)[strTileId];
+            }
             deviceMap[key]["tile_level"].push_back(tmp);
         } else {
             deviceMap[key]["device_level"] = dataList;
+            if (engineStatsJson->contains("device")) {
+                deviceMap[key]["engine_util"] = (*engineStatsJson)["device"];
+            }
         }
     }
 
@@ -307,7 +339,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
     std::string endTimestamp = isotimestamp(end);
 
     auto datas = std::vector<nlohmann::json>();
-    for (auto item : deviceMap.items()) {
+    for (auto &item : deviceMap.items()) {
         nlohmann::json data;
         data["begin"] = beginTimestamp;
         data["end"] = endTimestamp;
@@ -315,6 +347,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
         data["device_id"] = item.value()["device_id"];
         data["device_level"] = item.value()["device_level"];
         data["tile_level"] = item.value()["tile_level"];
+        if (item.value().contains("engine_util")) {
+            data["engine_util"] = item.value()["engine_util"];
+        }
         datas.push_back(data);
     }
 

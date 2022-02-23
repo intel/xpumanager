@@ -52,6 +52,7 @@ class CoreStub {
 
     std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter=false);
     std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter=false);
+    std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId);
     //config related interface
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2);
