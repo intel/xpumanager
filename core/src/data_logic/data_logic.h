@@ -55,6 +55,10 @@ class DataLogic : public DataLogicInterface {
                           xpum_device_metrics_t dataList[],
                           int* count);
 
+    xpum_result_t getEngineUtilizations(xpum_device_id_t deviceId,
+                                        xpum_device_engine_metric_t dataList[],
+                                        uint32_t *count);
+
     uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types);
 
     void stopRawDataCollectionTask(uint32_t task_id);

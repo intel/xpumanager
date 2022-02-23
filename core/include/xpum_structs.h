@@ -494,6 +494,20 @@ typedef struct xpum_device_engine_stats_t {
 } xpum_device_engine_stats_t;
 
 /**
+ * @brief Struct to store device engine metric data
+ * 
+ */
+typedef struct xpum_device_engine_metric_t {
+    bool isTileData;                ///< If this statistics data is tile level
+    int32_t tileId;                 ///< The tile id, only valid if isTileData is true
+    uint64_t id;                    ///< The id of the engine
+    xpum_engine_type_t type;        ///< The type of the engine
+    uint64_t value;                 ///< The value of engine utilization
+    uint32_t scale;                 ///< The magnification of the value field
+} xpum_device_engine_metric_t;
+
+
+/**
  * @brief Struct to store raw statistics data, not aggregated yet
  * 
  */

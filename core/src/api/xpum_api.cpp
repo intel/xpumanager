@@ -522,6 +522,16 @@ xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
     return xpum_result_t::XPUM_OK;
 }
 
+xpum_result_t xpumGetEngineUtilizations(xpum_device_id_t deviceId,
+                                        xpum_device_engine_metric_t dataList[],
+                                        uint32_t *count) {
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+    return Core::instance().getDataLogic()->getEngineUtilizations(deviceId, dataList, count);
+}
+
+
 xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
                                     xpum_device_metrics_t dataList[],
                                     int *count) {

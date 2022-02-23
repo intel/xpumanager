@@ -312,6 +312,58 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
+xpum_result_t DataLogic::getEngineUtilizations(xpum_device_id_t deviceId,
+                                               xpum_device_engine_metric_t dataList[],
+                                               uint32_t *count) {
+    std::string device_id = std::to_string(deviceId);
+    if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
+    auto metric_types = Configuration::getEnabledMetrics();
+    std::vector<xpum::DeviceCapability> capabilities;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
+    for(auto metric = metric_types.begin(); metric != metric_types.end();) {
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric));})){
+            metric = metric_types.erase(metric);
+        } else {
+            metric++;
+        }
+    }
+    if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
+        return XPUM_GENERIC_ERROR;
+    }
+
+    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
+    if (dataList == nullptr) {
+        return XPUM_OK;
+    }
+
+    std::shared_ptr<MeasurementData> p_data = getLatestData(METRIC_ENGINE_UTILIZATION, device_id);
+    auto engine_datas_iter = std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->begin();
+    uint32_t index = 0;
+    while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
+        uint32_t engine_id = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineID(engine_datas_iter->first);
+        if (engine_id != std::numeric_limits<uint32_t>::max()) {
+            xpum_device_engine_metric_t data;
+            data.isTileData = engine_datas_iter->second.on_subdevice;
+            data.tileId = engine_datas_iter->second.subdevice_id;
+            data.value = engine_datas_iter->second.current;
+            data.id = engine_id;
+            data.scale = p_data->getScale();
+            data.type = Utility::toXPUMEngineType(std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getEngineType(engine_datas_iter->first));
+            if (index >= *count) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+            dataList[index] = data;
+            ++index;
+        }
+        ++engine_datas_iter;
+    }
+    return XPUM_OK;
+}
+
 uint32_t DataLogic::startRawDataCollectionTask(xpum_device_id_t deviceId, std::vector<MeasurementType> types) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");

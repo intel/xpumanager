@@ -598,7 +598,7 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
 /**************************************************************************/
 
 /**
- * @brief Get statistics data by device
+ * @brief Get statistics data (not including per engine utilization) by device
  * 
  * @param deviceId      IN: Device id
  * @param dataList     OUT: The arry to store statistics data for device \a deviceId.
