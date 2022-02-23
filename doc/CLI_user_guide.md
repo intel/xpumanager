@@ -351,20 +351,42 @@ List the GPU device aggregated statistics that are collected by XPU Manager
 |                              | 1/1 -> 0/0: avg: 500, min: 100, max: 700, current: 400            |
 |                              | 1/0 -> 0/1: avg: 500, min: 100, max: 700, current: 400            |
 +------------------------------+-------------------------------------------------------------------+
-| Comupte Engine Util (%)      | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
-|                              | Engine 4: 0, Engne 5: 100, Engine 6: 0, Engine 7: 50              |
+| Comupte Engine Util (%)      | Tile 0:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
+|                              |   Engine 4: 0, Engne 5: 100, Engine 6: 0, Engine 7: 50            |
+|                              | Tile 1:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
+|                              |   Engine 4: 0, Engne 5: 100, Engine 6: 0, Engine 7: 50            |
 +------------------------------+-------------------------------------------------------------------+
-| Render Engine Util (%)       | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
+| Render Engine Util (%)       | Tile 0:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
+|                              | Tile 1:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
 +------------------------------+-------------------------------------------------------------------+
-| Decoder Engine Util (%)      | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
+| Decoder Engine Util (%)      | Tile 0:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
+|                              | Tile 1:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
 +------------------------------+-------------------------------------------------------------------+
-| Encoder Engine Util (%)      | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
+| Encoder Engine Util (%)      | Tile 0:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
+|                              | Tile 1:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
 +------------------------------+-------------------------------------------------------------------+
-| Copy Engine Util (%)         | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
+| Copy Engine Util (%)         | Tile 0:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
+|                              | Tile 1:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
 +------------------------------+-------------------------------------------------------------------+
-| Media EM Engine Util (%)     | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
+| Media EM Engine Util (%)     | Tile 0:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
+|                              | Tile 1:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
 +------------------------------+-------------------------------------------------------------------+
-| 3D Engine Util (%)           | Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50              |
+| 3D Engine Util (%)           | Tile 0:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
+|                              | Tile 1:                                                           |
+|                              |   Engine 0: 0, Engne 1: 100, Engine 2: 0, Engine 3: 50            |
 +------------------------------+-------------------------------------------------------------------+
 
 ```
