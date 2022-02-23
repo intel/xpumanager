@@ -685,7 +685,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
  */
 xpum_result_t xpumStartDumpRawDataTask(xpum_device_id_t deviceId,
                                        xpum_device_tile_id_t tileId,
-                                       const xpum_stats_type_t metricsTypeList[],
+                                       const xpum_dump_type_t dumpTypeList[],
                                        const int count,
                                        const char *dumpFilePath,
                                        xpum_dump_raw_data_task_t *taskInfo);

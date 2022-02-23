@@ -43,10 +43,10 @@ static void removeFileOnStartTaskFail(std::string filePath) {
 }
 
 ::grpc::Status XpumCoreServiceImpl::startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response) {
-    std::vector<xpum_stats_type_t> metricsTypeList;
+    std::vector<xpum_dump_type_t> dumpTypeList;
     for (auto enumValue : request->metricstypelist()) {
-        xpum_stats_type_t metricsType = static_cast<xpum_stats_type_t>(enumValue.value());
-        metricsTypeList.push_back(metricsType);
+        xpum_dump_type_t dumpType = static_cast<xpum_dump_type_t>(enumValue.value());
+        dumpTypeList.push_back(dumpType);
     }
     xpum_dump_raw_data_task_t taskInfo;
 
@@ -75,8 +75,8 @@ static void removeFileOnStartTaskFail(std::string filePath) {
     auto res = xpumStartDumpRawDataTask(
         deviceId,
         tileId,
-        metricsTypeList.data(),
-        metricsTypeList.size(),
+        dumpTypeList.data(),
+        dumpTypeList.size(),
         dumpFilePath.c_str(),
         &taskInfo);
     response->set_status(res);
@@ -87,7 +87,7 @@ static void removeFileOnStartTaskFail(std::string filePath) {
         grpcTaskInfo->set_tileid(taskInfo.tileId);
         for (int i = 0; i < taskInfo.count; i++) {
             auto generalEnum = grpcTaskInfo->add_metricstypelist();
-            generalEnum->set_value(taskInfo.metricsTypeList[i]);
+            generalEnum->set_value(taskInfo.dumpTypeList[i]);
         }
         grpcTaskInfo->set_begintime(taskInfo.beginTime);
         grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
@@ -115,7 +115,7 @@ static void removeFileOnStartTaskFail(std::string filePath) {
         grpcTaskInfo->set_tileid(taskInfo.tileId);
         for (int i = 0; i < taskInfo.count; i++) {
             auto generalEnum = grpcTaskInfo->add_metricstypelist();
-            generalEnum->set_value(taskInfo.metricsTypeList[i]);
+            generalEnum->set_value(taskInfo.dumpTypeList[i]);
         }
         grpcTaskInfo->set_begintime(taskInfo.beginTime);
         grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
@@ -159,7 +159,7 @@ static void removeFileOnStartTaskFail(std::string filePath) {
             grpcTaskInfo->set_tileid(taskInfo.tileId);
             for (int i = 0; i < taskInfo.count; i++) {
                 auto generalEnum = grpcTaskInfo->add_metricstypelist();
-                generalEnum->set_value(taskInfo.metricsTypeList[i]);
+                generalEnum->set_value(taskInfo.dumpTypeList[i]);
             }
             grpcTaskInfo->set_begintime(taskInfo.beginTime);
             grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);

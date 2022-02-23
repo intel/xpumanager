@@ -82,7 +82,7 @@ class CoreStub {
 	
     std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, const std::string& filePath );
 
-    std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_stats_type_t> metricsTypeList);
+    std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> metricsTypeList);
     std::unique_ptr<nlohmann::json> stopDumpRawDataTask(int taskId);
     std::unique_ptr<nlohmann::json> listDumpRawDataTasks();
 

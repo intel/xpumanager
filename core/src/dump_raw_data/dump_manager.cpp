@@ -29,22 +29,23 @@ void DumpRawDataManager::resetDumpFrequency() {
 xpum_result_t DumpRawDataManager::
     startDumpRawDataTask(xpum_device_id_t deviceId,
                          xpum_device_tile_id_t tileId,
-                         const xpum_stats_type_t metricsTypeList[],
+                         const xpum_dump_type_t dumpTypeList[],
                          const int count,
                          const char *dumpFilePath,
                          xpum_dump_raw_data_task_t *taskInfo) {
     std::lock_guard<std::mutex> lock(dumpMutex);
 
     for (int i = 0; i < count; i++) {
-        auto metricsType = metricsTypeList[i];
-        if (!supportedMetrics(metricsType))
+        auto dumpType = dumpTypeList[i];
+        if (getConfigOptionPointer(dumpType) == nullptr)
             return XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT;
     }
 
     // create task
     std::shared_ptr<DumpRawDataTask> p_task = std::make_shared<DumpRawDataTask>(taskIndex++, deviceId, tileId, std::string(dumpFilePath), pThreadPool);
     for (int i = 0; i < count; i++) {
-        p_task->metricsTypeList.push_back(metricsTypeList[i]);
+        // p_task->metricsTypeList.push_back(dumpTypeList[i]);
+        p_task->dumpTypeList.push_back(dumpTypeList[i]);
     }
     taskList.push_back(p_task);
 

@@ -759,6 +759,40 @@ typedef struct xpum_policy_t {
     bool isDeletePolicy;       // Only for set policy api, ignored by get policy api. If true, then delete this policy in set policy api.
 } xpum_policy_t;
 
+typedef enum xpum_dump_type_enum{
+    XPUM_DUMP_GPU_UTILIZATION,
+    XPUM_DUMP_POWER,
+    XPUM_DUMP_GPU_FREQUENCY,
+    XPUM_DUMP_GPU_CORE_TEMPERATURE,
+    XPUM_DUMP_MEMORY_TEMPERATURE,
+    XPUM_DUMP_MEMORY_UTILIZATION,
+    XPUM_DUMP_MEMORY_READ_THROUGHPUT,
+    XPUM_DUMP_MEMORY_WRITE_THROUGHPUT,
+    XPUM_DUMP_ENERGY,
+    XPUM_DUMP_EU_ACTIVE,
+    XPUM_DUMP_EU_STALL,
+    XPUM_DUMP_EU_IDLE,
+    XPUM_DUMP_RAS_ERROR_CAT_RESET,
+    XPUM_DUMP_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
+    XPUM_DUMP_RAS_ERROR_CAT_DRIVER_ERRORS,
+    XPUM_DUMP_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
+    XPUM_DUMP_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,
+    XPUM_DUMP_MEMORY_BANDWIDTH,
+    XPUM_DUMP_MEMORY_USED,
+    XPUM_DUMP_PCIE_READ_THROUGHPUT,
+    XPUM_DUMP_PCIE_WRITE_THROUGHPUT,
+    XPUM_DUMP_COMPUTE_ENGINE_UTILIZATION,
+    XPUM_DUMP_RENDER_ENGINE_UTILIZATION,
+    XPUM_DUMP_DECODE_ENGINE_UTILIZATION,
+    XPUM_DUMP_ENCODE_ENGINE_UTILIZATION,
+    XPUM_DUMP_COPY_ENGINE_UTILIZATION,
+    XPUM_DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION,
+    XPUM_DUMP_3D_ENGINE_UTILIZATION,
+    XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE,
+    XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE,
+    XPUM_DUMP_MAX
+} xpum_dump_type_t;
+
 /**
  * @brief dump raw data task structure
  * 
@@ -767,7 +801,7 @@ typedef struct xpum_dump_raw_data_task_t {
     xpum_dump_task_id_t taskId;                        ///< Task id of the task
     xpum_device_id_t deviceId;                         ///< device id
     xpum_device_tile_id_t tileId;                      ///< tile id, when it is -1, means dumping device level data
-    xpum_stats_type_t metricsTypeList[XPUM_STATS_MAX]; ///< metrics types to dump
+    xpum_dump_type_t dumpTypeList[XPUM_DUMP_MAX];      ///< data types to dump
     int count;                                         ///< The count of entries in metricsTypeList
     uint64_t beginTime;                                ///< The begin time of the task
     char dumpFilePath[XPUM_MAX_STR_LENGTH];            ///< The dump file path

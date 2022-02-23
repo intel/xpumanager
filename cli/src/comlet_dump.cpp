@@ -22,7 +22,7 @@ void ComletDump::setupOptions() {
 
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
     metricsListOpt->delimiter(',');
-    metricsListOpt->check(CLI::Range(0, (int)metricsOptions.size() - 1));
+    metricsListOpt->check(CLI::Range(0, (int)dumpTypeOptions.size() - 1));
     auto timeIntervalOpt = addOption("-i", this->opts->timeInterval, "The interval (in seconds) to dump the device statistics to screen. Default value: 1 second.");
     // timeIntervalOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
     timeIntervalOpt->check(
@@ -78,12 +78,12 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
         if (this->opts->startDumpTask && this->opts->deviceId != -1) {
             int deviceId = this->opts->deviceId;
             int tileId = this->opts->deviceTileId;
-            std::vector<xpum_stats_type_t> metricsTypeList;
+            std::vector<xpum_dump_type_t> dumpTypeList;
             for (auto i : this->opts->metricsIdList) {
-                auto &m = metricsOptions[i];
-                metricsTypeList.push_back(m.metricsType);
+                auto &m = dumpTypeOptions[i];
+                dumpTypeList.push_back(m.dumpType);
             }
-            json = this->coreStub->startDumpRawDataTask(deviceId, tileId, metricsTypeList);
+            json = this->coreStub->startDumpRawDataTask(deviceId, tileId, dumpTypeList);
         } else if (this->opts->listDumpTask) {
             json = this->coreStub->listDumpRawDataTasks();
         } else if (this->opts->dumpTaskId != -1) {
@@ -186,7 +186,12 @@ void ComletDump::printByLine(std::ostream &out) {
     }
     for (std::size_t i = 0; i < this->opts->metricsIdList.size(); i++) {
         int metric = this->opts->metricsIdList[i];
-        out << metricsOptions[metric].name;
+        auto config = dumpTypeOptions[metric];
+        if(config.optionType==DUMP_OPTION_STATS){
+            out << config.name;
+        }else if(config.optionType==DUMP_OPTION_ENGINE){
+            // print header by engine count
+        }
         if (i < this->opts->metricsIdList.size() - 1)
             out << ", ";
     }
@@ -230,19 +235,26 @@ void ComletDump::printByLine(std::ostream &out) {
 
         for (std::size_t i = 0; i < this->opts->metricsIdList.size(); i++) {
             int metric = this->opts->metricsIdList[i];
-            auto metricsConfig = metricsOptions[metric];
-            std::string metricKey = metricsConfig.key;
+            auto metricsConfig = dumpTypeOptions[metric];
             std::string value = "";
-            if (json != nullptr) {
-                for (auto metricObj : json->get<std::vector<nlohmann::json>>()) {
-                    if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
-                        uint64_t intValue = metricObj["value"].get<uint64_t>();
-                        if (metricsConfig.scale != 1) {
-                            intValue = round(intValue / metricsConfig.scale);
+            if (metricsConfig.optionType == DUMP_OPTION_STATS) {
+                std::string metricKey = metricsConfig.key;
+                if (json != nullptr) {
+                    for (auto metricObj : json->get<std::vector<nlohmann::json>>()) {
+                        if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
+                            uint64_t intValue = metricObj["value"].get<uint64_t>();
+                            if (metricsConfig.scale != 1) {
+                                intValue = round(intValue / metricsConfig.scale);
+                            }
+                            value = std::to_string(intValue);
+                            break;
                         }
-                        value = std::to_string(intValue);
-                        break;
                     }
+                }
+            } else if (metricsConfig.optionType == DUMP_OPTION_ENGINE) {
+                std::string metricKey = metricsConfig.key;
+                if(res->contains(metricKey)){
+                    
                 }
             }
             if (value.size() < 4) {
