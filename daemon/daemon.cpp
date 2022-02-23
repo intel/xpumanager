@@ -99,13 +99,16 @@ void print_help(const char* app_name) {
     printf("        24      RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE            on\n");
     printf("        25      RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE            on\n");
     printf("        26      RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE          on\n");
-    printf("        27      GPU_REQUEST_FREQUENCY                               on\n");
-    printf("        28      MEMORY_TEMPERATURE                                  on\n");
-    printf("        29      FREQUENCY_THROTTLE                                  on\n");
-    printf("        30      PCIE_READ_THROUGHPUT                                off\n");
-    printf("        31      PCIE_WRITE_THROUGHPUT                               off\n");
-    printf("        32      PCIE_READ                                           off\n");
-    printf("        33      PCIE_WRITE                                          off\n");
+    printf("        27      RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE        on\n");
+    printf("        28      RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE      on\n");
+    printf("        29      GPU_REQUEST_FREQUENCY                               on\n");
+    printf("        30      MEMORY_TEMPERATURE                                  on\n");
+    printf("        31      FREQUENCY_THROTTLE                                  on\n");
+    printf("        32      PCIE_READ_THROUGHPUT                                off\n");
+    printf("        33      PCIE_WRITE_THROUGHPUT                               off\n");
+    printf("        34      PCIE_READ                                           off\n");
+    printf("        35      PCIE_WRITE                                          off\n");
+    printf("        36      ENGINE_UTILIZATION                                  on\n");
     printf("\n");
 }
 
