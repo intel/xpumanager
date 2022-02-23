@@ -42,7 +42,7 @@ class PromMetric(Enum):
     xpum_programming_errors = ('xpum_programming_errors', 'Total number of GPU programming errors since Sysman init, per GPU')  # nopep8
     xpum_driver_errors = ('xpum_driver_errors', 'Total number of GPU driver errors since Sysman init, per GPU')  # nopep8
     xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since Sysman init, per GPU', ['type'])  # nopep8
-    xpum_non_compute_errors = ('xpum_cache_errors', 'Total number of GPU non-compute errors since Sysman init, per GPU', ['type'])  # nopep8
+    xpum_non_compute_errors = ('xpum_non_compute_errors', 'Total number of GPU non-compute errors since Sysman init, per GPU', ['type'])  # nopep8
     # xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since Sysman init, per GPU', ['type'])  # nopep8
 
     # Eu Active Stall Idle
