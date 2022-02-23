@@ -278,6 +278,22 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
     if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+
+    std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
+    auto metric_types = Configuration::getEnabledMetrics();
+    std::vector<xpum::DeviceCapability> capabilities;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
+    for(auto metric = metric_types.begin(); metric != metric_types.end();) {
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric));})){
+            metric = metric_types.erase(metric);
+        } else {
+            metric++;
+        }
+    }
+    if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
+        return XPUM_GENERIC_ERROR;
+    }
+
     *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
     if (dataList == nullptr) {
         return XPUM_OK;
