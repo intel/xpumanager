@@ -93,10 +93,10 @@ std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
             obj["max"] = engineInfo.max();
             obj["avg"] = engineInfo.avg();
         } else {
-            obj["value"] = engineInfo.value() / scale;
-            obj["min"] = engineInfo.min() / scale;
-            obj["max"] = engineInfo.max() / scale;
-            obj["avg"] = engineInfo.avg() / scale;
+            obj["value"] = (double)engineInfo.value() / scale;
+            obj["min"] = (double)engineInfo.min() / scale;
+            obj["max"] = (double)engineInfo.max() / scale;
+            obj["avg"] = (double)engineInfo.avg() / scale;
         }
         obj["engine_id"] = engineInfo.engineid();
         std::string tileId = engineInfo.istiledata() ? std::to_string(engineInfo.tileid()) : "device";
@@ -279,12 +279,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
 
         std::string key = std::to_string(stats_info.deviceid());
 
-        // get engine stats
-        auto engineStatsJson = getEngineStatistics(stats_info.deviceid());
-        if (engineStatsJson->contains("error")) {
-            return std::make_unique<nlohmann::json>(*engineStatsJson);
-        }
-
         if (!deviceMap.contains(key)) {
             auto tmp = nlohmann::json();
             tmp["device_level"] = std::vector<nlohmann::json>();
@@ -327,16 +321,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
             auto tmp = nlohmann::json();
             tmp["tile_id"] = stats_info.tileid();
             tmp["data_list"] = dataList;
-            auto strTileId = std::to_string(stats_info.tileid());
-            if(engineStatsJson->contains(strTileId)){
-                tmp["engine_util"] = (*engineStatsJson)[strTileId];
-            }
+            
             deviceMap[key]["tile_level"].push_back(tmp);
         } else {
             deviceMap[key]["device_level"] = dataList;
-            if (engineStatsJson->contains("device")) {
-                deviceMap[key]["engine_util"] = (*engineStatsJson)["device"];
-            }
+            
         }
     }
 
@@ -349,14 +338,29 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
     auto datas = std::vector<nlohmann::json>();
     for (auto &item : deviceMap.items()) {
         nlohmann::json data;
+        int deviceId = item.value()["device_id"].get<int>();
         data["begin"] = beginTimestamp;
         data["end"] = endTimestamp;
         data["elapsed_time"] = elapsed_time;
         data["device_id"] = item.value()["device_id"];
         data["device_level"] = item.value()["device_level"];
-        data["tile_level"] = item.value()["tile_level"];
-        if (item.value().contains("engine_util")) {
-            data["engine_util"] = item.value()["engine_util"];
+        // get engine stats
+        auto engineStatsJson = getEngineStatistics(deviceId);
+        if (engineStatsJson->contains("error")) {
+            return std::make_unique<nlohmann::json>(*engineStatsJson);
+        }
+        if (engineStatsJson->contains("device")) {
+            data["engine_util"] = (*engineStatsJson)["device"];
+        }
+        if (item.value().contains("tile_level")) {
+            auto &tileLevelObj = item.value()["tile_level"];
+            for (auto &tileObj : tileLevelObj) {
+                std::string strTileId = std::to_string(tileObj["tile_id"].get<int>());
+                if (engineStatsJson->contains(strTileId)) {
+                    tileObj["engine_util"] = (*engineStatsJson)[strTileId];
+                }
+            }
+            data["tile_level"] = tileLevelObj;
         }
         datas.push_back(data);
     }
