@@ -42,6 +42,7 @@ class PromMetric(Enum):
     xpum_programming_errors = ('xpum_programming_errors', 'Total number of GPU programming errors since Sysman init, per GPU')  # nopep8
     xpum_driver_errors = ('xpum_driver_errors', 'Total number of GPU driver errors since Sysman init, per GPU')  # nopep8
     xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since Sysman init, per GPU', ['type'])  # nopep8
+    xpum_non_compute_errors = ('xpum_cache_errors', 'Total number of GPU non-compute errors since Sysman init, per GPU', ['type'])  # nopep8
     # xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since Sysman init, per GPU', ['type'])  # nopep8
 
     # Eu Active Stall Idle
@@ -114,6 +115,8 @@ metrics_map = {
     'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': Metric(PromMetric.xpum_driver_errors, is_counter=True),
     'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_cache_errors, is_counter=True, ext_labels={'type': 'correctable'}),
     'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_cache_errors, is_counter=True, ext_labels={'type': 'uncorrectable'}),
+    'XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_non_compute_errors, is_counter=True, ext_labels={'type': 'correctable'}),
+    'XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_non_compute_errors, is_counter=True, ext_labels={'type': 'uncorrectable'}),
 
     # PCIe
     'XPUM_STATS_PCIE_READ': Metric(PromMetric.xpum_pcie_read_bytes, is_counter=True),  # nopep8
@@ -132,6 +135,8 @@ tile_to_device_aggregators = {
     'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': {'acc': sum},
     'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': {'acc': sum},
     'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': {'acc': sum},
+    'XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE': {'acc': sum},
+    'XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE': {'acc': sum},
     'XPUM_STATS_MEMORY_UTILIZATION': {'avg': avg},
     'XPUM_STATS_MEMORY_BANDWIDTH': {'avg': avg},
     'XPUM_STATS_GPU_UTILIZATION': {'avg': avg}
@@ -157,6 +162,10 @@ def get_metrics(core, pod_resources):
         for dev in data:
 
             device_id = dev.get('device_id')
+
+            stat_code, _, stat_data = core.getEngineStatistics(
+                device_id, session_id=1, get_accumulated=True)
+
             stat_code, _, stat_data = core.getStatistics(
                 device_id, session_id=1, get_accumulated=True)
 
