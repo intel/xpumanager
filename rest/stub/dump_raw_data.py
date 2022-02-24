@@ -1,7 +1,7 @@
 from google.protobuf import empty_pb2
 import core_pb2
 from .grpc_stub import stub
-from .xpum_enums import XpumStatsType
+from .xpum_enums import XpumDumpType
 import xpum_logger as logger
 
 url_prefix = "/download"
@@ -12,7 +12,7 @@ dump_folder = "/tmp/xpumdump"
 def startDumpRawDataTask(deviceId, tileId, metricsTypeList):
 
     enumList = [core_pb2.GeneralEnum(
-        value=XpumStatsType[m].value) for m in metricsTypeList]
+        value=XpumDumpType[m].value) for m in metricsTypeList]
 
     resp = stub.startDumpRawDataTask(core_pb2.StartDumpRawDataTaskRequest(
         deviceId=deviceId,

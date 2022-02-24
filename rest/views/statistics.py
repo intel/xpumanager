@@ -14,11 +14,42 @@ class StatisticsDataSchema(Schema):
         metadata={"description": "The min value since last query"})
 
 
+class EngineUtilDataSchema(Schema):
+    engine_id = fields.Int(
+        metadata={"description": "Engine id, unique in same tile and same type"})
+    value = fields.Number(metadata={"description": "The current value"})
+    avg = fields.Number(
+        metadata={"description": "The average value since last query"})
+    min = fields.Number(
+        metadata={"description": "The min value since last query"})
+    max = fields.Number(
+        metadata={"description": "The max value since last query"})
+
+
+class EngineUtilSchema(Schema):
+    compute = fields.Nested(EngineUtilDataSchema, many=True, metadata={
+        "description": "compute engine utilizations"})
+    render = fields.Nested(EngineUtilDataSchema, many=True, metadata={
+        "description": "render engine utilizations"})
+    decoder = fields.Nested(EngineUtilDataSchema, many=True, metadata={
+        "description": "decoder engine utilizations"})
+    encoder = fields.Nested(EngineUtilDataSchema, many=True, metadata={
+        "description": "encoder engine utilizations"})
+    copy = fields.Nested(EngineUtilDataSchema, many=True, metadata={
+        "description": "copy engine utilizations"})
+    media_enhancement = fields.Nested(EngineUtilDataSchema, many=True, metadata={
+        "description": "media enhancement engine utilizations"})
+    three_d = fields.Nested(EngineUtilDataSchema, many=True, metadata={
+        "description": "3d engine utilizations"}, data_key="3d")
+
+
 class TileStatisticsSchema(Schema):
     tile_id = fields.Int(
         metadata={"description": "The tile this data belongs to"})
     data_list = fields.Nested(StatisticsDataSchema, many=True, metadata={
                               "description": "Data array"})
+    engine_util = fields.Nested(EngineUtilSchema, metadata={
+        "description": "Engine utilizations"})
 
 
 class StatisticsSchema(Schema):
@@ -29,6 +60,8 @@ class StatisticsSchema(Schema):
                                  "description": "Device level statistics datas"})
     tile_level = fields.Nested(TileStatisticsSchema, many=True, metadata={
                                "description": "Tile level statistics datas"})
+    engine_util = fields.Nested(EngineUtilSchema, metadata={
+        "description": "Engine utilizations"})
 
 
 def get_statistics(deviceId):
