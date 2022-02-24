@@ -700,7 +700,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                                  || props.type == ZES_ENGINE_GROUP_COPY_SINGLE 
                                  || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE 
                                  || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
-                                    p_gpu->addEngine((uint64_t)engine);
+                                    p_gpu->addEngine((uint64_t)engine,props.type, props.onSubdevice, props.subdeviceId);
                                 }
                             }
                         }

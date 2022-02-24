@@ -305,8 +305,8 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
     *end = p_data->getLatestTime();
     uint32_t index = 0;
     while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
-        uint32_t engine_id = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineID(engine_datas_iter->first);
-        if (engine_id != std::numeric_limits<uint32_t>::max()) {
+        uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engine_datas_iter->first);
+        if (engine_index != std::numeric_limits<uint32_t>::max()) {
             xpum_device_engine_stats_t data;
             data.isTileData = engine_datas_iter->second.on_subdevice;
             data.tileId = engine_datas_iter->second.subdevice_id;
@@ -314,7 +314,7 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
             data.min = engine_datas_iter->second.min;
             data.avg = engine_datas_iter->second.avg;
             data.max = engine_datas_iter->second.max;
-            data.id = engine_id;
+            data.index = engine_index;
             data.scale = p_data->getScale();
             data.type = Utility::toXPUMEngineType(std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getEngineType(engine_datas_iter->first));
             if (index >= *count) {
@@ -360,13 +360,13 @@ xpum_result_t DataLogic::getEngineUtilizations(xpum_device_id_t deviceId,
     auto engine_datas_iter = std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->begin();
     uint32_t index = 0;
     while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
-        uint32_t engine_id = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineID(engine_datas_iter->first);
-        if (engine_id != std::numeric_limits<uint32_t>::max()) {
+        uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engine_datas_iter->first);
+        if (engine_index != std::numeric_limits<uint32_t>::max()) {
             xpum_device_engine_metric_t data;
             data.isTileData = engine_datas_iter->second.on_subdevice;
             data.tileId = engine_datas_iter->second.subdevice_id;
             data.value = engine_datas_iter->second.current;
-            data.id = engine_id;
+            data.index = engine_index;
             data.scale = p_data->getScale();
             data.type = Utility::toXPUMEngineType(std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getEngineType(engine_datas_iter->first));
             if (index >= *count) {

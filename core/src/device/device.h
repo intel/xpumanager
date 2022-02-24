@@ -12,6 +12,7 @@
 #include "infrastructure/measurement_type.h"
 #include "infrastructure/exception/base_exception.h"
 #include "infrastructure/property.h"
+#include "engine_info.h"
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 #include "level_zero/zet_api.h"
@@ -106,11 +107,15 @@ class Device {
 
     static std::function<void(Callback_t)> getDeviceMethod(DeviceCapability& capability, Device* p_device);
 
-    void addEngine(uint64_t engine);
+    void addEngine(uint64_t engine, zes_engine_group_t type, bool on_subdevice, uint32_t subdevice_id);
 
     uint32_t getEngineCount() noexcept;
 
-    uint32_t getEngineID(uint64_t handle);
+    uint32_t getEngineCount(uint32_t subdevice_id, zes_engine_group_t type);
+
+    uint32_t getEngineCount(uint32_t subdevice_id);
+
+    uint32_t getEngineIndex(uint64_t handle);
 
    public:
     virtual ~Device() {}
@@ -130,7 +135,7 @@ class Device {
 
     std::vector<Property> properties;
 
-    std::map<uint64_t,uint32_t> engines;
+    std::map<uint64_t,EngineInfo> engines;
 };
 
 } // end namespace xpum

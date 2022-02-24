@@ -519,6 +519,28 @@ xpum_engine_type_t Utility::toXPUMEngineType(zes_engine_group_t type) {
     }
 }
 
+zes_engine_group_t Utility::toZESEngineType(xpum_engine_type_t type) {
+    switch (type)
+    {
+    case XPUM_ENGINE_TYPE_COMPUTE:
+        return ZES_ENGINE_GROUP_COMPUTE_SINGLE;
+    case XPUM_ENGINE_TYPE_RENDER:
+        return ZES_ENGINE_GROUP_RENDER_SINGLE;
+    case XPUM_ENGINE_TYPE_DECODE:
+        return ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE;
+    case XPUM_ENGINE_TYPE_ENCODE:
+        return ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE;
+    case XPUM_ENGINE_TYPE_COPY:
+        return ZES_ENGINE_GROUP_COPY_SINGLE;
+    case XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT:
+        return ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE;
+    case XPUM_ENGINE_TYPE_3D:
+        return ZES_ENGINE_GROUP_3D_SINGLE;    
+    default:
+        return ZES_ENGINE_GROUP_FORCE_UINT32;
+    }
+}
+
 bool Utility::isATSPlatform(std::string device_name) {
     return device_name == "Intel(R) Graphics [0x020a]"
     || device_name == "Intel(R) Graphics [0x56c0]"

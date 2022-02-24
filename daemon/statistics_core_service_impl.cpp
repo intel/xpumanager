@@ -240,7 +240,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         engineStatsInfo->set_deviceid(deviceId);
         engineStatsInfo->set_istiledata(stats.isTileData);
         engineStatsInfo->set_tileid(stats.tileId);
-        engineStatsInfo->set_engineid(stats.id);
+        engineStatsInfo->set_engineid(stats.index);
         engineStatsInfo->set_enginetype(stats.type);
         engineStatsInfo->set_value(stats.value);
         engineStatsInfo->set_min(stats.min);

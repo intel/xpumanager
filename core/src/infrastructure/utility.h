@@ -42,6 +42,8 @@ class Utility {
 
     static xpum_engine_type_t toXPUMEngineType(zes_engine_group_t type);
 
+    static zes_engine_group_t toZESEngineType(xpum_engine_type_t type);
+
     static bool isATSPlatform(std::string device_name);
 };
 

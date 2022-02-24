@@ -1,8 +1,7 @@
 #include "device.h"
-
 #include <cstring>
-
 #include "infrastructure/exception/ilegal_parameter_exception.h"
+#include "infrastructure/logger.h"
 
 namespace xpum {
 
@@ -183,11 +182,18 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
     return nullptr;
 }
 
-void Device::addEngine(uint64_t engine) {
+void Device::addEngine(uint64_t handle, zes_engine_group_t type, bool on_subdevice, uint32_t subdevice_id) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    if (engines.find(engine) == engines.end()) {
-        uint32_t size = engines.size();
-        engines[engine] = size;
+    if (engines.find(handle) == engines.end()) {
+        EngineInfo engine_info(type,on_subdevice,subdevice_id);
+        uint32_t index = 0;
+        for (auto& engine : engines) {
+            if (engine.second.getSubdeviceId() == subdevice_id && engine.second.getType() == type) {
+                index++;
+            }
+        }
+        engine_info.setIndex(index);
+        engines.insert(std::make_pair(handle , engine_info));
     }
 }
 
@@ -196,9 +202,31 @@ uint32_t Device::getEngineCount() noexcept {
     return engines.size();
 }
 
-uint32_t Device::getEngineID(uint64_t handle) {
+uint32_t Device::getEngineCount(uint32_t subdevice_id, zes_engine_group_t type) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    uint32_t count = 0;
+    for (auto& engine:engines) {
+        if (engine.second.getSubdeviceId() == subdevice_id && engine.second.getType() == type) {
+            count++;
+        }
+    }
+    return count;
+}
+
+uint32_t Device::getEngineCount(uint32_t subdevice_id) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    uint32_t count = 0;
+    for (auto& engine:engines) {
+        if (engine.second.getSubdeviceId() == subdevice_id) {
+            count++;
+        }
+    }
+    return count;
+}
+
+uint32_t Device::getEngineIndex(uint64_t handle) {
     if (engines.find(handle) != engines.end()) {
-        return engines[handle];
+        return engines[handle].getIndex();
     }
     return std::numeric_limits<uint32_t>::max();
 }
