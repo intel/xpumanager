@@ -622,6 +622,27 @@ message XpumGetEngineStatsResponse {
     int32 status = 5;
 }
 
+message GetEngineCountRequest {
+    uint32 deviceId = 1;
+}
+
+message EngineCountInfoData {
+    int32 engineType = 1;
+    int32 count = 2;
+}
+
+message EngineCountInfo {
+    bool isTileLevel = 1;
+    int32 tileId = 2;
+    repeated EngineCountInfoData dataList = 3;
+}
+
+message GetEngineCountResponse {
+    int32 status = 1;
+    string errorMsg = 2;
+    repeated EngineCountInfo engineCountList = 3;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -648,6 +669,7 @@ service XpumCoreService {
     rpc getMetricsByGroup( GroupId ) returns ( DeviceStatsInfoArray );
     rpc getStatistics( XpumGetStatsRequest ) returns ( XpumGetStatsResponse );
     rpc getEngineStatistics( XpumGetEngineStatsRequest ) returns ( XpumGetEngineStatsResponse );
+    rpc getEngineCount( GetEngineCountRequest ) returns ( GetEngineCountResponse );
     rpc getStatisticsByGroup( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );
     rpc getStatisticsNotForPrometheus( XpumGetStatsRequest ) returns ( XpumGetStatsResponse );
     rpc getStatisticsByGroupNotForPrometheus( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );

@@ -110,6 +110,7 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status getTopoXMLBuffer(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::TopoXMLResponse* response);
 
     virtual ::grpc::Status getEngineStatistics(::grpc::ServerContext* context, const ::XpumGetEngineStatsRequest* request, ::XpumGetEngineStatsResponse* response) override;
+    virtual ::grpc::Status getEngineCount(::grpc::ServerContext* context, const ::GetEngineCountRequest* request, ::GetEngineCountResponse* response) override;
 
     private:
         std::atomic_bool stop;

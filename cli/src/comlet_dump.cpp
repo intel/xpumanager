@@ -175,6 +175,8 @@ void ComletDump::printByLine(std::ostream &out) {
     // try run
     res = run();
 
+    auto pEngineCountMap = this->coreStub->getEngineCount(deviceId);
+
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         return;
@@ -191,6 +193,13 @@ void ComletDump::printByLine(std::ostream &out) {
             out << config.name;
         }else if(config.optionType==DUMP_OPTION_ENGINE){
             // print header by engine count
+            if(pEngineCountMap->find(tileId) != pEngineCountMap->end()){
+                int engineCount = (*pEngineCountMap)[tileId][config.engineType];
+                for (int engineIdx = 0; engineIdx < engineCount; engineIdx++) {
+                    out << engineNameMap[config.engineType] << " " << engineIdx << " (%)";
+                    if (engineIdx < engineCount - 1) out << ", ";
+                }
+            }
         }
         if (i < this->opts->metricsIdList.size() - 1)
             out << ", ";
@@ -210,10 +219,14 @@ void ComletDump::printByLine(std::ostream &out) {
         }
 
         std::shared_ptr<nlohmann::json> json;
+        std::shared_ptr<nlohmann::json> engineUtilJson;
 
         if (tileId == -1) {
             if (res->contains("device_level")) {
                 json = std::make_shared<nlohmann::json>((*res)["device_level"]);
+            }
+            if(res->contains("engine_util")){
+                engineUtilJson = std::make_shared<nlohmann::json>((*res)["engine_util"]);
             }
         } else {
             if (res->contains("tile_level")) {
@@ -221,6 +234,9 @@ void ComletDump::printByLine(std::ostream &out) {
                 for (auto tile : tiles) {
                     if (tile.contains("tile_id") && tile["tile_id"].get<int>() == tileId && tile.contains("data_list")) {
                         json = std::make_shared<nlohmann::json>(tile["data_list"]);
+                        if(tile.contains("engine_util")){
+                            engineUtilJson = std::make_shared<nlohmann::json>(tile["engine_util"]);
+                        }
                         break;
                     }
                 }
@@ -252,9 +268,20 @@ void ComletDump::printByLine(std::ostream &out) {
                     }
                 }
             } else if (metricsConfig.optionType == DUMP_OPTION_ENGINE) {
-                std::string metricKey = metricsConfig.key;
-                if(res->contains(metricKey)){
-                    
+                if (pEngineCountMap->find(tileId) != pEngineCountMap->end()) {
+                    int engineCount = (*pEngineCountMap)[tileId][metricsConfig.engineType];
+                    for (int engineIdx = 0; engineIdx < engineCount; engineIdx++) {
+                        if (engineUtilJson != nullptr) {
+                            // out<<(*engineUtilJson)<<std::endl;
+                            auto engineUtilByType = (*engineUtilJson)[metricsConfig.key];
+                            for (auto u : engineUtilByType) {
+                                if (u["engine_id"].get<int>() == engineIdx) {
+                                    out << u["value"];
+                                }
+                            }
+                            if (engineIdx < engineCount - 1) out << ", ";
+                        }
+                    }
                 }
             }
             if (value.size() < 4) {

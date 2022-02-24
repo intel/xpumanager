@@ -3,6 +3,7 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <map>
 
 #include "comlet_base.h"
 #include "xpum_structs.h"
@@ -43,6 +44,16 @@ class ComletDump : public ComletBase {
    private:
     std::unique_ptr<ComletDumpOptions> opts;
 
+    std::map<xpum_engine_type_t, std::string> engineNameMap{
+        {XPUM_ENGINE_TYPE_COMPUTE, "Compute Engine"},
+        {XPUM_ENGINE_TYPE_RENDER, "Render Engine"},
+        {XPUM_ENGINE_TYPE_DECODE, "Decoder Engine"},
+        {XPUM_ENGINE_TYPE_ENCODE, "Encoder Engine"},
+        {XPUM_ENGINE_TYPE_COPY, "Copy Engine"},
+        {XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT, "Media Enhancement Engine"},
+        {XPUM_ENGINE_TYPE_3D, "3D Engine"}
+    };
+
     std::vector<DumpTypeOption> dumpTypeOptions{
         {XPUM_DUMP_GPU_UTILIZATION, DUMP_OPTION_STATS, XPUM_STATS_GPU_UTILIZATION, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_GPU_UTILIZATION", "GPU Utilization (%)", "GPU active time of the elapsed time, per tile"},
         {XPUM_DUMP_POWER, DUMP_OPTION_STATS, XPUM_STATS_POWER, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_POWER", "GPU Power (W)", "per tile"},
@@ -65,13 +76,13 @@ class ComletDump : public ComletBase {
         {XPUM_DUMP_MEMORY_USED, DUMP_OPTION_STATS, XPUM_STATS_MEMORY_USED, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_MEMORY_USED", "GPU Memory Used (MiB)", "", 1024 * 1024},
         {XPUM_DUMP_PCIE_READ_THROUGHPUT, DUMP_OPTION_STATS, XPUM_STATS_PCIE_READ_THROUGHPUT, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_PCIE_READ_THROUGHPUT", "PCIe Read (kB/s)", "per GPU"},
         {XPUM_DUMP_PCIE_WRITE_THROUGHPUT, DUMP_OPTION_STATS, XPUM_STATS_PCIE_WRITE_THROUGHPUT, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_PCIE_WRITE_THROUGHPUT", "PCIe Write (kB/s)", "per GPU"},
-        {XPUM_DUMP_COMPUTE_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_COMPUTE, "compute_engine_util", "Compute engine utilizations (%)", "per tile"},
-        {XPUM_DUMP_RENDER_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_RENDER, "render_engine_util", "Render engine utilizations (%)", "per tile"},
-        {XPUM_DUMP_DECODE_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_DECODE, "decoder_engine_util", "Media decoder engine utilizations (%)", "per tile"},
-        {XPUM_DUMP_ENCODE_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_ENCODE, "encoder_engine_util", "Media encoder engine utilizations (%)", "per tile"},
-        {XPUM_DUMP_COPY_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_COPY, "copy_engine_util", "Copy engine utilizations (%)", "per tile"},
-        {XPUM_DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT, "media_engine_util", "Media enhancement engine utilizations (%)", "per tile"},
-        {XPUM_DUMP_3D_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_3D, "3d_engine_util", "3D engine utilizations (%)", "per tile"},
+        {XPUM_DUMP_COMPUTE_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_COMPUTE, "compute", "Compute engine utilizations (%)", "per tile"},
+        {XPUM_DUMP_RENDER_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_RENDER, "render", "Render engine utilizations (%)", "per tile"},
+        {XPUM_DUMP_DECODE_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_DECODE, "decoder", "Media decoder engine utilizations (%)", "per tile"},
+        {XPUM_DUMP_ENCODE_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_ENCODE, "encoder", "Media encoder engine utilizations (%)", "per tile"},
+        {XPUM_DUMP_COPY_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_COPY, "copy", "Copy engine utilizations (%)", "per tile"},
+        {XPUM_DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT, "media_enhancement", "Media enhancement engine utilizations (%)", "per tile"},
+        {XPUM_DUMP_3D_ENGINE_UTILIZATION, DUMP_OPTION_ENGINE, XPUM_STATS_MAX, XPUM_ENGINE_TYPE_3D, "3d", "3D engine utilizations (%)", "per tile"},
         {XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, DUMP_OPTION_STATS, XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE", "GPU Memory Errors Correctable", "per tile. Other non-compute correctable errors are also included"},
         {XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, DUMP_OPTION_STATS, XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE", "GPU Memory Errors Uncorrectable", "per tile. Other non-compute correctable errors are also included"}};
 

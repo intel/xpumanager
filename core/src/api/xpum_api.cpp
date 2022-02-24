@@ -122,6 +122,43 @@ xpum_result_t xpumGetEngineCount(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
+std::vector<EngineCount> getDeviceAndTileEngineCount(xpum_device_id_t deviceId) {
+    auto res = std::vector<EngineCount>();
+    auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (pDevice == nullptr)
+        return res;
+    Property prop;
+    pDevice->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
+    auto tileCount = prop.getValueInt();
+    if (tileCount == 1) {
+        EngineCount ec;
+        ec.isTileLevel = false;
+        for (int engineType = 0; engineType < XPUM_ENGINE_TYPE_UNKNOWN; engineType++) {
+            int c = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount(-1, Utility::toZESEngineType((xpum_engine_type_t)engineType));
+            EngineCountData data;
+            data.count = c;
+            data.engineType = (xpum_engine_type_t)engineType;
+            ec.engineCountList.push_back(data);
+        }
+        res.push_back(ec);
+    } else {
+        for (int tileId = 0; tileId < tileCount; tileId++) {
+            EngineCount ec;
+            ec.isTileLevel = true;
+            ec.tileId = tileId;
+            for (int engineType = 0; engineType < XPUM_ENGINE_TYPE_UNKNOWN; engineType++) {
+                int c = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount(tileId, Utility::toZESEngineType((xpum_engine_type_t)engineType));
+                EngineCountData data;
+                data.count = c;
+                data.engineType = (xpum_engine_type_t)engineType;
+                ec.engineCountList.push_back(data);
+            }
+            res.push_back(ec);
+        }
+    }
+    return res;
+}
+
 xpum_result_t xpumInit() {
     try {
         XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());

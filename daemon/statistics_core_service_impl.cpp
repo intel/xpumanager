@@ -1,6 +1,7 @@
 #include "xpum_api.h"
 #include "xpum_core_service_impl.h"
 #include "xpum_structs.h"
+#include "internal_api.h"
 
 namespace xpum::daemon {
 
@@ -247,6 +248,22 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         engineStatsInfo->set_avg(stats.avg);
         engineStatsInfo->set_max(stats.max);
         engineStatsInfo->set_scale(stats.scale);
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getEngineCount(::grpc::ServerContext* context, const ::GetEngineCountRequest* request, ::GetEngineCountResponse* response) {
+    xpum_device_id_t deviceId = request->deviceid();
+    auto engineCountInfo = getDeviceAndTileEngineCount(deviceId);
+    for (auto tileEngineCountInfo : engineCountInfo) {
+        auto countInfo = response->add_enginecountlist();
+        countInfo->set_istilelevel(tileEngineCountInfo.isTileLevel);
+        countInfo->set_tileid(tileEngineCountInfo.tileId);
+        for (auto typeCountInfo : tileEngineCountInfo.engineCountList) {
+            auto dataList = countInfo->add_datalist();
+            dataList->set_enginetype(typeCountInfo.engineType);
+            dataList->set_count(typeCountInfo.count);
+        }
     }
     return grpc::Status::OK;
 }

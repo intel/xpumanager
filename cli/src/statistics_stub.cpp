@@ -61,6 +61,28 @@ std::string CoreStub::metricsTypeToString(xpum_stats_type_t metricsType) {
     return std::to_string(metricsType);
 }
 
+std::shared_ptr<std::map<int, std::map<int, int>>> CoreStub::getEngineCount(int deviceId) {
+    grpc::ClientContext context;
+    GetEngineCountRequest request;
+    GetEngineCountResponse response;
+    request.set_deviceid(deviceId);
+    grpc::Status status = stub->getEngineCount(&context, request, &response);
+
+    std::map<int, std::map<int, int>> m;
+
+    for (auto &tileInfo : response.enginecountlist()) {
+        std::map<int, int> mm;
+        for (auto &countInfo : tileInfo.datalist()) {
+            int engineType = countInfo.enginetype();
+            int count = countInfo.count();
+            mm[engineType] = count;
+        }
+        int tileId = tileInfo.istilelevel() ? tileInfo.tileid() : -1;
+        m[tileId] = mm;
+    }
+    return std::make_shared<std::map<int, std::map<int, int>>>(m);
+}
+
 std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
     grpc::ClientContext engineContext;
     XpumGetEngineStatsRequest engineRequest;
