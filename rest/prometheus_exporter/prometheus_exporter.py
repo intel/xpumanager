@@ -163,9 +163,6 @@ def get_metrics(core, pod_resources):
 
             device_id = dev.get('device_id')
 
-            stat_code, _, stat_data = core.getEngineStatistics(
-                device_id, session_id=1, get_accumulated=True)
-
             stat_code, _, stat_data = core.getStatistics(
                 device_id, session_id=1, get_accumulated=True)
 
