@@ -122,25 +122,6 @@ xpum_result_t xpumGetEngineCount(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
-xpum_result_t xpumGetEngineCount(xpum_device_id_t deviceId,
-                                 xpum_device_tile_id_t tileId,
-                                 uint32_t *count) {
-    auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (pDevice == nullptr)
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
-    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount(tileId);
-    return XPUM_OK;
-}
-
-xpum_result_t xpumGetEngineCount(xpum_device_id_t deviceId,
-                                 uint32_t *count) {
-    auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (pDevice == nullptr)
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
-    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
-    return XPUM_OK;
-}
-
 xpum_result_t xpumInit() {
     try {
         XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());

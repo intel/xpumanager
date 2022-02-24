@@ -202,22 +202,12 @@ uint32_t Device::getEngineCount() noexcept {
     return engines.size();
 }
 
-uint32_t Device::getEngineCount(uint32_t subdevice_id, zes_engine_group_t type) {
+uint32_t Device::getEngineCount(int32_t subdevice_id, zes_engine_group_t type) {
     std::unique_lock<std::mutex> lock(this->mutex);
     uint32_t count = 0;
     for (auto& engine:engines) {
-        if (engine.second.getSubdeviceId() == subdevice_id && engine.second.getType() == type) {
-            count++;
-        }
-    }
-    return count;
-}
-
-uint32_t Device::getEngineCount(uint32_t subdevice_id) {
-    std::unique_lock<std::mutex> lock(this->mutex);
-    uint32_t count = 0;
-    for (auto& engine:engines) {
-        if (engine.second.getSubdeviceId() == subdevice_id) {
+        if ((subdevice_id == -1 || engine.second.getSubdeviceId() == (uint32_t)subdevice_id) 
+            && (type == ZES_ENGINE_GROUP_FORCE_UINT32 || engine.second.getType() == type)) {
             count++;
         }
     }

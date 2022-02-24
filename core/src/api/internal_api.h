@@ -33,9 +33,9 @@ xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_t
  * @brief Get engine count on the same subdevice of the same type.
  *
  * @param deviceId      IN: Device id
- * @param tileId        IN: The tile Id
- * @param type          IN: Engine type
- * @param count        OUT: The number of the same type engine on the same subdevice
+ * @param tileId        IN: The tile Id. If tileId == -1, then count will be returned as the total number of engines of the type on device.
+ * @param type          IN: Engine type. If type == XPUM_ENGINE_TYPE_UNKNOWN, the count will be returned as the total number of engines of all types.
+ * @param count        OUT: The number of the same type engine on the same subdevice or device
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if failure
@@ -43,32 +43,6 @@ xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_t
 xpum_result_t xpumGetEngineCount(xpum_device_id_t deviceId,
                                  xpum_device_tile_id_t tileId,
                                  xpum_engine_type_t type,
-                                 uint32_t *count);
-
-/**
- * @brief Get total engine count on the same subdevice
- *
- * @param deviceId      IN: Device id
- * @param tileId        IN: The tile Id
- * @param count        OUT: The number of engines on the same subdevice
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_GENERIC_ERROR       if failure
- */
-xpum_result_t xpumGetEngineCount(xpum_device_id_t deviceId,
-                                 xpum_device_tile_id_t tileId,
-                                 uint32_t *count);
-
-/**
- * @brief Get total engine count
- *
- * @param deviceId      IN: Device id
- * @param count        OUT: The number of engines
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_GENERIC_ERROR       if failure
- */
-xpum_result_t xpumGetEngineCount(xpum_device_id_t deviceId,
                                  uint32_t *count);
 
 /**************************************************************************/

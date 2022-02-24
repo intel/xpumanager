@@ -111,9 +111,7 @@ class Device {
 
     uint32_t getEngineCount() noexcept;
 
-    uint32_t getEngineCount(uint32_t subdevice_id, zes_engine_group_t type);
-
-    uint32_t getEngineCount(uint32_t subdevice_id);
+    uint32_t getEngineCount(int32_t subdevice_id, zes_engine_group_t type);
 
     uint32_t getEngineIndex(uint64_t handle);
 
