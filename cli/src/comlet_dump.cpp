@@ -142,6 +142,42 @@ void ComletDump::getTableResult(std::ostream &out) {
     }
 }
 
+typedef std::function<std::string()> getValueFunc;
+
+struct DumpColumn {
+    std::string header;
+    getValueFunc getValue;
+
+    DumpColumn(
+        std::string header,
+        getValueFunc getValue)
+        : header(header),
+          getValue(getValue) {}
+};
+
+std::string keepTwoDecimalPrecision(double value) {
+    std::ostringstream os;
+    os << std::fixed;
+    os << std::setprecision(2);
+    os << value;
+    return os.str();
+}
+
+std::string getJsonValue(nlohmann::json obj, int scale) {
+    if (obj.is_number_float()) {
+        auto value = obj.get<double>();
+        value /= scale;
+        return keepTwoDecimalPrecision(value);
+    } else {
+        auto value = obj.get<int64_t>();
+        if (scale != 1) {
+            return keepTwoDecimalPrecision(value / scale);
+        } else {
+            return std::to_string(value);
+        }
+    }
+}
+
 void ComletDump::printByLine(std::ostream &out) {
     // out << std::left << std::setw(25) << std::setfill(' ') << "Timestamp, ";
     int deviceId = this->opts->deviceId;
@@ -182,28 +218,82 @@ void ComletDump::printByLine(std::ostream &out) {
         return;
     }
 
-    out << "Timestamp, DeviceId, ";
+    // construct column schema
+    std::vector<DumpColumn> columnSchemaList;
+
+    // timestamp column
+    columnSchemaList.push_back({"Timestamp",
+                                []() {
+                                    return CoreStub::isotimestamp(time(nullptr) * 1000);
+                                }});
+
+    // device id column
+    columnSchemaList.push_back({"DeviceId",
+                                [deviceId]() {
+                                    return std::to_string(deviceId);
+                                }});
+
+    // tile id
     if (tileId != -1) {
-        out << "TileId, ";
+        DumpColumn tileColumn{"TileId",
+                              [tileId]() {
+                                  return std::to_string(tileId);
+                              }};
+        columnSchemaList.push_back(tileColumn);
     }
+
+    // other columns
     for (std::size_t i = 0; i < this->opts->metricsIdList.size(); i++) {
         int metric = this->opts->metricsIdList[i];
         auto config = dumpTypeOptions[metric];
-        if(config.optionType==DUMP_OPTION_STATS){
-            out << config.name;
-        }else if(config.optionType==DUMP_OPTION_ENGINE){
-            // print header by engine count
-            if(pEngineCountMap->find(tileId) != pEngineCountMap->end()){
+        if (config.optionType == DUMP_OPTION_STATS) {
+            DumpColumn dc{
+                std::string(config.name),
+                [config, this]() {
+                    std::string metricKey = config.key;
+                    if (statsJson != nullptr) {
+                        for (auto metricObj : (*statsJson)) {
+                            if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
+                                return getJsonValue(metricObj["value"], config.scale);
+                            }
+                        }
+                    }
+                    return std::string();
+                }};
+            columnSchemaList.push_back(dc);
+        } else if (config.optionType == DUMP_OPTION_ENGINE) {
+            if (pEngineCountMap->find(tileId) != pEngineCountMap->end()) {
                 int engineCount = (*pEngineCountMap)[tileId][config.engineType];
                 for (int engineIdx = 0; engineIdx < engineCount; engineIdx++) {
-                    out << engineNameMap[config.engineType] << " " << engineIdx << " (%)";
-                    if (engineIdx < engineCount - 1) out << ", ";
+                    std::string header = engineNameMap[config.engineType] + " " + std::to_string(engineIdx) + " (%)";
+                    DumpColumn dc{
+                        header,
+                        [config, engineIdx, this]() {
+                            if (engineUtilJson != nullptr) {
+                                auto engineUtilByType = (*engineUtilJson)[config.key];
+                                for (auto u : engineUtilByType) {
+                                    if (u["engine_id"].get<int>() == engineIdx) {
+                                        return getJsonValue(u["value"], config.scale);
+                                    }
+                                }
+                            }
+                            return std::string();
+                        }};
+                    columnSchemaList.push_back(dc);
                 }
             }
         }
-        if (i < this->opts->metricsIdList.size() - 1)
-            out << ", ";
     }
+
+    // print table header
+    for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
+        auto dc = columnSchemaList[i];
+        out << dc.header;
+        if (i < columnSchemaList.size() - 1) {
+            out << ", ";
+        }
+    }
+
     out << std::endl;
 
     int iter = 0;
@@ -218,12 +308,12 @@ void ComletDump::printByLine(std::ostream &out) {
             return;
         }
 
-        std::shared_ptr<nlohmann::json> json;
-        std::shared_ptr<nlohmann::json> engineUtilJson;
+        statsJson = nullptr;
+        engineUtilJson = nullptr;
 
         if (tileId == -1) {
             if (res->contains("device_level")) {
-                json = std::make_shared<nlohmann::json>((*res)["device_level"]);
+                statsJson = std::make_shared<nlohmann::json>((*res)["device_level"]);
             }
             if(res->contains("engine_util")){
                 engineUtilJson = std::make_shared<nlohmann::json>((*res)["engine_util"]);
@@ -233,7 +323,7 @@ void ComletDump::printByLine(std::ostream &out) {
                 auto tiles = (*res)["tile_level"].get<std::vector<nlohmann::json>>();
                 for (auto tile : tiles) {
                     if (tile.contains("tile_id") && tile["tile_id"].get<int>() == tileId && tile.contains("data_list")) {
-                        json = std::make_shared<nlohmann::json>(tile["data_list"]);
+                        statsJson = std::make_shared<nlohmann::json>(tile["data_list"]);
                         if(tile.contains("engine_util")){
                             engineUtilJson = std::make_shared<nlohmann::json>(tile["engine_util"]);
                         }
@@ -243,55 +333,18 @@ void ComletDump::printByLine(std::ostream &out) {
             }
         }
 
-        out << CoreStub::isotimestamp(time(nullptr) * 1000) << ", ";
-        out << deviceId << ", ";
-        if (tileId != -1) {
-            out << tileId << ", ";
-        }
-
-        for (std::size_t i = 0; i < this->opts->metricsIdList.size(); i++) {
-            int metric = this->opts->metricsIdList[i];
-            auto metricsConfig = dumpTypeOptions[metric];
-            std::string value = "";
-            if (metricsConfig.optionType == DUMP_OPTION_STATS) {
-                std::string metricKey = metricsConfig.key;
-                if (json != nullptr) {
-                    for (auto metricObj : json->get<std::vector<nlohmann::json>>()) {
-                        if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
-                            uint64_t intValue = metricObj["value"].get<uint64_t>();
-                            if (metricsConfig.scale != 1) {
-                                intValue = round(intValue / metricsConfig.scale);
-                            }
-                            value = std::to_string(intValue);
-                            break;
-                        }
-                    }
-                }
-            } else if (metricsConfig.optionType == DUMP_OPTION_ENGINE) {
-                if (pEngineCountMap->find(tileId) != pEngineCountMap->end()) {
-                    int engineCount = (*pEngineCountMap)[tileId][metricsConfig.engineType];
-                    for (int engineIdx = 0; engineIdx < engineCount; engineIdx++) {
-                        if (engineUtilJson != nullptr) {
-                            // out<<(*engineUtilJson)<<std::endl;
-                            auto engineUtilByType = (*engineUtilJson)[metricsConfig.key];
-                            for (auto u : engineUtilByType) {
-                                if (u["engine_id"].get<int>() == engineIdx) {
-                                    out << u["value"];
-                                }
-                            }
-                            if (engineIdx < engineCount - 1) out << ", ";
-                        }
-                    }
-                }
-            }
+        for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
+            auto dc = columnSchemaList[i];
+            auto value = dc.getValue();
             if (value.size() < 4) {
                 out << std::string(4 - value.size(), ' ');
             }
             out << value;
-            if (i < this->opts->metricsIdList.size() - 1) {
-                out << ",";
+            if (i < columnSchemaList.size() - 1) {
+                out << ", ";
             }
         }
+
         out << std::endl;
 
         if (this->opts->dumpTimes != -1 && ++iter >= this->opts->dumpTimes) {

@@ -86,6 +86,9 @@ class ComletDump : public ComletBase {
         {XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, DUMP_OPTION_STATS, XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE", "GPU Memory Errors Correctable", "per tile. Other non-compute correctable errors are also included"},
         {XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, DUMP_OPTION_STATS, XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE", "GPU Memory Errors Uncorrectable", "per tile. Other non-compute correctable errors are also included"}};
 
+    std::shared_ptr<nlohmann::json> statsJson;
+    std::shared_ptr<nlohmann::json> engineUtilJson;
+
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
 
    public:
