@@ -3,7 +3,7 @@ from prometheus_client import CollectorRegistry, Gauge, Counter, generate_latest
 import os
 import traceback
 
-from enum import Enum, unique
+from prometheus_exporter_types import device_to_card_aggregators, tile_to_device_aggregators, metrics_map
 from itertools import filterfalse, groupby
 
 from dev_file_converter import get_dev_file
@@ -13,192 +13,103 @@ registries = {}
 counter_values = {}
 
 
-@unique
-class PromMetric(Enum):
-
-    # Engine utilization
-    xpum_engine_ratio = ('xpum_engine_ratio', 'GPU active time of the elapsed time (in %), per GPU tile')  # nopep8
-    xpum_engine_group_ratio = ('xpum_engine_group_ratio', 'Avg utilization of engine group (in %), per GPU tile', ['type'])  # nopep8
-
-    # Power/Energy/Temperature
-    xpum_power_watts = ('xpum_power_watts', 'Avg GPU power (in watts), per GPU and per card')  # nopep8
-    xpum_energy_joules = ('xpum_energy_joules', 'Total GPU energy consumption since boot (in Joules), per GPU')  # nopep8
-    xpum_temperature_celsius = ('xpum_temperature_celsius', 'Avg GPU temperature (in Celsius degree), per tile', ['location'])  # nopep8
-    xpum_max_temperature_celsius = ('xpum_max_temperature_celsius', 'Max GPU temperature (in Celsius degree), per tile', ['location'])  # nopep8
-
-    # Frequency
-    xpum_frequency_mhz = ('xpum_frequency_mhz', 'Avg (GPU) frequency (in MHz), per GPU tile', ['location', 'type'])  # nopep8
-    # xpum_frequency_throttling_ratio = ('xpum_frequency_throttling_ratio', 'Avg frequency throttle ratio (in %), per GPU tile', ['location'])  # nopep8
-
-    # Memory
-    xpum_memory_used_bytes = ('xpum_memory_used_bytes', 'Used GPU memory (in bytes), per GPU tile')  # nopep8
-    xpum_memory_ratio = ('xpum_memory_ratio', 'Used GPU memory / Total used GPU memory (in %), per GPU tile')  # nopep8
-    xpum_memory_bandwidth_ratio = ('xpum_memory_bandwidth_ratio', 'Avg memory throughput / max memory bandwidth (in %), per GPU tile')  # nopep8
-    xpum_memory_read_bytes = ('xpum_memory_read_bytes', 'Total memory read bytes (in bytes), per GPU tile')  # nopep8
-    xpum_memory_write_bytes = ('xpum_memory_write_bytes', 'Total memory write bytes (in bytes), per GPU tile')  # nopep8
-
-    # Errors
-    xpum_resets = ('xpum_resets', 'Total number of GPU reset since Sysman init, per GPU')  # nopep8
-    xpum_programming_errors = ('xpum_programming_errors', 'Total number of GPU programming errors since Sysman init, per GPU')  # nopep8
-    xpum_driver_errors = ('xpum_driver_errors', 'Total number of GPU driver errors since Sysman init, per GPU')  # nopep8
-    xpum_cache_errors = ('xpum_cache_errors', 'Total number of GPU cache errors since Sysman init, per GPU', ['type'])  # nopep8
-    xpum_non_compute_errors = ('xpum_non_compute_errors', 'Total number of GPU non-compute errors since Sysman init, per GPU', ['type'])  # nopep8
-    # xpum_display_errors = ('xpum_display_errors', 'Total number of GPU display errors since Sysman init, per GPU', ['type'])  # nopep8
-
-    # Eu Active Stall Idle
-    xpum_eu_active_ratio = ('xpum_eu_active_ratio', 'GPU EU Array Active (in %), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile.')  # nopep8
-    xpum_eu_stall_ratio = ('xpum_eu_stall_ratio', 'GPU EU Array Stall (in %), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled. Per tile.')  # nopep8
-    xpum_eu_idle_ratio = ('xpum_eu_idle_ratio', 'GPU EU Array Idle (in %), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile.')  # nopep8
-
-    # PCIe
-    xpum_pcie_read_bytes = ('xpum_pcie_read_bytes', 'Total PCIe read bytes (in bytes), per GPU')  # nopep8
-    xpum_pcie_write_bytes = ('xpum_pcie_write_bytes', 'Total PCIe write bytes (in bytes), per GPU')  # nopep8
-
-    def __new__(cls, name, desc=None, ext_labelnames=[]):
-        obj = object.__new__(cls)
-        obj._value_ = name
-        obj.desc = f'{name}_desc' if desc is None else desc
-        obj.ext_labelnames = ext_labelnames
-        return obj
-
-
-class Metric:
-    def __init__(self, prom_metric: PromMetric, is_counter: bool = False, process_counter_wrap: bool = True, xpum_field=None, scale: float = 1, ext_labels: dict = {}) -> None:
-        self.prom_metric = prom_metric
-        self.scale = scale
-        self.ext_labels = ext_labels
-        self.is_counter = is_counter
-        self.process_counter_wrap = process_counter_wrap
-        self.xpum_field = xpum_field if xpum_field is not None else (
-            'acc' if is_counter else 'avg')
-
-
-metrics_map = {
-    # Engine utilization
-    'XPUM_STATS_GPU_UTILIZATION': Metric(PromMetric.xpum_engine_ratio, scale=0.01),
-    'XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'compute'}),
-    'XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'media'}),
-    'XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'copy'}),
-    'XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': 'render'}),
-    'XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION': Metric(PromMetric.xpum_engine_group_ratio, scale=0.01, ext_labels={'type': '3d'}),
-
-    # EuActive/EuStall/EuIdle
-    'XPUM_STATS_EU_ACTIVE': Metric(PromMetric.xpum_eu_active_ratio, scale=0.01),
-    'XPUM_STATS_EU_STALL': Metric(PromMetric.xpum_eu_stall_ratio, scale=0.01),
-    'XPUM_STATS_EU_IDLE': Metric(PromMetric.xpum_eu_idle_ratio, scale=0.01),
-
-    # Power/Energy/Temperature
-    'XPUM_STATS_POWER': Metric(PromMetric.xpum_power_watts),
-    'XPUM_STATS_ENERGY': Metric(PromMetric.xpum_energy_joules, is_counter=True, scale=0.001),
-    'XPUM_STATS_GPU_CORE_TEMPERATURE': [
-        Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'gpu'}),  # nopep8
-        Metric(PromMetric.xpum_max_temperature_celsius, xpum_field='max', ext_labels={'location': 'gpu'})],  # nopep8
-    'XPUM_STATS_MEMORY_TEMPERATURE': [
-        Metric(PromMetric.xpum_temperature_celsius, ext_labels={'location': 'mem'}),  # nopep8
-        Metric(PromMetric.xpum_max_temperature_celsius, xpum_field='max', ext_labels={'location': 'mem'})],  # nopep8
-
-    # Frequency
-    'XPUM_STATS_GPU_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'actual'}),
-    'XPUM_STATS_GPU_REQUEST_FREQUENCY': Metric(PromMetric.xpum_frequency_mhz, ext_labels={'location': 'gpu', 'type': 'request'}),
-    # 'XPUM_STATS_GPU_FREQUENCY_THROTTLE_RATIO': Metric(PromMetric.xpum_frequency_throttling_ratio, scale=0.01, ext_labels={'location': 'gpu'}),
-
-    # Memory
-    'XPUM_STATS_MEMORY_USED': Metric(PromMetric.xpum_memory_used_bytes),
-    'XPUM_STATS_MEMORY_UTILIZATION': Metric(PromMetric.xpum_memory_ratio, scale=0.01),
-    'XPUM_STATS_MEMORY_BANDWIDTH': Metric(PromMetric.xpum_memory_bandwidth_ratio, scale=0.01),
-    'XPUM_STATS_MEMORY_READ': Metric(PromMetric.xpum_memory_read_bytes, is_counter=True),  # nopep8
-    'XPUM_STATS_MEMORY_WRITE': Metric(PromMetric.xpum_memory_write_bytes, is_counter=True),  # nopep8
-
-    # Errors
-    'XPUM_STATS_RAS_ERROR_CAT_RESET': Metric(PromMetric.xpum_resets, is_counter=True),
-    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': Metric(PromMetric.xpum_programming_errors, is_counter=True),
-    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': Metric(PromMetric.xpum_driver_errors, is_counter=True),
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_cache_errors, is_counter=True, ext_labels={'type': 'correctable'}),
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_cache_errors, is_counter=True, ext_labels={'type': 'uncorrectable'}),
-    'XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE': Metric(PromMetric.xpum_non_compute_errors, is_counter=True, ext_labels={'type': 'correctable'}),
-    'XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE': Metric(PromMetric.xpum_non_compute_errors, is_counter=True, ext_labels={'type': 'uncorrectable'}),
-
-    # PCIe
-    'XPUM_STATS_PCIE_READ': Metric(PromMetric.xpum_pcie_read_bytes, is_counter=True),  # nopep8
-    'XPUM_STATS_PCIE_WRITE': Metric(PromMetric.xpum_pcie_write_bytes, is_counter=True),  # nopep8
-}
-
-
-def avg(x):
-    return sum(x)/len(x) if len(x) > 0 else 0
-
-
-tile_to_device_aggregators = {
-    'XPUM_STATS_POWER': {'avg': sum},
-    'XPUM_STATS_RAS_ERROR_CAT_RESET': {'acc': sum},
-    'XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS': {'acc': sum},
-    'XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS': {'acc': sum},
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE': {'acc': sum},
-    'XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE': {'acc': sum},
-    'XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE': {'acc': sum},
-    'XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE': {'acc': sum},
-    'XPUM_STATS_MEMORY_UTILIZATION': {'avg': avg},
-    'XPUM_STATS_MEMORY_BANDWIDTH': {'avg': avg},
-    'XPUM_STATS_GPU_UTILIZATION': {'avg': avg}
-}
-
-device_to_card_aggregators = {
-    'XPUM_STATS_POWER': {'avg': sum},
-}
-
-
 def get_metrics(core, pod_resources):
-
-    all_device_data = {}
 
     try:
         # processing device metrics
-        code, _, data = core.getDeviceList()
+        code, _, devices = core.getDeviceList()
         if code != 0:
             return f'#nodata: failed to get devices ({code})', 500
 
-        resp = b''
+        resp_devices, all_device_data = process_device_stats(
+            core, pod_resources, devices)
+        resp_cards = process_card_stats(core, pod_resources, all_device_data)
+        resp_per_engine = process_per_engine_stats(
+            core, pod_resources, devices)
 
-        for dev in data:
-
-            device_id = dev.get('device_id')
-
-            stat_code, _, stat_data = core.getStatistics(
-                device_id, session_id=1, get_accumulated=True)
-
-            if stat_code != 0:
-                continue
-
-            # aggregate tile metrics so that they will be exported at device level
-            aggregate_tile_to_device(stat_data)
-
-            if 'device_level' in stat_data:
-
-                # store all device data in dict for later card level aggregation
-                all_device_data[device_id] = stat_data['device_level']
-
-                # export device metrics to Prometheus registry
-                r = convert_to_prometheus_metrics(
-                    pod_resources, dev, stat_data['device_level'], device_id)
-                resp = resp + r
-
-            # export tile metrics to Prometheus registry
-            for tile_data in stat_data.get('tile_level', []):
-                r = convert_to_prometheus_metrics(
-                    pod_resources, dev, tile_data['data_list'], device_id, tile_data['tile_id'])
-                resp = resp + r
-
-        # export card metrics
-        all_card_data = aggregate_device_to_card(core, all_device_data)
-        for card_id, card_data in all_card_data.items():
-            r = convert_to_prometheus_metrics(
-                pod_resources, dev=None, datalist=card_data, card_id=card_id)
-            resp = resp + r
-
-        return tidy_response(resp)
+        return tidy_response(resp_devices + resp_cards + resp_per_engine)
     except Exception as e:
         traceback.print_exc()
         return "#nodata: due to unexpected failure", 500
+
+
+def process_per_engine_stats(core, pod_resources, devices):
+
+    resp = b''
+
+    for dev in devices:
+
+        device_id = dev.get('device_id')
+
+        stat_code, _, stat_data = core.getEngineStatistics(
+            device_id, session_id=1)
+
+        if stat_code != 0 or 'engine_util' not in stat_data:
+            continue
+
+        for tile_id, data_map in stat_data['engine_util'].items():
+            flatten_per_engine_datalist = flatten_per_engine_data(data_map)
+            r = convert_to_prometheus_metrics(pod_resources, dev, flatten_per_engine_datalist, device_id, None if tile_id == 'device_level' else tile_id)
+            resp = resp + r
+
+    return resp
+
+
+def flatten_per_engine_data(data_map):
+    data_list = []
+    for engine_type, datas in data_map.items():
+        for data in datas:
+            data['metrics_type'] = 'XPUM_STATS_ENGINE_UTILIZATION'
+            data['engine_type'] = engine_type
+            data_list.append(data)
+    return data_list
+
+
+def process_device_stats(core, pod_resources, devices):
+
+    resp = b''
+    all_device_data = {}
+
+    for dev in devices:
+
+        device_id = dev.get('device_id')
+
+        stat_code, _, stat_data = core.getStatistics(
+            device_id, session_id=1, get_accumulated=True)
+
+        if stat_code != 0:
+            continue
+
+            # aggregate tile metrics so that they will be exported at device level
+        aggregate_tile_to_device(stat_data)
+
+        if 'device_level' in stat_data:
+
+            # store all device data in dict for later card level aggregation
+            all_device_data[device_id] = stat_data['device_level']
+
+            # export device metrics to Prometheus registry
+            r = convert_to_prometheus_metrics(
+                pod_resources, dev, stat_data['device_level'], device_id)
+            resp = resp + r
+
+            # export tile metrics to Prometheus registry
+        for tile_data in stat_data.get('tile_level', []):
+            r = convert_to_prometheus_metrics(
+                pod_resources, dev, tile_data['data_list'], device_id, tile_data['tile_id'])
+            resp = resp + r
+    return resp, all_device_data
+
+
+def process_card_stats(core, pod_resources, all_device_data):
+    resp = b''
+    all_card_data = aggregate_device_to_card(core, all_device_data)
+    for card_id, card_data in all_card_data.items():
+        r = convert_to_prometheus_metrics(
+            pod_resources, dev=None, datalist=card_data, card_id=card_id)
+        resp = resp + r
+    return resp
+
 
 def aggregate_device_to_card(core, all_device_data):
 
@@ -220,8 +131,10 @@ def aggregate_device_to_card(core, all_device_data):
             device_to_card_map[device_id] = group_id
 
     # group all device data by card
-    groups_data = [(device_to_card_map.get(x, INVALID_GROUP_ID),all_device_data[x]) for x in all_device_data]
-    key_func = lambda x: x[0]
+    groups_data = [(device_to_card_map.get(x, INVALID_GROUP_ID),
+                    all_device_data[x]) for x in all_device_data]
+
+    def key_func(x): return x[0]
     groups_data = sorted(groups_data, key=key_func)
     groups_data = groupby(groups_data, key_func)
     def filter_func(x): return x[0] == INVALID_GROUP_ID
@@ -233,14 +146,18 @@ def aggregate_device_to_card(core, all_device_data):
         group_data = [x[1] for x in list(data_list)]
         group_data = [item for sublist in group_data for item in sublist]
         def key_func(x): return x['metrics_type']
-        group_data_by_type = groupby(sorted(group_data, key=key_func), key_func)
+        group_data_by_type = groupby(
+            sorted(group_data, key=key_func), key_func)
+
         def filter_func(x): return x[0] not in device_to_card_aggregators
         group_data_by_type = filterfalse(filter_func, group_data_by_type)
 
         # aggregate device data to card
-        aggregate_data(group_data_by_type, device_to_card_aggregators, all_card_data.setdefault(card_id, []))
+        aggregate_data(group_data_by_type, device_to_card_aggregators,
+                       all_card_data.setdefault(card_id, []))
 
     return all_card_data
+
 
 def aggregate_tile_to_device(stat_data):
 
@@ -254,11 +171,13 @@ def aggregate_tile_to_device(stat_data):
         [item for sublist in tile_level for item in sublist], key=key_func)
     tiles_data_by_type = groupby(tile_level, key_func)
     # device_level already has this metric, skip aggregation from tile
-    def filter_func(x): return x[0] not in tile_to_device_aggregators or x[0] in device_metrics
+    def filter_func(
+        x): return x[0] not in tile_to_device_aggregators or x[0] in device_metrics
     tiles_data_by_type = filterfalse(filter_func, tiles_data_by_type)
 
     # aggregate tile data to device
-    aggregate_data(tiles_data_by_type, tile_to_device_aggregators, device_level)
+    aggregate_data(tiles_data_by_type,
+                   tile_to_device_aggregators, device_level)
 
     stat_data['device_level'] = device_level
 
@@ -275,6 +194,7 @@ def aggregate_data(data_by_type, data_aggregators, target_list):
                 device_data[value_type] = agg_value
                 device_data['agg_func'] = agg.__name__
         target_list.append(device_data)
+
 
 def tidy_response(resp):
     resp_str = resp.decode('UTF-8')
@@ -311,9 +231,10 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
             val = stat.get(metric.xpum_field) * metric.scale
 
             all_labelnames, all_labelvalues = attach_ext_labels(
-                labels, label_values, metric.prom_metric.ext_labelnames, metric.ext_labels)
+                labels, label_values, metric.prom_metric.ext_labelnames, metric.ext_labels, stat)
 
-            attach_src_label(all_labelnames, all_labelvalues, stat.get('agg_func', 'direct'))
+            attach_src_label(all_labelnames, all_labelvalues,
+                             stat.get('agg_func', 'direct'))
 
             if metric_name not in metrics:
                 if metric.is_counter:
@@ -404,14 +325,22 @@ def attach_card_labels(labels, label_values, card_id):
         labels.append('card')
         label_values.append(card_id)
 
+
 def attach_src_label(labels, label_values, src):
     labels.append('src')
     label_values.append(src)
 
-def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels):
+
+def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels, stat=None):
     if ext_labelnames is not None and len(ext_labelnames) > 0:
         all_labelnames = labels + ext_labelnames
-        all_labelvalues = label_values + \
-            [ext_labels.get(key, 'n/a') for key in ext_labelnames]
+
+        ext_labelvalues = []
+        for key in ext_labelnames:
+            value:str = ext_labels.get(key, 'n/a')
+            if value.startswith('$') and stat is not None:
+                value = stat.get(value[1:], 'n/a')
+            ext_labelvalues.append(value)
+        all_labelvalues = label_values + ext_labelvalues
         return all_labelnames, all_labelvalues
     return labels.copy(), label_values.copy()
