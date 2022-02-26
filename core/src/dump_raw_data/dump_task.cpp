@@ -4,9 +4,16 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <iomanip>
 
 #include "core/core.h"
 #include "infrastructure/configuration.h"
+#include "api/internal_dump_raw_data.h"
+#include "api/internal_api.h"
+
+using xpum::dump::getConfigOptionPointer;
+using xpum::dump::dumpTypeOptions;
+using xpum::dump::engineNameMap;
 
 namespace xpum {
 
@@ -38,32 +45,177 @@ void DumpRawDataTask::writeToFile(std::string text) {
     outfile.close();
 }
 
-DumpTypeOption* getConfigOptionPointer(xpum_dump_type_t dumpType) {
-    for (auto &entry : dumpTypeOptions) {
-        if (entry.dumpType == dumpType) {
-            return &entry;
-        }
-    }
-    return nullptr;
-}
-
 void DumpRawDataTask::writeHeader() {
     std::ofstream outfile;
     outfile.open(dumpFilePath.c_str(), std::ios::out | std::ios::app);
-    outfile << "Timestamp,DeviceId";
-    if (tileId != -1) {
-        outfile << ",TileId";
+    // outfile << "Timestamp,DeviceId";
+    // if (tileId != -1) {
+    //     outfile << ",TileId";
+    // }
+    // for (auto metricsType : dumpTypeList) {
+    //     auto pOption = getConfigOptionPointer(metricsType);
+    //     outfile << "," << pOption->name;
+    // }
+    for (std::size_t i = 0; i < columnList.size(); i++) {
+        auto dc = columnList[i];
+        outfile << dc.header;
+        if (i < columnList.size() - 1) {
+            outfile << ", ";
+        }
     }
-    for (auto metricsType : dumpTypeList) {
-        auto pOption = getConfigOptionPointer(metricsType);
-        outfile << "," << pOption->name;
-    }
-    outfile<<std::endl;
+    outfile << std::endl;
     outfile.flush();
     outfile.close();
 }
 
+std::string keepTwoDecimalPrecision(double value) {
+    std::ostringstream os;
+    os << std::fixed;
+    os << std::setprecision(2);
+    os << value;
+    return os.str();
+}
+
+std::string getScaledValue(uint64_t value, uint32_t scale) {
+    if (scale == 1) {
+        return std::to_string(value);
+    } else {
+        double v = value / scale;
+        return keepTwoDecimalPrecision(v);
+    }
+}
+
+void DumpRawDataTask::buildColumns() {
+    auto p_this = shared_from_this();
+
+    // timestamp column
+    columnList.push_back({"Timestamp",
+                          []() { return Utility::getCurrentUTCTimeString(); }});
+
+    // device id column
+    auto deviceId = p_this->deviceId;
+    columnList.push_back({"DeviceId",
+                          [deviceId]() { return std::to_string(deviceId); }});
+
+    // tile id column
+    auto tileId = p_this->tileId;
+    if (tileId != -1) {
+        columnList.push_back({"TileId",
+                              [tileId]() { return std::to_string(tileId); }});
+    }
+
+    // get engine count
+    auto engineCountList = getDeviceAndTileEngineCount(deviceId);
+
+    std::vector<xpum::EngineCountData>* pEngineCountList;
+
+    for (auto& ec : engineCountList) {
+        if ((tileId == -1 && !ec.isTileLevel) || (ec.isTileLevel && (tileId == ec.tileId))) {
+            pEngineCountList = &ec.engineCountList;
+            break;
+        }
+    }
+
+    // other columns
+    for (std::size_t i = 0; i < dumpTypeList.size(); i++) {
+        int dumpTypeIdx = dumpTypeList[i];
+        auto config = dumpTypeOptions[dumpTypeIdx];
+        if (config.optionType == xpum::dump::DUMP_OPTION_STATS) {
+            int columnIdx = columnList.size();
+            columnList.push_back({std::string(config.name),
+                                  [config, p_this, columnIdx]() {
+                                      DumpColumn& dc = p_this->columnList.at(columnIdx);
+                                      auto statsType = config.metricsType;
+                                      auto& m = p_this->rawDataMap;
+                                      auto it = m.find(statsType);
+                                      std::string value;
+                                      if (it != m.end()) {
+                                          auto data = it->second;
+                                          if (dc.lastTimestamp != data.timestamp) {
+                                              value = getScaledValue(data.value, data.scale);
+                                          }
+                                          dc.lastTimestamp = data.timestamp;
+                                      }
+                                      return value;
+                                  }});
+        } else if (config.optionType == xpum::dump::DUMP_OPTION_ENGINE) {
+            if (pEngineCountList == nullptr)
+                continue;
+            for (auto ecByType : *pEngineCountList) {
+                auto engineType = ecByType.engineType;
+                if (engineType != config.engineType)
+                    continue;
+                for (int engineIdx = 0; engineIdx < ecByType.count; engineIdx++) {
+                    std::string header = engineNameMap[config.engineType] + " " + std::to_string(engineIdx) + " (%)";
+                    columnList.push_back({header,
+                                          [engineType, engineIdx, p_this]() {
+                                              auto& m = p_this->engineUtilRawDataMap;
+                                              auto it = m.find(engineType);
+                                              std::string value;
+                                              if (it == m.end()) {
+                                                  return value;
+                                              }
+                                              auto& mm = it->second;
+                                              auto it2 = mm.find(engineIdx);
+                                              if (it2 == mm.end()) {
+                                                  return value;
+                                              }
+                                              auto& data = it2->second;
+                                              return getScaledValue(data.value, data.scale);
+                                          }});
+                }
+            }
+        }
+    }
+}
+
+void DumpRawDataTask::updateData() {
+    auto p_data_logic = xpum::Core::instance().getDataLogic();
+    auto p_this = shared_from_this();
+
+    // get stats data
+    int metricsCount;
+    p_data_logic->getLatestMetrics(p_this->deviceId,nullptr, &metricsCount);
+    std::vector<xpum_device_metrics_t> deviceMetricsList(metricsCount);
+    p_data_logic->getLatestMetrics(p_this->deviceId, deviceMetricsList.data(), &metricsCount);
+
+    rawDataMap.clear();
+    
+    for (auto deviceMetrics : deviceMetricsList) {
+        if ((p_this->tileId == -1 && !deviceMetrics.isTileData) || (deviceMetrics.isTileData && (p_this->tileId == deviceMetrics.tileId))) {
+            for (int i = 0; i < deviceMetrics.count; i++) {
+                auto data = deviceMetrics.dataList[i];
+                rawDataMap[data.metricsType] = data;
+            }
+            break;
+        }
+    }
+
+    // get engine stats data
+    engineUtilRawDataMap.clear();
+
+    uint32_t engineUtilRawDataSize;
+
+    p_data_logic->getEngineUtilizations(p_this->deviceId, nullptr, &engineUtilRawDataSize);
+    std::vector<xpum_device_engine_metric_t> engineUtilRawDataList(engineUtilRawDataSize);
+    p_data_logic->getEngineUtilizations(p_this->deviceId, engineUtilRawDataList.data(), &engineUtilRawDataSize);
+    for (auto engineUtilRawData : engineUtilRawDataList) {
+        if ((p_this->tileId == -1 && !engineUtilRawData.isTileData) || (engineUtilRawData.isTileData && (p_this->tileId == engineUtilRawData.tileId))) {
+            auto engineType = engineUtilRawData.type;
+            auto it = engineUtilRawDataMap.find(engineType);
+            if (it == engineUtilRawDataMap.end()) {
+                engineUtilRawDataMap[engineType] = std::map<int, xpum_device_engine_metric_t>();
+            }
+            engineUtilRawDataMap[engineType][engineUtilRawData.index] = engineUtilRawData;
+        }
+    }
+}
+
 void DumpRawDataTask::start() {
+
+    // build columns
+    buildColumns();
+
     // start periodical task to write to output file
 
     begin = time(nullptr) * 1000;
@@ -73,81 +225,18 @@ void DumpRawDataTask::start() {
 
     auto p_this = shared_from_this();
     lambda = [p_this]() {
+
+        // update data
+        p_this->updateData();
+
         std::stringstream ss;
 
-        // timestamp string
-        ss << Utility::getCurrentUTCTimeString();
-
-        // device id
-        ss << "," << p_this->deviceId;
-
-        // tile id
-        if (p_this->tileId != -1) {
-            ss << "," << p_this->tileId;
-        }
-
-        auto p_data_logic = xpum::Core::instance().getDataLogic();
-
-        // get stats data
-        int metricsCount;
-        p_data_logic->getLatestMetrics(p_this->deviceId,nullptr, &metricsCount);
-        std::vector<xpum_device_metrics_t> deviceMetricsList(metricsCount);
-        p_data_logic->getLatestMetrics(p_this->deviceId, deviceMetricsList.data(), &metricsCount);
-
-        std::map<xpum_stats_type_t,xpum_device_metric_data_t> m;
-        
-        for (auto deviceMetrics : deviceMetricsList) {
-            if ((p_this->tileId == -1 && !deviceMetrics.isTileData) || (deviceMetrics.isTileData && (p_this->tileId == deviceMetrics.tileId))) {
-                for (int i = 0; i < deviceMetrics.count; i++) {
-                    auto data = deviceMetrics.dataList[i];
-                    m[data.metricsType] = data;
-                }
-                break;
-            }
-        }
-
-        // TODO: get engine stats data
-        std::map<xpum_engine_type_t, xpum_engine_type_t> engineStatsMap;
-
-        for (auto dumpType : p_this->dumpTypeList) {
-            auto pConfigEntry = getConfigOptionPointer(dumpType);
-            if (pConfigEntry->optionType == DUMP_OPTION_STATS) {
-                auto metricsType = pConfigEntry->metricsType;
-                auto it = m.find(metricsType);
-                if (it == m.end()) {
-                    ss << ",";
-                    continue;
-                }
-                auto data = it->second;
-                auto t = data.timestamp;
-                if (p_this->dataLastCachedTime[metricsType] != t) {
-                    p_this->dataLastCachedTime[metricsType] = t;
-                    uint64_t scale = data.scale;
-                    uint64_t rawData = data.value;
-                    // some metrics need unit transform
-                    switch (metricsType) {
-                        case XPUM_STATS_ENERGY:
-                            rawData /= 1000;
-                            break;
-                        case XPUM_STATS_MEMORY_USED:
-                            rawData /= (1024 * 1024);
-                            break;
-                        default:
-                            break;
-                    }
-                    if (scale == 1) {
-                        ss << "," << rawData;
-                    } else {
-                        double d = rawData / scale;
-                        ss << "," << d;
-                    }
-                } else {
-                    ss << ",";
-                }
-            }else if(pConfigEntry->optionType ==DUMP_OPTION_ENGINE){
-                auto engineType = pConfigEntry->engineType;
-                auto it = engineStatsMap.find(engineType);
-                // wait for api ready
+        for (std::size_t i = 0; i < p_this->columnList.size(); i++) {
+            auto& dc = p_this->columnList[i];
+            auto value = dc.getValue();
+            ss << value;
+            if (i < p_this->columnList.size() - 1) {
+                ss << ",";
             }
         }
 

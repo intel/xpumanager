@@ -62,6 +62,7 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 include_directories(/usr/local/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/src)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/src/api)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/CLI11/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/json/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/googletest/googletest/include)
@@ -77,7 +78,7 @@ set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
 
 add_executable(xpumcli ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
-target_sources(xpumcli PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC})
+target_sources(xpumcli PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC} ${CMAKE_CURRENT_LIST_DIR}/../core/src/api/internal_dump_raw_data.cpp)
 
 target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 

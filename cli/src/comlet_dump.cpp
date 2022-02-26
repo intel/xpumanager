@@ -8,6 +8,8 @@
 #include "pretty_table.h"
 #include "xpum_structs.h"
 
+using xpum::dump::engineNameMap;
+
 namespace xpum::cli {
 
 bool isNumber(const std::string& str)
@@ -246,7 +248,7 @@ void ComletDump::printByLine(std::ostream &out) {
     for (std::size_t i = 0; i < this->opts->metricsIdList.size(); i++) {
         int metric = this->opts->metricsIdList[i];
         auto config = dumpTypeOptions[metric];
-        if (config.optionType == DUMP_OPTION_STATS) {
+        if (config.optionType == xpum::dump::DUMP_OPTION_STATS) {
             DumpColumn dc{
                 std::string(config.name),
                 [config, this]() {
@@ -261,7 +263,7 @@ void ComletDump::printByLine(std::ostream &out) {
                     return std::string();
                 }};
             columnSchemaList.push_back(dc);
-        } else if (config.optionType == DUMP_OPTION_ENGINE) {
+        } else if (config.optionType == xpum::dump::DUMP_OPTION_ENGINE) {
             if (pEngineCountMap->find(tileId) != pEngineCountMap->end()) {
                 int engineCount = (*pEngineCountMap)[tileId][config.engineType];
                 for (int engineIdx = 0; engineIdx < engineCount; engineIdx++) {

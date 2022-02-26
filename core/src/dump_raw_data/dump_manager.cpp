@@ -7,6 +7,9 @@
 #include "core/core.h"
 
 #include "dump_task.h"
+#include "api/internal_dump_raw_data.h"
+
+using xpum::dump::getConfigOptionPointer;
 
 namespace xpum {
 
