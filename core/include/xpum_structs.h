@@ -701,6 +701,7 @@ typedef struct xpum_scheduler_exclusive_t {
 #define XPUM_MAX_CPU_LIST_LEN 32
 #define XPUM_MAX_CPU_S_LEN 128
 #define XPUM_MAX_PATH_LEN 256
+#define XPUM_MAX_XELINK_PORT 8
 
 typedef struct parent_switch {
     char switchDevicePath[XPUM_MAX_PATH_LEN];
@@ -718,6 +719,29 @@ typedef struct xpum_topology_t {
     int switchCount;   ///< the count of parent switch
     parent_switch switches[]; ///< device path of parent switch
 } xpum_topology_t;
+
+typedef enum xpum_link_type_enum{
+    XPUM_LINK_UNKNOWN = 0,
+    XPUM_LINK_SELF,
+    XPUM_LINK_MDF,
+    XPUM_LINK_XE,
+    XPUM_LINK_SYS,
+    XPUM_LINK_NODE
+} xpum_xelink_type_t;
+
+typedef struct xpum_xelink_unit{
+    xpum_device_id_t deviceId;
+    bool onSubdevice;
+    uint32_t subdeviceId;
+    uint32_t numaIdx;
+}xpum_xelink_unit;
+
+typedef struct xpum_xelink_topo_info{
+    xpum_xelink_unit localDevice;
+    xpum_xelink_unit remoteDevide;
+    xpum_xelink_type_t linkType;
+    uint8_t linkPorts[XPUM_MAX_XELINK_PORT];
+}xpum_xelink_topo_info;
 
 typedef enum xpum_ras_type_enum {
     XPUM_RAS_ERROR_CAT_RESET = 0,
