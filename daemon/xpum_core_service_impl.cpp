@@ -75,7 +75,8 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
             auto& prop = data.properties[i];
             auto propRpc = response->add_properties();
             propRpc->set_name(getXpumDevicePropertyNameString(prop.name));
-            propRpc->set_value(prop.value);
+            std::string value(prop.value);
+            propRpc->set_value(value);
         }
     } else {
         switch (res) {

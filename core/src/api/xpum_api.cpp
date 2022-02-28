@@ -490,8 +490,7 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 }
                 auto &copy = pXpumProperties->properties[i];
                 copy.name = propName;
-                value.copy(copy.value, value.size());
-                copy.value[value.size()] = 0;
+                strcpy(copy.value, value.c_str());
             }
 
             pXpumProperties->propertyLen = propertyLen;
