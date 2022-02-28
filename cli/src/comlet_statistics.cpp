@@ -213,6 +213,55 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
                 { "label": "current", "value": "device_level[metrics_type==XPUM_STATS_PCIE_WRITE_THROUGHPUT].value" }
             ]}
         ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "Comupte Engine Util (%) " }
+        ], [
+            { "value": "compute_engine_util"}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "Render Engine Util (%) " }
+        ], [
+            { "value": "render_engine_util"}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "Decoder Engine Util (%) " }
+        ], [
+            { "value": "decoder_engine_util"}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "Encoder Engine Util (%) " }
+        ], [
+            { "value": "encoder_engine_util"}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "Copy Engine Util (%) " }
+        ], [
+            { "value": "copy_engine_util"}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "Media EM Engine Util (%) " }
+        ], [
+            { "value": "media_em_engine_util"}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "3D Engine Util (%) " }
+        ], [
+            { "value": "3d_engine_util"}
+        ]]
     }]
 })"_json);
 
@@ -233,6 +282,57 @@ std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     (*json)["error"] = "Unknow operation";
     return json;
+}
+
+std::string engineUtilFormater(nlohmann::json json, bool intent = false) {
+    std::string intent_str = intent ? std::string(2, ' ') : "";
+    std::string tmp;
+    std::string res;
+    int i = 0;
+    for (auto obj : json) {
+        if (tmp.empty()) tmp = intent_str;
+        tmp += "Engine " + std::to_string(obj["engine_id"].get<int>()) + ": " + std::to_string(obj["value"].get<int>());
+        i++;
+        if (i % 4 == 0) {
+            res += tmp + "\n";
+            tmp.clear();
+        } else {
+            tmp += ", ";
+        }
+    }
+    if (!tmp.empty()) {
+        res += tmp;
+        res.pop_back();
+        res.pop_back();
+    } else if (i > 0) {
+        res.pop_back();
+    }
+    return res;
+}
+
+std::string engineUtilByType(std::shared_ptr<nlohmann::json> jsonPtr, std::string key) {
+    std::string res;
+
+    // device level
+    if (jsonPtr->contains("engine_util") && (*jsonPtr)["engine_util"].contains(key)) {
+        auto jsonObj = (*jsonPtr)["engine_util"][key];
+        res += engineUtilFormater(jsonObj) + "\n";
+    }
+    // tile level
+    if (jsonPtr->contains("tile_level")) {
+        for (auto tileJson : (*jsonPtr)["tile_level"]) {
+            if (tileJson.contains("engine_util") && tileJson["engine_util"].contains(key)) {
+                auto jsonObj = tileJson["engine_util"][key];
+                auto engineStr = engineUtilFormater(jsonObj, true);
+                if (!engineStr.empty()) {
+                    res += "Tile " + std::to_string(tileJson["tile_id"].get<int>()) + ":\n";
+                    res += engineUtilFormater(jsonObj, true) + "\n";
+                }
+            }
+        }
+    }
+    if (!res.empty()) res.pop_back();
+    return res;
 }
 
 static void showDeviceStatistics(std::ostream &out, std::shared_ptr<nlohmann::json> jsonPtr, const bool cont = false) {
@@ -259,6 +359,14 @@ static void showDeviceStatistics(std::ostream &out, std::shared_ptr<nlohmann::js
             tileJson->push_back(tile0);
         }
     }
+
+    json["compute_engine_util"] = engineUtilByType(jsonPtr, "compute");
+    json["render_engine_util"] = engineUtilByType(jsonPtr, "render");
+    json["decoder_engine_util"] = engineUtilByType(jsonPtr, "decoder");
+    json["encoder_engine_util"] = engineUtilByType(jsonPtr, "encoder");
+    json["copy_engine_util"] = engineUtilByType(jsonPtr, "copy");
+    json["media_em_engine_util"] = engineUtilByType(jsonPtr, "media_enhancement");
+    json["3d_engine_util"] = engineUtilByType(jsonPtr, "3d");
 
     CharTable table(ComletConfigDeviceStatistics, json, cont);
     table.show(out);
