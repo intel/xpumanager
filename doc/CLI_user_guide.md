@@ -678,6 +678,7 @@ Usage: xpumcli config [Options]
   xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
   xpumcli config -d [deviceId] -t [tileId] --xelinkport [portId,value]
   xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
+  xpumcli config -d [deviceId] --memoryecc [value]
   
   
 Options:
@@ -696,6 +697,7 @@ Options:
                                 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
+  --memoryecc                 Enable/disable memory ECC setting. The value 0 means disabled and 1 means enabled. 
 
 ```
 
@@ -728,6 +730,9 @@ show the GPU settings
 |             |                   | Engine Type: media                                             |
 |             |                   |   Performance Factor: 50                                       |
 |             |                   |                                                                |
+|             |                   | Memory ECC Mode: enabled                                       |
+|             |                   |   Pending: disabled                                            |
+|             |                   |                                                                |
 |             |                   | Xe Link ports:                                                 |
 |             |                   |   Up: 0,1,2,3                                                  |
 |             |                   |   Down: 4,5,6,7                                                |
@@ -755,6 +760,9 @@ show the GPU settings
 |             |                   |   Performance Factor: 70                                       |
 |             |                   | Engine Type: media                                             |
 |             |                   |   Performance Factor: 50                                       |
+|             |                   |                                                                |
+|             |                   | Memory ECC State: enabled                                      |
+|             |                   |   Pending: disabled                                            |
 |             |                   |                                                                |
 |             |                   | Xe Link ports:                                                 |
 |             |                   |   Up: 0,1,2,3                                                  |
