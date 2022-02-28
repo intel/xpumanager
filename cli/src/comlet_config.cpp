@@ -43,16 +43,14 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "Engine Type", "value": "media_engine" },
                 { "label": "  Performance Factor", "value": "media_performance_factor" },
                 {"rowTitle": " " },
+                { "label": "Memory ECC Mode", "value": "memory_ecc_current_state" },
+                { "label": "  Pending", "value": "memory_ecc_pending_state" },
+                {"rowTitle": " " },
                 { "label": "Xe Link ports", "value": " " },
                 { "label": "  Up", "value": "port_up" },
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
-                { "label": "  Beaconing Off", "value": "beaconing_off" },
-                { "label": "  Memory Ecc Available", "value": "memory_ecc_available" },
-                { "label": "  Memory Ecc Configurable", "value": "memory_ecc_configurable" },
-                { "label": "  Memory Ecc current state", "value": "memory_ecc_current_state" },
-                { "label": "  Memory Ecc pending state", "value": "memory_ecc_pending_state" },
-                { "label": "  Memory Ecc pending action", "value": "memory_ecc_pending_action" }
+                { "label": "  Beaconing Off", "value": "beaconing_off" }
             ]
         ]
     }]
@@ -255,16 +253,20 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;
         } else if (!this->opts->setecc.empty()) {
-            std::for_each(this->opts->setecc.begin(), this->opts->setecc.end(), [](char & c) {
-                c = ::tolower(c);
-            });
-            bool enabled;
-            if (this->opts->setecc.compare("true") == 0) {
+            bool enabled = false;
+            int eccVal;
+            try {
+                eccVal = std::stoi(this->opts->setecc);
+            } catch (std::invalid_argument const &e) {
+                (*json)["return"]="invalid parameter value";
+                return json;     
+            }
+            if (eccVal == 1) {
                 enabled = true;
-            } else if (this->opts->setecc.compare("false") == 0) {
+            } else if (eccVal == 0) {
                 enabled = false;
             } else {
-                (*json)["return"]="invalid parameter: enabled";
+                (*json)["return"]="invalid parameter value";
                 return json;    
             }
             json = this->coreStub->setMemoryEccState(this->opts->deviceId, enabled);
@@ -275,11 +277,18 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 std::string pending = (*json)["memory_ecc_pending_state"];
                 std::string pendingAction = (*json)["memory_ecc_pending_action"];
 
-                (*json)["return"] = "Succeed to set memory Ecc state: available: " + available +
+               /* (*json)["return"] = "Succeed to set memory Ecc state: available: " + available +
                 " configurable: " + configurable +
                 " current: " + current +
                 " pending: " + pending + 
-                " action: " +  pendingAction;
+                " action: " +  pendingAction;*/
+                if (available.compare("true") == 0 && configurable.compare("true") == 0) {
+                    (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU "
+                + std::to_string(this->opts->deviceId) + " Please reset GPU or reboot OS to take effect.";
+                } else {
+                    (*json)["return"] = "Failed to change the ECC mode. The current Ecc mode is " + current + ", the pending Ecc mode is " + pending +
+                    " and the pending action is "+ pendingAction; " on GPU "+ std::to_string(this->opts->deviceId);
+                }
             }
             return json;  
         }

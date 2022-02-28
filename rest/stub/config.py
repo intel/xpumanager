@@ -59,7 +59,7 @@ def getConfig(deviceId, tileId):
         if resp.tileConfigData[i].schedulerTimesliceInterval > 0:
             tiledata['scheduler_timeslice_interval'] = resp.tileConfigData[i].schedulerTimesliceInterval
             tiledata['scheduler_timeslice_yield_timeout'] = resp.tileConfigData[i].schedulerTimesliceYieldTimeout
-        
+        '''
         if resp.tileConfigData[i].memoryEccAvailable == True:
             tiledata['memory_ecc_available'] = "True"
         else:
@@ -69,10 +69,10 @@ def getConfig(deviceId, tileId):
             tiledata['memory_ecc_configurable'] = "True"
         else:
             tiledata['memory_ecc_configurable'] = "False"
-        
+        '''
         tiledata['memory_ecc_current_state'] = resp.tileConfigData[i].memoryEccState
         tiledata['memory_ecc_pending_state'] = resp.tileConfigData[i].memoryEccPendingState
-        tiledata['memory_ecc_pending_action'] = resp.tileConfigData[i].memoryEccPendingAction
+        #tiledata['memory_ecc_pending_action'] = resp.tileConfigData[i].memoryEccPendingAction
         tilelist.append(tiledata)
     data['tile_config_data'] = tilelist
     return 0, "OK", data
