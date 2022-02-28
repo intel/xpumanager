@@ -524,4 +524,38 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
+bool DataLogic::getFabricLinkInfo(xpum_device_id_t deviceId,
+                                  FabricLinkInfo info[],
+                                  uint32_t* count) {
+    std::string device_id = std::to_string(deviceId);
+    if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
+        return false;
+    }
+
+    uint32_t index = 0;
+    auto fabric_throughput_info = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputIDS();
+    auto attach_iter = fabric_throughput_info.begin();
+    while (attach_iter != fabric_throughput_info.end()) {
+        auto remote_fabric_iter = attach_iter->second.begin();
+        while (remote_fabric_iter != attach_iter->second.end()) {
+            auto remote_attach_iter = remote_fabric_iter->second.begin();
+            while (remote_attach_iter != remote_fabric_iter->second.end()) {
+                if (info != nullptr) {
+                    FabricLinkInfo link;
+                    link.tile_id = attach_iter->first;
+                    link.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(remote_fabric_iter->first));
+                    link.remote_tile_id = remote_attach_iter->first;
+                    info[index] = link;
+                }
+                ++index;
+                ++remote_attach_iter;
+            }
+            ++remote_fabric_iter;
+        }
+        ++attach_iter;
+    }
+    *count = index;
+    return true;
+}
+
 } // end namespace xpum

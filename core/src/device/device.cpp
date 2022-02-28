@@ -296,4 +296,9 @@ uint32_t Device::getFabricThroughputInfoCount() {
     return count;
 }
 
+std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<FabricThroughputType>>>> Device::getFabricThroughputIDS() {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return fabric_throughput_ids;
+}
+
 } // end namespace xpum

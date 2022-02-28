@@ -172,4 +172,10 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_MAX
 } xpum_device_internal_property_name_t;
 
+typedef struct FabricLinkInfo_t {
+    uint32_t tile_id;
+    uint32_t remote_device_id;
+    uint32_t remote_tile_id;
+} FabricLinkInfo;
+
 } // end namespace xpum

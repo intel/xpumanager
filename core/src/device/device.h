@@ -143,6 +143,8 @@ class Device {
 
     uint32_t getFabricThroughputInfoCount();
 
+    std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<FabricThroughputType>>>> getFabricThroughputIDS();
+
    public:
     virtual ~Device() {}
 
