@@ -272,4 +272,13 @@ bool DeviceManager::setFabricPorts(const std::string& id, const port_info_set& p
     return GPUDeviceStub::instance().setFabricPorts(getDeviceHandle(id), portInfoSet);
 }
 
+bool DeviceManager::getEccState(const std::string& id, MemoryEcc& ecc){
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().getEccState(getDeviceHandle(id), ecc);
+}
+
+bool DeviceManager::setEccState(const std::string& id, ecc_state_t& newState, MemoryEcc& ecc){
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().setEccState(getDeviceHandle(id), newState, ecc);
+}
 } // end namespace xpum

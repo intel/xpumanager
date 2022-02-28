@@ -47,7 +47,12 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
                 { "label": "  Up", "value": "port_up" },
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
-                { "label": "  Beaconing Off", "value": "beaconing_off" }
+                { "label": "  Beaconing Off", "value": "beaconing_off" },
+                { "label": "  Memory Ecc Available", "value": "memory_ecc_available" },
+                { "label": "  Memory Ecc Configurable", "value": "memory_ecc_configurable" },
+                { "label": "  Memory Ecc current state", "value": "memory_ecc_current_state" },
+                { "label": "  Memory Ecc pending state", "value": "memory_ecc_pending_state" },
+                { "label": "  Memory Ecc pending action", "value": "memory_ecc_pending_action" }
             ]
         ]
     }]
@@ -71,6 +76,7 @@ void ComletConfig::setupOptions() {
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
     addOption("--xelinkport", this->opts->xelinkportEnable,"Change the Xe Link port status. The value 0 means down and 1 means up.");
     addOption("--xelinkportbeaconing", this->opts->xelinkportBeaconing,"Change the Xe Link port beaconing status. The value 0 means off and 1 means on.");
+    addOption("--memoryecc", this->opts->setecc,"Enable/disable memory Ecc setting.");
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter){
     size_t pos = 0;
@@ -248,6 +254,34 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " beaconing to " + (beaconing == 1 ? "on":"off") + " .";
             }
             return json;
+        } else if (!this->opts->setecc.empty()) {
+            std::for_each(this->opts->setecc.begin(), this->opts->setecc.end(), [](char & c) {
+                c = ::tolower(c);
+            });
+            bool enabled;
+            if (this->opts->setecc.compare("true") == 0) {
+                enabled = true;
+            } else if (this->opts->setecc.compare("false") == 0) {
+                enabled = false;
+            } else {
+                (*json)["return"]="invalid parameter: enabled";
+                return json;    
+            }
+            json = this->coreStub->setMemoryEccState(this->opts->deviceId, enabled);
+            if((*json)["status"] == "OK") {
+                std::string available = (*json)["memory_ecc_available"];
+                std::string configurable = (*json)["memory_ecc_configurable"];
+                std::string current = (*json)["memory_ecc_current_state"];
+                std::string pending = (*json)["memory_ecc_pending_state"];
+                std::string pendingAction = (*json)["memory_ecc_pending_action"];
+
+                (*json)["return"] = "Succeed to set memory Ecc state: available: " + available +
+                " configurable: " + configurable +
+                " current: " + current +
+                " pending: " + pending + 
+                " action: " +  pendingAction;
+            }
+            return json;  
         }
          /*else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             char confirmed;

@@ -8,6 +8,7 @@
 #include "device/power.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
+#include "device/memoryEcc.h"
 #include "device/performancefactor.h"
 #include "infrastructure/device_capability.h"
 #include "infrastructure/init_close_interface.h"
@@ -88,6 +89,10 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual bool getFabricPorts(const std::string& id, std::vector<port_info>& portInfo) = 0;
 
     virtual bool setFabricPorts(const std::string& id, const port_info_set& portInfoSet) = 0;
+
+    virtual bool getEccState(const std::string& id, MemoryEcc& ecc) = 0;
+
+    virtual bool setEccState(const std::string& id, ecc_state_t& newState, MemoryEcc& ecc) = 0;
 
     virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
 };

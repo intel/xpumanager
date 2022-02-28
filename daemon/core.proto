@@ -391,6 +391,11 @@ message ConfigTileData {
     string portDisabled = 22;
     string portBeaconingOn = 23;
     string portBeaconingOff = 24;
+    bool memoryEccAvailable = 25;
+    bool memoryEccConfigurable = 26;
+    string memoryEccState = 27;
+    string memoryEccPendingState = 28;
+    string memoryEccPendingAction = 29;
 }
 message ConfigDeviceData{
     uint32 deviceId = 1;    
@@ -444,6 +449,22 @@ message ConfigDeviceFabricPortBeconingRequest{
     uint32 attachId = 5;
     uint32 portNumber = 6;
     bool beaconing = 7;
+}
+
+message ConfigDeviceMemoryEccStateRequest{
+    uint32 deviceId = 1;
+    bool enabled = 2;
+}
+
+message ConfigDeviceMemoryEccStateResultData {
+    uint32 deviceId = 1;
+    uint32 retCode = 2;
+    string errorMsg = 3;
+    bool available = 4;
+    bool configurable = 5;
+    string currentState = 6;
+    string pendingState = 7;
+    string pendingAction = 8;
 }
 
 message ConfigDeviceResultData {
@@ -689,6 +710,7 @@ service XpumCoreService {
     rpc setDeviceStandbyMode( ConfigDeviceStandbyRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceFabricPortEnabled( ConfigDeviceFabricPortEnabledRequest ) returns ( ConfigDeviceResultData );
     rpc setDeviceFabricPortBeaconing( ConfigDeviceFabricPortBeconingRequest ) returns ( ConfigDeviceResultData );
+    rpc setDeviceMemoryEccState( ConfigDeviceMemoryEccStateRequest ) returns ( ConfigDeviceMemoryEccStateResultData );
     rpc startDumpRawDataTask( StartDumpRawDataTaskRequest ) returns ( StartDumpRawDataTaskResponse );
     rpc stopDumpRawDataTask( StopDumpRawDataTaskRequest ) returns ( StopDumpRawDataTaskReponse );
     rpc listDumpRawDataTasks( google.protobuf.Empty ) returns ( ListDumpRawDataTaskResponse );

@@ -5,6 +5,7 @@
 
 #include "data_logic/data_logic_interface.h"
 #include "device/scheduler.h"
+#include "device/memoryEcc.h"
 #include "device_manager_interface.h"
 
 namespace xpum {
@@ -84,6 +85,9 @@ class DeviceManager : public DeviceManagerInterface,
     bool getFabricPorts(const std::string& id, std::vector<port_info>& portInfo);
 
     bool setFabricPorts(const std::string& id, const port_info_set& portInfoSet);
+
+    bool getEccState(const std::string& id, MemoryEcc& ecc);
+    bool setEccState(const std::string& id, ecc_state_t& newState, MemoryEcc& ecc);
 
     std::shared_ptr<Device> getDevice(const std::string& id);
 

@@ -59,6 +59,20 @@ def getConfig(deviceId, tileId):
         if resp.tileConfigData[i].schedulerTimesliceInterval > 0:
             tiledata['scheduler_timeslice_interval'] = resp.tileConfigData[i].schedulerTimesliceInterval
             tiledata['scheduler_timeslice_yield_timeout'] = resp.tileConfigData[i].schedulerTimesliceYieldTimeout
+        
+        if resp.tileConfigData[i].memoryEccAvailable == True:
+            tiledata['memory_ecc_available'] = "True"
+        else:
+            tiledata['memory_ecc_available'] = "False"
+        
+        if resp.tileConfigData[i].memoryEccConfigurable == True:
+            tiledata['memory_ecc_configurable'] = "True"
+        else:
+            tiledata['memory_ecc_configurable'] = "False"
+        
+        tiledata['memory_ecc_current_state'] = resp.tileConfigData[i].memoryEccState
+        tiledata['memory_ecc_pending_state'] = resp.tileConfigData[i].memoryEccPendingState
+        tiledata['memory_ecc_pending_action'] = resp.tileConfigData[i].memoryEccPendingAction
         tilelist.append(tiledata)
     data['tile_config_data'] = tilelist
     return 0, "OK", data
@@ -142,6 +156,17 @@ def setScheduler(deviceId, tileId, mode, val1, val2):
         logger.audit("Config", "Failed", "Failed to set scheduler mode {} parameter1 {} parameter2 {} to device {}", mode,val1,val2,deviceId)
         return 1, resp.errorMsg, None
     logger.audit("Config", "Succeed", "Succeed to set scheduler mode {} parameter1 {} parameter2 {} to device {}", mode,val1,val2,deviceId)
+    return 0, "OK", {"result": "OK"}
+
+def setMemoryecc(deviceId, enabled):
+    resp = stub.setDeviceMemoryEccState(core_pb2.ConfigDeviceMemoryEccStateRequest(
+        deviceId=deviceId, enabled=enabled))
+    if len(resp.errorMsg) != 0:
+        logger.audit("Config", "Failed", "Failed to set memory ecc available {} configurable {} current {} pending {} action {}", 
+        resp.available,resp.configurable, resp.currentState, resp.pendingState, resp.pendingAction)
+        return 1, resp.errorMsg, None
+    logger.audit("Config", "Succeed", "Succeed to set memory ecc available {} configurable {} current {} pending {} action {}", 
+        resp.available,resp.configurable, resp.currentState, resp.pendingState, resp.pendingAction)
     return 0, "OK", {"result": "OK"}
 
 def runReset(deviceId):

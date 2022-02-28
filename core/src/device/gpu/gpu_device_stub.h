@@ -11,6 +11,7 @@
 #include "device/scheduler.h"
 #include "device/standby.h"
 #include "device/performancefactor.h"
+#include "device/memoryEcc.h"
 #include "health/health_data_type.h"
 #include "infrastructure/const.h"
 #include "infrastructure/measurement_data.h"
@@ -94,6 +95,9 @@ class GPUDeviceStub {
 
     static void getPerformanceFactor(const zes_device_handle_t& device, std::vector<PerformanceFactor>& pf);
     static bool setPerformanceFactor(const zes_device_handle_t& device, PerformanceFactor &pf);
+    bool getEccState(const zes_device_handle_t& device, MemoryEcc& ecc);
+    bool setEccState(const zes_device_handle_t& device, ecc_state_t& newState, MemoryEcc& ecc);
+
 
     static void getPowerLimits(const zes_device_handle_t& device,
                                Power_sustained_limit_t& sustained_limit,

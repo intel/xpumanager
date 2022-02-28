@@ -14,6 +14,7 @@ struct ComletConfigOptions {
     std::string performancefactor;
     std::string xelinkportEnable;
     std::string xelinkportBeaconing;
+    std::string setecc;
     //bool resetDevice = false;
     
     //std::string schedulerTimeslice ="";
@@ -45,7 +46,8 @@ class ComletConfig : public ComletBase {
             && this->opts->frequencyrange.empty()
             && this->opts->xelinkportBeaconing.empty()
             && this->opts->xelinkportEnable.empty()
-            && this->opts->performancefactor.empty();
+            && this->opts->performancefactor.empty()
+            && this->opts->setecc.empty();
             //&& !this->opts->resetDevice;
     }
 

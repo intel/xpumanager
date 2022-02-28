@@ -13,6 +13,7 @@
 #include "core/core.h"
 #include "device/device.h"
 #include "device/power.h"
+#include "device/memoryEcc.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_property.h"
 #include "infrastructure/version.h"
@@ -1377,6 +1378,66 @@ xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
     return XPUM_GENERIC_ERROR;
 }
 
+xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* configurable,
+        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action) {
+    *available = false;
+    *configurable = false;
+    *current = XPUM_ECC_STATE_UNAVAILABLE;
+    *pending = XPUM_ECC_STATE_UNAVAILABLE;
+    *action = XPUM_ECC_ACTION_NONE; 
+
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    xpum_result_t res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    
+    MemoryEcc* ecc = new MemoryEcc();
+    if (Core::instance().getDeviceManager()->getEccState(std::to_string(deviceId), *ecc)) {
+        *available = ecc->getAvailable();
+        *configurable = ecc->getConfigurable();
+        *current = (xpum_ecc_state_t)(ecc->getCurrent());
+        *pending = (xpum_ecc_state_t)(ecc->getPending());
+        *action = (xpum_ecc_action_t)(ecc->getAction()); 
+        return XPUM_OK;
+    }
+    return XPUM_GENERIC_ERROR;
+}
+
+xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newState, bool* available, bool* configurable,
+        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action) {
+    *available = false;
+    *configurable = false;
+    *current = XPUM_ECC_STATE_UNAVAILABLE;
+    *pending = XPUM_ECC_STATE_UNAVAILABLE;
+    *action = XPUM_ECC_ACTION_NONE; 
+
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    xpum_result_t res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    ecc_state_t newSt = (ecc_state_t)(newState);
+
+    MemoryEcc* ecc = new MemoryEcc();
+    if (Core::instance().getDeviceManager()->setEccState(std::to_string(deviceId), newSt, *ecc)) {
+        *available = ecc->getAvailable();
+        *configurable = ecc->getConfigurable();
+        *current = (xpum_ecc_state_t)(ecc->getCurrent());
+        *pending = (xpum_ecc_state_t)(ecc->getPending());
+        *action = (xpum_ecc_action_t)(ecc->getAction()); 
+        return XPUM_OK;
+    }
+    return XPUM_GENERIC_ERROR;
+}
 ///////////////////Policy//////////////////////
 xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
     return Core::instance().getPolicyManager()->xpumSetPolicy(deviceId, policy);

@@ -14,6 +14,7 @@
 #include "device/scheduler.h"
 #include "device/standby.h"
 #include "device/performancefactor.h"
+#include "device/memoryEcc.h"
 #include "gpu_device.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_property.h"
@@ -3092,6 +3093,100 @@ bool GPUDeviceStub::setFabricPorts(const zes_device_handle_t& device, const port
         }
     }
     return false;
+}
+
+bool GPUDeviceStub::getEccState(const zes_device_handle_t& device, MemoryEcc& ecc) {
+    ecc.setAvailable(false);
+    ecc.setConfigurable(false);
+    ecc.setCurrent(ECC_STATE_UNAVAILABLE);
+    ecc.setPending(ECC_STATE_UNAVAILABLE);
+    ecc.setAction(ECC_ACTION_NONE);
+
+    if (device == nullptr) {
+        return false;
+    }
+    //temp
+    return true;
+#if 0
+    ze_result_t res;
+    ze_bool_t boolValue = false;
+
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEccAvailable(device,  &boolValue));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    if (boolValue == false) {
+        return true;
+    }
+    ecc.setAvailable(true);
+
+    boolValue = false;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEccConfigurable(device,  &boolValue));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    if (boolValue == false) {
+        return true;
+    }
+    ecc.setConfigurable(true);
+
+    zes_device_ecc_properties_t props = {ZES_DEVICE_ECC_STATE_UNAVAILABLE, ZES_DEVICE_ECC_STATE_UNAVAILABLE, ZES_DEVICE_ACTION_NONE};
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetEccState(device, &props));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    ecc.setCurrent(props.currentState);
+    ecc.setPending(props.pendingState);
+    ecc.setAction(props.pendingAction);
+    return true;
+#endif
+}
+
+bool GPUDeviceStub::setEccState(const zes_device_handle_t& device, ecc_state_t& newState, MemoryEcc& ecc) {
+    ecc.setAvailable(false);
+    ecc.setConfigurable(false);
+    ecc.setCurrent(ECC_STATE_UNAVAILABLE);
+    ecc.setPending(ECC_STATE_UNAVAILABLE);
+    ecc.setAction(ECC_ACTION_NONE);
+
+    if (device == nullptr) {
+        return false;
+    }
+
+    //temp
+    return true;
+#if 0
+    ze_result_t res;
+    ze_bool_t boolValue = false;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEccAvailable(device,  &boolValue));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    if (boolValue == false) {
+        return true;
+    }
+    ecc.setAvailable(true);
+
+    boolValue = false;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEccConfigurable(device,  &boolValue));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    if (boolValue == false) {
+        return true;
+    }
+    ecc.setConfigurable(true);
+
+    zes_device_ecc_properties_t props = {ZES_DEVICE_ECC_STATE_UNAVAILABLE, ZES_DEVICE_ECC_STATE_UNAVAILABLE, ZES_DEVICE_ACTION_NONE};
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceSetEccState(device, newState, &props));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    ecc.setCurrent(props.currentState);
+    ecc.setPending(props.pendingState);
+    ecc.setAction(props.pendingAction);
+    return true;
+#endif
 }
 
 void GPUDeviceStub::getPCIeReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept {

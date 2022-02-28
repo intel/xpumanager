@@ -1234,6 +1234,17 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     int32_t power = powerLimits.sustained_limit.power / 1000;
     int32_t interval = powerLimits.sustained_limit.interval;
 
+    bool available;
+    bool configurable;
+    xpum_ecc_state_t current, pending;
+    xpum_ecc_action_t action;
+
+    res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+        return grpc::Status::OK;
+    }
+
     response->set_deviceid(deviceId);
 
     response->set_tilecount(tileCount);
@@ -1375,6 +1386,12 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         tileData->set_portbeaconingon(beaconing_on_str);
         tileData->set_portbeaconingoff(beaconing_off_str);
 
+        tileData->set_memoryeccavailable(available);
+        tileData->set_memoryeccconfigurable(configurable);
+        tileData->set_memoryeccstate(eccStateToString(current));
+        tileData->set_memoryeccpendingstate(eccStateToString(pending));
+        tileData->set_memoryeccpendingaction(eccActionToString(action));
+
         /*
         for (uint32_t i = 0; i < powerRangeCount; i++) {
             if (powerRangeArray[i].subdevice_Id == tileId) {
@@ -1433,6 +1450,66 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     }
     return grpc::Status::OK;
 }
+
+std::string XpumCoreServiceImpl::eccStateToString(xpum_ecc_state_t state) {
+    if (state == XPUM_ECC_STATE_UNAVAILABLE) {
+        return "unavailable";
+    }
+    if (state == XPUM_ECC_STATE_ENABLED) {
+        return "enabled";
+    }
+    if (state == XPUM_ECC_STATE_DISABLED) {
+        return "disabled";
+    }
+    return "unavailable";
+}
+
+std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
+    if (action == XPUM_ECC_ACTION_NONE) {
+        return "none";
+    }
+    if (action == XPUM_ECC_ACTION_WARM_CARD_RESET) {
+        return "warm card reset";
+    }
+    if (action == XPUM_ECC_ACTION_COLD_CARD_RESET) {
+        return "cold card reset";
+    }
+    if (action == XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT) {
+        return "cold system reboot";
+    }
+    return "none";
+}
+//
+::grpc::Status XpumCoreServiceImpl::setDeviceMemoryEccState(::grpc::ServerContext* context, const ::ConfigDeviceMemoryEccStateRequest* request, ::ConfigDeviceMemoryEccStateResultData* response) {
+    xpum_result_t res;
+    xpum_device_id_t deviceId = request->deviceid();
+    bool available;
+    bool configurable;
+    xpum_ecc_state_t current, pending;
+    xpum_ecc_action_t action;
+    xpum_ecc_state_t newState;
+    if (request->enabled()) {
+        newState = XPUM_ECC_STATE_ENABLED;
+    } else {
+        newState = XPUM_ECC_STATE_DISABLED;
+    }
+
+    res = xpumSetEccState(deviceId, newState, &available, &configurable, &current, &pending, &action);
+    response->set_available(available);
+    response->set_configurable(configurable);
+    response->set_currentstate(eccStateToString(current));
+    response->set_pendingstate(eccStateToString(pending));
+    response->set_pendingaction(eccActionToString(action));
+    if (res != XPUM_OK) {
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
+            response->set_errormsg("device Id or tile Id is invalid");
+        } else {
+            response->set_errormsg("Error");
+        }
+    }
+    return grpc::Status::OK;
+}
+
 
 ::grpc::Status XpumCoreServiceImpl::getTopoXMLBuffer(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, 
             ::TopoXMLResponse* response){

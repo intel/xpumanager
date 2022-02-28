@@ -13,6 +13,9 @@ class PortEnabledSchema(Schema):
         metadata={"description": "The port number"})
     enabled =fields.Integer(
         metadata={"description": "The enabled 1; disabled 0"})
+class MemoryEccStateSchema(Schema):
+    enabled =fields.Integer(
+        metadata={"description": "The enabled 1; disabled 0"})
 class PortBeaconingSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
@@ -455,6 +458,51 @@ def set_performancefactor(deviceId):
         engineValue = 1<<1
     
     code, message, data = stub.setPerformanceFactor(deviceId, tileId, engineValue, factor)
+    if code != 0:
+        error = dict(Status=code, Message=message)
+        return jsonify(error), 500
+    return jsonify(data)
+
+def set_memoryecc(deviceId):
+    """
+    Set memory ecc state for device
+    ---
+    put:
+        tags:
+            - "Config"
+        description: Set memory ecc state for device
+        parameters:
+            -
+                name: set_memoryecc
+                in: body
+                description: set the memory ecc state
+                schema: MemoryEccStateSchema
+            -
+                name: deviceId
+                in: path
+                description: Device id
+                type: integer
+        responses:
+            200:
+                description: OK
+            500:
+                description: Error
+    """
+    if not request.is_json:
+        return jsonify("json string is missing"), 500
+    
+    req = request.get_json()
+    if "enabled" not in req:
+        return jsonify("json string is invalid"), 500
+    
+    enabled = req["enabled"]  
+    if type(enabled) != int:
+        return jsonify("Invalid Parameter enabled"), 500
+    
+    if enabled != 0 and enabled != 1:
+        return jsonify("Invalid value of enabled"), 500
+    
+    code, message, data = stub.setMemoryecc(deviceId, enabled)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

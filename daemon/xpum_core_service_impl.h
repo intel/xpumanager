@@ -98,7 +98,10 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status setPerformanceFactor(::grpc::ServerContext* context, const ::PerformanceFactor* request, ::DevicePerformanceFactorSettingResponse* response) override;
     virtual ::grpc::Status setDeviceFabricPortEnabled(::grpc::ServerContext* context, const ::ConfigDeviceFabricPortEnabledRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status setDeviceFabricPortBeaconing(::grpc::ServerContext* context, const ::ConfigDeviceFabricPortBeconingRequest* request, ::ConfigDeviceResultData* response) override;
+    virtual ::grpc::Status setDeviceMemoryEccState(::grpc::ServerContext* context, const ::ConfigDeviceMemoryEccStateRequest* request, ::ConfigDeviceMemoryEccStateResultData* response) override;
     std::string convertEngineId2Num(uint32_t engine);
+    std::string eccStateToString(xpum_ecc_state_t state);
+    std::string eccActionToString(xpum_ecc_action_t action);
 
     virtual ::grpc::Status startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response);
     virtual ::grpc::Status stopDumpRawDataTask(::grpc::ServerContext* context, const ::StopDumpRawDataTaskRequest* request, ::StopDumpRawDataTaskReponse* response);

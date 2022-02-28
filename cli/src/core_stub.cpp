@@ -1249,6 +1249,20 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                     tileJson["scheduler_timeslice_interval"] = response.tileconfigdata(i).schedulertimesliceinterval();
                     tileJson["scheduler_timeslice_yield_timeout"] = response.tileconfigdata(i).schedulertimesliceyieldtimeout();
                 }
+                if (response.tileconfigdata(i).memoryeccavailable() == true) {
+                    tileJson["memory_ecc_available"] = "true";
+                } else {
+                    tileJson["memory_ecc_available"] = "false";
+                }
+                
+                if (response.tileconfigdata(i).memoryeccconfigurable() == true) {
+                    tileJson["memory_ecc_configurable"] = "true";
+                } else {
+                    tileJson["memory_ecc_configurable"] = "false";
+                }
+                tileJson["memory_ecc_current_state"] = response.tileconfigdata(i).memoryeccstate();
+                tileJson["memory_ecc_pending_state"] = response.tileconfigdata(i).memoryeccpendingstate();
+                tileJson["memory_ecc_pending_action"] = response.tileconfigdata(i).memoryeccpendingaction();
                 tileJsonList.push_back(tileJson);
             }
             (*json)["tile_config_data"] = tileJsonList;
@@ -1570,6 +1584,50 @@ std::unique_ptr<nlohmann::json> CoreStub::setFabricPortBeaconing(int deviceId, i
     }
     return json;    
 
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool enabled) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    ConfigDeviceMemoryEccStateRequest request;
+    request.set_deviceid(deviceId);
+    request.set_enabled(enabled);
+    ConfigDeviceMemoryEccStateResultData response;
+    grpc::Status status = stub->setDeviceMemoryEccState(&context, request, &response);
+    if (response.available() == true) {
+        (*json)["memory_ecc_available"] = "true";
+    } else {
+        (*json)["memory_ecc_available"] = "false";
+    }
+    if (response.configurable() == true) {
+        (*json)["memory_ecc_configurable"] = "true";
+    } else {
+        (*json)["memory_ecc_configurable"] = "false";
+    }
+    (*json)["memory_ecc_current_state"] = response.currentstate();
+    (*json)["memory_ecc_pending_state"] = response.pendingstate();
+    (*json)["memory_ecc_pending_action"] = response.pendingaction();
+
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["status"] = "OK";
+            XPUM_LOG_AUDIT("Succeed to set memory Ecc state: available: %s, configurable: %s, current: %s, pending: %s, action: %s", 
+            (*json)["memory_ecc_available"],(*json)["memory_ecc_configurable"],
+            (*json)["memory_ecc_current_state"],(*json)["memory_ecc_pending_state"],
+            (*json)["memory_ecc_pending_action"]);
+        } else {
+            (*json)["error"] = response.errormsg();
+            XPUM_LOG_AUDIT("Failed to set memory Ecc state: available: %s, configurable: %s, current: %s, pending: %s, action: %s", 
+            (*json)["memory_ecc_available"],(*json)["memory_ecc_configurable"],
+            (*json)["memory_ecc_current_state"],(*json)["memory_ecc_pending_state"],
+            (*json)["memory_ecc_pending_action"]);
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        XPUM_LOG_AUDIT("Fail to set memory Ecc state: %s",status.error_message());
+    }
+    return json;
 }
 
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceProcessState(int deviceId){
