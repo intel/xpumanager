@@ -630,7 +630,7 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
 /**************************************************************************/
 
 /**
- * @brief Get statistics data (not including per engine utilization) by device
+ * @brief Get statistics data (not including per engine utilization & fabric throughput) by device
  * 
  * @param deviceId      IN: Device id
  * @param dataList     OUT: The arry to store statistics data for device \a deviceId.
@@ -670,6 +670,27 @@ xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
                                  uint64_t *begin,
                                  uint64_t *end,
                                  uint64_t sessionId);
+
+/**
+ * @brief Get Fabric throughput statistics data by device
+ * 
+ * @param deviceId      IN: Device id
+ * @param dataList     OUT: The arry to store statistics data for device \a deviceId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats_size of this device. A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
+ * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @param sessionId     IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
+                                           xpum_device_fabric_throughput_stats_t dataList[],
+                                           uint32_t *count,
+                                           uint64_t *begin,
+                                           uint64_t *end,
+                                           uint64_t sessionId);
 
 /**
  * @brief Get statistics data by group

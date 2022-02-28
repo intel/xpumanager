@@ -91,6 +91,10 @@ class DeviceManager : public DeviceManagerInterface,
 
     std::shared_ptr<Device> getDevice(const std::string& id);
 
+    void discoverFabricLinks();
+
+    std::string getDeviceIDByFabricID(uint64_t fabric_id);
+
    private:
     DeviceManager() = default;
 
@@ -104,6 +108,8 @@ class DeviceManager : public DeviceManagerInterface,
     std::shared_ptr<DataLogicInterface> p_data_logic;
 
     std::vector<std::shared_ptr<Device>> devices;
+
+    std::map<uint32_t, std::string> fabric_ids;
 
     std::mutex mutex;
 };

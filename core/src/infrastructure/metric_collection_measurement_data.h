@@ -1,3 +1,5 @@
+#pragma once
+
 #include "measurement_data.h"
 
 namespace xpum {

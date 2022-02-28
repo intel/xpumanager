@@ -5,6 +5,10 @@
 
 namespace xpum {
 
+Device::Device() {
+    fabric_id = std::numeric_limits<uint32_t>::max();
+}
+
 std::string Device::getId() noexcept {
     std::unique_lock<std::mutex> lock(this->mutex);
     return id;
@@ -176,6 +180,8 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getPCIeRead(callback); };
         case DeviceCapability::METRIC_PCIE_WRITE:
             return [p_device](Callback_t callback) { p_device->getPCIeWrite(callback); };
+        case DeviceCapability::METRIC_FABRIC_THROUGHPUT:
+            return [p_device](Callback_t callback) { p_device->getFabricThroughput(callback); };
         default:
             break;
     }
@@ -219,6 +225,76 @@ uint32_t Device::getEngineIndex(uint64_t handle) {
         return engines[handle].getIndex();
     }
     return std::numeric_limits<uint32_t>::max();
+}
+
+void Device::setFabricID(uint32_t fabric_id) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    this->fabric_id = fabric_id;
+}
+
+void Device::addFabricPortHandle(uint32_t attach_id, uint32_t remote_fabric_id, uint32_t remote_attach_id, zes_fabric_port_handle_t handle) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    connected_fabric_port_handles[attach_id][remote_fabric_id][remote_attach_id].push_back(handle);
+    fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id].push_back(FabricThroughputType::RECEIVED);
+    FabricThroughputInfo rx_info;
+    rx_info.attach_id = attach_id;
+    rx_info.remote_fabric_id = remote_fabric_id;
+    rx_info.remote_attach_id = remote_attach_id;
+    rx_info.type = FabricThroughputType::RECEIVED;
+    fabric_throughput_info[(uint64_t)&(fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id][FabricThroughputType::RECEIVED])] = rx_info;
+
+    fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id].push_back(FabricThroughputType::TRANSMITTED);
+    FabricThroughputInfo tx_info;
+    tx_info.attach_id = attach_id;
+    tx_info.remote_fabric_id = remote_fabric_id;
+    tx_info.remote_attach_id = remote_attach_id;
+    tx_info.type = FabricThroughputType::TRANSMITTED;
+    fabric_throughput_info[(uint64_t)&(fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id][FabricThroughputType::TRANSMITTED])] = tx_info;
+}
+
+uint64_t Device::getFabricThroughputID(uint32_t attach_id, uint32_t remote_fabric_id, uint32_t remote_attach_id, FabricThroughputType type) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    if (fabric_throughput_ids.find(attach_id) != fabric_throughput_ids.end()
+    && fabric_throughput_ids[attach_id].find(remote_fabric_id) != fabric_throughput_ids[attach_id].end()
+    && fabric_throughput_ids[attach_id][remote_fabric_id].find(remote_attach_id) != fabric_throughput_ids[attach_id][remote_fabric_id].end()) {
+        //XPUM_LOG_INFO("{} getFabricThroughputID {} {} {} {}",id, attach_id,remote_fabric_id,remote_attach_id,(uint64_t)&(fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id][type]));
+        return (uint64_t)&(fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id][type]);
+    }
+
+    return std::numeric_limits<uint64_t>::max();
+}
+
+std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<zes_fabric_port_handle_t>>>> Device::getThroughputHandles() {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return connected_fabric_port_handles;
+}
+
+bool Device::getFabricThroughputInfo(uint64_t throughput_id, FabricThroughputInfo& info) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    if (fabric_throughput_info.find(throughput_id) != fabric_throughput_info.end()) {
+        info = fabric_throughput_info[throughput_id];
+        return true;
+    }
+    return false;
+}
+
+uint32_t Device::getFabricThroughputInfoCount() {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    uint32_t count = 0;
+    auto attach_id_iter = fabric_throughput_ids.begin();
+    while (attach_id_iter != fabric_throughput_ids.end()) {
+        auto remote_fabric_id_iter = attach_id_iter->second.begin();
+        while (remote_fabric_id_iter != attach_id_iter->second.end()) {
+            auto remote_attach_id_iter = remote_fabric_id_iter->second.begin();
+            while (remote_attach_id_iter != remote_fabric_id_iter->second.end()) {
+                count+=2;
+                ++remote_attach_id_iter;
+            }
+            ++remote_fabric_id_iter;
+        }
+        ++attach_id_iter;
+    }
+    return count;
 }
 
 } // end namespace xpum

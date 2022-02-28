@@ -22,6 +22,7 @@
 #include "topology/xe_link.h"
 #include "device/pcie_manager.h"
 #include "infrastructure/engine_measurement_data.h"
+#include "infrastructure/fabric_measurement_data.h"
 
 namespace xpum {
 
@@ -98,6 +99,7 @@ class GPUDeviceStub {
     bool getEccState(const zes_device_handle_t& device, MemoryEcc& ecc);
     bool setEccState(const zes_device_handle_t& device, ecc_state_t& newState, MemoryEcc& ecc);
 
+    void getFabricThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     static void getPowerLimits(const zes_device_handle_t& device,
                                Power_sustained_limit_t& sustained_limit,
@@ -147,11 +149,13 @@ class GPUDeviceStub {
 
     static std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device);
 	
-	static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
+	  static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
 
     static bool getFabricPorts(const zes_device_handle_t& device, std::vector<port_info>& portInfo);
     
     static bool setFabricPorts(const zes_device_handle_t& device, const port_info_set& portInfoSet);
+
+    static std::shared_ptr<FabricMeasurementData> toGetFabricThroughput(const zes_device_handle_t& device);
 
    private:
     GPUDeviceStub();

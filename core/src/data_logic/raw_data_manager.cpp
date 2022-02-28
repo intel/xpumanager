@@ -14,6 +14,7 @@
 #include "throughput_data_handler.h"
 #include "frequency_throttle_time_data_handler.h"
 #include "gpu_utilization_data_handler.h"
+#include "fabric_throughput_data_handler.h"
 
 namespace xpum {
 
@@ -159,6 +160,10 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_PCIE_WRITE] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_WRITE, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_WRITE]->init();
+
+    data_handlers[MeasurementType::METRIC_FABRIC_THROUGHPUT] =
+        std::make_shared<FabricThroughputDataHandler>(MeasurementType::METRIC_FABRIC_THROUGHPUT, p_persistency);
+    data_handlers[MeasurementType::METRIC_FABRIC_THROUGHPUT]->init();
 }
 
 void RawDataManager::close() {

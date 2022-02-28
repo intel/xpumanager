@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <iomanip>
 #include "db_persistency.h"
 #include "infrastructure/const.h"
 #include "infrastructure/exception/ilegal_state_exception.h"
@@ -9,7 +10,7 @@
 #include "infrastructure/configuration.h"
 #include "core/core.h"
 #include "engine_measurement_data.h"
-#include <iomanip>
+#include "fabric_measurement_data.h"
 
 namespace xpum {
 
@@ -100,7 +101,8 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     bool hasDataOnDevice = false;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
-        if (*metric_types_iter != METRIC_ENGINE_UTILIZATION) {
+        if (*metric_types_iter != METRIC_ENGINE_UTILIZATION
+        && *metric_types_iter != METRIC_FABRIC_THROUGHPUT) {
             std::shared_ptr<MeasurementData> p_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
             if (p_data != nullptr) {
                 hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
@@ -209,7 +211,8 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
     bool hasDataOnDevice = false;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
-        if (*metric_types_iter != METRIC_ENGINE_UTILIZATION) {
+        if (*metric_types_iter != METRIC_ENGINE_UTILIZATION
+        && *metric_types_iter != METRIC_FABRIC_THROUGHPUT) {
             std::shared_ptr<MeasurementData> m_data = getLatestData(*metric_types_iter, device_id);
             if (m_data != nullptr) {
                 hasDataOnDevice = hasDataOnDevice || m_data->hasDataOnDevice();
@@ -407,6 +410,118 @@ std::vector<std::deque<MeasurementCacheData>> DataLogic::getCachedRawData(uint32
         throw IlegalStateException("initialization is not done!");
     }
     return p_raw_data_manager->getCachedRawData(task_id);
+}
+
+xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId,
+                                                       xpum_device_fabric_throughput_stats_t dataList[],
+                                                       uint32_t* count,
+                                                       uint64_t* begin,
+                                                       uint64_t* end,
+                                                       uint64_t session_id) {
+
+    std::string device_id = std::to_string(deviceId);
+    if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    auto metric_types = Configuration::getEnabledMetrics();
+    std::vector<xpum::DeviceCapability> capabilities;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
+    for(auto metric = metric_types.begin(); metric != metric_types.end();) {
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric));})){
+            metric = metric_types.erase(metric);
+        } else {
+            metric++;
+        }
+    }
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        return XPUM_GENERIC_ERROR;
+    }
+
+    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfoCount();
+    if (dataList == nullptr || *count == 0) {
+        return XPUM_OK;
+    }
+
+    uint32_t index = 0;
+    std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_FABRIC_THROUGHPUT, device_id, session_id);
+    auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
+    *begin = p_data->getStartTime();
+    *end = p_data->getLatestTime();
+    while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
+        FabricThroughputInfo info;
+        if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
+            xpum_device_fabric_throughput_stats_t stats;
+            stats.tile_id = info.attach_id;
+            stats.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(info.remote_fabric_id));
+            stats.remote_device_tile_id = info.remote_attach_id;
+            stats.type = Utility::toXPUMFabricThroughputType(info.type);
+            stats.value = fabric_datas_iter->second.current;
+            stats.min = fabric_datas_iter->second.min;
+            stats.avg = fabric_datas_iter->second.avg;
+            stats.max = fabric_datas_iter->second.max;
+            stats.scale = p_data->getScale();
+            if (index >= *count) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+            dataList[index] = stats;
+            ++index;
+        }
+        ++fabric_datas_iter;
+    }
+    return XPUM_OK;
+}
+
+xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
+                                             xpum_device_fabric_throughput_metric_t dataList[],
+                                             uint32_t* count) {
+
+    std::string device_id = std::to_string(deviceId);
+    if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    auto metric_types = Configuration::getEnabledMetrics();
+    std::vector<xpum::DeviceCapability> capabilities;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
+    for(auto metric = metric_types.begin(); metric != metric_types.end();) {
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric));})){
+            metric = metric_types.erase(metric);
+        } else {
+            metric++;
+        }
+    }
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        return XPUM_GENERIC_ERROR;
+    }
+
+    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfoCount();
+    if (dataList == nullptr || *count == 0) {
+        return XPUM_OK;
+    }
+
+    uint32_t index = 0;
+    std::shared_ptr<MeasurementData> p_data = getLatestData(METRIC_FABRIC_THROUGHPUT, device_id);
+    auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
+    while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
+        FabricThroughputInfo info;
+        if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
+            xpum_device_fabric_throughput_metric_t stats;
+            stats.tile_id = info.attach_id;
+            stats.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(info.remote_fabric_id));
+            stats.remote_device_tile_id = info.remote_attach_id;
+            stats.type = Utility::toXPUMFabricThroughputType(info.type);
+            stats.value = fabric_datas_iter->second.current;
+            stats.scale = p_data->getScale();
+            if (index >= *count) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+            dataList[index] = stats;
+            ++index;
+        }
+        ++fabric_datas_iter;
+    }
+    return XPUM_OK;
 }
 
 } // end namespace xpum

@@ -26,8 +26,22 @@ namespace xpum {
 
 typedef std::function<void(std::shared_ptr<void>, std::shared_ptr<BaseException>)> Callback_t;
 
+enum FabricThroughputType{
+  RECEIVED = 0,
+  TRANSMITTED = 1,
+};
+
+typedef struct FabricThroughputInfo_t {
+  uint32_t attach_id;
+  uint32_t remote_fabric_id;
+  uint32_t remote_attach_id;
+  FabricThroughputType type;
+} FabricThroughputInfo;
+
 class Device {
    public:
+    Device();
+
     std::string getId() noexcept;
 
     void getCapability(std::vector<DeviceCapability>& capabilites) noexcept;
@@ -85,6 +99,8 @@ class Device {
 
     virtual void getPCIeWrite(Callback_t callback) noexcept = 0;
 
+    virtual void getFabricThroughput(Callback_t callback) noexcept = 0;
+
     void addCapability(DeviceCapability& capability);
 
     void removeCapability(DeviceCapability& capability);
@@ -115,6 +131,18 @@ class Device {
 
     uint32_t getEngineIndex(uint64_t handle);
 
+    void setFabricID(uint32_t fabric_id);
+
+    void addFabricPortHandle(uint32_t attach_id, uint32_t remote_fabric_id, uint32_t remote_attach_id, zes_fabric_port_handle_t handle);
+
+    uint64_t getFabricThroughputID(uint32_t attach_id, uint32_t remote_fabric_id, uint32_t remote_attach_id, FabricThroughputType type);
+
+    std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<zes_fabric_port_handle_t>>>> getThroughputHandles();
+
+    bool getFabricThroughputInfo(uint64_t throughput_id, FabricThroughputInfo& info);
+
+    uint32_t getFabricThroughputInfoCount();
+
    public:
     virtual ~Device() {}
 
@@ -134,6 +162,14 @@ class Device {
     std::vector<Property> properties;
 
     std::map<uint64_t,EngineInfo> engines;
+
+    uint32_t fabric_id;
+
+    std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<zes_fabric_port_handle_t>>>> connected_fabric_port_handles;
+
+    std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<FabricThroughputType>>>> fabric_throughput_ids;
+
+    std::map<uint64_t, FabricThroughputInfo> fabric_throughput_info;
 };
 
 } // end namespace xpum

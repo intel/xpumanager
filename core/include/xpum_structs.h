@@ -432,6 +432,7 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_PCIE_READ,                            ///< PCIe read
     XPUM_STATS_PCIE_WRITE,                           ///< PCIe write
     XPUM_STATS_ENGINE_UTILIZATION,                   ///< Engine Utilization
+    XPUM_STATS_FABRIC_THROUGHPUT,                    ///< Fabric throughput
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -506,6 +507,44 @@ typedef struct xpum_device_engine_metric_t {
     uint32_t scale;                 ///< The magnification of the value field
 } xpum_device_engine_metric_t;
 
+/**
+ * @brief Fabric throughput types
+ * 
+ */
+typedef enum xpum_fabric_throughput_type_enum {
+    XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED = 0,
+    XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED = 1,
+    XPUM_FABRIC_THROUGHPUT_TYPE_MAX,
+} xpum_fabric_throughput_type_t;
+
+/**
+ * @brief Struct to store device fabric throughput statistics data
+ * 
+ */
+typedef struct xpum_device_fabric_throughput_stats_t {
+    uint32_t tile_id;                   ///< tile id 
+    uint32_t remote_device_id;          ///< remote device id
+    uint32_t remote_device_tile_id;     ///< remote tile id
+    xpum_fabric_throughput_type_t type; ///< fabric throughput type
+    uint64_t value;                     ///< The value
+    uint64_t min;                       ///< The min value since last call
+    uint64_t avg;                       ///< The average value since last call
+    uint64_t max;                       ///< The max value since last call
+    uint32_t scale;                     ///< The magnification of the value, accumulated, min, avg, and max fields
+} xpum_device_fabric_throughput_stats_t;
+
+/**
+ * @brief Struct to store device fabric throughput metric data
+ * 
+ */
+typedef struct xpum_device_fabric_throughput_metric_t {
+    uint32_t tile_id;                   ///< tile id 
+    uint32_t remote_device_id;          ///< remote device id
+    uint32_t remote_device_tile_id;     ///< remote tile id
+    xpum_fabric_throughput_type_t type; ///< fabric throughput type
+    uint64_t value;                     ///< The value
+    uint32_t scale;                     ///< The magnification of the value, accumulated, min, avg, and max fields
+} xpum_device_fabric_throughput_metric_t;
 
 /**
  * @brief Struct to store raw statistics data, not aggregated yet

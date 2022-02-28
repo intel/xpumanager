@@ -397,4 +397,11 @@ void GPUDevice::getPCIeWrite(Callback_t callback) noexcept {
                                                    });
 }
 
+void GPUDevice::getFabricThroughput(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getFabricThroughput(zes_device_handle,
+                                                  [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                  callback(ret, e);
+                                                  });
+}
+
 } // end namespace xpum

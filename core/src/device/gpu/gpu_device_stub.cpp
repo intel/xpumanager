@@ -412,6 +412,8 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_PCIE_READ);
     if (checkCapability(props.core.name, bdf_address, "PCIe write", toGetPCIeWrite, device)) 
         capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE);
+    if (checkCapability(props.core.name, bdf_address, "fabric throughput", toGetFabricThroughput, device)) 
+        capabilities.push_back(DeviceCapability::METRIC_FABRIC_THROUGHPUT);
 }
 
 void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities) {
@@ -3292,4 +3294,63 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPCIeWrite(const zes_device_
     ret->setCurrent(value);
     return ret;
 }
+
+void GPUDeviceStub::getFabricThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetFabricThroughput, device);
+}
+
+std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetFabricThroughput error");
+    }
+    std::map<std::string, ze_result_t> exception_msgs;
+    bool data_acquired = false;
+    uint32_t fabric_port_count = 0;
+    std::shared_ptr<FabricMeasurementData> ret = std::make_shared<FabricMeasurementData>();
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_port_count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_fabric_port_handle_t> fabric_ports(fabric_port_count);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_port_count, fabric_ports.data()));
+        if (res == ZE_RESULT_SUCCESS) {
+            for (auto& fp : fabric_ports) {
+                zes_fabric_port_properties_t props;
+                XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetProperties(fp, &props));
+                if (res == ZE_RESULT_SUCCESS) {
+                    zes_fabric_port_state_t state;
+                    XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetState(fp, &state));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        zes_fabric_port_throughput_t throughput;
+                        XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetThroughput(fp, &throughput));
+                        if (res == ZE_RESULT_SUCCESS) {
+                            ret->addRawData(uint64_t(fp), throughput.timestamp, throughput.rxCounter, throughput.txCounter, props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId);
+                            data_acquired = true;
+                        } else {
+                            exception_msgs["zesFabricPortGetThroughput"] = res;
+                        }
+                    } else {
+                        exception_msgs["zesFabricPortGetState"] = res;
+                    }
+                } else {
+                    exception_msgs["zesFabricPortGetProperties"] = res;
+                }
+            }
+        } else {
+            exception_msgs["zesDeviceEnumFabricPorts"] = res;
+        }
+    } else {
+        exception_msgs["zesDeviceEnumFabricPorts"] = res;
+    }
+    
+	if (data_acquired) {
+        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
+        return ret;
+    } else {
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
+    }
+}
+
 } // end namespace xpum

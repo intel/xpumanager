@@ -8,9 +8,7 @@ void MetricCollectionMeasurementData::addMetricCollectionMeasurementData(uint64_
 }
 
 void MetricCollectionMeasurementData::setDataCur(uint64_t handle, uint64_t cur) {
-    if (p_collection_datas->find(handle) != p_collection_datas->end()) {
-        (*p_collection_datas)[handle].current = cur;
-    }
+    (*p_collection_datas)[handle].current = cur;
 }
 
 void MetricCollectionMeasurementData::setDataMin(uint64_t handle, uint64_t min) {

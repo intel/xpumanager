@@ -11,6 +11,8 @@
 #include "infrastructure/logger.h"
 #include "infrastructure/device_process.h"
 #include "infrastructure/utility.h"
+#include "level_zero/zes_api.h"
+#include "infrastructure/handle_lock.h"
 
 namespace xpum {
 
@@ -58,6 +60,8 @@ void DeviceManager::init() {
     while (!ready) {
         cv.wait(lock);
     }
+
+    discoverFabricLinks();
 }
 
 void DeviceManager::close() {
@@ -281,4 +285,42 @@ bool DeviceManager::setEccState(const std::string& id, ecc_state_t& newState, Me
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().setEccState(getDeviceHandle(id), newState, ecc);
 }
+
+std::string DeviceManager::getDeviceIDByFabricID(uint64_t fabric_id) {
+    std::string ret;
+    if (fabric_ids.find(fabric_id) != fabric_ids.end()) {
+        ret = fabric_ids[fabric_id];
+    }
+    return ret;
+}
+
+void DeviceManager::discoverFabricLinks() {
+    for (auto& p_device : this->devices) {
+        zes_device_handle_t device = p_device->getDeviceHandle();
+        uint32_t fabric_port_count = 0;
+        std::shared_ptr<FabricMeasurementData> ret = std::make_shared<FabricMeasurementData>();
+        ze_result_t res;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_port_count, nullptr));
+        if (res == ZE_RESULT_SUCCESS) {
+            std::vector<zes_fabric_port_handle_t> fabric_ports(fabric_port_count);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFabricPorts(device, &fabric_port_count, fabric_ports.data()));
+            if (res == ZE_RESULT_SUCCESS) {
+                for (auto& fp : fabric_ports) {
+                    zes_fabric_port_properties_t props;
+                    XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetProperties(fp, &props));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        zes_fabric_port_state_t state;
+                        XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetState(fp, &state));
+                        if (state.status == ZES_FABRIC_PORT_STATUS_HEALTHY || state.status == ZES_FABRIC_PORT_STATUS_DEGRADED) {
+                            fabric_ids[props.portId.fabricId] = p_device->getId();
+                            p_device->setFabricID(props.portId.fabricId);
+                            p_device->addFabricPortHandle(props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId, fp);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 } // end namespace xpum

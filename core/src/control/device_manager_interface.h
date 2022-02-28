@@ -95,6 +95,10 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual bool setEccState(const std::string& id, ecc_state_t& newState, MemoryEcc& ecc) = 0;
 
     virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
+
+    virtual void discoverFabricLinks() = 0;
+
+    virtual std::string getDeviceIDByFabricID(uint64_t fabric_id) = 0;
 };
 
 } // end namespace xpum

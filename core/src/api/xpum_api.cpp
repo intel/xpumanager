@@ -579,6 +579,34 @@ xpum_result_t xpumGetEngineUtilizations(xpum_device_id_t deviceId,
     return Core::instance().getDataLogic()->getEngineUtilizations(deviceId, dataList, count);
 }
 
+xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
+                                           xpum_device_fabric_throughput_stats_t dataList[],
+                                           uint32_t *count,
+                                           uint64_t *begin,
+                                           uint64_t *end,
+                                           uint64_t sessionId) {
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+    xpum_result_t res;
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK)
+        return res;
+    return Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList, count, begin, end, sessionId);
+}
+
+xpum_result_t xpumGetFabricThroughput(xpum_device_id_t deviceId,
+                                      xpum_device_fabric_throughput_metric_t dataList[],
+                                      uint32_t *count) {
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+    xpum_result_t res;
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK)
+        return res;
+    return Core::instance().getDataLogic()->getFabricThroughput(deviceId, dataList, count);
+}
 
 xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
                                     xpum_device_metrics_t dataList[],

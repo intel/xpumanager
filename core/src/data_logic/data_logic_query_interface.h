@@ -43,6 +43,17 @@ class DataLogicQueryInterface {
     virtual xpum_result_t getEngineUtilizations(xpum_device_id_t deviceId,
                                                 xpum_device_engine_metric_t dataList[],
                                                 uint32_t *count) = 0;
+    
+    virtual xpum_result_t getFabricThroughputStatistics(xpum_device_id_t deviceId,
+                                                        xpum_device_fabric_throughput_stats_t dataList[],
+                                                        uint32_t* count,
+                                                        uint64_t* begin,
+                                                        uint64_t* end,
+                                                        uint64_t session_id) = 0;
+
+    virtual xpum_result_t getFabricThroughput(xpum_device_id_t deviceId,
+                                              xpum_device_fabric_throughput_metric_t dataList[],
+                                              uint32_t* count) = 0;
 
     virtual uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types) = 0;
 

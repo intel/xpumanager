@@ -51,6 +51,17 @@ class DataLogic : public DataLogicInterface {
                                       uint64_t* end,
                                       uint64_t session_id);
 
+    xpum_result_t getFabricThroughputStatistics(xpum_device_id_t deviceId,
+                                                xpum_device_fabric_throughput_stats_t dataList[],
+                                                uint32_t* count,
+                                                uint64_t* begin,
+                                                uint64_t* end,
+                                                uint64_t session_id);
+
+    xpum_result_t getFabricThroughput(xpum_device_id_t deviceId,
+                                      xpum_device_fabric_throughput_metric_t dataList[],
+                                      uint32_t* count);
+                                                
     void getLatestMetrics(xpum_device_id_t deviceId,
                           xpum_device_metrics_t dataList[],
                           int* count);

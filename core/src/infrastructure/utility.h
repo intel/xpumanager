@@ -44,6 +44,8 @@ class Utility {
 
     static zes_engine_group_t toZESEngineType(xpum_engine_type_t type);
 
+    static xpum_fabric_throughput_type_t toXPUMFabricThroughputType(FabricThroughputType type);
+
     static bool isATSPlatform(std::string device_name);
 };
 
