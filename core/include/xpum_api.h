@@ -756,6 +756,8 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
  */
 xpum_result_t xpumExportTopology2XML(char xmlBuffer[], int *memSize);
 
+xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *count);
+
 /** @} */ // Closing for TOPOLOGY_API
 
 /**************************************************************************/

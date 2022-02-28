@@ -14,6 +14,7 @@
 #include "infrastructure/logger.h"
 #include "hwinfo.h"
 #include "pci_database.h"
+#include "xe_link.h"
 
 namespace xpum {
 
@@ -58,25 +59,20 @@ bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t
     hwloc_topology_t hwtopology;
     hwloc_obj_t obj = nullptr;
     const PcieDevice* pDevice = nullptr;
+    zes_pci_address_t pciAddress;
+
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
     hwloc_topology_load(hwtopology);
-
-    std::size_t start = 0, pos = 0;
-    int32_t domain = std::stoi(bdfAddress.substr(start), &pos, 16);
-    start += pos + 1;
-    pos = 0;
-    int32_t bus = std::stoi(bdfAddress.substr(start), &pos, 16);
-    start += pos + 1;
-    pos = 0;
-    int32_t device = std::stoi(bdfAddress.substr(start), &pos, 16);
-    start += pos + 1;
-    pos = 0;
-    int32_t function = std::stoi(bdfAddress.substr(start), &pos, 16);
+    
+    getBDF(bdfAddress, pciAddress);
 
     while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
         assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
-        if (obj->attr->pcidev.domain == domain && obj->attr->pcidev.bus == bus && obj->attr->pcidev.dev == device && obj->attr->pcidev.func == function) {
+        if (obj->attr->pcidev.domain == pciAddress.domain 
+        && obj->attr->pcidev.bus == pciAddress.bus 
+        && obj->attr->pcidev.dev == pciAddress.device 
+        && obj->attr->pcidev.func == pciAddress.function) {
             pDevice = PciDatabase::instance().getDevice(
                 obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
 
@@ -133,22 +129,15 @@ xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t* t
     hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
     hwloc_topology_load(hwtopology);
 
-    std::size_t start = 0, pos = 0;
-
-    int32_t domain = std::stoi(bdfAddress.substr(start), &pos, 16);
-    start += pos + 1;
-    pos = 0;
-    int32_t bus = std::stoi(bdfAddress.substr(start), &pos, 16);
-    start += pos + 1;
-    pos = 0;
-    int32_t device = std::stoi(bdfAddress.substr(start), &pos, 16);
-    start += pos + 1;
-    pos = 0;
-    int32_t function = std::stoi(bdfAddress.substr(start), &pos, 16);
+    zes_pci_address_t pciAddress;
+    getBDF(bdfAddress, pciAddress);
 
     while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
         assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
-        if (obj->attr->pcidev.domain == domain && obj->attr->pcidev.bus == bus && obj->attr->pcidev.dev == device && obj->attr->pcidev.func == function) {
+        if (obj->attr->pcidev.domain == pciAddress.domain 
+        && obj->attr->pcidev.bus == pciAddress.bus 
+        && obj->attr->pcidev.dev == pciAddress.device 
+        && obj->attr->pcidev.func == pciAddress.function) {
             switchCount = get_p_switch_count(obj);
             if (switchCount > 0) {
                 std::size_t size = sizeof(xpum_topology_t) + switchCount * sizeof(parent_switch);
@@ -192,6 +181,21 @@ bool Topology::isSwitchDevice(hwloc_obj_t obj) {
     int device_id = obj->attr->pcidev.device_id;
     const PcieDevice* pDevice = PciDatabase::instance().getDevice(verdor_id, device_id);
     return (pDevice != nullptr);
+}
+
+void Topology::getBDF(std::string bdfAddress, zes_pci_address_t& pciAddress){
+     std::size_t start = 0, pos = 0;
+
+    pciAddress.domain = std::stoi(bdfAddress.substr(start), &pos, 16);
+    start += pos + 1;
+    pos = 0;
+    pciAddress.bus = std::stoi(bdfAddress.substr(start), &pos, 16);
+    start += pos + 1;
+    pos = 0;
+    pciAddress.device = std::stoi(bdfAddress.substr(start), &pos, 16);
+    start += pos + 1;
+    pos = 0;
+    pciAddress.function = std::stoi(bdfAddress.substr(start), &pos, 16);
 }
 
 std::string Topology::pci2RegxString(hwloc_obj_t obj) {
@@ -344,7 +348,7 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
         }  
     }    
 
-    if (hwloc_topology_export_xmlbuffer(hwtopology, &xmlbuf, &xmlbuflen, HWLOC_TOPOLOGY_EXPORT_XML_FLAG_V1) < 0){
+    if (hwloc_topology_export_xmlbuffer(hwtopology, &xmlbuf, &xmlbuflen, 0) < 0){
         XPUM_LOG_ERROR("XML buffer export failed {}", strerror(errno));
         result = XPUM_GENERIC_ERROR;
     } else {
@@ -361,6 +365,110 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
 
     hwloc_topology_destroy(hwtopology);
     return result;
+}
+
+xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devices, std::vector<xpum_fabric_port_pair>& fabricPorts){
+    xpum_result_t result = XPUM_GENERIC_ERROR;    
+    hwloc_topology_t topology;
+    bool bNuma = false;
+
+    hwloc_topology_init(&topology);
+    hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_IS_THISSYSTEM);
+    hwloc_topology_set_all_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL);
+    hwloc_topology_set_io_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_IMPORTANT);
+    hwloc_topology_load(topology);  
+    
+    std::string xeLinkStr("XeLink");  
+    for (size_t j = 0; j < devices.size(); j++){
+        unsigned int numa_os_idx = (unsigned) -1;
+        auto &info = devices[j];            
+        std::vector<xpum::port_info> portInfo;     
+
+        std::string bdfAddress;
+        Property prop;
+        if (!info->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop)) {
+                return XPUM_GENERIC_ERROR;
+        }
+        bdfAddress = prop.getValue();
+
+        zes_pci_address_t address;
+        getBDF(bdfAddress, address);
+        bNuma = numaDevice(topology, address, numa_os_idx);
+        if(bNuma) {
+            XPUM_LOG_INFO("NUMA: idx {} addr {}", numa_os_idx, bdfAddress);
+        }
+
+        bool bResult = xpum::Core::instance().getDeviceManager()->getFabricPorts(
+                info->getId(), portInfo);
+        if(!bResult){
+            continue;
+        }
+
+        result = XPUM_OK;
+
+        for(unsigned long i=0; i< portInfo.size(); i++){  
+            std::string model(portInfo[i].portProps.model);
+            if(model.find_first_of(xeLinkStr) == std::string::npos)
+                continue;
+
+            xpum_fabric_port_pair portPair;    
+            portPair.deviceId = stoi(info->getId());
+            portPair.numaIdx = numa_os_idx;
+            portPair.onSubdevice = portInfo[i].portProps.onSubdevice;
+            portPair.subdeviceId = portInfo[i].portProps.subdeviceId;
+            portPair.portId = portInfo[i].portProps.portId;
+            portPair.enabled = portInfo[i].portConf.enabled;
+                
+            if (portInfo[i].portConf.enabled) {
+                switch (portInfo[i].portState.status){
+                    case ZES_FABRIC_PORT_STATUS_HEALTHY:
+                        portPair.healthy =true;
+                        portPair.remotePortId = portInfo[i].portState.remotePortId;
+                        break;
+                    case ZES_FABRIC_PORT_STATUS_DEGRADED:
+                    case ZES_FABRIC_PORT_STATUS_FAILED:
+                    case ZES_FABRIC_PORT_STATUS_DISABLED:
+                    default:
+                        portPair.healthy = false;
+                        break;
+                }
+            }		
+            fabricPorts.push_back(portPair);	
+        }
+            
+    }   
+  
+    hwloc_topology_destroy(topology);
+    return result;
+}
+
+bool Topology::numaDevice(hwloc_topology_t topology, zes_pci_address_t& address, unsigned int& numa_os_idx){
+    hwloc_obj_t objNuma = nullptr, objPcie = nullptr;
+    bool bFound = false;
+    while((objNuma = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_NUMANODE, objNuma)) != nullptr){
+        int NUMAnode = objNuma->os_index;
+        for (objPcie = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PCI_DEVICE, 0);
+        objPcie;
+        objPcie = hwloc_get_next_pcidev(topology,objPcie)){
+            if (objPcie->attr->pcidev.domain == address.domain 
+            && objPcie->attr->pcidev.bus == address.bus 
+            && objPcie->attr->pcidev.dev == address.device 
+            && objPcie->attr->pcidev.func == address.function){
+                hwloc_obj_t obj_anc = hwloc_get_non_io_ancestor_obj(topology,objPcie);
+                if(NUMAnode == hwloc_bitmap_first(obj_anc->nodeset)){
+                    numa_os_idx = NUMAnode;
+                    bFound = true;
+                    break;
+                }
+            }             
+        }    
+
+        if(bFound) {
+            break;
+        }    
+    }
+
+    return bFound;
 }
 
 } // end namespace xpum

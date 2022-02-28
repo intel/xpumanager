@@ -2,10 +2,12 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 
 #include "../include/xpum_structs.h"
-#include "hwloc.h"
+#include "device/device.h"
 #include "level_zero/zes_api.h"
+#include "hwloc.h"
 
 namespace xpum {
 
@@ -14,6 +16,17 @@ struct GraphicDevice {
     int32_t vendor_id;
     int32_t device_id;
     std::string device_name;
+};
+
+struct xpum_fabric_port_pair{
+    int32_t deviceId;
+    ze_bool_t onSubdevice;
+    uint32_t subdeviceId;
+    bool healthy;
+    bool enabled;
+    uint32_t numaIdx;
+    zes_fabric_port_id_t portId;
+    zes_fabric_port_id_t remotePortId;
 };
 
 typedef std::pair<int32_t, int32_t> device_pair;
@@ -34,6 +47,7 @@ class Topology {
     static std::string getLocalCpusList(std::string address);
 
     static xpum_result_t topo2xml(char * buffer, int * buflen, std::map<device_pair, GraphicDevice>& device_map);
+    static xpum_result_t getXelinkTopo(std::vector<std::shared_ptr<Device>>& devices, std::vector<xpum_fabric_port_pair>& fabricPorts);
 
    private:
     static bool hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, int32_t device, int32_t function);
@@ -43,5 +57,7 @@ class Topology {
     static std::string pci2RegxString(hwloc_obj_t obj);
 
     static void export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj);
+    static void getBDF(std::string bdfAddress, zes_pci_address_t& pciAddress);
+    static bool numaDevice(hwloc_topology_t topology, zes_pci_address_t& address, unsigned int& numa_os_idx);
 };
 } // end namespace xpum
