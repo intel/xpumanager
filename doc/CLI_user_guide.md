@@ -761,7 +761,7 @@ show the GPU settings
 |             |                   | Engine Type: media                                             |
 |             |                   |   Performance Factor: 50                                       |
 |             |                   |                                                                |
-|             |                   | Memory ECC State: enabled                                      |
+|             |                   | Memory ECC Mode: enabled                                       |
 |             |                   |   Pending: disabled                                            |
 |             |                   |                                                                |
 |             |                   | Xe Link ports:                                                 |
@@ -800,6 +800,12 @@ Set the performance factor
 ```
 ./xpumcli config -d 0 -t 0 --performancefactor compute,70
 Succeed to change the compute performance factor to 70 on GPU 0 tile 0.
+```
+
+Change GPU memroy ECC mode
+```
+./xpumcli config -d 0 --memoryecc 0
+Succeed to change the ECC mode to be disabled on GPU 0. Please reset GPU or reboot OS to take effect. 
 ```
 
 Change the Xe Link port status
