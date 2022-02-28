@@ -257,7 +257,6 @@ uint64_t Device::getFabricThroughputID(uint32_t attach_id, uint32_t remote_fabri
     if (fabric_throughput_ids.find(attach_id) != fabric_throughput_ids.end()
     && fabric_throughput_ids[attach_id].find(remote_fabric_id) != fabric_throughput_ids[attach_id].end()
     && fabric_throughput_ids[attach_id][remote_fabric_id].find(remote_attach_id) != fabric_throughput_ids[attach_id][remote_fabric_id].end()) {
-        //XPUM_LOG_INFO("{} getFabricThroughputID {} {} {} {}",id, attach_id,remote_fabric_id,remote_attach_id,(uint64_t)&(fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id][type]));
         return (uint64_t)&(fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id][type]);
     }
 
