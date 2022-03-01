@@ -104,7 +104,7 @@ bool operator == (const xpum_xelink_unit& x, const xpum_xelink_unit& y){
 bool operator == (const xpum_xelink_topo_info& x, const xpum_xelink_topo_info& y){
     return ( 
         (x.localDevice == y.localDevice) 
-        && (x.remoteDevide == y.remoteDevide)
+        && (x.remoteDevice == y.remoteDevice)
         );
 }
 
@@ -123,12 +123,12 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
 
     if(!bFound) {
         if(info.linkType != XPUM_LINK_XE){
-            if(info.localDevice == info.remoteDevide){
+            if(info.localDevice == info.remoteDevice){
                 info.linkType = XPUM_LINK_SELF;
             }
             else if(localPort.fabricId == remotePort.fabricId){
                 info.linkType = XPUM_LINK_MDF;
-            } else if(info.localDevice.numaIdx == info.remoteDevide.numaIdx){
+            } else if(info.localDevice.numaIdx == info.remoteDevice.numaIdx){
                 info.linkType = XPUM_LINK_NODE;
             } else {
                 info.linkType = XPUM_LINK_SYS;
@@ -169,10 +169,10 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
             topoInfo.localDevice.onSubdevice = fabricPorts[x].onSubdevice;
             topoInfo.localDevice.subdeviceId = fabricPorts[x].subdeviceId;
 
-            topoInfo.remoteDevide.deviceId = fabricPorts[y].deviceId;
-            topoInfo.remoteDevide.numaIdx = fabricPorts[y].numaIdx;
-            topoInfo.remoteDevide.onSubdevice = fabricPorts[y].onSubdevice;
-            topoInfo.remoteDevide.subdeviceId = fabricPorts[y].subdeviceId;
+            topoInfo.remoteDevice.deviceId = fabricPorts[y].deviceId;
+            topoInfo.remoteDevice.numaIdx = fabricPorts[y].numaIdx;
+            topoInfo.remoteDevice.onSubdevice = fabricPorts[y].onSubdevice;
+            topoInfo.remoteDevice.subdeviceId = fabricPorts[y].subdeviceId;
 
             topoInfo.linkType = XPUM_LINK_UNKNOWN;
 

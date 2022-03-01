@@ -777,7 +777,7 @@ typedef struct xpum_xelink_unit{
 
 typedef struct xpum_xelink_topo_info{
     xpum_xelink_unit localDevice;
-    xpum_xelink_unit remoteDevide;
+    xpum_xelink_unit remoteDevice;
     xpum_xelink_type_t linkType;
     uint8_t linkPorts[XPUM_MAX_XELINK_PORT];
 }xpum_xelink_topo_info;

@@ -10,6 +10,7 @@ namespace xpum::cli {
 struct ComletTopologyOptions {
     int deviceId = -1;
     std::string xmlFile = "";
+    bool xeLink = false;
 };
 
 class ComletTopology : public ComletBase {

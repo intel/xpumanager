@@ -34,8 +34,18 @@ void ComletTopology::setupOptions() {
     auto d = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
     auto e = addOption("-f,--file", this->opts->xmlFile, 
     "Generate the system topology with the GPU info to a XML file.");
+    auto m = addFlag("-m,--matrix", this->opts->xeLink, "Print the CPU/GPU topology matrix.\n"
+    " S: Self\n"
+    " XL#: Connected with Xe Link.  Xe Link LAN count is also provided.\n"
+    " SYS: Connected with PCIe between NUMA nodes\n"
+    " NODE: Connected with PCIe within a NUMA node\n"
+    " MDF: Connected with Multi-Die Fabric Interface");
     d->excludes(e);
+    d->excludes(m);
     e->excludes(d);
+    d->excludes(m);
+    m->excludes(d);
+    m->excludes(e);
 }
 
 std::unique_ptr<nlohmann::json> ComletTopology::run() {
@@ -59,9 +69,12 @@ std::unique_ptr<nlohmann::json> ComletTopology::run() {
         } else {
             std::cout << "Error opening file: " << opts->xmlFile << std::endl;
         }
+    } else if(this->opts->xeLink) {
+       // auto json = this->coreStub->xpumGetXelinkTopology();
+        
     } else {        
         (*result)["error"] = "Wrong argument or unknow operation, run with --help for more information.";
-    }
+    } 
     return result;
 }
 

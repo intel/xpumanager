@@ -1533,6 +1533,47 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::getXelinkTopology(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, 
+ ::TopoXelinkTopoResponse* response) {
+    XPUM_LOG_TRACE("call get version");
+    xpum_xelink_topo_info *topoInfo;
+    int count{16};
+    xpum_xelink_topo_info xelink_topo[count];
+    topoInfo = xelink_topo;
+    xpum_result_t res = xpumGetXelinkTopology(xelink_topo, &count);
+    if (res == XPUM_BUFFER_TOO_SMALL) {
+        xpum_xelink_topo_info xelink_topo[count];
+        topoInfo = xelink_topo;
+        res = xpumGetXelinkTopology(xelink_topo, &count);        
+    }
+
+    if (res == XPUM_OK) {
+        for (int i{0}; i < count; ++i) {
+            response->mutable_localdevice()->set_deviceid(topoInfo[i].localDevice.deviceId);
+            response->mutable_localdevice()->set_numaindex(topoInfo[i].localDevice.numaIdx);
+            response->mutable_localdevice()->set_onsubdevice(topoInfo[i].localDevice.onSubdevice);
+            response->mutable_localdevice()->set_subdeviceid(topoInfo[i].localDevice.subdeviceId);
+
+            response->mutable_remotedevice()->set_deviceid(topoInfo[i].remoteDevice.deviceId);
+            response->mutable_remotedevice()->set_numaindex(topoInfo[i].remoteDevice.numaIdx);
+            response->mutable_remotedevice()->set_onsubdevice(topoInfo[i].remoteDevice.onSubdevice);
+            response->mutable_remotedevice()->set_subdeviceid(topoInfo[i].remoteDevice.subdeviceId);
+
+            response->set_linktype((TopoXelinkTopoResponse_LinkType)topoInfo[i].linkType);
+
+            for(int n; n<XPUM_MAX_XELINK_PORT;n++){
+                response->add_linkportlist(topoInfo[i].linkPorts[n]);
+            }
+        }
+    }
+
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+
+    return grpc::Status::OK;
+ }
+
 void XpumCoreServiceImpl::close() {
     this->stop = true;
     condtionForCallBackDataList.notify_all();
