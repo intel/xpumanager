@@ -114,7 +114,7 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
 
     virtual ::grpc::Status getEngineStatistics(::grpc::ServerContext* context, const ::XpumGetEngineStatsRequest* request, ::XpumGetEngineStatsResponse* response) override;
     virtual ::grpc::Status getEngineCount(::grpc::ServerContext* context, const ::GetEngineCountRequest* request, ::GetEngineCountResponse* response) override;
-    virtual ::grpc::Status getXelinkTopology(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::TopoXelinkTopoResponse* response) override;
+    virtual ::grpc::Status getXelinkTopology(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::XpumXelinkTopoInfoArray* response) override;
     
     private:
         std::atomic_bool stop;

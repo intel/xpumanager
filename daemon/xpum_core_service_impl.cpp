@@ -1534,7 +1534,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
 }
 
 ::grpc::Status XpumCoreServiceImpl::getXelinkTopology(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, 
- ::TopoXelinkTopoResponse* response) {
+::XpumXelinkTopoInfoArray* response) {
     XPUM_LOG_TRACE("call get version");
     xpum_xelink_topo_info *topoInfo;
     int count{16};
@@ -1549,20 +1549,21 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
 
     if (res == XPUM_OK) {
         for (int i{0}; i < count; ++i) {
-            response->mutable_localdevice()->set_deviceid(topoInfo[i].localDevice.deviceId);
-            response->mutable_localdevice()->set_numaindex(topoInfo[i].localDevice.numaIdx);
-            response->mutable_localdevice()->set_onsubdevice(topoInfo[i].localDevice.onSubdevice);
-            response->mutable_localdevice()->set_subdeviceid(topoInfo[i].localDevice.subdeviceId);
+            XpumXelinkTopoInfoArray_XelinkTopoInfo* info = response->add_topoinfo();
+            info->mutable_localdevice()->set_deviceid(topoInfo[i].localDevice.deviceId);
+            info->mutable_localdevice()->set_numaindex(topoInfo[i].localDevice.numaIdx);
+            info->mutable_localdevice()->set_onsubdevice(topoInfo[i].localDevice.onSubdevice);
+            info->mutable_localdevice()->set_subdeviceid(topoInfo[i].localDevice.subdeviceId);
 
-            response->mutable_remotedevice()->set_deviceid(topoInfo[i].remoteDevice.deviceId);
-            response->mutable_remotedevice()->set_numaindex(topoInfo[i].remoteDevice.numaIdx);
-            response->mutable_remotedevice()->set_onsubdevice(topoInfo[i].remoteDevice.onSubdevice);
-            response->mutable_remotedevice()->set_subdeviceid(topoInfo[i].remoteDevice.subdeviceId);
+            info->mutable_remotedevice()->set_deviceid(topoInfo[i].remoteDevice.deviceId);
+            info->mutable_remotedevice()->set_numaindex(topoInfo[i].remoteDevice.numaIdx);
+            info->mutable_remotedevice()->set_onsubdevice(topoInfo[i].remoteDevice.onSubdevice);
+            info->mutable_remotedevice()->set_subdeviceid(topoInfo[i].remoteDevice.subdeviceId);
 
-            response->set_linktype((TopoXelinkTopoResponse_LinkType)topoInfo[i].linkType);
+            info->set_linktype((XpumXelinkTopoInfoArray_LinkType)topoInfo[i].linkType);
 
             for(int n; n<XPUM_MAX_XELINK_PORT;n++){
-                response->add_linkportlist(topoInfo[i].linkPorts[n]);
+                info->add_linkportlist(topoInfo[i].linkPorts[n]);
             }
         }
     }

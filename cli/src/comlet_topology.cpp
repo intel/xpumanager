@@ -70,8 +70,8 @@ std::unique_ptr<nlohmann::json> ComletTopology::run() {
             std::cout << "Error opening file: " << opts->xmlFile << std::endl;
         }
     } else if(this->opts->xeLink) {
-       // auto json = this->coreStub->xpumGetXelinkTopology();
-        
+        auto json = this->coreStub->getXelinkTopology();
+        return json;
     } else {        
         (*result)["error"] = "Wrong argument or unknow operation, run with --help for more information.";
     } 

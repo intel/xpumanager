@@ -98,6 +98,8 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getAgentConfig();
 
     std::string getTopoXMLBuffer();
+
+    std::unique_ptr<nlohmann::json> getXelinkTopology();
     
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;

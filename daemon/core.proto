@@ -664,14 +664,7 @@ message GetEngineCountResponse {
     repeated EngineCountInfo engineCountList = 3;
 }
 
-message TopoXelinkUnit {
-    uint32 deviceId = 1;
-    bool onSubdevice = 2;
-    uint32 subdeviceId = 3;
-    uint32 numaIndex = 4;
-}
-
-message TopoXelinkTopoResponse{
+message XpumXelinkTopoInfoArray{
     enum LinkType {
         XPUM_LINK_UNKNOWN = 0;
         XPUM_LINK_SELF = 1;
@@ -680,11 +673,21 @@ message TopoXelinkTopoResponse{
         XPUM_LINK_SYS = 4;
         XPUM_LINK_NODE = 5;    
     }
-    TopoXelinkUnit localDevice = 1;
-    TopoXelinkUnit remoteDevice = 2;
-    LinkType linkType = 3;
+    
+    message XelinkTopoUnit {
+        uint32 deviceId = 1;
+        bool onSubdevice = 2;
+        uint32 subdeviceId = 3;
+        uint32 numaIndex = 4;
+    }
+    message XelinkTopoInfo{
+        XelinkTopoUnit localDevice = 1;
+        XelinkTopoUnit remoteDevice = 2;
+        LinkType linkType = 3;    
+        repeated uint32 linkPortList = 4;
+    }
+    repeated XelinkTopoInfo topoInfo=1;
     string errorMsg = 4;
-    repeated uint32 linkPortList = 5;
 }
 
 /* services */
@@ -740,5 +743,5 @@ service XpumCoreService {
     rpc setAgentConfig( SetAgentConfigRequest ) returns ( SetAgentConfigResponse );
     rpc getAgentConfig( google.protobuf.Empty ) returns ( GetAgentConfigResponse );
     rpc getTopoXMLBuffer( google.protobuf.Empty ) returns ( TopoXMLResponse );
-    rpc getXelinkTopology( google.protobuf.Empty ) returns ( TopoXelinkTopoResponse );
+    rpc getXelinkTopology( google.protobuf.Empty ) returns ( XpumXelinkTopoInfoArray );
 }

@@ -1670,4 +1670,47 @@ std::string CoreStub::getTopoXMLBuffer(){
     return result;
 }
 
+
+std::unique_ptr<nlohmann::json> CoreStub::getXelinkTopology() {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());    
+
+    grpc::ClientContext context;
+    XpumXelinkTopoInfoArray response;
+    grpc::Status status = stub->getXelinkTopology(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> topoJsonList;
+            for (int i{0}; i < response.topoinfo_size(); ++i) {
+                auto componentJson = nlohmann::json();
+
+                componentJson["local_id"] = response.topoinfo(i).localdevice().deviceid();
+                componentJson["local_on_subdev"] = response.topoinfo(i).localdevice().onsubdevice();
+                componentJson["local_subdev_id"] = response.topoinfo(i).localdevice().subdeviceid();
+                componentJson["local_numa_idx"] = response.topoinfo(i).localdevice().numaindex();
+
+                componentJson["remote_id"] = response.topoinfo(i).remotedevice().deviceid();
+                componentJson["remote_on_subdev"] = response.topoinfo(i).remotedevice().onsubdevice();
+                componentJson["remote_subdev_id"] = response.topoinfo(i).remotedevice().subdeviceid();
+                componentJson["localremote_numa_idx"] = response.topoinfo(i).remotedevice().numaindex();
+
+                componentJson["link_type"] = response.topoinfo(i).linktype();
+
+                // todo:: linkports
+                
+                topoJsonList.push_back(componentJson);
+            }
+
+            (*json)["topo_list"] = topoJsonList;
+            
+        } else {
+            (*json)["error"] = response.errormsg();
+        }
+    } else {
+        (*json)["error"] = response.errormsg();
+    }
+
+    return json;
+}
+
 } // end namespace xpum::cli
