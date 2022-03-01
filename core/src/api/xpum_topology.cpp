@@ -96,7 +96,7 @@ xpum_result_t xpumExportTopology2XML(char *xmlBuffer, int *memSize){
 bool operator == (const xpum_xelink_unit& x, const xpum_xelink_unit& y){
     return ( 
         (x.deviceId == y.deviceId) 
-        && (x.onSubdevice == y.onSubdevice)
+     //   && (x.onSubdevice == y.onSubdevice)
         && (x.subdeviceId == y.subdeviceId) 
         );
 }
@@ -180,6 +180,13 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
                 if(fabricPorts[x].remotePortId == fabricPorts[y].portId) {
                     topoInfo.linkType = XPUM_LINK_XE;                    
                 }
+                XPUM_LOG_INFO("{}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}", 
+                fabricPorts[x].deviceId, fabricPorts[x].subdeviceId,
+                fabricPorts[x].portId.fabricId,
+                fabricPorts[x].portId.attachId, fabricPorts[x].portId.portNumber, 
+                 fabricPorts[y].deviceId, fabricPorts[y].subdeviceId,
+                fabricPorts[y].portId.fabricId, fabricPorts[y].portId.attachId, fabricPorts[y].portId.portNumber
+                );
             }   
 
             changeOrAddInfo(topoInfos, topoInfo, fabricPorts[x].portId, fabricPorts[y].portId);        
