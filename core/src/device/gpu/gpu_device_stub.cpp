@@ -3022,25 +3022,25 @@ bool GPUDeviceStub::getFabricPorts(const zes_device_handle_t& device, std::vecto
 
             XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetProperties(hPort, &props));
             if (res != ZE_RESULT_SUCCESS) {
-                continue;
+                XPUM_LOG_WARN("Failed to zesFabricPortGetProperties returned: {}", res);
             }
             info.portProps = props;
 
             XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetState(hPort, &state));                
             if (res != ZE_RESULT_SUCCESS) {
-                continue;
+                XPUM_LOG_WARN("Failed to zesFabricPortGetState returned: {}", res);
             }
             info.portState = state;
 
             XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetLinkType(hPort, &link));
             if (res != ZE_RESULT_SUCCESS) {
-                continue;
+                XPUM_LOG_WARN("Failed to zesFabricPortGetLinkType returned: {}", res);
             }
             info.portLink = link;
 
             XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetConfig(hPort, &config));
             if (res != ZE_RESULT_SUCCESS) {
-                continue;                    
+                XPUM_LOG_WARN("Failed to zesFabricPortGetLinkType returned: {}", res);                   
             }
             info.portConf = config;
             portInfo.push_back(info);

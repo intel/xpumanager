@@ -418,6 +418,8 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
             portPair.subdeviceId = portInfo[i].portProps.subdeviceId;
             portPair.portId = portInfo[i].portProps.portId;
             portPair.enabled = portInfo[i].portConf.enabled;
+
+            portPair.remotePortId.fabricId = (uint32_t)-1;
                 
             if (portInfo[i].portConf.enabled) {
                 switch (portInfo[i].portState.status){
