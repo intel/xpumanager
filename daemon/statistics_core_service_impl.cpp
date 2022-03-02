@@ -303,4 +303,21 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     return grpc::Status::OK;
 }
+
+::grpc::Status XpumCoreServiceImpl::getFabricCount(::grpc::ServerContext* context, const ::GetFabricCountRequest* request, ::GetFabricCountResponse* response) {
+    xpum_device_id_t deviceId = request->deviceid();
+    auto fabricCountInfo = getDeviceAndTileFabricCount(deviceId);
+    for (auto tileFabricCountInfo : fabricCountInfo) {
+        auto countInfo = response->add_fabriccountlist();
+        countInfo->set_istilelevel(tileFabricCountInfo.isTileLevel);
+        countInfo->set_tileid(tileFabricCountInfo.tileId);
+        for (auto d : tileFabricCountInfo.dataList) {
+            auto dataList = countInfo->add_datalist();
+            dataList->set_tileid(d.tile_id);
+            dataList->set_remotedeviceid(d.remote_device_id);
+            dataList->set_remotetileid(d.remote_tile_id);
+        }
+    }
+    return grpc::Status::OK;
+}
 }

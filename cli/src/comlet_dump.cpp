@@ -215,6 +215,8 @@ void ComletDump::printByLine(std::ostream &out) {
 
     auto pEngineCountMap = this->coreStub->getEngineCount(deviceId);
 
+    auto pFabricCountJson = this->coreStub->getFabricCount(deviceId);
+
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         return;
@@ -284,6 +286,49 @@ void ComletDump::printByLine(std::ostream &out) {
                     columnSchemaList.push_back(dc);
                 }
             }
+        } else if(config.optionType == xpum::dump::DUMP_OPTION_FABRIC){
+            std::string strTileId = tileId == -1 ? "device" : std::to_string(tileId);
+            if(pFabricCountJson->contains(strTileId)){
+                for (auto obj : (*pFabricCountJson)[strTileId]) {
+                    std::stringstream ss;
+                    std::string key;
+                    std::string header;
+                    // tx
+                    ss << deviceId << "/" << obj["tile_id"];
+                    ss << "->" << obj["remote_device_id"] << "/" << obj["remote_tile_id"];
+                    key = ss.str();
+                    header = "XL " + key + " (kB/s)";
+                    columnSchemaList.push_back({header,
+                                                [config, key, this]() {
+                                                    if (fabricThroughputJson != nullptr) {
+                                                        for (auto tp : (*fabricThroughputJson)) {
+                                                            if (!key.compare(tp["name"].get<std::string>())) {
+                                                                return getJsonValue(tp["value"], config.scale);
+                                                            }
+                                                        }
+                                                    }
+                                                    return std::string();
+                                                }});
+                    // rx
+                    ss.clear();
+                    ss << obj["remote_device_id"] << "/" << obj["remote_tile_id"];
+                    ss << "->";
+                    ss << deviceId << "/" << obj["tile_id"];
+                    key = ss.str();
+                    header = "XL " + key + " (kB/s)";
+                    columnSchemaList.push_back({header,
+                                                [config, key, this]() {
+                                                    if (fabricThroughputJson != nullptr) {
+                                                        for (auto tp : (*fabricThroughputJson)) {
+                                                            if (!key.compare(tp["name"].get<std::string>())) {
+                                                                return getJsonValue(tp["value"], config.scale);
+                                                            }
+                                                        }
+                                                    }
+                                                    return std::string();
+                                                }});
+                }
+            }
         }
     }
 
@@ -312,6 +357,7 @@ void ComletDump::printByLine(std::ostream &out) {
 
         statsJson = nullptr;
         engineUtilJson = nullptr;
+        fabricThroughputJson = std::make_shared<nlohmann::json>((*res)["fabric_throughput"]);
 
         if (tileId == -1) {
             if (res->contains("device_level")) {

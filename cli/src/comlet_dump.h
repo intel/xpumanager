@@ -33,6 +33,7 @@ class ComletDump : public ComletBase {
 
     std::shared_ptr<nlohmann::json> statsJson;
     std::shared_ptr<nlohmann::json> engineUtilJson;
+    std::shared_ptr<nlohmann::json> fabricThroughputJson;
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
 

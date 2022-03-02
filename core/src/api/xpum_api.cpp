@@ -160,6 +160,42 @@ std::vector<EngineCount> getDeviceAndTileEngineCount(xpum_device_id_t deviceId) 
     return res;
 }
 
+std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId) {
+    auto res = std::vector<FabricCount>();
+    auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (pDevice == nullptr)
+        return res;
+
+    uint32_t count;
+    Core::instance().getDataLogic()->getFabricLinkInfo(deviceId, nullptr, &count);
+    std::vector<FabricLinkInfo> info(count);
+    Core::instance().getDataLogic()->getFabricLinkInfo(deviceId, info.data(), &count);
+
+    Property prop;
+    pDevice->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
+    uint32_t tileCount = prop.getValueInt();
+    if (tileCount == 1) {
+        FabricCount fc;
+        fc.isTileLevel = false;
+        for (auto d : info) {
+            fc.dataList.push_back(d);
+        }
+        res.push_back(fc);
+    } else {
+        for (uint32_t tileId = 0; tileId < tileCount; tileId++) {
+            FabricCount fc;
+            fc.isTileLevel = true;
+            fc.tileId = tileId;
+            for (auto d : info) {
+                if (d.tile_id == tileId)
+                    fc.dataList.push_back(d);
+            }
+            res.push_back(fc);
+        }
+    }
+    return res;
+}
+
 xpum_result_t xpumInit() {
     try {
         XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());

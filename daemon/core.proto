@@ -706,6 +706,28 @@ message GetFabricStatsResponse {
     int32 status = 5;
 }
 
+message GetFabricCountRequest {
+    int32 deviceId = 1;
+}
+
+message FabricCountInfoData {
+    int32 tileId = 1;
+    int32 remoteDeviceId = 2;
+    int32 remoteTileId = 3;
+}
+
+message FabricCountInfo {
+    bool isTileLevel = 1;
+    int32 tileId = 2;
+    repeated FabricCountInfoData dataList = 3;
+}
+
+message GetFabricCountResponse {
+    bool isTileLevel = 1;
+    int32 tileId = 2;
+    repeated FabricCountInfo fabricCountList= 3;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -761,4 +783,5 @@ service XpumCoreService {
     rpc getTopoXMLBuffer( google.protobuf.Empty ) returns ( TopoXMLResponse );
     rpc getXelinkTopology( google.protobuf.Empty ) returns ( XpumXelinkTopoInfoArray );
     rpc getFabricStatistics( GetFabricStatsRequest ) returns ( GetFabricStatsResponse );
+    rpc getFabricCount( GetFabricCountRequest ) returns ( GetFabricCountResponse );
 }

@@ -4,6 +4,8 @@
 
 #include "xpum_structs.h"
 
+#include "internal_api_structs.h"
+
 namespace xpum {
 /**
  * @brief validate the device Id
@@ -47,17 +49,11 @@ xpum_result_t xpumGetEngineCount(xpum_device_id_t deviceId,
                                  xpum_engine_type_t type,
                                  uint32_t *count);
 
-struct EngineCountData {
-    xpum_engine_type_t engineType;
-    int32_t count;
-};
-struct EngineCount {
-    bool isTileLevel;
-    xpum_device_tile_id_t tileId;
-    std::vector<EngineCountData> engineCountList;
-};
 
 std::vector<EngineCount> getDeviceAndTileEngineCount(xpum_device_id_t deviceId);
+
+
+std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId);
 
 /**************************************************************************/
 /** @defgroup METRICS_API Get metrics data

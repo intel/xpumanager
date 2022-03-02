@@ -101,6 +101,8 @@ class CoreStub {
     std::string getTopoXMLBuffer();
 
     std::unique_ptr<nlohmann::json> getXelinkTopology();
+
+    std::shared_ptr<nlohmann::json> getFabricCount(int deviceId);
     
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;

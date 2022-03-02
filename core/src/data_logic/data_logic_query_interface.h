@@ -7,6 +7,7 @@
 #include "../include/xpum_structs.h"
 #include "infrastructure/measurement_cache_data.h"
 #include "infrastructure/measurement_data.h"
+#include "api/internal_api_structs.h"
 
 namespace xpum {
 

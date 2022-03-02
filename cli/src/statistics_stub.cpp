@@ -84,6 +84,27 @@ std::shared_ptr<std::map<int, std::map<int, int>>> CoreStub::getEngineCount(int 
     return std::make_shared<std::map<int, std::map<int, int>>>(m);
 }
 
+std::shared_ptr<nlohmann::json> CoreStub::getFabricCount(int deviceId) {
+    grpc::ClientContext context;
+    GetFabricCountRequest request;
+    GetFabricCountResponse response;
+    request.set_deviceid(deviceId);
+    grpc::Status status = stub->getFabricCount(&context, request, &response);
+
+    nlohmann::json json;
+    for (auto &tileInfo : response.fabriccountlist()) {
+        std::string tileId = tileInfo.istilelevel() ? std::to_string(tileInfo.tileid()) : "device";
+        nlohmann::json obj;
+        for (auto &countInfo : tileInfo.datalist()) {
+            obj["tile_id"] = countInfo.tileid();
+            obj["remote_device_id"] = countInfo.remotedeviceid();
+            obj["remote_tile_id"] = countInfo.remotetileid();
+        }
+        json[tileId].push_back(obj);
+    }
+    return std::make_shared<nlohmann::json>(json);
+}
+
 std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
     grpc::ClientContext engineContext;
     XpumGetEngineStatsRequest engineRequest;

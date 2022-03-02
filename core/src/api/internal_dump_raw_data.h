@@ -10,7 +10,8 @@ namespace xpum::dump {
 
 enum dump_option_type {
     DUMP_OPTION_STATS,
-    DUMP_OPTION_ENGINE
+    DUMP_OPTION_ENGINE,
+    DUMP_OPTION_FABRIC
 };
 
 struct DumpTypeOption {
