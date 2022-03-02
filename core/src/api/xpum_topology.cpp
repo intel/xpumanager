@@ -134,13 +134,13 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
                 info.linkType = XPUM_LINK_SYS;
             }
         } else {
-            info.linkPorts[localPort.portNumber] = 1;
+            info.linkPorts[localPort.portNumber-1] = 1;
         }
         topoInfos.push_back(info);
     } else {
         if(info.linkType == XPUM_LINK_XE) {
             currentInfo->linkType = XPUM_LINK_XE;
-            currentInfo->linkPorts[localPort.portNumber] = 1;
+            currentInfo->linkPorts[localPort.portNumber-1] = 1;
         }
     }
 }
@@ -179,7 +179,7 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
             if (fabricPorts[x].enabled && fabricPorts[x].healthy){
                 if(fabricPorts[x].remotePortId == fabricPorts[y].portId) {
                     topoInfo.linkType = XPUM_LINK_XE;    
-                    XPUM_LOG_INFO("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}", 
+                    XPUM_LOG_DEBUG("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}", 
                     fabricPorts[x].deviceId, fabricPorts[x].subdeviceId,
                     fabricPorts[x].portId.fabricId,
                     fabricPorts[x].portId.attachId, fabricPorts[x].portId.portNumber, 

@@ -395,7 +395,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
         getBDF(bdfAddress, address);
         bNuma = numaDevice(topology, address, numa_os_idx);
         if(bNuma) {
-            XPUM_LOG_INFO("NUMA: idx {} addr {}", numa_os_idx, bdfAddress);
+            XPUM_LOG_DEBUG("NUMA: idx {} addr {}", numa_os_idx, bdfAddress);
         }
 
         bool bResult = xpum::Core::instance().getDeviceManager()->getFabricPorts(

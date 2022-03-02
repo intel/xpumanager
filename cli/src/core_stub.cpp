@@ -1696,7 +1696,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getXelinkTopology() {
 
                 componentJson["link_type"] = response.topoinfo(i).linktype();
 
-                // todo:: linkports
+                std::vector<uint32_t> portList;
+                int nCount=response.topoinfo(i).linkportlist_size();
+                for(int n{0}; n<nCount;n++){
+                    uint32_t value = response.topoinfo(i).linkportlist(n);
+                    portList.push_back(value);
+                }
+                componentJson["port_list"] = portList;
                 
                 topoJsonList.push_back(componentJson);
             }

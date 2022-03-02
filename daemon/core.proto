@@ -664,16 +664,7 @@ message GetEngineCountResponse {
     repeated EngineCountInfo engineCountList = 3;
 }
 
-message XpumXelinkTopoInfoArray{
-    enum LinkType {
-        XPUM_LINK_UNKNOWN = 0;
-        XPUM_LINK_SELF = 1;
-        XPUM_LINK_MDF = 2;
-        XPUM_LINK_XE = 3;
-        XPUM_LINK_SYS = 4;
-        XPUM_LINK_NODE = 5;    
-    }
-    
+message XpumXelinkTopoInfoArray{   
     message XelinkTopoUnit {
         uint32 deviceId = 1;
         bool onSubdevice = 2;
@@ -683,7 +674,7 @@ message XpumXelinkTopoInfoArray{
     message XelinkTopoInfo{
         XelinkTopoUnit localDevice = 1;
         XelinkTopoUnit remoteDevice = 2;
-        LinkType linkType = 3;    
+        string linkType = 3;    
         repeated uint32 linkPortList = 4;
     }
     repeated XelinkTopoInfo topoInfo=1;

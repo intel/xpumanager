@@ -83,6 +83,85 @@ static void showDeviceTopology(std::ostream &out, std::shared_ptr<nlohmann::json
     table.show(out);
 }
 
+std::string ComletTopology::getKeyNumberValue(std::string key, const nlohmann::json &item){
+    auto sub = item.find(key);
+    if(sub != item.end()){
+        return std::to_string((uint32_t)sub.value());
+    }
+    return "";
+}
+
+std::string ComletTopology::getKeyStringValue(std::string key, const nlohmann::json &item){
+    auto sub = item.find(key);
+    if(sub != item.end()){
+        return sub.value();
+    }
+    return "";
+}
+
+std::string ComletTopology::getPortList(const nlohmann::json &item){
+    
+    std::string result = " ";
+    bool bFirst = true;
+    std::vector<uint32_t> portList = item["port_list"];
+    for(size_t i=0; i<portList.size(); i++){
+        if(portList[i] != 0){
+            if(!bFirst){
+                result += ",";
+            }
+            result += std::to_string(i+1);
+            bFirst = false;
+        }
+    }
+
+    return result;
+}
+
+void ComletTopology::printHead(std::string head[], int count, int headsize, int rowsize){
+    std::cout << std::left << std::setw(headsize) << " ";
+    for(int i=0; i<count; i++){
+        std::cout << std::left << std::setw(rowsize) << head[i];
+    }
+    std::cout << std::endl;
+}
+
+void ComletTopology::printContent(std::string head[], const nlohmann::json &table, int count, int headsize, int rowsize){
+    for(int col=0; col<count; col++){
+        std::cout << std::left << std::setw(headsize) << head[col];
+        for(int row=0; row<count; row++){
+            std::string linkType = getKeyStringValue("link_type", table[col*count + row]);
+            if(linkType.compare("XL") == 0){
+                linkType += getPortList(table[col*count + row]);
+            }
+            std::cout << std::left << std::setw(rowsize) << linkType;
+        }
+        std::cout << std::endl;
+    }
+}
+
+void ComletTopology::printXelinkTable(const nlohmann::json &table){
+    int nCount = table.size();
+    int instance = sqrt(nCount);
+    std::string title[instance];
+    int headsize = 12;
+    int rowsize = 20;
+
+    for (int i=0; i<instance; i++) {
+        title[i] = "GPU " + getKeyNumberValue("remote_id", table[i]) + "/" 
+            + getKeyNumberValue("remote_subdev_id", table[i]);
+    }    
+
+    printHead(title, instance, headsize, rowsize);
+    printContent(title, table, instance, headsize, rowsize);
+}
+
+void ComletTopology::showXelinkTopology(std::shared_ptr<nlohmann::json> json) {
+    auto result = json->find("topo_list");
+    if(result != json->end()){
+        printXelinkTable(*result);
+    }          
+}
+
 void ComletTopology::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
@@ -94,6 +173,8 @@ void ComletTopology::getTableResult(std::ostream &out) {
 
     if (isDeviceOperation()) {
         showDeviceTopology(out, json);
+    } else {
+        showXelinkTopology(json);
     }
 }
 } // end namespace xpum::cli

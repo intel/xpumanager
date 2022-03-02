@@ -1559,10 +1559,23 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             info->mutable_remotedevice()->set_numaindex(topoInfo[i].remoteDevice.numaIdx);
             info->mutable_remotedevice()->set_onsubdevice(topoInfo[i].remoteDevice.onSubdevice);
             info->mutable_remotedevice()->set_subdeviceid(topoInfo[i].remoteDevice.subdeviceId);
+            std::string linkType;
+            if (topoInfo[i].linkType == XPUM_LINK_SELF) {
+                linkType = "S"; 
+            } else if (topoInfo[i].linkType == XPUM_LINK_MDF) {
+                linkType = "MDF"; 
+            } else if (topoInfo[i].linkType == XPUM_LINK_XE) {
+                linkType = "XL"; 
+            } else if (topoInfo[i].linkType == XPUM_LINK_SYS) {
+                linkType = "SYS"; 
+            } else if (topoInfo[i].linkType == XPUM_LINK_NODE) {
+                linkType = "NODE"; 
+            } else {
+                linkType = "Unknown"; 
+            }
+            info->set_linktype(linkType);
 
-            info->set_linktype((XpumXelinkTopoInfoArray_LinkType)topoInfo[i].linkType);
-
-            for(int n; n<XPUM_MAX_XELINK_PORT;n++){
+            for(int n=0; n<XPUM_MAX_XELINK_PORT;n++){
                 info->add_linkportlist(topoInfo[i].linkPorts[n]);
             }
         }
