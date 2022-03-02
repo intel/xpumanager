@@ -122,7 +122,7 @@ void ComletTopology::printHead(std::string head[], int count, int headsize, int 
     for(int i=0; i<count; i++){
         std::cout << std::left << std::setw(rowsize) << head[i];
     }
-    std::cout << std::endl;
+    std::cout << std::left << std::setw(rowsize) << "CPU Affinity" << std::endl;
 }
 
 void ComletTopology::printContent(std::string head[], const nlohmann::json &table, int count, int headsize, int rowsize){
@@ -135,6 +135,7 @@ void ComletTopology::printContent(std::string head[], const nlohmann::json &tabl
             }
             std::cout << std::left << std::setw(rowsize) << linkType;
         }
+        std::cout << std::left << std::setw(rowsize) << getKeyStringValue("local_cpu_affinity", table[col*count]);
         std::cout << std::endl;
     }
 }
