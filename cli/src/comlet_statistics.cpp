@@ -216,6 +216,13 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
     }, {
         "instance": "",
         "cells": [[
+            { "rowTitle": "Xe Link Throughput (kB/s) " }
+        ], [
+            { "value": "fabric_throughput"}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
             { "rowTitle": "Comupte Engine Util (%) " }
         ], [
             { "value": "compute_engine_util"}
@@ -335,6 +342,24 @@ std::string engineUtilByType(std::shared_ptr<nlohmann::json> jsonPtr, std::strin
     return res;
 }
 
+std::string getXelinkThroughput(std::shared_ptr<nlohmann::json> jsonPtr) {
+    std::string res;
+    if (!jsonPtr->contains("fabric_throughput"))
+        return res;
+    std::stringstream ss;
+    for (auto& obj : (*jsonPtr)["fabric_throughput"]) {
+        ss.clear();
+        ss << obj["name"] << ": ";
+        ss << "avg: " << obj["avg"] << ", ";
+        ss << "min: " << obj["min"] << ", ";
+        ss << "max: " << obj["max"] << ", ";
+        ss << "current: " << obj["value"];
+        res = ss.str() + "\n";
+    }
+    if (!res.empty()) res.pop_back();
+    return res;
+}
+
 static void showDeviceStatistics(std::ostream &out, std::shared_ptr<nlohmann::json> jsonPtr, const bool cont = false) {
     nlohmann::json& json = *jsonPtr;
     bool noTile = true;
@@ -367,6 +392,8 @@ static void showDeviceStatistics(std::ostream &out, std::shared_ptr<nlohmann::js
     json["copy_engine_util"] = engineUtilByType(jsonPtr, "copy");
     json["media_em_engine_util"] = engineUtilByType(jsonPtr, "media_enhancement");
     json["3d_engine_util"] = engineUtilByType(jsonPtr, "3d");
+
+    json["fabric_throughput"] = getXelinkThroughput(jsonPtr);
 
     CharTable table(ComletConfigDeviceStatistics, json, cont);
     table.show(out);

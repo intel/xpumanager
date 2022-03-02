@@ -267,4 +267,40 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     return grpc::Status::OK;
 }
+
+::grpc::Status XpumCoreServiceImpl::getFabricStatistics(::grpc::ServerContext* context, const ::GetFabricStatsRequest* request, ::GetFabricStatsResponse* response){
+    xpum_device_id_t deviceId = request->deviceid();
+    uint64_t sessionId = request->sessionid();
+    uint32_t count;
+    uint64_t begin, end;
+    auto res = xpumGetFabricThroughputStats(deviceId, nullptr, &count, &begin, &end, sessionId);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Fail to get fabric throughput statistics data count");
+        response->set_status(res);
+        return grpc::Status::OK;
+    }
+    xpum_device_fabric_throughput_stats_t dataList[count];
+    res = xpumGetFabricThroughputStats(deviceId, dataList, &count, &begin, &end, sessionId);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Fail to get fabric throughput statistics");
+        response->set_status(res);
+        return grpc::Status::OK;
+    }
+    response->set_begin(begin);
+    response->set_end(end);
+    for (uint32_t i = 0; i < count; i++) {
+        FabricStatsInfo* fabricStatsInfo = response->add_datalist();
+        xpum_device_fabric_throughput_stats_t& stats = dataList[i];
+        fabricStatsInfo->set_tileid(stats.tile_id);
+        fabricStatsInfo->set_remote_device_id(stats.remote_device_id);
+        fabricStatsInfo->set_remote_device_tile_id(stats.remote_device_tile_id);
+        fabricStatsInfo->set_tx(stats.type == XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED);
+        fabricStatsInfo->set_value(stats.value);
+        fabricStatsInfo->set_min(stats.min);
+        fabricStatsInfo->set_avg(stats.avg);
+        fabricStatsInfo->set_max(stats.max);
+        fabricStatsInfo->set_scale(stats.scale);
+    }
+    return grpc::Status::OK;
+}
 }

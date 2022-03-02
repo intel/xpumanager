@@ -125,6 +125,7 @@ def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
     return 0, "OK", dict(group_id=group_id, datas=datas)
 
 
+@exit_on_disconnect
 def getEngineStatistics(device_id, session_id=0):
     resp = stub.getEngineStatistics(core_pb2.XpumGetEngineStatsRequest(
         deviceId=device_id, sessionId=session_id))
@@ -187,6 +188,48 @@ def getEngineStatistics(device_id, session_id=0):
     data["engine_util"] = engine_stats
     return 0, "OK", data
     
+
+@exit_on_disconnect
+def getFabricStatistics(device_id, session_id=0):
+    resp = stub.getFabricStatistics(core_pb2.GetFabricStatsRequest(
+        deviceId=device_id, sessionId=session_id
+    ))
+    if len(resp.errorMsg) != 0:
+        return resp.status, resp.errorMsg, None
+    data = dict()
+    data["device_id"] = device_id
+    beginTimestamp = datetime.datetime.fromtimestamp(
+        resp.begin/1e3, datetime.timezone.utc)
+    endTimestamp = datetime.datetime.fromtimestamp(
+        resp.end/1e3, datetime.timezone.utc)
+    data['begin'] = beginTimestamp.isoformat(
+        timespec='milliseconds').replace('+00:00', 'Z')
+    data['end'] = endTimestamp.isoformat(
+        timespec='milliseconds').replace('+00:00', 'Z')
+    fabric_stats = []
+    for stats_info in resp.dataList:
+        tmp = dict()
+        if stats_info.tx:
+            tmp["name"] = "{}/{}->{}/{}".format(device_id, stats_info.tileId,
+                                                stats_info.remote_device_id, stats_info.remote_device_tile_id)
+        else:
+            tmp["name"] = "{}/{}->{}/{}".format(stats_info.remote_device_id,
+                                                stats_info.remote_device_tile_id, device_id, stats_info.tileId)
+        scale = stats_info.scale
+        if scale == 1:
+            tmp["value"] = stats_info.value
+            tmp["avg"] = stats_info.avg
+            tmp["min"] = stats_info.min
+            tmp["max"] = stats_info.max
+        else:
+            tmp["value"] = stats_info.value / scale
+            tmp["avg"] = stats_info.avg / scale
+            tmp["min"] = stats_info.min / scale
+            tmp["max"] = stats_info.max / scale
+        fabric_stats.append(tmp)
+    data["fabric_throughput"] = fabric_stats
+    return 0, "OK", data
+
 
 def getStatisticsNotForPrometheus(device_id, session_id=0, get_accumulated=False):
     resp = stub.getStatisticsNotForPrometheus(

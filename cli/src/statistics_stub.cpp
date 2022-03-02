@@ -1,5 +1,6 @@
 #include <nlohmann/json.hpp>
 #include <vector>
+#include <sstream>
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
@@ -177,6 +178,55 @@ std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
     return std::make_shared<nlohmann::json>(json);
 }
 
+std::shared_ptr<nlohmann::json> CoreStub::getFabricStatistics(int deviceId) {
+    nlohmann::json json;
+
+    grpc::ClientContext context;
+    GetFabricStatsRequest request;
+    GetFabricStatsResponse response;
+    request.set_deviceid(deviceId);
+    request.set_sessionid(0);
+    grpc::Status status = stub->getFabricStatistics(&context, request, &response);
+    if (!status.ok()) {
+        json["error"] = status.error_message();
+        return std::make_shared<nlohmann::json>(json);
+    }
+    if (response.errormsg().length() != 0) {
+        json["error"] = response.errormsg();
+        return std::make_shared<nlohmann::json>(json);
+    }
+
+    // fabric data
+    json["fabric_throughput"] = nlohmann::json::array();
+    for (auto &fabricInfo : response.datalist()) {
+        nlohmann::json obj;
+
+        std::stringstream ss;
+        if (fabricInfo.tx()) {
+            ss << deviceId << "/" << fabricInfo.tileid() << "->" << fabricInfo.remote_device_id() << "/" << fabricInfo.remote_device_tile_id();
+        } else {
+            ss << fabricInfo.remote_device_id() << "/" << fabricInfo.remote_device_tile_id() << "->" << deviceId << "/" << fabricInfo.tileid();
+        }
+
+        int32_t scale = fabricInfo.scale();
+        if (scale == 1) {
+            obj["value"] = fabricInfo.value();
+            obj["min"] = fabricInfo.min();
+            obj["max"] = fabricInfo.max();
+            obj["avg"] = fabricInfo.avg();
+        } else {
+            obj["value"] = (double)fabricInfo.value() / scale;
+            obj["min"] = (double)fabricInfo.min() / scale;
+            obj["max"] = (double)fabricInfo.max() / scale;
+            obj["avg"] = (double)fabricInfo.avg() / scale;
+        }
+        obj["name"] = ss.str();
+        obj["tile_id"] = fabricInfo.tileid();
+        json["fabric_throughput"].push_back(obj);
+    }
+    return std::make_shared<nlohmann::json>(json);
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enableFilter) {
     assert(this->stub != nullptr);
 
@@ -204,6 +254,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
     auto engineStatsJson = getEngineStatistics(deviceId);
     if (engineStatsJson->contains("error")) {
         return std::make_unique<nlohmann::json>(*engineStatsJson);
+    }
+
+    // get fabric stats
+    auto fabricStatsJson = getFabricStatistics(deviceId);
+    if (fabricStatsJson->contains("error")) {
+        return std::make_unique<nlohmann::json>(*fabricStatsJson);
     }
 
     std::vector<nlohmann::json> deviceJsonList;
@@ -268,6 +324,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
         (*json)["tile_level"] = tileLevelStatsDataList;
 
     (*json)["device_id"] = deviceId;
+
+    json->update(*fabricStatsJson);
 
     return json;
 }
@@ -384,6 +442,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
             }
             data["tile_level"] = tileLevelObj;
         }
+        // get fabric stats
+        auto fabricStatsJson = getFabricStatistics(deviceId);
+        if (fabricStatsJson->contains("error")) {
+            return std::make_unique<nlohmann::json>(*fabricStatsJson);
+        }
+        data.update(*fabricStatsJson);
         datas.push_back(data);
     }
 

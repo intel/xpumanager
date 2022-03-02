@@ -42,6 +42,15 @@ class EngineUtilSchema(Schema):
     three_d = fields.Nested(EngineUtilDataSchema, many=True, metadata={
         "description": "3d engine utilizations"}, data_key="3d")
 
+class FabricThroughputSchema(Schema):
+    name = fields.Str(metadata={"description": "Fabric throughput name"})
+    value = fields.Number(metadata={"description": "The current value"})
+    avg = fields.Number(
+        metadata={"description": "The average value since last query"})
+    min = fields.Number(
+        metadata={"description": "The min value since last query"})
+    max = fields.Number(
+        metadata={"description": "The max value since last query"})
 
 class TileStatisticsSchema(Schema):
     tile_id = fields.Int(
@@ -62,6 +71,8 @@ class StatisticsSchema(Schema):
                                "description": "Tile level statistics datas"})
     engine_util = fields.Nested(EngineUtilSchema, metadata={
         "description": "Engine utilizations"})
+    fabric_throughput = fields.Nested(FabricThroughputSchema, many=True, metadata={
+        "description": "Fabric throughput statistics"})
 
 
 def get_statistics(deviceId):
@@ -91,30 +102,37 @@ def get_statistics(deviceId):
                 description: Error
     """
     code, message, data = stub.getStatisticsNotForPrometheus(deviceId)
-    if code == 0:
-        engineCode, engineMsg, engineData = stub.getEngineStatistics(deviceId)
-        if engineCode != 0:
-            error = dict(message="Error code: {}, error message: {}".format(
-                stub.XpumResult(engineCode).name, engineMsg))
-            return jsonify(error), 500
-        if "engine_util" not in engineData:
-            return jsonify(data)
-        engineUtilData = engineData["engine_util"]
-        if "device_level" in engineUtilData:
-            data["engine_util"] = engineUtilData["device_level"]
-        if "tile_level" in data:
-            for t in data["tile_level"]:
-                tileId = t.get("tile_id", None)
-                if tileId in engineUtilData:
-                    t["engine_util"] = engineUtilData[tileId]
-        return jsonify(data)
-    elif code == stub.XpumResult["XPUM_RESULT_DEVICE_NOT_FOUND"].value:
+    if code == stub.XpumResult["XPUM_RESULT_DEVICE_NOT_FOUND"].value:
         error = dict(message=message)
         return jsonify(error), 400
-    else:
+    elif code !=0:
         error = dict(message="Error code: {}, error message: {}".format(
             stub.XpumResult(code).name, message))
         return jsonify(error), 500
+    engineCode, engineMsg, engineData = stub.getEngineStatistics(deviceId)
+    if engineCode != 0:
+        error = dict(message="Error code: {}, error message: {}".format(
+            stub.XpumResult(engineCode).name, engineMsg))
+        return jsonify(error), 500
+    fabricCode, fabricMsg, fabricData = stub.getFabricStatistics(deviceId)
+    if fabricCode != 0:
+        error = dict(message="Error code: {}, error message: {}".format(
+            stub.XpumResult(fabricCode).name, fabricMsg))
+        return jsonify(error), 500
+    # update fabric throughput data
+    data["fabric_throughput"] = fabricData["fabric_throughput"]
+    # update engine util
+    if "engine_util" not in engineData:
+        return jsonify(data)
+    engineUtilData = engineData["engine_util"]
+    if "device_level" in engineUtilData:
+        data["engine_util"] = engineUtilData["device_level"]
+    if "tile_level" in data:
+        for t in data["tile_level"]:
+            tileId = t.get("tile_id", None)
+            if tileId in engineUtilData:
+                t["engine_util"] = engineUtilData[tileId]
+    return jsonify(data)
 
 class GroupStatisticsSchema(Schema):
     group_id = fields.Int(metadata={"description": "Group id"})
@@ -163,6 +181,14 @@ def get_group_statistics(groupId):
             error = dict(message="Error code: {}, error message: {}".format(
                 stub.XpumResult(engineCode).name, engineMsg))
             return jsonify(error), 500
+        fabricCode, fabricMsg, fabricData = stub.getFabricStatistics(deviceId)
+        if fabricCode != 0:
+            error = dict(message="Error code: {}, error message: {}".format(
+                stub.XpumResult(fabricCode).name, fabricMsg))
+            return jsonify(error), 500
+        # update fabric throughput data
+        data["fabric_throughput"] = fabricData["fabric_throughput"]
+        # update engine util
         if "engine_util" not in engineData:
             continue
         engineUtilData = engineData["engine_util"]
