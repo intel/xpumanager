@@ -25,6 +25,7 @@ struct xpum_fabric_port_pair{
     bool healthy;
     bool enabled;
     uint32_t numaIdx;
+    std::string cpuAffinity;
     zes_fabric_port_id_t portId;
     zes_fabric_port_id_t remotePortId;
 };
@@ -58,6 +59,6 @@ class Topology {
 
     static void export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj);
     static void getBDF(std::string bdfAddress, zes_pci_address_t& pciAddress);
-    static bool numaDevice(hwloc_topology_t topology, zes_pci_address_t& address, unsigned int& numa_os_idx);
+    static bool numaDevice(hwloc_topology_t topology, zes_pci_address_t& address, unsigned int& numa_os_idx, std::string& cpuAffinity);
 };
 } // end namespace xpum

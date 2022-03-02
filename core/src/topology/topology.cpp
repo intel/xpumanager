@@ -380,6 +380,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
     
     std::string xeLinkStr("XeLink");  
     for (size_t j = 0; j < devices.size(); j++){
+        std::string cpuAffinity = "";
         unsigned int numa_os_idx = (unsigned) -1;
         auto &info = devices[j];            
         std::vector<xpum::port_info> portInfo;     
@@ -393,7 +394,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
 
         zes_pci_address_t address;
         getBDF(bdfAddress, address);
-        bNuma = numaDevice(topology, address, numa_os_idx);
+        bNuma = numaDevice(topology, address, numa_os_idx, cpuAffinity);
         if(bNuma) {
             XPUM_LOG_DEBUG("NUMA: idx {} addr {}", numa_os_idx, bdfAddress);
         }
@@ -414,6 +415,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
             xpum_fabric_port_pair portPair;    
             portPair.deviceId = stoi(info->getId());
             portPair.numaIdx = numa_os_idx;
+            portPair.cpuAffinity = cpuAffinity;
             portPair.onSubdevice = portInfo[i].portProps.onSubdevice;
             portPair.subdeviceId = portInfo[i].portProps.subdeviceId;
             portPair.portId = portInfo[i].portProps.portId;
@@ -444,7 +446,8 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
     return result;
 }
 
-bool Topology::numaDevice(hwloc_topology_t topology, zes_pci_address_t& address, unsigned int& numa_os_idx){
+bool Topology::numaDevice(hwloc_topology_t topology, zes_pci_address_t& address,
+                            unsigned int& numa_os_idx, std::string& cpuAffinity){
     hwloc_obj_t objNuma = nullptr, objPcie = nullptr;
     bool bFound = false;
     while((objNuma = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_NUMANODE, objNuma)) != nullptr){
@@ -458,6 +461,11 @@ bool Topology::numaDevice(hwloc_topology_t topology, zes_pci_address_t& address,
             && objPcie->attr->pcidev.func == address.function){
                 hwloc_obj_t obj_anc = hwloc_get_non_io_ancestor_obj(topology,objPcie);
                 if(NUMAnode == hwloc_bitmap_first(obj_anc->nodeset)){
+                    char * buffer;
+                    hwloc_bitmap_list_asprintf(&buffer, obj_anc->cpuset);
+                    cpuAffinity = buffer;
+                    free(buffer);
+
                     numa_os_idx = NUMAnode;
                     bFound = true;
                     break;

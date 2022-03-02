@@ -1554,6 +1554,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             info->mutable_localdevice()->set_numaindex(topoInfo[i].localDevice.numaIdx);
             info->mutable_localdevice()->set_onsubdevice(topoInfo[i].localDevice.onSubdevice);
             info->mutable_localdevice()->set_subdeviceid(topoInfo[i].localDevice.subdeviceId);
+            info->mutable_localdevice()->set_cpuaffinity(topoInfo[i].localDevice.cpuAffinity);
 
             info->mutable_remotedevice()->set_deviceid(topoInfo[i].remoteDevice.deviceId);
             info->mutable_remotedevice()->set_numaindex(topoInfo[i].remoteDevice.numaIdx);

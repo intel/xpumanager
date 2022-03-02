@@ -1688,6 +1688,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getXelinkTopology() {
                 componentJson["local_on_subdev"] = response.topoinfo(i).localdevice().onsubdevice();
                 componentJson["local_subdev_id"] = response.topoinfo(i).localdevice().subdeviceid();
                 componentJson["local_numa_idx"] = response.topoinfo(i).localdevice().numaindex();
+                componentJson["local_cpu_affinity"] = response.topoinfo(i).localdevice().cpuaffinity();
 
                 componentJson["remote_id"] = response.topoinfo(i).remotedevice().deviceid();
                 componentJson["remote_on_subdev"] = response.topoinfo(i).remotedevice().onsubdevice();

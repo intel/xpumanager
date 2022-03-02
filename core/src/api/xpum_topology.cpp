@@ -163,11 +163,14 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
     for(std::size_t x=0; x<fabricPorts.size(); x++) {        
         for(unsigned long y=0; y<fabricPorts.size(); y++){
             xpum_xelink_topo_info topoInfo;
+            int len;
             memset(&topoInfo, 0, sizeof(topoInfo));
             topoInfo.localDevice.deviceId = fabricPorts[x].deviceId;
             topoInfo.localDevice.numaIdx = fabricPorts[x].numaIdx;
             topoInfo.localDevice.onSubdevice = fabricPorts[x].onSubdevice;
             topoInfo.localDevice.subdeviceId = fabricPorts[x].subdeviceId;
+            len = fabricPorts[x].cpuAffinity.copy(topoInfo.localDevice.cpuAffinity, XPUM_MAX_CPU_LIST_LEN);
+            topoInfo.localDevice.cpuAffinity[len] = '\0';
 
             topoInfo.remoteDevice.deviceId = fabricPorts[y].deviceId;
             topoInfo.remoteDevice.numaIdx = fabricPorts[y].numaIdx;

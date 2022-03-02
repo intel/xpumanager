@@ -773,6 +773,7 @@ typedef struct xpum_xelink_unit{
     bool onSubdevice;
     uint32_t subdeviceId;
     uint32_t numaIdx;
+    char cpuAffinity[XPUM_MAX_CPU_LIST_LEN];
 }xpum_xelink_unit;
 
 typedef struct xpum_xelink_topo_info{

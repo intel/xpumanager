@@ -670,6 +670,7 @@ message XpumXelinkTopoInfoArray{
         bool onSubdevice = 2;
         uint32 subdeviceId = 3;
         uint32 numaIndex = 4;
+        string cpuAffinity = 5;
     }
     message XelinkTopoInfo{
         XelinkTopoUnit localDevice = 1;
