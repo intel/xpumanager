@@ -38,42 +38,34 @@ Core& Core::instance() {
 }
 
 std::shared_ptr<DeviceManagerInterface> Core::getDeviceManager() {
-    std::unique_lock<std::mutex> lock(mutex);
     return p_device_manager;
 }
 
 std::shared_ptr<DataLogicInterface> Core::getDataLogic() {
-    std::unique_lock<std::mutex> lock(mutex);
     return p_data_logic;
 }
 
 std::shared_ptr<MonitorManagerInterface> Core::getMonitorManager() {
-    std::unique_lock<std::mutex> lock(mutex);
     return p_monitor_manager;
 }
 
 std::shared_ptr<HealthManagerInterface> Core::getHealthManager() {
-    std::unique_lock<std::mutex> lock(mutex);
     return p_health_manager;
 }
 
 std::shared_ptr<GroupManagerInterface> Core::getGroupManager() {
-    std::unique_lock<std::mutex> lock(mutex);
     return p_group_manager;
 }
 
 std::shared_ptr<DiagnosticManagerInterface> Core::getDiagnosticManager() {
-    std::unique_lock<std::mutex> lock(mutex);
     return p_diagnostic_manager;
 }
 
 std::shared_ptr<PolicyManagerInterface> Core::getPolicyManager() {
-    std::unique_lock<std::mutex> lock(mutex);
     return p_policy_manager;
 }
 
 std::shared_ptr<DumpRawDataManager> Core::getDumpRawDataManager() {
-    std::unique_lock<std::mutex> lock(mutex);
     return p_dump_raw_data_manager;
 }
 
