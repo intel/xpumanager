@@ -767,7 +767,8 @@ typedef enum xpum_link_type_enum{
     XPUM_LINK_MDF,
     XPUM_LINK_XE,
     XPUM_LINK_SYS,
-    XPUM_LINK_NODE
+    XPUM_LINK_NODE,
+    XPUM_LINK_XE_TRANSMIT
 } xpum_xelink_type_t;
 
 typedef struct xpum_xelink_unit{

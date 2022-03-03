@@ -1568,18 +1568,19 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
                 linkType = "MDF"; 
             } else if (topoInfo[i].linkType == XPUM_LINK_XE) {
                 linkType = "XL"; 
+                for(int n=0; n<XPUM_MAX_XELINK_PORT;n++){
+                    info->add_linkportlist(topoInfo[i].linkPorts[n]);
+                }
             } else if (topoInfo[i].linkType == XPUM_LINK_SYS) {
                 linkType = "SYS"; 
             } else if (topoInfo[i].linkType == XPUM_LINK_NODE) {
                 linkType = "NODE"; 
+            } else if( topoInfo[i].linkType == XPUM_LINK_XE_TRANSMIT) {
+                linkType = "XL";
             } else {
                 linkType = "Unknown"; 
             }
             info->set_linktype(linkType);
-
-            for(int n=0; n<XPUM_MAX_XELINK_PORT;n++){
-                info->add_linkportlist(topoInfo[i].linkPorts[n]);
-            }
         }
     }
 

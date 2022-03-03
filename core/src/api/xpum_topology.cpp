@@ -108,8 +108,33 @@ bool operator == (const xpum_xelink_topo_info& x, const xpum_xelink_topo_info& y
         );
 }
 
+bool getXelinkTransfer(std::vector<xpum_xelink_topo_info> & topoInfos, xpum_xelink_topo_info& info){
+    for(size_t i=0; i<topoInfos.size(); i++){
+        if(topoInfos[i].localDevice.deviceId == info.localDevice.deviceId
+        && topoInfos[i].remoteDevice.deviceId == info.remoteDevice.deviceId){
+           if(topoInfos[i].linkType == XPUM_LINK_XE){
+               return true;
+           }
+        }
+    }
+
+    return false;
+}
+
+
+void setXelinkTransfer(std::vector<xpum_xelink_topo_info> & topoInfos, xpum_xelink_topo_info& info){
+    for(size_t i=0; i<topoInfos.size(); i++){
+        if(topoInfos[i].localDevice.deviceId == info.localDevice.deviceId
+        && topoInfos[i].remoteDevice.deviceId == info.remoteDevice.deviceId){
+           if(topoInfos[i].linkType == XPUM_LINK_NODE || topoInfos[i].linkType == XPUM_LINK_SYS){
+               topoInfos[i].linkType = XPUM_LINK_XE_TRANSMIT;
+           }
+        }
+    }
+}
+
 void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_topo_info& info,
-        zes_fabric_port_id_t localPort, zes_fabric_port_id_t remotePort){
+        zes_fabric_port_id_t& localPort, zes_fabric_port_id_t& remotePort){
     bool bFound = false;
     xpum_xelink_topo_info * currentInfo = nullptr;   
 
@@ -129,12 +154,15 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
 
     if(!bFound) {
         if(info.linkType == XPUM_LINK_UNKNOWN){
-            if(info.localDevice.numaIdx == info.remoteDevice.numaIdx){
+            if(getXelinkTransfer(topoInfos, info)){
+                info.linkType = XPUM_LINK_XE_TRANSMIT;
+            } else if(info.localDevice.numaIdx == info.remoteDevice.numaIdx){
                 info.linkType = XPUM_LINK_NODE;
             } else {
                 info.linkType = XPUM_LINK_SYS;
             }
         } else if (info.linkType == XPUM_LINK_XE){
+            setXelinkTransfer(topoInfos, info);
             info.linkPorts[localPort.portNumber-1] = 1;
         }
         topoInfos.push_back(info);
@@ -145,6 +173,7 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
         }
     }
 }
+
 
 xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *count)
 {
