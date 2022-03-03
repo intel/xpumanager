@@ -287,7 +287,7 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
-    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+    if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
         *count = 0;
         *begin = 0;
         *end = 0;
@@ -354,7 +354,7 @@ xpum_result_t DataLogic::getEngineUtilizations(xpum_device_id_t deviceId,
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
-    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+    if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
         *count = 0;
         return XPUM_METRIC_NOT_ENABLED;
     }
