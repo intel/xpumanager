@@ -1443,7 +1443,7 @@ xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
     }
     return XPUM_GENERIC_ERROR;
 }
-
+/*
 xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* configurable,
         xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action) {
     *available = false;
@@ -1504,6 +1504,7 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
     }
     return XPUM_GENERIC_ERROR;
 }
+*/
 ///////////////////Policy//////////////////////
 xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
     return Core::instance().getPolicyManager()->xpumSetPolicy(deviceId, policy);

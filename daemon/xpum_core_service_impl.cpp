@@ -1234,7 +1234,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     }
     int32_t power = powerLimits.sustained_limit.power / 1000;
     int32_t interval = powerLimits.sustained_limit.interval;
-
+   /*
     bool available;
     bool configurable;
     xpum_ecc_state_t current, pending;
@@ -1244,7 +1244,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     if (res != XPUM_OK) {
         response->set_errormsg("Error");
         return grpc::Status::OK;
-    }
+    }*/
 
     response->set_deviceid(deviceId);
 
@@ -1387,11 +1387,11 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         tileData->set_portbeaconingon(beaconing_on_str);
         tileData->set_portbeaconingoff(beaconing_off_str);
 
-        tileData->set_memoryeccavailable(available);
+        /*tileData->set_memoryeccavailable(available);
         tileData->set_memoryeccconfigurable(configurable);
         tileData->set_memoryeccstate(eccStateToString(current));
         tileData->set_memoryeccpendingstate(eccStateToString(pending));
-        tileData->set_memoryeccpendingaction(eccActionToString(action));
+        tileData->set_memoryeccpendingaction(eccActionToString(action));*/
 
         /*
         for (uint32_t i = 0; i < powerRangeCount; i++) {
@@ -1482,7 +1482,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
 }
 //
 ::grpc::Status XpumCoreServiceImpl::setDeviceMemoryEccState(::grpc::ServerContext* context, const ::ConfigDeviceMemoryEccStateRequest* request, ::ConfigDeviceMemoryEccStateResultData* response) {
-    xpum_result_t res;
+   /* xpum_result_t res;
     xpum_device_id_t deviceId = request->deviceid();
     bool available;
     bool configurable;
@@ -1495,7 +1495,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
         newState = XPUM_ECC_STATE_DISABLED;
     }
 
-    res = xpumSetEccState(deviceId, newState, &available, &configurable, &current, &pending, &action);
+    //res = xpumSetEccState(deviceId, newState, &available, &configurable, &current, &pending, &action);
     response->set_available(available);
     response->set_configurable(configurable);
     response->set_currentstate(eccStateToString(current));
@@ -1508,6 +1508,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             response->set_errormsg("Error");
         }
     }
+   */
     return grpc::Status::OK;
 }
 

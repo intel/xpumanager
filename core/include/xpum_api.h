@@ -481,8 +481,8 @@ xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
-xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* configurable,
-        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);
+/*xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* configurable,
+        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);*/
 /**
  * @brief Set the memory Ecc state of the device
  * @details This function is used to set the memory Ecc state of the device
@@ -498,8 +498,8 @@ xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* 
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
-xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newState, bool* available, bool* configurable,
-        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);
+/*xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newState, bool* available, bool* configurable,
+        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);*/
 
 /** @} */ // Closing for CONFIGURATION_API
 

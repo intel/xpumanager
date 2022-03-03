@@ -70,8 +70,8 @@ def getConfig(deviceId, tileId):
         else:
             tiledata['memory_ecc_configurable'] = "False"
         '''
-        tiledata['memory_ecc_current_state'] = resp.tileConfigData[i].memoryEccState
-        tiledata['memory_ecc_pending_state'] = resp.tileConfigData[i].memoryEccPendingState
+       # tiledata['memory_ecc_current_state'] = resp.tileConfigData[i].memoryEccState
+       # tiledata['memory_ecc_pending_state'] = resp.tileConfigData[i].memoryEccPendingState
         #tiledata['memory_ecc_pending_action'] = resp.tileConfigData[i].memoryEccPendingAction
         tilelist.append(tiledata)
     data['tile_config_data'] = tilelist

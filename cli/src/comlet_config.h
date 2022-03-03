@@ -14,7 +14,7 @@ struct ComletConfigOptions {
     std::string performancefactor;
     std::string xelinkportEnable;
     std::string xelinkportBeaconing;
-    std::string setecc;
+    std::string setecc = "";
     //bool resetDevice = false;
     
     //std::string schedulerTimeslice ="";
