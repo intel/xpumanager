@@ -291,7 +291,7 @@ void Topology::export_cb(void *reserved, hwloc_topology_t topo, hwloc_obj_t obj)
     int err;
     size_t len = strlen((char*)obj->userdata);
     err = hwloc_export_obj_userdata(reserved, topo, obj, "Device Name", (char*)obj->userdata, len);
-    XPUM_LOG_INFO("hwloc_export_obj_userdata  data-{} len-{} result-{}", (char*)obj->userdata, len, err);
+    XPUM_LOG_DEBUG("hwloc_export_obj_userdata  data-{} len-{} result-{}", (char*)obj->userdata, len, err);
 }
 
 xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pair, GraphicDevice>& device_map){

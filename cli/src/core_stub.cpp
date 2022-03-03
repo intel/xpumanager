@@ -1684,16 +1684,14 @@ std::unique_ptr<nlohmann::json> CoreStub::getXelinkTopology() {
             for (int i{0}; i < response.topoinfo_size(); ++i) {
                 auto componentJson = nlohmann::json();
 
-                componentJson["local_id"] = response.topoinfo(i).localdevice().deviceid();
-                componentJson["local_on_subdev"] = response.topoinfo(i).localdevice().onsubdevice();
-                componentJson["local_subdev_id"] = response.topoinfo(i).localdevice().subdeviceid();
-                componentJson["local_numa_idx"] = response.topoinfo(i).localdevice().numaindex();
+                componentJson["local_device_id"] = response.topoinfo(i).localdevice().deviceid();
+                componentJson["local_on_subdevice"] = response.topoinfo(i).localdevice().onsubdevice();
+                componentJson["local_subdevice_id"] = response.topoinfo(i).localdevice().subdeviceid();
+                componentJson["local_numa_index"] = response.topoinfo(i).localdevice().numaindex();
                 componentJson["local_cpu_affinity"] = response.topoinfo(i).localdevice().cpuaffinity();
 
-                componentJson["remote_id"] = response.topoinfo(i).remotedevice().deviceid();
-                componentJson["remote_on_subdev"] = response.topoinfo(i).remotedevice().onsubdevice();
-                componentJson["remote_subdev_id"] = response.topoinfo(i).remotedevice().subdeviceid();
-                componentJson["localremote_numa_idx"] = response.topoinfo(i).remotedevice().numaindex();
+                componentJson["remote_device_id"] = response.topoinfo(i).remotedevice().deviceid();
+                componentJson["remote_subdevice_id"] = response.topoinfo(i).remotedevice().subdeviceid();
 
                 componentJson["link_type"] = response.topoinfo(i).linktype();
 

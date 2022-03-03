@@ -15,7 +15,27 @@ def getTopology(deviceId):
     data["switch_list"] = [s.switchDevicePath for s in resp.switchInfo]
   return 0, "OK", data
 
-
+def getTopoXelink():
+  resp = stub.getXelinkTopology(empty_pb2.Empty())
+  if len(resp.errorMsg) != 0:
+    return 1, resp.errorMsg, None
+  
+  data = []
+  for xelink in resp.topoInfo:
+    t = dict()
+    t["local_device_id"] = xelink.localDevice.deviceId    
+    t["local_on_subdevice"] = xelink.localDevice.onSubdevice
+    t["local_subdevice_id"] = xelink.localDevice.subdeviceId    
+    t["local_numa_index"] = xelink.localDevice.numaIndex
+    t["local_cpu_affinity"] = xelink.localDevice.cpuAffinity
+    t["remote_device_id"] = xelink.remoteDevice.deviceId    
+    t["remote_subdevice_id"] = xelink.remoteDevice.subdeviceId
+    t["link_type"] = xelink.linkType
+    t["port_list"] = [port for port in xelink.linkPortList]
+    
+    data.append(t)
+  return 0, "OK", data
+  
 def exportTopology():
   try:
     resp = stub.getTopoXMLBuffer(empty_pb2.Empty())
