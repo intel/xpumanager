@@ -279,8 +279,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
 
     // get fabric stats
     auto fabricStatsJson = getFabricStatistics(deviceId);
-    if (fabricStatsJson->contains("error")) {
-        return std::make_unique<nlohmann::json>(*fabricStatsJson);
+    if (!fabricStatsJson->contains("error")) {
+        json->update(*fabricStatsJson);
+        // return std::make_unique<nlohmann::json>(*fabricStatsJson);
     }
 
     std::vector<nlohmann::json> deviceJsonList;
@@ -345,8 +346,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
         (*json)["tile_level"] = tileLevelStatsDataList;
 
     (*json)["device_id"] = deviceId;
-
-    json->update(*fabricStatsJson);
 
     return json;
 }
@@ -465,10 +464,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
         }
         // get fabric stats
         auto fabricStatsJson = getFabricStatistics(deviceId);
-        if (fabricStatsJson->contains("error")) {
-            return std::make_unique<nlohmann::json>(*fabricStatsJson);
+        if (!fabricStatsJson->contains("error")) {
+            // return std::make_unique<nlohmann::json>(*fabricStatsJson);
+            data.update(*fabricStatsJson);
         }
-        data.update(*fabricStatsJson);
         datas.push_back(data);
     }
 

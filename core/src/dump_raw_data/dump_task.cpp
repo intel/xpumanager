@@ -17,16 +17,17 @@ using xpum::dump::engineNameMap;
 
 namespace xpum {
 
-
 DumpRawDataTask::DumpRawDataTask(xpum_dump_task_id_t taskId,
                                  xpum_device_id_t deviceId,
                                  xpum_device_tile_id_t tileId,
                                  std::string dumpFilePath,
-                                 std::shared_ptr<ScheduledThreadPool> pThreadPool) : taskId(taskId),
-                                                                                      deviceId(deviceId),
-                                                                                      tileId(tileId),
-                                                                                      dumpFilePath(dumpFilePath),
-                                                                                      pThreadPool(pThreadPool) {
+                                 std::shared_ptr<ScheduledThreadPool> pThreadPool)
+    : taskId(taskId),
+      deviceId(deviceId),
+      tileId(tileId),
+      dumpFilePath(dumpFilePath),
+      pThreadPool(pThreadPool) {
+    p_data_logic = xpum::Core::instance().getDataLogic();
 }
 
 DumpRawDataTask::~DumpRawDataTask() {
@@ -48,14 +49,6 @@ void DumpRawDataTask::writeToFile(std::string text) {
 void DumpRawDataTask::writeHeader() {
     std::ofstream outfile;
     outfile.open(dumpFilePath.c_str(), std::ios::out | std::ios::app);
-    // outfile << "Timestamp,DeviceId";
-    // if (tileId != -1) {
-    //     outfile << ",TileId";
-    // }
-    // for (auto metricsType : dumpTypeList) {
-    //     auto pOption = getConfigOptionPointer(metricsType);
-    //     outfile << "," << pOption->name;
-    // }
     for (std::size_t i = 0; i < columnList.size(); i++) {
         auto dc = columnList[i];
         outfile << dc.header;
@@ -107,11 +100,21 @@ void DumpRawDataTask::buildColumns() {
     // get engine count
     auto engineCountList = getDeviceAndTileEngineCount(deviceId);
 
-    std::vector<xpum::EngineCountData>* pEngineCountList;
+    std::vector<xpum::EngineCountData>* pEngineCountList = nullptr;
 
     for (auto& ec : engineCountList) {
         if ((tileId == -1 && !ec.isTileLevel) || (ec.isTileLevel && (tileId == ec.tileId))) {
             pEngineCountList = &ec.engineCountList;
+            break;
+        }
+    }
+
+    // get fabric count
+    auto fabricCountList = getDeviceAndTileFabricCount(deviceId);
+    std::vector<xpum::FabricLinkInfo_t>* pFabricCountList = nullptr;
+    for (auto& fc : fabricCountList) {
+        if ((tileId == -1 && !fc.isTileLevel) || (fc.isTileLevel && (tileId == fc.tileId))) {
+            pFabricCountList = &fc.dataList;
             break;
         }
     }
@@ -165,15 +168,55 @@ void DumpRawDataTask::buildColumns() {
                                           }});
                 }
             }
+        } else if(config.optionType == xpum::dump::DUMP_OPTION_FABRIC && pFabricCountList){
+            for (auto& fc : *pFabricCountList) {
+                std::stringstream ss;
+                std::string key;
+                std::string header;
+                // tx
+                ss << deviceId << "/" << fc.tile_id;
+                ss << "->" << fc.remote_device_id << "/" << fc.remote_tile_id;
+                key = ss.str();
+                header = "XL " + key + " (kB/s)";
+                columnList.push_back({header,
+                                      [config, key, p_this]() {
+                                          auto& m = p_this->fabricRawDataMap;
+                                          auto it = m.find(key);
+                                          std::string value;
+                                          if (it == m.end()) {
+                                              return value;
+                                          }
+                                          auto& data = it->second;
+                                          return getScaledValue(data.value, data.scale);
+                                      }});
+                // rx
+                ss.clear();
+                ss << fc.remote_device_id << "/" << fc.remote_tile_id;
+                ss << "->";
+                ss << deviceId << "/" << fc.tile_id;
+                key = ss.str();
+                header = "XL " + key + " (kB/s)";
+                columnList.push_back({header,
+                                      [config, key, p_this]() {
+                                          auto& m = p_this->fabricRawDataMap;
+                                          auto it = m.find(key);
+                                          std::string value;
+                                          if (it == m.end()) {
+                                              return value;
+                                          }
+                                          auto& data = it->second;
+                                          return getScaledValue(data.value, data.scale);
+                                      }});
+            }
         }
     }
 }
 
 void DumpRawDataTask::updateData() {
-    auto p_data_logic = xpum::Core::instance().getDataLogic();
     auto p_this = shared_from_this();
+    auto p_data_logic = p_this->p_data_logic;
 
-    // get stats data
+    // get raw data
     int metricsCount;
     p_data_logic->getLatestMetrics(p_this->deviceId,nullptr, &metricsCount);
     std::vector<xpum_device_metrics_t> deviceMetricsList(metricsCount);
@@ -191,7 +234,7 @@ void DumpRawDataTask::updateData() {
         }
     }
 
-    // get engine stats data
+    // get engine raw data
     engineUtilRawDataMap.clear();
 
     uint32_t engineUtilRawDataSize;
@@ -208,6 +251,29 @@ void DumpRawDataTask::updateData() {
             }
             engineUtilRawDataMap[engineType][engineUtilRawData.index] = engineUtilRawData;
         }
+    }
+
+    // get fabric raw data
+    fabricRawDataMap.clear();
+
+    uint32_t fabricRawDataSize;
+    p_data_logic->getFabricThroughput(p_this->deviceId, nullptr, &fabricRawDataSize);
+    std::vector<xpum_device_fabric_throughput_metric_t> fabricRawDataList(fabricRawDataSize);
+    p_data_logic->getFabricThroughput(p_this->deviceId, fabricRawDataList.data(), &fabricRawDataSize);
+
+    for (auto fabricRawData : fabricRawDataList) {
+        std::stringstream ss;
+        if (fabricRawData.type == XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED) {
+            ss << p_this->deviceId << "/" << fabricRawData.tile_id;
+            ss << "->";
+            ss << fabricRawData.remote_device_id << "/" << fabricRawData.remote_device_tile_id;
+        } else {
+            ss << fabricRawData.remote_device_id << "/" << fabricRawData.remote_device_tile_id;
+            ss << "->";
+            ss << p_this->deviceId << "/" << fabricRawData.tile_id;
+        }
+        std::string key = ss.str();
+        fabricRawDataMap[key] = fabricRawData;
     }
 }
 

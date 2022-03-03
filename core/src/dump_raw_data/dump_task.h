@@ -1,11 +1,12 @@
 #pragma once
 
 #include <fstream>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <map>
 
+#include "data_logic/data_logic_interface.h"
 #include "infrastructure/scheduled_thread_pool.h"
 #include "xpum_structs.h"
 
@@ -35,16 +36,18 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
     std::string dumpFilePath;
     uint64_t begin;
 
-    uint64_t dataLastCachedTime[XPUM_STATS_MAX + 5];
    private:
     std::shared_ptr<ScheduledThreadPool> pThreadPool;
     std::shared_ptr<ScheduledThreadPoolTask> pThreadPoolTask;
     std::function<void()> lambda;
 
+    std::shared_ptr<xpum::DataLogicInterface> p_data_logic;
+
     std::vector<DumpColumn> columnList;
 
     std::map<xpum_stats_type_t,xpum_device_metric_data_t> rawDataMap;
     std::map<xpum_engine_type_t, std::map<int, xpum_device_engine_metric_t>> engineUtilRawDataMap;
+    std::map<std::string, xpum_device_fabric_throughput_metric_t> fabricRawDataMap;
 
    public:
     DumpRawDataTask(xpum_dump_task_id_t taskId,
