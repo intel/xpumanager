@@ -279,11 +279,20 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
                                     uint64_t session_id) {
     std::string device_id = std::to_string(deviceId);
     if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
+        *count = 0;
+        *begin = 0;
+        *end = 0;
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        *count = 0;
+        *begin = 0;
+        *end = 0;
+        return XPUM_METRIC_NOT_ENABLED;
+    }
     std::vector<xpum::DeviceCapability> capabilities;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
     for(auto metric = metric_types.begin(); metric != metric_types.end();) {
@@ -294,7 +303,10 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
         }
     }
     if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
-        return XPUM_GENERIC_ERROR;
+        *count = 0;
+        *begin = 0;
+        *end = 0;
+        return XPUM_METRIC_NOT_SUPPORTED;
     }
 
     *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
@@ -336,11 +348,16 @@ xpum_result_t DataLogic::getEngineUtilizations(xpum_device_id_t deviceId,
                                                uint32_t *count) {
     std::string device_id = std::to_string(deviceId);
     if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
+        *count = 0;
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        *count = 0;
+        return XPUM_METRIC_NOT_ENABLED;
+    }
     std::vector<xpum::DeviceCapability> capabilities;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
     for(auto metric = metric_types.begin(); metric != metric_types.end();) {
@@ -351,7 +368,8 @@ xpum_result_t DataLogic::getEngineUtilizations(xpum_device_id_t deviceId,
         }
     }
     if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
-        return XPUM_GENERIC_ERROR;
+        *count = 0;
+        return XPUM_METRIC_NOT_SUPPORTED;
     }
 
     *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
@@ -421,10 +439,19 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
 
     std::string device_id = std::to_string(deviceId);
     if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
+        *count = 0;
+        *begin = 0;
+        *end = 0;
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     auto metric_types = Configuration::getEnabledMetrics();
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        *count = 0;
+        *begin = 0;
+        *end = 0;
+        return XPUM_METRIC_NOT_ENABLED;
+    }
     std::vector<xpum::DeviceCapability> capabilities;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
     for(auto metric = metric_types.begin(); metric != metric_types.end();) {
@@ -435,7 +462,10 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
         }
     }
     if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
-        return XPUM_GENERIC_ERROR;
+        *count = 0;
+        *begin = 0;
+        *end = 0;
+        return XPUM_METRIC_NOT_SUPPORTED;
     }
 
     *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfoCount();
@@ -478,10 +508,15 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
 
     std::string device_id = std::to_string(deviceId);
     if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
+        *count = 0;
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     auto metric_types = Configuration::getEnabledMetrics();
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        *count = 0;
+        return XPUM_METRIC_NOT_ENABLED;
+    }
     std::vector<xpum::DeviceCapability> capabilities;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
     for(auto metric = metric_types.begin(); metric != metric_types.end();) {
@@ -492,7 +527,8 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
         }
     }
     if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
-        return XPUM_GENERIC_ERROR;
+        *count = 0;
+        return XPUM_METRIC_NOT_SUPPORTED;
     }
 
     *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfoCount();
