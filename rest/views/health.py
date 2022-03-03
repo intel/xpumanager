@@ -5,7 +5,7 @@ from marshmallow import Schema, fields
 
 class ThresholdSchema(Schema):
     custom_threshold = fields.Int(
-        metadata={"description": "The custom threshold for coreTemperature, memoryTemperature or power"})
+        metadata={"description": "The custom threshold for coreTemperature in celsius degree, memoryTemperature in celsius degree or power in watts"})
 
 class HealthComponentSchema(Schema):
     description = fields.Str(
@@ -19,9 +19,9 @@ class HealthConfigurableComponentSchemaBase(Schema):
     status = fields.Int(
         metadata={"description": "The status for health"})
     throttle_threshold = fields.Int(
-        metadata={"description": "The throttle threshold for health"})
+        metadata={"description": "The throttle threshold in watts for health"})
     custom_threshold = fields.Int(
-            metadata={"description": "The custom threshold for health"})
+            metadata={"description": "The custom threshold in watts for health"})
 
 class HealthConfigurableComponentSchemaExt(Schema):
     description = fields.Str(
@@ -29,11 +29,11 @@ class HealthConfigurableComponentSchemaExt(Schema):
     status = fields.Int(
         metadata={"description": "The status for health"})
     throttle_threshold = fields.Int(
-        metadata={"description": "The throttle threshold for health"})
+        metadata={"description": "The throttle threshold in celsius degree for health"})
     shutdown_threshold = fields.Int(
-        metadata={"description": "The shutdown threshold for health"})
+        metadata={"description": "The shutdown threshold in celsius degree for health"})
     custom_threshold = fields.Int(
-            metadata={"description": "The custom threshold for health"})
+            metadata={"description": "The custom threshold in celsius degree for health"})
 
 class HealthSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})

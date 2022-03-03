@@ -219,15 +219,15 @@ typedef struct xpum_group_info_t {
 /**************************************************************************/
 
 typedef enum xpum_health_config_type_enum {
-    XPUM_HEALTH_CORE_THEARMAL_LIMIT = 0,
-    XPUM_HEALTH_MEMORY_THEARMAL_LIMIT,
-    XPUM_HEALTH_POWER_LIMIT
+    XPUM_HEALTH_CORE_THEARMAL_LIMIT = 0,    ///< Threshold in celsius degree
+    XPUM_HEALTH_MEMORY_THEARMAL_LIMIT,      ///< Threshold in celsius degree
+    XPUM_HEALTH_POWER_LIMIT                 ///< Threshold in watts
 } xpum_health_config_type_t;
 
 typedef enum xpum_health_type_enum {
-    XPUM_HEALTH_CORE_THERMAL = 0,
-    XPUM_HEALTH_MEMORY_THEARMAL,
-    XPUM_HEALTH_POWER,
+    XPUM_HEALTH_CORE_THERMAL = 0,   
+    XPUM_HEALTH_MEMORY_THEARMAL,    
+    XPUM_HEALTH_POWER,              
     XPUM_HEALTH_MEMORY,
     XPUM_HEALTH_FABRIC_PORT,
 } xpum_health_type_t;
@@ -240,12 +240,12 @@ typedef enum xpum_health_status_enum {
 } xpum_health_status_t;
 
 typedef struct xpum_health_data_t {
-    xpum_device_id_t deviceId;
-    xpum_health_type_t type;
-    xpum_health_status_t status;
-    char description[XPUM_MAX_STR_LENGTH];
-    uint64_t throttleThreshold;
-    uint64_t shutdownThreshold;
+    xpum_device_id_t deviceId;                  ///< Device ID
+    xpum_health_type_t type;                    ///< Health type
+    xpum_health_status_t status;                ///< Health status
+    char description[XPUM_MAX_STR_LENGTH];      ///< Description for health
+    uint64_t throttleThreshold;                 ///< Throttle threshold, temperature in celsius degree and power in watts
+    uint64_t shutdownThreshold;                 ///< Shutdown threshold, temperature in celsius degree and power in watts
 } xpum_health_data_t;
 
 /**************************************************************************/
