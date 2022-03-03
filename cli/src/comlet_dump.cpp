@@ -310,7 +310,7 @@ void ComletDump::printByLine(std::ostream &out) {
                                                     return std::string();
                                                 }});
                     // rx
-                    ss.clear();
+                    ss.str("");
                     ss << obj["remote_device_id"] << "/" << obj["remote_tile_id"];
                     ss << "->";
                     ss << deviceId << "/" << obj["tile_id"];

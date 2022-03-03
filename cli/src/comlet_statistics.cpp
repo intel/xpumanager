@@ -348,13 +348,17 @@ std::string getXelinkThroughput(std::shared_ptr<nlohmann::json> jsonPtr) {
         return res;
     std::stringstream ss;
     for (auto& obj : (*jsonPtr)["fabric_throughput"]) {
-        ss.clear();
-        ss << obj["name"] << ": ";
+        ss.str("");
+        auto key = obj["name"].get<std::string>();
+        int i = key.find("->");
+        key.insert(i + 2, " ");
+        key.insert(i, " ");
+        ss << key << ": ";
         ss << "avg: " << obj["avg"] << ", ";
         ss << "min: " << obj["min"] << ", ";
         ss << "max: " << obj["max"] << ", ";
         ss << "current: " << obj["value"];
-        res = ss.str() + "\n";
+        res += ss.str() + "\n";
     }
     if (!res.empty()) res.pop_back();
     return res;

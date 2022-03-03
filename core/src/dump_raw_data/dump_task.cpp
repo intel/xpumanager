@@ -190,7 +190,7 @@ void DumpRawDataTask::buildColumns() {
                                           return getScaledValue(data.value, data.scale);
                                       }});
                 // rx
-                ss.clear();
+                ss.str("");
                 ss << fc.remote_device_id << "/" << fc.remote_tile_id;
                 ss << "->";
                 ss << deviceId << "/" << fc.tile_id;
