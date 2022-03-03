@@ -103,7 +103,9 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
     XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
-    XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT
+    XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT,
+    XPUM_METRIC_NOT_SUPPORTED,              ///< Unsupported metric
+    XPUM_METRIC_NOT_ENABLED,                ///< Unenabled metric
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
