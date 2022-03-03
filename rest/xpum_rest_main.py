@@ -152,6 +152,8 @@ def main(*args, **kwargs):
                     view_func=auth.login_required(topology.get_topology))
     app.add_url_rule('/rest/v1/topology', methods=['GET'],
                     view_func=auth.login_required(topology.export_topology))
+    app.add_url_rule('/rest/v1/topology/xelink', methods=['GET'],
+                    view_func=auth.login_required(topology.get_topo_xelink))
 
     # dump raw data
     app.add_url_rule('/rest/v1/dump', methods=['POST'],
@@ -224,4 +226,4 @@ if __name__ == '__main__':
     else:
         app = main()
     app.debug = True
-    app.run(host='0.0.0.0', port=30000, use_reloader=False)
+    app.run(host='0.0.0.0', port=30001, use_reloader=False)

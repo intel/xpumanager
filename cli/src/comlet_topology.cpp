@@ -35,11 +35,11 @@ void ComletTopology::setupOptions() {
     auto e = addOption("-f,--file", this->opts->xmlFile, 
     "Generate the system topology with the GPU info to a XML file.");
     auto m = addFlag("-m,--matrix", this->opts->xeLink, "Print the CPU/GPU topology matrix.\n"
-    " S: Self\n"
-    " XL#: Connected with Xe Link.  Xe Link LAN count is also provided.\n"
-    " SYS: Connected with PCIe between NUMA nodes\n"
-    " NODE: Connected with PCIe within a NUMA node\n"
-    " MDF: Connected with Multi-Die Fabric Interface");
+    "  S: Self\n"
+    "  XL#: Connected with Xe Link.  Xe Link LAN count is also provided.\n"
+    "  SYS: Connected with PCIe between NUMA nodes\n"
+    "  NODE: Connected with PCIe within a NUMA node\n"
+    "  MDF: Connected with Multi-Die Fabric Interface");
     d->excludes(e);
     d->excludes(m);
     e->excludes(d);
