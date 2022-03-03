@@ -121,19 +121,20 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
         }
     }
 
+    if(info.localDevice == info.remoteDevice){
+        info.linkType = XPUM_LINK_SELF;
+    } else if(localPort.fabricId == remotePort.fabricId){
+        info.linkType = XPUM_LINK_MDF;
+    }
+
     if(!bFound) {
-        if(info.linkType != XPUM_LINK_XE){
-            if(info.localDevice == info.remoteDevice){
-                info.linkType = XPUM_LINK_SELF;
-            }
-            else if(localPort.fabricId == remotePort.fabricId){
-                info.linkType = XPUM_LINK_MDF;
-            } else if(info.localDevice.numaIdx == info.remoteDevice.numaIdx){
+        if(info.linkType == XPUM_LINK_UNKNOWN){
+            if(info.localDevice.numaIdx == info.remoteDevice.numaIdx){
                 info.linkType = XPUM_LINK_NODE;
             } else {
                 info.linkType = XPUM_LINK_SYS;
             }
-        } else {
+        } else if (info.linkType == XPUM_LINK_XE){
             info.linkPorts[localPort.portNumber-1] = 1;
         }
         topoInfos.push_back(info);

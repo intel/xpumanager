@@ -148,8 +148,8 @@ void ComletTopology::printXelinkTable(const nlohmann::json &table){
     int rowsize = 20;
 
     for (int i=0; i<instance; i++) {
-        title[i] = "GPU " + getKeyNumberValue("remote_id", table[i]) + "/" 
-            + getKeyNumberValue("remote_subdev_id", table[i]);
+        title[i] = "GPU " + getKeyNumberValue("remote_device_id", table[i]) + "/" 
+            + getKeyNumberValue("remote_subdevice_id", table[i]);
     }    
 
     printHead(title, instance, headsize, rowsize);
