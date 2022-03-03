@@ -168,6 +168,8 @@ std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId) 
 
     uint32_t count;
     Core::instance().getDataLogic()->getFabricLinkInfo(deviceId, nullptr, &count);
+    if (count <= 0)
+        return res;
     std::vector<FabricLinkInfo> info(count);
     Core::instance().getDataLogic()->getFabricLinkInfo(deviceId, info.data(), &count);
 
@@ -190,7 +192,8 @@ std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId) 
                 if (d.tile_id == tileId)
                     fc.dataList.push_back(d);
             }
-            res.push_back(fc);
+            if (fc.dataList.size() > 0)
+                res.push_back(fc);
         }
     }
     return res;
