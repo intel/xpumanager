@@ -123,7 +123,7 @@ std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
 
     if (engineResponse.errormsg().length() != 0) {
         json["error"] = engineResponse.errormsg();
-        std::make_shared<nlohmann::json>(json);
+        return std::make_shared<nlohmann::json>(json);
     }
 
     // engine data
