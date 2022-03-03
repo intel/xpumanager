@@ -217,7 +217,7 @@ void DumpRawDataTask::updateData() {
     auto p_data_logic = p_this->p_data_logic;
 
     // get raw data
-    int metricsCount;
+    int metricsCount = 0;
     p_data_logic->getLatestMetrics(p_this->deviceId,nullptr, &metricsCount);
     std::vector<xpum_device_metrics_t> deviceMetricsList(metricsCount);
     p_data_logic->getLatestMetrics(p_this->deviceId, deviceMetricsList.data(), &metricsCount);
@@ -237,7 +237,7 @@ void DumpRawDataTask::updateData() {
     // get engine raw data
     engineUtilRawDataMap.clear();
 
-    uint32_t engineUtilRawDataSize;
+    uint32_t engineUtilRawDataSize = 0;
 
     p_data_logic->getEngineUtilizations(p_this->deviceId, nullptr, &engineUtilRawDataSize);
     std::vector<xpum_device_engine_metric_t> engineUtilRawDataList(engineUtilRawDataSize);
@@ -256,7 +256,7 @@ void DumpRawDataTask::updateData() {
     // get fabric raw data
     fabricRawDataMap.clear();
 
-    uint32_t fabricRawDataSize;
+    uint32_t fabricRawDataSize = 0;
     p_data_logic->getFabricThroughput(p_this->deviceId, nullptr, &fabricRawDataSize);
     std::vector<xpum_device_fabric_throughput_metric_t> fabricRawDataList(fabricRawDataSize);
     p_data_logic->getFabricThroughput(p_this->deviceId, fabricRawDataList.data(), &fabricRawDataSize);
