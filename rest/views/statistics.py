@@ -116,11 +116,16 @@ def get_statistics(deviceId):
         return jsonify(error), 500
     fabricCode, fabricMsg, fabricData = stub.getFabricStatistics(deviceId)
     if fabricCode != 0:
-        error = dict(message="Error code: {}, error message: {}".format(
-            stub.XpumResult(fabricCode).name, fabricMsg))
-        return jsonify(error), 500
+        error_name = stub.XpumResult(fabricCode).name
+        if error_name == "XPUM_METRIC_NOT_SUPPORTED" or error_name == "XPUM_METRIC_NOT_ENABLED":
+            pass
+        else:
+            error = dict(message="Error code: {}, error message: {}".format(
+                stub.XpumResult(fabricCode).name, fabricMsg))
+            return jsonify(error), 500
     # update fabric throughput data
-    data["fabric_throughput"] = fabricData["fabric_throughput"]
+    if fabricData is not None and "fabric_throughput" in fabricData:
+        data["fabric_throughput"] = fabricData["fabric_throughput"]
     # update engine util
     if "engine_util" not in engineData:
         return jsonify(data)
