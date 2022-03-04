@@ -122,6 +122,8 @@ std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
     }
 
     if (engineResponse.errormsg().length() != 0) {
+        if (engineResponse.status() == XPUM_METRIC_NOT_SUPPORTED || engineResponse.status() == XPUM_METRIC_NOT_ENABLED)
+            return std::make_shared<nlohmann::json>();
         json["error"] = engineResponse.errormsg();
         return std::make_shared<nlohmann::json>(json);
     }
@@ -213,6 +215,8 @@ std::shared_ptr<nlohmann::json> CoreStub::getFabricStatistics(int deviceId) {
         return std::make_shared<nlohmann::json>(json);
     }
     if (response.errormsg().length() != 0) {
+        if (response.status() == XPUM_METRIC_NOT_SUPPORTED || response.status() == XPUM_METRIC_NOT_ENABLED)
+            return std::make_shared<nlohmann::json>();
         json["error"] = response.errormsg();
         return std::make_shared<nlohmann::json>(json);
     }
@@ -279,7 +283,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
 
     // get fabric stats
     auto fabricStatsJson = getFabricStatistics(deviceId);
-    if (!fabricStatsJson->contains("error")) {
+    if (!fabricStatsJson->contains("error") && !fabricStatsJson->empty()) {
         json->update(*fabricStatsJson);
         // return std::make_unique<nlohmann::json>(*fabricStatsJson);
     }
@@ -464,7 +468,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
         }
         // get fabric stats
         auto fabricStatsJson = getFabricStatistics(deviceId);
-        if (!fabricStatsJson->contains("error")) {
+        if (!fabricStatsJson->contains("error") && !fabricStatsJson->empty()) {
             // return std::make_unique<nlohmann::json>(*fabricStatsJson);
             data.update(*fabricStatsJson);
         }
