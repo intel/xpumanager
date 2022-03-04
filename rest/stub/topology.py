@@ -31,7 +31,8 @@ def getTopoXelink():
     t["remote_device_id"] = xelink.remoteDevice.deviceId    
     t["remote_subdevice_id"] = xelink.remoteDevice.subdeviceId
     t["link_type"] = xelink.linkType
-    t["port_list"] = [port for port in xelink.linkPortList]
+    if len(xelink.linkPortList) > 0:
+      t["port_list"] = [port for port in xelink.linkPortList]
     
     data.append(t)
   return 0, "OK", data

@@ -107,6 +107,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName) {
     name.set_name(groupName);
     grpc::Status status = stub->groupCreate(&context, name, &response);
     if (status.ok() && response.errormsg().length() == 0) {
+        XPUM_LOG_AUDIT("Succeed to create group %d,%s", response.id(), groupName);
         (*json)["group_id"] = response.id();
         (*json)["group_name"] = response.groupname();
         (*json)["device_count"] = response.count();
@@ -119,6 +120,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName) {
         (*json)["device_id_list"] = deviceIdList;
         
     } else {
+        XPUM_LOG_AUDIT("Fail to create group %s", groupName);
         (*json)["error"] = response.errormsg();
     }
     return json;
@@ -134,9 +136,10 @@ std::unique_ptr<nlohmann::json> CoreStub::groupDelete(int groupId) {
     grpc::Status status = stub->groupDestory(&context, id, &response);
     if (status.ok() && response.errormsg().length() == 0) {
         (*json)["group_id"] = response.id();
-
+        XPUM_LOG_AUDIT("Succeed to delete group %d", groupId);
     } else {
         (*json)["error"] = response.errormsg();
+        XPUM_LOG_AUDIT("Fail to delete group %d", groupId);
     }
     return json;
 }
@@ -218,6 +221,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
     grpc::Status status = stub->groupAddDevice(&context, groupAR, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
+            XPUM_LOG_AUDIT("Succeed to add device(%d) to group %d", deviceId, groupId);
             (*json)["group_id"] = groupId;
             (*json)["group_name"] = response.groupname();
             (*json)["device_count"] = response.count();
@@ -228,11 +232,14 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
             }
 
             (*json)["device_id_list"] = deviceIdList;
+            
         } else {
+            XPUM_LOG_AUDIT("Fail to add device(%d) to group %d", deviceId, groupId);
             (*json)["device_id"] = deviceId;
             (*json)["error"] = response.errormsg();
         }
     } else {
+        XPUM_LOG_AUDIT("Fail to add device(%d) to group %d", deviceId, groupId);
         (*json)["device_id"] = deviceId;
         (*json)["error"] = response.errormsg();
     }
@@ -250,6 +257,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
     grpc::Status status = stub->groupRemoveDevice(&context, groupAR, &response);
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
+            XPUM_LOG_AUDIT("Succeed to remove device(%d) from group %d", deviceId, groupId);
             (*json)["group_id"] = groupId;
             (*json)["group_name"] = response.groupname();
             (*json)["device_count"] = response.count();
@@ -261,10 +269,12 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
 
             (*json)["device_id_list"] = deviceIdList;
         } else {
+            XPUM_LOG_AUDIT("Fail to remove device(%d) from group %d", deviceId, groupId);
             (*json)["device_id"] = deviceId;
             (*json)["error"] = response.errormsg();
         }
     } else {
+        XPUM_LOG_AUDIT("Fail to remove device(%d) from group %d", deviceId, groupId);
         (*json)["device_id"] = deviceId;
         (*json)["error"] = response.errormsg();
     }
@@ -1697,13 +1707,16 @@ std::unique_ptr<nlohmann::json> CoreStub::getXelinkTopology() {
 
                 componentJson["link_type"] = response.topoinfo(i).linktype();
 
-                std::vector<uint32_t> portList;
                 int nCount=response.topoinfo(i).linkportlist_size();
-                for(int n{0}; n<nCount;n++){
-                    uint32_t value = response.topoinfo(i).linkportlist(n);
-                    portList.push_back(value);
-                }
-                componentJson["port_list"] = portList;
+                if(nCount > 0) {
+                    std::vector<uint32_t> portList;
+                
+                    for(int n{0}; n<nCount;n++){
+                        uint32_t value = response.topoinfo(i).linkportlist(n);
+                        portList.push_back(value);
+                    }
+                    componentJson["port_list"] = portList;
+                }                
                 
                 topoJsonList.push_back(componentJson);
             }

@@ -1536,7 +1536,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
 
 ::grpc::Status XpumCoreServiceImpl::getXelinkTopology(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, 
 ::XpumXelinkTopoInfoArray* response) {
-    XPUM_LOG_TRACE("call get version");
+    XPUM_LOG_TRACE("call getXelinkTopology");
     xpum_xelink_topo_info *topoInfo;
     int count{16};
     xpum_xelink_topo_info xelink_topo[count];
