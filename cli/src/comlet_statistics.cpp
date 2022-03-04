@@ -296,6 +296,10 @@ std::string engineUtilFormater(nlohmann::json json, bool intent = false) {
     std::string tmp;
     std::string res;
     int i = 0;
+    auto func = [](nlohmann::json obj1, nlohmann::json obj2) {
+        return obj1["engine_id"] <= obj2["engine_id"];
+    };
+    std::sort(json.begin(), json.end(), func);
     for (auto obj : json) {
         if (tmp.empty()) tmp = intent_str;
         tmp += "Engine " + std::to_string(obj["engine_id"].get<int>()) + ": " + std::to_string(obj["value"].get<int>());
