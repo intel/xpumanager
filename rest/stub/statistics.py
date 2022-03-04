@@ -212,9 +212,17 @@ def getFabricStatistics(device_id, session_id=0):
         if stats_info.tx:
             tmp["name"] = "{}/{}->{}/{}".format(device_id, stats_info.tileId,
                                                 stats_info.remote_device_id, stats_info.remote_device_tile_id)
+            tmp["src_device_id"] = device_id
+            tmp["src_tile_id"] = stats_info.tileId
+            tmp["dst_device_id"] = stats_info.remote_device_id
+            tmp["dst_tile_id"] = stats_info.remote_device_tile_id
         else:
             tmp["name"] = "{}/{}->{}/{}".format(stats_info.remote_device_id,
                                                 stats_info.remote_device_tile_id, device_id, stats_info.tileId)
+            tmp["src_device_id"] = stats_info.remote_device_id
+            tmp["src_tile_id"] = stats_info.remote_device_tile_id
+            tmp["dst_device_id"] = device_id
+            tmp["dst_tile_id"] = stats_info.tileId
         scale = stats_info.scale
         if scale == 1:
             tmp["value"] = stats_info.value
