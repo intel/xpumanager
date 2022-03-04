@@ -40,6 +40,14 @@ void EngineGroupUtilizationDataHandler::calculateData(std::shared_ptr<SharedData
             std::map<uint32_t, std::vector<uint32_t>> group_utilizations;
             auto extended_data = iter->second->getExtendedDatas()->begin();
             while (extended_data != iter->second->getExtendedDatas()->end()) {
+                if (extended_data->second.type == ZES_ENGINE_GROUP_COMPUTE_ALL 
+                || extended_data->second.type == ZES_ENGINE_GROUP_RENDER_ALL 
+                || extended_data->second.type == ZES_ENGINE_GROUP_MEDIA_ALL 
+                || extended_data->second.type == ZES_ENGINE_GROUP_COPY_ALL 
+                || extended_data->second.type == ZES_ENGINE_GROUP_3D_ALL) {
+                    ++extended_data;
+                    continue;
+                }
                 auto pre_data = p_preData->getData().find(iter->first);
                 if (pre_data != p_preData->getData().end()) {
                     auto pre_extended = pre_data->second->getExtendedDatas()->find(extended_data->first);
