@@ -1,6 +1,7 @@
 #include "monitor_manager.h"
 
 #include <algorithm>
+#include <set>
 
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_capability.h"
@@ -46,48 +47,23 @@ void MonitorManager::close() {
 
 void MonitorManager::createMonitorTasks() {
     auto metric_types = Configuration::getEnabledMetrics();
+    std::set<DeviceCapability> created_caps;
     for (auto& type : metric_types) {
-        tasks.emplace_back(std::make_shared<MonitorTask>(Utility::capabilityFromMeasurementType(type), Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
-    }
-}
-
-void MonitorManager::addMetricTask(MeasurementType type, int freq) {
-    std::unique_lock<std::mutex> lock(this->mutex);
-    if (Utility::isMetric(type)) {
-        for (auto& p_task : tasks) {
-            if (p_task->getCapability() == Utility::capabilityFromMeasurementType(type)) {
-                return;
-            }
-        }
-        auto task = std::make_shared<MonitorTask>(Utility::capabilityFromMeasurementType(type),
-                                                  freq, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS);
-        tasks.emplace_back(task);
-        task->start(this->p_scheduled_thread_pool);
-    }
-}
-
-void MonitorManager::removeMetricTask(MeasurementType type) {
-    std::unique_lock<std::mutex> lock(this->mutex);
-    DeviceCapability capability = Utility::capabilityFromMeasurementType(type);
-    for (auto& p_task : tasks) {
-        if (p_task->getType() == MonitorTaskType::GPU_METRICS && p_task->getCapability() == capability) {
-            p_task->stop();
+        DeviceCapability capability = Utility::capabilityFromMeasurementType(type);
+        if (created_caps.find(capability) == created_caps.end()) {
+            tasks.emplace_back(std::make_shared<MonitorTask>(capability, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE, p_device_manager, p_data_logic, MonitorTaskType::GPU_METRICS));
+            created_caps.emplace(capability);
         }
     }
-    tasks.erase(std::remove_if(tasks.begin(), tasks.end(), [capability](std::shared_ptr<MonitorTask> t) { return (t->getType() == MonitorTaskType::GPU_METRICS && t->getCapability() == capability); }), tasks.end());
 }
 
 void MonitorManager::resetMetricTasksFrequency() {
-    auto metric_types = Configuration::getEnabledMetrics();
-    auto iter = metric_types.begin();
-    while (iter != metric_types.end()) {
-        removeMetricTask(*iter++);
+    std::unique_lock<std::mutex> lock(this->mutex);
+    for (auto& p_task : tasks) {
+        p_task->stop();
     }
-    
-    iter = metric_types.begin();
-    while (iter != metric_types.end()) {
-        addMetricTask(*iter++, Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE);
-    }
+    tasks.clear();
+    createMonitorTasks();
 }
 
 } // end namespace xpum
