@@ -2157,7 +2157,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEngineGroupUtilization(cons
                             }
                             break;
                         case ZES_ENGINE_GROUP_MEDIA_ALL:
-                            if (props.type == ZES_ENGINE_GROUP_MEDIA_ALL && !(props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE)) {
+                            if (props.type != ZES_ENGINE_GROUP_MEDIA_ALL && !(props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE)) {
                                 continue;
                             }
                             break;
