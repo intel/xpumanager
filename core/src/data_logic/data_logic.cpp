@@ -11,6 +11,7 @@
 #include "core/core.h"
 #include "engine_measurement_data.h"
 #include "fabric_measurement_data.h"
+#include "infrastructure/logger.h"
 
 namespace xpum {
 
@@ -486,11 +487,17 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
             stats.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(info.remote_fabric_id));
             stats.remote_device_tile_id = info.remote_attach_id;
             stats.type = Utility::toXPUMFabricThroughputType(info.type);
-            stats.value = fabric_datas_iter->second.current;
-            stats.min = fabric_datas_iter->second.min;
-            stats.avg = fabric_datas_iter->second.avg;
-            stats.max = fabric_datas_iter->second.max;
-            stats.scale = p_data->getScale();
+            if (info.type == TRANSMITTED_COUNTER || info.type == RECEIVED_COUNTER) {
+                stats.value = fabric_datas_iter->second.current - fabric_datas_iter->second.min;
+                stats.accumulated = fabric_datas_iter->second.current;
+                stats.scale = 1;
+            } else {
+                stats.value = fabric_datas_iter->second.current;
+                stats.min = fabric_datas_iter->second.min;
+                stats.avg = fabric_datas_iter->second.avg;
+                stats.max = fabric_datas_iter->second.max;
+                stats.scale = p_data->getScale();
+            }
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }
@@ -547,8 +554,12 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
             stats.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(info.remote_fabric_id));
             stats.remote_device_tile_id = info.remote_attach_id;
             stats.type = Utility::toXPUMFabricThroughputType(info.type);
+            if (info.type == TRANSMITTED_COUNTER || info.type == RECEIVED_COUNTER) {
+                stats.scale = 1;
+            } else {
+                stats.scale = p_data->getScale();
+            }
             stats.value = fabric_datas_iter->second.current;
-            stats.scale = p_data->getScale();
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }

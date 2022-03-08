@@ -514,8 +514,10 @@ typedef struct xpum_device_engine_metric_t {
  * 
  */
 typedef enum xpum_fabric_throughput_type_enum {
-    XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED = 0,
-    XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED = 1,
+    XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED            = 0,
+    XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED         = 1,
+    XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED_COUNTER    = 2,
+    XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED_COUNTER = 3,
     XPUM_FABRIC_THROUGHPUT_TYPE_MAX,
 } xpum_fabric_throughput_type_t;
 
@@ -529,6 +531,7 @@ typedef struct xpum_device_fabric_throughput_stats_t {
     uint32_t remote_device_tile_id;     ///< remote tile id
     xpum_fabric_throughput_type_t type; ///< fabric throughput type
     uint64_t value;                     ///< The value
+    uint64_t accumulated;               ///< The accumulated value for counter type
     uint64_t min;                       ///< The min value since last call
     uint64_t avg;                       ///< The average value since last call
     uint64_t max;                       ///< The max value since last call

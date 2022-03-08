@@ -27,8 +27,11 @@ namespace xpum {
 typedef std::function<void(std::shared_ptr<void>, std::shared_ptr<BaseException>)> Callback_t;
 
 enum FabricThroughputType{
-  RECEIVED = 0,
-  TRANSMITTED = 1,
+  RECEIVED                    = 0,
+  TRANSMITTED                 = 1,
+  RECEIVED_COUNTER            = 2,
+  TRANSMITTED_COUNTER         = 3,
+  FABRIC_THROUGHPUT_TYPE_MAX  = 4,
 };
 
 typedef struct FabricThroughputInfo_t {
