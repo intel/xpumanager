@@ -227,10 +227,12 @@ std::shared_ptr<nlohmann::json> CoreStub::getFabricStatistics(int deviceId) {
         nlohmann::json obj;
 
         std::stringstream ss;
-        if (fabricInfo.tx()) {
+        if (fabricInfo.type() == XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED) {
             ss << deviceId << "/" << fabricInfo.tileid() << "->" << fabricInfo.remote_device_id() << "/" << fabricInfo.remote_device_tile_id();
-        } else {
+        } else if (fabricInfo.type() == XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED) {
             ss << fabricInfo.remote_device_id() << "/" << fabricInfo.remote_device_tile_id() << "->" << deviceId << "/" << fabricInfo.tileid();
+        } else {
+            continue;
         }
 
         int32_t scale = fabricInfo.scale();

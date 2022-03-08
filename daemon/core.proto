@@ -691,12 +691,13 @@ message FabricStatsInfo {
     int32 tileId = 1;
     int32 remote_device_id = 2;
     int32 remote_device_tile_id = 3;
-    bool tx = 4;
+    int32 type = 4;
     uint64 value = 5;
     uint64 min = 6;
     uint64 avg = 7;
     uint64 max = 8;
     uint64 scale = 9;
+    uint64 accumulated = 10;
 }
 
 message GetFabricStatsResponse {

@@ -294,12 +294,13 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         fabricStatsInfo->set_tileid(stats.tile_id);
         fabricStatsInfo->set_remote_device_id(stats.remote_device_id);
         fabricStatsInfo->set_remote_device_tile_id(stats.remote_device_tile_id);
-        fabricStatsInfo->set_tx(stats.type == XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED);
+        fabricStatsInfo->set_type(stats.type);
         fabricStatsInfo->set_value(stats.value);
         fabricStatsInfo->set_min(stats.min);
         fabricStatsInfo->set_avg(stats.avg);
         fabricStatsInfo->set_max(stats.max);
         fabricStatsInfo->set_scale(stats.scale);
+        fabricStatsInfo->set_accumulated(stats.accumulated);
     }
     return grpc::Status::OK;
 }
