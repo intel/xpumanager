@@ -282,12 +282,17 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
+    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
+    if (dataList == nullptr) {
+        return XPUM_OK;
+    }
+
+    *begin = getStatsTimestamp(session_id);
+    *end = Utility::getCurrentTime();
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
     if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
         *count = 0;
-        *begin = 0;
-        *end = 0;
         return XPUM_METRIC_NOT_ENABLED;
     }
     std::vector<xpum::DeviceCapability> capabilities;
@@ -301,20 +306,15 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
     }
     if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
         *count = 0;
-        *begin = 0;
-        *end = 0;
         return XPUM_METRIC_NOT_SUPPORTED;
     }
 
-    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
-    if (dataList == nullptr) {
+    std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_ENGINE_UTILIZATION, device_id, session_id);
+    if (p_data == nullptr || p_data->getTimestamp() < *begin) {
+        *count = 0;
         return XPUM_OK;
     }
-
-    std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_ENGINE_UTILIZATION, device_id, session_id);
     auto engine_datas_iter = std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->begin();
-    *begin = getStatsTimestamp(session_id);
-    *end = Utility::getCurrentTime();
     uint32_t index = 0;
     while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
         uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engine_datas_iter->first);
