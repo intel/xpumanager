@@ -9,6 +9,7 @@
 #include "infrastructure/utility.h"
 #include "infrastructure/configuration.h"
 #include "monitor_task.h"
+#include "core/core.h"
 
 namespace xpum {
 
@@ -27,6 +28,10 @@ void MonitorManager::init() {
     std::unique_lock<std::mutex> lock(this->mutex);
 
     createMonitorTasks();
+    
+    for (uint64_t session = 0; session < Configuration::MAX_STATISTICS_SESSION_NUM; session++) {
+        Core::instance().getDataLogic()->updateStatsTimestamp(session);
+    }
 
     for (auto& p_task : tasks) {
         p_task->start(this->p_scheduled_thread_pool);

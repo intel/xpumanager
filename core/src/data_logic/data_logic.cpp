@@ -97,8 +97,6 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     }
 
     auto metric_types_iter = metric_types.begin();
-    uint64_t start_time = Utility::getCurrentMillisecond();
-    uint64_t end_time = 0;
     bool hasDataOnDevice = false;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
@@ -108,14 +106,12 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
             if (p_data != nullptr) {
                 hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
                 m_datas.insert(std::make_pair(*metric_types_iter, p_data));
-                start_time = (uint64_t)p_data->getStartTime() < start_time ? p_data->getStartTime() : start_time;
-                end_time = (uint64_t)p_data->getLatestTime() > end_time ? p_data->getLatestTime() : end_time;
             }
         }
         ++metric_types_iter;
     }
-    *begin = start_time;
-    *end = end_time;
+    *begin = getStatsTimestamp(session_id);
+    *end = Utility::getCurrentTime();
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>>::iterator datas_iter = m_datas.begin();
     xpum_device_stats_t device_stats;
@@ -317,8 +313,8 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
 
     std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_ENGINE_UTILIZATION, device_id, session_id);
     auto engine_datas_iter = std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->begin();
-    *begin = p_data->getStartTime();
-    *end = p_data->getLatestTime();
+    *begin = getStatsTimestamp(session_id);
+    *end = Utility::getCurrentTime();
     uint32_t index = 0;
     while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
         uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engine_datas_iter->first);
@@ -477,8 +473,8 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
     uint32_t index = 0;
     std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_FABRIC_THROUGHPUT, device_id, session_id);
     auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
-    *begin = p_data->getStartTime();
-    *end = p_data->getLatestTime();
+    *begin = getStatsTimestamp(session_id);
+    *end = Utility::getCurrentTime();
     while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
         FabricThroughputInfo info;
         if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
@@ -603,6 +599,20 @@ bool DataLogic::getFabricLinkInfo(xpum_device_id_t deviceId,
     }
     *count = index;
     return true;
+}
+
+void DataLogic::updateStatsTimestamp(uint32_t session_id) {
+    if (p_raw_data_manager == nullptr) {
+        throw IlegalStateException("initialization is not done!");
+    }
+    p_raw_data_manager->updateStatsTimestamp(session_id);
+}
+
+uint64_t DataLogic::getStatsTimestamp(uint32_t session_id) {
+    if (p_raw_data_manager == nullptr) {
+        throw IlegalStateException("initialization is not done!");
+    }
+    return p_raw_data_manager->getStatsTimestamp(session_id);
 }
 
 } // end namespace xpum
