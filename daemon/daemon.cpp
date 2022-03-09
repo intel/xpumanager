@@ -123,6 +123,8 @@ void runRPCServer() {
     }
     unlink(unixSockName.c_str());
 
+    umask( S_IXUSR | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH );
+
     string serverAddr("unix://" + unixSockName);
 
     XpumCoreServiceImpl service;
