@@ -383,7 +383,7 @@ typedef struct xpum_diag_task_info_t {
  * 
  */
 typedef enum xpum_agent_config_enum {
-    XPUM_AGENT_CONFIG_SAMPLE_INTERVAL = 0 ///< Agent sample interval, in milliseconds, options are [100, 200, 500, 1000],default is 1000
+    XPUM_AGENT_CONFIG_SAMPLE_INTERVAL = 0 ///< Agent sample interval, in milliseconds, options are [100, 200, 500, 1000], default is 1000. Value type in xpumSetAgentConfig is int64_t
 } xpum_agent_config_t;
 
 /**************************************************************************/
