@@ -301,8 +301,6 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
     hwloc_obj_t obj = nullptr;
     char *xmlbuf;
     int  xmlbuflen, err;
-    std::shared_ptr<char> tmpBuffer(static_cast<char*>(malloc(512)), free);    
-    memset(tmpBuffer.get(), 0, 512);
 
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_userdata_export_callback(hwtopology, export_cb);
@@ -328,6 +326,8 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
                 obj->attr->pcidev.device_id);
         std::map<device_pair, GraphicDevice>::iterator it = device_map.find(pare);
         if (it != device_map.end()){
+            std::shared_ptr<char> tmpBuffer(static_cast<char*>(malloc(512)), free);    
+            memset(tmpBuffer.get(), 0, 512);
             const PcieDevice* pDevice = PciDatabase::instance().getDevice(
                 obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
 

@@ -13,8 +13,8 @@ function CreateUser()
 CreateUser xpum
 
 if [ -n "${RPM_INSTALL_PREFIX}" ]; then
-  cp -f ${RPM_INSTALL_PREFIX}/xpum.service /lib/systemd/system/xpum.service
-  cp -f ${RPM_INSTALL_PREFIX}/xpum_rest.service /lib/systemd/system/xpum_rest.service
+  mv -f ${RPM_INSTALL_PREFIX}/xpum.service /lib/systemd/system/xpum.service
+  mv -f ${RPM_INSTALL_PREFIX}/xpum_rest.service /lib/systemd/system/xpum_rest.service
 
   sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" /usr/lib/systemd/system/xpum.service > /usr/lib/systemd/system/xpum.service.n
   mv -f /usr/lib/systemd/system/xpum.service.n /usr/lib/systemd/system/xpum.service
@@ -26,8 +26,8 @@ if [ -n "${RPM_INSTALL_PREFIX}" ]; then
   chmod +x ${RPM_INSTALL_PREFIX}/keytool.sh
   #chmod +x ${RPM_INSTALL_PREFIX}/rest/exporter_main.py
 else
-  cp -f /opt/xpum/xpum.service /lib/systemd/system/xpum.service
-  cp -f /opt/xpum/xpum_rest.service /lib/systemd/system/xpum_rest.service
+  mv -f /opt/xpum/xpum.service /lib/systemd/system/xpum.service
+  mv -f /opt/xpum/xpum_rest.service /lib/systemd/system/xpum_rest.service
   chown -R xpum /opt/xpum
   chmod +x /opt/xpum/keytool.sh
   #chmod +x /opt/xpum/rest/exporter_main.py

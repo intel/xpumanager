@@ -20,8 +20,8 @@ PATTERN "*.md"
 PATTERN "*.pem" EXCLUDE
 PATTERN "__pycache__" EXCLUDE
 PATTERN "conf/rest.conf" EXCLUDE
-#PATTERN "xpum_rest.service" EXCLUDE
-#PATTERN "xpum_rest.service.in" EXCLUDE
+PATTERN "xpum_rest.service" EXCLUDE
+PATTERN "xpum_rest.service.in" EXCLUDE
 #PATTERN ".gitignore" EXCLUDE
 PATTERN "CMakeLists.txt" EXCLUDE
 #PATTERN "ifwi_fake" EXCLUDE
