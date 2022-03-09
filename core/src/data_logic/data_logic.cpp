@@ -11,6 +11,7 @@
 #include "core/core.h"
 #include "engine_measurement_data.h"
 #include "fabric_measurement_data.h"
+#include "infrastructure/logger.h"
 
 namespace xpum {
 
@@ -96,8 +97,6 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     }
 
     auto metric_types_iter = metric_types.begin();
-    uint64_t start_time = Utility::getCurrentMillisecond();
-    uint64_t end_time = 0;
     bool hasDataOnDevice = false;
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
@@ -107,14 +106,12 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
             if (p_data != nullptr) {
                 hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
                 m_datas.insert(std::make_pair(*metric_types_iter, p_data));
-                start_time = (uint64_t)p_data->getStartTime() < start_time ? p_data->getStartTime() : start_time;
-                end_time = (uint64_t)p_data->getLatestTime() > end_time ? p_data->getLatestTime() : end_time;
             }
         }
         ++metric_types_iter;
     }
-    *begin = start_time;
-    *end = end_time;
+    *begin = getStatsTimestamp(session_id);
+    *end = Utility::getCurrentTime();
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>>::iterator datas_iter = m_datas.begin();
     xpum_device_stats_t device_stats;
@@ -285,12 +282,17 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
+    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
+    if (dataList == nullptr) {
+        return XPUM_OK;
+    }
+
+    *begin = getStatsTimestamp(session_id);
+    *end = Utility::getCurrentTime();
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
     if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
         *count = 0;
-        *begin = 0;
-        *end = 0;
         return XPUM_METRIC_NOT_ENABLED;
     }
     std::vector<xpum::DeviceCapability> capabilities;
@@ -304,20 +306,15 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
     }
     if (metric_types.find(METRIC_ENGINE_UTILIZATION) == metric_types.end()) {
         *count = 0;
-        *begin = 0;
-        *end = 0;
         return XPUM_METRIC_NOT_SUPPORTED;
     }
 
-    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
-    if (dataList == nullptr) {
+    std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_ENGINE_UTILIZATION, device_id, session_id);
+    if (p_data == nullptr || p_data->getTimestamp() < *begin) {
+        *count = 0;
         return XPUM_OK;
     }
-
-    std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_ENGINE_UTILIZATION, device_id, session_id);
     auto engine_datas_iter = std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->begin();
-    *begin = p_data->getStartTime();
-    *end = p_data->getLatestTime();
     uint32_t index = 0;
     while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
         uint32_t engine_index = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineIndex(engine_datas_iter->first);
@@ -476,8 +473,8 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
     uint32_t index = 0;
     std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_FABRIC_THROUGHPUT, device_id, session_id);
     auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
-    *begin = p_data->getStartTime();
-    *end = p_data->getLatestTime();
+    *begin = getStatsTimestamp(session_id);
+    *end = Utility::getCurrentTime();
     while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
         FabricThroughputInfo info;
         if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
@@ -486,11 +483,17 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
             stats.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(info.remote_fabric_id));
             stats.remote_device_tile_id = info.remote_attach_id;
             stats.type = Utility::toXPUMFabricThroughputType(info.type);
-            stats.value = fabric_datas_iter->second.current;
-            stats.min = fabric_datas_iter->second.min;
-            stats.avg = fabric_datas_iter->second.avg;
-            stats.max = fabric_datas_iter->second.max;
-            stats.scale = p_data->getScale();
+            if (info.type == TRANSMITTED_COUNTER || info.type == RECEIVED_COUNTER) {
+                stats.value = fabric_datas_iter->second.current - fabric_datas_iter->second.min;
+                stats.accumulated = fabric_datas_iter->second.current;
+                stats.scale = 1;
+            } else {
+                stats.value = fabric_datas_iter->second.current;
+                stats.min = fabric_datas_iter->second.min;
+                stats.avg = fabric_datas_iter->second.avg;
+                stats.max = fabric_datas_iter->second.max;
+                stats.scale = p_data->getScale();
+            }
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }
@@ -547,8 +550,12 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
             stats.remote_device_id = std::stoi(Core::instance().getDeviceManager()->getDeviceIDByFabricID(info.remote_fabric_id));
             stats.remote_device_tile_id = info.remote_attach_id;
             stats.type = Utility::toXPUMFabricThroughputType(info.type);
+            if (info.type == TRANSMITTED_COUNTER || info.type == RECEIVED_COUNTER) {
+                stats.scale = 1;
+            } else {
+                stats.scale = p_data->getScale();
+            }
             stats.value = fabric_datas_iter->second.current;
-            stats.scale = p_data->getScale();
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }
@@ -592,6 +599,20 @@ bool DataLogic::getFabricLinkInfo(xpum_device_id_t deviceId,
     }
     *count = index;
     return true;
+}
+
+void DataLogic::updateStatsTimestamp(uint32_t session_id) {
+    if (p_raw_data_manager == nullptr) {
+        throw IlegalStateException("initialization is not done!");
+    }
+    p_raw_data_manager->updateStatsTimestamp(session_id);
+}
+
+uint64_t DataLogic::getStatsTimestamp(uint32_t session_id) {
+    if (p_raw_data_manager == nullptr) {
+        throw IlegalStateException("initialization is not done!");
+    }
+    return p_raw_data_manager->getStatsTimestamp(session_id);
 }
 
 } // end namespace xpum

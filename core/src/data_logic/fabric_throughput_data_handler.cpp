@@ -23,6 +23,8 @@ void FabricThroughputDataHandler::calculateData(std::shared_ptr<SharedData>& p_d
         if (pre_iter != p_preData->getData().end()) {
             std::map<uint64_t, uint64_t> rx_vals;
             std::map<uint64_t, uint64_t> tx_vals;
+            std::map<uint64_t, uint64_t> rx_counter_vals;
+            std::map<uint64_t, uint64_t> tx_counter_vals;
             auto cur_raw_datas = std::static_pointer_cast<FabricMeasurementData>(iter->second)->getFabricRawDatas();
             auto pre_raw_datas = std::static_pointer_cast<FabricMeasurementData>(pre_iter->second)->getFabricRawDatas();
             auto cur_raw_datas_iter = cur_raw_datas->begin();
@@ -42,6 +44,8 @@ void FabricThroughputDataHandler::calculateData(std::shared_ptr<SharedData>& p_d
                         tx_vals[cur_raw_datas_iter->first] = tx_val;
                         p_data->getData()[iter->first]->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                     }
+                    rx_counter_vals[cur_raw_datas_iter->first] = cur_rx_counter;
+                    tx_counter_vals[cur_raw_datas_iter->first] = cur_tx_counter;
                 }
                 ++cur_raw_datas_iter;
             }
@@ -56,16 +60,24 @@ void FabricThroughputDataHandler::calculateData(std::shared_ptr<SharedData>& p_d
                         auto handles = remote_attach_ids_iter->second;
                         uint64_t rx_id = Core::instance().getDeviceManager()->getDevice(iter->first)->getFabricThroughputID(attach_ids_iter->first, remote_fabric_ids_iter->first, remote_attach_ids_iter->first, FabricThroughputType::RECEIVED);
                         uint64_t tx_id = Core::instance().getDeviceManager()->getDevice(iter->first)->getFabricThroughputID(attach_ids_iter->first, remote_fabric_ids_iter->first, remote_attach_ids_iter->first, FabricThroughputType::TRANSMITTED);
+                        uint64_t rx_counter_id = Core::instance().getDeviceManager()->getDevice(iter->first)->getFabricThroughputID(attach_ids_iter->first, remote_fabric_ids_iter->first, remote_attach_ids_iter->first, FabricThroughputType::RECEIVED_COUNTER);
+                        uint64_t tx_counter_id = Core::instance().getDeviceManager()->getDevice(iter->first)->getFabricThroughputID(attach_ids_iter->first, remote_fabric_ids_iter->first, remote_attach_ids_iter->first, FabricThroughputType::TRANSMITTED_COUNTER);
                         uint64_t rx_val = 0;
                         uint64_t tx_val = 0;
+                        uint64_t rx_counter_val = 0;
+                        uint64_t tx_counter_val = 0;
                         auto handles_iter = handles.begin();
                         while (handles_iter != handles.end()) {
                             rx_val += rx_vals[(uint64_t)(*handles_iter)];
                             tx_val += tx_vals[(uint64_t)(*handles_iter)];
+                            rx_counter_val += rx_counter_vals[(uint64_t)(*handles_iter)];
+                            tx_counter_val += tx_counter_vals[(uint64_t)(*handles_iter)];
                             ++handles_iter;
                         }
                         std::static_pointer_cast<FabricMeasurementData>(iter->second)->setDataCur(rx_id, rx_val);
                         std::static_pointer_cast<FabricMeasurementData>(iter->second)->setDataCur(tx_id, tx_val);
+                        std::static_pointer_cast<FabricMeasurementData>(iter->second)->setDataCur(rx_counter_id, rx_counter_val);
+                        std::static_pointer_cast<FabricMeasurementData>(iter->second)->setDataCur(tx_counter_id, tx_counter_val);
                         ++remote_attach_ids_iter;
                     }
                     ++remote_fabric_ids_iter;

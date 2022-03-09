@@ -559,6 +559,10 @@ xpum_fabric_throughput_type_t Utility::toXPUMFabricThroughputType(FabricThroughp
         return XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED;
     case TRANSMITTED:
         return XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED;
+    case RECEIVED_COUNTER:
+        return XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED_COUNTER;
+    case TRANSMITTED_COUNTER:
+        return XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED_COUNTER;
     default:
         return XPUM_FABRIC_THROUGHPUT_TYPE_MAX;
     }

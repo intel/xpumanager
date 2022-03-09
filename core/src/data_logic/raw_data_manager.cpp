@@ -311,4 +311,17 @@ void RawDataManager::updateCaches(MeasurementType type, std::shared_ptr<SharedDa
         ++iter;
     }
 }
+
+void RawDataManager::updateStatsTimestamp(uint32_t session_id) {
+    std::unique_lock<std::mutex> lock(mutex);
+    stats_session_timestamps[session_id] = Utility::getCurrentTime();
+}
+
+uint64_t RawDataManager::getStatsTimestamp(uint32_t session_id) {
+    std::unique_lock<std::mutex> lock(mutex);
+    uint64_t time = stats_session_timestamps[session_id];
+    stats_session_timestamps[session_id] = Utility::getCurrentTime();
+    return time;
+}
+
 } // end namespace xpum

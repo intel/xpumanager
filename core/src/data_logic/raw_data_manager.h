@@ -60,6 +60,10 @@ class RawDataManager {
 
     std::vector<std::deque<MeasurementCacheData>> getCachedRawData(uint32_t task_id);
 
+    void updateStatsTimestamp(uint32_t session_id);
+
+    uint64_t getStatsTimestamp(uint32_t session_id);
+
    private:
     RawDataManager() = default;
 
@@ -73,6 +77,8 @@ class RawDataManager {
     std::map<uint32_t, std::map<MeasurementType, std::deque<MeasurementCacheData>>> caches;
 
     std::deque<RawDataCollectionTask> raw_data_collection_tasks;
+
+    std::map<uint32_t, uint64_t> stats_session_timestamps;
 
     std::mutex mutex;
 };

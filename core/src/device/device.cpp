@@ -235,6 +235,7 @@ void Device::setFabricID(uint32_t fabric_id) {
 void Device::addFabricPortHandle(uint32_t attach_id, uint32_t remote_fabric_id, uint32_t remote_attach_id, zes_fabric_port_handle_t handle) {
     std::unique_lock<std::mutex> lock(this->mutex);
     connected_fabric_port_handles[attach_id][remote_fabric_id][remote_attach_id].push_back(handle);
+
     fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id].push_back(FabricThroughputType::RECEIVED);
     FabricThroughputInfo rx_info;
     rx_info.attach_id = attach_id;
@@ -250,6 +251,22 @@ void Device::addFabricPortHandle(uint32_t attach_id, uint32_t remote_fabric_id, 
     tx_info.remote_attach_id = remote_attach_id;
     tx_info.type = FabricThroughputType::TRANSMITTED;
     fabric_throughput_info[(uint64_t)&(fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id][FabricThroughputType::TRANSMITTED])] = tx_info;
+
+    fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id].push_back(FabricThroughputType::RECEIVED_COUNTER);
+    FabricThroughputInfo rx_counter_info;
+    rx_counter_info.attach_id = attach_id;
+    rx_counter_info.remote_fabric_id = remote_fabric_id;
+    rx_counter_info.remote_attach_id = remote_attach_id;
+    rx_counter_info.type = FabricThroughputType::RECEIVED_COUNTER;
+    fabric_throughput_info[(uint64_t)&(fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id][FabricThroughputType::RECEIVED_COUNTER])] = rx_counter_info;
+
+    fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id].push_back(FabricThroughputType::TRANSMITTED_COUNTER);
+    FabricThroughputInfo tx_counter_info;
+    tx_counter_info.attach_id = attach_id;
+    tx_counter_info.remote_fabric_id = remote_fabric_id;
+    tx_counter_info.remote_attach_id = remote_attach_id;
+    tx_counter_info.type = FabricThroughputType::TRANSMITTED_COUNTER;
+    fabric_throughput_info[(uint64_t)&(fabric_throughput_ids[attach_id][remote_fabric_id][remote_attach_id][FabricThroughputType::TRANSMITTED_COUNTER])] = tx_counter_info;
 }
 
 uint64_t Device::getFabricThroughputID(uint32_t attach_id, uint32_t remote_fabric_id, uint32_t remote_attach_id, FabricThroughputType type) {
@@ -286,7 +303,7 @@ uint32_t Device::getFabricThroughputInfoCount() {
         while (remote_fabric_id_iter != attach_id_iter->second.end()) {
             auto remote_attach_id_iter = remote_fabric_id_iter->second.begin();
             while (remote_attach_id_iter != remote_fabric_id_iter->second.end()) {
-                count+=2;
+                count+=FABRIC_THROUGHPUT_TYPE_MAX;
                 ++remote_attach_id_iter;
             }
             ++remote_fabric_id_iter;

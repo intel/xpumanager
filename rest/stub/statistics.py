@@ -190,7 +190,7 @@ def getEngineStatistics(device_id, session_id=0):
     
 
 @exit_on_disconnect
-def getFabricStatistics(device_id, session_id=0):
+def getFabricStatistics(device_id, session_id=0, get_accumulated=False):
     resp = stub.getFabricStatistics(core_pb2.GetFabricStatsRequest(
         deviceId=device_id, sessionId=session_id
     ))
@@ -209,33 +209,42 @@ def getFabricStatistics(device_id, session_id=0):
     fabric_stats = []
     for stats_info in resp.dataList:
         tmp = dict()
-        if stats_info.tx:
+        if stats_info.type == 1 or (stats_info.type == 3 and get_accumulated):
             tmp["name"] = "{}/{}->{}/{}".format(device_id, stats_info.tileId,
                                                 stats_info.remote_device_id, stats_info.remote_device_tile_id)
             tmp["src_device_id"] = device_id
             tmp["src_tile_id"] = stats_info.tileId
             tmp["dst_device_id"] = stats_info.remote_device_id
             tmp["dst_tile_id"] = stats_info.remote_device_tile_id
-        else:
+        elif stats_info.type == 0 or (stats_info.type == 2 and get_accumulated):
             tmp["name"] = "{}/{}->{}/{}".format(stats_info.remote_device_id,
                                                 stats_info.remote_device_tile_id, device_id, stats_info.tileId)
             tmp["src_device_id"] = stats_info.remote_device_id
             tmp["src_tile_id"] = stats_info.remote_device_tile_id
             tmp["dst_device_id"] = device_id
             tmp["dst_tile_id"] = stats_info.tileId
+        else:
+            continue
+        
+        tmp["type"] = stats_info.type
         scale = stats_info.scale
         if scale == 1:
             tmp["value"] = stats_info.value
             tmp["avg"] = stats_info.avg
             tmp["min"] = stats_info.min
             tmp["max"] = stats_info.max
+            if get_accumulated:
+                tmp["acc"] = stats_info.accumulated
         else:
             tmp["value"] = stats_info.value / scale
             tmp["avg"] = stats_info.avg / scale
             tmp["min"] = stats_info.min / scale
             tmp["max"] = stats_info.max / scale
+            if get_accumulated:
+                tmp["acc"] = stats_info.accumulated / scale
         fabric_stats.append(tmp)
     data["fabric_throughput"] = fabric_stats
+
     return 0, "OK", data
 
 

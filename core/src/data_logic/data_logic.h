@@ -82,6 +82,10 @@ class DataLogic : public DataLogicInterface {
 
     std::vector<std::deque<MeasurementCacheData>> getCachedRawData(uint32_t task_id);
 
+    void updateStatsTimestamp(uint32_t session_id);
+
+    uint64_t getStatsTimestamp(uint32_t session_id);
+
    private:
     std::unique_ptr<RawDataManager> p_raw_data_manager;
 

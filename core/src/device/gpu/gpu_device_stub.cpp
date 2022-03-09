@@ -655,6 +655,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFirmwares(device, &firmware_count, nullptr));
                 std::vector<zes_firmware_handle_t> firmwares(firmware_count);
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFirmwares(device, &firmware_count, firmwares.data()));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME, std::string("GSC")));
+                std::string fwVersion = "unknown";
                 if (res == ZE_RESULT_SUCCESS) {
                     for (auto firmware : firmwares) {
                         zes_firmware_properties_t prop;
@@ -662,10 +664,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                         if (strcmp(prop.name, "GSC") != 0 || strcmp(prop.name, "unknown") == 0 || strcmp(prop.version, "unknown") == 0) {
                             continue;
                         }
-                        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME, std::string(prop.name)));
-                        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION, std::string(prop.version)));
+                        fwVersion = std::string(prop.version);
                     }
                 }
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION, fwVersion));
 
                 uint32_t fabric_count = 0;
                 XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFabricPorts(device, &fabric_count, nullptr));
@@ -722,11 +724,11 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
         unsigned int amc_versions[4];
         std::shared_ptr<GPUDevice> gpu = std::dynamic_pointer_cast<GPUDevice>((*p_devices)[0]);
 
+        gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME, std::string{"AMC"}));
         bool rc;
         for (int i{0}; i < 3; ++i) {
             rc = gpu->getAMCFirmwareVersion(amc_versions);
             if (rc) {
-                gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME, std::string{"AMC"}));
                 std::string version = std::to_string(amc_versions[0]) + "." + std::to_string(amc_versions[1]) + "." + std::to_string(amc_versions[2]) + "." + std::to_string(amc_versions[3]);
                 gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, version));
                 break;
