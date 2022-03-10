@@ -501,6 +501,8 @@ std::string Utility::getXpumStatsTypeString(MeasurementType type) {
             return std::string("PCIE read");
         case MeasurementType::METRIC_PCIE_WRITE:
             return std::string("PCIE write");
+        case MeasurementType::METRIC_ENGINE_UTILIZATION:
+            return std::string("engine utilization");
         case MeasurementType::METRIC_FABRIC_THROUGHPUT:
             return std::string("fabric throughput");
         default:
