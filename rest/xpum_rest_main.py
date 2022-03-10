@@ -27,6 +27,7 @@ import xpum_logger as logger
 import argparse
 
 from stub import dump_raw_data as dump_raw_data_stub
+from stub import grpc_stub
 
 auth = HTTPBasicAuth()
 
@@ -37,6 +38,9 @@ def main(*args, **kwargs):
 
     if "dump_folder" in kwargs:
         dump_raw_data_stub.dump_folder = kwargs["dump_folder"]
+    
+    if "gunicorn_pid_file" in kwargs:
+        grpc_stub.gunicorn_pid_file = kwargs["gunicorn_pid_file"]
 
     app = Flask(__name__, static_url_path=dump_raw_data_stub.url_prefix, static_folder=dump_raw_data_stub.dump_folder)
 
