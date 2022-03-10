@@ -142,6 +142,8 @@ void runRPCServer() {
         chown(unixSockName.c_str(), pwd->pw_uid, pwd->pw_gid);
     }
 
+    chmod( unixSockName.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP );
+
     // start a background thread for the server.
     std::thread grpc_server_thread(
         [](::grpc::Server* grpc_server_ptr) {
