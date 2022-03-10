@@ -69,6 +69,9 @@ void MonitorManager::resetMetricTasksFrequency() {
     }
     tasks.clear();
     createMonitorTasks();
+    for (auto& p_task : tasks) {
+        p_task->start(this->p_scheduled_thread_pool);
+    }
 }
 
 } // end namespace xpum
