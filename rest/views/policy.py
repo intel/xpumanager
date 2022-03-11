@@ -22,7 +22,7 @@ class PolicySchema(Schema):
     notify_callback_url = fields.Str(metadata={"description": "Policy notify callback url"})
     action = fields.Nested(PolicyActionSchema)
     condition = fields.Nested(PolicyConditionSchema)
-    is_delete_policy = fields.Bool(metadata={"description": "is_delete_policy flag when remove policy"})
+    #is_delete_policy = fields.Bool(metadata={"description": "is_delete_policy flag when remove policy"})
 
 class PolicyGetSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
@@ -83,7 +83,7 @@ def set_device_policy(deviceId):
     post:
         tags:
             - "Policy"
-        description: Set a policy for a device. The is_delete_policy must be false.
+        description: Set a policy for a device. 
         parameters:
             - 
                 name: policy info
@@ -119,12 +119,12 @@ def set_device_policy(deviceId):
     delete:
         tags:
             - "Policy"
-        description: Delete a policy for a device. The policy type must be set, is_delete_policy must be true.
+        description: Delete a policy for a device. The policy type must be set.
         parameters:
             - 
                 name: policy info
                 in: body
-                description: policy info which will be deleted from a device. the policy type must be set, is_delete_policy must be true.
+                description: policy info which will be deleted from a device. the policy type must be set.
                 schema: PolicySchema
             -
                 name: deviceId
@@ -225,7 +225,7 @@ def set_group_policy(groupId):
     post:
         tags:
             - "Policy"
-        description: Set a policy for a group. The is_delete_policy must be false.
+        description: Set a policy for a group. 
         parameters:
             - 
                 name: policy info
@@ -261,12 +261,12 @@ def set_group_policy(groupId):
     delete:
         tags:
             - "Policy"
-        description: Delete a policy for a group. The policy type must be set, is_delete_policy must be true.
+        description: Delete a policy for a group. The policy type must be set.
         parameters:
             - 
                 name: policy info
                 in: body
-                description: policy info which will be deleted from a group. the policy type must be set, is_delete_policy must be true.
+                description: policy info which will be deleted from a group. the policy type must be set.
                 schema: PolicySchema
             -
                 name: groupId

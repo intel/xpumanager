@@ -96,6 +96,13 @@ def getPolicy(id, isDevcie):
         ret.append(data)
     return 0, "OK", ret, 200
 
+def isValidNotifyCallbackUrl(notify_callback_url):
+    if notify_callback_url is None or len(notify_callback_url) == 0:
+        return False
+    if not ( str(notify_callback_url).startswith('http://') or  str(notify_callback_url).startswith('https://') ):
+        return False
+    return True
+
 def setPolicy(id, isDevcie,input,is_delete_policy): 
     ##########
     if "type" not in input or len(input["type"]) == 0 or input["type"] not in XpumPolicyTypeFromString:
@@ -143,7 +150,9 @@ def setPolicy(id, isDevcie,input,is_delete_policy):
             action = core_pb2.XpumPolicyAction(type=policyActionType)
         ##########
         if 'notify_callback_url' in input:
-            notify_callback_url = input['notify_callback_url']            
+            notify_callback_url = input['notify_callback_url']    
+            if not isValidNotifyCallbackUrl(notify_callback_url):
+                return 1, "Invalid Parameter: policy notify_callback_url must be valid Url with http:// or https:// schema.", 400
         else:
             notify_callback_url = "NoCallBackFromRest"
         policy = core_pb2.XpumPolicyData(type=policyType,condition=condition,action=action,notifyCallBackUrl=notify_callback_url)
@@ -193,6 +202,9 @@ def readPolicyNotifyData():
             ####
             json_str = json.dumps(data)
             url = notify_callback_url+"?data="+urllib.parse.quote(json_str)
+            if not isValidNotifyCallbackUrl(url):
+                print("{} - CallBackPolicyData: Failed to send callback url:{} -- policyType={}; policyTimestamp={}; Because callback url is invalid.".format(time_stamp,one.notifyCallBackUrl,data['type'], one.timestamp))
+                continue
             response = urllib.request.urlopen(url)
             html = response.read()
             #print(html)
