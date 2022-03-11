@@ -3,7 +3,11 @@
 ```
 apt install doxygen liblua5.2-dev
 
-pip install Sphinx sphinx_rtd_theme sphinxcontrib-openapi  apispec-webframeworks myst-parser prometheus-client
+python3 -m venv {/path/to/venv}
+
+source {/path/to/venv}/bin/activate
+
+pip install --no-cache-dir -r requirements.txt
 
 ./build.sh
 ```
