@@ -86,6 +86,14 @@ class DataLogic : public DataLogicInterface {
 
     uint64_t getStatsTimestamp(uint32_t session_id);
 
+    void updateEngineStatsTimestamp(uint32_t session_id);
+
+    uint64_t getEngineStatsTimestamp(uint32_t session_id);
+
+    void updateFabricStatsTimestamp(uint32_t session_id);
+
+    uint64_t getFabricStatsTimestamp(uint32_t session_id);
+
    private:
     std::unique_ptr<RawDataManager> p_raw_data_manager;
 

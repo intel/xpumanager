@@ -324,4 +324,28 @@ uint64_t RawDataManager::getStatsTimestamp(uint32_t session_id) {
     return time;
 }
 
+void RawDataManager::updateEngineStatsTimestamp(uint32_t session_id) {
+    std::unique_lock<std::mutex> lock(mutex);
+    engine_stats_session_timestamps[session_id] = Utility::getCurrentTime();
+}
+
+uint64_t RawDataManager::getEngineStatsTimestamp(uint32_t session_id) {
+    std::unique_lock<std::mutex> lock(mutex);
+    uint64_t time = engine_stats_session_timestamps[session_id];
+    engine_stats_session_timestamps[session_id] = Utility::getCurrentTime();
+    return time;
+}
+
+void RawDataManager::updateFabricStatsTimestamp(uint32_t session_id) {
+    std::unique_lock<std::mutex> lock(mutex);
+    fabric_stats_session_timestamps[session_id] = Utility::getCurrentTime();
+}
+
+uint64_t RawDataManager::getFabricStatsTimestamp(uint32_t session_id) {
+    std::unique_lock<std::mutex> lock(mutex);
+    uint64_t time = fabric_stats_session_timestamps[session_id];
+    fabric_stats_session_timestamps[session_id] = Utility::getCurrentTime();
+    return time;
+}
+
 } // end namespace xpum

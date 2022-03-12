@@ -64,6 +64,14 @@ class RawDataManager {
 
     uint64_t getStatsTimestamp(uint32_t session_id);
 
+    void updateEngineStatsTimestamp(uint32_t session_id);
+
+    uint64_t getEngineStatsTimestamp(uint32_t session_id);
+
+    void updateFabricStatsTimestamp(uint32_t session_id);
+
+    uint64_t getFabricStatsTimestamp(uint32_t session_id);
+
    private:
     RawDataManager() = default;
 
@@ -79,6 +87,10 @@ class RawDataManager {
     std::deque<RawDataCollectionTask> raw_data_collection_tasks;
 
     std::map<uint32_t, uint64_t> stats_session_timestamps;
+
+    std::map<uint32_t, uint64_t> engine_stats_session_timestamps;
+
+    std::map<uint32_t, uint64_t> fabric_stats_session_timestamps;
 
     std::mutex mutex;
 };

@@ -31,6 +31,8 @@ void MonitorManager::init() {
     
     for (uint64_t session = 0; session < Configuration::MAX_STATISTICS_SESSION_NUM; session++) {
         Core::instance().getDataLogic()->updateStatsTimestamp(session);
+        Core::instance().getDataLogic()->updateEngineStatsTimestamp(session);
+        Core::instance().getDataLogic()->updateFabricStatsTimestamp(session);
     }
 
     for (auto& p_task : tasks) {
