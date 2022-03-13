@@ -101,19 +101,19 @@ std::string ComletTopology::getKeyStringValue(std::string key, const nlohmann::j
 
 std::string ComletTopology::getPortList(const nlohmann::json &item){
     std::string key = "port_list";
-    std::string result = " ";
-    bool bFirst = true;
+    std::string result = "";
     auto sub = item.find(key);
     if(sub != item.end()) {
+        int portCount=0;
         std::vector<uint32_t> portList = item[key];
         for(size_t i=0; i<portList.size(); i++){
-            if(portList[i] != 0){
-                if(!bFirst){
-                    result += ",";
-                }
-                result += std::to_string(i+1);
-                bFirst = false;
+            if(portList[i] == 1){
+               portCount++;
             }
+        }
+
+        if(portCount > 0){
+            result=std::to_string(portCount);
         }
     }   
 

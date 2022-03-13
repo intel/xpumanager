@@ -448,30 +448,39 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
 
 bool Topology::numaDevice(hwloc_topology_t topology, zes_pci_address_t& address,
                             unsigned int& numa_os_idx, std::string& cpuAffinity){
-    hwloc_obj_t objNuma = nullptr, objPcie = nullptr;
+    hwloc_obj_t objNuma = nullptr, obj_anc = nullptr;
     bool bFound = false;
-    while((objNuma = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_NUMANODE, objNuma)) != nullptr){
-        int NUMAnode = objNuma->os_index;
-        for (objPcie = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PCI_DEVICE, 0);
+    
+
+    for ( hwloc_obj_t objPcie = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PCI_DEVICE, 0);
         objPcie;
         objPcie = hwloc_get_next_pcidev(topology,objPcie)){
             if (objPcie->attr->pcidev.domain == address.domain 
             && objPcie->attr->pcidev.bus == address.bus 
             && objPcie->attr->pcidev.dev == address.device 
             && objPcie->attr->pcidev.func == address.function){
-                hwloc_obj_t obj_anc = hwloc_get_non_io_ancestor_obj(topology,objPcie);
-                if(NUMAnode == hwloc_bitmap_first(obj_anc->nodeset)){
-                    char * buffer;
-                    hwloc_bitmap_list_asprintf(&buffer, obj_anc->cpuset);
-                    cpuAffinity = buffer;
-                    free(buffer);
-
-                    numa_os_idx = NUMAnode;
-                    bFound = true;
-                    break;
-                }
+                obj_anc = hwloc_get_non_io_ancestor_obj(topology,objPcie);      
+                break;          
             }             
-        }    
+    } 
+
+    if(obj_anc == nullptr){
+        return false;
+    }
+
+    while((objNuma = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_NUMANODE, objNuma)) != nullptr){
+        int NUMAnode = objNuma->os_index;          
+
+        if(NUMAnode == hwloc_bitmap_first(obj_anc->nodeset)){
+            char * buffer;
+            hwloc_bitmap_list_asprintf(&buffer, obj_anc->cpuset);
+            cpuAffinity = buffer;
+            free(buffer);
+
+            numa_os_idx = NUMAnode;
+            bFound = true;
+            break;
+        }
 
         if(bFound) {
             break;
