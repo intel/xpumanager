@@ -22,6 +22,25 @@ DiagnosticManager::~DiagnosticManager() {
 }
 
 void DiagnosticManager::init() {
+    std::string service_file_name = "/lib/systemd/system/xpum.service";
+    std::ifstream service_file(service_file_name);
+    if (service_file.is_open()) {
+            std::string line;
+            while(getline(service_file, line)){
+                if (line.find("ExecStart=") != std::string::npos) {
+                    auto lpos = line.find("=");
+                    auto rpos = line.find(" ");
+                    if (rpos == std::string::npos) {
+                        XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1);
+                    } else {
+                        XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1, rpos - lpos - 1);
+                    }
+                }
+            }
+    }
+    if (XPUM_DAEMON_INSTALL_PATH.empty()) {
+        XPUM_LOG_ERROR("couldn't find xpum install path in service file: {}", service_file_name);
+    }
 }
 
 void DiagnosticManager::close() {
@@ -32,13 +51,17 @@ std::map<ze_device_handle_t, std::string> DiagnosticManager::device_names;
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_PATH = "/usr/share/mfx/samples/";
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_DECODE_FILE = "test_stream.264";
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_ENCODE_FILE ="test_stream_176x96.yuv";
+std::string DiagnosticManager::XPUM_DAEMON_INSTALL_PATH;
 
 void DiagnosticManager::readConfigFile() {
     thresholds.clear();
-    char exe_path[XPUM_MAX_PATH_LEN];
-    ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
-    exe_path[len] = '\0';
-    std::string current_file = exe_path;
+    std::string current_file = XPUM_DAEMON_INSTALL_PATH;
+    if (current_file.empty()) {
+        char exe_path[XPUM_MAX_PATH_LEN];
+        ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+        exe_path[len] = '\0';
+        current_file = exe_path;
+    }
     std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../config/";
     std::string file_name = config_folder + std::string("diagnostics.conf");
     std::ifstream conf_file(file_name);
@@ -245,6 +268,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             }
         }
 
+        /*
         if (p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
             p_task_info->finished = true;
             p_task_info->endTime = Utility::getCurrentMillisecond();
@@ -252,7 +276,8 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             XPUM_LOG_ERROR("aborted! other GPU processes are running");
             return;
         }
-
+        */
+       
         if (p_task_info->level >= xpum_diag_level_t::XPUM_DIAG_LEVEL_2) {
             XPUM_LOG_INFO("start hardware sysmam diagnostic");
             try {
@@ -576,10 +601,13 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
         }
         closedir(dir);
         if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
-            char exe_path[XPUM_MAX_PATH_LEN];
-            ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
-            exe_path[len] = '\0';
-            std::string current_file = exe_path;
+            std::string current_file = XPUM_DAEMON_INSTALL_PATH;
+            if (current_file.empty()) {
+                char exe_path[XPUM_MAX_PATH_LEN];
+                ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+                exe_path[len] = '\0';
+                current_file = exe_path;
+            }
             std::string mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/mediadata/";
             std::string decode_file_name = mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_DECODE_FILE;
             std::string command_decode = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_decode h264 -device " + device_path +
@@ -1062,10 +1090,13 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
 }
 
 std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_path) {
-    char exe_path[XPUM_MAX_PATH_LEN];
-    ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
-    exe_path[len] = '\0';
-    std::string current_file = exe_path;
+    std::string current_file = XPUM_DAEMON_INSTALL_PATH;
+    if (current_file.empty()) {
+        char exe_path[XPUM_MAX_PATH_LEN];
+        ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+        exe_path[len] = '\0';
+        current_file = exe_path;
+    }
     std::string folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/kernels/";
     std::string absolute_file_path = folder + file_path;
     std::ifstream stream(absolute_file_path, std::ios::in | std::ios::binary);
