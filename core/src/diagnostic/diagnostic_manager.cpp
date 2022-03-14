@@ -277,7 +277,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             return;
         }
         */
-       
+
         if (p_task_info->level >= xpum_diag_level_t::XPUM_DIAG_LEVEL_2) {
             XPUM_LOG_INFO("start hardware sysmam diagnostic");
             try {
@@ -378,7 +378,7 @@ void DiagnosticManager::doDeviceDiagnosticLibraries(std::shared_ptr<xpum_diag_ta
     p_task_info->count += 1;
     updateMessage(component2.message, std::string("Running"));
     std::vector<std::string> libs;
-    libs.push_back("libze_loader.so");
+    libs.push_back("libze_loader.so.1");
     libs.push_back("libze_intel_gpu.so.1");
 
     bool find_libs = true;
@@ -471,7 +471,7 @@ void DiagnosticManager::doDeviceDiagnosticExclusive(const zes_device_handle_t &d
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zesDeviceProcessesGetState()");
     }
-    uint32_t process_count_origin = process_count;
+
     for (auto process : processes) {
         std::ifstream file("/proc/" + std::to_string(process.processId) + "/cmdline");
         if (!file.good()) {
@@ -490,7 +490,7 @@ void DiagnosticManager::doDeviceDiagnosticExclusive(const zes_device_handle_t &d
     }
     if (process_count > 1) {
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        std::string desc = "Fail to check the software exclusive. " + std::to_string(process_count_origin) + " processses are using the device.";
+        std::string desc = "Fail to check the software exclusive. " + std::to_string(process_count) + " processses are using the device.";
         updateMessage(component4.message, desc);
     } else {
         component4.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
