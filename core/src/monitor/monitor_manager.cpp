@@ -30,9 +30,13 @@ void MonitorManager::init() {
     createMonitorTasks();
     
     for (uint64_t session = 0; session < Configuration::MAX_STATISTICS_SESSION_NUM; session++) {
-        Core::instance().getDataLogic()->updateStatsTimestamp(session);
-        Core::instance().getDataLogic()->updateEngineStatsTimestamp(session);
-        Core::instance().getDataLogic()->updateFabricStatsTimestamp(session);
+        std::vector<std::shared_ptr<Device>> devices;
+        Core::instance().getDeviceManager()->getDeviceList(devices);
+        for (auto device:devices) {
+            Core::instance().getDataLogic()->updateStatsTimestamp(session, std::stoi(device->getId()));
+            Core::instance().getDataLogic()->updateEngineStatsTimestamp(session, std::stoi(device->getId()));
+            Core::instance().getDataLogic()->updateFabricStatsTimestamp(session, std::stoi(device->getId()));
+        }
     }
 
     for (auto& p_task : tasks) {

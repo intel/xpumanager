@@ -68,16 +68,16 @@ class DataLogicQueryInterface {
 
     virtual std::vector<std::deque<MeasurementCacheData>> getCachedRawData(uint32_t task_id) = 0;
 
-    virtual void updateStatsTimestamp(uint32_t session_id) = 0;
+    virtual void updateStatsTimestamp(uint32_t session_id, uint32_t device_id) = 0;
 
-    virtual uint64_t getStatsTimestamp(uint32_t session_id) = 0;
+    virtual uint64_t getStatsTimestamp(uint32_t session_id, uint32_t device_id) = 0;
 
-    virtual void updateEngineStatsTimestamp(uint32_t session_id) = 0;
+    virtual void updateEngineStatsTimestamp(uint32_t session_id, uint32_t device_id) = 0;
 
-    virtual uint64_t getEngineStatsTimestamp(uint32_t session_id) = 0;
+    virtual uint64_t getEngineStatsTimestamp(uint32_t session_id, uint32_t device_id) = 0;
 
-    virtual void updateFabricStatsTimestamp(uint32_t session_id) = 0;
+    virtual void updateFabricStatsTimestamp(uint32_t session_id, uint32_t device_id) = 0;
 
-    virtual uint64_t getFabricStatsTimestamp(uint32_t session_id) = 0;
+    virtual uint64_t getFabricStatsTimestamp(uint32_t session_id, uint32_t device_id) = 0;
 };
 } // end namespace xpum
