@@ -914,7 +914,7 @@ Options:
   -l,--level                  The diagnostic levels to run. The valid options include
                                 1. quick test
                                 2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs
-                                3. long test - will diagnostic level have the significant performance impact on the specified GPUs
+                                3. long test - this diagnostic level will have the significant performance impact on the specified GPUs
 ```
 
 Run test to diagnose GPU
