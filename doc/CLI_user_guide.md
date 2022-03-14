@@ -911,10 +911,10 @@ Options:
 
   -d,--device                 The device ID.
   -g,--group                  The group ID.
-  -l,--level                  The diagnostics level to run. The valid options include
+  -l,--level                  The diagnostic levels to run. The valid options include
                                 1. quick test
-                                2. medium test
-                                3. long test
+                                2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs
+                                3. long test - will diagnostic level have the significant performance impact on the specified GPUs
 ```
 
 Run test to diagnose GPU
