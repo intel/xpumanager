@@ -2985,6 +2985,8 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                     description += "are configured down. ";
                 }
             }
+        } else {
+            description = "The device has no Xe Link capability.";
         }
     }
 
