@@ -933,12 +933,18 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
 
                 std::size_t one_case_allocation_count = one_case_requested_allocation_size / (number_of_kernel_args_ * sizeof(uint8_t));
                 std::uint64_t number_of_dispatch = max_allocation_size / one_case_requested_allocation_size;
-
+                // Turn down number_of_dispatch and allocate_size to support unstable PVC
+                if (device_names.find(ze_device) != device_names.end() && device_names[ze_device].find("0x0bd5") != std::string::npos) {
+                    if (allocate_size == one_GB) {
+                        continue;
+                    }
+                    number_of_dispatch = std::min((int)number_of_dispatch, 100);
+                }
                 std::vector<uint8_t *> input_allocations;
                 std::vector<uint8_t *> output_allocations;
                 std::vector<std::vector<uint8_t>> data_out_vector;
                 std::vector<std::string> test_kernel_names;
-
+                
                 for (uint64_t dispatch_id = 0; dispatch_id < number_of_dispatch; dispatch_id++) {
                     uint8_t *input_allocation;
                     uint8_t *output_allocation;
