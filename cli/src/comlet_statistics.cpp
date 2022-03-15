@@ -216,13 +216,6 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
     }, {
         "instance": "",
         "cells": [[
-            { "rowTitle": "Xe Link Throughput (kB/s) " }
-        ], [
-            { "value": "fabric_throughput"}
-        ]]
-    }, {
-        "instance": "",
-        "cells": [[
             { "rowTitle": "Comupte Engine Util (%) " }
         ], [
             { "value": "compute_engine_util"}
@@ -268,6 +261,13 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "3D Engine Util (%) " }
         ], [
             { "value": "3d_engine_util"}
+        ]]
+    }, {
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "Xe Link Throughput (kB/s) " }
+        ], [
+            { "value": "fabric_throughput"}
         ]]
     }]
 })"_json);

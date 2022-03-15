@@ -416,7 +416,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId, boo
                     && response.componentinfo(i).result() == DIAG_RESULT_FAIL) {
                     auto process_list_json = getDeviceProcessState(response.deviceid());
                     if (process_list_json->contains("device_process_list")) {
-                        componentJson["process_list"] = (*process_list_json)["device_process_list"];
+                        std::vector<nlohmann::json> processList;
+                        for (auto process : (*process_list_json)["device_process_list"]) {
+                            if (process["process_name"] != "")
+                                processList.push_back(process);
+                        }
+                        componentJson["process_list"] = processList;
                     }
                 }
                 componentJsonList.push_back(componentJson);
@@ -514,7 +519,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t g
                         && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_FAIL) {
                         auto process_list_json = getDeviceProcessState(response.taskinfo(i).deviceid());
                         if (process_list_json->contains("device_process_list")) {
-                            componentJson["process_list"] = (*process_list_json)["device_process_list"];
+                            std::vector<nlohmann::json> processList;
+                            for (auto process : (*process_list_json)["device_process_list"]) {
+                                if (process["process_name"] != "")
+                                    processList.push_back(process);
+                            }
+                            componentJson["process_list"] = processList;
                         }
                     }
                     componentJsonList.push_back(componentJson);

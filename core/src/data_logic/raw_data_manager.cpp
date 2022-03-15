@@ -312,39 +312,39 @@ void RawDataManager::updateCaches(MeasurementType type, std::shared_ptr<SharedDa
     }
 }
 
-void RawDataManager::updateStatsTimestamp(uint32_t session_id) {
+void RawDataManager::updateStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     std::unique_lock<std::mutex> lock(mutex);
-    stats_session_timestamps[session_id] = Utility::getCurrentTime();
+    stats_session_timestamps[session_id][device_id] = Utility::getCurrentTime();
 }
 
-uint64_t RawDataManager::getStatsTimestamp(uint32_t session_id) {
+uint64_t RawDataManager::getStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     std::unique_lock<std::mutex> lock(mutex);
-    uint64_t time = stats_session_timestamps[session_id];
-    stats_session_timestamps[session_id] = Utility::getCurrentTime();
+    uint64_t time = stats_session_timestamps[session_id][device_id];
+    stats_session_timestamps[session_id][device_id] = Utility::getCurrentTime();
     return time;
 }
 
-void RawDataManager::updateEngineStatsTimestamp(uint32_t session_id) {
+void RawDataManager::updateEngineStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     std::unique_lock<std::mutex> lock(mutex);
-    engine_stats_session_timestamps[session_id] = Utility::getCurrentTime();
+    engine_stats_session_timestamps[session_id][device_id] = Utility::getCurrentTime();
 }
 
-uint64_t RawDataManager::getEngineStatsTimestamp(uint32_t session_id) {
+uint64_t RawDataManager::getEngineStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     std::unique_lock<std::mutex> lock(mutex);
-    uint64_t time = engine_stats_session_timestamps[session_id];
-    engine_stats_session_timestamps[session_id] = Utility::getCurrentTime();
+    uint64_t time = engine_stats_session_timestamps[session_id][device_id];
+    engine_stats_session_timestamps[session_id][device_id] = Utility::getCurrentTime();
     return time;
 }
 
-void RawDataManager::updateFabricStatsTimestamp(uint32_t session_id) {
+void RawDataManager::updateFabricStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     std::unique_lock<std::mutex> lock(mutex);
-    fabric_stats_session_timestamps[session_id] = Utility::getCurrentTime();
+    fabric_stats_session_timestamps[session_id][device_id] = Utility::getCurrentTime();
 }
 
-uint64_t RawDataManager::getFabricStatsTimestamp(uint32_t session_id) {
+uint64_t RawDataManager::getFabricStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     std::unique_lock<std::mutex> lock(mutex);
-    uint64_t time = fabric_stats_session_timestamps[session_id];
-    fabric_stats_session_timestamps[session_id] = Utility::getCurrentTime();
+    uint64_t time = fabric_stats_session_timestamps[session_id][device_id];
+    fabric_stats_session_timestamps[session_id][device_id] = Utility::getCurrentTime();
     return time;
 }
 

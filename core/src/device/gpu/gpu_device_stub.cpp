@@ -2851,25 +2851,40 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
         std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
         if (res == ZE_RESULT_SUCCESS) {
+            auto current_device_value = 0;
+            auto current_sub_device_value_sum = 0;
             for (auto& power : power_handles) {
+                zes_power_properties_t props;
+                props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
+                if (res != ZE_RESULT_SUCCESS) {
+                    continue;
+                }
                 zes_power_energy_counter_t snap1, snap2;
                 XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
                 if (res == ZE_RESULT_SUCCESS) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
-                    int power_val = 0;
                     XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
                     if (res == ZE_RESULT_SUCCESS) {
-                        power_val = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
-                        if (power_val < power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
-                            status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
-                            description = "All power domains are healthy.";
-                        }
-                        if (power_val >= power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
-                            status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
-                            description = "Find an unhealthy power domains. Its power is " + std::to_string(power_val) + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(power_threshold) + ".";
+                        int value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+                        if (!props.onSubdevice) {
+                            current_device_value = value;
+                        } else {
+                            current_sub_device_value_sum += value;
                         }
                     }
                 }
+            }
+            XPUM_LOG_DEBUG("health: current device power value: {}", current_device_value);
+            XPUM_LOG_DEBUG("health: current sum of sub-device power values: {}", current_sub_device_value_sum);
+            auto power_val = std::max(current_device_value, current_sub_device_value_sum);
+            if (power_val < power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
+                description = "All power domains are healthy.";
+            }
+            if (power_val >= power_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
+                description = "Find an unhealthy power domain. Its power is " + std::to_string(power_val) + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(power_threshold) + ".";
             }
         }
     } else if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL || type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THEARMAL) {
@@ -2985,6 +3000,8 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                     description += "are configured down. ";
                 }
             }
+        } else {
+            description = "The device has no Xe Link capability.";
         }
     }
 

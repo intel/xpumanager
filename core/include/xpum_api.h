@@ -47,7 +47,7 @@ xpum_result_t xpumShutdown(void);
  *                                      \a versionInfoList         
  * @return
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than device count of group
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than the count of version info
  */
 xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count);
 

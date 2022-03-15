@@ -110,7 +110,7 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         }
         ++metric_types_iter;
     }
-    *begin = getStatsTimestamp(session_id);
+    *begin = getStatsTimestamp(session_id, deviceId);
     *end = Utility::getCurrentTime();
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>>::iterator datas_iter = m_datas.begin();
@@ -287,7 +287,7 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
         return XPUM_OK;
     }
 
-    *begin = getEngineStatsTimestamp(session_id);
+    *begin = getEngineStatsTimestamp(session_id, deviceId);
     *end = Utility::getCurrentTime();
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
@@ -473,7 +473,7 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
     uint32_t index = 0;
     std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_FABRIC_THROUGHPUT, device_id, session_id);
     auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
-    *begin = getFabricStatsTimestamp(session_id);
+    *begin = getFabricStatsTimestamp(session_id, deviceId);
     *end = Utility::getCurrentTime();
     while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
         FabricThroughputInfo info;
@@ -601,46 +601,46 @@ bool DataLogic::getFabricLinkInfo(xpum_device_id_t deviceId,
     return true;
 }
 
-void DataLogic::updateStatsTimestamp(uint32_t session_id) {
+void DataLogic::updateStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
     }
-    p_raw_data_manager->updateStatsTimestamp(session_id);
+    p_raw_data_manager->updateStatsTimestamp(session_id, device_id);
 }
 
-uint64_t DataLogic::getStatsTimestamp(uint32_t session_id) {
+uint64_t DataLogic::getStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
     }
-    return p_raw_data_manager->getStatsTimestamp(session_id);
+    return p_raw_data_manager->getStatsTimestamp(session_id, device_id);
 }
 
-void DataLogic::updateEngineStatsTimestamp(uint32_t session_id) {
+void DataLogic::updateEngineStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
     }
-    p_raw_data_manager->updateEngineStatsTimestamp(session_id);
+    p_raw_data_manager->updateEngineStatsTimestamp(session_id, device_id);
 }
 
-uint64_t DataLogic::getEngineStatsTimestamp(uint32_t session_id) {
+uint64_t DataLogic::getEngineStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
     }
-    return p_raw_data_manager->getEngineStatsTimestamp(session_id);
+    return p_raw_data_manager->getEngineStatsTimestamp(session_id, device_id);
 }
 
-void DataLogic::updateFabricStatsTimestamp(uint32_t session_id) {
+void DataLogic::updateFabricStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
     }
-    p_raw_data_manager->updateFabricStatsTimestamp(session_id);
+    p_raw_data_manager->updateFabricStatsTimestamp(session_id, device_id);
 }
 
-uint64_t DataLogic::getFabricStatsTimestamp(uint32_t session_id) {
+uint64_t DataLogic::getFabricStatsTimestamp(uint32_t session_id, uint32_t device_id) {
     if (p_raw_data_manager == nullptr) {
         throw IlegalStateException("initialization is not done!");
     }
-    return p_raw_data_manager->getFabricStatsTimestamp(session_id);
+    return p_raw_data_manager->getFabricStatsTimestamp(session_id, device_id);
 }
 
 } // end namespace xpum
