@@ -20,14 +20,13 @@ struct GraphicDevice {
 
 struct xpum_fabric_port_pair{
     int32_t deviceId;
-    ze_bool_t onSubdevice;
-    uint32_t subdeviceId;
+    zes_fabric_port_properties_t localPortProp;
+    
     bool healthy;
     bool enabled;
     uint32_t numaIdx;
-    std::string cpuAffinity;
-    zes_fabric_port_id_t portId;
-    zes_fabric_port_id_t remotePortId;
+    std::string cpuAffinity;    
+    zes_fabric_port_id_t remotePortId;    
 };
 
 typedef std::pair<int32_t, int32_t> device_pair;

@@ -200,32 +200,36 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
             memset(&topoInfo, 0, sizeof(topoInfo));
             topoInfo.localDevice.deviceId = fabricPorts[x].deviceId;
             topoInfo.localDevice.numaIdx = fabricPorts[x].numaIdx;
-            topoInfo.localDevice.onSubdevice = fabricPorts[x].onSubdevice;
-            topoInfo.localDevice.subdeviceId = fabricPorts[x].subdeviceId;
+            topoInfo.localDevice.onSubdevice = fabricPorts[x].localPortProp.onSubdevice;
+            topoInfo.localDevice.subdeviceId = fabricPorts[x].localPortProp.subdeviceId;
             len = fabricPorts[x].cpuAffinity.copy(topoInfo.localDevice.cpuAffinity, XPUM_MAX_CPU_LIST_LEN);
             topoInfo.localDevice.cpuAffinity[len] = '\0';
 
             topoInfo.remoteDevice.deviceId = fabricPorts[y].deviceId;
             topoInfo.remoteDevice.numaIdx = fabricPorts[y].numaIdx;
-            topoInfo.remoteDevice.onSubdevice = fabricPorts[y].onSubdevice;
-            topoInfo.remoteDevice.subdeviceId = fabricPorts[y].subdeviceId;
+            //topoInfo.remoteDevice.onSubdevice = fabricPorts[y].onSubdevice;
+            //topoInfo.remoteDevice.subdeviceId = fabricPorts[y].subdeviceId;
 
             topoInfo.linkType = XPUM_LINK_UNKNOWN;
 
             if (fabricPorts[x].enabled && fabricPorts[x].healthy){
-                if(fabricPorts[x].remotePortId == fabricPorts[y].portId) {
+                if(fabricPorts[x].remotePortId == fabricPorts[y].localPortProp.portId) {
                     topoInfo.linkType = XPUM_LINK_XE;    
                     XPUM_LOG_DEBUG("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}", 
-                    fabricPorts[x].deviceId, fabricPorts[x].subdeviceId,
-                    fabricPorts[x].portId.fabricId,
-                    fabricPorts[x].portId.attachId, fabricPorts[x].portId.portNumber, 
-                    fabricPorts[y].deviceId, fabricPorts[y].subdeviceId,
-                    fabricPorts[y].portId.fabricId, fabricPorts[y].portId.attachId, fabricPorts[y].portId.portNumber
-                    );                
+                    fabricPorts[x].deviceId, fabricPorts[x].localPortProp.subdeviceId,
+                    fabricPorts[x].localPortProp.portId.fabricId,
+                    fabricPorts[x].localPortProp.portId.attachId, fabricPorts[x].localPortProp.portId.portNumber, 
+                    fabricPorts[y].deviceId, fabricPorts[y].localPortProp.subdeviceId,
+                    fabricPorts[y].localPortProp.portId.fabricId, fabricPorts[y].localPortProp.portId.attachId, 
+                    fabricPorts[y].localPortProp.portId.portNumber
+                    );   
+
+                    XPUM_LOG_DEBUG("XELINK Rx:{} Tx:{}", fabricPorts[x].localPortProp.maxRxSpeed.width,
+                     fabricPorts[x].localPortProp.maxTxSpeed.width);             
                 }                
             }   
 
-            changeOrAddInfo(topoInfos, topoInfo, fabricPorts[x].portId, fabricPorts[y].portId);        
+            changeOrAddInfo(topoInfos, topoInfo, fabricPorts[x].localPortProp.portId, fabricPorts[y].localPortProp.portId);        
         }        
     }
 
