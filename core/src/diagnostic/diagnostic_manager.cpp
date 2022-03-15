@@ -1294,7 +1294,8 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
     std::thread read_power_thread = std::thread([&computation_done, &power_value, device]() {
         while (!computation_done.load()) {
             try {
-                auto current_value = 0;
+                auto current_device_value = 0;
+                auto current_sub_device_value_sum = 0;
                 ze_result_t res;
                 uint32_t power_domain_count = 0;
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
@@ -1314,18 +1315,19 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                             std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
                             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
-                                int power_value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+                                int value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
                                 if (!props.onSubdevice) {
-                                    current_value = power_value;
-                                    break;
-                                }
-                                else {
-                                    current_value += power_value;
+                                    current_device_value = value;
+                                } else {
+                                    current_sub_device_value_sum += value;
                                 }
                             }
                         }
                     }
                 }
+                XPUM_LOG_DEBUG("diagnostic: current device power value: {}", current_device_value);
+                XPUM_LOG_DEBUG("diagnostic: current sum of sub-device power values: {}", current_sub_device_value_sum);
+                auto current_value = std::max(current_device_value, current_sub_device_value_sum);
                 if (current_value > power_value) {
                     power_value = current_value;
                     XPUM_LOG_DEBUG("update peak power value: {}", power_value);
