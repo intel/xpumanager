@@ -106,6 +106,10 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT,
     XPUM_METRIC_NOT_SUPPORTED,              ///< Unsupported metric
     XPUM_METRIC_NOT_ENABLED,                ///< Unenabled metric
+    XPUM_RESULT_HEALTH_INVALID_TYPE,
+    XPUM_RESULT_HEALTH_INVALID_CONIG_TYPE,
+    XPUM_RESULT_HEALTH_INVALID_THRESHOLD,
+    XPUM_RESULT_DIAGNOSTIC_INVALID_LEVEL,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

@@ -827,6 +827,11 @@ xpum_result_t xpumGetHealthConfigByGroup(xpum_group_id_t groupId,
     if (ret != XPUM_OK)
         return ret;
 
+    if (deviceIdList == nullptr || valueList == nullptr) {
+        *count = xpum_group_info.count;
+        return  XPUM_OK;
+    }
+
     if (xpum_group_info.count > (*count)) {
         return XPUM_BUFFER_TOO_SMALL;
     }
@@ -856,6 +861,11 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
     ret = xpumGroupGetInfo(groupId, &xpum_group_info);
     if (ret != XPUM_OK)
         return ret;
+
+    if (dataList == nullptr) {
+        *count = xpum_group_info.count;
+        return  XPUM_OK;
+    }
 
     if (xpum_group_info.count > (*count)) {
         return XPUM_BUFFER_TOO_SMALL;
@@ -912,6 +922,11 @@ xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
     ret = xpumGroupGetInfo(groupId, &xpum_group_info);
     if (ret != XPUM_OK)
         return ret;
+
+    if (resultList == nullptr) {
+        *count = xpum_group_info.count;
+        return  XPUM_OK;
+    }
 
     if (xpum_group_info.count > (*count)) {
         return XPUM_BUFFER_TOO_SMALL;

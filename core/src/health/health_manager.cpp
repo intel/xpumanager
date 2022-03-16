@@ -11,7 +11,7 @@ HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
                              std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {
     XPUM_LOG_TRACE("HealthManager()");
-    p_health_device_to_tdps = { {"0x0205", 150}, {"0x020A", 300}, 
+    p_health_device_to_tdps = { {"0x0205", 150}, {"0x0203", 150}, {"0x020A", 300}, 
                                 {"0x56C0", 150}, {"0x56C1", 37.5}, {"0x0BD5", 600}};
 }
 
@@ -42,6 +42,8 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
             case xpum_health_config_type_t::XPUM_HEALTH_POWER_LIMIT:
                 p_health_power_configs.erase(deviceId);
                 break;
+            default:
+                return XPUM_RESULT_HEALTH_INVALID_CONIG_TYPE;
         }
         return XPUM_OK;
     }
@@ -50,18 +52,21 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
     switch (key) {
         case xpum_health_config_type_t::XPUM_HEALTH_CORE_THEARMAL_LIMIT:
             if (threshold <= 0 || threshold > 130) // (0, 130]
-                return XPUM_GENERIC_ERROR;
+                return XPUM_RESULT_HEALTH_INVALID_THRESHOLD;
             p_health_core_thermal_configs[deviceId] = threshold;
             break;
         case xpum_health_config_type_t::XPUM_HEALTH_MEMORY_THEARMAL_LIMIT:
             if (threshold <= 0 || threshold > 100) // (0, 100])
-                return XPUM_GENERIC_ERROR;
+                return XPUM_RESULT_HEALTH_INVALID_THRESHOLD;
             p_health_memory_thermal_configs[deviceId] = threshold;
             break;
         case xpum_health_config_type_t::XPUM_HEALTH_POWER_LIMIT:
-            if (threshold <= 0)
-                return XPUM_GENERIC_ERROR;
+            if (threshold <= 0 || threshold > 600) // (0, 600])
+                return XPUM_RESULT_HEALTH_INVALID_THRESHOLD;
             p_health_power_configs[deviceId] = threshold;
+            break;
+        default:
+            return XPUM_RESULT_HEALTH_INVALID_CONIG_TYPE;
     }
     return XPUM_OK;
 }
@@ -95,6 +100,8 @@ xpum_result_t HealthManager::getHealthConfig(xpum_device_id_t deviceId, xpum_hea
                 *threshold = p_health_power_configs.at(deviceId);
             }
             break;
+        default:
+            return XPUM_RESULT_HEALTH_INVALID_CONIG_TYPE;
     }
     return XPUM_OK;
 }
@@ -122,6 +129,10 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
             deviceName = prop.getValue();
         }
         data->throttleThreshold = getThrottlePower(deviceName);
+    } else {
+        if (type != xpum_health_type_t::XPUM_HEALTH_MEMORY 
+            && type != xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT)
+        return XPUM_RESULT_HEALTH_INVALID_TYPE;
     }
 
     bool global_default_limit = true;
