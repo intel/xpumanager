@@ -1633,6 +1633,8 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         uint64_t currentGpuBusy = 0;
         uint64_t currentEuStall = 0;
         uint64_t currentEuActive = 0;
+        uint64_t currentXveStall = 0;
+        uint64_t currentXueActive= 0;
         uint64_t currentGPUElapsedTime = 0;
         for (uint32_t metric = 0; metric < metricCount; metric++) {
             zet_typed_value_t data = metricValues[report * metricCount + metric];
@@ -1650,10 +1652,18 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
             if (std::strcmp(metricProperties.name, "EuStall") == 0) {
                 currentEuStall = data.value.fp32;
             }
+            if (strcmp(metricProperties.name, "XveActive") == 0) {
+                currentXueActive = data.value.fp32;
+            }
+            if (strcmp(metricProperties.name, "XveStall")  == 0) {
+                currentXveStall = data.value.fp32;
+            }
             if (std::strcmp(metricProperties.name, "GpuTime") == 0) {
                 currentGPUElapsedTime = data.value.ui64;
             }
         }
+        currentEuActive = std::max(currentEuActive, currentXueActive);
+        currentEuStall = std::max(currentEuStall, currentXveStall);
         totalGpuBusy += currentGPUElapsedTime * currentGpuBusy;
         totalEuStall += currentGPUElapsedTime * currentEuStall;
         totalEuActive += currentGPUElapsedTime * currentEuActive;
