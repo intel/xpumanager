@@ -144,13 +144,16 @@ install(TARGETS xpum xpumcli xpumd
 	ARCHIVE DESTINATION .
 )
 
-install(
-    FILES
-		install/tools/fwUpgrade/GfxFwFPT
-    PERMISSIONS
-		OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
-    DESTINATION /usr/local/bin
-)
+
+IF(EXISTS install/tools/fwUpgrade/GfxFwFPT)
+	install(
+		FILES
+			install/tools/fwUpgrade/GfxFwFPT
+		PERMISSIONS
+			OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
+		DESTINATION /usr/local/bin
+	)
+ENDIF()
 
 
 install(FILES

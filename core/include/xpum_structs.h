@@ -110,6 +110,7 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_HEALTH_INVALID_CONIG_TYPE,
     XPUM_RESULT_HEALTH_INVALID_THRESHOLD,
     XPUM_RESULT_DIAGNOSTIC_INVALID_LEVEL,
+    XPUM_RESULT_GFXFWFPT_NOT_FOUND
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

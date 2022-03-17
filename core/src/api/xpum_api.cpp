@@ -307,6 +307,15 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 
 static const std::string gfxPath{"/usr/local/bin/GfxFwFPT"};
 
+static bool detectGfxTool() {
+    if (FILE *file = fopen(gfxPath.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmware_flash_job* job) {
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -314,6 +323,9 @@ static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmw
 
     xpum_result_t rc;
     if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+        if (!detectGfxTool()) {
+            return XPUM_RESULT_GFXFWFPT_NOT_FOUND;
+        }
         rc = device->runFirmwareFlash(job->filePath, gfxPath);
     }
     else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC) {

@@ -70,7 +70,22 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data DUMP_RAW_DATA_SRC)
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/ipmi IPMI_SRC)
+
+IF(EXISTS ${CMAKE_CURRENT_LIST_DIR}/src/ipmi)
+  message(STATUS "amcfw lib src found")
+  aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/ipmi IPMI_SRC)
+  add_library(amcfw STATIC ${IPMI_SRC} ${INFRAS_SRC} ${EXCEPTION_SRC})
+  
+  target_include_directories(
+    amcfw 
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
+    ${CMAKE_CURRENT_LIST_DIR}/src 
+    ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
+    
+ELSE()
+  add_library(amcfw STATIC IMPORTED)
+  set_target_properties(amcfw PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_LIST_DIR}/resources/amcfw/libamcfw.a)
+ENDIF()
 
 add_executable(test_xpum_api ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
 add_library(xpum SHARED)
@@ -110,7 +125,7 @@ target_sources(
           ${HEALTH_SRC}
           ${DIAGNOSTIC_SRC}
           ${TOPOLOGY_SRC}
-          ${IPMI_SRC}
+          # ${IPMI_SRC}
           ${DUMP_RAW_DATA_SRC})
 
 target_sources(
@@ -130,8 +145,11 @@ target_sources(
           ${HEALTH_SRC}
           ${DIAGNOSTIC_SRC}
           ${TOPOLOGY_SRC}
-          ${IPMI_SRC}
+          # ${IPMI_SRC}
           ${DUMP_RAW_DATA_SRC})
+
+target_link_libraries(xpum PRIVATE amcfw)
+target_link_libraries(test_xpum_api PRIVATE amcfw)
 
 message(STATUS "version ${PROJECT_VERSION}") 
 message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")
