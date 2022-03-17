@@ -665,6 +665,14 @@ static int cmd_firmware_info(nrv_list cards, unsigned int versions[4]) {
     return err;
 }
 
+int cmd_probe() {
+    int card_id = CARD_SELECT_ALL;
+
+    nrv_list cards;
+
+    int err = get_card_list(&cards, card_id);
+}
+
 int cmd_firmware(const char* file, unsigned int versions[4]) {
     const char *bsmc_file = file;
     uint8_t *bsmc_data = NULL;

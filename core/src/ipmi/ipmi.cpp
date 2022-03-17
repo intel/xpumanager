@@ -133,7 +133,7 @@ static int card_detect(nrv_card *card) {
     return NRV_SUCCESS;
 }
 
-static int init_card_list() {
+static int probe_i2c_addr(uint8_t i2c_addr){
     int err = 0;
     nrv_card card;
     unsigned char devid = 0;
@@ -146,7 +146,7 @@ static int init_card_list() {
     card.ipmi_address = (ipmi_address_t){
         .bus = 0,
         .slot = 0,
-        .i2c_addr = CARD_FIRST_I2C_ADDR,
+        .i2c_addr = i2c_addr,
     };
 
     err = get_device_id(&card, &devid);
@@ -169,7 +169,7 @@ static int init_card_list() {
         card.ipmi_address = (ipmi_address_t){
             .bus = 0,
             .slot = slot,
-            .i2c_addr = CARD_FIRST_I2C_ADDR,
+            .i2c_addr = i2c_addr,
         };
 
         err = card_detect(&card);
@@ -186,6 +186,15 @@ static int init_card_list() {
         return NRV_SUCCESS;
 
     return NRV_NO_CARD_DETECTED;
+}
+
+static int init_card_list() {
+    int err = 0;
+    err = probe_i2c_addr(CARD_FIRST_I2C_ADDR);
+    if (err) {
+        err = probe_i2c_addr(CARD_FIRST_I2C_ADDR_OLD);
+    }
+    return err;
 }
 
 /* Returns 0 if there is at least one card in system. */

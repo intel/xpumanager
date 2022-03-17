@@ -125,7 +125,6 @@ target_sources(
           ${HEALTH_SRC}
           ${DIAGNOSTIC_SRC}
           ${TOPOLOGY_SRC}
-          # ${IPMI_SRC}
           ${DUMP_RAW_DATA_SRC})
 
 target_sources(
@@ -145,7 +144,6 @@ target_sources(
           ${HEALTH_SRC}
           ${DIAGNOSTIC_SRC}
           ${TOPOLOGY_SRC}
-          # ${IPMI_SRC}
           ${DUMP_RAW_DATA_SRC})
 
 target_link_libraries(xpum PRIVATE amcfw)

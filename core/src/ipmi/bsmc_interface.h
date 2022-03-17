@@ -15,7 +15,8 @@ namespace xpum {
 #define RESPONSE_HEADER_SIZE	sizeof(uint8_t) /* SlotIPMB completion code */
 #define COMPLETION_CODE_SIZE	sizeof(uint8_t) /* Response completion code */
 
-#define CARD_FIRST_I2C_ADDR	0xb0
+#define CARD_FIRST_I2C_ADDR_OLD	0xb0
+#define CARD_FIRST_I2C_ADDR	0xce
 #define MAX_PCI_SLOT_COUNT	0x07
 
 #define MAX_PCI_SLOT_COUNT_OPEN_BMC     0x07
