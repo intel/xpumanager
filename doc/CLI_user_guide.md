@@ -346,11 +346,6 @@ List the GPU device aggregated statistics that are collected by XPU Manager
 | GPU Memory Used (MiB)        | Tile 0: avg: 500, min: 100, max: 700, current: 400                |
 |                              | Tile 1: avg: 500, min: 100, max: 700, current: 400                |
 +------------------------------+-------------------------------------------------------------------+
-| Xe Link Throughput (kB/s)    | 0/0 -> 1/1: avg: 500, min: 100, max: 700, current: 400            |
-|                              | 0/1 -> 1/0: avg: 500, min: 100, max: 700, current: 400            |
-|                              | 1/1 -> 0/0: avg: 500, min: 100, max: 700, current: 400            |
-|                              | 1/0 -> 0/1: avg: 500, min: 100, max: 700, current: 400            |
-+------------------------------+-------------------------------------------------------------------+
 | Compute Engine Util (%)      | Tile 0:                                                           |
 |                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
 |                              |   Engine 4: 0, Engne 5: 100, Engine 6: 0, Engine 7: 50            |
@@ -388,7 +383,11 @@ List the GPU device aggregated statistics that are collected by XPU Manager
 |                              | Tile 1:                                                           |
 |                              |   Engine 0: 0, Engine 1: 100, Engine 2: 0, Engine 3: 50           |
 +------------------------------+-------------------------------------------------------------------+
-
+| Xe Link Throughput (kB/s)    | 0/0 -> 1/1: avg: 500, min: 100, max: 700, current: 400            |
+|                              | 0/1 -> 1/0: avg: 500, min: 100, max: 700, current: 400            |
+|                              | 1/1 -> 0/0: avg: 500, min: 100, max: 700, current: 400            |
+|                              | 1/0 -> 0/1: avg: 500, min: 100, max: 700, current: 400            |
++------------------------------+-------------------------------------------------------------------+
 ```
  
 ## Get the device health status
@@ -579,7 +578,8 @@ optional arguments:
   -f,--file                   Generate the system topology with the GPU info to a XML file. 
   -m,--matrix                 Print the CPU/GPU topology matrix. 
                                 S: Self
-                                XL#: Connected with Xe Link.  Xe Link LAN count is also provided.
+                                XL[laneCount]: Two tiles on the different cards are directly connected by Xe Link.  Xe Link lane count is also provided.
+                                XL*: Two tiles on the differen cards are connected by Xe Link + MDF. They are not directly connected by Xe Link. 
                                 SYS: Connected with PCIe between NUMA nodes
                                 NODE: Connected with PCIe within a NUMA node
                                 MDF: Connected with Multi-Die Fabric Interface
@@ -610,10 +610,10 @@ Generate the CPU/GPU topology matrix.
 ./xpumcli topology -m
 
          GPU 0/0|GPU 0/1|GPU 1/0|GPU 1/1|CPU Affinity
-GPU 0/0 |S      |MDF    |SYS    |XL8    |0-23,48-71
-GPU 0/1 |MDF    |S      |XL8    |SYS    |0-23,48-71
-GPU 1/0 |SYS    |XL8    |S      |MDF    |24-47,72-95
-GPU 1/1 |XL8    |SYS    |MDF    |S      |24-47,72-95
+GPU 0/0 |S      |MDF    |XL*    |XL16   |0-23,48-71
+GPU 0/1 |MDF    |S      |XL16   |XL*    |0-23,48-71
+GPU 1/0 |XL*    |XL16   |S      |MDF    |24-47,72-95
+GPU 1/1 |XL16   |XL*    |MDF    |S      |24-47,72-95
 ```
   
   
@@ -672,7 +672,7 @@ Get and change the GPU settings.
 Usage: xpumcli config [Options]
   xpumcli config -d [deviceId]
   xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]
-  xpumcli config -d [deviceId] -t [tileId] --powerlimit [powerValue,averageWindow]
+  xpumcli config -d [deviceId] --powerlimit [powerValue,averageWindow]
   xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
   xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
   xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
@@ -688,7 +688,7 @@ Options:
   -t,--tile                   The tile ID
 
   --frequencyrange            GPU tile-level core frequency range.
-  --powerlimit                Tile-level power limit. 
+  --powerlimit                GPU-level power limit. 
   --standby                   Tile-level standby mode. Valid options: "default"; "never".
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); 
                                 "timeslice",interval (us),yieldtimeout (us); "exclusive". The valid range of all time values (us) is from 5000 to 100,000,000.
@@ -705,12 +705,12 @@ show the GPU settings
 +-------------+-------------------+----------------------------------------------------------------+
 | Device Type | Device ID/Tile ID | Configuration                                                  |
 +-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0/0               | Power Limit (w): 300.0                                         |
+| GPU         | 0                 | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 1 to 500                                        |
 |             |                   | Power Average Window (ms): 1                                   |
 |             |                   |   Valid Range: 1 to 124                                        |
-|             |                   |                                                                |
-|             |                   | GPU Min Frequency(MHz): 300.0                                  |
++-------------+-------------------+----------------------------------------------------------------+
+| GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
 |             |                   |   Valid Options: 300, 350, 400, 450, 500,550, 600, 650, 700    |
 |             |                   |       750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200    |
@@ -734,18 +734,14 @@ show the GPU settings
 |             |                   |   Beaconing On: 0,1,2,3                                        |
 |             |                   |   Beaconing Off: 4,5,6,7                                       |
 +-------------+-------------------+----------------------------------------------------------------+
-| GPU         | 0/1               | Power Limit (w): 300.0                                         |
-|             |                   |   Valid Range: 1 to 500                                        |
-|             |                   | Power Average Window (ms): 1                                   |
-|             |                   |   Valid Range: 1 to 124                                        |
-|             |                   |                                                                |
-|             |                   | GPU Min Frequency(MHz): 300.0                                  |
+| GPU         | 0/1               | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
 |             |                   |   Valid Options: 300, 350, 400, 450, 500,550, 600, 650, 700    |
 |             |                   |     750, 800, 850, 900, 950, 1000, 1050, 1100, 1150, 1200      |
 |             |                   |     1250, 1300                                                 |
 |             |                   |                                                                |
 |             |                   | Standby Mode: default                                          |
+|             |                   |   Valid Options: default, never                                |
 |             |                   |                                                                |
 |             |                   | Scheduler Mode: timeslice                                      |
 |             |                   |   Interval(us): 5000                                           |
@@ -772,8 +768,8 @@ Succeed to change the core frequency range on GPU 0 tile 0.
  
 Change the GPU power limit.
 ```
-./xpumcli config -d 0 -t 0 --powerlimit 299,1000
-Succeed to set the power limit on GPU 0 tile 0.
+./xpumcli config -d 0 --powerlimit 299,1000
+Succeed to set the power limit on GPU 0.
 ```
  
 Change the GPU tile standby mode.

@@ -10,7 +10,15 @@ It supports local command line interface, local library call and remote RESFTul 
 * GPU firmware update
 * Get/change GPU settings, including power limit, GPU frequency, standby mode and scheduler mode
 * Support K8s and can export GPU telemetries to Prometheus
-  
+
+## Suppored Devices
+* Intel Arctic Sound-M75 GPU
+* Intel Arctic Sound-M150 GPU
+* Intel Arctic Sound-P GPU
+
+## Supported OS
+* Ubuntu 20.0.4
+* RHEL 8.4
   
 
 ## Intel XPU Manager Architecture
