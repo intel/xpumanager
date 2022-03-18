@@ -51,7 +51,8 @@ def process_fabric_stats(core, pod_resources, devices):
         data_list = []
 
         for link in stat_data['fabric_throughput']:
-            if link.get('src_device_id') != device_id:
+            # type 3 is XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED_COUNTER
+            if link.get('src_device_id') != device_id or link.get('type') != 3:
                 continue
             link['metrics_type'] = 'XPUM_STATS_FABRIC_THROUGHPUT'
             dst_device = next((x for x in devices if x.get('device_id') == link.get('dst_device_id')), None)
@@ -266,11 +267,13 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
             metric_name = metric.prom_metric.name
             val = stat.get(metric.xpum_field) * metric.scale
 
-            all_labelnames, all_labelvalues = attach_ext_labels(
+            all_labelnames, all_labelvalues, ext_labelvalues = attach_ext_labels(
                 labels, label_values, metric.prom_metric.ext_labelnames, metric.ext_labels, stat)
 
             attach_src_label(all_labelnames, all_labelvalues,
                              stat.get('agg_func', 'direct'))
+
+            counter_key = f'{metrics_owner}_{metric_name}_{ext_labelvalues}'
 
             if metric_name not in metrics:
                 if metric.is_counter:
@@ -278,7 +281,7 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
                     metrics[metric_name] = Counter(
                         metric_name, metric.prom_metric.desc, labelnames=all_labelnames, registry=registry)
                     mm = metrics[metric_name].labels(*all_labelvalues)
-                    counter_values[mm] = val
+                    counter_values[counter_key] = val
                     mm.inc(val)
                 else:
                     # aggregated value
@@ -289,23 +292,23 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
                 if metric.is_counter:
                     # counter value
                     mm = metrics[metric_name].labels(*all_labelvalues)
-                    cur_value = counter_values.setdefault(mm, 0)
-                    if val >= cur_value:
-                        counter_values[mm] = val
-                        mm.inc(val-cur_value)
+                    pre_value = counter_values.setdefault(counter_key, 0)
+                    if val >= pre_value:
+                        counter_values[counter_key] = val
+                        mm.inc(val-pre_value)
                     elif metric.process_counter_wrap:
                         logger.info(
-                            'counter wrapped, %s: pre=%d, cur=%d, create new counter', metric_name, cur_value, val)
+                            'counter wrapped, %s: pre=%d, cur=%d, create new counter', metric_name, pre_value, val)
                         # remove the existing metric child
                         metrics[metric_name].remove(*all_labelvalues)
-                        del counter_values[mm]
+                        del counter_values[counter_key]
                         # create new metric child
                         mm = metrics[metric_name].labels(*all_labelvalues)
-                        counter_values[mm] = val
+                        counter_values[counter_key] = val
                         mm.inc(val)
                     else:
                         logger.warn(
-                            'counter decreased, %s: pre=%d, cur=%d, ignore it', metric_name, cur_value, val)
+                            'counter decreased, %s: pre=%d, cur=%d, ignore it', metric_name, pre_value, val)
                 else:
                     # aggregated value
                     metrics[metric_name].labels(*all_labelvalues).set(val)
@@ -378,5 +381,5 @@ def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels, stat=Non
                 value = stat.get(value[1:], 'n/a')
             ext_labelvalues.append(value)
         all_labelvalues = label_values + ext_labelvalues
-        return all_labelnames, all_labelvalues
-    return labels.copy(), label_values.copy()
+        return all_labelnames, all_labelvalues, str(ext_labelvalues)
+    return labels.copy(), label_values.copy(), ''

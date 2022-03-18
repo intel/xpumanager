@@ -120,7 +120,7 @@ metrics_map = {
     'XPUM_STATS_ENGINE_UTILIZATION': Metric(PromMetric.xpum_per_engine_ratio, scale=0.01, ext_labels={'type':'$engine_type', 'engine_id':'$engine_id'}), # nopep8
 
     # XE Link
-    'XPUM_STATS_FABRIC_THROUGHPUT': Metric(PromMetric.xpum_fabric_tx_bytes, is_counter=True, process_counter_wrap=False, ext_labels={'sub_dev': '$src_tile_id', 'dst_dev_file':'$dst_dev_file', 'dst_pci_bdf': '$dst_pci_bdf', 'dst_sub_dev': '$dst_tile_id'}) # nopep8
+    'XPUM_STATS_FABRIC_THROUGHPUT': Metric(PromMetric.xpum_fabric_tx_bytes, is_counter=True, ext_labels={'sub_dev': '$src_tile_id', 'dst_dev_file':'$dst_dev_file', 'dst_pci_bdf': '$dst_pci_bdf', 'dst_sub_dev': '$dst_tile_id'}) # nopep8
 }
 
 
