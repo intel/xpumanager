@@ -858,7 +858,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 ::grpc::Status XpumCoreServiceImpl::setDevicePowerLimit(::grpc::ServerContext* context, const ::ConfigDevicePowerLimitRequest* request,
                                                         ::ConfigDeviceResultData* response) {
     xpum_device_id_t deviceId = request->deviceid();
-    uint32_t tileId = request->tileid();
+    int32_t tileId = request->tileid();
     uint32_t val1 = request->powerlimit();
     uint32_t val2 = request->intervalwindow();
     xpum_result_t res;
@@ -873,7 +873,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     }
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
-        if (powerRangeArray[i].subdevice_Id == tileId) {
+        if (powerRangeArray[i].subdevice_Id == (uint32_t)tileId || tileId == -1) {
             if(val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit) || val2 > 124 || val2 < 1 ) {
                 response->set_errormsg("Invalid power limit value");
                 return grpc::Status::OK;
@@ -1300,13 +1300,25 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         return grpc::Status::OK;
     }
 
+    response->set_powerlimit(power);
+    response->set_interval(interval);
+
+    for (uint32_t i = 0; i < powerRangeCount; i++) {
+        if (powerRangeArray[i].on_subdevice == false) {
+            std::string scope = "1 to " + std::to_string(powerRangeArray[i].default_limit/1000);
+            response->set_powerscope(scope);
+            break;
+        }
+    }
+    response->set_intervalscope ("1 to 124");
+
     for (int j{0}; j < tileCount; ++j) {
         uint32_t tileId = tileList.at(j);
         std::string clockString = "";
         ConfigTileData* tileData = response->add_tileconfigdata();
         tileData->set_tileid(std::to_string(deviceId) + "/" + std::to_string(tileId));
-        tileData->set_powerlimit(power);
-        tileData->set_interval(interval);
+        //tileData->set_powerlimit(power);
+        //tileData->set_interval(interval);
 
         for (uint32_t i = 0; i < freqCount; i++) {
             if (freqArray[i].type == XPUM_GPU_FREQUENCY && freqArray[i].subdevice_Id == tileId) {
@@ -1403,13 +1415,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
             }
         }
         */
-        for (uint32_t i = 0; i < powerRangeCount; i++) {
-            if (powerRangeArray[i].subdevice_Id == tileId) {
-                std::string scope = "1 to " + std::to_string(powerRangeArray[i].default_limit/1000);
-                tileData->set_powerscope(scope);
-                break;
-            }
-        }
+
         xpumGetFreqAvailableClocks(deviceId, tileId, availableClocksArray,&clockCount);
         
         for (uint32_t i= 0; i < clockCount; i++) {
@@ -1420,7 +1426,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         }
         tileData->set_freqoption(clockString);
         tileData->set_standbyoption("default, never");
-        tileData->set_intervalscope ("1 to 124");
+        //tileData->set_intervalscope ("1 to 124");
         //tileData->set_powerscope ("0 to 500");
 
         for (uint32_t i = 0; i < standbyCount; i++) {

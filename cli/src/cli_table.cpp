@@ -178,6 +178,19 @@ void CharTableConfig::addTitleRow(CharTableRow& row) {
     }
 }
 
+void CharTableConfig::calCellWidth(CharTableRow& row, const unsigned int col, const std::string& value) {
+    unsigned int valLen = value.length();
+    if (valLen > colWidthMax[col]) {
+        colWidthMax[col] = valLen;
+    }
+}
+
+void CharTableConfig::calTitleRow(CharTableRow& row) {
+    for (unsigned int i=0; i<columns.size(); i++) {
+        calCellWidth(row, i, columns[i]->getTitle());
+    }
+}
+
 static const unsigned int margin = 1;
 static const unsigned int line = 1;
 
@@ -282,10 +295,14 @@ CharTable::CharTable(CharTableConfig& tableConf, const nlohmann::json& res, cons
 config(tableConf),
 result(res),
 rows() {
-    if (config.showTitleRow()) {
+    if (config.showTitleRow() && !cont) {
         addSeparator();
         CharTableRow& titleRow = addRow();
         config.addTitleRow(titleRow);
+    }else {
+        CharTableRow& titleRow = addRow();
+        config.calTitleRow(titleRow);
+        removeLatestRow();
     }
     if (!cont) addSeparator();
 

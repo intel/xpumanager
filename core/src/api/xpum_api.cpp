@@ -1067,9 +1067,11 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-    xpum_result_t res = validateDeviceIdAndTileId(deviceId, tileId);
-    if (res != XPUM_OK) {
-        return res;
+    if (tileId != -1) {
+        xpum_result_t res = validateDeviceIdAndTileId(deviceId, tileId);
+        if (res != XPUM_OK) {
+            return res;
+        }
     }
 
     Power_sustained_limit_t sustainedLimit;

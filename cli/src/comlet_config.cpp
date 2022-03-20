@@ -7,7 +7,30 @@
 
 namespace xpum::cli {
 
-static CharTableConfig ComletConfigShowConfiguration(R"({
+static CharTableConfig ComletDeviceConfiguration(R"({
+    "indentation": 4,
+    "columns": [{
+        "title": "Device Type"
+    }, {
+        "title": "Device ID/Tile ID"
+    }, {
+        "title": "Configuration"
+    }],
+    "rows": [{
+        "instance": "",
+        "cells": [
+            { "rowTitle": "GPU" },
+            "device_id", [
+                { "label": "Power Limit (w) ", "value": "power_limit" },
+                { "label": "  Valid Range", "value": "power_vaild_range" },
+                { "label": "Power Average Window (ms) ", "value": "power_average_window" },
+                { "label": "  Valid Range", "value": "power_average_window_vaild_range" }
+            ]
+        ]
+    }]
+})"_json);
+
+static CharTableConfig ComletTileConfiguration(R"({
     "indentation": 4,
     "columns": [{
         "title": "Device Type"
@@ -21,11 +44,6 @@ static CharTableConfig ComletConfigShowConfiguration(R"({
         "cells": [
             { "rowTitle": "GPU" },
             "tile_id", [
-                { "label": "Power Limit (w) ", "value": "power_limit" },
-                { "label": "  Valid Range", "value": "power_vaild_range" },
-                { "label": "Power Average Window (ms) ", "value": "power_average_window" },
-                { "label": "  Valid Range", "value": "power_average_window_vaild_range" },
-                { "rowTitle": " " },
                 { "label": "GPU Min Frequency (MHz) ", "value": "min_frequency" },
                 { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
                 { "label": "  Valid Options", "value": "gpu_frequency_valid_options" },
@@ -133,15 +151,16 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 " tile " + std::to_string(this->opts->tileId) + ".";
             }
             return json;
-        } else if (this->opts->tileId >= 0 && !this->opts->powerlimit.empty()) {
+        } else if (/*this->opts->tileId >= 0 &&*/ !this->opts->powerlimit.empty()) {
             std::vector<std::string> paralist = split(this->opts->powerlimit, ",");
             if (paralist.size() ==2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
                 int val1 = std::stoi(paralist.at(0));
                 int val2 = std::stoi(paralist.at(1));
+                this->opts->tileId = -1;
                 json = this->coreStub->setDevicePowerlimit(this->opts->deviceId, this->opts->tileId, val1, val2);
                 if((*json)["status"] == "OK") {
-                     (*json)["return"] = "Succeed to set the power limit on GPU " + std::to_string(this->opts->deviceId) +
-                    " tile " + std::to_string(this->opts->tileId) + ".";
+                     (*json)["return"] = "Succeed to set the power limit on GPU " + std::to_string(this->opts->deviceId) /*+
+                    " tile " + std::to_string(this->opts->tileId) */+ ".";
                 }
             }else {
                 (*json)["return"]="invalid parameter: please check help information";
@@ -328,8 +347,10 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
 }
 
 static void showConfigurations(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
-    CharTable table(ComletConfigShowConfiguration, *json);
-    table.show(out);
+    CharTable table1(ComletDeviceConfiguration, *json);
+    CharTable table2(ComletTileConfiguration, *json, true);
+    table1.show(out);
+    table2.show(out);
 }
 
 static void showPureCommandOutput(std::ostream &out, std::shared_ptr<nlohmann::json> json) {

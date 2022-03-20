@@ -368,40 +368,40 @@ message ConfigDeviceDataRequest{
 }
 message ConfigTileData {
     string tileId = 1;
-    uint32 powerLimit = 2;
-    string powerScope = 3;
-    uint32 interval = 4;
-    string intervalScope = 5; 
-    uint32 minFreq = 6;
-    uint32 maxFreq = 7;
-    string freqOption = 8;
-    XpumStandbyMode standby = 9;
-    string standbyOption = 10;
-    XpumSchedulerMode scheduler = 11;
-    uint32 schedulerTimeout = 12;
-    uint32 schedulerTimesliceInterval = 13;
-    uint32 schedulerTimesliceYieldTimeout = 14;
-    double otherPerformanceFactor = 15;
-    double computePerformanceFactor = 16;
-    double threedPerformanceFactor = 17;
-    double mediaPerformanceFactor = 18;
-    double dmaPerformanceFactor = 19;
-    double renderPerformanceFactor = 20;
-    string portEnabled = 21;
-    string portDisabled = 22;
-    string portBeaconingOn = 23;
-    string portBeaconingOff = 24;
-    bool memoryEccAvailable = 25;
-    bool memoryEccConfigurable = 26;
-    string memoryEccState = 27;
-    string memoryEccPendingState = 28;
-    string memoryEccPendingAction = 29;
+    uint32 minFreq = 2;
+    uint32 maxFreq = 3;
+    string freqOption = 4;
+    XpumStandbyMode standby = 5;
+    string standbyOption = 6;
+    XpumSchedulerMode scheduler = 7;
+    uint32 schedulerTimeout = 8;
+    uint32 schedulerTimesliceInterval = 9;
+    uint32 schedulerTimesliceYieldTimeout = 10;
+    double otherPerformanceFactor = 11;
+    double computePerformanceFactor = 12;
+    double threedPerformanceFactor = 13;
+    double mediaPerformanceFactor = 14;
+    double dmaPerformanceFactor = 15;
+    double renderPerformanceFactor = 16;
+    string portEnabled = 17;
+    string portDisabled = 18;
+    string portBeaconingOn = 19;
+    string portBeaconingOff = 20;
+    bool memoryEccAvailable = 21;
+    bool memoryEccConfigurable = 22;
+    string memoryEccState = 23;
+    string memoryEccPendingState = 24;
+    string memoryEccPendingAction = 25;
 }
 message ConfigDeviceData{
     uint32 deviceId = 1;    
     uint32 tileCount = 2;
-    repeated ConfigTileData tileConfigData = 3;
-    string errorMsg = 4;
+    uint32 powerLimit = 3;
+    string powerScope = 4;
+    uint32 interval = 5;
+    string intervalScope = 6; 
+    repeated ConfigTileData tileConfigData = 7;
+    string errorMsg = 8;
 }
 message ConfigDeviceSchdeulerModeRequest{
     uint32 deviceId = 1;
@@ -413,7 +413,7 @@ message ConfigDeviceSchdeulerModeRequest{
 }
 message ConfigDevicePowerLimitRequest{
     uint32 deviceId = 1;
-    uint32 tileId = 2;
+    int32 tileId = 2;
     uint32 powerLimit = 3;
     uint32 intervalWindow = 4;
 }

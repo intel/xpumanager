@@ -1234,8 +1234,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["device_id"] = deviceId;
-            //(*json)["power_limit"] = response.powerlimit();
-            //(*json)["power_average_window"] = response.interval();
+            (*json)["power_limit"] = response.powerlimit();
+            (*json)["power_vaild_range"] = response.powerscope();
+            (*json)["power_average_window"] = response.interval();
+            (*json)["power_average_window_vaild_range"] = response.intervalscope();
+
             std::vector<nlohmann::json> tileJsonList;
             for (uint i{0}; i < response.tilecount(); ++i) {
                 auto tileJson = nlohmann::json();
@@ -1244,10 +1247,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["max_frequency"] = response.tileconfigdata(i).maxfreq();
                 tileJson["standby_mode"] = standbyModeEnumToString(response.tileconfigdata(i).standby());
                 tileJson["scheduler_mode"] = schedulerModeEnumToString(response.tileconfigdata(i).scheduler());
-                tileJson["power_limit"] = response.tileconfigdata(i).powerlimit();
-                tileJson["power_vaild_range"] = response.tileconfigdata(i).powerscope();
-                tileJson["power_average_window"] = response.tileconfigdata(i).interval();
-                tileJson["power_average_window_vaild_range"] = response.tileconfigdata(i).intervalscope();
                 tileJson["gpu_frequency_valid_options"] = response.tileconfigdata(i).freqoption();
                 tileJson["standby_mode_valid_options"] = response.tileconfigdata(i).standbyoption();
                 if (int(response.tileconfigdata(i).mediaperformancefactor())!= -1){

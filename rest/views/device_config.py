@@ -31,8 +31,8 @@ class PerformancefactorSchema(Schema):
     factor =fields.Float(
         metadata={"description": "performance factor"})
 class PowerLimitSchema(Schema):
-    tile_id = fields.Integer(
-        metadata={"description": "The tile id"})
+    #tile_id = fields.Integer(
+    #    metadata={"description": "The tile id"})
     power_limit = fields.Integer(
         metadata={"description": "The power limit value"})
     power_average_window = fields.Integer(
@@ -160,11 +160,11 @@ def set_powerlimit(deviceId):
     if not request.is_json:
         return jsonify("json string is missing"), 500
     req = request.get_json()
-    if ("power_limit" not in req) or ("power_average_window" not in req) or ("tile_id" not in req) :
+    if ("power_limit" not in req) or ("power_average_window" not in req) :
         return jsonify("json string is invalid"), 500
     power = req["power_limit"]
     interval = req["power_average_window"]
-    tileId = req["tile_id"]
+    #tileId = req["tile_id"]
     if type(power) != int:
        return jsonify("Invalid Parameter power_limit"), 500
     if type(interval) != int:
@@ -174,13 +174,14 @@ def set_powerlimit(deviceId):
     if power<0 or interval<0:
         return jsonify("invalid power_limit or power_average_window value"), 500
     
-    if type(tileId) != int:
-        return jsonify("Invalid Parameter tileId"), 500
+    #if type(tileId) != int:
+    #    return jsonify("Invalid Parameter tileId"), 500
     
-    if tileId<0:
-        return jsonify("invalid Parameter tileId"), 500
+    #if tileId<0:
+    #    return jsonify("invalid Parameter tileId"), 500
     
-    code, message, data = stub.setPowerLimit(deviceId, tileId, power, interval)
+    #code, message, data = stub.setPowerLimit(deviceId, tileId, power, interval)
+    code, message, data = stub.setPowerLimit(deviceId, -1, power, interval)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

@@ -49,7 +49,7 @@ class DeviceManagerInterface : public InitCloseInterface {
                                       Power_burst_limit_t& burst_limit,
                                       Power_peak_limit_t& peak_limit) = 0;
 
-    virtual bool setDevicePowerSustainedLimits(const std::string& id, uint32_t tileId,
+    virtual bool setDevicePowerSustainedLimits(const std::string& id, int32_t tileId,
                                                const Power_sustained_limit_t& sustained_limit) = 0;
 
     virtual bool setDevicePowerBurstLimits(const std::string& id,

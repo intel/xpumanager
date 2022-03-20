@@ -2488,6 +2488,13 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
             zes_power_sustained_limit_t sustained;
             zes_power_burst_limit_t burst;
             zes_power_peak_limit_t peak;
+            zes_power_properties_t props;
+            XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
+            if (res == ZE_RESULT_SUCCESS) {
+                if(props.onSubdevice == true) {
+                    continue;
+                }
+            }
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetLimits(power, &sustained, &burst, &peak));
             if (res == ZE_RESULT_SUCCESS) {
                 sustained_limit.enabled = sustained.enabled;
@@ -2504,7 +2511,7 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
     }
 }
 
-bool GPUDeviceStub::setPowerSustainedLimits(const zes_device_handle_t& device, uint32_t tileId,
+bool GPUDeviceStub::setPowerSustainedLimits(const zes_device_handle_t& device, int32_t tileId,
                                             const Power_sustained_limit_t& sustained_limit) {
     if (device == nullptr) {
         return false;
@@ -2519,7 +2526,7 @@ bool GPUDeviceStub::setPowerSustainedLimits(const zes_device_handle_t& device, u
             zes_power_properties_t props;
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
-                if(props.subdeviceId == tileId) {
+                if(props.subdeviceId == (uint32_t)tileId || (tileId == -1 && props.onSubdevice == false)) {
                     zes_power_sustained_limit_t sustained;
                     sustained.enabled = sustained_limit.enabled;
                     sustained.power = sustained_limit.power;

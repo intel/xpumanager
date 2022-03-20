@@ -435,7 +435,11 @@ class CharTableConfig {
 
     void setCellValue(CharTableRow& row, const unsigned int col, const std::string& value);
 
+    void calCellWidth(CharTableRow& row, const unsigned int col, const std::string& value);
+
     void addTitleRow(CharTableRow& row);
+
+    void calTitleRow(CharTableRow& row);
 
     void calculateColumnWidth();
 
@@ -582,6 +586,10 @@ class CharTable {
     inline CharTableRow& addRow() {
         rows.push_back(new CharTableRow(config.numOfColumns()));
         return (CharTableRow&) *(rows.back());
+    }
+
+    inline void removeLatestRow() {
+        rows.pop_back();
     }
 
     inline CharTableRowSeparator& addSeparator() {
