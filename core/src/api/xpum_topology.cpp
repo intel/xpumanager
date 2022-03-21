@@ -168,11 +168,13 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
         topoInfos.push_back(info);
     } else {
         if(info.linkType == XPUM_LINK_XE) {
-            if(currentInfo->linkType == XPUM_LINK_NODE || currentInfo->linkType == XPUM_LINK_SYS){
+            if(currentInfo->linkType == XPUM_LINK_NODE 
+            || currentInfo->linkType == XPUM_LINK_SYS
+            || currentInfo->linkType == XPUM_LINK_XE_TRANSMIT){
                 currentInfo->linkType = XPUM_LINK_XE;
                 setXelinkTransfer(topoInfos, info);
             }            
-            //currentInfo->linkPorts[localPort.portNumber-1] = 1;
+            currentInfo->linkPorts[localPort.portNumber-1] = info.linkPorts[localPort.portNumber-1];
         }
     }
 }
