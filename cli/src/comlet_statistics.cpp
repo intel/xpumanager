@@ -41,16 +41,16 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
                 { "value": "data_list[metrics_type==XPUM_STATS_ENERGY].value", "scale": 1000 }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_GPU_UTILIZATION].value", "fixer": "round" }
+                { "value": "data_list[metrics_type==XPUM_STATS_GPU_UTILIZATION].avg", "fixer": "round" }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].value" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].avg" }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].value" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].avg" }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].value" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].avg" }
             ]}
         ]]
     }, {
@@ -216,7 +216,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
     }, {
         "instance": "",
         "cells": [[
-            { "rowTitle": "Comupte Engine Util (%) " }
+            { "rowTitle": "Compute Engine Util (%) " }
         ], [
             { "value": "compute_engine_util"}
         ]]
@@ -302,7 +302,7 @@ std::string engineUtilFormater(nlohmann::json json, bool intent = false) {
     std::sort(json.begin(), json.end(), func);
     for (auto obj : json) {
         if (tmp.empty()) tmp = intent_str;
-        tmp += "Engine " + std::to_string(obj["engine_id"].get<int>()) + ": " + std::to_string(obj["value"].get<int>());
+        tmp += "Engine " + std::to_string(obj["engine_id"].get<int>()) + ": " + std::to_string(obj["avg"].get<int>());
         i++;
         if (i % 4 == 0) {
             res += tmp + "\n";
