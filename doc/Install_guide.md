@@ -26,7 +26,7 @@ By default, Intel XPU Manager has provided as many GPU metrics as possible witho
    add "-m metric-indexes" to ExecStart. 
    Use "/opt/xpum/bin/xpumd -h" to get detailed info.  
    Sample:
-   ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-29
+   ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-37
 2. Run command "sudo systemctl daemon-reload"
 3. Run command "sudo systemctl restart xpum"
   
