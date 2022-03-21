@@ -110,7 +110,8 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_HEALTH_INVALID_CONIG_TYPE,
     XPUM_RESULT_HEALTH_INVALID_THRESHOLD,
     XPUM_RESULT_DIAGNOSTIC_INVALID_LEVEL,
-    XPUM_RESULT_GFXFWFPT_NOT_FOUND
+    XPUM_RESULT_GFXFWFPT_NOT_FOUND,     /// "/usr/local/bin/GfxFwFPT" not found 
+    XPUM_RESULT_AGENT_SET_INVALID_VALUE, /// Agent set value is invalid
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

@@ -775,17 +775,24 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
     return XPUM_OK;
 }
 
+std::set<int64_t> monitor_freq_set{100, 200, 500, 1000};
+
 xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value) {
     if (Core::instance().getMonitorManager() == nullptr) {
         return XPUM_NOT_INITIALIZED;
     }
     switch (key) {
-        case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
-            Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = *((int64_t *)value);
+        case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL: {
+            int64_t freq = *((int64_t *)value);
+            if (monitor_freq_set.find(freq) == monitor_freq_set.end()) {
+                return XPUM_RESULT_AGENT_SET_INVALID_VALUE;
+            }
+            Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE = freq;
             Core::instance().getMonitorManager()->resetMetricTasksFrequency();
             Core::instance().getDumpRawDataManager()->resetDumpFrequency();
             Core::instance().getPolicyManager()->resetCheckFrequency();
             return XPUM_OK;
+        }
         default:
             break;
     }
