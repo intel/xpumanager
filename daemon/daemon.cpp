@@ -287,17 +287,17 @@ void parse_opts(int argc, char* argv[]) {
                 break;
             }
             case 's':
-            if(sock_file_name != nullptr){
+            if(sock_file_name == nullptr){
                 sock_file_name = strdup(optarg);
             }
                 break;
             case 'p':
-            if(pid_file_name != nullptr){
+            if(pid_file_name == nullptr){
                 pid_file_name = strdup(optarg);
             }
                 break;
             case 'l':
-            if(log_file_name != nullptr) {
+            if(log_file_name == nullptr) {
                 log_file_name = strdup(optarg);
             }
                 break;
@@ -307,7 +307,7 @@ void parse_opts(int argc, char* argv[]) {
             }
                 break;
             case 'm':
-            if(enabled_metrics != nullptr){
+            if(enabled_metrics == nullptr){
                 enabled_metrics = strdup(optarg);
             }
                 break;
