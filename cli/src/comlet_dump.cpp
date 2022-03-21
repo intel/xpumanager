@@ -251,14 +251,25 @@ void ComletDump::printByLine(std::ostream &out) {
         int metric = this->opts->metricsIdList[i];
         auto config = dumpTypeOptions[metric];
         if (config.optionType == xpum::dump::DUMP_OPTION_STATS) {
+            std::string jsonValueKey = "value";
+            switch (config.dumpType) {
+                case xpum::XPUM_DUMP_GPU_UTILIZATION:
+                case xpum::XPUM_DUMP_EU_ACTIVE:
+                case xpum::XPUM_DUMP_EU_STALL:
+                case xpum::XPUM_DUMP_EU_IDLE:
+                    jsonValueKey = "avg";
+                    break;
+                default:
+                    break;
+            }
             DumpColumn dc{
                 std::string(config.name),
-                [config, this]() {
+                [config, this, jsonValueKey]() {
                     std::string metricKey = config.key;
                     if (statsJson != nullptr) {
                         for (auto metricObj : (*statsJson)) {
                             if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
-                                return getJsonValue(metricObj["value"], config.scale);
+                                return getJsonValue(metricObj[jsonValueKey], config.scale);
                             }
                         }
                     }
@@ -277,7 +288,7 @@ void ComletDump::printByLine(std::ostream &out) {
                                 auto engineUtilByType = (*engineUtilJson)[config.key];
                                 for (auto u : engineUtilByType) {
                                     if (u["engine_id"].get<int>() == engineIdx) {
-                                        return getJsonValue(u["value"], config.scale);
+                                        return getJsonValue(u["avg"], config.scale);
                                     }
                                 }
                             }
