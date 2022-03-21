@@ -1582,7 +1582,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             } else if (topoInfo[i].linkType == XPUM_LINK_NODE) {
                 linkType = "NODE"; 
             } else if( topoInfo[i].linkType == XPUM_LINK_XE_TRANSMIT) {
-                linkType = "XL";
+                linkType = "XL*";
             } else {
                 linkType = "Unknown"; 
             }

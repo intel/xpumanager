@@ -163,7 +163,7 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
             }
         } else if (info.linkType == XPUM_LINK_XE){
             setXelinkTransfer(topoInfos, info);
-            info.linkPorts[localPort.portNumber-1] = 1;
+            //info.linkPorts[localPort.portNumber-1] = min(localPort.);
         }
         topoInfos.push_back(info);
     } else {
@@ -172,7 +172,7 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
                 currentInfo->linkType = XPUM_LINK_XE;
                 setXelinkTransfer(topoInfos, info);
             }            
-            currentInfo->linkPorts[localPort.portNumber-1] = 1;
+            //currentInfo->linkPorts[localPort.portNumber-1] = 1;
         }
     }
 }
@@ -207,8 +207,8 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
 
             topoInfo.remoteDevice.deviceId = fabricPorts[y].deviceId;
             topoInfo.remoteDevice.numaIdx = fabricPorts[y].numaIdx;
-            //topoInfo.remoteDevice.onSubdevice = fabricPorts[y].onSubdevice;
-            //topoInfo.remoteDevice.subdeviceId = fabricPorts[y].subdeviceId;
+            topoInfo.remoteDevice.onSubdevice = fabricPorts[y].localPortProp.onSubdevice;
+            topoInfo.remoteDevice.subdeviceId = fabricPorts[y].localPortProp.subdeviceId;
 
             topoInfo.linkType = XPUM_LINK_UNKNOWN;
 
@@ -223,9 +223,10 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
                     fabricPorts[y].localPortProp.portId.fabricId, fabricPorts[y].localPortProp.portId.attachId, 
                     fabricPorts[y].localPortProp.portId.portNumber
                     );   
-
-                    XPUM_LOG_DEBUG("XELINK Rx:{} Tx:{}", fabricPorts[x].localPortProp.maxRxSpeed.width,
-                     fabricPorts[x].localPortProp.maxTxSpeed.width);             
+                    topoInfo.linkPorts[fabricPorts[x].localPortProp.portId.portNumber-1] = std::min(
+                        fabricPorts[x].localPortProp.maxRxSpeed.width, fabricPorts[x].localPortProp.maxTxSpeed.width);
+                    XPUM_LOG_DEBUG("XELINK Rx:{} Tx:{} :LaneCount:{}", fabricPorts[x].localPortProp.maxRxSpeed.width,
+                     fabricPorts[x].localPortProp.maxTxSpeed.width, topoInfo.linkPorts[fabricPorts[x].localPortProp.portId.portNumber-1]);             
                 }                
             }   
 

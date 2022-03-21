@@ -37,6 +37,7 @@ void ComletTopology::setupOptions() {
     auto m = addFlag("-m,--matrix", this->opts->xeLink, "Print the CPU/GPU topology matrix.\n"
     "  S: Self\n"
     "  XL#: Connected with Xe Link.  Xe Link LAN count is also provided.\n"
+    "  XL*: Two tiles on the differen cards are connected by Xe Link + MDF. They are not directly connected by Xe Link."
     "  SYS: Connected with PCIe between NUMA nodes\n"
     "  NODE: Connected with PCIe within a NUMA node\n"
     "  MDF: Connected with Multi-Die Fabric Interface");
@@ -107,8 +108,8 @@ std::string ComletTopology::getPortList(const nlohmann::json &item){
         int portCount=0;
         std::vector<uint32_t> portList = item[key];
         for(size_t i=0; i<portList.size(); i++){
-            if(portList[i] == 1){
-               portCount++;
+            if(portList[i] > 0){
+               portCount += portList[i];
             }
         }
 
