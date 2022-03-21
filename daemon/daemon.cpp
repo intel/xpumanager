@@ -109,6 +109,7 @@ void print_help(const char* app_name) {
     printf("        34      PCIE_READ                                           off\n");
     printf("        35      PCIE_WRITE                                          off\n");
     printf("        36      ENGINE_UTILIZATION                                  on\n");
+    printf("        37      FABRIC_THROUGHPUT                                   on\n");
     printf("\n");
 }
 
