@@ -119,6 +119,8 @@ void runRPCServer() {
 
     if (sock_file_name != nullptr) {
         unixSockName = sock_file_name;
+        delete sock_file_name;
+        sock_file_name = nullptr;
     } else {
         unixSockName = defaultSockName;
     }
@@ -332,6 +334,10 @@ int main(int argc, char* argv[]) {
     parse_opts(argc, argv);
     umask(S_IXUSR | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
     Logger::init(log_level, log_file_name, log_max_size, log_max_files);
+    if (log_file_name != nullptr) {
+        delete log_file_name;
+        log_file_name = nullptr;
+    }
 
     writePID();
     createDumpFolder();
@@ -341,6 +347,8 @@ int main(int argc, char* argv[]) {
 
     if (enabled_metrics != nullptr) {
         setenv("XPUM_METRICS", enabled_metrics, 1);
+        delete enabled_metrics;
+        enabled_metrics  = nullptr;
     }
 
     XPUM_LOG_INFO("XPUM: Init xpum library");
