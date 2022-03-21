@@ -302,7 +302,7 @@ void parse_opts(int argc, char* argv[]) {
             }
                 break;
             case 'd':
-            if(dump_folder_name != nullptr){
+            if(dump_folder_name == nullptr){
                 dump_folder_name = strdup(optarg);
             }
                 break;
