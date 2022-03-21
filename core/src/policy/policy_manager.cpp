@@ -16,33 +16,33 @@ namespace xpum {
 #define NOVALUE -10000
 
 void xpum_policy_triggered_for_trace(xpum_policy_notify_callback_para_t *p_para) {
-    XPUM_LOG_INFO("------xpum_policy_triggered_for_trace-----begin---");
-    XPUM_LOG_INFO("Policy Device Id: {}", p_para->deviceId);
-    XPUM_LOG_INFO("Policy Type: {}", p_para->type);
-    XPUM_LOG_INFO("Policy Condition Type: {}", p_para->condition.type);
-    XPUM_LOG_INFO("Policy Condition Threshold: {}", p_para->condition.threshold);
-    XPUM_LOG_INFO("Policy Action type: {}", p_para->action.type);
-    XPUM_LOG_INFO("Policy timestamp: {}", p_para->timestamp);
-    XPUM_LOG_INFO("Policy curValue: {}", p_para->curValue);
-    XPUM_LOG_INFO("Policy isTileData: {}", p_para->isTileData);
-    XPUM_LOG_INFO("Policy tileId: {}", p_para->tileId);
-    XPUM_LOG_INFO("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
-    XPUM_LOG_INFO("------xpum_policy_triggered_for_trace-----end----");
+    XPUM_LOG_TRACE("------xpum_policy_triggered_for_trace-----begin---");
+    XPUM_LOG_TRACE("Policy Device Id: {}", p_para->deviceId);
+    XPUM_LOG_TRACE("Policy Type: {}", p_para->type);
+    XPUM_LOG_TRACE("Policy Condition Type: {}", p_para->condition.type);
+    XPUM_LOG_TRACE("Policy Condition Threshold: {}", p_para->condition.threshold);
+    XPUM_LOG_TRACE("Policy Action type: {}", p_para->action.type);
+    XPUM_LOG_TRACE("Policy timestamp: {}", p_para->timestamp);
+    XPUM_LOG_TRACE("Policy curValue: {}", p_para->curValue);
+    XPUM_LOG_TRACE("Policy isTileData: {}", p_para->isTileData);
+    XPUM_LOG_TRACE("Policy tileId: {}", p_para->tileId);
+    XPUM_LOG_TRACE("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
+    XPUM_LOG_TRACE("------xpum_policy_triggered_for_trace-----end----");
 }
 
 void print_policy_for_demo(const std::string &tag,xpum_policy_t *p_para) {
-    XPUM_LOG_INFO("-----------------{}-----------begin---",tag);
-    XPUM_LOG_INFO("Policy Device Id: {}", p_para->deviceId);
-    XPUM_LOG_INFO("Policy Type: {}", p_para->type);
-    XPUM_LOG_INFO("Policy Condition Type: {}", p_para->condition.type);
-    XPUM_LOG_INFO("Policy Condition Threshold: {}", p_para->condition.threshold);
-    XPUM_LOG_INFO("Policy Action type: {}", p_para->action.type);
-    XPUM_LOG_INFO("Policy isDeletePolicy: {}", p_para->isDeletePolicy);
-    //XPUM_LOG_INFO("Policy timestamp: {}", p_para->timestamp);
-    //XPUM_LOG_INFO("Policy curValue: {}", p_para->curValue);
-    //XPUM_LOG_INFO("Policy preValue: {}", p_para->preValue);
-    XPUM_LOG_INFO("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
-    XPUM_LOG_INFO("-----------------{}-----------end---",tag);
+    XPUM_LOG_TRACE("-----------------{}-----------begin---",tag);
+    XPUM_LOG_TRACE("Policy Device Id: {}", p_para->deviceId);
+    XPUM_LOG_TRACE("Policy Type: {}", p_para->type);
+    XPUM_LOG_TRACE("Policy Condition Type: {}", p_para->condition.type);
+    XPUM_LOG_TRACE("Policy Condition Threshold: {}", p_para->condition.threshold);
+    XPUM_LOG_TRACE("Policy Action type: {}", p_para->action.type);
+    XPUM_LOG_TRACE("Policy isDeletePolicy: {}", p_para->isDeletePolicy);
+    //XPUM_LOG_TRACE("Policy timestamp: {}", p_para->timestamp);
+    //XPUM_LOG_TRACE("Policy curValue: {}", p_para->curValue);
+    //XPUM_LOG_TRACE("Policy preValue: {}", p_para->preValue);
+    XPUM_LOG_TRACE("Policy notifyCallBackUrl: {}", p_para->notifyCallBackUrl);
+    XPUM_LOG_TRACE("-----------------{}-----------end---",tag);
 }
 
 void print_policy_for_demoEx2(const std::string &tag,std::shared_ptr<xpum_policy_data> p_para) {
