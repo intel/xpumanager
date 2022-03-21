@@ -281,7 +281,7 @@ xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
  * @details This function is used to get the power limit of device
  *
  * @param deviceId          IN: The device Id
- * @param tileId            IN: The tile Id
+ * @param tileId            IN: The tile Id. if tileId is -1, return device's powerlimit; otherwise return tile's powerlimit.
  * @param pPowerLimits      IN/OUT: The detailed power limit data.
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully

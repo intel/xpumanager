@@ -2450,6 +2450,7 @@ void GPUDeviceStub::getAllPowerLimits(const zes_device_handle_t& device,
             Power_sustained_limit_t  *sustainedLimit;
             zes_power_burst_limit_t burst;
             Power_burst_limit_t * burstLimit;
+            Power_peak_limit_t *peakLimit;
             zes_power_peak_limit_t peak;
             zes_power_properties_t props;
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
@@ -2465,6 +2466,14 @@ void GPUDeviceStub::getAllPowerLimits(const zes_device_handle_t& device,
                     burstLimit = new Power_burst_limit_t();
                     burstLimit->enabled = burst.enabled;
                     burstLimit->power = burst.power;
+                    burst_limits.push_back(*burstLimit);
+                    peakLimit = new Power_peak_limit_t();
+                    peakLimit->power_AC = peak.powerAC;
+                    peakLimit->power_DC = peak.powerDC;
+                    peak_limit.push_back(*peakLimit);
+                    delete sustainedLimit;
+                    delete burstLimit;
+                    delete peakLimit;
                 }
             }
         }
