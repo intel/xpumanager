@@ -311,12 +311,14 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
     err = hwloc_topology_set_flags(hwtopology, flags);
     if (err < 0) {
         XPUM_LOG_ERROR("Failed to set flags {}  {}.\n", flags, strerror(errno));
+        hwloc_topology_destroy(hwtopology);
         return XPUM_GENERIC_ERROR;
     }
 
     err = hwloc_topology_load(hwtopology);
     if (err < 0) {
         XPUM_LOG_ERROR("Failed to load topology {}.\n", strerror(errno));
+        hwloc_topology_destroy(hwtopology);
         return XPUM_GENERIC_ERROR;
     }
 
@@ -326,8 +328,6 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
                 obj->attr->pcidev.device_id);
         std::map<device_pair, GraphicDevice>::iterator it = device_map.find(pare);
         if (it != device_map.end()){
-            std::shared_ptr<char> tmpBuffer(static_cast<char*>(malloc(512)), free);    
-            memset(tmpBuffer.get(), 0, 512);
             const PcieDevice* pDevice = PciDatabase::instance().getDevice(
                 obj->attr->pcidev.vendor_id, obj->attr->pcidev.device_id);
 
@@ -340,11 +340,15 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
             if(name.empty()){
                 name = it->second.device_name;
             }   
-            
-            if(!name.empty()){
-                strncpy(tmpBuffer.get(), name.c_str(), name.length());
-                obj->userdata = (void*)tmpBuffer.get();  
-            }  
+            std::shared_ptr<char> tmpBuffer(static_cast<char*>(malloc(512)), free);   
+            if(tmpBuffer != nullptr) {
+                memset(tmpBuffer.get(), 0, 512);            
+                
+                if(!name.empty()){
+                    strncpy(tmpBuffer.get(), name.c_str(), name.length());
+                    obj->userdata = (void*)tmpBuffer.get();  
+                }  
+            }
         }  
     }    
 
@@ -413,6 +417,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
                 continue;
 
             xpum_fabric_port_pair portPair;    
+            portPair.healthy = false;
             portPair.deviceId = stoi(info->getId());
             portPair.numaIdx = numa_os_idx;
             portPair.cpuAffinity = cpuAffinity;
@@ -431,7 +436,6 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
                     case ZES_FABRIC_PORT_STATUS_FAILED:
                     case ZES_FABRIC_PORT_STATUS_DISABLED:
                     default:
-                        portPair.healthy = false;
                         break;
                 }
             }		
