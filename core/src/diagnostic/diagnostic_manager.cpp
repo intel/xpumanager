@@ -665,6 +665,9 @@ std::string DiagnosticManager::getCommandResult(std::string command) {
     std::array<char, 128> buffer;
     std::string result;
     FILE *pipe = popen(command.c_str(), "r");
+    if (pipe == nullptr) {
+        return "Failed to execute command";
+    }
     while (fgets(buffer.data(), 128, pipe) != nullptr) {
         result += buffer.data();
     }
