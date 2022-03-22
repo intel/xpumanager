@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file init_close_interface.h
+ */
+
 #pragma once
 
 #include <vector>

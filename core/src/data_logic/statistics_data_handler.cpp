@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file statistics_data_handler.cpp
+ */
+
 #include "statistics_data_handler.h"
 
 #include "infrastructure/configuration.h"

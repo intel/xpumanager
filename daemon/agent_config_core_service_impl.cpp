@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file agent_config_core_service_impl.cpp
+ */
+
 #include <string>
 
 #include "xpum_api.h"

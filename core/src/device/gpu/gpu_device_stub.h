@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file gpu_device_stub.h
+ */
+
 #pragma once
 
 #include <dirent.h>

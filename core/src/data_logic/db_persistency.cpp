@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file db_persistency.cpp
+ */
+
 #include "db_persistency.h"
 
 #include "infrastructure/logger.h"

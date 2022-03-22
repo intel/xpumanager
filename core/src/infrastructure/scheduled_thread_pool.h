@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file scheduled_thread_pool.h
+ */
+
 #pragma once
 
 #include <atomic>

@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file comlet_agentset.cpp
+ */
+
 #include "comlet_agentset.h"
 
 #include <nlohmann/json.hpp>

@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file prometheus_exporter_types.py
+#
+
 from enum import Enum, unique
 
 @unique

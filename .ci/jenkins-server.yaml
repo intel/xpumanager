@@ -1,4 +1,10 @@
-#!!!!!!! Must uncomment Secret and use real PASSWORD for "PLACEHOLDER"!!!!!!!
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file jenkins-server.yaml
+#
+
+!!!!!!! Must uncomment Secret and use real PASSWORD for "PLACEHOLDER"!!!!!!!
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file data_handler.cpp
+ */
+
 #include "data_handler.h"
 
 #include <thread>

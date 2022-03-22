@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file monitor_task.cpp
+ */
+
 #include "monitor_task.h"
 
 #include <chrono>

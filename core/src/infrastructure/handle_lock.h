@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file handle_lock.h
+ */
+
 #pragma once
 
 #ifdef XPUM_ZE_HANDLE_LOCK_LOG

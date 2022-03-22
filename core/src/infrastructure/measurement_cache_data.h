@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file measurement_cache_data.h
+ */
+
 #pragma once
 
 #include <chrono>

@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file xpum_structs.h
+ */
+
 #ifndef _XPUM_STRUCTS_H
 #define _XPUM_STRUCTS_H
 

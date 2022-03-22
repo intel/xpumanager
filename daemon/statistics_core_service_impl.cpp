@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file statistics_core_service_impl.cpp
+ */
+
 #include "xpum_api.h"
 #include "xpum_core_service_impl.h"
 #include "xpum_structs.h"

@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file time_weighted_average_data_handler.cpp
+ */
+
 #include "time_weighted_average_data_handler.h"
 #include <algorithm>
 #include <iostream>

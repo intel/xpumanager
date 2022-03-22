@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file hwinfo.cpp
+ */
+
 #include "hwinfo.h"
 
 #include <experimental/filesystem>

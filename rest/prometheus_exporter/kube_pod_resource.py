@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file kube_pod_resource.py
+#
+
 import grpc
 import api_pb2_grpc as apigrpc
 import api_pb2 as apipb2

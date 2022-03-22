@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file fabric_measurement_data.h
+ */
+
 #include "measurement_data.h"
 #include "metric_collection_measurement_data.h"
 

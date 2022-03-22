@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file pretty_table.h
+ */
+
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>

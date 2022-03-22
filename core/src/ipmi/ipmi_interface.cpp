@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file ipmi_interface.cpp
+ */
+
 #ifdef __linux__
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>

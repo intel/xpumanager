@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file bsmc_ipmi_oem_cmd.h
+ */
+
 #pragma once
 
 #include <stdint.h>
