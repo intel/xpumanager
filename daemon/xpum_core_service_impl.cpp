@@ -61,7 +61,15 @@ grpc::Status XpumCoreServiceImpl::getDeviceList(grpc::ServerContext* context, co
             device->set_vendorname(devices[i].VendorName);
         }
     } else {
-        response->set_errormsg("Error");
+        switch (res)
+        {
+        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+            response->set_errormsg("Level Zero Initialization Error");
+            break;
+        default:
+            response->set_errormsg("Error");
+            break;
+        }      
     }
 
     return grpc::Status::OK;
@@ -80,6 +88,9 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
         }
     } else {
         switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
             case XPUM_RESULT_DEVICE_NOT_FOUND:
                 response->set_errormsg("Device not found");
                 break;
@@ -115,7 +126,15 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             parentSwitch->set_switchdevicepath(topology->switches[i].switchDevicePath);
         }
     } else {
-        response->set_errormsg("Error");
+        switch (res)
+        {
+        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+            response->set_errormsg("Level Zero Initialization Error");
+            break;
+        default:
+            response->set_errormsg("Error");
+            break;
+        } 
     }
 
     return grpc::Status::OK;
@@ -131,7 +150,15 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_groupname(request->name());
         response->set_count(0);
     } else {
-        response->set_errormsg("Error");
+        switch (res)
+        {
+        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+            response->set_errormsg("Level Zero Initialization Error");
+            break;
+        default:
+            response->set_errormsg("Error");
+            break;
+        } 
     }
 
     return grpc::Status::OK;
@@ -142,14 +169,22 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     XPUM_LOG_TRACE("call group destory");
     xpum_result_t res = xpumGroupDestroy(request->id());
 
-    if (res == XPUM_OK) {
-        response->set_id(request->id());
-    } else if (res == XPUM_RESULT_GROUP_NOT_FOUND) {
-        response->set_errormsg("group not found");
-    } else if (res == XPUM_GROUP_CHANGE_NOT_ALLOWED) {
-        response->set_errormsg("operation not allowed");
-    } else {
-        response->set_errormsg("Error");
+    switch (res) {
+        case XPUM_OK:
+            response->set_id(request->id());
+            break;
+        case XPUM_RESULT_GROUP_NOT_FOUND:
+            response->set_errormsg("group not found");
+            break;
+        case XPUM_GROUP_CHANGE_NOT_ALLOWED:
+            response->set_errormsg("operation not allowed");
+            break;
+        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+            response->set_errormsg("Level Zero Initialization Error");
+            break;
+        default:
+            response->set_errormsg("Error");
+            break;
     }
 
     return grpc::Status::OK;
@@ -172,16 +207,27 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 deviceid->set_id(info.deviceList[i]);
             }
         }
-    } else if (res == XPUM_RESULT_GROUP_NOT_FOUND) {
-        response->set_errormsg("group not found");
-    } else if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
-        response->set_errormsg("device not found");
-    } else if (res == XPUM_GROUP_CHANGE_NOT_ALLOWED) {
-        response->set_errormsg("operation not allowed");
-    } else if (res == XPUM_GROUP_DEVICE_DUPLICATED) {
-        response->set_errormsg("device was already in the group");
     } else {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("group not found");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_GROUP_CHANGE_NOT_ALLOWED:
+                response->set_errormsg("operation not allowed");
+                break;
+            case XPUM_GROUP_DEVICE_DUPLICATED:
+                response->set_errormsg("device was already in the group");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
 
     return grpc::Status::OK;
@@ -205,14 +251,24 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             }
         }
 
-    } else if (res == XPUM_RESULT_GROUP_NOT_FOUND) {
-        response->set_errormsg("group not found");
-    } else if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
-        response->set_errormsg("device not found in group");
-    } else if (res == XPUM_GROUP_CHANGE_NOT_ALLOWED) {
-        response->set_errormsg("operation not allowed");
     } else {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("group not found");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found in group");
+                break;
+            case XPUM_GROUP_CHANGE_NOT_ALLOWED:
+                response->set_errormsg("operation not allowed");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
 
     return grpc::Status::OK;
@@ -233,10 +289,18 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             DeviceId* deviceid = response->add_devicelist();
             deviceid->set_id(info.deviceList[i]);
         }
-    } else if (res == XPUM_RESULT_GROUP_NOT_FOUND) {
-        response->set_errormsg("group not found");
     } else {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("group not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
 
     return grpc::Status::OK;
@@ -267,7 +331,14 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             }
         }
     } else {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
 
     return grpc::Status::OK;
@@ -277,12 +348,20 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                                                    ::DiagnosticsTaskInfo* response) {
     xpum_result_t res = xpumRunDiagnostics(request->deviceid(), static_cast<xpum_diag_level_t>(request->level()));
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else if (res == XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE)
-            response->set_errormsg("last diagnostic task on the device is not completed");
-        else
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE:
+                response->set_errormsg("last diagnostic task on the device is not completed");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -290,14 +369,23 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                                                           ::DiagnosticsGroupTaskInfo* response) {
     xpum_result_t res = xpumRunDiagnosticsByGroup(request->groupid(), static_cast<xpum_diag_level_t>(request->level()));
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_GROUP_NOT_FOUND)
-            response->set_errormsg("group not found");
-        else if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else if (res == XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE)
-            response->set_errormsg("last diagnostic task on one device is not completed");
-        else
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("group not found");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE:
+                response->set_errormsg("last diagnostic task on the device is not completed");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -328,10 +416,17 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             component->set_message(task_info.componentList[i].message);
         }
     } else {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -368,12 +463,20 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             }
         }
     } else {
-        if (res == XPUM_RESULT_GROUP_NOT_FOUND)
-            response->set_errormsg("group not found");
-        else if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("group not found");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -390,10 +493,17 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_throttlethreshold(data.throttleThreshold);
         response->set_shutdownthreshold(data.shutdownThreshold);
     } else {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -417,12 +527,20 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             data->set_shutdownthreshold(healthDatas[i].shutdownThreshold);
         }
     } else {
-        if (res == XPUM_RESULT_GROUP_NOT_FOUND)
-            response->set_errormsg("group not found");
-        else if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("group not found");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -436,10 +554,17 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_configtype(request->configtype());
         response->set_threshold(threshold);
     } else {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -462,12 +587,20 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             response->add_threshold(threshold_vals[i]);
         }
     } else {
-        if (res == XPUM_RESULT_GROUP_NOT_FOUND)
-            response->set_errormsg("group not found");
-        else if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else
-            response->set_errormsg("Error");
+                switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("group not found");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -477,10 +610,17 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     int threshold = request->threshold();
     xpum_result_t res = xpumSetHealthConfig(request->deviceid(), static_cast<xpum_health_config_type_t>(request->configtype()), &threshold);
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else
-            response->set_errormsg("Error");
+                switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -490,12 +630,20 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     int threshold = request->threshold();
     xpum_result_t res = xpumSetHealthConfigByGroup(request->groupid(), static_cast<xpum_health_config_type_t>(request->configtype()), &threshold);
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_GROUP_NOT_FOUND)
-            response->set_errormsg("group not found");
-        else if (res == XPUM_RESULT_DEVICE_NOT_FOUND)
-            response->set_errormsg("device not found");
-        else
-            response->set_errormsg("Error");
+                switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("group not found");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -506,7 +654,14 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     xpum_device_metrics_t dataList[count];
     xpum_result_t res = xpumGetMetrics(deviceId, dataList, &count);
     if (res != XPUM_OK || count < 0) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     for (int i = 0; i < count; i++) {
         DeviceStatsInfo* deviceStatsInfo = response->add_datalist();
@@ -533,7 +688,14 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     xpum_device_metrics_t dataList[count];
     xpum_result_t res = xpumGetMetricsByGroup(groupId, dataList, &count);
     if (res != XPUM_OK || count < 0) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
     for (int i = 0; i < count; i++) {
         DeviceStatsInfo* deviceStatsInfo = response->add_datalist();
@@ -555,14 +717,20 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
 
 ::grpc::Status XpumCoreServiceImpl::handleErrorForGetPolicy(xpum_result_t res,::GetPolicyResponse* response) {
-    //response->set_isok(false);
-    if(res == XPUM_RESULT_DEVICE_NOT_FOUND){
-        response->set_errormsg("Error: device_id is invalid.");            
-    }else if(res == XPUM_RESULT_GROUP_NOT_FOUND){
-        response->set_errormsg("Error: group_id is invalid.");
-    }else{
-        response->set_errormsg("Error: unknow");
-    }            
+    switch (res) {
+        case XPUM_RESULT_GROUP_NOT_FOUND:
+            response->set_errormsg("Error: group_id is invalid.");
+            break;
+        case XPUM_RESULT_DEVICE_NOT_FOUND:
+            response->set_errormsg("Error: device_id is invalid.");
+            break;
+        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+            response->set_errormsg("Level Zero Initialization Error");
+            break;
+        default:
+            response->set_errormsg("Error: unknow");
+            break;
+    }          
     return grpc::Status::OK;
 }
 
@@ -792,9 +960,11 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
             response->set_errormsg("Error: frequency is invalid (frequency must greater than 0 and max must greater than or equal min).");
         }else if(res == XPUM_RESULT_POLICY_INVALID_THRESHOLD){
             response->set_errormsg("Error: threshold is invalid (threshold must greater than or equal 0).");
+        }else if(res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR){
+            response->set_errormsg("Level Zero Initialization Error");
         }else{
             response->set_errormsg("Error: unknow");
-        }            
+        } 
         return grpc::Status::OK;
     }
     response->set_isok(true);
@@ -846,10 +1016,17 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         response->set_errormsg("Error");
     }
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-            response->set_errormsg("device Id or tile Id is invalid");
-        } else {
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device Id or tile Id is invalid");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
         }
     }
     return grpc::Status::OK;
@@ -868,7 +1045,14 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }        
         return grpc::Status::OK;
     }
 
@@ -891,10 +1075,17 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     res = xpumSetDevicePowerSustainedLimits(deviceId, tileId, sustained_limit);
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-            response->set_errormsg("device Id or tile Id is invalid");
-        } else {
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                response->set_errormsg("device Id or tile Id is invalid");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
         }
     }
     return grpc::Status::OK;
@@ -923,10 +1114,17 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     res = xpumSetDeviceFrequencyRange(deviceId, freq_range);
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-            response->set_errormsg("device Id or tile Id is invalid");
-        } else {
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                response->set_errormsg("device Id or tile Id is invalid");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
         }
     }
     return grpc::Status::OK;
@@ -963,10 +1161,17 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     }
     res = xpumSetDeviceStandby(deviceId, standby);
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-            response->set_errormsg("device Id or tile Id is invalid");
-        } else {
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                response->set_errormsg("device Id or tile Id is invalid");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
         }
     }
     return grpc::Status::OK;
@@ -1020,7 +1225,14 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         xpum_device_performancefactor_t dataArray[count];
         res = xpumGetPerformanceFactor(deviceId, dataArray, &count);
         if (res != XPUM_OK) {
-            response->set_errormsg("Error");
+            switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
             return grpc::Status::OK;
         }else {
             for (uint32_t i = 0; i < count; i++) {
@@ -1056,10 +1268,17 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     res = xpumSetPerformanceFactor(deviceId,pf);
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
                 response->set_errormsg("device Id or tile Id is invalid");
-        } else {
-            response->set_errormsg("Error");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
         }
     }
     return grpc::Status::OK;
@@ -1073,14 +1292,28 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     res = xpumGetDeviceProcessState(deviceId, nullptr, &count);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
         return grpc::Status::OK;
     }
     if (count > 0) {
         xpum_device_process_t dataArray[count];
         res = xpumGetDeviceProcessState(deviceId, dataArray, &count);
         if (res != XPUM_OK) {
-            response->set_errormsg("Error");
+            switch (res) {
+                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                    response->set_errormsg("Level Zero Initialization Error");
+                    break;
+                default:
+                    response->set_errormsg("Error");
+                    break;
+            }
             return grpc::Status::OK;
         }else {
             for (uint32_t i = 0; i < count; i++) {
@@ -1138,10 +1371,17 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
 
     res = xpumSetFabricPortConfig(deviceId,portConfig);
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-            response->set_errormsg("device Id or tile Id is invalid");
-        } else {
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                response->set_errormsg("device Id or tile Id is invalid");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
         }
     }
     return grpc::Status::OK;
@@ -1168,10 +1408,17 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
 
     res = xpumSetFabricPortConfig(deviceId,portConfig);
     if (res != XPUM_OK) {
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
-            response->set_errormsg("device Id or tile Id is invalid");
-        } else {
-            response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                response->set_errormsg("device Id or tile Id is invalid");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
         }
     }
     return grpc::Status::OK;
@@ -1194,12 +1441,26 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         res = validateDeviceId(deviceId);
     }
     if (res != XPUM_OK) {
-        response->set_errormsg("device Id or tile Id is invalid");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("device Id or tile Id is invalid");
+                break;
+        }
         return grpc::Status::OK;
     }
     res = xpumGetDeviceProperties(deviceId, &properties);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
         return grpc::Status::OK;
     }
 
@@ -1229,7 +1490,14 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     xpum_power_limits_t powerLimits;
     res = xpumGetDevicePowerLimits(deviceId, 0, &powerLimits);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
         return grpc::Status::OK;
     }
     int32_t power = powerLimits.sustained_limit.power / 1000;
@@ -1269,34 +1537,76 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
    
     res = xpumGetDeviceFrequencyRanges(deviceId, freqArray, &freqCount);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
         return grpc::Status::OK;
     }
     res = xpumGetDeviceStandbys(deviceId, standbyArray, &standbyCount);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
         return grpc::Status::OK;
     }
     res = xpumGetDeviceSchedulers(deviceId, schedulerArray, &schedulerCount);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
         return grpc::Status::OK;
     }
     res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
         return grpc::Status::OK;
     }
 
     res = xpumGetPerformanceFactor(deviceId, performanceFactorArray, &performanceFactorCount);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
         return grpc::Status::OK;
     }
 
     res = xpumGetFabricPortConfig(deviceId, portConfig, &portConfigCount);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
         return grpc::Status::OK;
     }
 
@@ -1534,7 +1844,14 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     }
 
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
 
     return grpc::Status::OK;
@@ -1591,7 +1908,14 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     }
 
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
 
     return grpc::Status::OK;
