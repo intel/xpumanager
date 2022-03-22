@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file comlet_dump.cpp
+ */
+
 #include "comlet_dump.h"
 
 #include <map>

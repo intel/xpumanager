@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file raw_data_manager.cpp
+ */
+
 #include "raw_data_manager.h"
 
 #include <algorithm>

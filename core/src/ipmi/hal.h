@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file hal.h
+ */
+
 #pragma once
 #include "bsmc_ipmi_oem_cmd.h"
 #include "bsmc_interface.h"

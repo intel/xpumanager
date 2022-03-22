@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file xpum_enums.py
+#
+
 from enum import Enum
 
 XpumStatsType = Enum("xpum_stats_type_t", (

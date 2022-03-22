@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file topology.py
+#
+
 from .grpc_stub import stub
 import core_pb2
 from google.protobuf import empty_pb2

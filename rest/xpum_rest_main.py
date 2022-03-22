@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file xpum_rest_main.py
+#
 
 import configparser
 import os

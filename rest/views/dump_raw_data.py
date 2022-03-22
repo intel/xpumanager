@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file dump_raw_data.py
+#
+
 from flask import request, jsonify
 import stub
 from marshmallow import Schema, fields, validate, ValidationError

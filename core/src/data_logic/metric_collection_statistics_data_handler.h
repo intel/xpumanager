@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file metric_collection_statistics_data_handler.h
+ */
+
 #pragma once
 
 #include "data_handler.h"

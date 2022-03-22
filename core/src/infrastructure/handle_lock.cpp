@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file handle_lock.cpp
+ */
+
 #include "handle_lock.h"
 
 #include <memory>

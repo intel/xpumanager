@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file device_manager.cpp
+ */
+
 #include "device_manager.h"
 
 #include <atomic>

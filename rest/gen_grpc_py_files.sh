@@ -1,4 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file gen_grpc_py_files.sh
+#
+
 
 WORK=$(dirname "$0")
 cd ${WORK}

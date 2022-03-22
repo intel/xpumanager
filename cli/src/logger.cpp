@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file logger.cpp
+ */
+
 #include <stdarg.h>
 #include <syslog.h>
 #include <unistd.h>

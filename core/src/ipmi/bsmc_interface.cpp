@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file bsmc_interface.cpp
+ */
+
 #ifdef __linux__
 #include <linux/ipmi.h>
 #include <sys/fcntl.h>

@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file grpc_stub.py
+#
+
 import grpc
 import core_pb2_grpc
 import os

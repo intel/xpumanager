@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file metric_collection_measurement_data.h
+ */
+
 #pragma once
 
 #include "measurement_data.h"

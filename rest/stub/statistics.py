@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file statistics.py
+#
+
 from google.protobuf import empty_pb2
 from .grpc_stub import stub, exit_on_disconnect
 import core_pb2

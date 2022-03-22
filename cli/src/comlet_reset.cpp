@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file comlet_reset.cpp
+ */
+
 #include "comlet_reset.h"
 #include "cli_wrapper.h"
 #include <iostream>

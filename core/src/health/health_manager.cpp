@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file health_manager.cpp
+ */
+
 #include "health_manager.h"
 
 #include "device/gpu/gpu_device_stub.h"

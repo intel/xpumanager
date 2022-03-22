@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file dump_manager.cpp
+ */
+
 #include "dump_manager.h"
 #include "xpum_structs.h"
 

@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file engine_measurement_data.cpp
+ */
+
 #include "engine_measurement_data.h"
 
 namespace xpum {

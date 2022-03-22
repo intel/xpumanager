@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file groups.py
+#
+
 from flask import request, jsonify
 import stub
 from marshmallow import Schema, fields, ValidationError

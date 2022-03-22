@@ -1,3 +1,8 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file group_manager.cpp
+ */
 
 #include "group_manager.h"
 

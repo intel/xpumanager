@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file gpu_utilization_data_handler.h
+ */
+
 #pragma once
 
 #include "metric_statistics_data_handler.h"

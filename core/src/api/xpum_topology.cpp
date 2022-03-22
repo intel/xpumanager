@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file xpum_topology.cpp
+ */
+
 #include "xpum_api.h"
 #include "internal_api.h"
 

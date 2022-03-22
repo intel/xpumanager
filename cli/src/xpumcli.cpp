@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file xpumcli.cpp
+ */
+
 #include <iostream>
 #include <memory>
 #include <string>
