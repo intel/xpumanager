@@ -155,7 +155,7 @@ bool check_pci_device(const pci_address_t *address)
 		return false;
 
 	buffer = (char *)read_file(path, &buffer_size);
-	if (sscanf(buffer, "0x%x", &pci_id) != 1) {
+	if (buffer != nullptr && sscanf(buffer, "0x%x", &pci_id) != 1) {
 		XPUM_LOG_ERROR("ERROR: Failed to parse device ID");
 		free(buffer);
 		return false;
@@ -201,7 +201,7 @@ int reset_pci_device(const pci_address_t *address)
 static bool get_pci_properties_from_proc_line(char *line, pci_properties_t *properties)
 {
 	char *line_tok;
-	int devfn;
+	unsigned devfn;
 	pci_properties_t prop;
 
 	assert(properties);
@@ -273,7 +273,7 @@ int get_pci_device_list(pci_address_t *list, int list_size, int *out_count)
 		if (!check_pci_device(&prop.address))
 			continue;
 
-		if (count > list_size) {
+		if (count >= list_size) {
 			break;
 		}
 

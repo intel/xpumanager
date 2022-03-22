@@ -224,8 +224,9 @@ static SystemCommandResult execCommand(const std::string& command) {
         } catch (...) {
             pclose(pipe);
         }
+        exitcode = WEXITSTATUS(pclose(pipe));
     }
-    exitcode = WEXITSTATUS(pclose(pipe));
+
     return SystemCommandResult(result, exitcode);
 }
 
