@@ -214,6 +214,8 @@ void createDumpFolder() {
         if (dumpFolder.back() == '/') {
             dumpFolder.pop_back();
         }
+        delete dump_folder_name;
+        dump_folder_name = nullptr;
     } else {
         dumpFolder = "/tmp/xpumdump";
     }

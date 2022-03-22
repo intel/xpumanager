@@ -275,6 +275,10 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
             bool ok = true;
             for (std::string command : commands) {
                 FILE* commandExec = popen(command.c_str(), "r");
+                if (!commandExec) {
+                    ok = false;
+                    break;
+                }
                 while (true) {
                     char buf[BUFFERSIZE];
                     char* res = fgets(buf, BUFFERSIZE, commandExec);

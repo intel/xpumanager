@@ -306,26 +306,26 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
         p_device->getProperties(properties);
 
         for (Property &prop : properties) {
-            auto name = prop.getName();
+            auto internal_name = prop.getName();
             std::string value = prop.getValue();
-            switch (name) {
-                case XPUM_DEVICE_PROPERTY_UUID:
+            switch (internal_name) {
+                case XPUM_DEVICE_PROPERTY_INTERNAL_UUID:
                     value.copy(info.uuid, value.size());
                     info.uuid[value.size()] = 0;
                     break;
-                case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME:
                     value.copy(info.deviceName, value.size());
                     info.deviceName[value.size()] = 0;
                     break;
-                case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID:
                     value.copy(info.PCIDeviceId, value.size());
                     info.PCIDeviceId[value.size()] = 0;
                     break;
-                case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS:
                     value.copy(info.PCIBDFAddress, value.size());
                     info.PCIBDFAddress[value.size()] = 0;
                     break;
-                case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME:
                     value.copy(info.VendorName, value.size());
                     info.VendorName[value.size()] = 0;
                     break;
