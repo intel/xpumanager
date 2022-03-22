@@ -3074,19 +3074,22 @@ bool GPUDeviceStub::getFabricPorts(const zes_device_handle_t& device, std::vecto
 
             XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetState(hPort, &state));                
             if (res != ZE_RESULT_SUCCESS) {
-                XPUM_LOG_WARN("Failed to zesFabricPortGetState returned: {}", res);
+                XPUM_LOG_WARN("Failed to zesFabricPortGetState returned: {} port:{}.{}.{}", 
+                res, props.portId.fabricId, props.portId.attachId, props.portId.portNumber);
             }
             info.portState = state;
 
             XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetLinkType(hPort, &link));
             if (res != ZE_RESULT_SUCCESS) {
-                XPUM_LOG_WARN("Failed to zesFabricPortGetLinkType returned: {}", res);
+                XPUM_LOG_WARN("Failed to zesFabricPortGetLinkType returned: {} port:{}.{}.{}", 
+                res, props.portId.fabricId, props.portId.attachId, props.portId.portNumber);
             }
             info.portLink = link;
 
             XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetConfig(hPort, &config));
             if (res != ZE_RESULT_SUCCESS) {
-                XPUM_LOG_WARN("Failed to zesFabricPortGetLinkType returned: {}", res);                   
+                XPUM_LOG_WARN("Failed to zesFabricPortGetLinkType returned: {} port:{}.{}.{}", 
+                res, props.portId.fabricId, props.portId.attachId, props.portId.portNumber);                   
             }
             info.portConf = config;
             portInfo.push_back(info);
