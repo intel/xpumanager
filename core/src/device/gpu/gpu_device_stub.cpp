@@ -23,6 +23,7 @@
 #include "infrastructure/logger.h"
 #include "infrastructure/measurement_data.h"
 #include "api/api_types.h"
+#include "infrastructure/exception/level_zero_initialization_exception.h"
 
 namespace xpum {
 
@@ -97,7 +98,7 @@ void GPUDeviceStub::init() {
     if (ret != ZE_RESULT_SUCCESS) {
         XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
         checkInitDependency();
-        throw BaseException("zeInit error");
+        throw LevelZeroInitializationException("zeInit error");
     }
     
     if (Configuration::INITIALIZE_PCIE_MANAGER) {

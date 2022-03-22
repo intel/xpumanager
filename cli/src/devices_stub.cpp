@@ -30,6 +30,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
                 deviceJsonList.push_back(deviceJson);
             }
             (*json)["device_list"] = deviceJsonList;
+        } else {
+            (*json)["error"] = response.errormsg();
         }
     }
 

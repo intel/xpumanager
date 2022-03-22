@@ -29,7 +29,7 @@ static int agentConfigStrToKey(std::string keyStr) {
     return -1;
 }
 
-void static fillAgentConfigReponse(::AgentConfigEntryList* response) {
+void static fillAgentConfigReponse(::AgentConfigEntryList* response, xpum_result_t& res) {
     int64_t intValue;
     double floatValue;
     char stringValue[256];
@@ -42,15 +42,15 @@ void static fillAgentConfigReponse(::AgentConfigEntryList* response) {
         auto flexValue = entry->mutable_value();
         switch (type) {
             case VALUE_TYPE_INT64:
-                xpumGetAgentConfig(key, &intValue);
+                res = xpumGetAgentConfig(key, &intValue);
                 flexValue->set_intvalue(intValue);
                 break;
             case VALUE_TYPE_DOUBLE:
-                xpumGetAgentConfig(key, &floatValue);
+                res =xpumGetAgentConfig(key, &floatValue);
                 flexValue->set_floatvalue(floatValue);
                 break;
             case VALUE_TYPE_STRING:
-                xpumGetAgentConfig(key, stringValue);
+                res = xpumGetAgentConfig(key, stringValue);
                 std::string str(stringValue);
                 flexValue->set_stringvalue(str);
                 break;
@@ -104,18 +104,35 @@ void static fillAgentConfigReponse(::AgentConfigEntryList* response) {
         if (res != XPUM_OK) {
             auto error = response->add_errorlist();
             error->set_key(keyStr);
-            error->set_errormsg("Error: fail to set");
+            switch (res) {
+                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                    response->set_errormsg("Level Zero Initialization Error");
+                    break;
+                default:
+                    error->set_errormsg("Error: fail to set");
+                    break;
+            }
         }
     }
 
+    xpum_result_t res;
     // fill response config entries
-    fillAgentConfigReponse(response->mutable_entrylist());
+    fillAgentConfigReponse(response->mutable_entrylist(), res);
 
     return grpc::Status::OK;
 }
 
 ::grpc::Status XpumCoreServiceImpl::getAgentConfig(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAgentConfigResponse* response) {
-    fillAgentConfigReponse(response->mutable_entrylist());
+    xpum_result_t res;
+    fillAgentConfigReponse(response->mutable_entrylist(), res);
+    switch (res) {
+        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+            response->set_errormsg("Level Zero Initialization Error");
+            break;
+        default:
+            response->set_errormsg("Error");
+            break;
+    }
     return grpc::Status::OK;
 }
 } // namespace xpum::daemon

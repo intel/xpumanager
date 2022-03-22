@@ -40,6 +40,14 @@ CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {
 }
 
 void CLIWrapper::printResult(std::ostream &out) {
+    if (!this->coreStub->permissionCheck()) {
+        out << "Error: User Permission Error\r\n";
+        return;
+    } else if (!this->coreStub->serviceStatusCheck()) {
+        out << "Error: XPUM Service Status Error\r\n";
+        return;
+    }
+    
     auto versionOpt = this->cliApp.get_option("-v");
     if (!versionOpt->empty()) {
         ComletVersion comlet;

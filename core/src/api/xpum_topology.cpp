@@ -18,6 +18,11 @@ bool operator == (const zes_fabric_port_id_t& x, const zes_fabric_port_id_t& y){
 }
 
 xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topology, long unsigned int *memSize) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -51,6 +56,11 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
 }
 
 xpum_result_t xpumExportTopology2XML(char *xmlBuffer, int *memSize){
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
     if (Core::instance().getDeviceManager() == nullptr) {
         return XPUM_NOT_INITIALIZED;
     }
@@ -182,6 +192,11 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
 
 xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *count)
 {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    
     int nCount = 0;
     std::vector<std::shared_ptr<Device>> devices;
     std::vector<xpum_fabric_port_pair> fabricPorts;
