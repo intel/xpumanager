@@ -10,7 +10,12 @@
 #include <thread>
 #include <chrono>
 #include <cstdlib>
-
+#include <stdlib.h>
+#include <errno.h>
+#include <stdio.h>
+#include <grp.h>
+#include <unistd.h>
+#include <pwd.h>
 #include "core.grpc.pb.h"
 #include "core.pb.h"
 #include "xpum_structs.h"
@@ -948,6 +953,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllPolicy() {
                 dataList.push_back(healthJson);
             }
             (*json)["all_policy_list"] = dataList;
+        } else {
+            (*json)["error"] = response.errormsg();
         }
     }
     return json;
@@ -1740,6 +1747,47 @@ std::unique_ptr<nlohmann::json> CoreStub::getXelinkTopology() {
     }
 
     return json;
+}
+
+bool CoreStub::permissionCheck() {
+    uid_t uid = getuid();
+	struct passwd* pw = getpwuid(uid);
+	if(pw == NULL){
+    	perror("getpwuid error");
+	}
+	int ngroups = 0;
+	getgrouplist(pw->pw_name, pw->pw_gid, NULL, &ngroups);
+    if (ngroups == 0) {
+        return false;
+    }
+	gid_t groups[ngroups];
+	getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
+    std::string xpum_grp("xpum");
+    std::string root_grp("root");
+    for (int i = 0; i < ngroups; i++){
+	    struct group* gr = getgrgid(groups[i]);
+	    if(gr == NULL){
+	        perror("getgrgid error");
+	    }
+        std::string grp_name(gr->gr_name);
+		if (grp_name != xpum_grp && grp_name != root_grp) {
+            return false;
+        }
+	}
+    return true;
+}
+
+bool CoreStub::serviceStatusCheck() {
+    FILE * f = popen("service xpum status", "r");
+    char c_line[1024];
+    while (fgets(c_line, 1024, f) != NULL) {
+        std::string line(c_line);
+        if (line.find("active (running)") != std::string::npos) {
+            return true;
+        }
+    }
+    pclose(f);
+    return false;
 }
 
 } // end namespace xpum::cli

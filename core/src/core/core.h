@@ -28,6 +28,16 @@ class Core : public InitCloseInterface {
 
     bool isInitialized();
 
+    bool isZeInitialized();
+    
+    bool userPermissionAllowed();
+
+    void setZeInitialized(bool val);
+
+    void setUserPermissionAllowed(bool val);
+
+    xpum_result_t apiAccessPreCheck();
+
     std::shared_ptr<DeviceManagerInterface> getDeviceManager();
 
     std::shared_ptr<DataLogicInterface> getDataLogic();
@@ -73,6 +83,10 @@ class Core : public InitCloseInterface {
     std::shared_ptr<DumpRawDataManager> p_dump_raw_data_manager;
 
     bool initialized;
+
+    bool ze_initialized;
+
+    bool user_permission_allowed;
 
     std::mutex mutex;
 };

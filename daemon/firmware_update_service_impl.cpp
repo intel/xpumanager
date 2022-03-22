@@ -22,7 +22,14 @@ namespace xpum::daemon {
         response->set_desc("");
         response->set_version("");
     } else {
-        response->set_errormsg("Error");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error occurs");
+                break;
+        }
     }
 
     return grpc::Status::OK;

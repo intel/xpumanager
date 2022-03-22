@@ -93,12 +93,19 @@ static void removeFileOnStartTaskFail(std::string filePath) {
         grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
     } else {
         removeFileOnStartTaskFail(dumpFilePath);
-        if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
-            response->set_errormsg("Device not found");
-        } else if (res == XPUM_RESULT_TILE_NOT_FOUND) {
-            response->set_errormsg("Tile not found");
-        } else {
-            response->set_errormsg("Error occurs");
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("Device not found");
+                break;
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                response->set_errormsg("Tile not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error occurs");
+                break;
         }
     }
     return grpc::Status::OK;
@@ -119,10 +126,18 @@ static void removeFileOnStartTaskFail(std::string filePath) {
         }
         grpcTaskInfo->set_begintime(taskInfo.beginTime);
         grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
-    } else if (res == XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST) {
-        response->set_errormsg("Task does not exist");
     } else {
-        response->set_errormsg("Error occurs");
+        switch (res) {
+            case XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST:
+                response->set_errormsg("Task does not exist");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error occurs");
+                break;
+        }
     }
     return grpc::Status::OK;
 }
@@ -135,7 +150,14 @@ static void removeFileOnStartTaskFail(std::string filePath) {
         res = xpumListDumpRawDataTasks(nullptr, &count);
         response->set_status(res);
         if (res != XPUM_OK || count < 0) {
-            response->set_errormsg("Error occurs");
+            switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error occurs");
+                break;
+        }
             return grpc::Status::OK;
         }
         if (count == 0) {
@@ -165,7 +187,14 @@ static void removeFileOnStartTaskFail(std::string filePath) {
             grpcTaskInfo->set_dumpfilepath(taskInfo.dumpFilePath);
         }
     } else {
-        response->set_errormsg("Error occurs");
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error occurs");
+                break;
+        }
     }
     return grpc::Status::OK;
 }

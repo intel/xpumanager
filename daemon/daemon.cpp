@@ -355,7 +355,6 @@ int main(int argc, char* argv[]) {
     xpum::xpum_result_t res = xpum::xpumInit();
     if (res != xpum::XPUM_OK) {
         XPUM_LOG_ERROR("XPUM: Load xpum library failed! {}", res);
-        return 1;
     }
 
     XPUM_LOG_INFO("XPUM: start XPUM RPC Server.");
