@@ -151,6 +151,10 @@ xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t* t
                     *memSize = size;
                     return XPUM_BUFFER_TOO_SMALL;
                 }
+
+                if(topology == nullptr){
+                    return XPUM_GENERIC_ERROR;
+                }
                 topology->switchCount = switchCount;
                 parent_switch* pSwitch = topology->switches;
                 get_p_switch_dev_path(obj, pSwitch);
@@ -172,7 +176,10 @@ bool Topology::hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, i
     }
     while (objChild != nullptr) {
         if (objChild->type == HWLOC_OBJ_PCI_DEVICE) {
-            if ((objChild->attr->pcidev.domain == domain) && (objChild->attr->pcidev.bus == bus) && (objChild->attr->pcidev.dev == device) && (objChild->attr->pcidev.func == function)) {
+            if ((objChild->attr->pcidev.domain == domain) 
+            && (objChild->attr->pcidev.bus == bus) 
+            && (objChild->attr->pcidev.dev == device) 
+            && (objChild->attr->pcidev.func == function)) {
                 return true;
             }
         }
@@ -398,7 +405,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
         std::string bdfAddress;
         Property prop;
         if (!info->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop)) {
-                return XPUM_GENERIC_ERROR;
+            return XPUM_GENERIC_ERROR;
         }
         bdfAddress = prop.getValue();
 
@@ -480,10 +487,12 @@ bool Topology::numaDevice(hwloc_topology_t topology, zes_pci_address_t& address,
         int NUMAnode = objNuma->os_index;          
 
         if(NUMAnode == hwloc_bitmap_first(obj_anc->nodeset)){
-            char * buffer;
+            char * buffer = nullptr;
             hwloc_bitmap_list_asprintf(&buffer, obj_anc->cpuset);
-            cpuAffinity = buffer;
-            free(buffer);
+            if(buffer != nullptr){
+                cpuAffinity = buffer;
+                free(buffer);
+            }    
 
             numa_os_idx = NUMAnode;
             bFound = true;
