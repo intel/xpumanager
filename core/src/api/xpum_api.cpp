@@ -674,8 +674,14 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
         return XPUM_NOT_INITIALIZED;
     }
     res = validateDeviceId(deviceId);
-    if (res != XPUM_OK)
+    if (res != XPUM_OK) {
         return res;
+    }
+    
+    if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
+        return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
     Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
     return xpum_result_t::XPUM_OK;
 }
@@ -695,8 +701,14 @@ xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
         return XPUM_NOT_INITIALIZED;
     }
     res = validateDeviceId(deviceId);
-    if (res != XPUM_OK)
+    if (res != XPUM_OK) {
         return res;
+    }
+    
+    if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
+        return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
     return Core::instance().getDataLogic()->getEngineStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 
@@ -739,8 +751,14 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
         return XPUM_NOT_INITIALIZED;
     }
     res = validateDeviceId(deviceId);
-    if (res != XPUM_OK)
+    if (res != XPUM_OK) {
         return res;
+    }
+        
+    if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
+        return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
     return Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 

@@ -119,6 +119,7 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_GFXFWFPT_NOT_FOUND,     /// "/usr/local/bin/GfxFwFPT" not found 
     XPUM_RESULT_AGENT_SET_INVALID_VALUE, /// Agent set value is invalid
     XPUM_LEVEL_ZERO_INITIALIZATION_ERROR,   ///< Level Zero initialization error.
+    XPUM_UNSUPPORTED_SESSIONID,   ///< Unsupported session id
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
