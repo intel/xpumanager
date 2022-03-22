@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file monitor_manager.cpp
+ */
+
 #include "monitor_manager.h"
 
 #include <algorithm>

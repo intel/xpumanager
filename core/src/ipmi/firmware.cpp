@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file firmware.cpp
+ */
+
 #ifdef __linux__
 #include <getopt.h>
 #include <linux/pci.h>

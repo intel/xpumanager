@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file error_code.h
+ */
+
 #pragma once
 namespace xpum {
 enum ErrorCode {

@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file comlet_config.cpp
+ */
+
 #include "comlet_config.h"
 
 #include <nlohmann/json.hpp>

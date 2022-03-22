@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file comlet_diagnostic.cpp
+ */
+
 #include "comlet_diagnostic.h"
 
 #include <nlohmann/json.hpp>

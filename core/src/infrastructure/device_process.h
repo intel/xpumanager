@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file device_process.h
+ */
+
 #pragma once
 #include <string>
 #include "level_zero/zes_api.h"

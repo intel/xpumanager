@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file health.py
+#
+
 from .grpc_stub import stub
 import core_pb2
 import xpum_logger as logger

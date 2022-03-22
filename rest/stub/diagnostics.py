@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file diagnostics.py
+#
+
 import core_pb2
 from .grpc_stub import stub
 import datetime

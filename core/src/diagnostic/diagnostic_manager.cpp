@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file diagnostic_manager.cpp
+ */
+
 #include "diagnostic_manager.h"
 
 #include <thread>
@@ -665,6 +671,9 @@ std::string DiagnosticManager::getCommandResult(std::string command) {
     std::array<char, 128> buffer;
     std::string result;
     FILE *pipe = popen(command.c_str(), "r");
+    if (pipe == nullptr) {
+        return "Failed to execute command";
+    }
     while (fgets(buffer.data(), 128, pipe) != nullptr) {
         result += buffer.data();
     }

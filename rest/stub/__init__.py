@@ -1,4 +1,9 @@
-# from .exporter import getMetrics, getMetricsByGroup
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file __init__.py
+#
+
 from .versions import getVersion
 from .devices import getDeviceList, getDeviceProperties
 from .health import getHealth, getHealthByGroup, setHealthConfig, setHealthConfigByGroup

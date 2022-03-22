@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file core_stub.cpp
+ */
+
 #include "core_stub.h"
 
 #include <grpc++/grpc++.h>

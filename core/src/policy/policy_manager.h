@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file policy_manager.h
+ */
+
 #pragma once
 
 #include <dirent.h>

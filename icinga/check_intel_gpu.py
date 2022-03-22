@@ -1,4 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file check_intel_gpu.py
+#
+
 import argparse
 import json
 import http.client

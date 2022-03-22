@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file comlet_firmware.cpp
+ */
+
 #include "comlet_firmware.h"
 #include <nlohmann/json.hpp>
 #include "core_stub.h"

@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file device_property.cpp
+ */
+
 #include "device_property.h"
 
 namespace xpum {

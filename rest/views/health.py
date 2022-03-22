@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file health.py
+#
+
 import stub
 from flask import request
 from flask import jsonify

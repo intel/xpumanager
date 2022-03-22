@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file xpum_api.cpp
+ */
+
 #include "xpum_api.h"
 #include "internal_api.h"
 
@@ -354,7 +360,7 @@ static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmw
         return XPUM_GENERIC_ERROR;
     }
 
-    xpum_result_t rc;
+    xpum_result_t rc = XPUM_GENERIC_ERROR;
     if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
         if (!detectGfxTool()) {
             return XPUM_RESULT_GFXFWFPT_NOT_FOUND;

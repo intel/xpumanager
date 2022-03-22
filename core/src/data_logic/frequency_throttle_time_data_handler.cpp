@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file frequency_throttle_time_data_handler.cpp
+ */
+
 #include "frequency_throttle_time_data_handler.h"
 
 namespace xpum {

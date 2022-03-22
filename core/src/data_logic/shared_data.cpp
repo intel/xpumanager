@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file shared_data.cpp
+ */
+
 #include "shared_data.h"
 
 namespace xpum {

@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file versions.py
+#
+
 import stub
 from flask import jsonify
 from marshmallow import Schema, fields

@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file comlet_health.cpp
+ */
+
 #include "comlet_health.h"
 
 #include <nlohmann/json.hpp>

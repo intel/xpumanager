@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file winopenssl.h
+ */
+
 // https://docs.huihoo.com/doxygen/openssl/1.0.1c/crypto_2sha_2sha_8h_source.html
 
 namespace xpum {

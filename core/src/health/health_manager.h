@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file health_manager.h
+ */
+
 #pragma once
 
 #include "control/device_manager_interface.h"

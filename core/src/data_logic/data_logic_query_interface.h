@@ -1,3 +1,8 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file data_logic_query_interface.h
+ */
 
 #pragma once
 
