@@ -65,6 +65,7 @@ static inline bool check_codename(card_get_info_res *card_get_info, const char *
     return memcmp(card_get_info->project_codename, codename, size) == 0;
 }
 
+/*
 static int get_device_id(nrv_card *card, unsigned char *data) {
     bsmc_req req;
     bsmc_res res;
@@ -81,6 +82,7 @@ static int get_device_id(nrv_card *card, unsigned char *data) {
 
     return NRV_SUCCESS;
 }
+*/
 
 static int card_detect(nrv_card *card) {
     bsmc_req req;
@@ -145,20 +147,16 @@ static int probe_i2c_addr(uint8_t i2c_addr){
     unsigned char devid = 0;
     uint8_t slot_count = 0;
 
-    err = bsmc_interface_init(iface);
-    if (err)
-        return err;
-
     card.ipmi_address = (ipmi_address_t){
         .bus = 0,
         .slot = 0,
         .i2c_addr = i2c_addr,
     };
 
-    err = get_device_id(&card, &devid);
-    if (err) {
-        XPUM_LOG_ERROR("Error in getting device id");
-    }
+    // err = get_device_id(&card, &devid);
+    // if (err) {
+    //     XPUM_LOG_ERROR("Error in getting device id");
+    // }
 
     if (devid == OPEN_BMC_DEV_ID) {
         XPUM_LOG_DEBUG("OPEN BMC platform found");
@@ -196,9 +194,14 @@ static int probe_i2c_addr(uint8_t i2c_addr){
 
 static int init_card_list() {
     int err = 0;
-    err = probe_i2c_addr(CARD_FIRST_I2C_ADDR);
+    err = bsmc_interface_init(iface);
+    if (err)
+        return err;
+    // err = probe_i2c_addr(CARD_FIRST_I2C_ADDR);
+    err = probe_i2c_addr(CARD_FIRST_I2C_ADDR_OLD);
     if (err) {
-        err = probe_i2c_addr(CARD_FIRST_I2C_ADDR_OLD);
+        // err = probe_i2c_addr(CARD_FIRST_I2C_ADDR_OLD);
+        err = probe_i2c_addr(CARD_FIRST_I2C_ADDR);
     }
     return err;
 }
