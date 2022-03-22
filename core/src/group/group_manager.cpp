@@ -48,18 +48,10 @@ xpum_result_t GroupManager::createGroup(const char* pGroupName, xpum_group_id_t*
     }
     if (buildIn) {
         groupId = internalSequence++;
-        if (groupId < 0) {
-            XPUM_LOG_DEBUG("GroupManager::createGroup-exceed max group id.");
-            return ret;
-        }
         name += std::to_string(groupId);
         groupId |= BUILD_IN_GROUP_MASK;
     } else {
         groupId = groupSequence++;
-        if (groupId < 0) {
-            XPUM_LOG_DEBUG("GroupManager::createGroup-exceed max group id.");
-            return ret;
-        }
     }
 
     groupMap.insert({groupId, std::make_shared<GroupUnit>(name, groupId)});
