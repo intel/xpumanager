@@ -106,10 +106,13 @@ typedef enum xpum_result_enum {
     XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST,   ///< Dump raw data task not exists
     XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH,   ///< Dump file path provide is illegal
     XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY,   ///< The the key for agent setting is unknown
+    XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME,   ///< File name can not contain following characters: {}()><&*'|=?;[]$-#~!"%:+,` 
+    XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
     XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
+    XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND,     /// "/usr/local/bin/GfxFwFPT" not found 
     XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT,
     XPUM_METRIC_NOT_SUPPORTED,              ///< Unsupported metric
     XPUM_METRIC_NOT_ENABLED,                ///< Unenabled metric
@@ -117,7 +120,6 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_HEALTH_INVALID_CONIG_TYPE,
     XPUM_RESULT_HEALTH_INVALID_THRESHOLD,
     XPUM_RESULT_DIAGNOSTIC_INVALID_LEVEL,
-    XPUM_RESULT_GFXFWFPT_NOT_FOUND,     /// "/usr/local/bin/GfxFwFPT" not found 
     XPUM_RESULT_AGENT_SET_INVALID_VALUE, /// Agent set value is invalid
     XPUM_LEVEL_ZERO_INITIALIZATION_ERROR,   ///< Level Zero initialization error.
     XPUM_UNSUPPORTED_SESSIONID,   ///< Unsupported session id

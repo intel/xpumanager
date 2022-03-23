@@ -88,11 +88,15 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
         }
     }
 
-    std::cout << "Start to update firmware" << std::endl;
-    std::cout << "Firmware Name: " << opts->firmwareType << std::endl;
-    std::cout << "Image path: " << opts->firmwarePath << std::endl;
+    // get full path of firmware image path
+    char resolved_path[PATH_MAX];
+    char *fullpath = realpath(opts->firmwarePath.c_str(), resolved_path);
+    if (fullpath == nullptr) {
+        (*json)["error"] = "Firmware image not found.";
+        return json;
+    }
 
-    json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
+    json = coreStub->runFirmwareFlash(opts->deviceId, type, fullpath);
     return json;
 }
 
@@ -100,9 +104,12 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     auto json = this->run();
     auto status = (*json)["error"];
     if (!status.is_null()) {
-        out << status.get<std::string>() << std::endl;
+        out << "Error: " << status.get<std::string>() << std::endl;
         return;
     }
+    std::cout << "Start to update firmware" << std::endl;
+    std::cout << "Firmware Name: " << opts->firmwareType << std::endl;
+    std::cout << "Image path: " << opts->firmwarePath << std::endl;
 
     status = (*json)["firmware_flash_result"];
     if (!status.is_null()) {

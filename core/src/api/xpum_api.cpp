@@ -351,11 +351,6 @@ static bool detectGfxTool() {
 }
 
 static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmware_flash_job* job) {
-    xpum_result_t res = Core::instance().apiAccessPreCheck();
-    if (res != XPUM_OK) {
-        return res;
-    }
-
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
     }
@@ -363,7 +358,8 @@ static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmw
     xpum_result_t rc = XPUM_GENERIC_ERROR;
     if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
         if (!detectGfxTool()) {
-            return XPUM_RESULT_GFXFWFPT_NOT_FOUND;
+            XPUM_LOG_INFO("flash tool not exists");
+            return XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND;
         }
         rc = device->runFirmwareFlash(job->filePath, gfxPath);
     }
@@ -375,31 +371,40 @@ static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmw
     return rc;
 }
 
+static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
+    if (job->filePath == nullptr)
+        return XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME;
+
+    std::ifstream fwFile(job->filePath);
+    if (!fwFile.is_open()) {
+        XPUM_LOG_INFO("invalid file");
+        fwFile.close();
+        return XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND;
+    }
+
+    fwFile.close();
+
+    std::string invalidChars = "{}()><&*'|=?;[]$-#~!\"%:+,`";
+
+    std::string filePath(job->filePath);
+
+    auto itr = std::find_if(filePath.begin(), filePath.end(),
+                            [invalidChars](unsigned char ch) { return invalidChars.find(ch) != invalidChars.npos; });
+    if (itr != filePath.end())
+        return XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME;
+
+    return XPUM_OK;
+}
+
 xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
     }
 
-    std::ifstream fwFile(job->filePath);
-    if (!fwFile.is_open()) {
-        //setResultError( apiResult, ErrorCode::OPERATION_FAILED, std::string{ "invalid file" } );
-        XPUM_LOG_INFO("invalid file");
-        fwFile.close();
-        return XPUM_GENERIC_ERROR;
-    }
-
-    fwFile.close();
-
-    fwFile.open(gfxPath);
-    if (!fwFile.is_open()) {
-        //setResultError( apiResult, ErrorCode::OPERATION_FAILED, std::string{ "flash tool not exists" } );
-        XPUM_LOG_INFO("flash tool not exists");
-        fwFile.close();
-        return XPUM_GENERIC_ERROR;
-    }
-
-    fwFile.close();
+    res = validateFwImagePath(job);
+    if (res != XPUM_OK)
+        return res;
 
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         xpum_result_t rc;
@@ -435,6 +440,9 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
         return rc;
     } else {
         if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+            res = validateDeviceId(deviceId);
+            if (res != XPUM_OK)
+                return res;
             std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
             return runFirmwareFlash(device, job);
         }

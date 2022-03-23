@@ -97,7 +97,23 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
         return json;
     }
     else if (status.ok() && response.value() == xpum_result_t::XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE) {
-        (*json)["error"] = "Device models are inconsistent, failed to upgrade all";
+        (*json)["error"] = "Device models are inconsistent, failed to upgrade all.";
+        return json;
+    }
+    else if (status.ok() && response.value() == xpum_result_t::XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME) {
+        (*json)["error"] = "Illegal firmware image filename. Image filename should not contain following characters: {}()><&*'|=?;[]$-#~!\"%:+,`";
+        return json;
+    }
+    else if (status.ok() && response.value() == xpum_result_t::XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND) {
+        (*json)["error"] = "Firmware image not found.";
+        return json;
+    }
+    else if (status.ok() && response.value() == xpum_result_t::XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND) {
+        (*json)["error"] = "/usr/local/bin/GfxFwFPT not found. To enable this feature, install GfxFwFPT first.";
+        return json;
+    }
+    else if (status.ok() && response.value() == xpum_result_t::XPUM_RESULT_DEVICE_NOT_FOUND) {
+        (*json)["error"] = "Device not found.";
         return json;
     }
     /*

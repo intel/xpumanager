@@ -534,7 +534,17 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
  * @param deviceId          IN: Device id
  * @param firmwareType      IN: The firmware type to query status
  * @param result           OUT: The result of the job 
- * @return xpum_result_t
+ * @return 
+ *      - \ref XPUM_OK
+ *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
+ *      - \ref XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND
+ *      - \ref XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME
+ *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC
+ *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE
+ *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL
+ *      - \ref XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE
+ *      - \ref XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND
+ *      - \ref XPUM_GENERIC_ERROR
  */
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
                                          xpum_firmware_type_t firmwareType,

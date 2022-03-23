@@ -13,12 +13,6 @@ class FirmwareFlashJobSchema(Schema):
     file = fields.Str(metadata={"description": "The path of firmware binary file to flash"})
     firmware_name = fields.Str(metadata={"description": "Firmware name, options are: GSC, AMC"})
 
-
-class FirmwareFlashStateQuerySchema(Schema):
-    #type = fields.Str(metadata={"description": "The firmware type"})
-    pass
-
-
 class FirmwareFlashResultSchema(Schema):
     result = fields.Str(metadata={"description": "Firmware flash state, OK/FAILED/ONGOING"})
 
@@ -51,26 +45,35 @@ def run_firmware_flash(deviceId):
     """
     req = request.get_json()
     if not req:
-        return jsonify({'error': 'missing arguments'})
+        return jsonify({'error': 'missing arguments'}), 400
 
     filePath = req.get('file')
     if not filePath:
-        return jsonify({'error': 'missing arguments'})
+        return jsonify({'error': 'missing arguments'}), 400
+    pos = filePath.find("/")
+    if pos == -1:
+        return jsonify({'error': 'invalid file path, only full path supported'}), 400
+    else:
+       filePath = filePath[pos:]    # trunc the file path
     
     fwType = req.get('firmware_name')
     if not fwType:
-        return jsonify({'error': 'missing arguments'})
+        return jsonify({'error': 'missing arguments'}), 400
     if not fwType == 'GSC' and not fwType == 'AMC':
-        return jsonify({'error': 'invalid firmware name'})
+        return jsonify({'error': 'invalid firmware name'}), 400
     if fwType == 'GSC' and deviceId == 1024:
-        return jsonify({'error': 'upgrading GSC firmware on all devices is not supported'})
+        return jsonify({'error': 'upgrading GSC firmware on all devices is not supported'}), 400
     if fwType == 'AMC' and not deviceId == 1024:
-        return jsonify({'error': 'upgrading AMC firmware only supports on single device'})
+        return jsonify({'error': 'upgrading AMC firmware only supports on single device'}), 400
 
     firmwareType = 0 if fwType == 'GSC' else 1
 
-    rc = stub.runFirmwareFlash(deviceId, firmwareType, filePath)
-    return jsonify({'result': rc})
+    code, msg, data = stub.runFirmwareFlash(deviceId, firmwareType, filePath)
+    if code == stub.XpumResult['XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND'].value:
+        return jsonify({'error': msg}), 500
+    elif code != 0:
+        return jsonify({'error': msg}), 400
+    return jsonify({'result': msg})
 
 def get_firmware_flash_result_all():
     return get_firmware_flash_result(1024)
