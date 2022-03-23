@@ -104,6 +104,7 @@ typedef enum xpum_result_enum {
     XPUM_GROUP_CHANGE_NOT_ALLOWED,
     XPUM_NOT_INITIALIZED,     ///< XPUM is not initialized.
     XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST,   ///< Dump raw data task not exists
+    XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH,   ///< Dump file path provide is illegal
     XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY,   ///< The the key for agent setting is unknown
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,

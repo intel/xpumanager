@@ -15,6 +15,9 @@
 #include "dump_task.h"
 #include "api/internal_dump_raw_data.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 using xpum::dump::getConfigOptionPointer;
 
 namespace xpum {
@@ -43,6 +46,23 @@ xpum_result_t DumpRawDataManager::
                          const char *dumpFilePath,
                          xpum_dump_raw_data_task_t *taskInfo) {
     std::lock_guard<std::mutex> lock(dumpMutex);
+    if (dumpFilePath == nullptr)
+        return XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH;
+    std::string filepath(dumpFilePath);
+    if (filepath.size() <= 0)
+        return XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH;
+    auto pos = filepath.find_last_of("/\\");
+    if (pos != filepath.npos) {
+        // check parent folder exists
+        std::string parentFolder = filepath.substr(0, pos);
+        struct stat info;
+        if (stat(parentFolder.c_str(), &info) != 0)
+            // folder not exists
+            return XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH;
+        else if (!(info.st_mode & S_IFDIR))
+            // is not a folder
+            return XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH;
+    }
 
     for (int i = 0; i < count; i++) {
         auto dumpType = dumpTypeList[i];
