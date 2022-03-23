@@ -58,7 +58,7 @@ bool permissionCheck() {
 	        perror("getgrgid error");
 	    }
         std::string grp_name(gr->gr_name);
-		if (grp_name != xpum_grp && grp_name != root_grp) {
+		if (grp_name == xpum_grp || grp_name == root_grp) {
             has_permission = true;
         }
 	}
