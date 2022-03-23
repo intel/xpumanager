@@ -293,7 +293,7 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 
     std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
-    if (deviceList == nullptr || devices.size() > XPUM_MAX_NUM_DEVICES || (size_t)*count < devices.size()) {
+    if (deviceList == nullptr || devices.size() > XPUM_MAX_NUM_DEVICES) {
         return XPUM_BUFFER_TOO_SMALL;
     }
 
