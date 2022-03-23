@@ -1,11 +1,14 @@
-FROM centos:8.3.2011
-ADD level-zero-1.7.4.tar.gz /
+FROM centos:8.4.2105
+RUN cd /etc/yum.repos.d/ && \
+    sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* &&\
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+ADD level-zero-1.7.9.tar.gz /
 RUN dnf update -y && \
     dnf clean all && \
     dnf install -y rpm-build gcc gcc-c++ cmake make python3 libtool dnf-plugins-core && \
     dnf config-manager --set-enabled powertools && \
     dnf install -y glibc-static
-RUN cd /level-zero-1.7.4 && \
+RUN cd /level-zero-1.7.9 && \
     mkdir build && \
     cd build && \
     cmake .. && \

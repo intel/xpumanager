@@ -1,11 +1,18 @@
 FROM ubuntu:20.04
-ADD level-zero-1.7.4.tar.gz /
+
+# Ubuntu release matching "FROM" version
+RUN /bin/echo -e "\
+deb http://linux-ftp.sh.intel.com/pub/mirrors/ubuntu/ focal main universe\n\
+deb http://linux-ftp.sh.intel.com/pub/mirrors/ubuntu/ focal-updates main universe\n\
+" > /etc/apt/sources.list
+
+ADD level-zero-1.7.9.tar.gz /
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && apt-get upgrade -y && \
     apt-get install -y gcc g++ build-essential \
     dpkg-dev curl cmake nano python3 python3-pip \
     autoconf libtool pkg-config
-RUN cd /level-zero-1.7.4 && \
+RUN cd /level-zero-1.7.9 && \
     mkdir build && \
     cd build && \
     cmake .. && \
