@@ -22,14 +22,17 @@ if __name__ == '__main__':
     owner = args.owner if args.owner else 'xpum'
     group = args.group if args.group else 'xpum'
 
-    print( "Please enter password for REST API user xpumadmin" )
+    print( "Please enter password for REST API user xpumadmin, min 8 characters" )
     while True:
         pw = getpass.getpass( 'Enter password:' )
+        if len( pw ) < 8:
+            print( 'Error: Password length shoube be at least 8 characters' )
+            continue
         pwAgain = getpass.getpass( 'Confirm password:' )
         if pw == pwAgain:
             break
         else:
-            print( 'The two passwords you entered are inconsistent' )
+            print( 'Error: The two passwords you entered are inconsistent' )
 
     salt = os.popen( 'tr -dc A-Za-z0-9 < /dev/urandom |head -c 12' ).read()
     pwHash = hashlib.pbkdf2_hmac('sha512', pw.encode('ASCII'), salt.encode('ASCII'), 10000).hex()
