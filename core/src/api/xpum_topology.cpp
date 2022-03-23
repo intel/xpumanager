@@ -46,16 +46,17 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
         *memSize = sizeof(xpum_topology_t);
     } else {
         topo = topology;
-        topo->deviceId = deviceId;
-        topo->switchCount = 0;
+        if(topo != nullptr){
+            topo->deviceId = deviceId;
+            topo->switchCount = 0;
+             std::string cpus = Topology::getLocalCpus(bdfAddress);
+            size_t len = cpus.copy(topo->cpuAffinity.localCPUs, XPUM_MAX_CPU_S_LEN);
+            topo->cpuAffinity.localCPUs[len] = '\0';
 
-        std::string cpus = Topology::getLocalCpus(bdfAddress);
-        size_t len = cpus.copy(topo->cpuAffinity.localCPUs, XPUM_MAX_CPU_S_LEN);
-        topo->cpuAffinity.localCPUs[len] = '\0';
-
-        std::string cpulist = Topology::getLocalCpusList(bdfAddress);
-        len = cpulist.copy(topo->cpuAffinity.localCPUList, XPUM_MAX_CPU_LIST_LEN);
-        topo->cpuAffinity.localCPUList[len] = '\0';
+            std::string cpulist = Topology::getLocalCpusList(bdfAddress);
+            len = cpulist.copy(topo->cpuAffinity.localCPUList, XPUM_MAX_CPU_LIST_LEN);
+            topo->cpuAffinity.localCPUList[len] = '\0';
+        }       
     }
 
     return Topology::getSwitchTopo(bdfAddress, topo, memSize);
@@ -238,18 +239,18 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
             if (fabricPorts[x].enabled && fabricPorts[x].healthy){
                 if(fabricPorts[x].remotePortId == fabricPorts[y].localPortProp.portId) {
                     topoInfo.linkType = XPUM_LINK_XE;    
-                    XPUM_LOG_DEBUG("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}", 
-                    fabricPorts[x].deviceId, fabricPorts[x].localPortProp.subdeviceId,
-                    fabricPorts[x].localPortProp.portId.fabricId,
-                    fabricPorts[x].localPortProp.portId.attachId, fabricPorts[x].localPortProp.portId.portNumber, 
-                    fabricPorts[y].deviceId, fabricPorts[y].localPortProp.subdeviceId,
-                    fabricPorts[y].localPortProp.portId.fabricId, fabricPorts[y].localPortProp.portId.attachId, 
-                    fabricPorts[y].localPortProp.portId.portNumber
-                    );   
+                    //XPUM_LOG_DEBUG("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}", 
+                    //fabricPorts[x].deviceId, fabricPorts[x].localPortProp.subdeviceId,
+                    //fabricPorts[x].localPortProp.portId.fabricId,
+                    //fabricPorts[x].localPortProp.portId.attachId, fabricPorts[x].localPortProp.portId.portNumber, 
+                    //fabricPorts[y].deviceId, fabricPorts[y].localPortProp.subdeviceId,
+                    //fabricPorts[y].localPortProp.portId.fabricId, fabricPorts[y].localPortProp.portId.attachId, 
+                    //fabricPorts[y].localPortProp.portId.portNumber
+                    //);   
                     topoInfo.linkPorts[fabricPorts[x].localPortProp.portId.portNumber-1] = std::min(
                         fabricPorts[x].localPortProp.maxRxSpeed.width, fabricPorts[x].localPortProp.maxTxSpeed.width);
-                    XPUM_LOG_DEBUG("XELINK Rx:{} Tx:{} :LaneCount:{}", fabricPorts[x].localPortProp.maxRxSpeed.width,
-                     fabricPorts[x].localPortProp.maxTxSpeed.width, topoInfo.linkPorts[fabricPorts[x].localPortProp.portId.portNumber-1]);             
+                    //XPUM_LOG_DEBUG("XELINK Rx:{} Tx:{} :LaneCount:{}", fabricPorts[x].localPortProp.maxRxSpeed.width,
+                    // fabricPorts[x].localPortProp.maxTxSpeed.width, topoInfo.linkPorts[fabricPorts[x].localPortProp.portId.portNumber-1]);             
                 }                
             }   
 

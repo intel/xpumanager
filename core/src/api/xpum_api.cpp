@@ -293,7 +293,7 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 
     std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
-    if (deviceList == nullptr || devices.size() > XPUM_MAX_NUM_DEVICES) {
+    if (deviceList == nullptr || devices.size() > XPUM_MAX_NUM_DEVICES || (size_t)*count < devices.size()) {
         return XPUM_BUFFER_TOO_SMALL;
     }
 
@@ -306,26 +306,26 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
         p_device->getProperties(properties);
 
         for (Property &prop : properties) {
-            auto name = prop.getName();
+            auto internal_name = prop.getName();
             std::string value = prop.getValue();
-            switch (name) {
-                case XPUM_DEVICE_PROPERTY_UUID:
+            switch (internal_name) {
+                case XPUM_DEVICE_PROPERTY_INTERNAL_UUID:
                     value.copy(info.uuid, value.size());
                     info.uuid[value.size()] = 0;
                     break;
-                case XPUM_DEVICE_PROPERTY_DEVICE_NAME:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME:
                     value.copy(info.deviceName, value.size());
                     info.deviceName[value.size()] = 0;
                     break;
-                case XPUM_DEVICE_PROPERTY_PCI_DEVICE_ID:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID:
                     value.copy(info.PCIDeviceId, value.size());
                     info.PCIDeviceId[value.size()] = 0;
                     break;
-                case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS:
                     value.copy(info.PCIBDFAddress, value.size());
                     info.PCIBDFAddress[value.size()] = 0;
                     break;
-                case XPUM_DEVICE_PROPERTY_VENDOR_NAME:
+                case XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME:
                     value.copy(info.VendorName, value.size());
                     info.VendorName[value.size()] = 0;
                     break;
@@ -674,8 +674,14 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
         return XPUM_NOT_INITIALIZED;
     }
     res = validateDeviceId(deviceId);
-    if (res != XPUM_OK)
+    if (res != XPUM_OK) {
         return res;
+    }
+    
+    if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
+        return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
     Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
     return xpum_result_t::XPUM_OK;
 }
@@ -695,8 +701,14 @@ xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
         return XPUM_NOT_INITIALIZED;
     }
     res = validateDeviceId(deviceId);
-    if (res != XPUM_OK)
+    if (res != XPUM_OK) {
         return res;
+    }
+    
+    if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
+        return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
     return Core::instance().getDataLogic()->getEngineStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 
@@ -739,8 +751,14 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
         return XPUM_NOT_INITIALIZED;
     }
     res = validateDeviceId(deviceId);
-    if (res != XPUM_OK)
+    if (res != XPUM_OK) {
         return res;
+    }
+        
+    if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
+        return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
     return Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 

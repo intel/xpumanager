@@ -677,7 +677,16 @@ int cmd_probe() {
     nrv_list cards;
 
     int err = get_card_list(&cards, card_id);
+
+    if(err)
+        return err;
+
+    unsigned int versions[4];
+    
+    err = cmd_firmware_info(cards, versions);
+
     return err;
+    
 }
 
 int cmd_firmware(const char* file, unsigned int versions[4]) {
