@@ -1844,7 +1844,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     XPUM_LOG_TRACE("call exportTopoXML");
     int size = 0;
     xpum_result_t res = xpumExportTopology2XML(nullptr, &size);
-    if (res == XPUM_BUFFER_TOO_SMALL) {
+    if (res == XPUM_OK) {
         std::shared_ptr<char> newBuffer(static_cast<char*>(malloc(size)), free);
         res = xpumExportTopology2XML(newBuffer.get(), &size);
         if (res == XPUM_OK) {

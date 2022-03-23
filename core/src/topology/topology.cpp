@@ -130,6 +130,8 @@ xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t* t
     hwloc_topology_t hwtopology;
     hwloc_obj_t obj = nullptr;
     int switchCount;
+    xpum_result_t result = XPUM_OK;
+    std::size_t size = sizeof(xpum_topology_t);
 
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
@@ -146,26 +148,27 @@ xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t* t
         && obj->attr->pcidev.func == pciAddress.function) {
             switchCount = get_p_switch_count(obj);
             if (switchCount > 0) {
-                std::size_t size = sizeof(xpum_topology_t) + switchCount * sizeof(parent_switch);
-                if (*memSize < size) {
-                    *memSize = size;
-                    return XPUM_BUFFER_TOO_SMALL;
-                }
-
-                if(topology == nullptr){
-                    return XPUM_GENERIC_ERROR;
-                }
-                topology->switchCount = switchCount;
-                parent_switch* pSwitch = topology->switches;
-                get_p_switch_dev_path(obj, pSwitch);
+                size = sizeof(xpum_topology_t) + switchCount * sizeof(parent_switch);
             }
 
+            if(topology != nullptr){
+                if (*memSize < size) {                        
+                    result = XPUM_BUFFER_TOO_SMALL;
+                } else {
+                    topology->switchCount = switchCount;
+                    if(switchCount > 0){
+                        parent_switch* pSwitch = topology->switches;
+                        get_p_switch_dev_path(obj, pSwitch);
+                    }
+                }
+            } 
+            *memSize = size;    
             break;
         }
     }
 
     hwloc_topology_destroy(hwtopology);
-    return XPUM_OK;
+    return result;
 }
 
 bool Topology::hasChildPciDevice(hwloc_obj_t obj, int32_t domain, int32_t bus, int32_t device, int32_t function) {
@@ -369,13 +372,18 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
         XPUM_LOG_ERROR("XML buffer export failed {}", strerror(errno));
         result = XPUM_GENERIC_ERROR;
     } else {
-        if(*buflen<xmlbuflen){
-            *buflen = xmlbuflen;
-            result = XPUM_BUFFER_TOO_SMALL;
-        } else {
-            *buflen = xmlbuflen;
-            memcpy(buffer, xmlbuf, xmlbuflen);
-            buffer[xmlbuflen] = 0;
+        if(buffer != nullptr){            
+            if(*buflen<xmlbuflen){      
+                *buflen = xmlbuflen;          
+                result = XPUM_BUFFER_TOO_SMALL;
+            } else {
+                *buflen = xmlbuflen;
+                memcpy(buffer, xmlbuf, xmlbuflen);
+                buffer[xmlbuflen] = 0;
+            }
+        } 
+        else {
+            *buflen = xmlbuflen;            
         }
         hwloc_free_xmlbuffer(hwtopology, xmlbuf);
     }

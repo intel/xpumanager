@@ -686,7 +686,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     if (res == ZE_RESULT_SUCCESS) {
                         for (auto& fp : fps) {
                             zes_fabric_port_properties_t props;
-                            XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetProperties(fp, &props));
+                            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetProperties(fp, &props));
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_RX_SPEED, props.maxRxSpeed.bitRate));
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_TX_SPEED, props.maxTxSpeed.bitRate));
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_RX_LANES_NUMBER, props.maxRxSpeed.width));
@@ -3073,27 +3073,27 @@ bool GPUDeviceStub::getFabricPorts(const zes_device_handle_t& device, std::vecto
             memset(&link, 0, sizeof(link));
             memset(&config, 0, sizeof(config));
 
-            XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetProperties(hPort, &props));
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetProperties(hPort, &props));
             if (res != ZE_RESULT_SUCCESS) {
                 XPUM_LOG_WARN("Failed to zesFabricPortGetProperties returned: {}", res);
             }
             info.portProps = props;
 
-            XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetState(hPort, &state));                
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetState(hPort, &state));                
             if (res != ZE_RESULT_SUCCESS) {
                 XPUM_LOG_WARN("Failed to zesFabricPortGetState returned: {} port:{}.{}.{}", 
                 res, props.portId.fabricId, props.portId.attachId, props.portId.portNumber);
             }
             info.portState = state;
 
-            XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetLinkType(hPort, &link));
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetLinkType(hPort, &link));
             if (res != ZE_RESULT_SUCCESS) {
                 XPUM_LOG_WARN("Failed to zesFabricPortGetLinkType returned: {} port:{}.{}.{}", 
                 res, props.portId.fabricId, props.portId.attachId, props.portId.portNumber);
             }
             info.portLink = link;
 
-            XPUM_ZE_HANDLE_LOCK(hPort, res = zesFabricPortGetConfig(hPort, &config));
+            XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetConfig(hPort, &config));
             if (res != ZE_RESULT_SUCCESS) {
                 XPUM_LOG_WARN("Failed to zesFabricPortGetLinkType returned: {} port:{}.{}.{}", 
                 res, props.portId.fabricId, props.portId.attachId, props.portId.portNumber);                   
@@ -3374,15 +3374,15 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
         if (res == ZE_RESULT_SUCCESS) {
             for (auto& fp : fabric_ports) {
                 zes_fabric_port_properties_t props;
-                XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetProperties(fp, &props));
+                XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetProperties(fp, &props));
                 if (res == ZE_RESULT_SUCCESS) {
                     zes_fabric_port_state_t state;
-                    XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetState(fp, &state));
+                    XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetState(fp, &state));
                     if (res == ZE_RESULT_SUCCESS) {
                         zes_fabric_port_throughput_t throughput;
-                        XPUM_ZE_HANDLE_LOCK(fp, res = zesFabricPortGetThroughput(fp, &throughput));
+                        XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetThroughput(fp, &throughput));
                         if (res == ZE_RESULT_SUCCESS) {
-                            ret->addRawData(uint64_t(fp), throughput.timestamp, throughput.rxCounter, throughput.txCounter, props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId);
+                            ret->addRawData(uint64_t(device), throughput.timestamp, throughput.rxCounter, throughput.txCounter, props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId);
                             data_acquired = true;
                         } else {
                             exception_msgs["zesFabricPortGetThroughput"] = res;

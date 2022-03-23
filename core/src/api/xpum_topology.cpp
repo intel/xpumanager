@@ -34,32 +34,29 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t *topolo
         return XPUM_GENERIC_ERROR;
     }
     std::vector<Property>::iterator it;
-    xpum_topology_t *topo = nullptr;
     std::string bdfAddress;
     Property prop;
     if (!device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop)) {
         return XPUM_GENERIC_ERROR;
     }
     bdfAddress = prop.getValue();
-
-    if (*memSize < sizeof(xpum_topology_t)) {
-        *memSize = sizeof(xpum_topology_t);
-    } else {
-        topo = topology;
-        if(topo != nullptr){
-            topo->deviceId = deviceId;
-            topo->switchCount = 0;
+     
+    if(topology != nullptr){
+        if (*memSize < sizeof(xpum_topology_t)) {
+            ;
+        } else {
+            topology->deviceId = deviceId;
+            topology->switchCount = 0;
              std::string cpus = Topology::getLocalCpus(bdfAddress);
-            size_t len = cpus.copy(topo->cpuAffinity.localCPUs, XPUM_MAX_CPU_S_LEN);
-            topo->cpuAffinity.localCPUs[len] = '\0';
+            size_t len = cpus.copy(topology->cpuAffinity.localCPUs, XPUM_MAX_CPU_S_LEN);
+            topology->cpuAffinity.localCPUs[len] = '\0';
 
             std::string cpulist = Topology::getLocalCpusList(bdfAddress);
-            len = cpulist.copy(topo->cpuAffinity.localCPUList, XPUM_MAX_CPU_LIST_LEN);
-            topo->cpuAffinity.localCPUList[len] = '\0';
+            len = cpulist.copy(topology->cpuAffinity.localCPUList, XPUM_MAX_CPU_LIST_LEN);
+            topology->cpuAffinity.localCPUList[len] = '\0';
         }       
-    }
-
-    return Topology::getSwitchTopo(bdfAddress, topo, memSize);
+    } 
+    return Topology::getSwitchTopo(bdfAddress, topology, memSize);
 }
 
 xpum_result_t xpumExportTopology2XML(char *xmlBuffer, int *memSize){
