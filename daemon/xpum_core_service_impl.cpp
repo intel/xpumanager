@@ -1055,6 +1055,10 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
                 break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                response->set_errormsg("device Id or tile Id is invalid");
+                break;
             default:
                 response->set_errormsg("Error");
                 break;
