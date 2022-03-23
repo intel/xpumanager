@@ -1455,11 +1455,6 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
     
-    xpum_result_t res = validateDeviceId(deviceId);
-    if (res != XPUM_OK) {
-        return res;
-    }
-
     std::vector<Power> powers;
     Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
 
