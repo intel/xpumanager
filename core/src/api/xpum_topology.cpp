@@ -256,17 +256,20 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
     }
 
     nCount = topoInfos.size();
-    if(*count < nCount) {
+    if(xelink_topo == nullptr){
         *count = nCount;
-        return XPUM_BUFFER_TOO_SMALL;
+    }
+    else if(*count < nCount) {
+        *count = nCount;
+        res = XPUM_BUFFER_TOO_SMALL;
+    } else {
+        for(int i=0; i<nCount; i++) {
+            xelink_topo[i] = topoInfos[i];
+        }
+        *count = nCount;
     }
 
-    for(int i=0; i<nCount; i++) {
-        xelink_topo[i] = topoInfos[i];
-    }
-    *count = nCount;
-
-    return XPUM_OK;
+    return res;
 }
 
 } // end namespace xpum
