@@ -53,7 +53,6 @@ bool permissionCheck() {
 	gid_t groups[ngroups];
 	getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
     std::string xpum_grp("xpum");
-    std::string sudo_grp("sudo");
     bool has_permission = false;
     for (int i = 0; i < ngroups; i++){
 	    struct group* gr = getgrgid(groups[i]);
@@ -61,7 +60,7 @@ bool permissionCheck() {
 	        perror("getgrgid error");
 	    }
         std::string grp_name(gr->gr_name);
-		if (grp_name == xpum_grp || grp_name == sudo_grp) {
+		if (grp_name == xpum_grp) {
             has_permission = true;
         }
 	}

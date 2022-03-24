@@ -522,6 +522,18 @@ xpum_result_t PolicyManager::xpumSetPolicyByDeviceIds(xpum_device_id_t deviceIds
 }
 
 xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
+    //
+    if(policy.type < XPUM_POLICY_TYPE_GPU_TEMPERATURE || policy.type >= XPUM_POLICY_TYPE_MAX){
+        return XPUM_RESULT_POLICY_TYPE_INVALID;
+    }
+    if(policy.action.type < XPUM_POLICY_ACTION_TYPE_NULL || policy.action.type > XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE){
+        return XPUM_RESULT_POLICY_ACTION_TYPE_INVALID;
+    }
+    if(policy.condition.type < XPUM_POLICY_CONDITION_TYPE_GREATER || policy.condition.type > XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR){
+        return XPUM_RESULT_POLICY_CONDITION_TYPE_INVALID;
+    }
+
+    //
     if(policy.type == XPUM_POLICY_TYPE_GPU_TEMPERATURE){
         if(!(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_GREATER
             ||policy.condition.type == XPUM_POLICY_CONDITION_TYPE_LESS)){
