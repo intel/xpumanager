@@ -357,7 +357,7 @@ xpum_result_t Topology::topo2xml(char * buffer, int * buflen, std::map<device_pa
                 name = it->second.device_name;
             }   
             std::shared_ptr<char> tmpBuffer(static_cast<char*>(malloc(512)), free);   
-            if(tmpBuffer != nullptr) {
+            if(tmpBuffer != nullptr && tmpBuffer.get() != nullptr) {
                 memset(tmpBuffer.get(), 0, 512);            
                 
                 if(!name.empty()){
