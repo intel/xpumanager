@@ -281,7 +281,7 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count) {
     return XPUM_OK;
 }
 
-xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_DEVICES], int *count) {
+xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -293,7 +293,12 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_D
 
     std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
-    if (deviceList == nullptr || devices.size() > XPUM_MAX_NUM_DEVICES) {
+    if (deviceList == nullptr) {
+        *count = devices.size();
+        return XPUM_OK;
+    }
+
+    if (devices.size() > *count) {
         return XPUM_BUFFER_TOO_SMALL;
     }
 

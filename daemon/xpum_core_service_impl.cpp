@@ -51,7 +51,7 @@ grpc::Status XpumCoreServiceImpl::getVersion(grpc::ServerContext* context, const
 
 grpc::Status XpumCoreServiceImpl::getDeviceList(grpc::ServerContext* context, const google::protobuf::Empty* request,
                                                 XpumDeviceBasicInfoArray* response) {
-    int count{0};
+    int count{XPUM_MAX_NUM_DEVICES};
     xpum_device_basic_info devices[XPUM_MAX_NUM_DEVICES];
 
     xpum_result_t res = xpumGetDeviceList(devices, &count);

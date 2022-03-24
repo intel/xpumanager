@@ -72,11 +72,16 @@ xpum_result_t xpumVersionInfo(xpum_version_info versionInfoList[], int *count);
  * The identifier represents device id corresponding to each device on the system and is immutable 
  * during the lifespan of the engine. The list should be queried again if the engine is restarted.
  * 
- * @param deviceList      OUT: The array to store device infos
- * @param count             OUT: The count of device
+ * @param deviceList               OUT: The array to store device infos
+ * @param count                 IN/OUT: When \a deviceList is NULL, \a count will be filled with the number of                     
+ *                                      available devices, and return.      
+ *                                      When \a deviceList is not NULL, \a count denotes the length of \a deviceList,  
+ *                                      \a count should be equal to or larger than the number of available devices,            
+ *                                      when return, the \a count will store real number of devices returned by             
+ *                                      \a deviceList       
  * @return \ref xpum_result_t 
  */
-xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[XPUM_MAX_NUM_DEVICES], int *count);
+xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count);
 
 /**
  * @brief Get device properties corresponding to the \a deviceId.
