@@ -381,6 +381,10 @@ xpum_result_t DataLogic::getEngineUtilizations(xpum_device_id_t deviceId,
     }
 
     std::shared_ptr<MeasurementData> p_data = getLatestData(METRIC_ENGINE_UTILIZATION, device_id);
+    if (p_data == nullptr) {
+        *count = 0;
+        return XPUM_OK;
+    }
     auto engine_datas_iter = std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->begin();
     uint32_t index = 0;
     while (engine_datas_iter != std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getDatas()->end()) {
