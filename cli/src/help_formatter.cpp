@@ -23,37 +23,38 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
     } else if (app->get_name().compare("group") == 0) {
         return "\n"
                "Usage: xpumcli group [Options] \n"
-               "   xpumcli group -c -n [groupName] \n"
-               "   xpumcli group -a -g [groupId] -d [deviceIds] \n"
-               "   xpumcli group -r -d [deviceIds] -g [groupId] \n"
-               "   xpumcli group -D -g [groupId] \n"
-               "   xpumcli group -l \n"
-               "   xpumcli group -l -g [groupId] \n";
+               "  xpumcli group -c -n [groupName] \n"
+               "  xpumcli group -a -g [groupId] -d [deviceIds] \n"
+               "  xpumcli group -r -d [deviceIds] -g [groupId] \n"
+               "  xpumcli group -D -g [groupId] \n"
+               "  xpumcli group -l \n"
+               "  xpumcli -l -j \n"
+               "  xpumcli group -l -g [groupId] \n";
     } else if (app->get_name().compare("topology") == 0) {
         return "\n"
                "Usage: xpumcli topology [Options] \n"
-               "   xpumcli topology -d [deviceId] \n"
-               "   xpumcli topology -d [deviceId] -j \n"
-               "   xpumcli topology -f [filename]  \n"
-               "   xpumcli topology -m  \n";;
+               "  xpumcli topology -d [deviceId] \n"
+               "  xpumcli topology -d [deviceId] -j \n"
+               "  xpumcli topology -f [filename]  \n"
+               "  xpumcli topology -m  \n";;
     } else if (app->get_name().compare("health") == 0) {
         return "\nUsage: xpumcli health [Options] \n"
-               "   xpumcli health -l \n"
-               "   xpumcli health -l -j \n"
-               "   xpumcli health -d [deviceId] \n"
-               "   xpumcli health -d [deviceId] -j \n"
-               "   xpumcli health -g [groupId] \n"
-               "   xpumcli health -g [groupId] -j \n"
-               "   xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] \n"
-               "   xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] -j \n"
-               "   xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold] \n"
-               "   xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold] -j \n";
+               "  xpumcli health -l \n"
+               "  xpumcli health -l -j \n"
+               "  xpumcli health -d [deviceId] \n"
+               "  xpumcli health -d [deviceId] -j \n"
+               "  xpumcli health -g [groupId] \n"
+               "  xpumcli health -g [groupId] -j \n"
+               "  xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] \n"
+               "  xpumcli health -d [deviceId] -c [componentTypeId] --threshold [threshold] -j \n"
+               "  xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold] \n"
+               "  xpumcli health -g [groupId] -c [componentTypeId] --threshold [threshold] -j \n";
     } else if (app->get_name().compare("diag") == 0) {
         return "\nUsage: xpumcli diag [Options] \n"
-               "   xpumcli diag -d [deviceId] -l [level] \n"
-               "   xpumcli diag -d [deviceId] -l [level] -j \n"
-               "   xpumcli diag -g [groupId] -l [level] \n"
-               "   xpumcli diag -g [groupId] -l [level] -j \n";
+               "  xpumcli diag -d [deviceId] -l [level] \n"
+               "  xpumcli diag -d [deviceId] -l [level] -j \n"
+               "  xpumcli diag -g [groupId] -l [level] \n"
+               "  xpumcli diag -g [groupId] -l [level] -j \n";
     } else if (app->get_name().compare("dump") == 0) {
         return "\nUsage: xpumcli dump [Options]\n"
                "  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
