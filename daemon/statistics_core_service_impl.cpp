@@ -57,7 +57,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
 ::grpc::Status XpumCoreServiceImpl::getStatistics(::grpc::ServerContext* context, const ::XpumGetStatsRequest* request, ::XpumGetStatsResponse* response) {
     xpum_device_id_t deviceId = request->deviceid();
     uint64_t sessionId = request->sessionid();
-    int count = 5;
+    uint32_t count = 5;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
     xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, sessionId);
@@ -74,7 +74,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     response->set_begin(begin);
     response->set_end(end);
-    for (int i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         DeviceStatsInfo* deviceStatsInfo = response->add_datalist();
         xpum_device_stats_t& stats = dataList[i];
         deviceStatsInfo->set_deviceid(stats.deviceId);
@@ -102,7 +102,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
 ::grpc::Status XpumCoreServiceImpl::getStatisticsByGroup(::grpc::ServerContext* context, const ::XpumGetStatsByGroupRequest* request, ::XpumGetStatsResponse* response) {
     xpum_device_id_t groupId = request->groupid();
     uint64_t sessionId = request->sessionid();
-    int count = 5 * XPUM_MAX_NUM_DEVICES;
+    uint32_t count = 5 * XPUM_MAX_NUM_DEVICES;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
     xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end, sessionId);
@@ -121,7 +121,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     response->set_begin(begin);
     response->set_end(end);
-    for (int i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         DeviceStatsInfo* deviceStatsInfo = response->add_datalist();
         xpum_device_stats_t& stats = dataList[i];
         deviceStatsInfo->set_deviceid(stats.deviceId);
@@ -147,7 +147,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
 ::grpc::Status XpumCoreServiceImpl::getStatisticsNotForPrometheus(::grpc::ServerContext* context, const ::XpumGetStatsRequest* request, ::XpumGetStatsResponse* response) {
     xpum_device_id_t deviceId = request->deviceid();
     uint64_t sessionId = request->sessionid();
-    int count = 5;
+    uint32_t count = 5;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
     xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, sessionId);
@@ -168,7 +168,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     response->set_begin(begin);
     response->set_end(end);
-    for (int i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         DeviceStatsInfo* deviceStatsInfo = response->add_datalist();
         xpum_device_stats_t& stats = dataList[i];
         deviceStatsInfo->set_deviceid(stats.deviceId);
@@ -196,7 +196,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
 ::grpc::Status XpumCoreServiceImpl::getStatisticsByGroupNotForPrometheus(::grpc::ServerContext* context, const ::XpumGetStatsByGroupRequest* request, ::XpumGetStatsResponse* response) {
     xpum_device_id_t groupId = request->groupid();
     uint64_t sessionId = request->sessionid();
-    int count = 5 * XPUM_MAX_NUM_DEVICES;
+    uint32_t count = 5 * XPUM_MAX_NUM_DEVICES;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
     xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end, sessionId);
@@ -215,7 +215,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     response->set_begin(begin);
     response->set_end(end);
-    for (int i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         DeviceStatsInfo* deviceStatsInfo = response->add_datalist();
         xpum_device_stats_t& stats = dataList[i];
         deviceStatsInfo->set_deviceid(stats.deviceId);

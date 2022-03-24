@@ -669,7 +669,7 @@ xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], 
 
 xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
                            xpum_device_stats_t dataList[],
-                           int *count,
+                           uint32_t *count,
                            uint64_t *begin,
                            uint64_t *end,
                            uint64_t sessionId) {
@@ -690,8 +690,7 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
         return XPUM_UNSUPPORTED_SESSIONID;
     }
 
-    Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
-    return xpum_result_t::XPUM_OK;
+    return Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 
 xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
@@ -895,7 +894,7 @@ xpum_result_t xpumGetMetricsRawDataByTask(xpum_dump_task_id_t taskId, xpum_metri
 
 xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   xpum_device_stats_t dataList[],
-                                  int *count,
+                                  uint32_t *count,
                                   uint64_t *begin,
                                   uint64_t *end,
                                   uint64_t sessionId) {
@@ -905,7 +904,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
     }
 
     xpum_group_info_t groupInfo;
-    int currentCount = 0, totalCount = 0;
+    uint32_t currentCount = 0, totalCount = 0;
     xpum_device_stats_t *pStatus = dataList;
 
     res = Core::instance().getGroupManager()->getGroupInfo(groupId, &groupInfo);

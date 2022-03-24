@@ -73,21 +73,21 @@ std::shared_ptr<MeasurementData> DataLogic::getLatestStatistics(MeasurementType 
     return p_raw_data_manager->getLatestStatistics(type, device_id, session_id);
 }
 
-void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
-                                     xpum_device_stats_t dataList[],
-                                     int* count,
-                                     uint64_t* begin,
-                                     uint64_t* end,
-                                     uint64_t session_id) {
+xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
+                                              xpum_device_stats_t dataList[],
+                                              uint32_t* count,
+                                              uint64_t* begin,
+                                              uint64_t* end,
+                                              uint64_t session_id) {
     if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId)) == nullptr) {
-        return;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
     Property prop;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUBDEVICE,prop);
     uint32_t num_subdevice = prop.getValueInt();
-    *count = num_subdevice + 1;
     if (dataList == nullptr) {
-        return;
+        *count = num_subdevice + 1;
+        return XPUM_OK;
     }
 
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
@@ -148,6 +148,9 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         }
     }
     uint32_t index = 0;
+    if (index >= *count) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
     dataList[index++] = device_stats;
 
     for (uint32_t i = 0; i < num_subdevice; i++) {
@@ -180,8 +183,13 @@ void DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
             }
             ++datas_iter;
         }
+        if (index >= *count) {
+            return XPUM_BUFFER_TOO_SMALL;
+        }
         dataList[index++] = subdevice_stats;
     }
+    *count = index;
+    return XPUM_OK;
 }
 
 void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,

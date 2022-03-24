@@ -43,12 +43,12 @@ class DataLogic : public DataLogicInterface {
 
     std::shared_ptr<MeasurementData> getLatestStatistics(MeasurementType type, std::string& device_id, uint64_t session_id) override;
 
-    void getMetricsStatistics(xpum_device_id_t device_id,
-                              xpum_device_stats_t data_list[],
-                              int* count,
-                              uint64_t* begin,
-                              uint64_t* end,
-                              uint64_t session_id);
+    xpum_result_t getMetricsStatistics(xpum_device_id_t device_id,
+                                       xpum_device_stats_t data_list[],
+                                       uint32_t* count,
+                                       uint64_t* begin,
+                                       uint64_t* end,
+                                       uint64_t session_id);
     
     xpum_result_t getEngineStatistics(xpum_device_id_t device_id,
                                       xpum_device_engine_stats_t data_list[],

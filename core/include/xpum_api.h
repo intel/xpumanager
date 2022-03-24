@@ -661,7 +661,7 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
  */
 xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
                            xpum_device_stats_t dataList[],
-                           int *count,
+                           uint32_t *count,
                            uint64_t *begin,
                            uint64_t *end,
                            uint64_t sessionId);
@@ -724,7 +724,7 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
  */
 xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   xpum_device_stats_t dataList[],
-                                  int *count,
+                                  uint32_t *count,
                                   uint64_t *begin,
                                   uint64_t *end,
                                   uint64_t sessionId);
