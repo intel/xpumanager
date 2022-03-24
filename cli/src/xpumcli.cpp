@@ -80,10 +80,38 @@ bool serviceStatusCheck() {
     return false;
 }
 
+bool levelZeroLoaderCheck() {
+    FILE * f = popen("ldd /opt/xpum/bin/xpumd", "r");
+    char c_line[1024];
+    while (fgets(c_line, 1024, f) != NULL) {
+        std::string line(c_line);
+        if (line.find("libze_loader.so") != std::string::npos) {
+            if (line.find("not found")) {
+                return false;
+            }
+            return true;
+        }
+    }
+    pclose(f);
+    return true;
+}
+
 int main(int argc, char **argv) {
 
     xpum::cli::init_logger();
     // XPUM_LOG_AUDIT("XPUM CLI (ver.%s) Started", "1.0.0.0");
+
+    if (!permissionCheck()) {
+        std::cout << "Error: User Permission Error\r\n";
+        return 0;
+    } else if (!serviceStatusCheck()) {
+        std::cout << "Error: XPUM Service Status Error. ";
+        if (!levelZeroLoaderCheck()) {
+            std::cout << "Cannot find level zero loader.";
+        }
+        std::cout << std::endl;
+        return 0;
+    }
 
     CLI::App app{xpum::cli::getResourceString("CLI_APP_DESC")};
 
@@ -102,11 +130,6 @@ int main(int argc, char **argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet));
     app.require_subcommand(0, 1);
-
-    if (!permissionCheck()) {
-        std::cout << "Error: User Permission Error\r\n";
-        return 0;
-    }
 
     if (argc == 1) {
         std::cout << app.help();
