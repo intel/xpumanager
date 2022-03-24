@@ -918,19 +918,36 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
         return res;
     }
 
-    for (int i = 0; i < groupInfo.count; i++) {
-        currentCount = *count - totalCount;
-        Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], pStatus,
-                                                              &currentCount, begin, end, sessionId);
-        totalCount += currentCount;
-        pStatus += currentCount;
-        if (*count < totalCount) {
-            return XPUM_BUFFER_TOO_SMALL;
+    if(pStatus == nullptr){
+        for (int i = 0; i < groupInfo.count; i++) {
+            currentCount = *count - totalCount;
+            res = Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], nullptr,
+                                                                &currentCount, begin, end, sessionId);
+            if(res != XPUM_OK){
+                break;
+            }
+            totalCount += currentCount;        
+        }
+    } else {
+        for (int i = 0; i < groupInfo.count; i++) {
+            currentCount = *count - totalCount;
+            res = Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], pStatus,
+                                                                &currentCount, begin, end, sessionId);
+
+            if(currentCount > *count - totalCount){
+                res = XPUM_BUFFER_TOO_SMALL;
+                break;
+            }
+            if(res != XPUM_OK){                
+                break;
+            }
+            totalCount += currentCount;
+            pStatus += currentCount;
         }
     }
 
     *count = totalCount;
-    return XPUM_OK;
+    return res;
 }
 
 std::set<int64_t> monitor_freq_set{100, 200, 500, 1000};
