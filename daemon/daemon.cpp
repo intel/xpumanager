@@ -150,6 +150,10 @@ void runRPCServer() {
     if (pwd != nullptr) {
         chown(unixSockName.c_str(), pwd->pw_uid, pwd->pw_gid);
     }
+    else {
+        XPUM_LOG_ERROR("XPUM: no xpum account exists, abort");
+        return; 
+    }
 
     chmod( unixSockName.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP );
 

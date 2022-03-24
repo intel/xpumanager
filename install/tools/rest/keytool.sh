@@ -10,7 +10,7 @@ WORK=`dirname "$0"`
 WORK_DIR=`cd ${WORK} && pwd`
 echo "WORK_DIR: ${WORK_DIR}"
 OWNER=xpum
-GROUP=xpum
+GROUP=root
 for i in "$@"; do
   case $i in
     -o=*|--owner=*)
