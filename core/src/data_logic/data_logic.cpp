@@ -290,14 +290,12 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
                                     uint64_t session_id) {
     std::string device_id = std::to_string(deviceId);
     if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
-        *count = 0;
-        *begin = 0;
-        *end = 0;
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
-    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
+    uint32_t engine_count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getEngineCount();
     if (dataList == nullptr) {
+        *count = engine_count;
         return XPUM_OK;
     }
 
@@ -351,6 +349,7 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
         }
         ++engine_datas_iter;
     }
+    *count = index;
     return XPUM_OK;
 }
 
