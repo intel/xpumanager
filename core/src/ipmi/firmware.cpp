@@ -524,7 +524,7 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
 
 #if __linux__
     if (discover_pci_address_list(&cards, pci_address, &pci_address_count)) {
-        err = get_pci_device_list(pci_address, sizeof(pci_address),
+        err = get_pci_device_list(pci_address, MAX_CARD_NO,
                                   &pci_address_count);
         if (err)
             return err;

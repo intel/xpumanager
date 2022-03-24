@@ -93,7 +93,7 @@ bool check_pci_device(const pci_address_t *address)
 	int path_size = 0;
 	char path[PATH_MAX] = {0};
 	char *buffer;
-	uint32_t pci_id;
+	uint32_t pci_id = 0;
 	size_t buffer_size = PCI_ID_SIZE;
 
 	assert(address);
@@ -217,7 +217,7 @@ static bool get_pci_properties_from_proc_line(char *line, pci_properties_t *prop
 	if (!line_tok)
 		return false;
 
-	if (sscanf(line_tok, "%02x%02x", (int*)&prop.address.bus, &devfn) != 2)
+	if (sscanf(line_tok, "%02x%02x", (unsigned*)&prop.address.bus, &devfn) != 2)
 		return false;
 
 	prop.address.device = PCI_SLOT(devfn);
