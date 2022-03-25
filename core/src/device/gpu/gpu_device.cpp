@@ -293,7 +293,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
                 // break when previous update fail
                 if (!ok) break;
             }
-            dumpFirmwareFlashLog();
+            // dumpFirmwareFlashLog();
             log.clear();
             xpum_firmware_flash_result_t rc;
             if (ok) {

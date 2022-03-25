@@ -35,12 +35,18 @@ void ComletDump::setupOptions() {
     // timeIntervalOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
     timeIntervalOpt->check(
         [](const std::string &str) {
-            if (isNumber(str)) {
-                int value = std::stoi(str);
-                if (value >= 1 && value < std::numeric_limits<int>::max())
-                    return std::string();
+            std::string errStr = "Value should be integer larger than or equal to 1 and less than 1000";
+            if (!isNumber(str))
+                return errStr;
+            int value;
+            try {
+                value = std::stoi(str);
+            } catch (const std::out_of_range &oor) {
+                return errStr;
             }
-            return std::string("Value should be integer larger than or equal to 1");
+            if (value < 1 || value >= 1000)
+                return errStr;
+            return std::string();
         });
     auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.\n");
     dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
