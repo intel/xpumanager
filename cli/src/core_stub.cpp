@@ -74,9 +74,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
                 }
             }
         }
-    } else {
-        std::cout << "status not ok" << std::endl;
-        std::cout << response.errormsg() << std::endl;
     }
 
     return json;
