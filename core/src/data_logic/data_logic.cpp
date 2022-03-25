@@ -454,16 +454,12 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
     std::string device_id = std::to_string(deviceId);
     if (Core::instance().getDeviceManager()->getDevice(device_id) == nullptr) {
         *count = 0;
-        *begin = 0;
-        *end = 0;
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
     auto metric_types = Configuration::getEnabledMetrics();
     if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
         *count = 0;
-        *begin = 0;
-        *end = 0;
         return XPUM_METRIC_NOT_ENABLED;
     }
     std::vector<xpum::DeviceCapability> capabilities;
@@ -477,13 +473,12 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
     }
     if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
         *count = 0;
-        *begin = 0;
-        *end = 0;
         return XPUM_METRIC_NOT_SUPPORTED;
     }
 
-    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfoCount();
-    if (dataList == nullptr || *count == 0) {
+    uint32_t throughput_count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfoCount();
+    if (dataList == nullptr || throughput_count == 0) {
+        *count = throughput_count;
         return XPUM_OK;
     }
 
@@ -519,6 +514,7 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
         }
         ++fabric_datas_iter;
     }
+    *count = index;
     return XPUM_OK;
 }
 
@@ -551,8 +547,9 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
         return XPUM_METRIC_NOT_SUPPORTED;
     }
 
-    *count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfoCount();
+    uint32_t throughput_count = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfoCount();
     if (dataList == nullptr || *count == 0) {
+        *count = throughput_count;
         return XPUM_OK;
     }
 
@@ -581,6 +578,7 @@ xpum_result_t DataLogic::getFabricThroughput(xpum_device_id_t deviceId,
         }
         ++fabric_datas_iter;
     }
+    *count = index;
     return XPUM_OK;
 }
 
