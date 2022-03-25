@@ -44,14 +44,12 @@ void ComletFirmware::setupOptions() {
 
     auto fwTypeOpt = addOption( "-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far." );
     fwTypeOpt->required();
-    fwTypeOpt->transform([](const std::string &str) {
+    fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
-        if (str.compare("GSC") == 0) {
-            return std::string("0");
-        } else if (str.compare("AMC") == 0) {
-            return std::string("1");
+        if (str.compare("GSC") == 0 || str.compare("AMC") == 0) {
+            return std::string();
         } else {
-            throw CLI::ValidationError(errStr);
+            return errStr;
         }
     });
 
@@ -75,13 +73,13 @@ void ComletFirmware::setupOptions() {
 nlohmann::json ComletFirmware::validateArguments() {
     nlohmann::json result;
     // GSC
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType == 0) {
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GSC") == 0) {
         result["error"] = "upgrading GSC firmware on all devices is not supported";
         return result;
     }
 
     // AMC
-    if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType == 1) {
+    if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("AMC") == 0) {
         result["error"] = "pgrading AMC firmware on single device is not supported";
         return result;
     }
@@ -105,6 +103,14 @@ static void printJson(std::shared_ptr<nlohmann::json> json, std::ostream &out, b
     }
 }
 
+static int getIntFirmwareType(std::string firmwareType) {
+    if (firmwareType.compare("GSC") == 0)
+        return 0;
+    if (firmwareType.compare("AMC") == 0)
+        return 1;
+    return -1;
+}
+
 void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     auto validateResultJson = validateArguments();
     if (validateResultJson.contains("error")) {
@@ -112,7 +118,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
         return;
     }
 
-    int type = opts->firmwareType;
+    int type = getIntFirmwareType(opts->firmwareType);
     auto uniqueJson = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
     std::shared_ptr<nlohmann::json> json = std::move(uniqueJson);
     if (json->contains("error")) {
@@ -160,7 +166,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     }
 
     // warn user
-    int type = opts->firmwareType;
+    int type = getIntFirmwareType(opts->firmwareType);
     if (type == 1) { // AMC caution
         std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model. Updating AMC firmware may cause OS to reboot." << std::endl;
         std::cout << "Please comfirm to proceed ( Y/N ) ?" << std::endl;
