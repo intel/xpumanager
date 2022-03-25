@@ -484,9 +484,13 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
 
     uint32_t index = 0;
     std::shared_ptr<MeasurementData> p_data = getLatestStatistics(METRIC_FABRIC_THROUGHPUT, device_id, session_id);
-    auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
     *begin = getFabricStatsTimestamp(session_id, deviceId);
     *end = Utility::getCurrentTime();
+    if (p_data == nullptr || p_data->getTimestamp() < *begin) {
+        *count = 0;
+        return XPUM_OK;
+    }
+    auto fabric_datas_iter = std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->begin();
     while (fabric_datas_iter != std::static_pointer_cast<FabricMeasurementData>(p_data)->getDatas()->end()) {
         FabricThroughputInfo info;
         if (Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getFabricThroughputInfo(fabric_datas_iter->first, info)) {
