@@ -18,7 +18,7 @@ using xpum::dump::engineNameMap;
 
 namespace xpum::cli {
 
-bool isNumber(const std::string& str)
+static bool isNumber(const std::string& str)
 {
     return str.find_first_not_of("0123456789") == std::string::npos;
 }

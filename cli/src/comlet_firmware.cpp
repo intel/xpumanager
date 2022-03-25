@@ -18,54 +18,159 @@ ComletFirmware::ComletFirmware() : ComletBase("updatefw", "Update GPU firmware")
 ComletFirmware::~ComletFirmware() {
 }
 
+static bool isNumber(const std::string& str)
+{
+    return str.find_first_not_of("0123456789") == std::string::npos;
+}
+
 void ComletFirmware::setupOptions() {
     opts = std::unique_ptr<FlashFirmwareOptions>( new FlashFirmwareOptions() );
-    addOption( "-d, --device", opts->deviceId, "device ID, optional" );
-    addOption( "-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far." );
-    addOption( "-f, --file", opts->firmwarePath, "The firmware image file path on this server" );
+
+    auto deviceIdOpt = addOption( "-d, --device", opts->deviceId, "device ID, optional" );
+    deviceIdOpt->check([](const std::string &str) {
+        std::string errStr = "Device id should be integer larger than or equal to 0";
+        if (!isNumber(str))
+            return errStr;
+        int value;
+        try {
+            value = std::stoi(str);
+        } catch (const std::out_of_range &oor) {
+            return errStr;
+        }
+        if (value < 0)
+            return errStr;
+        return std::string();
+    });
+
+    auto fwTypeOpt = addOption( "-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far." );
+    fwTypeOpt->required();
+    fwTypeOpt->transform([](const std::string &str) {
+        std::string errStr = "Invalid firmware type";
+        if (str.compare("GSC") == 0) {
+            return std::string("0");
+        } else if (str.compare("AMC") == 0) {
+            return std::string("1");
+        } else {
+            throw CLI::ValidationError(errStr);
+        }
+    });
+
+    auto fwPathOpt = addOption( "-f, --file", opts->firmwarePath, "The firmware image file path on this server" );
+    fwPathOpt->required();
+    fwPathOpt->transform([](const std::string &str) {
+        if (FILE *file = fopen(str.c_str(), "r")) {
+            fclose(file);
+            // get full path of firmware image path
+            char resolved_path[PATH_MAX];
+            char *fullpath = realpath(str.c_str(), resolved_path);
+            return std::string(fullpath);
+        } else {
+            throw CLI::ValidationError("Invalid file path.");
+        }
+    });
 
     opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
+}
+
+nlohmann::json ComletFirmware::validateArguments() {
+    nlohmann::json result;
+    // GSC
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType == 0) {
+        result["error"] = "upgrading GSC firmware on all devices is not supported";
+        return result;
+    }
+
+    // AMC
+    if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType == 1) {
+        result["error"] = "pgrading AMC firmware on single device is not supported";
+        return result;
+    }
+    return result;
 }
 
 std::unique_ptr<nlohmann::json> ComletFirmware::run() {
     std::unique_ptr<nlohmann::json> json = std::unique_ptr<nlohmann::json>( new nlohmann::json() );
 
-    if ( opts->deviceId < 0 ) {
-        (*json)["error"] = "invalid device id";
-        return json;
+    // json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
+    return json;
+}
+
+static void printJson(std::shared_ptr<nlohmann::json> json, std::ostream &out, bool raw) {
+    if (raw) {
+        out << json->dump() << std::endl;
+        return;
+    } else {
+        out << json->dump(4) << std::endl;
+        return;
+    }
+}
+
+void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
+    auto validateResultJson = validateArguments();
+    if (validateResultJson.contains("error")) {
+        printJson(std::make_shared<nlohmann::json>(validateResultJson), out, raw);
+        return;
     }
 
-    if (opts->firmwareType != "GSC" && opts->firmwareType != "AMC") {
-        (*json)["error"] = "invalid firmware type";
-        return json;
+    int type = opts->firmwareType;
+    auto uniqueJson = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
+    std::shared_ptr<nlohmann::json> json = std::move(uniqueJson);
+    if (json->contains("error")) {
+        printJson(json, out, raw);
+        return;
+    }
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+
+        json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
+        if (json->contains("error")) {
+            printJson(json, out, raw);
+            return;
+        }
+        if (!json->contains("firmware_flash_result")) {
+            nlohmann::json tmp;
+            tmp["error"] = "Failed to get firmware reuslt";
+            printJson(std::make_shared<nlohmann::json>(tmp), out, raw);
+            return;
+        }
+
+        std::string flashStatus = (*json)["firmware_flash_result"].get<std::string>();
+
+        if (flashStatus.compare("OK") == 0) {
+            nlohmann::json tmp;
+            tmp["result"] = "OK";
+            printJson(std::make_shared<nlohmann::json>(tmp), out, raw);
+            return;
+        } else if (flashStatus.compare("FAILED") == 0) {
+            nlohmann::json tmp;
+            tmp["result"] = "FAILED";
+            printJson(std::make_shared<nlohmann::json>(tmp), out, raw);
+            return;
+        } else {
+            // do nothing
+        }
+    }
+}
+
+void ComletFirmware::getTableResult(std::ostream &out) {
+    auto validateResultJson = validateArguments();
+    if(validateResultJson.contains("error")){
+        out << "Error: " << validateResultJson["error"].get<std::string>() << std::endl;
+        return;
     }
 
-    if (opts->firmwarePath.length() == 0) {
-        (*json)["error"] = "invalid file name";
-        return json;
-    }
-
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType == "GSC") {
-        (*json)["error"] = "upgrading GSC firmware on all devices is not supported";
-        return json;
-    }
-
-    if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType == "AMC") {
-        (*json)["error"] = "upgrading AMC firmware on single device is not supported";
-        return json;
-    }
-
-    int type = opts->firmwareType == "GSC" ? 0 : 1;
-    if (type == 1) {
+    // warn user
+    int type = opts->firmwareType;
+    if (type == 1) { // AMC caution
         std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model. Updating AMC firmware may cause OS to reboot." << std::endl;
         std::cout << "Please comfirm to proceed ( Y/N ) ?" << std::endl;
         std::string confirm;
         std::cin >> confirm;
         if (confirm != "Y" && confirm != "y") {
-            (*json)["error"] = "update aborted";
-            return json;
+            out << "update aborted" << std::endl;
+            return;
         }
-    } else {
+    } else { // GSC caution
         auto allGroups = coreStub->groupListAll();
         if (allGroups != nullptr && allGroups->contains("group_list")) {
             for (auto groupJson : (*allGroups)["group_list"]) {
@@ -74,12 +179,12 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
                     auto deviceIdList = groupJson["device_id_list"];
                     for (auto deviceIdInGroup : deviceIdList) {
                         if (deviceIdInGroup.get<int>() == opts->deviceId) {
-                            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) "<< std::endl;
+                            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) " << std::endl;
                             std::string confirm;
                             std::cin >> confirm;
                             if (confirm != "Y" && confirm != "y") {
-                                (*json)["error"] = "update aborted";
-                                return json;
+                                out << "update aborted" << std::endl;
+                                return;
                             }
                         }
                     }
@@ -88,41 +193,43 @@ std::unique_ptr<nlohmann::json> ComletFirmware::run() {
         }
     }
 
-    // get full path of firmware image path
-    char resolved_path[PATH_MAX];
-    char *fullpath = realpath(opts->firmwarePath.c_str(), resolved_path);
-    if (fullpath == nullptr) {
-        (*json)["error"] = "Firmware image not found.";
-        return json;
-    }
+    // start run 
+    auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
 
-    json = coreStub->runFirmwareFlash(opts->deviceId, type, fullpath);
-    return json;
-}
-
-void ComletFirmware::getTableResult(std::ostream &out) {
-    auto json = this->run();
     auto status = (*json)["error"];
     if (!status.is_null()) {
         out << "Error: " << status.get<std::string>() << std::endl;
         return;
     }
-    std::cout << "Start to update firmware" << std::endl;
-    std::cout << "Firmware Name: " << opts->firmwareType << std::endl;
-    std::cout << "Image path: " << opts->firmwarePath << std::endl;
+    out << "Start to update firmware" << std::endl;
+    out << "Firmware Name: " << opts->firmwareType << std::endl;
+    out << "Image path: " << opts->firmwarePath << std::endl;
 
-    status = (*json)["firmware_flash_result"];
-    if (!status.is_null()) {
-        if (status.get<std::string>().find("OK") != std::string::npos) {
-            auto other_devices = (*json)["other_devices"];
-            if (!other_devices.is_null()) {
-                out << "CAUTIONS: Please also upgrade GSC firmware on device " << other_devices.get<std::string>() << "if not upgraded" << std::endl;
-            }
-            out << "Update firmware successfully. Please reboot OS to take effect." << std::endl;
-        } else {
-            out << "Update firmware failed" << std::endl;
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        out << "." << std::flush;
+
+        json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
+        if (json->contains("error")) {
+            out << "Error: " << (*json)["error"] << std::endl;
+            return;
         }
-        return;
+        if (!json->contains("firmware_flash_result")) {
+            out << "Error: Failed to get firmware reuslt" << std::endl;
+            return;
+        }
+
+        std::string flashStatus = (*json)["firmware_flash_result"].get<std::string>();
+
+        if (flashStatus.compare("OK")==0) {
+            out << "Update firmware successfully. Please reboot OS to take effect." << std::endl;
+            return;
+        } else if (flashStatus.compare("FAILED")==0) {
+            out << "Update firmware failed" << std::endl;
+            return;
+        } else {
+            // do nothing
+        }
     }
 
     out << "unknown error" << std::endl;

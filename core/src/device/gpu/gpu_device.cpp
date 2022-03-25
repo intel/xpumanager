@@ -269,7 +269,8 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
 
     std::lock_guard<std::mutex> lck(mtx);
     if (taskGSC.valid()) {
-        return xpum_result_t::XPUM_GENERIC_ERROR;
+        // task already running
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     } else {
         taskGSC = std::async(std::launch::async, [&, commands] {
             bool ok = true;
@@ -318,7 +319,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath) noexcept {
 
     std::lock_guard<std::mutex> lck(mtx);
     if (taskAMC.valid()) {
-        return xpum_result_t::XPUM_GENERIC_ERROR;
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
     else {
         std::string dupPath(filePath);

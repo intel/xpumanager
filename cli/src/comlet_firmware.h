@@ -15,7 +15,8 @@
 namespace xpum::cli {
     struct FlashFirmwareOptions {
         int deviceId;
-        std::string firmwareType;
+        // std::string firmwareType;
+        int firmwareType;
         std::string firmwarePath;
 
         /*
@@ -38,9 +39,12 @@ namespace xpum::cli {
 
             virtual void setupOptions() override;
             virtual std::unique_ptr<nlohmann::json> run() override;
+            virtual void getJsonResult(std::ostream &out, bool raw = false) override;
             virtual void getTableResult(std::ostream &out) override;
-        
-        private:
+
+            nlohmann::json validateArguments();
+
+           private:
             std::unique_ptr<FlashFirmwareOptions> opts;
     };
 }
