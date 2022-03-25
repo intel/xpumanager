@@ -293,16 +293,17 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
 
     std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
+    const int deviceCount = devices.size();
     if (deviceList == nullptr) {
-        *count = devices.size();
+        *count = deviceCount;
         return XPUM_OK;
     }
 
-    if (devices.size() > *count) {
+    if (deviceCount > *count) {
         return XPUM_BUFFER_TOO_SMALL;
     }
 
-    for (size_t i = 0; i < devices.size(); i++) {
+    for (int i = 0; i < deviceCount; i++) {
         auto &p_device = devices[i];
         auto &info = deviceList[i];
         info.deviceId = stoi(p_device->getId());
@@ -339,7 +340,7 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
             }
         }
     }
-    *count = devices.size();
+    *count = deviceCount;
 
     return XPUM_OK;
 }
