@@ -69,4 +69,9 @@ void CLIWrapper::printResult(std::ostream &out) {
         }
     }
 }
+
+std::shared_ptr<CoreStub> CLIWrapper::getCoreStub() {
+    return coreStub;
+}
+
 } // end namespace xpum::cli

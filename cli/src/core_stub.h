@@ -14,7 +14,7 @@
 #include <map>
 
 #include "core.grpc.pb.h"
-
+#include <grpc++/channel.h>
 #include "xpum_structs.h"
 
 namespace xpum::cli {
@@ -22,6 +22,8 @@ namespace xpum::cli {
 class CoreStub {
    public:
     CoreStub();
+
+    bool isChannelReady();
 
     std::unique_ptr<nlohmann::json> getVersion();
 
@@ -109,14 +111,13 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getXelinkTopology();
 
     std::shared_ptr<nlohmann::json> getFabricCount(int deviceId);
-
-    bool permissionCheck();
-
-    bool serviceStatusCheck();
     
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
+    
+    std::shared_ptr< grpc::Channel> channel;
 
     std::string getCardUUID(const std::string& rawUUID);
+
 };
 } // end namespace xpum::cli

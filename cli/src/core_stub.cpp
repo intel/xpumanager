@@ -27,8 +27,19 @@ CoreStub::CoreStub() {
     char* xpum_socket_file_env = std::getenv("XPUM_SOCKET_FILE");
     std::string unixSockName{xpum_socket_file_env != NULL ? xpum_socket_file_env : "/tmp/xpum.sock"};
     std::string serverAddr{"unix://" + unixSockName};
-    auto channel = grpc::CreateChannel(serverAddr, grpc::InsecureChannelCredentials());
-    this->stub = XpumCoreService::NewStub(channel);
+    this->channel = grpc::CreateChannel(serverAddr, grpc::InsecureChannelCredentials());
+    this->stub = XpumCoreService::NewStub(this->channel);
+}
+
+bool CoreStub::isChannelReady() {
+    grpc::ClientContext context;
+    XpumVersionInfoArray response;
+    grpc::Status status = stub->getVersion(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        return true;
+    } else {
+        return channel->GetState(true) == GRPC_CHANNEL_READY;
+    }
 }
 
 std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
@@ -63,6 +74,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
                 }
             }
         }
+    } else {
+        std::cout << "status not ok" << std::endl;
+        std::cout << response.errormsg() << std::endl;
     }
 
     return json;

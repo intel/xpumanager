@@ -32,6 +32,7 @@ class CLIWrapper {
     CLIWrapper(CLI::App &cliApp);
     CLIWrapper &addComlet(const std::shared_ptr<ComletBase> &comlet);
     void printResult(std::ostream &out);
+    std::shared_ptr<CoreStub> getCoreStub();
 
    private:
     CLI::App &cliApp;

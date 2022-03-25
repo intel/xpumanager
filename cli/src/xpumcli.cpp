@@ -31,7 +31,7 @@
 #include "comlet_firmware.h"
 #include "comlet_dump.h"
 #include "comlet_agentset.h"
-
+#include "core_stub.h"
 #include "logger.h"
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
@@ -104,7 +104,12 @@ int main(int argc, char **argv) {
     if (!permissionCheck()) {
         std::cout << "Error: User Permission Error\r\n";
         return 0;
-    } else if (!serviceStatusCheck()) {
+    }
+
+    CLI::App app{xpum::cli::getResourceString("CLI_APP_DESC")};
+
+    xpum::cli::CLIWrapper wrapper(app);
+    if (!wrapper.getCoreStub()->isChannelReady()) {
         std::cout << "Error: XPUM Service Status Error. ";
         if (!levelZeroLoaderCheck()) {
             std::cout << "Cannot find level zero loader.";
@@ -113,9 +118,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    CLI::App app{xpum::cli::getResourceString("CLI_APP_DESC")};
-
-    xpum::cli::CLIWrapper wrapper(app);
     wrapper
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiscovery))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTopology))
