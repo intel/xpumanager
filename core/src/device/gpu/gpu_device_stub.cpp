@@ -2921,7 +2921,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                 description = "Find an unhealthy power domain. Its power is " + std::to_string(power_val) + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(power_threshold) + ".";
             }
         }
-    } else if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL || type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THEARMAL) {
+    } else if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL || type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL) {
         if (core_thermal_threshold <= 0 || memory_thermal_threshold <= 0) {
             description = "Temperature health threshold is not set";
             return;
@@ -2947,7 +2947,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                 if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL && props.type != ZES_TEMP_SENSORS_GPU) {
                     continue;
                 }
-                if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THEARMAL && props.type != ZES_TEMP_SENSORS_MEMORY) {
+                if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL && props.type != ZES_TEMP_SENSORS_MEMORY) {
                     continue;
                 }
                 double temp_val = 0;

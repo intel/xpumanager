@@ -611,12 +611,12 @@ nlohmann::json CoreStub::appendHealthThreshold(int deviceId, nlohmann::json json
         json["throttle_threshold"] = throttleValue;
     }
     if (type == HEALTH_CORE_THERMAL) {
-        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_CORE_THEARMAL_LIMIT);
+        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_CORE_THERMAL_LIMIT);
         json["throttle_threshold"] = throttleValue;
         json["shutdown_threshold"] = shutdownValue;
     }
     if (type == HEALTH_MEMORY_THERMAL) {
-        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_MEMORY_THEARMAL_LIMIT);
+        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_MEMORY_THERMAL_LIMIT);
         json["throttle_threshold"] = throttleValue;
         json["shutdown_threshold"] = shutdownValue;
     }
