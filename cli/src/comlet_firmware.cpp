@@ -80,7 +80,7 @@ nlohmann::json ComletFirmware::validateArguments() {
 
     // AMC
     if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("AMC") == 0) {
-        result["error"] = "pgrading AMC firmware on single device is not supported";
+        result["error"] = "upgrading AMC firmware on single device is not supported";
         return result;
     }
     return result;
@@ -133,14 +133,14 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
             printJson(json, out, raw);
             return;
         }
-        if (!json->contains("firmware_flash_result")) {
+        if (!json->contains("result")) {
             nlohmann::json tmp;
             tmp["error"] = "Failed to get firmware reuslt";
             printJson(std::make_shared<nlohmann::json>(tmp), out, raw);
             return;
         }
 
-        std::string flashStatus = (*json)["firmware_flash_result"].get<std::string>();
+        std::string flashStatus = (*json)["result"].get<std::string>();
 
         if (flashStatus.compare("OK") == 0) {
             nlohmann::json tmp;
@@ -220,12 +220,12 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             out << "Error: " << (*json)["error"] << std::endl;
             return;
         }
-        if (!json->contains("firmware_flash_result")) {
+        if (!json->contains("result")) {
             out << "Error: Failed to get firmware reuslt" << std::endl;
             return;
         }
 
-        std::string flashStatus = (*json)["firmware_flash_result"].get<std::string>();
+        std::string flashStatus = (*json)["result"].get<std::string>();
 
         if (flashStatus.compare("OK")==0) {
             out << "Update firmware successfully. Please reboot OS to take effect." << std::endl;

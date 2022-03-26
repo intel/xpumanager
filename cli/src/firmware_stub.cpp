@@ -83,13 +83,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, u
 
     switch (result) {
         case 0:
-            (*json)["firmware_flash_result"] = "OK";
+            (*json)["result"] = "OK";
             break;
         case 1:
-            (*json)["firmware_flash_result"] = "FAILED";
+            (*json)["result"] = "FAILED";
             break;
         default:
-            (*json)["firmware_flash_result"] = "ONGOING";
+            (*json)["result"] = "ONGOING";
             break;
     }
     return json;

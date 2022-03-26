@@ -116,9 +116,9 @@ def main(*args, **kwargs):
 
     # firmware flash
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/updatefw', methods=['POST'],
-                    view_func=auth.login_required(firmwares.run_firmware_flash))
+                    view_func=auth.login_required(firmwares.run_firmware_flash_single))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/firmware', methods=['GET'],
-                    view_func=auth.login_required(firmwares.get_firmware_flash_result))
+                    view_func=auth.login_required(firmwares.get_firmware_flash_result_single))
     app.add_url_rule('/rest/v1/devices/updatefw', methods=['POST'],
                     view_func=auth.login_required(firmwares.run_firmware_flash_all))
     app.add_url_rule('/rest/v1/devices/firmware', methods=['GET'],

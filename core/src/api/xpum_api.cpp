@@ -474,6 +474,16 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         return XPUM_GENERIC_ERROR;
     }
 
+    if (firmwareType == XPUM_DEVICE_FIRMWARE_AMC) {
+        // check device support AMC or not
+        Property amcVersion;
+        bool hasAMC = device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, amcVersion);
+
+        if (!hasAMC || amcVersion.getValue() == "unknown") {
+            return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
+        }
+    }
+
     xpum_firmware_flash_result_t res = device->getFirmwareFlashResult(firmwareType);
 
     result->deviceId = deviceId;
