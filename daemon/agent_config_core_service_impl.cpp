@@ -52,7 +52,7 @@ void static fillAgentConfigReponse(::AgentConfigEntryList* response, xpum_result
                 flexValue->set_intvalue(intValue);
                 break;
             case VALUE_TYPE_DOUBLE:
-                res =xpumGetAgentConfig(key, &floatValue);
+                res = xpumGetAgentConfig(key, &floatValue);
                 flexValue->set_floatvalue(floatValue);
                 break;
             case VALUE_TYPE_STRING:
@@ -132,6 +132,8 @@ void static fillAgentConfigReponse(::AgentConfigEntryList* response, xpum_result
     xpum_result_t res;
     fillAgentConfigReponse(response->mutable_entrylist(), res);
     switch (res) {
+        case XPUM_OK:
+            break;
         case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
             response->set_errormsg("Level Zero Initialization Error");
             break;
