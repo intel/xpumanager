@@ -46,7 +46,9 @@ add_definitions(-DLOADER_VERSION_PATCH=${PROJECT_VERSION_PATCH})
 
 message(STATUS "CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
 
-add_subdirectory(third_party/googletest)
+IF (EXISTS third_party/googletest)
+	add_subdirectory(third_party/googletest)
+ENDIF()
 add_subdirectory(third_party/spdlog)
 add_subdirectory(third_party/hwloc)
 add_subdirectory(third_party/pcm)
@@ -60,7 +62,9 @@ if (BUILD_DOC)
 endif()
 
 add_dependencies(xpum lib_hwloc)
-add_dependencies(test_xpum_api lib_hwloc)
+IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/core/test)
+	add_dependencies(test_xpum_api lib_hwloc)
+ENDIF()
 
 if(NOT DEFINED CPACK_GENERATOR)
 	if(EXISTS "/etc/debian_version")

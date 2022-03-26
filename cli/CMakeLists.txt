@@ -65,7 +65,9 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/src/api)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/CLI11/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/json/include)
-include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/googletest/googletest/include)
+IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+  include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/googletest/googletest/include)
+ENDIF()
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 link_directories(/usr/local/lib)
@@ -82,38 +84,39 @@ target_sources(xpumcli PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC} ${CMAKE_CURRENT_LIST_
 
 target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 
-enable_testing()
+IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+  enable_testing()
+  if(NOT BUILD_TESTING)
+      set(BUILD_TESTING "Off" CACHE STRING "Choose On or off" FORCE)
+  endif()
 
-if(NOT BUILD_TESTING)
-    set(BUILD_TESTING "Off" CACHE STRING "Choose On or off" FORCE)
-endif()
+  if (BUILD_TESTING)
 
-if (BUILD_TESTING)
+    set(Libraries
+      gtest$<$<CONFIG:Debug>:d>
+      gmock$<$<CONFIG:Debug>:d>
+      gtest_main$<$<CONFIG:Debug>:d>
+      gmock_main$<$<CONFIG:Debug>:d>
+    )
 
-  set(Libraries
-    gtest$<$<CONFIG:Debug>:d>
-    gmock$<$<CONFIG:Debug>:d>
-    gtest_main$<$<CONFIG:Debug>:d>
-    gmock_main$<$<CONFIG:Debug>:d>
-  )
+    aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TEST_SRC)
+    list(REMOVE_ITEM XPUM_CLI_TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
-  aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TEST_SRC)
-  list(REMOVE_ITEM XPUM_CLI_TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
+    file(GLOB test_sources test/*_test.cpp)
 
-  file(GLOB test_sources test/*_test.cpp)
+    foreach(testsourcefile ${test_sources})
 
-  foreach(testsourcefile ${test_sources})
+      get_filename_component(testname ${testsourcefile} NAME_WE)
 
-    get_filename_component(testname ${testsourcefile} NAME_WE)
+      add_executable(${testname} ${testsourcefile})
 
-    add_executable(${testname} ${testsourcefile})
+      target_sources(${testname} PUBLIC ${XPUM_CLI_TEST_SRC} ${GRPC_SRC})
 
-    target_sources(${testname} PUBLIC ${XPUM_CLI_TEST_SRC} ${GRPC_SRC})
+      target_link_libraries(${testname} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF} ${Libraries})
 
-    target_link_libraries(${testname} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF} ${Libraries})
+      include(GoogleTest)
+      gtest_discover_tests(${testname})
 
-    include(GoogleTest)
-    gtest_discover_tests(${testname})
-
-  endforeach(testsourcefile ${test_sources})
-endif()
+    endforeach(testsourcefile ${test_sources})
+  endif()
+ENDIF()

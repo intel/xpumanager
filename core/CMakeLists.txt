@@ -21,10 +21,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
 
 include(../.cmake/xpum_version.cmake)
 
-# Build test or not
-option(BUILD_TEST "build application instead of lib for test" OFF)
-option(BUILD_TEST_API "build application for api test" OFF)
-
 OPTION(XPUM_ZE_HANDLE_LOCK_LOG "Log ZE Handle Locks" OFF)
 IF(XPUM_ZE_HANDLE_LOCK_LOG)
     ADD_DEFINITIONS(-DXPUM_ZE_HANDLE_LOCK_LOG)
@@ -87,7 +83,10 @@ ELSE()
   set_target_properties(amcfw PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_LIST_DIR}/resources/amcfw/libamcfw.a)
 ENDIF()
 
-add_executable(test_xpum_api ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
+IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+  add_executable(test_xpum_api ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
+ENDIF()
+
 add_library(xpum SHARED)
 
 target_include_directories(
@@ -99,14 +98,16 @@ target_include_directories(
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/include
           ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
 
-target_include_directories(
-  test_xpum_api
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
-  PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
-          ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/ 
-          ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
-          ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/include
-          ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
+IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+  target_include_directories(
+    test_xpum_api
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
+    PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
+            ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/ 
+            ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
+            ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/include
+            ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
+ENDIF()
 
 target_sources(
   xpum
@@ -127,27 +128,31 @@ target_sources(
           ${TOPOLOGY_SRC}
           ${DUMP_RAW_DATA_SRC})
 
-target_sources(
-  test_xpum_api
-  PRIVATE ${API_SRC}
-          ${CONTROL_SRC}
-          ${CORE_SRC}
-          ${DATA_LOGIC_SRC}
-          ${DEVICE_SRC}
-          ${GPU_SRC}
-          ${EVENT_SRC}
-          ${INFRAS_SRC}
-          ${EXCEPTION_SRC}
-          ${MONITOR_SRC}
-          ${POLICY_SRC}
-          ${GROUP_SRC}
-          ${HEALTH_SRC}
-          ${DIAGNOSTIC_SRC}
-          ${TOPOLOGY_SRC}
-          ${DUMP_RAW_DATA_SRC})
+IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+  target_sources(
+    test_xpum_api
+    PRIVATE ${API_SRC}
+            ${CONTROL_SRC}
+            ${CORE_SRC}
+            ${DATA_LOGIC_SRC}
+            ${DEVICE_SRC}
+            ${GPU_SRC}
+            ${EVENT_SRC}
+            ${INFRAS_SRC}
+            ${EXCEPTION_SRC}
+            ${MONITOR_SRC}
+            ${POLICY_SRC}
+            ${GROUP_SRC}
+            ${HEALTH_SRC}
+            ${DIAGNOSTIC_SRC}
+            ${TOPOLOGY_SRC}
+            ${DUMP_RAW_DATA_SRC})
+ENDIF()
 
 target_link_libraries(xpum PRIVATE amcfw)
-target_link_libraries(test_xpum_api PRIVATE amcfw)
+IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+  target_link_libraries(test_xpum_api PRIVATE amcfw)
+ENDIF()
 
 message(STATUS "version ${PROJECT_VERSION}") 
 message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")
@@ -161,10 +166,14 @@ set(LibSpd
 
 if(HAVE_PCIACCESS_H)
     target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pcm-iio-gpu pciaccess)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pcm-iio-gpu pciaccess)
+    IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+      target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pcm-iio-gpu pciaccess)
+    ENDIF()
 else()
     target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu stdc++fs)
-    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu stdc++fs)
+    IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+      target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu stdc++fs)
+    ENDIF()
 endif()
 
 unset(BUILD_TEST CACHE)
