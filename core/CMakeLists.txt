@@ -68,7 +68,8 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/group GROUP_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data DUMP_RAW_DATA_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data
+                     DUMP_RAW_DATA_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/firmware FIRMWARE_SRC)
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/src/ipmi)

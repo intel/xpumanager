@@ -77,14 +77,14 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions(){
+std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions() {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     GetAMCFirmwareVersionsResponse response;
 
-    grpc::Status status = stub->getAMCFirmwareVersions(&context,google::protobuf::Empty(), &response);
+    grpc::Status status = stub->getAMCFirmwareVersions(&context, google::protobuf::Empty(), &response);
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();

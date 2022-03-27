@@ -84,8 +84,7 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
 ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover the GPU devices installed on this machine and provide the device info.") {
 }
 
-static bool isNumber(const std::string& str)
-{
+static bool isNumber(const std::string &str) {
     return str.find_first_not_of("0123456789") == std::string::npos;
 }
 
