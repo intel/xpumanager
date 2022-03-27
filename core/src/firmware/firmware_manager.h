@@ -16,11 +16,14 @@
 namespace xpum {
 class FirmwareManager {
    private:
+    bool amcUpdated = false;
     std::vector<std::string> amcFwList;
 
     std::mutex mtx;
 
     std::future<xpum_firmware_flash_result_t> taskAMC;
+
+    void getAMCFwVersions();
 
    public:
     void init();

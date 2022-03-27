@@ -15,12 +15,21 @@ extern int cmd_firmware(const char* file, unsigned int versions[4]);
 
 extern std::vector<std::string> cmd_get_amc_firmware_versions();
 
+void FirmwareManager::getAMCFwVersions() {
+    if(amcUpdated){
+        // firmware updated, need to re get version info
+        amcFwList = cmd_get_amc_firmware_versions();
+        amcUpdated = false;
+    }
+}
+
 void FirmwareManager::init() {
     // get amc fw versions
-    amcFwList = cmd_get_amc_firmware_versions();
+    getAMCFwVersions();
 };
 
 std::vector<std::string> FirmwareManager::getAMCFirmwareVersions() {
+    getAMCFwVersions();
     return amcFwList;
 }
 
@@ -34,8 +43,9 @@ xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath) {
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     } else {
         std::string dupPath(filePath);
-        taskAMC = std::async(std::launch::async, [=] {
+        taskAMC = std::async(std::launch::async, [dupPath, this] {
             int rc = cmd_firmware(dupPath.c_str(), nullptr);
+            this->amcUpdated = true;
             if (rc == 0) {
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
             } else {

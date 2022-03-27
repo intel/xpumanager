@@ -197,11 +197,9 @@ static int init_card_list() {
     err = bsmc_interface_init(iface);
     if (err)
         return err;
-    // err = probe_i2c_addr(CARD_FIRST_I2C_ADDR);
-    err = probe_i2c_addr(CARD_FIRST_I2C_ADDR_OLD);
+    err = probe_i2c_addr(CARD_FIRST_I2C_ADDR);
     if (err) {
-        // err = probe_i2c_addr(CARD_FIRST_I2C_ADDR_OLD);
-        err = probe_i2c_addr(CARD_FIRST_I2C_ADDR);
+        err = probe_i2c_addr(CARD_FIRST_I2C_ADDR_OLD);
     }
     return err;
 }
@@ -248,5 +246,9 @@ int set_bsmc_interface(char *iface_str) {
 
 inline int get_total_ipmi_card_count() {
     return g_list.count;
+}
+
+void clean_data() {
+    g_list.count = 0;
 }
 } // namespace xpum

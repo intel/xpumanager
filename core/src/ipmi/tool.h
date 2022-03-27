@@ -102,5 +102,6 @@ int cmd_net(int argc, char **argv);
 int cmd_version(int argc, char **argv);
 int cmd_modes(int argc, char **argv);
 void do_sleep(int sleep_time_in_ms);
+void clean_data();
 
 } // namespace xpum

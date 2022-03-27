@@ -629,6 +629,8 @@ exit:
         XPUM_LOG_WARN("PLEASE do HOST POWER CYCLE to complete update process");
         return NRV_REBOOT_NEEDED;
     }
+    // clean discovered cards, since fw update may change I2C addr
+    clean_data();
     return err;
 }
 
