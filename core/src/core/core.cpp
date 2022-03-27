@@ -75,6 +75,10 @@ std::shared_ptr<DumpRawDataManager> Core::getDumpRawDataManager() {
     return p_dump_raw_data_manager;
 }
 
+std::shared_ptr<FirmwareManager> Core::getFirmwareManager() {
+    return p_firmware_manager;
+}
+
 void Core::init() {
     std::unique_lock<std::mutex> lock(mutex);
     if (initialized) {
@@ -118,6 +122,10 @@ void Core::init() {
     p_dump_raw_data_manager = std::make_shared<DumpRawDataManager>();
     // p_dump_raw_data_manager->init();
 
+    XPUM_LOG_INFO("initialize dump raw data manager");
+    p_firmware_manager = std::make_shared<FirmwareManager>();
+    p_firmware_manager->init();
+
     XPUM_LOG_INFO("xpumd core initialization completed");
     initialized = true;
 }
@@ -127,6 +135,8 @@ void Core::close() {
     if (!initialized) {
         return;
     }
+
+    p_firmware_manager = nullptr;
 
     p_dump_raw_data_manager = nullptr;
 

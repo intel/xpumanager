@@ -21,8 +21,6 @@
 namespace xpum {
 using namespace std::chrono_literals;
 
-extern int cmd_firmware(const char* file, unsigned int versions[4]);
-
 GPUDevice::GPUDevice() {
 }
 
@@ -308,31 +306,6 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
     }
 }
 
-xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath) noexcept {
-    Property amcVersion;
-    bool res = getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, amcVersion);
-
-    if (!res || amcVersion.getValue() == "unknown") {
-        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
-    }
-
-    std::lock_guard<std::mutex> lck(mtx);
-    if (taskAMC.valid()) {
-        return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
-    } else {
-        std::string dupPath(filePath);
-        taskAMC = std::async(std::launch::async, [=] {
-            int rc = cmd_firmware(dupPath.c_str(), nullptr);
-            if (rc == 0) {
-                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
-            } else {
-                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
-            }
-        });
-
-        return xpum_result_t::XPUM_OK;
-    }
-}
 
 const std::string GPUDevice::logFilePath = "/tmp/gfx";
 
@@ -348,8 +321,9 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_typ
     std::future<xpum_firmware_flash_result_t>* task;
     if (type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
         task = &taskGSC;
-    } else {
-        task = &taskAMC;
+    }
+    else {
+        return XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
     }
 
     if (task->valid()) {
@@ -365,13 +339,8 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_typ
     }
 }
 
-bool GPUDevice::getAMCFirmwareVersion(unsigned int versions[4]) noexcept {
-    int rc = cmd_firmware(nullptr, versions);
-    return rc == 0 ? true : false;
-}
-
 bool GPUDevice::isUpgradingFw(void) noexcept {
-    return taskGSC.valid() || taskAMC.valid();
+    return taskGSC.valid();
 }
 
 void GPUDevice::getPCIeReadThroughput(Callback_t callback) noexcept {

@@ -68,8 +68,8 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/group GROUP_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data
-                     DUMP_RAW_DATA_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data DUMP_RAW_DATA_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/firmware FIRMWARE_SRC)
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/src/ipmi)
   message(STATUS "amcfw lib src found")
@@ -136,7 +136,8 @@ target_sources(
           ${HEALTH_SRC}
           ${DIAGNOSTIC_SRC}
           ${TOPOLOGY_SRC}
-          ${DUMP_RAW_DATA_SRC})
+          ${DUMP_RAW_DATA_SRC}
+          ${FIRMWARE_SRC})
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   target_sources(
@@ -156,7 +157,8 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${HEALTH_SRC}
             ${DIAGNOSTIC_SRC}
             ${TOPOLOGY_SRC}
-            ${DUMP_RAW_DATA_SRC})
+            ${DUMP_RAW_DATA_SRC}
+            ${FIRMWARE_SRC})
 endif()
 
 target_link_libraries(xpum PRIVATE amcfw)

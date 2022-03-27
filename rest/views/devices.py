@@ -150,3 +150,31 @@ def get_device_properties(deviceId):
     except Exception as e:
         print(e)
         return "Internal error", 500
+
+
+class AMCFwVersionSchema(Schema):
+    amc_fw_version = fields.Str(many=True,metadata={"description": "AMC versions"})
+    error = fields.Str(metadata={"description": "Error message"})
+
+
+def get_amc_fw_versions():
+    """
+    Get amc firmware versions.
+    ---
+    get:
+        tags:
+            - "Devices"
+        description: Get amc firmware versions.
+        produces: 
+            - application/json
+        responses:
+            200:
+                description: OK
+                schema: AMCFwVersionSchema
+            500:
+                description: Error
+    """
+    code, message, data = stub.getAMCFirmwareVersions()
+    if code != 0:
+        return jsonify({"error": message}), 500
+    return jsonify(data)

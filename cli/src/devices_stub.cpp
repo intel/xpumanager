@@ -57,6 +57,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        return json;
     }
 
     if (response.errormsg().length() != 0) {
@@ -75,4 +76,31 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
 
     return json;
 }
+
+std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions(){
+    assert(this->stub != nullptr);
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    GetAMCFirmwareVersionsResponse response;
+
+    grpc::Status status = stub->getAMCFirmwareVersions(&context,google::protobuf::Empty(), &response);
+
+    if (!status.ok()) {
+        (*json)["error"] = status.error_message();
+        return json;
+    }
+
+    if (response.errormsg().length() != 0) {
+        (*json)["error"] = response.errormsg();
+        return json;
+    }
+
+    for (auto version : response.versions()) {
+        (*json)["amc_fw_version"].push_back(version);
+    }
+
+    return json;
+}
+
 } // end namespace xpum::cli

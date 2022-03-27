@@ -53,8 +53,6 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
                 { "label": "Driver Version", "value": "driver_version" },
                 { "label": "Firmware Name", "value": "firmware_name" },
                 { "label": "Firmware Version", "value": "firmware_version" },
-                { "label": "Firmware Name", "value": "amc_firmware_name" },
-                { "label": "Firmware Version", "value": "amc_firmware_version" },
                 { "rowTitle": " " },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address" },
                 { "label": "PCI Slot", "value": "pci_slot" },
@@ -86,12 +84,38 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
 ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover the GPU devices installed on this machine and provide the device info.") {
 }
 
+static bool isNumber(const std::string& str)
+{
+    return str.find_first_not_of("0123456789") == std::string::npos;
+}
+
 void ComletDiscovery::setupOptions() {
     this->opts = std::unique_ptr<ComletDiscoveryOptions>(new ComletDiscoveryOptions());
-    addOption("-d,--device", this->opts->deviceId, "Device ID to query. It will show more detailed info.");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "Device ID to query. It will show more detailed info.");
+    deviceIdOpt->check([](const std::string &str) {
+        std::string errStr = "Device id should be integer larger than or equal to 0";
+        if (!isNumber(str))
+            return errStr;
+        int value;
+        try {
+            value = std::stoi(str);
+        } catch (const std::out_of_range &oor) {
+            return errStr;
+        }
+        if (value < 0)
+            return errStr;
+        return std::string();
+    });
+    auto listamcversionsOpt = addFlag("--listamcversions", this->opts->listamcversions, "Show all AMC firmware versions.");
+    deviceIdOpt->excludes(listamcversionsOpt);
 }
 
 std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
+    if (this->opts->listamcversions) {
+        auto json = this->coreStub->getAMCFirmwareVersions();
+        return json;
+    }
+
     if (this->opts->deviceId != -1) {
         auto json = this->coreStub->getDeviceProperties(this->opts->deviceId);
         return json;
@@ -116,6 +140,15 @@ static void showDetailedInfo(std::ostream &out, std::shared_ptr<nlohmann::json> 
     table.show(out);
 }
 
+static void showAmcFwVersion(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
+    auto versions = (*json)["amc_fw_version"];
+    out << versions.size() << " AMC are found" << std::endl;
+    int i = 1;
+    for (auto version : versions) {
+        out << "AMC " << i++ << " firmware version: " << version.get<std::string>() << std::endl;
+    }
+}
+
 void ComletDiscovery::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
@@ -125,7 +158,9 @@ void ComletDiscovery::getTableResult(std::ostream &out) {
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
     *json = *res;
 
-    if (this->opts->deviceId != -1) {
+    if (this->opts->listamcversions) {
+        showAmcFwVersion(out, json);
+    } else if (this->opts->deviceId != -1) {
         showDetailedInfo(out, json);
     } else {
         showBasicInfo(out, json);

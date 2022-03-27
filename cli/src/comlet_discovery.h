@@ -17,6 +17,7 @@ namespace xpum::cli {
 struct ComletDiscoveryOptions {
     int deviceId = -1;
     int a = 0;
+    bool listamcversions = false;
 };
 
 class ComletDiscovery : public ComletBase {

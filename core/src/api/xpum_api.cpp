@@ -86,10 +86,6 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "NUMBER_OF_THREADS_PER_EU";
         case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
             return "PHYSICAL_EU_SIMD_WIDTH";
-        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME:
-            return "AMC_FIRMWARE_NAME";
-        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION:
-            return "AMC_FIRMWARE_VERSION";
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
             return "NUMBER_OF_FABRIC_PORTS";
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED:
@@ -345,6 +341,23 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
     return XPUM_OK;
 }
 
+xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count) {
+    auto versions = Core::instance().getFirmwareManager()->getAMCFirmwareVersions();
+    if (versionList == nullptr) {
+        *count = versions.size();
+        return XPUM_OK;
+    }
+    if (*count < (int)versions.size()) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    *count = versions.size();
+    for (int i = 0; i < *count; i++) {
+        std::string version = versions[i];
+        std::strcpy(versionList[i].version, version.c_str());
+    }
+    return XPUM_OK;
+}
+
 static const std::string gfxPath{"/usr/local/bin/GfxFwFPT"};
 
 static bool detectGfxTool() {
@@ -368,9 +381,6 @@ static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmw
             return XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND;
         }
         rc = device->runFirmwareFlash(job->filePath, gfxPath);
-    } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC) {
-        rc = device->runFirmwareFlash(job->filePath);
-        //rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED;
     }
 
     return rc;
@@ -414,10 +424,15 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         xpum_result_t rc;
 
+        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+            rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
+            return rc;
+        }
+
+        // check if same model
         std::vector<std::shared_ptr<Device>> devices;
         Core::instance().getDeviceManager()->getDeviceList(devices);
 
-        // check if same model
         std::string previousModel;
         for (std::shared_ptr<Device> device : devices) {
             // p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
@@ -435,13 +450,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
             }
         }
 
-        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
-            rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
-        } else {
-            std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(0));
-            rc = runFirmwareFlash(device, job);
-        }
-
+        rc = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath);
         return rc;
     } else {
         if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
@@ -464,22 +473,22 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     }
 
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
-        deviceId = 0;
+        if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
+            return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
+        auto res = Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult();
+        result->deviceId = deviceId;
+        result->type = XPUM_DEVICE_FIRMWARE_GSC;
+        result->result = res;
+        return XPUM_OK;
+    }
+
+    if(firmwareType == XPUM_DEVICE_FIRMWARE_AMC){
+        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
     }
 
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
-    }
-
-    if (firmwareType == XPUM_DEVICE_FIRMWARE_AMC) {
-        // check device support AMC or not
-        Property amcVersion;
-        bool hasAMC = device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION, amcVersion);
-
-        if (!hasAMC || amcVersion.getValue() == "unknown") {
-            return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
-        }
     }
 
     xpum_firmware_flash_result_t res = device->getFirmwareFlashResult(firmwareType);
@@ -553,10 +562,6 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_THREADS_PER_EU;
         case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PHYSICAL_EU_SIMD_WIDTH;
-        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME;
-        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION;
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_NUMBER;
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED:

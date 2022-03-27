@@ -195,8 +195,6 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE,    ///< Maximum number of EUs per sub-slice
     XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU,       ///< Maximum number of threads per EU
     XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH,         ///< The physical EU simd width
-    XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME,              ///< AMC string
-    XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION,           ///< AMC firmware version
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER,             ///< Number of fabric ports
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED,          ///< Maximum speed supported by the port (sum of all lanes)
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER,       ///< The number of lanes of the port
@@ -222,6 +220,14 @@ typedef struct xpum_device_properties_t {
     xpum_device_property_t properties[XPUM_MAX_NUM_PROPERTIES];
     int propertyLen; ///< The property numbers stored in properties
 } xpum_device_properties_t;
+
+/**
+ * @brief Struct 
+ * 
+ */
+typedef struct xpum_amc_fw_version_t {
+    char version[XPUM_MAX_STR_LENGTH];
+} xpum_amc_fw_version_t;
 
 /**
  * @brief Struct for group info
@@ -313,7 +319,7 @@ typedef enum xpum_firmware_flash_result_enum {
     XPUM_DEVICE_FIRMWARE_FLASH_OK = 0,      ///< Firmware flash successfully
     XPUM_DEVICE_FIRMWARE_FLASH_ERROR,       ///< Firmware flash in error
     XPUM_DEVICE_FIRMWARE_FLASH_ONGOING,     ///< Firmware flash is on going
-    XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED, ///< Firmware flash is on going
+    XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED, ///< Firmware flash is unsupported
 } xpum_firmware_flash_result_t;
 
 /**

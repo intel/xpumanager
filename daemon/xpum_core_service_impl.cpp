@@ -106,6 +106,33 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
     return grpc::Status::OK;
 }
 
+grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAMCFirmwareVersionsResponse* response) {
+    int count;
+    auto res = xpumGetAMCFirmwareVersions(nullptr, &count);
+    if (res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
+        response->set_errormsg("Level Zero Initialization Error");
+        return grpc::Status::OK;
+    } else if (res != XPUM_OK) {
+        response->set_status(res);
+        response->set_errormsg("Fail to get AMC firmware version count");
+        return grpc::Status::OK;
+    }
+    std::vector<xpum_amc_fw_version_t> versions(count);
+    res = xpumGetAMCFirmwareVersions(versions.data(), &count);
+    if (res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
+        response->set_errormsg("Level Zero Initialization Error");
+        return grpc::Status::OK;
+    } else if (res != XPUM_OK) {
+        response->set_status(res);
+        response->set_errormsg("Fail to get AMC firmware versions");
+        return grpc::Status::OK;
+    }
+    for (auto version : versions) {
+        response->add_versions(version.version);
+    }
+    return grpc::Status::OK;
+}
+
 grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, const DeviceId* request,
                                               XpumTopologyInfo* response) {
     XPUM_LOG_TRACE("call get topology");

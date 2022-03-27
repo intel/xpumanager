@@ -44,6 +44,12 @@ message XpumDeviceProperties {
     string errorMsg = 2;
 }
 
+message GetAMCFirmwareVersionsResponse {
+    repeated string versions = 1;
+    string errorMsg = 2;
+    int32 status = 3;
+}
+
 message XpumTopologyInfo {
     DeviceId id = 1;
     message XpumCpuAffinity {
@@ -735,6 +741,7 @@ service XpumCoreService {
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
     rpc getDeviceList( google.protobuf.Empty ) returns ( XpumDeviceBasicInfoArray );
     rpc getDeviceProperties( DeviceId ) returns ( XpumDeviceProperties );
+    rpc getAMCFirmwareVersions( google.protobuf.Empty ) returns ( GetAMCFirmwareVersionsResponse );
     rpc getTopology(  DeviceId ) returns ( XpumTopologyInfo );
     rpc groupCreate( GroupName ) returns ( GroupInfo );
     rpc groupDestory( GroupId ) returns ( GroupInfo );

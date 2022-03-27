@@ -92,6 +92,17 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
  */
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties);
 
+
+/**
+ * @brief Get all AMC firmware versions
+ * 
+ * @param versionList   IN/OUT: The array to store AMC firmware version
+ * @param count         IN/OUT: When \a versionList is NULL, \a count will be filled with the number of AMC firmware versions, and return.
+ *                              When \a versionList is not NULL, \a count denotes the length of \a versionList, \a count should be equal to or larger than the number of AMC firmware versions, when return, the \a count will store real number of AMC firmware versions returned by \a versionList
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count);
+
 /** @} */ // Closing for DEVICE_API
 
 /**************************************************************************/

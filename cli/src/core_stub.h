@@ -32,6 +32,8 @@ class CoreStub {
 
     std::unique_ptr<nlohmann::json> getDeviceProperties(int deviceId);
 
+    std::unique_ptr<nlohmann::json> getAMCFirmwareVersions();
+
     std::unique_ptr<nlohmann::json> getTopology(int deviceId);
 
     std::unique_ptr<nlohmann::json> groupCreate(std::string groupName);

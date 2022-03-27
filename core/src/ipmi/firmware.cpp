@@ -43,6 +43,10 @@ UINT32 gFwReqSize;
 #include "pci.h"
 #include "tool.h"
 
+#include <vector>
+#include <string>
+#include <sstream>
+
 namespace xpum {
 
 #define LINE_LENGTH 4096
@@ -686,7 +690,36 @@ int cmd_probe() {
     return err;
 }
 
-int cmd_firmware(const char *file, unsigned int versions[4]) {
+std::vector<std::string> cmd_get_amc_firmware_versions() {
+    std::vector<std::string> versions;
+
+    int err = NRV_SUCCESS;
+    int card_id = CARD_SELECT_ALL;
+
+    nrv_list cards;
+
+    err = get_card_list(&cards, card_id);
+    if (err)
+        return versions;
+
+    for (int i = 0; i < cards.count; i++) {
+        struct firmware_versions fw_ver = {{0}};
+        err = get_fw_version(&cards.card[i].ipmi_address, &fw_ver);
+        if (err)
+            continue;
+
+        std::stringstream ss;
+
+        ss << fw_ver.bsmc.major << ".";
+        ss << fw_ver.bsmc.minor << ".";
+        ss << fw_ver.bsmc.patch << ".";
+        ss << fw_ver.bsmc.build;
+        versions.push_back(ss.str());
+    }
+    return versions;
+}
+
+int cmd_firmware(const char* file, unsigned int versions[4]) {
     const char *bsmc_file = file;
     uint8_t *bsmc_data = NULL;
     size_t bsmc_size = 0;

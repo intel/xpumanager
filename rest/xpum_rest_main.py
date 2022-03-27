@@ -79,7 +79,9 @@ def main(*args, **kwargs):
     app.add_url_rule('/rest/v1/devices',
                      view_func=auth.login_required(devices.get_devices), methods=['GET'])
     app.add_url_rule('/rest/v1/devices/<int:deviceId>',
-                     view_func=auth.login_required(devices.get_device_properties), methods=['GET'])
+                    view_func=auth.login_required(devices.get_device_properties), methods=['GET'])
+    app.add_url_rule('/rest/v1/devices/amcversions',
+                     view_func=auth.login_required(devices.get_amc_fw_versions), methods=['GET'])
 
     # diagnostics
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/diagnostics', methods=['POST'],
