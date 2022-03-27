@@ -6,18 +6,20 @@ project(XPUMDAEMON)
 include(../.cmake/grpc_common.cmake)
 include(../.cmake/xpum_version.cmake)
 
-
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set compilation options
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+check_cxx_compiler_flag("-std=c++14" COMPILER_SUPPORTS_CXX14)
 if(COMPILER_SUPPORTS_CXX14)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 else()
-  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support.  Please use a different C++ compiler.")
+  message(
+    STATUS
+      "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support.  Please use a different C++ compiler."
+  )
 endif()
 
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -Wall -pthread -fPIC")
@@ -28,15 +30,13 @@ if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
 
-#list(APPEND CMAKE_INSTALL_RPATH 
-#	"${CMAKE_CURRENT_BINARY_DIR}"
-#	"${CMAKE_CURRENT_BINARY_DIR}/../core"
-#)
+# list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_CURRENT_BINARY_DIR}"
+# "${CMAKE_CURRENT_BINARY_DIR}/../core" )
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/config.h @ONLY)
 
-link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/spdlog)               
+link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/spdlog)
 
 # Proto file
 get_filename_component(core_proto "${CMAKE_CURRENT_LIST_DIR}/core.proto"
@@ -72,40 +72,38 @@ target_include_directories(
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../core/include
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../core/src/api
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
-          ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
-)
+          ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include)
 
-set(LibSpd
-    spdlog$<$<CONFIG:Debug>:d>    
-)
+set(LibSpd spdlog$<$<CONFIG:Debug>:d>)
 
 target_sources(xpumd PUBLIC ${XPUM_DAEMON_SRC} ${GRPC_SRC})
 
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_LIST_DIR}/../)
-if (NOT DEFINED WORK_PATH)
+if(NOT DEFINED WORK_PATH)
   message(STATUS "WORK_PATH not defined!")
   message("PATH = $ENV{PATH}")
-  find_library(DGM_LIB 
-    NAMES libxpum.so 
-    PATHS 
-    ${CMAKE_CURRENT_LIST_DIR}/../core/build
-    ${CMAKE_CURRENT_LIST_DIR}/../build/core
-    NO_CMAKE_ENVIRONMENT_PATH
-    NO_DEFAULT_PATH
-    NO_SYSTEM_ENVIRONMENT_PATH
-    )
-  
+  find_library(
+    DGM_LIB
+    NAMES libxpum.so
+    PATHS ${CMAKE_CURRENT_LIST_DIR}/../core/build
+          ${CMAKE_CURRENT_LIST_DIR}/../build/core
+    NO_CMAKE_ENVIRONMENT_PATH NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
+
   message(STATUS "DGM_LIB=${DGM_LIB}")
   target_link_libraries(xpumd PRIVATE ${LibSpd} ${DGM_LIB} ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF})
-  
-  add_custom_command( TARGET xpumd 
-      PRE_BUILD
-      COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources/config ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
-      COMMAND /bin/sh -c "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+                                      ${_PROTOBUF_LIBPROTOBUF})
+
+  add_custom_command(
+    TARGET xpumd
+    PRE_BUILD
+    COMMAND
+      /bin/sh -c
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources/config ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+    COMMAND
+      /bin/sh -c
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
   )
 else()
-  target_link_libraries(xpumd PRIVATE xpum ${LibSpd} 
-        ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
+  target_link_libraries(xpumd PRIVATE xpum ${LibSpd} ${_GRPC_GRPCPP}
+                                      ${_PROTOBUF_LIBPROTOBUF})
 endif()
-

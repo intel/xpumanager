@@ -12,11 +12,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set compilation options
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+check_cxx_compiler_flag("-std=c++14" COMPILER_SUPPORTS_CXX14)
 if(COMPILER_SUPPORTS_CXX14)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 else()
-  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support.  Please use a different C++ compiler.")
+  message(
+    STATUS
+      "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support.  Please use a different C++ compiler."
+  )
 endif()
 
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -Wall -pthread -fPIC")
@@ -33,7 +36,7 @@ endif()
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/src/config.h.in
                ${CMAKE_CURRENT_LIST_DIR}/src/config.h @ONLY)
-               
+
 # Proto file
 get_filename_component(core_proto "../daemon/core.proto" ABSOLUTE)
 get_filename_component(core_proto_path "${core_proto}" PATH)
@@ -65,9 +68,10 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/src/api)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/CLI11/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/json/include)
-IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
-  include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/googletest/googletest/include)
-ENDIF()
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+  include_directories(
+    ${CMAKE_CURRENT_LIST_DIR}/../third_party/googletest/googletest/include)
+endif()
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 link_directories(/usr/local/lib)
@@ -80,27 +84,29 @@ set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
 
 add_executable(xpumcli ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
-target_sources(xpumcli PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC} ${CMAKE_CURRENT_LIST_DIR}/../core/src/api/internal_dump_raw_data.cpp)
+target_sources(
+  xpumcli
+  PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC}
+          ${CMAKE_CURRENT_LIST_DIR}/../core/src/api/internal_dump_raw_data.cpp)
 
 target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 
-IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   enable_testing()
   if(NOT BUILD_TESTING)
-      set(BUILD_TESTING "Off" CACHE STRING "Choose On or off" FORCE)
+    set(BUILD_TESTING
+        "Off"
+        CACHE STRING "Choose On or off" FORCE)
   endif()
 
-  if (BUILD_TESTING)
+  if(BUILD_TESTING)
 
-    set(Libraries
-      gtest$<$<CONFIG:Debug>:d>
-      gmock$<$<CONFIG:Debug>:d>
-      gtest_main$<$<CONFIG:Debug>:d>
-      gmock_main$<$<CONFIG:Debug>:d>
-    )
+    set(Libraries gtest$<$<CONFIG:Debug>:d> gmock$<$<CONFIG:Debug>:d>
+                  gtest_main$<$<CONFIG:Debug>:d> gmock_main$<$<CONFIG:Debug>:d>)
 
     aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_TEST_SRC)
-    list(REMOVE_ITEM XPUM_CLI_TEST_SRC ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
+    list(REMOVE_ITEM XPUM_CLI_TEST_SRC
+         ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
 
     file(GLOB test_sources test/*_test.cpp)
 
@@ -112,11 +118,12 @@ IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
 
       target_sources(${testname} PUBLIC ${XPUM_CLI_TEST_SRC} ${GRPC_SRC})
 
-      target_link_libraries(${testname} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF} ${Libraries})
+      target_link_libraries(${testname} ${_GRPC_GRPCPP}
+                            ${_PROTOBUF_LIBPROTOBUF} ${Libraries})
 
       include(GoogleTest)
       gtest_discover_tests(${testname})
 
     endforeach(testsourcefile ${test_sources})
   endif()
-ENDIF()
+endif()

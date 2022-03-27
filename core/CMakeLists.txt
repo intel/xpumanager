@@ -8,11 +8,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set compilation options
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
+check_cxx_compiler_flag("-std=c++14" COMPILER_SUPPORTS_CXX14)
 if(COMPILER_SUPPORTS_CXX14)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 else()
-  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support.  Please use a different C++ compiler.")
+  message(
+    STATUS
+      "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support.  Please use a different C++ compiler."
+  )
 endif()
 
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -Wall -pthread -fPIC")
@@ -21,15 +24,15 @@ set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3")
 
 include(../.cmake/xpum_version.cmake)
 
-OPTION(XPUM_ZE_HANDLE_LOCK_LOG "Log ZE Handle Locks" OFF)
-IF(XPUM_ZE_HANDLE_LOCK_LOG)
-    ADD_DEFINITIONS(-DXPUM_ZE_HANDLE_LOCK_LOG)
-ENDIF(XPUM_ZE_HANDLE_LOCK_LOG)
+option(XPUM_ZE_HANDLE_LOCK_LOG "Log ZE Handle Locks" OFF)
+if(XPUM_ZE_HANDLE_LOCK_LOG)
+  add_definitions(-DXPUM_ZE_HANDLE_LOCK_LOG)
+endif(XPUM_ZE_HANDLE_LOCK_LOG)
 
-OPTION(TRACE_SCHEDULED_TASK_RUN "Log XPUM Scheduled Task Trace" OFF)
-IF(TRACE_SCHEDULED_TASK_RUN)
-    ADD_DEFINITIONS(-DTRACE_SCHEDULED_TASK_RUN)
-ENDIF(TRACE_SCHEDULED_TASK_RUN)
+option(TRACE_SCHEDULED_TASK_RUN "Log XPUM Scheduled Task Trace" OFF)
+if(TRACE_SCHEDULED_TASK_RUN)
+  add_definitions(-DTRACE_SCHEDULED_TASK_RUN)
+endif(TRACE_SCHEDULED_TASK_RUN)
 
 if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
@@ -65,49 +68,56 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/group GROUP_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/health HEALTH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/diagnostic DIAGNOSTIC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data DUMP_RAW_DATA_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data
+                     DUMP_RAW_DATA_SRC)
 
-IF(EXISTS ${CMAKE_CURRENT_LIST_DIR}/src/ipmi)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/src/ipmi)
   message(STATUS "amcfw lib src found")
   aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/ipmi IPMI_SRC)
   add_library(amcfw STATIC ${IPMI_SRC} ${INFRAS_SRC} ${EXCEPTION_SRC})
-  
-  target_include_directories(
-    amcfw 
-    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
-    ${CMAKE_CURRENT_LIST_DIR}/src 
-    ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
-    
-ELSE()
-  add_library(amcfw STATIC IMPORTED)
-  set_target_properties(amcfw PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_LIST_DIR}/resources/amcfw/libamcfw.a)
-ENDIF()
 
-IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+  target_include_directories(
+    amcfw
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
+            ${CMAKE_CURRENT_LIST_DIR}/src
+            ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
+
+else()
+  add_library(amcfw STATIC IMPORTED)
+  set_target_properties(
+    amcfw PROPERTIES IMPORTED_LOCATION
+                     ${CMAKE_CURRENT_LIST_DIR}/resources/amcfw/libamcfw.a)
+endif()
+
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   add_executable(test_xpum_api ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
-ENDIF()
+endif()
 
 add_library(xpum SHARED)
 
 target_include_directories(
   xpum
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
-  PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
+  PRIVATE /usr/local/include/level_zero/
+          /usr/include/level_zero/
           ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
           ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/include
-          ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
+          ${CMAKE_CURRENT_LIST_DIR}/src
+          ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 
-IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   target_include_directories(
     test_xpum_api
     PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include
-    PRIVATE /usr/local/include/level_zero/ /usr/include/level_zero/
-            ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/ 
+    PRIVATE /usr/local/include/level_zero/
+            /usr/include/level_zero/
+            ${CMAKE_CURRENT_LIST_DIR}/../build/hwloc/include/
             ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
             ${CMAKE_CURRENT_LIST_DIR}/../third_party/pcm/include
-            ${CMAKE_CURRENT_LIST_DIR}/src ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure )
-ENDIF()
+            ${CMAKE_CURRENT_LIST_DIR}/src
+            ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
+endif()
 
 target_sources(
   xpum
@@ -128,7 +138,7 @@ target_sources(
           ${TOPOLOGY_SRC}
           ${DUMP_RAW_DATA_SRC})
 
-IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   target_sources(
     test_xpum_api
     PRIVATE ${API_SRC}
@@ -147,45 +157,56 @@ IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${DIAGNOSTIC_SRC}
             ${TOPOLOGY_SRC}
             ${DUMP_RAW_DATA_SRC})
-ENDIF()
+endif()
 
 target_link_libraries(xpum PRIVATE amcfw)
-IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   target_link_libraries(test_xpum_api PRIVATE amcfw)
-ENDIF()
+endif()
 
-message(STATUS "version ${PROJECT_VERSION}") 
+message(STATUS "version ${PROJECT_VERSION}")
 message(STATUS "soversion: ${PROJECT_VERSION_MAJOR}")
 
-set_target_properties(xpum PROPERTIES 
-    VERSION ${PROJECT_REAL_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
+set_target_properties(xpum PROPERTIES VERSION ${PROJECT_REAL_VERSION}
+                                      SOVERSION ${PROJECT_VERSION_MAJOR})
 
-set(LibSpd
-    spdlog$<$<CONFIG:Debug>:d>    
-)
+set(LibSpd spdlog$<$<CONFIG:Debug>:d>)
 
 if(HAVE_PCIACCESS_H)
-    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pcm-iio-gpu pciaccess)
-    IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
-      target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc stdc++fs pcm-iio-gpu pciaccess)
-    ENDIF()
+  target_link_libraries(
+    xpum
+    PRIVATE ze_loader
+            dl
+            ${LibSpd}
+            hwloc
+            stdc++fs
+            pcm-iio-gpu
+            pciaccess)
+  if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+    target_link_libraries(
+      test_xpum_api
+      PRIVATE ze_loader
+              dl
+              ${LibSpd}
+              hwloc
+              stdc++fs
+              pcm-iio-gpu
+              pciaccess)
+  endif()
 else()
-    target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu stdc++fs)
-    IF (EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
-      target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu stdc++fs)
-    ENDIF()
+  target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu
+                                     stdc++fs)
+  if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
+    target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc
+                                                pcm-iio-gpu stdc++fs)
+  endif()
 endif()
 
 unset(BUILD_TEST CACHE)
 
-install(DIRECTORY	
-		resources
-	DESTINATION .
-  PATTERN "config" EXCLUDE
-)
+install(
+  DIRECTORY resources
+  DESTINATION .
+  PATTERN "config" EXCLUDE)
 
-
-install(DIRECTORY	
-		resources/config
-	DESTINATION .
-)
+install(DIRECTORY resources/config DESTINATION .)
