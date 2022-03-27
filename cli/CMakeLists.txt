@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.12.0)
 cmake_policy(SET CMP0077 OLD)
 
 project(XPUMCLI)

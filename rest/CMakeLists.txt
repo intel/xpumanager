@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.2.0)
+cmake_minimum_required(VERSION 3.12.0)
 
 configure_file("${CMAKE_CURRENT_LIST_DIR}/xpum_rest.service.in" "${CMAKE_CURRENT_LIST_DIR}/xpum_rest.service")
 
