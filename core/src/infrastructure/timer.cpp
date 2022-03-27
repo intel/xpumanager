@@ -49,7 +49,7 @@ void Timer::scheduleAtFixedRate(long delay, int interval,
             long spent = end - begin;
             if (interval >= spent) {
                 wait = interval - spent;
-                std::this_thread::sleep_for(std::chrono::milliseconds(wait));        
+                std::this_thread::sleep_for(std::chrono::milliseconds(wait));
             } else {
                 XPUM_LOG_DEBUG("The timer interval will not be accurate");
                 wait = 0;

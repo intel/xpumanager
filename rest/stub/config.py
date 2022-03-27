@@ -19,16 +19,18 @@ SchedulerModeEnumToString = {
     core_pb2.SCHEDULER_EXCLUSIVE: "EXCLUSIVE"
 }
 
+
 def getConfig(deviceId, tileId):
     if(tileId == -1):
         isTiledId = False
         tileId = 0
     else:
         isTiledId = True
-    
-    resp = stub.getDeviceConfig(core_pb2.ConfigDeviceDataRequest(deviceId=deviceId, isTileData=isTiledId, tileId=tileId))
+
+    resp = stub.getDeviceConfig(core_pb2.ConfigDeviceDataRequest(
+        deviceId=deviceId, isTileData=isTiledId, tileId=tileId))
     if len(resp.errorMsg) != 0:
-            return 1, resp.errorMsg, None
+        return 1, resp.errorMsg, None
     data = dict()
     data['device_id'] = resp.deviceId
     data['power_limit'] = resp.powerLimit
@@ -38,7 +40,7 @@ def getConfig(deviceId, tileId):
     #data['tileCount'] = resp.tileCount
 
     tilelist = list()
-    for i in range(0,resp.tileCount):
+    for i in range(0, resp.tileCount):
         tiledata = dict()
         tiledata['tile_id'] = resp.tileConfigData[i].tileId
         #tiledata['power_limit'] = resp.tileConfigData[i].powerLimit
@@ -51,12 +53,14 @@ def getConfig(deviceId, tileId):
         tiledata['standby_mode'] = StandbyModeEnumToString[resp.tileConfigData[i].standby]
         tiledata['standby_mode_valid_options'] = resp.tileConfigData[i].standbyOption
         tiledata['scheduler_mode'] = SchedulerModeEnumToString[resp.tileConfigData[i].scheduler]
-        if int(resp.tileConfigData[i].computePerformanceFactor)!= -1:
-            tiledata['compute_performance_factor'] = str(resp.tileConfigData[i].computePerformanceFactor)
+        if int(resp.tileConfigData[i].computePerformanceFactor) != -1:
+            tiledata['compute_performance_factor'] = str(
+                resp.tileConfigData[i].computePerformanceFactor)
         else:
             tiledata['compute_performance_factor'] = ''
-        if int(resp.tileConfigData[i].mediaPerformanceFactor)!= -1:
-            tiledata['media_performance_factor'] = str(resp.tileConfigData[i].mediaPerformanceFactor)
+        if int(resp.tileConfigData[i].mediaPerformanceFactor) != -1:
+            tiledata['media_performance_factor'] = str(
+                resp.tileConfigData[i].mediaPerformanceFactor)
         else:
             tiledata['media_performance_factor'] = ''
         tiledata['fabric_port_enabled'] = resp.tileConfigData[i].portEnabled
@@ -89,6 +93,7 @@ def getConfig(deviceId, tileId):
     data['tile_config_data'] = tilelist
     return 0, "OK", data
 
+
 def setStandby(deviceId, tileId, standby):
     if standby.lower() == "never":
         mode = core_pb2.STANDBY_NEVER
@@ -96,50 +101,65 @@ def setStandby(deviceId, tileId, standby):
         mode = core_pb2.STANDBY_DEFAULT
     else:
         return 1, "Invalid Parameter: standby mode", None
-    
+
     resp = stub.setDeviceStandbyMode(core_pb2.ConfigDeviceStandbyRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, standby=mode))
     if len(resp.errorMsg) != 0:
-        logger.audit("Config", "Failed", "Failed to set standby mode {} to device {}", mode, deviceId)
+        logger.audit("Config", "Failed",
+                     "Failed to set standby mode {} to device {}", mode, deviceId)
         return 1, resp.errorMsg, None
-    logger.audit("Config", "Succeed", "Succeed to set standby mode {} to device {}", mode, deviceId)
+    logger.audit("Config", "Succeed",
+                 "Succeed to set standby mode {} to device {}", mode, deviceId)
     return 0, "OK", {"result": "OK"}
+
 
 def setPortEnabled(deviceId, tileId, port, enabled):
     resp = stub.setDeviceFabricPortEnabled(core_pb2.ConfigDeviceFabricPortEnabledRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, portNumber=port, enabled=enabled))
     if len(resp.errorMsg) != 0:
-        logger.audit("Config", "Failed", "Failed to set fabric port enable mode {} to device {}", enabled, deviceId)
+        logger.audit("Config", "Failed",
+                     "Failed to set fabric port enable mode {} to device {}", enabled, deviceId)
         return 1, resp.errorMsg, None
-    logger.audit("Config", "Succeed", "Succeed to set fabric port enable mode {} to device {}", enabled, deviceId)
+    logger.audit("Config", "Succeed",
+                 "Succeed to set fabric port enable mode {} to device {}", enabled, deviceId)
     return 0, "OK", {"result": "OK"}
+
 
 def setPerformanceFactor(deviceId, tileId, engineValue, factor):
     resp = stub.setPerformanceFactor(core_pb2.PerformanceFactor(
         deviceId=deviceId, isTileData=True, tileId=tileId, engineSet=engineValue, factor=factor))
     if len(resp.errorMsg) != 0:
-        logger.audit("Config", "Failed", "Failed to set engine {} performance factor {} to device {}", engineValue,factor,deviceId)
+        logger.audit("Config", "Failed", "Failed to set engine {} performance factor {} to device {}",
+                     engineValue, factor, deviceId)
         return 1, resp.errorMsg, None
-    logger.audit("Config", "Succeed", "Succeed to set engine {} performance factor {} to device {}", engineValue,factor,deviceId)
+    logger.audit("Config", "Succeed", "Succeed to set engine {} performance factor {} to device {}",
+                 engineValue, factor, deviceId)
     return 0, "OK", {"result": "OK"}
+
 
 def setPortBeaconing(deviceId, tileId, port, beaconing):
     resp = stub.setDeviceFabricPortBeaconing(core_pb2.ConfigDeviceFabricPortBeconingRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, portNumber=port, beaconing=beaconing))
     if len(resp.errorMsg) != 0:
-        logger.audit("Config", "Failed", "Failed to set port {} beaconing {} to device {}", port,beaconing,deviceId)
+        logger.audit("Config", "Failed",
+                     "Failed to set port {} beaconing {} to device {}", port, beaconing, deviceId)
         return 1, resp.errorMsg, None
-    logger.audit("Config", "Succeed", "Succeed to set port {} beaconing {} to device {}", port,beaconing,deviceId)
+    logger.audit("Config", "Succeed",
+                 "Succeed to set port {} beaconing {} to device {}", port, beaconing, deviceId)
     return 0, "OK", {"result": "OK"}
+
 
 def setPowerLimit(deviceId, tileId, power, interval):
     resp = stub.setDevicePowerLimit(core_pb2.ConfigDevicePowerLimitRequest(
         deviceId=deviceId, tileId=tileId, powerLimit=power, intervalWindow=interval))
     if len(resp.errorMsg) != 0:
-        logger.audit("Config", "Failed", "Failed to set power {} interval {} to device {}", power,interval,deviceId)
+        logger.audit("Config", "Failed",
+                     "Failed to set power {} interval {} to device {}", power, interval, deviceId)
         return 1, resp.errorMsg, None
-    logger.audit("Config", "Succeed", "Succeed to set power {} interval {} to device {}", power,interval,deviceId)
+    logger.audit("Config", "Succeed",
+                 "Succeed to set power {} interval {} to device {}", power, interval, deviceId)
     return 0, "OK", {"result": "OK"}
+
 
 def setFrequencyRange(deviceId, tileId, minFreq, maxFreq):
     if maxFreq < minFreq:
@@ -148,10 +168,13 @@ def setFrequencyRange(deviceId, tileId, minFreq, maxFreq):
     resp = stub.setDeviceFrequencyRange(core_pb2.ConfigDeviceFrequencyRangeRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, minFreq=minFreq, maxFreq=maxFreq))
     if len(resp.errorMsg) != 0:
-        logger.audit("Config", "Failed", "Failed to set min_frequency {} max_frequency {} to device {}", minFreq,maxFreq,deviceId)
+        logger.audit("Config", "Failed",
+                     "Failed to set min_frequency {} max_frequency {} to device {}", minFreq, maxFreq, deviceId)
         return 1, resp.errorMsg, None
-    logger.audit("Config", "Succeed", "Succeed to set min_frequency {} max_frequency {} to device {}", minFreq,maxFreq,deviceId)
+    logger.audit("Config", "Succeed",
+                 "Succeed to set min_frequency {} max_frequency {} to device {}", minFreq, maxFreq, deviceId)
     return 0, "OK", {"result": "OK"}
+
 
 def setScheduler(deviceId, tileId, mode, val1, val2):
     if mode.lower() == "timeout":
@@ -165,24 +188,28 @@ def setScheduler(deviceId, tileId, mode, val1, val2):
     resp = stub.setDeviceSchedulerMode(core_pb2.ConfigDeviceSchdeulerModeRequest(
         deviceId=deviceId, isTileData=True, tileId=tileId, scheduler=scheduler, val1=val1, val2=val2))
     if len(resp.errorMsg) != 0:
-        logger.audit("Config", "Failed", "Failed to set scheduler mode {} parameter1 {} parameter2 {} to device {}", mode,val1,val2,deviceId)
+        logger.audit("Config", "Failed",
+                     "Failed to set scheduler mode {} parameter1 {} parameter2 {} to device {}", mode, val1, val2, deviceId)
         return 1, resp.errorMsg, None
-    logger.audit("Config", "Succeed", "Succeed to set scheduler mode {} parameter1 {} parameter2 {} to device {}", mode,val1,val2,deviceId)
+    logger.audit("Config", "Succeed",
+                 "Succeed to set scheduler mode {} parameter1 {} parameter2 {} to device {}", mode, val1, val2, deviceId)
     return 0, "OK", {"result": "OK"}
+
 
 def setMemoryecc(deviceId, enabled):
     resp = stub.setDeviceMemoryEccState(core_pb2.ConfigDeviceMemoryEccStateRequest(
         deviceId=deviceId, enabled=enabled))
     if len(resp.errorMsg) != 0:
-        logger.audit("Config", "Failed", "Failed to set memory ecc available {} configurable {} current {} pending {} action {}", 
-        resp.available,resp.configurable, resp.currentState, resp.pendingState, resp.pendingAction)
+        logger.audit("Config", "Failed", "Failed to set memory ecc available {} configurable {} current {} pending {} action {}",
+                     resp.available, resp.configurable, resp.currentState, resp.pendingState, resp.pendingAction)
         return 1, resp.errorMsg, None
-    logger.audit("Config", "Succeed", "Succeed to set memory ecc available {} configurable {} current {} pending {} action {}", 
-        resp.available,resp.configurable, resp.currentState, resp.pendingState, resp.pendingAction)
+    logger.audit("Config", "Succeed", "Succeed to set memory ecc available {} configurable {} current {} pending {} action {}",
+                 resp.available, resp.configurable, resp.currentState, resp.pendingState, resp.pendingAction)
     return 0, "OK", {"result": "OK"}
+
 
 def runReset(deviceId):
     #resp = stub.ResetDevice()
-    #if len(resp.errorMsg) != 0:
+    # if len(resp.errorMsg) != 0:
     #    return 1, resp.errorMsg, None
-    return 0, "OK", {"result": "OK"} 
+    return 0, "OK", {"result": "OK"}

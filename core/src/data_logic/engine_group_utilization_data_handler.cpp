@@ -5,15 +5,17 @@
  */
 
 #include "engine_group_utilization_data_handler.h"
+
 #include <algorithm>
 #include <iostream>
-#include "infrastructure/configuration.h"
+
 #include "core/core.h"
+#include "infrastructure/configuration.h"
 
 namespace xpum {
 
 EngineGroupUtilizationDataHandler::EngineGroupUtilizationDataHandler(MeasurementType type,
-                                                           std::shared_ptr<Persistency>& p_persistency)
+                                                                     std::shared_ptr<Persistency>& p_persistency)
     : MetricStatisticsDataHandler(type, p_persistency) {
 }
 
@@ -35,7 +37,7 @@ uint32_t EngineGroupUtilizationDataHandler::getAverage(std::vector<uint32_t>& da
 
 void EngineGroupUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_data) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    
+
     std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
         Property prop;
@@ -46,11 +48,7 @@ void EngineGroupUtilizationDataHandler::calculateData(std::shared_ptr<SharedData
             std::map<uint32_t, std::vector<uint32_t>> group_utilizations;
             auto extended_data = iter->second->getExtendedDatas()->begin();
             while (extended_data != iter->second->getExtendedDatas()->end()) {
-                if (extended_data->second.type == ZES_ENGINE_GROUP_COMPUTE_ALL 
-                || extended_data->second.type == ZES_ENGINE_GROUP_RENDER_ALL 
-                || extended_data->second.type == ZES_ENGINE_GROUP_MEDIA_ALL 
-                || extended_data->second.type == ZES_ENGINE_GROUP_COPY_ALL 
-                || extended_data->second.type == ZES_ENGINE_GROUP_3D_ALL) {
+                if (extended_data->second.type == ZES_ENGINE_GROUP_COMPUTE_ALL || extended_data->second.type == ZES_ENGINE_GROUP_RENDER_ALL || extended_data->second.type == ZES_ENGINE_GROUP_MEDIA_ALL || extended_data->second.type == ZES_ENGINE_GROUP_COPY_ALL || extended_data->second.type == ZES_ENGINE_GROUP_3D_ALL) {
                     ++extended_data;
                     continue;
                 }
@@ -91,11 +89,7 @@ void EngineGroupUtilizationDataHandler::calculateData(std::shared_ptr<SharedData
                 if (pre_data != p_preData->getData().end()) {
                     auto pre_extended = pre_data->second->getExtendedDatas()->find(extended_data->first);
                     if (pre_extended != pre_data->second->getExtendedDatas()->end()) {
-                        if (extended_data->second.type == ZES_ENGINE_GROUP_COMPUTE_ALL
-                        || extended_data->second.type == ZES_ENGINE_GROUP_RENDER_ALL
-                        || extended_data->second.type == ZES_ENGINE_GROUP_MEDIA_ALL
-                        || extended_data->second.type == ZES_ENGINE_GROUP_COPY_ALL
-                        || extended_data->second.type == ZES_ENGINE_GROUP_3D_ALL) {
+                        if (extended_data->second.type == ZES_ENGINE_GROUP_COMPUTE_ALL || extended_data->second.type == ZES_ENGINE_GROUP_RENDER_ALL || extended_data->second.type == ZES_ENGINE_GROUP_MEDIA_ALL || extended_data->second.type == ZES_ENGINE_GROUP_COPY_ALL || extended_data->second.type == ZES_ENGINE_GROUP_3D_ALL) {
                             uint64_t val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100 * (extended_data->second.active_time - pre_extended->second.active_time) / (extended_data->second.timestamp - pre_extended->second.timestamp);
                             if (val > Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100) {
                                 val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * 100;
@@ -112,7 +106,7 @@ void EngineGroupUtilizationDataHandler::calculateData(std::shared_ptr<SharedData
                 ++extended_data;
             }
         }
-        
+
         ++iter;
     }
 }
@@ -121,7 +115,7 @@ void EngineGroupUtilizationDataHandler::handleData(std::shared_ptr<SharedData>& 
     if (p_preData == nullptr || p_data == nullptr) {
         return;
     }
-    
+
     calculateData(p_data);
     updateStatistics(p_data);
 }

@@ -5,18 +5,17 @@
  */
 
 #include "dump_manager.h"
-#include "xpum_structs.h"
+
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <iostream>
 #include <mutex>
 
-#include "core/core.h"
-
-#include "dump_task.h"
 #include "api/internal_dump_raw_data.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "core/core.h"
+#include "dump_task.h"
+#include "xpum_structs.h"
 
 using xpum::dump::getConfigOptionPointer;
 

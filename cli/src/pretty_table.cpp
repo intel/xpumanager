@@ -79,7 +79,8 @@ void Table::show() {
                 if (j < (int)column.size()) {
                     out << " " << std::left << std::setw(width) << std::setfill(separator) << column[j] << " |";
                 } else {
-                    out << " " << std::left << std::setw(width) << std::setfill(separator) <<""<< " |";
+                    out << " " << std::left << std::setw(width) << std::setfill(separator) << ""
+                        << " |";
                 }
             }
             out << std::endl;

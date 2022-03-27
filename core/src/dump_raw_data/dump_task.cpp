@@ -7,19 +7,19 @@
 #include "dump_task.h"
 
 #include <fstream>
-#include <iostream>
-#include <sstream>
-#include <map>
 #include <iomanip>
+#include <iostream>
+#include <map>
+#include <sstream>
 
+#include "api/internal_api.h"
+#include "api/internal_dump_raw_data.h"
 #include "core/core.h"
 #include "infrastructure/configuration.h"
-#include "api/internal_dump_raw_data.h"
-#include "api/internal_api.h"
 
-using xpum::dump::getConfigOptionPointer;
 using xpum::dump::dumpTypeOptions;
 using xpum::dump::engineNameMap;
+using xpum::dump::getConfigOptionPointer;
 
 namespace xpum {
 
@@ -174,7 +174,7 @@ void DumpRawDataTask::buildColumns() {
                                           }});
                 }
             }
-        } else if(config.optionType == xpum::dump::DUMP_OPTION_FABRIC && pFabricCountList){
+        } else if (config.optionType == xpum::dump::DUMP_OPTION_FABRIC && pFabricCountList) {
             for (auto& fc : *pFabricCountList) {
                 std::stringstream ss;
                 std::string key;
@@ -224,12 +224,12 @@ void DumpRawDataTask::updateData() {
 
     // get raw data
     int metricsCount = 0;
-    p_data_logic->getLatestMetrics(p_this->deviceId,nullptr, &metricsCount);
+    p_data_logic->getLatestMetrics(p_this->deviceId, nullptr, &metricsCount);
     std::vector<xpum_device_metrics_t> deviceMetricsList(metricsCount);
     p_data_logic->getLatestMetrics(p_this->deviceId, deviceMetricsList.data(), &metricsCount);
 
     rawDataMap.clear();
-    
+
     for (auto deviceMetrics : deviceMetricsList) {
         if ((p_this->tileId == -1 && !deviceMetrics.isTileData) || (deviceMetrics.isTileData && (p_this->tileId == deviceMetrics.tileId))) {
             for (int i = 0; i < deviceMetrics.count; i++) {
@@ -284,7 +284,6 @@ void DumpRawDataTask::updateData() {
 }
 
 void DumpRawDataTask::start() {
-
     // build columns
     buildColumns();
 
@@ -297,7 +296,6 @@ void DumpRawDataTask::start() {
 
     auto p_this = shared_from_this();
     lambda = [p_this]() {
-
         // update data
         p_this->updateData();
 

@@ -39,7 +39,6 @@ class HealthManager : public HealthManagerInterface {
     xpum_result_t getHealth(xpum_device_id_t deviceId, xpum_health_type_t type, xpum_health_data_t *data) override;
 
    private:
-
     uint64_t getThrottlePower(std::string deviceName);
 
     std::shared_ptr<DeviceManagerInterface> p_device_manager;

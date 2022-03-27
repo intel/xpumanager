@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <mutex>
 #include <future>
+#include <mutex>
 
 #include "device/device.h"
 #include "stdio.h"
@@ -53,7 +53,7 @@ class GPUDevice : public Device {
     void getFabricThroughput(Callback_t callback) noexcept override;
 
     virtual xpum_result_t runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept override; //GSC
-    xpum_result_t runFirmwareFlash(const char* filePath) noexcept;  //AMC
+    xpum_result_t runFirmwareFlash(const char* filePath) noexcept;                                               //AMC
     bool getAMCFirmwareVersion(unsigned int versions[4]) noexcept;
     virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept override;
 
@@ -64,8 +64,8 @@ class GPUDevice : public Device {
 
    private:
     //FILE* commandExec;
-    std::future<xpum_firmware_flash_result_t>  taskGSC;
-    std::future<xpum_firmware_flash_result_t>  taskAMC;
+    std::future<xpum_firmware_flash_result_t> taskGSC;
+    std::future<xpum_firmware_flash_result_t> taskAMC;
     std::mutex mtx;
     std::string log;
 

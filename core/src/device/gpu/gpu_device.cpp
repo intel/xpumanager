@@ -6,18 +6,17 @@
 
 #include "gpu_device.h"
 
-#include <iostream>
-#include <fstream>
 #include <chrono>
+#include <fstream>
+#include <iostream>
 
+#include "core/core.h"
 #include "device/gpu/gpu_device_stub.h"
+#include "group/group_manager.h"
 #include "infrastructure/device_property.h"
 #include "infrastructure/logger.h"
 #include "stdio.h"
 #include "unistd.h"
-#include "core/core.h"
-#include "group/group_manager.h"
-
 
 namespace xpum {
 using namespace std::chrono_literals;
@@ -76,11 +75,12 @@ void GPUDevice::getRequestFrequency(Callback_t callback) noexcept {
 }
 
 void GPUDevice::getTemperature(Callback_t callback, zes_temp_sensors_t type) noexcept {
-    GPUDeviceStub::instance().getTemperature(zes_device_handle,
-                                             [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                 callback(ret, e);
-                                             },
-                                             type);
+    GPUDeviceStub::instance().getTemperature(
+        zes_device_handle,
+        [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+            callback(ret, e);
+        },
+        type);
 }
 
 void GPUDevice::getMemory(Callback_t callback) noexcept {
@@ -120,16 +120,16 @@ void GPUDevice::getMemoryWrite(Callback_t callback) noexcept {
 
 void GPUDevice::getMemoryReadThroughput(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getMemoryReadThroughput(zes_device_handle,
-                                            [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                callback(ret, e);
-                                            });
+                                                      [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                          callback(ret, e);
+                                                      });
 }
 
 void GPUDevice::getMemoryWriteThroughput(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getMemoryWriteThroughput(zes_device_handle,
-                                             [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                 callback(ret, e);
-                                             });
+                                                       [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                           callback(ret, e);
+                                                       });
 }
 
 void GPUDevice::getEnergy(Callback_t callback) noexcept {
@@ -141,9 +141,9 @@ void GPUDevice::getEnergy(Callback_t callback) noexcept {
 
 void GPUDevice::getEuActiveStallIdle(Callback_t callback, MeasurementType type) noexcept {
     GPUDeviceStub::instance().getEuActiveStallIdle(ze_device_handle, ze_driver_handle, type,
-                                                      [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                          callback(ret, e);
-                                                      });
+                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                       callback(ret, e);
+                                                   });
 }
 
 void GPUDevice::getRasError(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept {
@@ -239,7 +239,6 @@ static std::vector<std::string> getSiblingDeviceBDFAddr(GPUDevice* device) {
 }
 
 xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
-
     auto bdfAddrs = getSiblingDeviceBDFAddr(this);
 
     std::vector<std::string> commands;
@@ -320,15 +319,13 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath) noexcept {
     std::lock_guard<std::mutex> lck(mtx);
     if (taskAMC.valid()) {
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
-    }
-    else {
+    } else {
         std::string dupPath(filePath);
         taskAMC = std::async(std::launch::async, [=] {
             int rc = cmd_firmware(dupPath.c_str(), nullptr);
             if (rc == 0) {
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
-            }
-            else {
+            } else {
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
         });
@@ -348,22 +345,19 @@ void GPUDevice::dumpFirmwareFlashLog() noexcept {
 }
 
 xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_type_t type) noexcept {
-
     std::future<xpum_firmware_flash_result_t>* task;
-    if ( type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC ) {
+    if (type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
         task = &taskGSC;
-    }
-    else {
+    } else {
         task = &taskAMC;
     }
 
-    if (task->valid()) { 
+    if (task->valid()) {
         auto status = task->wait_for(0ms);
         if (status == std::future_status::ready) {
             std::lock_guard<std::mutex> lck(mtx);
             return task->get();
-        }
-        else {
+        } else {
             return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
         }
     } else {
@@ -382,36 +376,36 @@ bool GPUDevice::isUpgradingFw(void) noexcept {
 
 void GPUDevice::getPCIeReadThroughput(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getPCIeReadThroughput(zes_device_handle,
-                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                       callback(ret, e);
-                                                   });    
+                                                    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                        callback(ret, e);
+                                                    });
 }
 
 void GPUDevice::getPCIeWriteThroughput(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getPCIeWriteThroughput(zes_device_handle,
-                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                       callback(ret, e);
-                                                   });
+                                                     [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                         callback(ret, e);
+                                                     });
 }
 
 void GPUDevice::getPCIeRead(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getPCIeRead(zes_device_handle,
-                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                       callback(ret, e);
-                                                   });    
+                                          [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                              callback(ret, e);
+                                          });
 }
 
 void GPUDevice::getPCIeWrite(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getPCIeWrite(zes_device_handle,
-                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                       callback(ret, e);
-                                                   });
+                                           [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                               callback(ret, e);
+                                           });
 }
 
 void GPUDevice::getFabricThroughput(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getFabricThroughput(zes_device_handle,
                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                  callback(ret, e);
+                                                      callback(ret, e);
                                                   });
 }
 

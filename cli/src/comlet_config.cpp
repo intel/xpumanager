@@ -8,8 +8,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "core_stub.h"
 #include "cli_table.h"
+#include "core_stub.h"
 
 namespace xpum::cli {
 
@@ -86,18 +86,19 @@ void ComletConfig::setupOptions() {
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\".The valid range of all time values (us) is from 5000 to 100,000,000.");
     //addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
-    
+
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
     //addFlag("--exclusive", this->opts->schedulerExclusive, "set scheduler exclusive mode");
-    
-    addOption("--performancefactor", this->opts->performancefactor, "Set the tile-level performance factor. Valid options: \"compute/media\";factorValue. The factor value should be\n\
+
+    addOption("--performancefactor", this->opts->performancefactor,
+              "Set the tile-level performance factor. Valid options: \"compute/media\";factorValue. The factor value should be\n\
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
-    addOption("--xelinkport", this->opts->xelinkportEnable,"Change the Xe Link port status. The value 0 means down and 1 means up.");
-    addOption("--xelinkportbeaconing", this->opts->xelinkportBeaconing,"Change the Xe Link port beaconing status. The value 0 means off and 1 means on.");
+    addOption("--xelinkport", this->opts->xelinkportEnable, "Change the Xe Link port status. The value 0 means down and 1 means up.");
+    addOption("--xelinkportbeaconing", this->opts->xelinkportBeaconing, "Change the Xe Link port beaconing status. The value 0 means off and 1 means on.");
     //addOption("--memoryecc", this->opts->setecc,"Enable/disable memory Ecc setting.");
 }
-std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter){
+std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter) {
     size_t pos = 0;
     std::string token;
     std::string str1 = str;
@@ -113,7 +114,7 @@ std::vector<std::string> ComletConfig::split(std::string str, std::string delimi
 
 std::unique_ptr<nlohmann::json> ComletConfig::run() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    (*json)["return"]="error";
+    (*json)["return"] = "error";
     if (isQuery()) {
         json = this->coreStub->getDeviceConfig(this->opts->deviceId, this->opts->tileId);
         return json;
@@ -121,61 +122,62 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
     if (this->opts->deviceId >= 0) {
         if (this->opts->tileId >= 0 && !this->opts->scheduler.empty()) {
             std::vector<std::string> paralist = split(this->opts->scheduler, ",");
-            int val1,val2;
+            int val1, val2;
             std::string command = paralist.at(0);
-            std::for_each(command.begin(), command.end(), [](char & c) {
+            std::for_each(command.begin(), command.end(), [](char &c) {
                 c = ::tolower(c);
             });
             if (command.compare("timeout") == 0) {
                 if (paralist.size() != 2 || paralist.at(1).empty()) {
-                   (*json)["return"]="invalid parameter: timeout";
-                   return json; 
+                    (*json)["return"] = "invalid parameter: timeout";
+                    return json;
                 }
                 val1 = std::stoi(paralist.at(1));
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMEOUT,
-                    val1,0);
+                                                              val1, 0);
             } else if (command.compare("timeslice") == 0) {
                 if (paralist.size() != 3 || paralist.at(1).empty() || paralist.at(2).empty()) {
-                   (*json)["return"]="invalid parameter: timeslice";
-                   return json; 
+                    (*json)["return"] = "invalid parameter: timeslice";
+                    return json;
                 }
                 val1 = std::stoi(paralist.at(1));
                 val2 = std::stoi(paralist.at(2));
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMESLICE, val1, val2);
             } else if (command.compare("exclusive") == 0) {
                 if (paralist.size() != 1) {
-                   (*json)["return"]="invalid parameter: exclusive";
-                   return json; 
+                    (*json)["return"] = "invalid parameter: exclusive";
+                    return json;
                 }
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_EXCLUSIVE, 0, 0);
             } else {
-                (*json)["return"]="invalid scheduler mode";
-                return json; 
+                (*json)["return"] = "invalid scheduler mode";
+                return json;
             }
-            if((*json)["status"] == "OK") {
+            if ((*json)["status"] == "OK") {
                 (*json)["return"] = "Succeed to change the scheduler mode on GPU " + std::to_string(this->opts->deviceId) +
-                " tile " + std::to_string(this->opts->tileId) + ".";
+                                    " tile " + std::to_string(this->opts->tileId) + ".";
             }
             return json;
         } else if (/*this->opts->tileId >= 0 &&*/ !this->opts->powerlimit.empty()) {
             std::vector<std::string> paralist = split(this->opts->powerlimit, ",");
-            if (paralist.size() ==2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
+            if (paralist.size() == 2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
                 int val1 = std::stoi(paralist.at(0));
                 int val2 = std::stoi(paralist.at(1));
                 this->opts->tileId = -1;
                 json = this->coreStub->setDevicePowerlimit(this->opts->deviceId, this->opts->tileId, val1, val2);
-                if((*json)["status"] == "OK") {
-                     (*json)["return"] = "Succeed to set the power limit on GPU " + std::to_string(this->opts->deviceId) /*+
-                    " tile " + std::to_string(this->opts->tileId) */+ ".";
+                if ((*json)["status"] == "OK") {
+                    (*json)["return"] = "Succeed to set the power limit on GPU " + std::to_string(this->opts->deviceId) /*+
+                    " tile " + std::to_string(this->opts->tileId) */
+                                        + ".";
                 }
-            }else {
-                (*json)["return"]="invalid parameter: please check help information";
+            } else {
+                (*json)["return"] = "invalid parameter: please check help information";
                 return json;
             }
             return json;
         } else if (this->opts->tileId >= 0 && !this->opts->standby.empty()) {
             XpumStandbyMode mode;
-            std::for_each(this->opts->standby.begin(), this->opts->standby.end(), [](char & c) {
+            std::for_each(this->opts->standby.begin(), this->opts->standby.end(), [](char &c) {
                 c = ::tolower(c);
             });
             if (this->opts->standby.compare("never") == 0) {
@@ -183,13 +185,13 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             } else if (this->opts->standby.compare("default") == 0) {
                 mode = STANDBY_DEFAULT;
             } else {
-                (*json)["return"]="invalid parameter: standby mode";
-                return json;    
+                (*json)["return"] = "invalid parameter: standby mode";
+                return json;
             }
             json = this->coreStub->setDeviceStandby(this->opts->deviceId, this->opts->tileId, mode);
-            if((*json)["status"] == "OK") {
-                     (*json)["return"] = "Succeed to change the standby mode on GPU " + std::to_string(this->opts->deviceId) +
-                    " tile " + std::to_string(this->opts->tileId) + ".";
+            if ((*json)["status"] == "OK") {
+                (*json)["return"] = "Succeed to change the standby mode on GPU " + std::to_string(this->opts->deviceId) +
+                                    " tile " + std::to_string(this->opts->tileId) + ".";
             }
             return json;
         } else if (this->opts->tileId >= 0 && !this->opts->frequencyrange.empty()) {
@@ -198,24 +200,23 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 int val1 = std::stoi(paralist.at(0));
                 int val2 = std::stoi(paralist.at(1));
                 json = this->coreStub->setDeviceFrequencyRange(this->opts->deviceId, this->opts->tileId, val1, val2);
-                if((*json)["status"] == "OK") {
+                if ((*json)["status"] == "OK") {
                     (*json)["return"] = "Succeed to change the core frequency range on GPU " + std::to_string(this->opts->deviceId) +
-                    " tile " + std::to_string(this->opts->tileId) + ".";
+                                        " tile " + std::to_string(this->opts->tileId) + ".";
                 }
                 return json;
-            }else {
-                (*json)["return"]="invalid parameter: please check help information";
+            } else {
+                (*json)["return"] = "invalid parameter: please check help information";
                 return json;
             }
         } else if (this->opts->tileId >= 0 && !this->opts->performancefactor.empty()) {
             std::vector<std::string> paralist = split(this->opts->performancefactor, ",");
             if (paralist.size() != 2 || paralist.at(1).empty()) {
-                (*json)["return"]="invalid parameter: please check help information";
+                (*json)["return"] = "invalid parameter: please check help information";
                 return json;
             }
             std::string engine = paralist.at(0);
-            std::for_each(engine.begin(), engine.end(), [](char & c) {
-                c = ::tolower(c);});
+            std::for_each(engine.begin(), engine.end(), [](char &c) { c = ::tolower(c); });
             xpum_engine_type_flags_t engineType;
 
             if (engine.compare("compute") == 0) {
@@ -223,59 +224,59 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             } else if (engine.compare("media") == 0) {
                 engineType = XPUM_MEDIA;
             } else {
-                (*json)["return"]="invalid engine";
+                (*json)["return"] = "invalid engine";
                 return json;
             }
             double val1 = std::stod(paralist.at(1));
             if (val1 < 0.0 || val1 > 100.0) {
-                (*json)["return"]="invalid factor";
+                (*json)["return"] = "invalid factor";
                 return json;
             }
             json = this->coreStub->setPerformanceFactor(this->opts->deviceId, this->opts->tileId, engineType, val1);
-            if((*json)["status"] == "OK") {
-                (*json)["return"] = "Succeed to change the "+ engine +" performance factor to " + paralist.at(1) +
-                " on GPU " + std::to_string(this->opts->deviceId) +
-                " tile " + std::to_string(this->opts->tileId) + ".";
+            if ((*json)["status"] == "OK") {
+                (*json)["return"] = "Succeed to change the " + engine + " performance factor to " + paralist.at(1) +
+                                    " on GPU " + std::to_string(this->opts->deviceId) +
+                                    " tile " + std::to_string(this->opts->tileId) + ".";
             }
             return json;
         } else if (this->opts->tileId >= 0 && !this->opts->xelinkportEnable.empty()) {
             std::vector<std::string> paralist = split(this->opts->xelinkportEnable, ",");
             if (paralist.size() != 2 || paralist.at(1).empty()) {
-                (*json)["return"]="invalid parameter: please check help information";
+                (*json)["return"] = "invalid parameter: please check help information";
                 return json;
             }
 
             int port = std::stoi(paralist.at(0));
             int enabled = std::stoi(paralist.at(1));
-            if ((enabled != 0 && enabled != 1) || port < 0 ) {
-                (*json)["return"]="invalid parameter enabled";
+            if ((enabled != 0 && enabled != 1) || port < 0) {
+                (*json)["return"] = "invalid parameter enabled";
                 return json;
             }
             json = this->coreStub->setFabricPortEnabled(this->opts->deviceId, this->opts->tileId, port, enabled);
-            if((*json)["status"] == "OK") {
-                (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " to " + (enabled == 1 ? "up":"down") + " .";
+            if ((*json)["status"] == "OK") {
+                (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " to " + (enabled == 1 ? "up" : "down") + " .";
             }
             return json;
         } else if (this->opts->tileId >= 0 && !this->opts->xelinkportBeaconing.empty()) {
             std::vector<std::string> paralist = split(this->opts->xelinkportBeaconing, ",");
             if (paralist.size() != 2 || paralist.at(1).empty()) {
-                (*json)["return"]="invalid parameter: please check help information";
+                (*json)["return"] = "invalid parameter: please check help information";
                 return json;
             }
 
             int port = std::stoi(paralist.at(0));
             int beaconing = std::stoi(paralist.at(1));
-            if (beaconing != 0 && beaconing != 1){
-                (*json)["return"]="invalid parameter value: beaconing";
+            if (beaconing != 0 && beaconing != 1) {
+                (*json)["return"] = "invalid parameter value: beaconing";
                 return json;
             }
             json = this->coreStub->setFabricPortBeaconing(this->opts->deviceId, this->opts->tileId, port, beaconing);
-            if((*json)["status"] == "OK") {
-                (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " beaconing to " + (beaconing == 1 ? "on":"off") + " .";
+            if ((*json)["status"] == "OK") {
+                (*json)["return"] = "Succeed to change Xe Link port " + paralist.at(0) + " beaconing to " + (beaconing == 1 ? "on" : "off") + " .";
             }
             return json;
         }
-        #if 0
+#if 0
         else if (!this->opts->setecc.empty()) {
             bool enabled = false;
             int eccVal;
@@ -316,8 +317,8 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;  
         }
-        #endif
-         /*else if (this->opts->tileId == -1 && this->opts->resetDevice) {
+#endif
+        /*else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             char confirmed;
             if (this->opts->deviceId >= 0) {
                 json = this->coreStub->getDeviceProcessState(this->opts->deviceId);
@@ -345,10 +346,10 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;
         }*/
-        (*json)["return"]="unknown or invalid command, parameter or device/tile Id";
+        (*json)["return"] = "unknown or invalid command, parameter or device/tile Id";
         return json;
     }
-    (*json)["return"]="invalid device Id";
+    (*json)["return"] = "invalid device Id";
     return json;
 }
 

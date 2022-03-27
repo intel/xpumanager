@@ -6,23 +6,22 @@
 
 #pragma once
 
+#include <functional>
+#include <map>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
-#include <functional>
-#include <memory>
-#include <map>
 
 #include "../include/xpum_structs.h"
-#include "infrastructure/device_capability.h"
-#include "infrastructure/measurement_type.h"
-#include "infrastructure/exception/base_exception.h"
-#include "infrastructure/property.h"
 #include "engine_info.h"
+#include "infrastructure/device_capability.h"
+#include "infrastructure/exception/base_exception.h"
+#include "infrastructure/measurement_type.h"
+#include "infrastructure/property.h"
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 #include "level_zero/zet_api.h"
-
 
 namespace xpum {
 
@@ -32,19 +31,19 @@ namespace xpum {
 
 typedef std::function<void(std::shared_ptr<void>, std::shared_ptr<BaseException>)> Callback_t;
 
-enum FabricThroughputType{
-  RECEIVED                    = 0,
-  TRANSMITTED                 = 1,
-  RECEIVED_COUNTER            = 2,
-  TRANSMITTED_COUNTER         = 3,
-  FABRIC_THROUGHPUT_TYPE_MAX  = 4,
+enum FabricThroughputType {
+    RECEIVED = 0,
+    TRANSMITTED = 1,
+    RECEIVED_COUNTER = 2,
+    TRANSMITTED_COUNTER = 3,
+    FABRIC_THROUGHPUT_TYPE_MAX = 4,
 };
 
 typedef struct FabricThroughputInfo_t {
-  uint32_t attach_id;
-  uint32_t remote_fabric_id;
-  uint32_t remote_attach_id;
-  FabricThroughputType type;
+    uint32_t attach_id;
+    uint32_t remote_fabric_id;
+    uint32_t remote_attach_id;
+    FabricThroughputType type;
 } FabricThroughputInfo;
 
 class Device {
@@ -99,11 +98,11 @@ class Device {
     virtual void getRasErrorOnSubdevice(Callback_t callback) noexcept = 0;
 
     virtual void getFrequencyThrottle(Callback_t callback) noexcept = 0;
-  
+
     virtual void getPCIeReadThroughput(Callback_t callback) noexcept = 0;
 
     virtual void getPCIeWriteThroughput(Callback_t callback) noexcept = 0;
-  
+
     virtual void getPCIeRead(Callback_t callback) noexcept = 0;
 
     virtual void getPCIeWrite(Callback_t callback) noexcept = 0;
@@ -121,7 +120,7 @@ class Device {
     zes_device_handle_t getDeviceHandle();
 
     virtual xpum_result_t runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept; //GSC
-    virtual xpum_result_t runFirmwareFlash(const char* filePath) noexcept; //AMC
+    virtual xpum_result_t runFirmwareFlash(const char* filePath) noexcept;                              //AMC
     virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept;
 
     ze_device_handle_t getDeviceZeHandle();
@@ -172,7 +171,7 @@ class Device {
 
     std::vector<Property> properties;
 
-    std::map<uint64_t,EngineInfo> engines;
+    std::map<uint64_t, EngineInfo> engines;
 
     uint32_t fabric_id;
 

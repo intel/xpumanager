@@ -14,12 +14,12 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     grpc::ClientContext context;
 
     XpumFirmwareFlashJob request;
-    request.mutable_id()->set_id( deviceId );
-    request.mutable_type()->set_value( type );
-    request.set_path( filePath );
+    request.mutable_id()->set_id(deviceId);
+    request.mutable_type()->set_value(type);
+    request.set_path(filePath);
 
     GeneralEnum response;
-    grpc::Status status = stub->runFirmwareFlash( &context, request, &response );
+    grpc::Status status = stub->runFirmwareFlash(&context, request, &response);
 
     if (!status.ok()) {
         (*json)["error"] = "Failed to run firmware flash";
@@ -28,10 +28,10 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
 
     xpum_result_t code = (xpum_result_t)response.value();
 
-    switch(code){
+    switch (code) {
         case xpum_result_t::XPUM_OK:
             (*json)["result"] = "OK";
-            return json;   
+            return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC:
             (*json)["error"] = "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.";
             return json;
@@ -60,19 +60,18 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
             (*json)["error"] = "Unknown error.";
             return json;
     }
-
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, unsigned int type){
+std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, unsigned int type) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext ct;
     XpumFirmwareFlashTaskRequest rq;
-    rq.mutable_id()->set_id( deviceId );
-    rq.mutable_type()->set_value( type );
+    rq.mutable_id()->set_id(deviceId);
+    rq.mutable_type()->set_value(type);
 
     XpumFirmwareFlashTaskResult res;
-    auto status = stub->getFirmwareFlashResult( &ct, rq, &res );
+    auto status = stub->getFirmwareFlashResult(&ct, rq, &res);
 
     if (!status.ok() || res.errormsg().length() != 0) {
         (*json)["error"] = "Failed to get firmware reuslt";
@@ -95,4 +94,4 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, u
     return json;
 }
 
-}
+} // namespace xpum::cli

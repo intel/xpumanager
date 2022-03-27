@@ -26,7 +26,7 @@ class ComletBase {
 
     virtual void setupOptions() = 0;
     virtual std::unique_ptr<nlohmann::json> run() = 0;
-    
+
     bool parsed() {
         return this->subCLIApp->parsed();
     }
@@ -56,7 +56,7 @@ class ComletBase {
 
    protected:
     template <typename T>
-    CLI::Option * addOption(std::string optName, T &variable, std::string optDescription = "", bool required = false) {
+    CLI::Option *addOption(std::string optName, T &variable, std::string optDescription = "", bool required = false) {
         assert(subCLIApp != nullptr);
         auto opt = this->subCLIApp->add_option(optName, variable, optDescription);
         if (required) {
@@ -66,7 +66,7 @@ class ComletBase {
     }
 
     template <typename T>
-    CLI::Option * addFlag(std::string optName, T &variable, std::string optDescription = "") {
+    CLI::Option *addFlag(std::string optName, T &variable, std::string optDescription = "") {
         assert(subCLIApp != nullptr);
         return this->subCLIApp->add_flag(optName, variable, optDescription);
     };

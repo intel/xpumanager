@@ -5,15 +5,17 @@
  */
 
 #include "metric_collection_statistics_data_handler.h"
+
 #include <algorithm>
 #include <iostream>
+
 #include "infrastructure/configuration.h"
 #include "infrastructure/engine_measurement_data.h"
 
 namespace xpum {
 
 MetricCollectionStatisticsDataHandler::MetricCollectionStatisticsDataHandler(MeasurementType type,
-                                                           std::shared_ptr<Persistency>& p_persistency)
+                                                                             std::shared_ptr<Persistency>& p_persistency)
     : DataHandler(type, p_persistency) {
 }
 
@@ -121,7 +123,7 @@ std::shared_ptr<MeasurementData> MetricCollectionStatisticsDataHandler::getLates
             cur_datas->setLatestTime(statistics_datas[session_id][device_id][uint64_t(metric_collection_datas_iter->first)].latest_time);
             ++metric_collection_datas_iter;
         }
-		resetStatistics(device_id, session_id);
+        resetStatistics(device_id, session_id);
     }
 
     if (datas.find(device_id) != datas.end()) {

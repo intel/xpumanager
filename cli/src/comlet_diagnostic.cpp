@@ -8,8 +8,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "core_stub.h"
 #include "cli_table.h"
+#include "core_stub.h"
 
 namespace xpum::cli {
 
@@ -55,7 +55,8 @@ void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
     addOption("-d,--device", this->opts->deviceId, "The device ID");
     addOption("-g,--group", this->opts->groupId, "The group ID");
-    addOption("-l,--level", this->opts->level, "The diagnostic levels to run. The valid options include\n\
+    addOption("-l,--level", this->opts->level,
+              "The diagnostic levels to run. The valid options include\n\
       1. quick test\n\
       2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs\n\
       3. long test - this diagnostic level will have the significant performance impact on the specified GPUs");

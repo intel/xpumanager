@@ -168,4 +168,4 @@
 #error Please add support for your compiler in build/build_config.h
 #endif
 
-#endif  // BUILD_BUILD_CONFIG_H_
+#endif // BUILD_BUILD_CONFIG_H_

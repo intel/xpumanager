@@ -5,7 +5,6 @@
 # @file gen_grpc_py_files.sh
 #
 
-
 WORK=$(dirname "$0")
 cd ${WORK}
 

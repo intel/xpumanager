@@ -36,9 +36,11 @@ def runDiagnostics(deviceId, level):
     resp = stub.runDiagnostics(
         core_pb2.RunDiagnosticsRequest(deviceId=deviceId, level=level))
     if len(resp.errorMsg) != 0:
-        logger.audit("Diagnostics", "Failed", "Failed to run level-{} diagnostics on device {}", level, deviceId)
+        logger.audit("Diagnostics", "Failed",
+                     "Failed to run level-{} diagnostics on device {}", level, deviceId)
         return 1, resp.errorMsg, None
-    logger.audit("Diagnostics", "Succeed", "Succeed to run level-{} diagnostics on device {}", level, deviceId)
+    logger.audit("Diagnostics", "Succeed",
+                 "Succeed to run level-{} diagnostics on device {}", level, deviceId)
     return 0, "OK", {"result": "OK"}
 
 
@@ -48,9 +50,11 @@ def runDiagnosticsByGroup(groupId, level):
     resp = stub.runDiagnosticsByGroup(
         core_pb2.RunDiagnosticsByGroupRequest(groupId=groupId, level=level))
     if len(resp.errorMsg) != 0:
-        logger.audit("Diagnostics", "Failed", "Failed to run level-{} diagnostics on group {}", level, groupId)
+        logger.audit("Diagnostics", "Failed",
+                     "Failed to run level-{} diagnostics on group {}", level, groupId)
         return 1, resp.errorMsg, None
-    logger.audit("Diagnostics", "Succeed", "Succeed to run level-{} diagnostics on group {}", level, groupId)
+    logger.audit("Diagnostics", "Succeed",
+                 "Succeed to run level-{} diagnostics on group {}", level, groupId)
     return 0, "OK", {"result": "OK"}
 
 
@@ -66,11 +70,15 @@ def getDiagnosticsResult(deviceId):
     data['result'] = diagnosticResultEnumToString[resp.result]
     data['message'] = resp.message
     data['component_count'] = resp.count
-    beginTimestamp = datetime.datetime.fromtimestamp(resp.startTime/1e3, datetime.timezone.utc)
-    data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+    beginTimestamp = datetime.datetime.fromtimestamp(
+        resp.startTime/1e3, datetime.timezone.utc)
+    data['start_time'] = beginTimestamp.isoformat(
+        timespec='milliseconds').replace('+00:00', 'Z')
     if resp.finished:
-        endTimestamp = datetime.datetime.fromtimestamp(resp.endTime/1e3, datetime.timezone.utc)
-        data['end_time'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        endTimestamp = datetime.datetime.fromtimestamp(
+            resp.endTime/1e3, datetime.timezone.utc)
+        data['end_time'] = endTimestamp.isoformat(
+            timespec='milliseconds').replace('+00:00', 'Z')
     componentList = []
     i = 0
     for component in resp.componentInfo:
@@ -83,7 +91,8 @@ def getDiagnosticsResult(deviceId):
         new_component['result'] = diagnosticResultEnumToString[component.result]
         new_component['message'] = component.message
         if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
-            process_list_resp = stub.getDeviceProcessState(core_pb2.DeviceId(id=deviceId))
+            process_list_resp = stub.getDeviceProcessState(
+                core_pb2.DeviceId(id=deviceId))
             if len(resp.errorMsg) == 0:
                 processList = []
                 for process in process_list_resp.processlist:
@@ -114,11 +123,15 @@ def getDiagnosticsResultByGroup(groupId):
         data['result'] = diagnosticResultEnumToString[diagTaskInfo.result]
         data['message'] = diagTaskInfo.message
         data['component_count'] = diagTaskInfo.count
-        beginTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.startTime/1e3, datetime.timezone.utc)
-        data['start_time'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        beginTimestamp = datetime.datetime.fromtimestamp(
+            diagTaskInfo.startTime/1e3, datetime.timezone.utc)
+        data['start_time'] = beginTimestamp.isoformat(
+            timespec='milliseconds').replace('+00:00', 'Z')
         if diagTaskInfo.finished:
-            endTimestamp = datetime.datetime.fromtimestamp(diagTaskInfo.endTime/1e3, datetime.timezone.utc)
-            data['end_time'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+            endTimestamp = datetime.datetime.fromtimestamp(
+                diagTaskInfo.endTime/1e3, datetime.timezone.utc)
+            data['end_time'] = endTimestamp.isoformat(
+                timespec='milliseconds').replace('+00:00', 'Z')
         componentList = []
         i = 0
         for component in diagTaskInfo.componentInfo:
@@ -131,7 +144,8 @@ def getDiagnosticsResultByGroup(groupId):
             new_component['result'] = diagnosticResultEnumToString[component.result]
             new_component['message'] = component.message
             if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
-                process_list_resp = stub.getDeviceProcessState(core_pb2.DeviceId(id=diagTaskInfo.deviceId))
+                process_list_resp = stub.getDeviceProcessState(
+                    core_pb2.DeviceId(id=diagTaskInfo.deviceId))
                 if len(resp.errorMsg) == 0:
                     processList = []
                     for process in process_list_resp.processlist:

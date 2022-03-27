@@ -5,8 +5,8 @@
  */
 
 #include <nlohmann/json.hpp>
-#include <vector>
 #include <sstream>
+#include <vector>
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
@@ -15,7 +15,7 @@
 
 namespace xpum::cli {
 
-struct MetricsTypeEntry{
+struct MetricsTypeEntry {
     xpum_stats_type_t key;
     std::string keyStr;
 };
@@ -342,7 +342,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
             tmp["tile_id"] = stats_info.tileid();
             tmp["data_list"] = dataList;
             auto strTileId = std::to_string(stats_info.tileid());
-            if(engineStatsJson->contains(strTileId)){
+            if (engineStatsJson->contains(strTileId)) {
                 tmp["engine_util"] = (*engineStatsJson)[strTileId];
             }
             tileLevelStatsDataList.push_back(tmp);
@@ -350,7 +350,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
             deviceLevelStatsDataList.insert(deviceLevelStatsDataList.end(), dataList.begin(), dataList.end());
         }
     }
-    if(engineStatsJson->contains("device")){
+    if (engineStatsJson->contains("device")) {
         (*json)["engine_util"] = (*engineStatsJson)["device"];
     }
     (*json)["device_level"] = deviceLevelStatsDataList;
@@ -433,11 +433,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
             auto tmp = nlohmann::json();
             tmp["tile_id"] = stats_info.tileid();
             tmp["data_list"] = dataList;
-            
+
             deviceMap[key]["tile_level"].push_back(tmp);
         } else {
             deviceMap[key]["device_level"] = dataList;
-            
         }
     }
 

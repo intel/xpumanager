@@ -132,7 +132,7 @@ void runRPCServer() {
     }
     unlink(unixSockName.c_str());
 
-    umask( S_IXUSR | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH );
+    umask(S_IXUSR | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
 
     string serverAddr("unix://" + unixSockName);
 
@@ -149,13 +149,12 @@ void runRPCServer() {
     passwd* pwd = getpwnam("xpum");
     if (pwd != nullptr) {
         chown(unixSockName.c_str(), pwd->pw_uid, pwd->pw_gid);
-    }
-    else {
+    } else {
         XPUM_LOG_ERROR("XPUM: no xpum account exists, abort");
-        return; 
+        return;
     }
 
-    chmod( unixSockName.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP );
+    chmod(unixSockName.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 
     // start a background thread for the server.
     std::thread grpc_server_thread(
@@ -168,7 +167,7 @@ void runRPCServer() {
         // Wait for the stop signal and then shut the server.
         cv.wait(lock);
     }
-    
+
     // Shut down server.
     XPUM_LOG_INFO("XPUM: Shutting down RPC server...");
     // must close service before shutdown the server to avoid stuck in server->Shutdown()
@@ -302,29 +301,29 @@ void parse_opts(int argc, char* argv[]) {
                 break;
             }
             case 's':
-            if(sock_file_name == nullptr){
-                sock_file_name = strdup(optarg);
-            }
+                if (sock_file_name == nullptr) {
+                    sock_file_name = strdup(optarg);
+                }
                 break;
             case 'p':
-            if(pid_file_name == nullptr){
-                pid_file_name = strdup(optarg);
-            }
+                if (pid_file_name == nullptr) {
+                    pid_file_name = strdup(optarg);
+                }
                 break;
             case 'l':
-            if(log_file_name == nullptr) {
-                log_file_name = strdup(optarg);
-            }
+                if (log_file_name == nullptr) {
+                    log_file_name = strdup(optarg);
+                }
                 break;
             case 'd':
-            if(dump_folder_name == nullptr){
-                dump_folder_name = strdup(optarg);
-            }
+                if (dump_folder_name == nullptr) {
+                    dump_folder_name = strdup(optarg);
+                }
                 break;
             case 'm':
-            if(enabled_metrics == nullptr){
-                enabled_metrics = strdup(optarg);
-            }
+                if (enabled_metrics == nullptr) {
+                    enabled_metrics = strdup(optarg);
+                }
                 break;
             case 'h':
                 print_help(argv[0]);
@@ -360,7 +359,7 @@ int main(int argc, char* argv[]) {
     if (enabled_metrics != nullptr) {
         setenv("XPUM_METRICS", enabled_metrics, 1);
         delete enabled_metrics;
-        enabled_metrics  = nullptr;
+        enabled_metrics = nullptr;
     }
 
     XPUM_LOG_INFO("XPUM: Init xpum library");

@@ -7,18 +7,18 @@
 #include "device_manager.h"
 
 #include <atomic>
-#include <iostream>
-#include <vector>
 #include <condition_variable>
+#include <iostream>
 #include <memory>
+#include <vector>
 
 #include "device/gpu/gpu_device_stub.h"
-#include "infrastructure/exception/ilegal_parameter_exception.h"
-#include "infrastructure/logger.h"
 #include "infrastructure/device_process.h"
+#include "infrastructure/exception/ilegal_parameter_exception.h"
+#include "infrastructure/handle_lock.h"
+#include "infrastructure/logger.h"
 #include "infrastructure/utility.h"
 #include "level_zero/zes_api.h"
-#include "infrastructure/handle_lock.h"
 
 namespace xpum {
 
@@ -135,11 +135,11 @@ MeasurementData DeviceManager::getRealtimeMeasurementData(
         throw(*exception);
     }
 
-    auto subdeviceAdditionalCurrentDataTypes = p_data->getSubdeviceAdditionalCurrentDataTypes(); 
+    auto subdeviceAdditionalCurrentDataTypes = p_data->getSubdeviceAdditionalCurrentDataTypes();
     if (subdeviceAdditionalCurrentDataTypes.find(type) != subdeviceAdditionalCurrentDataTypes.end()) {
         auto mData = std::make_shared<MeasurementData>();
         auto subdeviceAdditionalCurrentDatas = p_data->getSubdeviceAdditionalCurrentDatas();
-        for (auto & sData : subdeviceAdditionalCurrentDatas) {
+        for (auto& sData : subdeviceAdditionalCurrentDatas) {
             if (sData.first == UINT32_MAX)
                 mData->setCurrent(sData.second[type]);
             else
@@ -185,7 +185,7 @@ void DeviceManager::getDevicePowerLimits(const std::string& id,
     GPUDeviceStub::instance().getPowerLimits(getDeviceHandle(id), sustained_limit, burst_limit, peak_limit);
 }
 
-bool DeviceManager::setDevicePowerSustainedLimits(const std::string& id,int32_t tileId,
+bool DeviceManager::setDevicePowerSustainedLimits(const std::string& id, int32_t tileId,
                                                   const Power_sustained_limit_t& sustained_limit) {
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().setPowerSustainedLimits(getDeviceHandle(id), tileId, sustained_limit);
@@ -229,19 +229,19 @@ void DeviceManager::getFreqAvailableClocks(const std::string& id, uint32_t subde
     GPUDeviceStub::instance().getFreqAvailableClocks(getDeviceHandle(id), subdevice_id, clocks);
 }
 
-void DeviceManager::getDeviceProcessState(const std::string& id, std::vector<device_process>& processes){
+void DeviceManager::getDeviceProcessState(const std::string& id, std::vector<device_process>& processes) {
     std::unique_lock<std::mutex> lock(this->mutex);
     GPUDeviceStub::instance().getDeviceProcessState(getDeviceHandle(id), processes);
 }
 
-void DeviceManager::getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf){
+void DeviceManager::getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) {
     std::unique_lock<std::mutex> lock(this->mutex);
     GPUDeviceStub::instance().getPerformanceFactor(getDeviceHandle(id), pf);
 }
 
-bool DeviceManager::setPerformanceFactor(const std::string& id, PerformanceFactor &pf){
+bool DeviceManager::setPerformanceFactor(const std::string& id, PerformanceFactor& pf) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    return GPUDeviceStub::instance().setPerformanceFactor(getDeviceHandle(id), pf);    
+    return GPUDeviceStub::instance().setPerformanceFactor(getDeviceHandle(id), pf);
 }
 
 bool DeviceManager::setDeviceStandby(const std::string& id,
@@ -272,22 +272,22 @@ bool DeviceManager::resetDevice(const std::string& id, bool force) {
     return GPUDeviceStub::instance().resetDevice(getDeviceHandle(id), (ze_bool_t)force);
 }
 
-bool DeviceManager::getFabricPorts(const std::string& id, std::vector<port_info>& portInfo){
+bool DeviceManager::getFabricPorts(const std::string& id, std::vector<port_info>& portInfo) {
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().getFabricPorts(getDeviceHandle(id), portInfo);
 }
 
-bool DeviceManager::setFabricPorts(const std::string& id, const port_info_set& portInfoSet){
+bool DeviceManager::setFabricPorts(const std::string& id, const port_info_set& portInfoSet) {
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().setFabricPorts(getDeviceHandle(id), portInfoSet);
 }
 
-bool DeviceManager::getEccState(const std::string& id, MemoryEcc& ecc){
+bool DeviceManager::getEccState(const std::string& id, MemoryEcc& ecc) {
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().getEccState(getDeviceHandle(id), ecc);
 }
 
-bool DeviceManager::setEccState(const std::string& id, ecc_state_t& newState, MemoryEcc& ecc){
+bool DeviceManager::setEccState(const std::string& id, ecc_state_t& newState, MemoryEcc& ecc) {
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().setEccState(getDeviceHandle(id), newState, ecc);
 }

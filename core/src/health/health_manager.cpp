@@ -6,10 +6,11 @@
 
 #include "health_manager.h"
 
+#include <algorithm>
+
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/logger.h"
-#include <algorithm>
 
 namespace xpum {
 
@@ -17,8 +18,7 @@ HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
                              std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {
     XPUM_LOG_TRACE("HealthManager()");
-    p_health_device_to_tdps = { {"0x0205", 150}, {"0x0203", 150}, {"0x020A", 300}, 
-                                {"0x56C0", 150}, {"0x56C1", 37.5}, {"0x0BD5", 600}};
+    p_health_device_to_tdps = {{"0x0205", 150}, {"0x0203", 150}, {"0x020A", 300}, {"0x56C0", 150}, {"0x56C1", 37.5}, {"0x0BD5", 600}};
 }
 
 HealthManager::~HealthManager() {
@@ -35,7 +35,7 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
     if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-    
+
     std::unique_lock<std::mutex> lock(this->mutex);
     if (value == nullptr || *static_cast<int*>(value) == -1) {
         switch (key) {
@@ -136,9 +136,8 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
         }
         data->throttleThreshold = getThrottlePower(deviceName);
     } else {
-        if (type != xpum_health_type_t::XPUM_HEALTH_MEMORY 
-            && type != xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT)
-        return XPUM_RESULT_HEALTH_INVALID_TYPE;
+        if (type != xpum_health_type_t::XPUM_HEALTH_MEMORY && type != xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT)
+            return XPUM_RESULT_HEALTH_INVALID_TYPE;
     }
 
     bool global_default_limit = true;

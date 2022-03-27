@@ -13,22 +13,22 @@
 
 #include "device/device.h"
 #include "device/frequency.h"
+#include "device/memoryEcc.h"
+#include "device/pcie_manager.h"
+#include "device/performancefactor.h"
 #include "device/power.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
-#include "device/performancefactor.h"
-#include "device/memoryEcc.h"
 #include "health/health_data_type.h"
 #include "infrastructure/const.h"
-#include "infrastructure/measurement_data.h"
 #include "infrastructure/device_process.h"
+#include "infrastructure/engine_measurement_data.h"
+#include "infrastructure/fabric_measurement_data.h"
+#include "infrastructure/measurement_data.h"
 #include "level_zero/ze_api.h"
 #include "level_zero/zes_api.h"
 #include "level_zero/zet_api.h"
 #include "topology/xe_link.h"
-#include "device/pcie_manager.h"
-#include "infrastructure/engine_measurement_data.h"
-#include "infrastructure/fabric_measurement_data.h"
 
 namespace xpum {
 
@@ -85,7 +85,7 @@ class GPUDeviceStub {
     void getRasError(const zes_device_handle_t& device, uint64_t errorCategory[XPUM_RAS_ERROR_MAX]) noexcept;
 
     void getFrequencyThrottle(const zes_device_handle_t& device, Callback_t callback) noexcept;
-  
+
     void getPCIeReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getPCIeWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
@@ -101,7 +101,7 @@ class GPUDeviceStub {
     static void getPowerProps(const zes_device_handle_t& device, std::vector<Power>& powers);
 
     static void getPerformanceFactor(const zes_device_handle_t& device, std::vector<PerformanceFactor>& pf);
-    static bool setPerformanceFactor(const zes_device_handle_t& device, PerformanceFactor &pf);
+    static bool setPerformanceFactor(const zes_device_handle_t& device, PerformanceFactor& pf);
     bool getEccState(const zes_device_handle_t& device, MemoryEcc& ecc);
     bool setEccState(const zes_device_handle_t& device, ecc_state_t& newState, MemoryEcc& ecc);
 
@@ -112,10 +112,10 @@ class GPUDeviceStub {
                                Power_burst_limit_t& burst_limit,
                                Power_peak_limit_t& peak_limit);
     static void getAllPowerLimits(const zes_device_handle_t& device,
-                                   std::vector<uint32_t>& tileIds,
-                                   std::vector<Power_sustained_limit_t>& sustained_limits,
-                                   std::vector<Power_burst_limit_t>& burst_limits,
-                                   std::vector<Power_peak_limit_t>& peak_limit);
+                                  std::vector<uint32_t>& tileIds,
+                                  std::vector<Power_sustained_limit_t>& sustained_limits,
+                                  std::vector<Power_burst_limit_t>& burst_limits,
+                                  std::vector<Power_peak_limit_t>& peak_limit);
 
     static bool setPowerSustainedLimits(const zes_device_handle_t& device, int32_t tileId,
                                         const Power_sustained_limit_t& sustained_limit);
@@ -154,11 +154,11 @@ class GPUDeviceStub {
     static void getFreqAvailableClocks(const zes_device_handle_t& device, uint32_t subdevice_id, std::vector<double>& clocks);
 
     static std::shared_ptr<MeasurementData> toGetPower(const zes_device_handle_t& device);
-	
-	  static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
+
+    static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
 
     static bool getFabricPorts(const zes_device_handle_t& device, std::vector<port_info>& portInfo);
-    
+
     static bool setFabricPorts(const zes_device_handle_t& device, const port_info_set& portInfoSet);
 
     static std::shared_ptr<FabricMeasurementData> toGetFabricThroughput(const zes_device_handle_t& device);

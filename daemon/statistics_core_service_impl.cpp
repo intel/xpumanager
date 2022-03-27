@@ -4,10 +4,10 @@
  *  @file statistics_core_service_impl.cpp
  */
 
+#include "internal_api.h"
 #include "xpum_api.h"
 #include "xpum_core_service_impl.h"
 #include "xpum_structs.h"
-#include "internal_api.h"
 
 namespace xpum::daemon {
 
@@ -45,7 +45,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         // XPUM_STATS_GPU_REQUEST_FREQUENCY,
         XPUM_STATS_MEMORY_TEMPERATURE,
         XPUM_STATS_FREQUENCY_THROTTLE,
-        XPUM_STATS_PCIE_READ_THROUGHPUT,        
+        XPUM_STATS_PCIE_READ_THROUGHPUT,
         XPUM_STATS_PCIE_WRITE_THROUGHPUT,
         XPUM_STATS_PCIE_READ,
         XPUM_STATS_PCIE_WRITE,
@@ -307,7 +307,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getFabricStatistics(::grpc::ServerContext* context, const ::GetFabricStatsRequest* request, ::GetFabricStatsResponse* response){
+::grpc::Status XpumCoreServiceImpl::getFabricStatistics(::grpc::ServerContext* context, const ::GetFabricStatsRequest* request, ::GetFabricStatsResponse* response) {
     xpum_device_id_t deviceId = request->deviceid();
     uint64_t sessionId = request->sessionid();
     uint32_t count;
@@ -374,4 +374,4 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     return grpc::Status::OK;
 }
-}
+} // namespace xpum::daemon

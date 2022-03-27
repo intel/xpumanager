@@ -8,7 +8,7 @@
 
 namespace xpum {
 
-void MetricCollectionMeasurementData::addMetricCollectionMeasurementData(uint64_t handle, bool on_subdevice, uint32_t subdevice_id){
+void MetricCollectionMeasurementData::addMetricCollectionMeasurementData(uint64_t handle, bool on_subdevice, uint32_t subdevice_id) {
     (*p_collection_datas)[handle].on_subdevice = on_subdevice;
     (*p_collection_datas)[handle].subdevice_id = subdevice_id;
 }

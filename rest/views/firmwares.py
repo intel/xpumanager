@@ -7,7 +7,7 @@
 from flask import request, jsonify
 import stub
 from marshmallow import Schema, fields
-from marshmallow import Schema, fields, validate, ValidationError,validates_schema
+from marshmallow import Schema, fields, validate, ValidationError, validates_schema
 
 
 class FirmwareFlashJobOnAllDevicesSchema(Schema):
@@ -20,6 +20,7 @@ class FirmwareFlashJobOnAllDevicesSchema(Schema):
         metadata={"description": "Firmware name, options are: AMC"}
     )
 
+
 class FirmwareFlashJobOnSingleDeviceSchema(Schema):
     file = fields.Str(
         required=True,
@@ -29,6 +30,7 @@ class FirmwareFlashJobOnSingleDeviceSchema(Schema):
         validate=validate.OneOf(["GSC"]),
         metadata={"description": "Firmware name, options are: GSC"}
     )
+
 
 class RunFirmwareFlashJobResultSchema(Schema):
     result = fields.Str(metadata={"description": "The result of the query"})
@@ -58,7 +60,7 @@ def run_firmware_flash_all():
                 schema: RunFirmwareFlashJobResultSchema
             500:
                 description: Error
-    
+
     """
     req = request.get_json()
     try:
@@ -66,6 +68,7 @@ def run_firmware_flash_all():
     except ValidationError as err:
         return jsonify(err.messages), 400
     return runFirmwareFlash(1024)
+
 
 def run_firmware_flash_single(deviceId):
     """Run firmware flash on single device or single card
@@ -114,8 +117,8 @@ def runFirmwareFlash(deviceId):
     if pos == -1:
         return jsonify({'error': 'invalid file path, only full path supported'}), 400
     else:
-       filePath = filePath[pos:]    # trunc the file path
-    
+        filePath = filePath[pos:]    # trunc the file path
+
     fwType = req.get('firmware_name')
     if fwType == 'GSC' and deviceId == 1024:
         return jsonify({'error': 'upgrading GSC firmware on all devices is not supported'}), 400
@@ -129,12 +132,15 @@ def runFirmwareFlash(deviceId):
         return jsonify({'error': msg}), 400
     return jsonify(data)
 
+
 class FirmwareFlashResultQuerySingleDeviceSchema(Schema):
     firmware_name = fields.Str(
         required=True,
         validate=validate.OneOf(["GSC"]),
         metadata={"description": "Firmware name, options are: GSC"}
     )
+
+
 class FirmwareFlashResultQueryAllDevicesSchema(Schema):
     firmware_name = fields.Str(
         required=True,
@@ -142,9 +148,12 @@ class FirmwareFlashResultQueryAllDevicesSchema(Schema):
         metadata={"description": "Firmware name, options are: AMC"}
     )
 
+
 class FirmwareFlashResultSchema(Schema):
-    result = fields.Str(metadata={"description": "Firmware flash state, OK/FAILED/ONGOING"})
+    result = fields.Str(
+        metadata={"description": "Firmware flash state, OK/FAILED/ONGOING"})
     error = fields.Str(metadata={"description": "Error message"})
+
 
 def get_firmware_flash_result_all():
     """Get firmware flash state of all devices
@@ -178,6 +187,7 @@ def get_firmware_flash_result_all():
     except ValidationError as err:
         return jsonify(err.messages), 400
     return get_firmware_flash_result(1024)
+
 
 def get_firmware_flash_result_single(deviceId):
     """Get firmware flash state of single device
@@ -217,8 +227,9 @@ def get_firmware_flash_result_single(deviceId):
         return jsonify(err.messages), 400
     return get_firmware_flash_result(deviceId)
 
-def get_firmware_flash_result(deviceId):     
-    req = request.get_json()   
+
+def get_firmware_flash_result(deviceId):
+    req = request.get_json()
     fwType = req.get('firmware_name')
     if fwType == "GSC" and deviceId == 1024:
         return jsonify({'error': 'upgrading GSC firmware on all devices is not supported'})

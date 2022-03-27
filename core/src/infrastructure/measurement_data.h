@@ -44,14 +44,14 @@ class MeasurementData {
     ~MeasurementData() {
     }
 
-    MeasurementData() : avg(std::numeric_limits<uint64_t>::max()), 
-                        min(std::numeric_limits<uint64_t>::max()), 
-                        max(std::numeric_limits<uint64_t>::max()), 
-                        current(std::numeric_limits<uint64_t>::max()), 
-                        raw_data(std::numeric_limits<uint64_t>::max()), 
-                        scale(1), 
-                        bHasDataOnDevice(false), 
-                        raw_timestamp(0), 
+    MeasurementData() : avg(std::numeric_limits<uint64_t>::max()),
+                        min(std::numeric_limits<uint64_t>::max()),
+                        max(std::numeric_limits<uint64_t>::max()),
+                        current(std::numeric_limits<uint64_t>::max()),
+                        raw_data(std::numeric_limits<uint64_t>::max()),
+                        scale(1),
+                        bHasDataOnDevice(false),
+                        raw_timestamp(0),
                         timestamp(0) {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
@@ -160,7 +160,10 @@ class MeasurementData {
 
     uint64_t getRawdata() { return raw_data; }
 
-    void setRawData(uint64_t val) { bHasDataOnDevice = true; this->raw_data = val; }
+    void setRawData(uint64_t val) {
+        bHasDataOnDevice = true;
+        this->raw_data = val;
+    }
 
     void setSubdeviceRawData(uint32_t subdevice_id, uint64_t data);
 

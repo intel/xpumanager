@@ -61,12 +61,14 @@ namespace xpum {
 
 // MSVC_SUPPRESS_WARNING disables warning |n| for the remainder of the line and
 // for the next line of the source file.
-#define MSVC_SUPPRESS_WARNING(n) __pragma(warning(suppress:n))
+#define MSVC_SUPPRESS_WARNING(n) __pragma(warning(suppress \
+                                                  : n))
 
 // MSVC_PUSH_DISABLE_WARNING pushes |n| onto a stack of warnings to be disabled.
 // The warning remains disabled until popped by MSVC_POP_WARNING.
 #define MSVC_PUSH_DISABLE_WARNING(n) __pragma(warning(push)) \
-                                     __pragma(warning(disable:n))
+    __pragma(warning(disable                                 \
+                     : n))
 
 // MSVC_PUSH_WARNING_LEVEL pushes |n| as the global warning level.  The level
 // remains in effect until popped by MSVC_POP_WARNING().  Use 0 to disable all
@@ -79,7 +81,7 @@ namespace xpum {
 #define MSVC_DISABLE_OPTIMIZE() __pragma(optimize("", off))
 #define MSVC_ENABLE_OPTIMIZE() __pragma(optimize("", on))
 
-#else  // Not MSVC
+#else // Not MSVC
 
 #define _Printf_format_string_
 #define MSVC_SUPPRESS_WARNING(n)
@@ -89,7 +91,7 @@ namespace xpum {
 #define MSVC_DISABLE_OPTIMIZE()
 #define MSVC_ENABLE_OPTIMIZE()
 
-#endif  // COMPILER_MSVC
+#endif // COMPILER_MSVC
 
 // TODO(crbug.com/752837): Remove this, it's a no-op.
 #define NON_EXPORTED_BASE(code) code
@@ -204,7 +206,7 @@ namespace xpum {
 // Mark a memory region fully initialized.
 // Use this to annotate code that deliberately reads uninitialized data, for
 // example a GC scavenging root set pointers from the stack.
-#define MSAN_UNPOISON(p, size)  __msan_unpoison(p, size)
+#define MSAN_UNPOISON(p, size) __msan_unpoison(p, size)
 
 // Check a memory region for initializedness, as if it was being used here.
 // If any bits are uninitialized, crash with an MSan report.
@@ -212,10 +214,10 @@ namespace xpum {
 // passing data to another process via shared memory.
 #define MSAN_CHECK_MEM_IS_INITIALIZED(p, size) \
     __msan_check_mem_is_initialized(p, size)
-#else  // MEMORY_SANITIZER
+#else // MEMORY_SANITIZER
 #define MSAN_UNPOISON(p, size)
 #define MSAN_CHECK_MEM_IS_INITIALIZED(p, size)
-#endif  // MEMORY_SANITIZER
+#endif // MEMORY_SANITIZER
 
 // DISABLE_CFI_PERF -- Disable Control Flow Integrity for perf reasons.
 #if !defined(DISABLE_CFI_PERF)
@@ -230,10 +232,10 @@ namespace xpum {
 #if !defined(CDECL)
 #if defined(OS_WIN)
 #define CDECL __cdecl
-#else  // defined(OS_WIN)
+#else // defined(OS_WIN)
 #define CDECL
-#endif  // defined(OS_WIN)
-#endif  // !defined(CDECL)
+#endif // defined(OS_WIN)
+#endif // !defined(CDECL)
 
 // Macro for hinting that an expression is likely to be false.
 #if !defined(UNLIKELY)
@@ -241,16 +243,16 @@ namespace xpum {
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
 #define UNLIKELY(x) (x)
-#endif  // defined(COMPILER_GCC)
-#endif  // !defined(UNLIKELY)
+#endif // defined(COMPILER_GCC)
+#endif // !defined(UNLIKELY)
 
 #if !defined(LIKELY)
 #if defined(COMPILER_GCC)
 #define LIKELY(x) __builtin_expect(!!(x), 1)
 #else
 #define LIKELY(x) (x)
-#endif  // defined(COMPILER_GCC)
-#endif  // !defined(LIKELY)
+#endif // defined(COMPILER_GCC)
+#endif // !defined(LIKELY)
 
 // Compiler feature-detection.
 // clang.llvm.org/docs/LanguageExtensions.html#has-feature-and-has-extension
@@ -260,5 +262,5 @@ namespace xpum {
 #define HAS_FEATURE(FEATURE) 0
 #endif
 
-#endif  // BASE_COMPILER_SPECIFIC_H_
+#endif // BASE_COMPILER_SPECIFIC_H_
 }

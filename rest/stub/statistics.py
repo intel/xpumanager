@@ -24,8 +24,10 @@ def getStatistics(device_id, session_id=0, get_accumulated=False):
         resp.begin/1e3, datetime.timezone.utc)
     endTimestamp = datetime.datetime.fromtimestamp(
         resp.end/1e3, datetime.timezone.utc)
-    data['begin'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
-    data['end'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+    data['begin'] = beginTimestamp.isoformat(
+        timespec='milliseconds').replace('+00:00', 'Z')
+    data['end'] = endTimestamp.isoformat(
+        timespec='milliseconds').replace('+00:00', 'Z')
 
     deviceLevelStatsDataList = []
     tileLevelStatsDataList = []
@@ -123,8 +125,10 @@ def getStatisticsByGroup(group_id, session_id=0, get_accumulated=False):
     for deviceId in deviceMap:
         data = dict()
         data['device_id'] = deviceId
-        data['begin'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
-        data['end'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        data['begin'] = beginTimestamp.isoformat(
+            timespec='milliseconds').replace('+00:00', 'Z')
+        data['end'] = endTimestamp.isoformat(
+            timespec='milliseconds').replace('+00:00', 'Z')
         data["device_level"] = deviceMap[deviceId]["device_level"]
         data["tile_level"] = deviceMap[deviceId]["tile_level"]
         datas.append(data)
@@ -193,7 +197,7 @@ def getEngineStatistics(device_id, session_id=0):
 
     data["engine_util"] = engine_stats
     return 0, "OK", data
-    
+
 
 @exit_on_disconnect
 def getFabricStatistics(device_id, session_id=0, get_accumulated=False):
@@ -231,7 +235,7 @@ def getFabricStatistics(device_id, session_id=0, get_accumulated=False):
             tmp["dst_tile_id"] = stats_info.tileId
         else:
             continue
-        
+
         tmp["type"] = stats_info.type
         scale = stats_info.scale
         if scale == 1:
@@ -266,8 +270,10 @@ def getStatisticsNotForPrometheus(device_id, session_id=0, get_accumulated=False
         resp.begin/1e3, datetime.timezone.utc)
     endTimestamp = datetime.datetime.fromtimestamp(
         resp.end/1e3, datetime.timezone.utc)
-    data['begin'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
-    data['end'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+    data['begin'] = beginTimestamp.isoformat(
+        timespec='milliseconds').replace('+00:00', 'Z')
+    data['end'] = endTimestamp.isoformat(
+        timespec='milliseconds').replace('+00:00', 'Z')
 
     deviceLevelStatsDataList = []
     tileLevelStatsDataList = []
@@ -364,8 +370,10 @@ def getStatisticsByGroupNotForPrometheus(group_id, session_id=0, get_accumulated
     for deviceId in deviceMap:
         data = dict()
         data['device_id'] = deviceId
-        data['begin'] = beginTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
-        data['end'] = endTimestamp.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        data['begin'] = beginTimestamp.isoformat(
+            timespec='milliseconds').replace('+00:00', 'Z')
+        data['end'] = endTimestamp.isoformat(
+            timespec='milliseconds').replace('+00:00', 'Z')
         data["device_level"] = deviceMap[deviceId]["device_level"]
         data["tile_level"] = deviceMap[deviceId]["tile_level"]
         datas.append(data)

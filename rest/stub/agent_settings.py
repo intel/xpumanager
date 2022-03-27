@@ -35,12 +35,13 @@ def setAgentConfig(configList):
         vt = entry.value.WhichOneof("value")
         if vt == "intValue":
             value = entry.value.intValue
-        elif vt== "floatValue":
+        elif vt == "floatValue":
             value = entry.value.floatValue
         elif vt == "stringValue":
             value = entry.value.stringValue
         configEntries.append(dict(name=entry.key, value=value))
     return 0, "OK", configEntries
+
 
 def getAllAgentConfig():
     resp = stub.getAgentConfig(empty_pb2.Empty())
@@ -51,7 +52,7 @@ def getAllAgentConfig():
         vt = entry.value.WhichOneof("value")
         if vt == "intValue":
             value = entry.value.intValue
-        elif vt== "floatValue":
+        elif vt == "floatValue":
             value = entry.value.floatValue
         elif vt == "stringValue":
             value = entry.value.stringValue

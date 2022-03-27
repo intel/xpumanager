@@ -33,7 +33,6 @@ void DataHandler::close() {
 }
 
 void DataHandler::preHandleData(std::shared_ptr<SharedData>& p_data) noexcept {
-
     // handle data in the caller thread directly, don't put any time consuming task here
 
     std::unique_lock<std::mutex> lock(this->mutex);

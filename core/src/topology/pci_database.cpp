@@ -300,9 +300,9 @@ void PciDatabase::parse_device_config(std::ifstream &fstream) {
         if (start < len) {
             device_id = std::stoi(info.substr(start), &pos, 16);
             start += pos + 1;
-            if (start < len) {                
+            if (start < len) {
                 PcieDevice device = {DV_UNKNOW, false, vendor_id, device_id, 0, 0};
-                
+
                 if (info.at(start) == '0') {
                     int ret = devices.erase(std::make_pair(vendor_id, device_id));
                     XPUM_LOG_TRACE("PciDatabase::parse_switch_config()- remove d_id:v_id = [{}:{}] count:{}", vendor_id, device_id, ret);
@@ -313,29 +313,29 @@ void PciDatabase::parse_device_config(std::ifstream &fstream) {
                     start++;
                     device.type = DV_GRAPHIC;
 
-                    while(start<len){
-                        if(is_blank_space(info.at(start))){
+                    while (start < len) {
+                        if (is_blank_space(info.at(start))) {
                             start++;
                         } else {
                             break;
-                        }                            
+                        }
                     }
 
-                    if(info.at(start) != '0'){
+                    if (info.at(start) != '0') {
                         device.grouped = true;
-                    } 
+                    }
                     start++;
-                    while(start<len){
-                        if(is_blank_space(info.at(start))){
+                    while (start < len) {
+                        if (is_blank_space(info.at(start))) {
                             start++;
                         } else {
                             break;
-                        }  
+                        }
                     }
-                    if(start<len){
+                    if (start < len) {
                         device.device_name = info.substr(start);
                         XPUM_LOG_TRACE("PciDatabase::parse_switch_config()- device_name:{}", device.device_name);
-                    }                                           
+                    }
                     devices[std::make_pair(vendor_id, device_id)] = device;
                 } else {
                     XPUM_LOG_DEBUG("PciDatabase::parse_switch_config() error- unknow value.");

@@ -29,9 +29,9 @@ class ComletDiscovery : public ComletBase {
 
     virtual void getTableResult(std::ostream &out) override;
 
-	inline bool isDeviceList() {
-		return opts->deviceId < 0;
-	}
+    inline bool isDeviceList() {
+        return opts->deviceId < 0;
+    }
 
    private:
     std::unique_ptr<ComletDiscoveryOptions> opts;

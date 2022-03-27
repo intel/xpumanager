@@ -8,8 +8,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "core_stub.h"
 #include "cli_table.h"
+#include "core_stub.h"
 
 namespace xpum::cli {
 
@@ -133,7 +133,8 @@ void ComletHealth::setupOptions() {
     addFlag("-l,--list", this->opts->listAll, "Display health info for all devices");
     addOption("-d,--device", this->opts->deviceId, "The device ID");
     addOption("-g,--group", this->opts->groupId, "The group ID");
-    addOption("-c,--component", this->opts->componentType, "Component types\n\
+    addOption("-c,--component", this->opts->componentType,
+              "Component types\n\
       1. GPU Core Temperature\n\
       2. GPU Memory Temperature\n\
       3. GPU Power\n\
@@ -158,14 +159,13 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         (*json)["error"] = "group not found";
         return json;
     }
-    
+
     if (this->opts->componentType != INT_MIN && (this->opts->componentType < 1 || this->opts->componentType > 5)) {
         (*json)["error"] = "invalid component";
         return json;
     }
 
-    if ((this->opts->threshold != INT_MIN && this->opts->threshold < -1)
-        || (this->opts->threshold == 0)) {
+    if ((this->opts->threshold != INT_MIN && this->opts->threshold < -1) || (this->opts->threshold == 0)) {
         (*json)["error"] = "invalid threshold";
         return json;
     }
@@ -187,7 +187,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
             json = this->coreStub->getHealth(this->opts->deviceId, this->opts->componentType);
             return json;
         } else {
-           if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
+            if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
                 json = this->coreStub->getHealth(this->opts->deviceId, this->opts->componentType);
             else
                 json = this->coreStub->getHealth(this->opts->deviceId, -1);
@@ -212,7 +212,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
             json = this->coreStub->getHealthByGroup(this->opts->groupId, this->opts->componentType);
             return json;
         } else {
-           if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
+            if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
                 json = this->coreStub->getHealthByGroup(this->opts->groupId, this->opts->componentType);
             else
                 json = this->coreStub->getHealthByGroup(this->opts->groupId, -1);
@@ -223,7 +223,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
     return json;
 }
 
-static void showHealth(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig& healthConfig, const bool cont = true) {
+static void showHealth(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig &healthConfig, const bool cont = true) {
     CharTable table(healthConfig, *json, cont);
     table.show(out);
 }
@@ -237,7 +237,7 @@ static void showHealthAllComps(std::ostream &out, std::shared_ptr<nlohmann::json
     showHealth(out, json, ComletConfigHealthFabricPort);
 }
 
-static void showHealthComp(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig& healthConfig, const bool cont = false) {
+static void showHealthComp(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig &healthConfig, const bool cont = false) {
     showHealth(out, json, ComletConfigHealthDeviceId, cont);
     showHealth(out, json, healthConfig);
 }
@@ -251,7 +251,7 @@ static void showHealthMultiDevicesAllComps(std::ostream &out, std::shared_ptr<nl
     }
 }
 
-static void showHealthMultiDeviceComp(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig& healthConfig) {
+static void showHealthMultiDeviceComp(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig &healthConfig) {
     auto devices = (*json)["device_list"].get<std::vector<nlohmann::json>>();
     bool cont = false;
     for (auto device : devices) {
@@ -268,7 +268,7 @@ void ComletHealth::getTableResult(std::ostream &out) {
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
     *json = *res;
- 
+
     const int ct = getCompType();
     if (this->opts->listAll) {
         showHealthMultiDevicesAllComps(out, json);
@@ -277,21 +277,21 @@ void ComletHealth::getTableResult(std::ostream &out) {
     if (this->opts->deviceId >= 0) {
         if (ct >= 1 && ct <= 5) {
             switch (ct) {
-            case 1:
-                showHealthComp(out, json, ComletConfigHealthCoreTemp);
-                break;
-            case 2:
-                showHealthComp(out, json, ComletConfigHealthMemTemp);
-                break;
-            case 3:
-                showHealthComp(out, json, ComletConfigHealthPower);
-                break;
-            case 4:
-                showHealthComp(out, json, ComletConfigHealthMemory);
-                break;
-            case 5:
-                showHealthComp(out, json, ComletConfigHealthFabricPort);
-                break;
+                case 1:
+                    showHealthComp(out, json, ComletConfigHealthCoreTemp);
+                    break;
+                case 2:
+                    showHealthComp(out, json, ComletConfigHealthMemTemp);
+                    break;
+                case 3:
+                    showHealthComp(out, json, ComletConfigHealthPower);
+                    break;
+                case 4:
+                    showHealthComp(out, json, ComletConfigHealthMemory);
+                    break;
+                case 5:
+                    showHealthComp(out, json, ComletConfigHealthFabricPort);
+                    break;
             }
         } else {
             showHealthAllComps(out, json);
@@ -301,27 +301,26 @@ void ComletHealth::getTableResult(std::ostream &out) {
     if (this->opts->groupId > 0) {
         if (ct >= 1 && ct <= 5) {
             switch (ct) {
-            case 1:
-                showHealthMultiDeviceComp(out, json, ComletConfigHealthCoreTemp);
-                break;
-            case 2:
-                showHealthMultiDeviceComp(out, json, ComletConfigHealthMemTemp);
-                break;
-            case 3:
-                showHealthMultiDeviceComp(out, json, ComletConfigHealthPower);
-                break;
-            case 4:
-                showHealthMultiDeviceComp(out, json, ComletConfigHealthMemory);
-                break;
-            case 5:
-                showHealthMultiDeviceComp(out, json, ComletConfigHealthFabricPort);
-                break;
+                case 1:
+                    showHealthMultiDeviceComp(out, json, ComletConfigHealthCoreTemp);
+                    break;
+                case 2:
+                    showHealthMultiDeviceComp(out, json, ComletConfigHealthMemTemp);
+                    break;
+                case 3:
+                    showHealthMultiDeviceComp(out, json, ComletConfigHealthPower);
+                    break;
+                case 4:
+                    showHealthMultiDeviceComp(out, json, ComletConfigHealthMemory);
+                    break;
+                case 5:
+                    showHealthMultiDeviceComp(out, json, ComletConfigHealthFabricPort);
+                    break;
             }
         } else {
             showHealthMultiDevicesAllComps(out, json);
         }
         return;
     }
-
 }
 } // end namespace xpum::cli

@@ -12,7 +12,7 @@
 #include "control/device_manager_interface.h"
 
 namespace xpum {
-     
+
 class GroupUnit : public std::enable_shared_from_this<GroupUnit> {
    public:
     GroupUnit(std::string groupname, xpum_group_id_t groupId);

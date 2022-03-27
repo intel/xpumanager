@@ -27,7 +27,7 @@ struct FabricRawData_t {
 };
 
 class FabricMeasurementData : public MetricCollectionMeasurementData {
-public:
+   public:
     FabricMeasurementData() {
         p_fabric_datas = std::make_shared<std::map<uint64_t, FabricRawData_t>>();
     }
@@ -38,7 +38,8 @@ public:
     const std::shared_ptr<std::map<uint64_t, FabricRawData_t>> getFabricRawDatas() {
         return p_fabric_datas;
     }
-private:
+
+   private:
     std::shared_ptr<std::map<uint64_t, FabricRawData_t>> p_fabric_datas;
 };
 

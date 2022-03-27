@@ -6,19 +6,19 @@
 
 #pragma once
 
+#include <climits>
 #include <nlohmann/json.hpp>
 #include <string>
-#include <climits>
 
 #include "comlet_base.h"
 
 namespace xpum::cli {
-    struct FlashFirmwareOptions {
-        int deviceId;
-        std::string firmwareType;
-        std::string firmwarePath;
+struct FlashFirmwareOptions {
+    int deviceId;
+    std::string firmwareType;
+    std::string firmwarePath;
 
-        /*
+    /*
         FlashFirmwareOptions( unsigned int id, const std::string& type, const std::string& path )
             : deviceId( id ), firmwarePath( path ) {
             if ( type == "GSC" ) {
@@ -29,21 +29,21 @@ namespace xpum::cli {
             }
         }
         */
-    };
+};
 
-    class ComletFirmware : public ComletBase {
-        public:
-            ComletFirmware();
-            virtual ~ComletFirmware();
+class ComletFirmware : public ComletBase {
+   public:
+    ComletFirmware();
+    virtual ~ComletFirmware();
 
-            virtual void setupOptions() override;
-            virtual std::unique_ptr<nlohmann::json> run() override;
-            virtual void getJsonResult(std::ostream &out, bool raw = false) override;
-            virtual void getTableResult(std::ostream &out) override;
+    virtual void setupOptions() override;
+    virtual std::unique_ptr<nlohmann::json> run() override;
+    virtual void getJsonResult(std::ostream &out, bool raw = false) override;
+    virtual void getTableResult(std::ostream &out) override;
 
-            nlohmann::json validateArguments();
+    nlohmann::json validateArguments();
 
-           private:
-            std::unique_ptr<FlashFirmwareOptions> opts;
-    };
-}
+   private:
+    std::unique_ptr<FlashFirmwareOptions> opts;
+};
+} // namespace xpum::cli

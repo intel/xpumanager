@@ -11,16 +11,16 @@
 
 #include "device/device.h"
 #include "device/frequency.h"
+#include "device/memoryEcc.h"
+#include "device/performancefactor.h"
 #include "device/power.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
-#include "device/memoryEcc.h"
-#include "device/performancefactor.h"
 #include "infrastructure/device_capability.h"
+#include "infrastructure/device_process.h"
 #include "infrastructure/init_close_interface.h"
 #include "infrastructure/measurement_data.h"
 #include "infrastructure/measurement_type.h"
-#include "infrastructure/device_process.h"
 #include "topology/xe_link.h"
 
 namespace xpum {
@@ -90,7 +90,7 @@ class DeviceManagerInterface : public InitCloseInterface {
 
     virtual void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) = 0;
 
-    virtual bool setPerformanceFactor(const std::string& id, PerformanceFactor &pf) = 0;
+    virtual bool setPerformanceFactor(const std::string& id, PerformanceFactor& pf) = 0;
 
     virtual bool getFabricPorts(const std::string& id, std::vector<port_info>& portInfo) = 0;
 

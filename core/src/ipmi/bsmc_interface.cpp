@@ -12,10 +12,10 @@
 #endif
 
 #include <errno.h>
-#include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "tool.h"
@@ -24,16 +24,15 @@ namespace xpum {
 bsmc_hal_t *bsmc_hal;
 extern bsmc_hal_t ipmi_hal;
 
-int bsmc_interface_init(bsmc_interface_t iface)
-{
-	switch (iface) {
-	case IPMI:
-		bsmc_hal = &ipmi_hal;
-		break;
+int bsmc_interface_init(bsmc_interface_t iface) {
+    switch (iface) {
+        case IPMI:
+            bsmc_hal = &ipmi_hal;
+            break;
 
-	default:
-		bsmc_hal = &ipmi_hal;
-	}
-	return bsmc_hal->init();
+        default:
+            bsmc_hal = &ipmi_hal;
+    }
+    return bsmc_hal->init();
 }
-}
+} // namespace xpum

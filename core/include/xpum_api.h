@@ -428,7 +428,7 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_process_t dataArray[], uint32_t *count);
+xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_process_t dataArray[], uint32_t *count);
 
 /**
  * @brief Get the performance factor of the device
@@ -441,7 +441,7 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_performancefactor_t dataArray[], uint32_t *count);
+xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t dataArray[], uint32_t *count);
 
 /**
  * @brief Set the performance factor of the device
@@ -736,7 +736,6 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
 
 /** @} */ // Closing for STATISTICS_API
 
-
 /**************************************************************************/
 /** @defgroup DUMP_RAW_DATA_API Dump metrics raw data
  * These APIs are for collecting metrics raw data
@@ -786,7 +785,6 @@ xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_
  *      - \ref XPUM_GENERIC_ERROR if other error happens
  */
 xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int *count);
-
 
 /** @} */ // Closing for DUMP_RAW_DATA_API
 

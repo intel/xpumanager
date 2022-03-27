@@ -23,6 +23,7 @@ healthStatusEnumToString = {
     core_pb2.HEALTH_STATUS_CRITICAL: "Critical"
 }
 
+
 def appendHealthThreshold(healthData, healthType, throttleValue, shudownValue):
     if healthType == 0:
         healthData['throttle_threshold'] = throttleValue
@@ -33,9 +34,11 @@ def appendHealthThreshold(healthData, healthType, throttleValue, shudownValue):
     elif healthType == 2:
         healthData['throttle_threshold'] = throttleValue
 
+
 def getHealth(deviceId, healthType):
     types = []
-    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory", "xeLinkPort"]
+    healthTypes = ["coreTemperature", "memoryTemperature",
+                   "power", "memory", "xeLinkPort"]
     if healthType == "All":
         types = [0, 1, 2, 3, 4]
     else:
@@ -53,7 +56,8 @@ def getHealth(deviceId, healthType):
         data[key]['status'] = healthStatusEnumToString[resp.statusType]
         data[key]['description'] = resp.description
         if t == 0 or t == 1 or t == 2:
-            appendHealthThreshold(data[key], t, resp.throttleThreshold, resp.shutdownThreshold)
+            appendHealthThreshold(
+                data[key], t, resp.throttleThreshold, resp.shutdownThreshold)
             resp = stub.getHealthConfig(
                 core_pb2.HealthConfigRequest(deviceId=deviceId, configType=t))
             if len(resp.errorMsg) != 0:
@@ -65,7 +69,8 @@ def getHealth(deviceId, healthType):
 
 def getHealthByGroup(groupId, healthType):
     types = []
-    healthTypes = ["coreTemperature", "memoryTemperature", "power", "memory", "xeLinkPort"]
+    healthTypes = ["coreTemperature", "memoryTemperature",
+                   "power", "memory", "xeLinkPort"]
     if healthType == "All":
         types = [0, 1, 2, 3, 4]
     else:
@@ -91,7 +96,8 @@ def getHealthByGroup(groupId, healthType):
                     data[key]['status'] = healthStatusEnumToString[healthData.statusType]
                     data[key]['description'] = healthData.description
                     if t == 0 or t == 1 or t == 2:
-                        appendHealthThreshold(data[key], t, healthData.throttleThreshold, healthData.shutdownThreshold)
+                        appendHealthThreshold(
+                            data[key], t, healthData.throttleThreshold, healthData.shutdownThreshold)
                         resp = stub.getHealthConfig(core_pb2.HealthConfigRequest(
                             deviceId=data['device_id'], configType=t))
                         if len(resp.errorMsg) != 0:
@@ -109,10 +115,12 @@ def setHealthConfig(deviceId, healthType, threshold):
     resp = stub.setHealthConfig(core_pb2.HealthConfigRequest(
         deviceId=deviceId, configType=t, threshold=threshold))
     if len(resp.errorMsg) != 0:
-        logger.audit("Health", "Failed", "Failed to set health threshold on device {} type {} threshold {}", deviceId, healthType, threshold)
+        logger.audit("Health", "Failed", "Failed to set health threshold on device {} type {} threshold {}",
+                     deviceId, healthType, threshold)
         return 1, resp.errorMsg, None
 
-    logger.audit("Health", "Succeed", "Succeed to set health threshold on device {} type {} threshold {}", deviceId, healthType, threshold)
+    logger.audit("Health", "Succeed", "Succeed to set health threshold on device {} type {} threshold {}",
+                 deviceId, healthType, threshold)
     return 0, "OK", {"result": "OK"}
 
 
@@ -124,8 +132,10 @@ def setHealthConfigByGroup(groupId, healthType, threshold):
     resp = stub.setHealthConfigByGroup(core_pb2.HealthConfigByGroupRequest(
         groupId=groupId, configType=t, threshold=threshold))
     if len(resp.errorMsg) != 0:
-        logger.audit("Health", "Failed", "Failed to set health threshold on group {} type {} threshold {}", groupId, healthType, threshold)
+        logger.audit("Health", "Failed", "Failed to set health threshold on group {} type {} threshold {}",
+                     groupId, healthType, threshold)
         return 1, resp.errorMsg, None
-    
-    logger.audit("Health", "Succeed", "Succeed to set health threshold on group {} type {} threshold {}", groupId, healthType, threshold)
+
+    logger.audit("Health", "Succeed", "Succeed to set health threshold on group {} type {} threshold {}",
+                 groupId, healthType, threshold)
     return 0, "OK", {"result": "OK"}

@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <climits>
 #include <nlohmann/json.hpp>
 #include <string>
-#include <climits>
 
 #include "comlet_base.h"
 
@@ -31,7 +31,7 @@ class ComletHealth : public ComletBase {
 
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
-    
+
     virtual void getTableResult(std::ostream &out) override;
 
     inline const bool isSingleDeviceOperation() const {

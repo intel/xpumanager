@@ -12,7 +12,6 @@
 #include "../include/xpum_structs.h"
 #include "device/device.h"
 
-
 namespace xpum {
 
 long long Utility::getCurrentMillisecond() {
@@ -52,9 +51,9 @@ std::string Utility::getTimeString(long long milliseconds) {
     struct tm* p_tm = std::localtime(&time);
     char date[128] = {0};
     snprintf(date, 128, "%d-%02d-%02d %02d:%02d:%02d.%03d %s", p_tm->tm_year + 1900,
-            (int)p_tm->tm_mon + 1, (int)p_tm->tm_mday, (int)p_tm->tm_hour,
-            (int)p_tm->tm_min, (int)p_tm->tm_sec, (int)(milliseconds % 1000),
-            p_tm->tm_zone);
+             (int)p_tm->tm_mon + 1, (int)p_tm->tm_mday, (int)p_tm->tm_hour,
+             (int)p_tm->tm_min, (int)p_tm->tm_sec, (int)(milliseconds % 1000),
+             p_tm->tm_zone);
     return std::string(date);
 }
 
@@ -220,10 +219,10 @@ bool Utility::isCounterMetric(MeasurementType type) {
            type == MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE ||
            type == MeasurementType::METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE ||
            type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE ||
-           type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE||
+           type == MeasurementType::METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE ||
            type == MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE ||
-           type == MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE||
-           type == MeasurementType::METRIC_PCIE_READ||
+           type == MeasurementType::METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE ||
+           type == MeasurementType::METRIC_PCIE_READ ||
            type == MeasurementType::METRIC_PCIE_WRITE;
 }
 
@@ -518,69 +517,64 @@ std::string Utility::getXpumStatsTypeString(MeasurementType type) {
 }
 
 xpum_engine_type_t Utility::toXPUMEngineType(zes_engine_group_t type) {
-    switch (type)
-    {
-    case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
-        return XPUM_ENGINE_TYPE_COMPUTE;
-    case ZES_ENGINE_GROUP_RENDER_SINGLE:
-        return XPUM_ENGINE_TYPE_RENDER;
-    case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
-        return XPUM_ENGINE_TYPE_DECODE;
-    case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
-        return XPUM_ENGINE_TYPE_ENCODE;
-    case ZES_ENGINE_GROUP_COPY_SINGLE:
-        return XPUM_ENGINE_TYPE_COPY;
-    case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
-        return XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT;
-    case ZES_ENGINE_GROUP_3D_SINGLE:
-        return XPUM_ENGINE_TYPE_3D;    
-    default:
-        return XPUM_ENGINE_TYPE_UNKNOWN;
+    switch (type) {
+        case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
+            return XPUM_ENGINE_TYPE_COMPUTE;
+        case ZES_ENGINE_GROUP_RENDER_SINGLE:
+            return XPUM_ENGINE_TYPE_RENDER;
+        case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
+            return XPUM_ENGINE_TYPE_DECODE;
+        case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
+            return XPUM_ENGINE_TYPE_ENCODE;
+        case ZES_ENGINE_GROUP_COPY_SINGLE:
+            return XPUM_ENGINE_TYPE_COPY;
+        case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
+            return XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT;
+        case ZES_ENGINE_GROUP_3D_SINGLE:
+            return XPUM_ENGINE_TYPE_3D;
+        default:
+            return XPUM_ENGINE_TYPE_UNKNOWN;
     }
 }
 
 zes_engine_group_t Utility::toZESEngineType(xpum_engine_type_t type) {
-    switch (type)
-    {
-    case XPUM_ENGINE_TYPE_COMPUTE:
-        return ZES_ENGINE_GROUP_COMPUTE_SINGLE;
-    case XPUM_ENGINE_TYPE_RENDER:
-        return ZES_ENGINE_GROUP_RENDER_SINGLE;
-    case XPUM_ENGINE_TYPE_DECODE:
-        return ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE;
-    case XPUM_ENGINE_TYPE_ENCODE:
-        return ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE;
-    case XPUM_ENGINE_TYPE_COPY:
-        return ZES_ENGINE_GROUP_COPY_SINGLE;
-    case XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT:
-        return ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE;
-    case XPUM_ENGINE_TYPE_3D:
-        return ZES_ENGINE_GROUP_3D_SINGLE;    
-    default:
-        return ZES_ENGINE_GROUP_FORCE_UINT32;
+    switch (type) {
+        case XPUM_ENGINE_TYPE_COMPUTE:
+            return ZES_ENGINE_GROUP_COMPUTE_SINGLE;
+        case XPUM_ENGINE_TYPE_RENDER:
+            return ZES_ENGINE_GROUP_RENDER_SINGLE;
+        case XPUM_ENGINE_TYPE_DECODE:
+            return ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE;
+        case XPUM_ENGINE_TYPE_ENCODE:
+            return ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE;
+        case XPUM_ENGINE_TYPE_COPY:
+            return ZES_ENGINE_GROUP_COPY_SINGLE;
+        case XPUM_ENGINE_TYPE_MEDIA_ENHANCEMENT:
+            return ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE;
+        case XPUM_ENGINE_TYPE_3D:
+            return ZES_ENGINE_GROUP_3D_SINGLE;
+        default:
+            return ZES_ENGINE_GROUP_FORCE_UINT32;
     }
 }
 
 xpum_fabric_throughput_type_t Utility::toXPUMFabricThroughputType(FabricThroughputType type) {
-    switch (type)
-    {
-    case RECEIVED:
-        return XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED;
-    case TRANSMITTED:
-        return XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED;
-    case RECEIVED_COUNTER:
-        return XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED_COUNTER;
-    case TRANSMITTED_COUNTER:
-        return XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED_COUNTER;
-    default:
-        return XPUM_FABRIC_THROUGHPUT_TYPE_MAX;
+    switch (type) {
+        case RECEIVED:
+            return XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED;
+        case TRANSMITTED:
+            return XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED;
+        case RECEIVED_COUNTER:
+            return XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED_COUNTER;
+        case TRANSMITTED_COUNTER:
+            return XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED_COUNTER;
+        default:
+            return XPUM_FABRIC_THROUGHPUT_TYPE_MAX;
     }
 }
 
 bool Utility::isATSPlatform(std::string device_name) {
-    return device_name == "Intel(R) Graphics [0x020a]"
-    || device_name == "Intel(R) Graphics [0x56c0]"
-    || device_name == "Intel(R) Graphics [0x56c1]";
+    return device_name == "Intel(R) Graphics [0x020a]" || device_name == "Intel(R) Graphics [0x56c0]" || device_name == "Intel(R) Graphics [0x56c1]";
 }
 
 } // end namespace xpum

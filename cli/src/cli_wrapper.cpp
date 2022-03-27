@@ -12,9 +12,9 @@
 
 #include "CLI/App.hpp"
 #include "comlet_base.h"
+#include "comlet_version.h"
 #include "core_stub.h"
 #include "help_formatter.h"
-#include "comlet_version.h"
 
 namespace xpum::cli {
 
@@ -22,7 +22,7 @@ CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
 
     cliApp.formatter(std::make_shared<HelpFormatter>());
-    
+
     // cliApp.add_flag("--raw", this->opts->raw, "Print json output in raw format");
     cliApp.add_flag("-v, --version", this->opts->version, "Display version information and exit.");
 
@@ -60,7 +60,7 @@ void CLIWrapper::printResult(std::ostream &out) {
                 out << comlet->subCLIApp->help();
                 return;
             }
-            if(this->opts->json){
+            if (this->opts->json) {
                 comlet->getJsonResult(out, this->opts->raw);
                 return;
             }

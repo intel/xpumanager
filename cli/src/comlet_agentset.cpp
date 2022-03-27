@@ -8,8 +8,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "core_stub.h"
 #include "cli_table.h"
+#include "core_stub.h"
 
 namespace xpum::cli {
 

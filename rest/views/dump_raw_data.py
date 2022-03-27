@@ -16,6 +16,7 @@ def is_unique(values):
     if len(set(values)) != len(values):
         raise ValidationError("Duplicated metrics type")
 
+
 class StartDumpRawDataTaskSchema(Schema):
     device_id = fields.Int(
         required=True,

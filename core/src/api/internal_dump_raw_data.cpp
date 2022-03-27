@@ -51,7 +51,7 @@ std::vector<DumpTypeOption> dumpTypeOptions{
     {XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, DUMP_OPTION_STATS, XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, XPUM_ENGINE_TYPE_UNKNOWN, "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE", "GPU Memory Errors Uncorrectable", "per tile. Other non-compute uncorrectable errors are also included."}};
 
 DumpTypeOption* getConfigOptionPointer(xpum_dump_type_t dumpType) {
-    for (auto &entry : dumpTypeOptions) {
+    for (auto& entry : dumpTypeOptions) {
         if (entry.dumpType == dumpType) {
             return &entry;
         }

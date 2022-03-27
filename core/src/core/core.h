@@ -11,12 +11,12 @@
 #include "control/device_manager_interface.h"
 #include "data_logic/data_logic_interface.h"
 #include "diagnostic/diagnostic_manager_interface.h"
+#include "dump_raw_data/dump_manager.h"
 #include "group/group_manager_interface.h"
 #include "health/health_manager_interface.h"
 #include "infrastructure/init_close_interface.h"
 #include "monitor/monitor_manager_interface.h"
 #include "policy/policy_manager_interface.h"
-#include "dump_raw_data/dump_manager.h"
 
 namespace xpum {
 
@@ -35,7 +35,7 @@ class Core : public InitCloseInterface {
     bool isInitialized();
 
     bool isZeInitialized();
-    
+
     bool userPermissionAllowed();
 
     void setZeInitialized(bool val);

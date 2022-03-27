@@ -29,7 +29,6 @@ void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_
     while (iter != p_data->getData().end()) {
         auto pre_iter = p_preData->getData().find(iter->first);
         if (pre_iter != p_preData->getData().end()) {
-
             auto cur_engine_datas = std::static_pointer_cast<EngineCollectionMeasurementData>(iter->second)->getEngineRawDatas();
             auto pre_engine_datas = std::static_pointer_cast<EngineCollectionMeasurementData>(pre_iter->second)->getEngineRawDatas();
             auto cur_engine_datas_iter = cur_engine_datas->begin();
@@ -49,7 +48,7 @@ void EngineUtilizationDataHandler::calculateData(std::shared_ptr<SharedData>& p_
                         iter->second->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                     }
                 }
-                
+
                 ++cur_engine_datas_iter;
             }
         }

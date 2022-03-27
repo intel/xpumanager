@@ -128,7 +128,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setAgentConfig(std::string jsonName, v
         (*json)["error"] = pConfigType->jsonFieldName + ":" + error.errormsg();
         return json;
     }
-    
+
     return getAgentConfigJsonOBject(response.entrylist().configentries());
 }
 

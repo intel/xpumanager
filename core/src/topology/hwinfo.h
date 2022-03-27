@@ -7,6 +7,7 @@
 #pragma once
 
 #include <string>
+
 #include "../include/xpum_structs.h"
 
 namespace xpum {

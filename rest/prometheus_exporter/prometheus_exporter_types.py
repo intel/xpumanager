@@ -6,6 +6,7 @@
 
 from enum import Enum, unique
 
+
 @unique
 class PromMetric(Enum):
 
@@ -52,7 +53,6 @@ class PromMetric(Enum):
 
     # XE Link
     xpum_fabric_tx_bytes = ('xpum_fabric_tx_bytes', 'Data transmitted through fabric link (in bytes)', ['sub_dev', 'dst_dev_file', 'dst_pci_bdf', 'dst_sub_dev'])  # nopep8
-
 
     def __new__(cls, name, desc=None, ext_labelnames=[]):
         obj = object.__new__(cls)
@@ -123,10 +123,10 @@ metrics_map = {
     'XPUM_STATS_PCIE_WRITE': Metric(PromMetric.xpum_pcie_write_bytes, is_counter=True),  # nopep8
 
     # Per Engine Utilization
-    'XPUM_STATS_ENGINE_UTILIZATION': Metric(PromMetric.xpum_per_engine_ratio, scale=0.01, ext_labels={'type':'$engine_type', 'engine_id':'$engine_id'}), # nopep8
+    'XPUM_STATS_ENGINE_UTILIZATION': Metric(PromMetric.xpum_per_engine_ratio, scale=0.01, ext_labels={'type': '$engine_type', 'engine_id': '$engine_id'}),  # nopep8
 
     # XE Link
-    'XPUM_STATS_FABRIC_THROUGHPUT': Metric(PromMetric.xpum_fabric_tx_bytes, is_counter=True, ext_labels={'sub_dev': '$src_tile_id', 'dst_dev_file':'$dst_dev_file', 'dst_pci_bdf': '$dst_pci_bdf', 'dst_sub_dev': '$dst_tile_id'}) # nopep8
+    'XPUM_STATS_FABRIC_THROUGHPUT': Metric(PromMetric.xpum_fabric_tx_bytes, is_counter=True, ext_labels={'sub_dev': '$src_tile_id', 'dst_dev_file': '$dst_dev_file', 'dst_pci_bdf': '$dst_pci_bdf', 'dst_sub_dev': '$dst_tile_id'})  # nopep8
 }
 
 

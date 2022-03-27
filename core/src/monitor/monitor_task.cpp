@@ -8,8 +8,8 @@
 
 #include <chrono>
 #include <mutex>
-#include <thread>
 #include <set>
+#include <thread>
 
 #include "control/device_manager.h"
 #include "infrastructure/logger.h"
@@ -71,7 +71,7 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
         }
 
         auto datas = std::make_shared<std::map<std::string, std::shared_ptr<MeasurementData>>>();
-        
+
         for (auto& p_device : devices) {
             DeviceCapability capability = p_this->capability;
             auto method = Device::getDeviceMethod(capability, p_device.get());
@@ -122,10 +122,10 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
         XPUM_LOG_TRACE("Monitor passes data {} to datalogic", p_this->capability);
         p_this->p_data_logic->storeMeasurementData(measurmentType, now, datas);
         if (hasSubdeviceAdditionalCurrentData) {
-            for(auto& type : subdeviceAdditionalCurrentDataTypes) {
-                for (auto & data : (*datas)) {
+            for (auto& type : subdeviceAdditionalCurrentDataTypes) {
+                for (auto& data : (*datas)) {
                     auto mData = std::make_shared<MeasurementData>();
-                    for (auto & sData : subdeviceAdditionalCurrentDatasAll[data.first]) {
+                    for (auto& sData : subdeviceAdditionalCurrentDatasAll[data.first]) {
                         if (sData.first == UINT32_MAX)
                             mData->setCurrent(sData.second[type]);
                         else

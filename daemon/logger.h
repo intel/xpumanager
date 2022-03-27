@@ -6,6 +6,7 @@
 
 #pragma once
 #include <string>
+
 #include "spdlog/cfg/env.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"

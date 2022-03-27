@@ -9,12 +9,14 @@ import core_pb2
 from google.protobuf import empty_pb2
 import xpum_logger as logger
 
+
 def createGroup(groupName):
     resp = stub.groupCreate(core_pb2.GroupName(name=groupName))
     if len(resp.errorMsg) != 0:
         logger.audit("Group", "Failed", "Fail to create group {}", groupName)
         return 1, resp.errorMsg, None
-    logger.audit("Group", "Succeed", "Succeed to create group {} ：{}", resp.id, groupName)
+    logger.audit("Group", "Succeed",
+                 "Succeed to create group {} ：{}", resp.id, groupName)
     data = dict()
     data["group_name"] = groupName
     data["group_id"] = resp.id
@@ -63,10 +65,13 @@ def addDeviceToGroup(groupId, deviceIds):
         resp = stub.groupAddDevice(core_pb2.GroupAddRemoveDevice(
             groupId=groupId, deviceId=deviceId))
         if len(resp.errorMsg) != 0:
-            logger.audit("Group", "Failed", "Fail to add device {} to group {}", deviceId, groupId)
-            fail_to_add.append(dict(device_id=deviceId,error_msg=resp.errorMsg))
+            logger.audit("Group", "Failed",
+                         "Fail to add device {} to group {}", deviceId, groupId)
+            fail_to_add.append(
+                dict(device_id=deviceId, error_msg=resp.errorMsg))
         else:
-            logger.audit("Group", "Succeed", "Succeed to add device {} to group {}", deviceId, groupId)
+            logger.audit(
+                "Group", "Succeed", "Succeed to add device {} to group {}", deviceId, groupId)
     return fail_to_add
 
 
@@ -76,8 +81,11 @@ def removeDeviceFromGroup(groupId, deviceIds):
         resp = stub.groupRemoveDevice(core_pb2.GroupAddRemoveDevice(
             groupId=groupId, deviceId=deviceId))
         if len(resp.errorMsg) != 0:
-            logger.audit("Group", "Failed", "Fail to remove device {} from group {}", deviceId, groupId)
-            fail_to_remove.append(dict(device_id=deviceId,error_msg=resp.errorMsg))
+            logger.audit(
+                "Group", "Failed", "Fail to remove device {} from group {}", deviceId, groupId)
+            fail_to_remove.append(
+                dict(device_id=deviceId, error_msg=resp.errorMsg))
         else:
-            logger.audit("Group", "Succeed", "Succeed to remove device {} from group {}", deviceId, groupId)
+            logger.audit(
+                "Group", "Succeed", "Succeed to remove device {} from group {}", deviceId, groupId)
     return fail_to_remove

@@ -6,22 +6,23 @@
 
 #pragma once
 
-#include "infrastructure/init_close_interface.h"
+#include <array>
+#include <atomic>
+#include <cstdlib>
+#include <exception>
+#include <fstream>
+#include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <thread>
-#include <array>
-#include <iostream>
-#include <exception>
-#include <atomic>
-#include <sstream>
-#include <fstream>
-#include <cstdlib>
+
+#include "infrastructure/init_close_interface.h"
 
 namespace xpum {
 
 class PCIeManager : InitCloseInterface {
-public:
+   public:
     PCIeManager();
 
     virtual ~PCIeManager();
@@ -38,7 +39,7 @@ public:
 
     uint64_t getLatestPCIeWrite(std::string bdf);
 
-private:
+   private:
     std::map<std::string, uint64_t> pcie_read_throughputs;
     std::map<std::string, uint64_t> pcie_write_throughputs;
     std::map<std::string, uint64_t> pcie_reads;
@@ -47,4 +48,4 @@ private:
     std::atomic<bool> initialized;
     std::atomic<bool> stopped;
 };
-}
+} // namespace xpum

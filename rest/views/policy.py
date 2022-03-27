@@ -9,34 +9,47 @@ from flask import request
 from flask import jsonify
 from marshmallow import Schema, fields
 from marshmallow.base import FieldABC
-import time, threading
+import time
+import threading
 import datetime
 
+
 class PolicyConditionSchema(Schema):
-    type = fields.Str(metadata={"description": "Policy conditon type. Supported types: XPUM_POLICY_CONDITION_TYPE_GREATER, XPUM_POLICY_CONDITION_TYPE_LESS, XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR"})
-    threshold = fields.Int(metadata={"description": "The threshold for policy"})
+    type = fields.Str(metadata={
+                      "description": "Policy conditon type. Supported types: XPUM_POLICY_CONDITION_TYPE_GREATER, XPUM_POLICY_CONDITION_TYPE_LESS, XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR"})
+    threshold = fields.Int(
+        metadata={"description": "The threshold for policy"})
+
 
 class PolicyActionSchema(Schema):
-    type = fields.Str(metadata={"description": "Policy action type. Supported types: XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE, XPUM_POLICY_ACTION_TYPE_NULL"})
-    throttle_device_frequency_min = fields.Int(metadata={"description": "The throttle_device_frequency_min value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type."})
-    throttle_device_frequency_max = fields.Int(metadata={"description": "The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type."})
+    type = fields.Str(metadata={
+                      "description": "Policy action type. Supported types: XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE, XPUM_POLICY_ACTION_TYPE_NULL"})
+    throttle_device_frequency_min = fields.Int(metadata={
+                                               "description": "The throttle_device_frequency_min value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type."})
+    throttle_device_frequency_max = fields.Int(metadata={
+                                               "description": "The throttle_device_frequency_max value only for POLICY_ACTION_TYPE_THROTTLE_DEVICE action type."})
 
 
 class PolicySchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
     type = fields.Str(metadata={"description": "Policy type. Supported types: XPUM_POLICY_TYPE_GPU_TEMPERATURE, XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE, XPUM_POLICY_TYPE_GPU_POWER, XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET, XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, XPUM_POLICY_TYPE_GPU_MISSING"})
-    notify_callback_url = fields.Str(metadata={"description": "Policy notify callback url"})
+    notify_callback_url = fields.Str(
+        metadata={"description": "Policy notify callback url"})
     action = fields.Nested(PolicyActionSchema)
     condition = fields.Nested(PolicyConditionSchema)
     #is_delete_policy = fields.Bool(metadata={"description": "is_delete_policy flag when remove policy"})
 
+
 class PolicyGetSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
-    policy_list = fields.Nested(PolicySchema,many=True)
+    policy_list = fields.Nested(PolicySchema, many=True)
 
-class PolicyRespSchema(Schema):  
-    status = fields.Int(metadata={"description": "status code, 0 is success, other is error."})
-    message = fields.Str(metadata={"description": "success or error message"}) 
+
+class PolicyRespSchema(Schema):
+    status = fields.Int(
+        metadata={"description": "status code, 0 is success, other is error."})
+    message = fields.Str(metadata={"description": "success or error message"})
+
 
 def get_device_policy(deviceId):
     """
@@ -69,7 +82,7 @@ def get_device_policy(deviceId):
                 examples: 
                     application/json:
                         { "message": "There is no data", "status": 1 }
-    """  
+    """
     id = deviceId
     ret = []
     code, message, data, httpCode = stub.getPolicy(id, True)
@@ -80,7 +93,8 @@ def get_device_policy(deviceId):
     retOne["device_id"] = id
     retOne["policy_list"] = data
     ret.append(retOne)
-    return jsonify(ret),200
+    return jsonify(ret), 200
+
 
 def set_device_policy(deviceId):
     """
@@ -158,7 +172,7 @@ def set_device_policy(deviceId):
                 examples: 
                     application/json:
                         { "message": "Internal Error", "status": 2 }
-    """  
+    """
     id = deviceId
     policy = request.get_json()
     if request.method == 'DELETE':
@@ -166,13 +180,15 @@ def set_device_policy(deviceId):
     else:
         is_delete_policy = False
     #######
-    code, message, httpCode = stub.setPolicy(id, True, policy,is_delete_policy)
+    code, message, httpCode = stub.setPolicy(
+        id, True, policy, is_delete_policy)
     if code != 0:
         error = dict(status=code, message=message)
         return jsonify(error), httpCode
     #######
     ret = dict(status=0, message="success")
     return jsonify(ret), 200
+
 
 def get_group_policy(groupId):
     """
@@ -211,7 +227,7 @@ def get_group_policy(groupId):
                 examples: 
                     application/json:
                         { "message": "Internal Error", "status": 2 }
-    """  
+    """
     id = groupId
     ret = []
     code, message, data, httpCode = stub.getPolicy(id, False)
@@ -223,6 +239,7 @@ def get_group_policy(groupId):
     retOne["policy_list"] = data
     ret.append(retOne)
     return jsonify(ret), 200
+
 
 def set_group_policy(groupId):
     """
@@ -300,7 +317,7 @@ def set_group_policy(groupId):
                 examples: 
                     application/json:
                         { "message": "Internal Error", "status": 2 }
-    """  
+    """
     id = groupId
     policy = request.get_json()
     if request.method == 'DELETE':
@@ -308,13 +325,15 @@ def set_group_policy(groupId):
     else:
         is_delete_policy = False
     #######
-    code, message, httpCode = stub.setPolicy(id, False, policy,is_delete_policy)
+    code, message, httpCode = stub.setPolicy(
+        id, False, policy, is_delete_policy)
     if code != 0:
         error = dict(status=code, message=message)
         return jsonify(error), httpCode
     #######
     ret = dict(status=0, message="success")
     return jsonify(ret), 200
+
 
 def get_all_policy():
     """
@@ -347,7 +366,7 @@ def get_all_policy():
                 examples: 
                     application/json:
                         { "message": "Internal Error", "status": 2 }
-    """  
+    """
     code, message, data = stub.getDeviceList()
     if code != 0:
         error = dict(status=3, message=message)
@@ -374,17 +393,19 @@ def get_all_policy():
     else:
         return jsonify(ret), 200
 
+
 def policyCallBackThread():
     while True:
         try:
             stub.readPolicyNotifyData()
         except:
             time.sleep(5)
-            #traceback.print_exc()  
+            # traceback.print_exc()
             time_stamp = datetime.datetime.now()
             time_stamp = time_stamp.strftime('[%Y-%m-%d %H:%M:%S]')
-            print("{}: policyCallBackThread(): Failed to readPolicyNotifyData!".format(time_stamp))
-        
+            print("{}: policyCallBackThread(): Failed to readPolicyNotifyData!".format(
+                time_stamp))
+
 
 def startPolicyCallBackThread():
     t = threading.Thread(target=policyCallBackThread, name='policyCallBackRun')

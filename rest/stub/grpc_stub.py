@@ -17,6 +17,7 @@ stub = core_pb2_grpc.XpumCoreServiceStub(channel)
 
 gunicorn_pid_file = "/opt/xpum/rest/gunicorn.pid"
 
+
 def exit_on_disconnect(func):
     def wrapper(*args, **kwargs):
         g = func.__globals__

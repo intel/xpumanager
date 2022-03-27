@@ -11,8 +11,8 @@
 #pragma once
 #endif
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #if defined(__cplusplus)
 namespace xpum {
@@ -57,7 +57,7 @@ extern "C" {
 /**
  * The device id stand for all devices
  */
-#define XPUM_DEVICE_ID_ALL_DEVICES  1024
+#define XPUM_DEVICE_ID_ALL_DEVICES 1024
 
 /**
  * Device id
@@ -88,45 +88,45 @@ typedef int32_t xpum_device_tile_id_t;
  * API call results
  */
 typedef enum xpum_result_enum {
-    XPUM_OK = 0,           ///< Ok
-    XPUM_GENERIC_ERROR,    ///< Function return with unknown errors
-    XPUM_BUFFER_TOO_SMALL, ///< The buffer pass to function is too small
-    XPUM_RESULT_DEVICE_NOT_FOUND,   ///< Device not found
+    XPUM_OK = 0,                  ///< Ok
+    XPUM_GENERIC_ERROR,           ///< Function return with unknown errors
+    XPUM_BUFFER_TOO_SMALL,        ///< The buffer pass to function is too small
+    XPUM_RESULT_DEVICE_NOT_FOUND, ///< Device not found
     XPUM_RESULT_TILE_NOT_FOUND,   ///< Tile not found
     XPUM_RESULT_GROUP_NOT_FOUND,
-    XPUM_RESULT_POLICY_TYPE_INVALID,    // Policy type is invalid
-    XPUM_RESULT_POLICY_ACTION_TYPE_INVALID,    // Policy action type is invalid
-    XPUM_RESULT_POLICY_CONDITION_TYPE_INVALID,    // Policy condtion type is invalid
-    XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT, // Policy type and policy action not match
-    XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT,  // Policy type and condition type not match
-    XPUM_RESULT_POLICY_INVALID_THRESHOLD,   //Policy threshold invalid
-    XPUM_RESULT_POLICY_INVALID_FREQUENCY,   //Policy frequency invalid
-    XPUM_RESULT_POLICY_NOT_EXIST,           //Policy not exist
+    XPUM_RESULT_POLICY_TYPE_INVALID,               // Policy type is invalid
+    XPUM_RESULT_POLICY_ACTION_TYPE_INVALID,        // Policy action type is invalid
+    XPUM_RESULT_POLICY_CONDITION_TYPE_INVALID,     // Policy condtion type is invalid
+    XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT,    // Policy type and policy action not match
+    XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT, // Policy type and condition type not match
+    XPUM_RESULT_POLICY_INVALID_THRESHOLD,          //Policy threshold invalid
+    XPUM_RESULT_POLICY_INVALID_FREQUENCY,          //Policy frequency invalid
+    XPUM_RESULT_POLICY_NOT_EXIST,                  //Policy not exist
     XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE,
     XPUM_GROUP_DEVICE_DUPLICATED,
     XPUM_GROUP_CHANGE_NOT_ALLOWED,
-    XPUM_NOT_INITIALIZED,     ///< XPUM is not initialized.
-    XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST,   ///< Dump raw data task not exists
-    XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH,   ///< Dump file path provide is illegal
-    XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY,   ///< The the key for agent setting is unknown
-    XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME,   ///< File name can not contain following characters: {}()><&*'|=?;[]$-#~!"%:+,` 
+    XPUM_NOT_INITIALIZED,                      ///< XPUM is not initialized.
+    XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST,         ///< Dump raw data task not exists
+    XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH, ///< Dump file path provide is illegal
+    XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY,      ///< The the key for agent setting is unknown
+    XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME,     ///< File name can not contain following characters: {}()><&*'|=?;[]$-#~!"%:+,`
     XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
     XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
-    XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND,     /// "/usr/local/bin/GfxFwFPT" not found 
-    XPUM_UPDATE_FIRMWARE_TASK_RUNNING,     /// Firmware update task is already running 
+    XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND, /// "/usr/local/bin/GfxFwFPT" not found
+    XPUM_UPDATE_FIRMWARE_TASK_RUNNING,       /// Firmware update task is already running
     XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT,
-    XPUM_METRIC_NOT_SUPPORTED,              ///< Unsupported metric
-    XPUM_METRIC_NOT_ENABLED,                ///< Unenabled metric
+    XPUM_METRIC_NOT_SUPPORTED, ///< Unsupported metric
+    XPUM_METRIC_NOT_ENABLED,   ///< Unenabled metric
     XPUM_RESULT_HEALTH_INVALID_TYPE,
     XPUM_RESULT_HEALTH_INVALID_CONIG_TYPE,
     XPUM_RESULT_HEALTH_INVALID_THRESHOLD,
     XPUM_RESULT_DIAGNOSTIC_INVALID_LEVEL,
-    XPUM_RESULT_AGENT_SET_INVALID_VALUE, /// Agent set value is invalid
-    XPUM_LEVEL_ZERO_INITIALIZATION_ERROR,   ///< Level Zero initialization error.
-    XPUM_UNSUPPORTED_SESSIONID,   ///< Unsupported session id
+    XPUM_RESULT_AGENT_SET_INVALID_VALUE,  /// Agent set value is invalid
+    XPUM_LEVEL_ZERO_INITIALIZATION_ERROR, ///< Level Zero initialization error.
+    XPUM_UNSUPPORTED_SESSIONID,           ///< Unsupported session id
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -240,15 +240,15 @@ typedef struct xpum_group_info_t {
 /**************************************************************************/
 
 typedef enum xpum_health_config_type_enum {
-    XPUM_HEALTH_CORE_THERMAL_LIMIT = 0,    ///< Threshold in celsius degree
-    XPUM_HEALTH_MEMORY_THERMAL_LIMIT,      ///< Threshold in celsius degree
-    XPUM_HEALTH_POWER_LIMIT                 ///< Threshold in watts
+    XPUM_HEALTH_CORE_THERMAL_LIMIT = 0, ///< Threshold in celsius degree
+    XPUM_HEALTH_MEMORY_THERMAL_LIMIT,   ///< Threshold in celsius degree
+    XPUM_HEALTH_POWER_LIMIT             ///< Threshold in watts
 } xpum_health_config_type_t;
 
 typedef enum xpum_health_type_enum {
-    XPUM_HEALTH_CORE_THERMAL = 0,   
-    XPUM_HEALTH_MEMORY_THERMAL,    
-    XPUM_HEALTH_POWER,              
+    XPUM_HEALTH_CORE_THERMAL = 0,
+    XPUM_HEALTH_MEMORY_THERMAL,
+    XPUM_HEALTH_POWER,
     XPUM_HEALTH_MEMORY,
     XPUM_HEALTH_FABRIC_PORT,
 } xpum_health_type_t;
@@ -261,12 +261,12 @@ typedef enum xpum_health_status_enum {
 } xpum_health_status_t;
 
 typedef struct xpum_health_data_t {
-    xpum_device_id_t deviceId;                  ///< Device ID
-    xpum_health_type_t type;                    ///< Health type
-    xpum_health_status_t status;                ///< Health status
-    char description[XPUM_MAX_STR_LENGTH];      ///< Description for health
-    uint64_t throttleThreshold;                 ///< Throttle threshold, temperature in celsius degree and power in watts
-    uint64_t shutdownThreshold;                 ///< Shutdown threshold, temperature in celsius degree and power in watts
+    xpum_device_id_t deviceId;             ///< Device ID
+    xpum_health_type_t type;               ///< Health type
+    xpum_health_status_t status;           ///< Health status
+    char description[XPUM_MAX_STR_LENGTH]; ///< Description for health
+    uint64_t throttleThreshold;            ///< Throttle threshold, temperature in celsius degree and power in watts
+    uint64_t shutdownThreshold;            ///< Shutdown threshold, temperature in celsius degree and power in watts
 } xpum_health_data_t;
 
 /**************************************************************************/
@@ -310,9 +310,9 @@ typedef enum xpum_firmware_type_enum {
  * 
  */
 typedef enum xpum_firmware_flash_result_enum {
-    XPUM_DEVICE_FIRMWARE_FLASH_OK = 0,  ///< Firmware flash successfully
-    XPUM_DEVICE_FIRMWARE_FLASH_ERROR,   ///< Firmware flash in error
-    XPUM_DEVICE_FIRMWARE_FLASH_ONGOING, ///< Firmware flash is on going
+    XPUM_DEVICE_FIRMWARE_FLASH_OK = 0,      ///< Firmware flash successfully
+    XPUM_DEVICE_FIRMWARE_FLASH_ERROR,       ///< Firmware flash in error
+    XPUM_DEVICE_FIRMWARE_FLASH_ONGOING,     ///< Firmware flash is on going
     XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED, ///< Firmware flash is on going
 } xpum_firmware_flash_result_t;
 
@@ -447,15 +447,15 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE,
     XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE,
-    XPUM_STATS_GPU_REQUEST_FREQUENCY,                ///< Gpu Request Frequency
-    XPUM_STATS_MEMORY_TEMPERATURE,                   ///< Memory Temeperature
-    XPUM_STATS_FREQUENCY_THROTTLE,                   ///< Frequency Throttle
-    XPUM_STATS_PCIE_READ_THROUGHPUT,                 ///< PCIe read throughput
-    XPUM_STATS_PCIE_WRITE_THROUGHPUT,                ///< PCIe write throughput
-    XPUM_STATS_PCIE_READ,                            ///< PCIe read
-    XPUM_STATS_PCIE_WRITE,                           ///< PCIe write
-    XPUM_STATS_ENGINE_UTILIZATION,                   ///< Engine Utilization
-    XPUM_STATS_FABRIC_THROUGHPUT,                    ///< Fabric throughput
+    XPUM_STATS_GPU_REQUEST_FREQUENCY, ///< Gpu Request Frequency
+    XPUM_STATS_MEMORY_TEMPERATURE,    ///< Memory Temeperature
+    XPUM_STATS_FREQUENCY_THROTTLE,    ///< Frequency Throttle
+    XPUM_STATS_PCIE_READ_THROUGHPUT,  ///< PCIe read throughput
+    XPUM_STATS_PCIE_WRITE_THROUGHPUT, ///< PCIe write throughput
+    XPUM_STATS_PCIE_READ,             ///< PCIe read
+    XPUM_STATS_PCIE_WRITE,            ///< PCIe write
+    XPUM_STATS_ENGINE_UTILIZATION,    ///< Engine Utilization
+    XPUM_STATS_FABRIC_THROUGHPUT,     ///< Fabric throughput
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -506,15 +506,15 @@ typedef enum xpum_engine_type_enum {
  * 
  */
 typedef struct xpum_device_engine_stats_t {
-    bool isTileData;                ///< If this statistics data is tile level
-    int32_t tileId;                 ///< The tile id, only valid if isTileData is true
-    uint64_t index;                 ///< The index of the engine in the same type on the device or sub-device
-    xpum_engine_type_t type;        ///< The type of the engine
-    uint64_t value;                 ///< The value of engine utilization
-    uint64_t min;                   ///< The min value since last call
-    uint64_t avg;                   ///< The average value since last call
-    uint64_t max;                   ///< The max value since last call
-    uint32_t scale;                 ///< The magnification of the value, accumulated, min, avg, and max fields
+    bool isTileData;         ///< If this statistics data is tile level
+    int32_t tileId;          ///< The tile id, only valid if isTileData is true
+    uint64_t index;          ///< The index of the engine in the same type on the device or sub-device
+    xpum_engine_type_t type; ///< The type of the engine
+    uint64_t value;          ///< The value of engine utilization
+    uint64_t min;            ///< The min value since last call
+    uint64_t avg;            ///< The average value since last call
+    uint64_t max;            ///< The max value since last call
+    uint32_t scale;          ///< The magnification of the value, accumulated, min, avg, and max fields
 } xpum_device_engine_stats_t;
 
 /**
@@ -522,12 +522,12 @@ typedef struct xpum_device_engine_stats_t {
  * 
  */
 typedef struct xpum_device_engine_metric_t {
-    bool isTileData;                ///< If this statistics data is tile level
-    int32_t tileId;                 ///< The tile id, only valid if isTileData is true
-    uint64_t index;                 ///< The index of the engine in the same type on the device or sub-device
-    xpum_engine_type_t type;        ///< The type of the engine
-    uint64_t value;                 ///< The value of engine utilization
-    uint32_t scale;                 ///< The magnification of the value field
+    bool isTileData;         ///< If this statistics data is tile level
+    int32_t tileId;          ///< The tile id, only valid if isTileData is true
+    uint64_t index;          ///< The index of the engine in the same type on the device or sub-device
+    xpum_engine_type_t type; ///< The type of the engine
+    uint64_t value;          ///< The value of engine utilization
+    uint32_t scale;          ///< The magnification of the value field
 } xpum_device_engine_metric_t;
 
 /**
@@ -535,9 +535,9 @@ typedef struct xpum_device_engine_metric_t {
  * 
  */
 typedef enum xpum_fabric_throughput_type_enum {
-    XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED            = 0,
-    XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED         = 1,
-    XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED_COUNTER    = 2,
+    XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED = 0,
+    XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED = 1,
+    XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED_COUNTER = 2,
     XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED_COUNTER = 3,
     XPUM_FABRIC_THROUGHPUT_TYPE_MAX,
 } xpum_fabric_throughput_type_t;
@@ -547,7 +547,7 @@ typedef enum xpum_fabric_throughput_type_enum {
  * 
  */
 typedef struct xpum_device_fabric_throughput_stats_t {
-    uint32_t tile_id;                   ///< tile id 
+    uint32_t tile_id;                   ///< tile id
     uint32_t remote_device_id;          ///< remote device id
     uint32_t remote_device_tile_id;     ///< remote tile id
     xpum_fabric_throughput_type_t type; ///< fabric throughput type
@@ -564,7 +564,7 @@ typedef struct xpum_device_fabric_throughput_stats_t {
  * 
  */
 typedef struct xpum_device_fabric_throughput_metric_t {
-    uint32_t tile_id;                   ///< tile id 
+    uint32_t tile_id;                   ///< tile id
     uint32_t remote_device_id;          ///< remote device id
     uint32_t remote_device_tile_id;     ///< remote tile id
     xpum_fabric_throughput_type_t type; ///< fabric throughput type
@@ -686,25 +686,22 @@ typedef enum xpum_scheduler_mode_t {
     XPUM_MODE_FORCE_UINT32 = 0x7fffffff
 } xpum_scheduler_mode_t;
 
-typedef enum xpum_ecc_state_t
-{
-    XPUM_ECC_STATE_UNAVAILABLE = 0,           ///< None
-    XPUM_ECC_STATE_ENABLED = 1,               ///< ECC enabled.
-    XPUM_ECC_STATE_DISABLED = 2,              ///< ECC disabled.
+typedef enum xpum_ecc_state_t {
+    XPUM_ECC_STATE_UNAVAILABLE = 0, ///< None
+    XPUM_ECC_STATE_ENABLED = 1,     ///< ECC enabled.
+    XPUM_ECC_STATE_DISABLED = 2,    ///< ECC disabled.
     XPUM_ECC_STATE_FORCE_UINT32 = 0x7fffffff
 
 } xpum_ecc_state_t;
 
-typedef enum xpum_ecc_action_t
-{
-    XPUM_ECC_ACTION_NONE = 0,                     ///< No action.
-    XPUM_ECC_ACTION_WARM_CARD_RESET = 1,          ///< Warm reset of the card.
-    XPUM_ECC_ACTION_COLD_CARD_RESET = 2,          ///< Cold reset of the card.
-    XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT = 3,       ///< Cold reboot of the system.
+typedef enum xpum_ecc_action_t {
+    XPUM_ECC_ACTION_NONE = 0,               ///< No action.
+    XPUM_ECC_ACTION_WARM_CARD_RESET = 1,    ///< Warm reset of the card.
+    XPUM_ECC_ACTION_COLD_CARD_RESET = 2,    ///< Cold reset of the card.
+    XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT = 3, ///< Cold reboot of the system.
     XPUM_ECC_ACTION_FORCE_UINT32 = 0x7fffffff
 
-} xpum_ecc_action_t; 
-
+} xpum_ecc_action_t;
 
 typedef struct xpum_device_process_t {
     uint32_t processId;
@@ -746,7 +743,7 @@ typedef struct xpum_power_prop_data_t {
     int32_t default_limit;
     int32_t min_limit;
     int32_t max_limit;
-}xpum_power_prop_data_t;
+} xpum_power_prop_data_t;
 
 typedef struct xpum_scheduler_timeout_t {
     uint32_t subdevice_Id;
@@ -779,13 +776,13 @@ typedef struct xpum_topology_t {
     xpum_device_id_t deviceId; ///< Device id
     struct {
         char localCPUList[XPUM_MAX_CPU_LIST_LEN]; ///< CPU affinity, local CPU list
-        char localCPUs[XPUM_MAX_CPU_S_LEN]; ///< CPU affinity, local CPUs
+        char localCPUs[XPUM_MAX_CPU_S_LEN];       ///< CPU affinity, local CPUs
     } cpuAffinity;
-    int switchCount;   ///< the count of parent switch
+    int switchCount;          ///< the count of parent switch
     parent_switch switches[]; ///< device path of parent switch
 } xpum_topology_t;
 
-typedef enum xpum_link_type_enum{
+typedef enum xpum_link_type_enum {
     XPUM_LINK_UNKNOWN = 0,
     XPUM_LINK_SELF,
     XPUM_LINK_MDF,
@@ -795,20 +792,20 @@ typedef enum xpum_link_type_enum{
     XPUM_LINK_XE_TRANSMIT
 } xpum_xelink_type_t;
 
-typedef struct xpum_xelink_unit{
+typedef struct xpum_xelink_unit {
     xpum_device_id_t deviceId;
     bool onSubdevice;
     uint32_t subdeviceId;
     uint32_t numaIdx;
     char cpuAffinity[XPUM_MAX_CPU_LIST_LEN];
-}xpum_xelink_unit;
+} xpum_xelink_unit;
 
-typedef struct xpum_xelink_topo_info{
+typedef struct xpum_xelink_topo_info {
     xpum_xelink_unit localDevice;
     xpum_xelink_unit remoteDevice;
     xpum_xelink_type_t linkType;
     uint8_t linkPorts[XPUM_MAX_XELINK_PORT];
-}xpum_xelink_topo_info;
+} xpum_xelink_topo_info;
 
 typedef enum xpum_ras_type_enum {
     XPUM_RAS_ERROR_CAT_RESET = 0,
@@ -867,7 +864,7 @@ typedef struct xpum_policy_notify_callback_para_t {
     xpum_policy_action_t action;
     xpum_device_id_t deviceId;
     uint64_t timestamp;
-    uint64_t curValue;    
+    uint64_t curValue;
     bool isTileData;
     int32_t tileId;
     char notifyCallBackUrl[XPUM_MAX_STR_LENGTH];
@@ -884,7 +881,7 @@ typedef struct xpum_policy_t {
     bool isDeletePolicy;       // Only for set policy api, ignored by get policy api. If true, then delete this policy in set policy api.
 } xpum_policy_t;
 
-typedef enum xpum_dump_type_enum{
+typedef enum xpum_dump_type_enum {
     XPUM_DUMP_GPU_UTILIZATION,
     XPUM_DUMP_POWER,
     XPUM_DUMP_GPU_FREQUENCY,
@@ -924,13 +921,13 @@ typedef enum xpum_dump_type_enum{
  * 
  */
 typedef struct xpum_dump_raw_data_task_t {
-    xpum_dump_task_id_t taskId;                        ///< Task id of the task
-    xpum_device_id_t deviceId;                         ///< device id
-    xpum_device_tile_id_t tileId;                      ///< tile id, when it is -1, means dumping device level data
-    xpum_dump_type_t dumpTypeList[XPUM_DUMP_MAX];      ///< data types to dump
-    int count;                                         ///< The count of entries in metricsTypeList
-    uint64_t beginTime;                                ///< The begin time of the task
-    char dumpFilePath[XPUM_MAX_STR_LENGTH];            ///< The dump file path
+    xpum_dump_task_id_t taskId;                   ///< Task id of the task
+    xpum_device_id_t deviceId;                    ///< device id
+    xpum_device_tile_id_t tileId;                 ///< tile id, when it is -1, means dumping device level data
+    xpum_dump_type_t dumpTypeList[XPUM_DUMP_MAX]; ///< data types to dump
+    int count;                                    ///< The count of entries in metricsTypeList
+    uint64_t beginTime;                           ///< The begin time of the task
+    char dumpFilePath[XPUM_MAX_STR_LENGTH];       ///< The dump file path
 } xpum_dump_raw_data_task_t;
 
 #if defined(__cplusplus)

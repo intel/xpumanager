@@ -9,15 +9,18 @@ from flask import request
 from flask import jsonify
 from marshmallow import Schema, fields
 
+
 class ThresholdSchema(Schema):
     custom_threshold = fields.Int(
         metadata={"description": "The custom threshold for coreTemperature in celsius degree, memoryTemperature in celsius degree or power in watts"})
+
 
 class HealthComponentSchema(Schema):
     description = fields.Str(
         metadata={"description": "The description for health"})
     status = fields.Int(
         metadata={"description": "The status for health"})
+
 
 class HealthConfigurableComponentSchemaBase(Schema):
     description = fields.Str(
@@ -27,7 +30,8 @@ class HealthConfigurableComponentSchemaBase(Schema):
     throttle_threshold = fields.Int(
         metadata={"description": "The throttle threshold in watts for health"})
     custom_threshold = fields.Int(
-            metadata={"description": "The custom threshold in watts for health"})
+        metadata={"description": "The custom threshold in watts for health"})
+
 
 class HealthConfigurableComponentSchemaExt(Schema):
     description = fields.Str(
@@ -39,7 +43,8 @@ class HealthConfigurableComponentSchemaExt(Schema):
     shutdown_threshold = fields.Int(
         metadata={"description": "The shutdown threshold in celsius degree for health"})
     custom_threshold = fields.Int(
-            metadata={"description": "The custom threshold in celsius degree for health"})
+        metadata={"description": "The custom threshold in celsius degree for health"})
+
 
 class HealthSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})

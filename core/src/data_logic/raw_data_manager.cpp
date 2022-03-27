@@ -8,9 +8,12 @@
 
 #include <algorithm>
 
-#include "engine_utilization_data_handler.h"
 #include "engine_group_utilization_data_handler.h"
+#include "engine_utilization_data_handler.h"
+#include "fabric_throughput_data_handler.h"
 #include "frequency_data_handler.h"
+#include "frequency_throttle_time_data_handler.h"
+#include "gpu_utilization_data_handler.h"
 #include "infrastructure/configuration.h"
 #include "memory_data_handler.h"
 #include "metric_statistics_data_handler.h"
@@ -18,9 +21,6 @@
 #include "shared_data.h"
 #include "temperature_data_handler.h"
 #include "throughput_data_handler.h"
-#include "frequency_throttle_time_data_handler.h"
-#include "gpu_utilization_data_handler.h"
-#include "fabric_throughput_data_handler.h"
 
 namespace xpum {
 
@@ -158,8 +158,8 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT]->init();
-	
-	data_handlers[MeasurementType::METRIC_PCIE_READ] =
+
+    data_handlers[MeasurementType::METRIC_PCIE_READ] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_READ, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_READ]->init();
 

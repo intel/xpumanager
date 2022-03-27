@@ -5,10 +5,12 @@
  */
 
 #include "comlet_firmware.h"
-#include <nlohmann/json.hpp>
-#include "core_stub.h"
-#include <thread>
+
 #include <chrono>
+#include <nlohmann/json.hpp>
+#include <thread>
+
+#include "core_stub.h"
 
 namespace xpum::cli {
 ComletFirmware::ComletFirmware() : ComletBase("updatefw", "Update GPU firmware") {
@@ -18,15 +20,14 @@ ComletFirmware::ComletFirmware() : ComletBase("updatefw", "Update GPU firmware")
 ComletFirmware::~ComletFirmware() {
 }
 
-static bool isNumber(const std::string& str)
-{
+static bool isNumber(const std::string &str) {
     return str.find_first_not_of("0123456789") == std::string::npos;
 }
 
 void ComletFirmware::setupOptions() {
-    opts = std::unique_ptr<FlashFirmwareOptions>( new FlashFirmwareOptions() );
+    opts = std::unique_ptr<FlashFirmwareOptions>(new FlashFirmwareOptions());
 
-    auto deviceIdOpt = addOption( "-d, --device", opts->deviceId, "device ID, optional" );
+    auto deviceIdOpt = addOption("-d, --device", opts->deviceId, "device ID, optional");
     deviceIdOpt->check([](const std::string &str) {
         std::string errStr = "Device id should be integer larger than or equal to 0";
         if (!isNumber(str))
@@ -42,7 +43,7 @@ void ComletFirmware::setupOptions() {
         return std::string();
     });
 
-    auto fwTypeOpt = addOption( "-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far." );
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.");
     fwTypeOpt->required();
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
@@ -53,7 +54,7 @@ void ComletFirmware::setupOptions() {
         }
     });
 
-    auto fwPathOpt = addOption( "-f, --file", opts->firmwarePath, "The firmware image file path on this server" );
+    auto fwPathOpt = addOption("-f, --file", opts->firmwarePath, "The firmware image file path on this server");
     fwPathOpt->required();
     fwPathOpt->transform([](const std::string &str) {
         if (FILE *file = fopen(str.c_str(), "r")) {
@@ -87,7 +88,7 @@ nlohmann::json ComletFirmware::validateArguments() {
 }
 
 std::unique_ptr<nlohmann::json> ComletFirmware::run() {
-    std::unique_ptr<nlohmann::json> json = std::unique_ptr<nlohmann::json>( new nlohmann::json() );
+    std::unique_ptr<nlohmann::json> json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
     // json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
     return json;
@@ -160,7 +161,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
 
 void ComletFirmware::getTableResult(std::ostream &out) {
     auto validateResultJson = validateArguments();
-    if(validateResultJson.contains("error")){
+    if (validateResultJson.contains("error")) {
         out << "Error: " << validateResultJson["error"].get<std::string>() << std::endl;
         return;
     }
@@ -199,7 +200,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         }
     }
 
-    // start run 
+    // start run
     auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
 
     auto status = (*json)["error"];
@@ -227,10 +228,10 @@ void ComletFirmware::getTableResult(std::ostream &out) {
 
         std::string flashStatus = (*json)["result"].get<std::string>();
 
-        if (flashStatus.compare("OK")==0) {
+        if (flashStatus.compare("OK") == 0) {
             out << "Update firmware successfully. Please reboot OS to take effect." << std::endl;
             return;
-        } else if (flashStatus.compare("FAILED")==0) {
+        } else if (flashStatus.compare("FAILED") == 0) {
             out << "Update firmware failed" << std::endl;
             return;
         } else {

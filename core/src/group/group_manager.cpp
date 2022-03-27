@@ -148,16 +148,15 @@ xpum_result_t GroupManager::getAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM
     xpum_result_t ret = XPUM_GENERIC_ERROR;
 
     int nCount = groupMap.size();
-    if(groupIds == nullptr){
+    if (groupIds == nullptr) {
         *count = nCount;
         return XPUM_OK;
-    }
-    else if(*count < nCount) {
+    } else if (*count < nCount) {
         *count = nCount;
         return XPUM_BUFFER_TOO_SMALL;
     }
 
-    if(groupIds == nullptr){
+    if (groupIds == nullptr) {
         *count = nCount;
         return ret;
     }

@@ -11,10 +11,10 @@
 #include <mutex>
 #include <thread>
 
+#include "internal_api.h"
 #include "logger.h"
 #include "xpum_api.h"
 #include "xpum_structs.h"
-#include "internal_api.h"
 
 namespace xpum::daemon {
 
@@ -67,15 +67,14 @@ grpc::Status XpumCoreServiceImpl::getDeviceList(grpc::ServerContext* context, co
             device->set_vendorname(devices[i].VendorName);
         }
     } else {
-        switch (res)
-        {
-        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
-            response->set_errormsg("Level Zero Initialization Error");
-            break;
-        default:
-            response->set_errormsg("Error");
-            break;
-        }      
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
 
     return grpc::Status::OK;
@@ -132,15 +131,14 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             parentSwitch->set_switchdevicepath(topology->switches[i].switchDevicePath);
         }
     } else {
-        switch (res)
-        {
-        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
-            response->set_errormsg("Level Zero Initialization Error");
-            break;
-        default:
-            response->set_errormsg("Error");
-            break;
-        } 
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
 
     return grpc::Status::OK;
@@ -156,15 +154,14 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         response->set_groupname(request->name());
         response->set_count(0);
     } else {
-        switch (res)
-        {
-        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
-            response->set_errormsg("Level Zero Initialization Error");
-            break;
-        default:
-            response->set_errormsg("Error");
-            break;
-        } 
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
     }
 
     return grpc::Status::OK;
@@ -593,7 +590,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             response->add_threshold(threshold_vals[i]);
         }
     } else {
-                switch (res) {
+        switch (res) {
             case XPUM_RESULT_GROUP_NOT_FOUND:
                 response->set_errormsg("group not found");
                 break;
@@ -616,7 +613,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     int threshold = request->threshold();
     xpum_result_t res = xpumSetHealthConfig(request->deviceid(), static_cast<xpum_health_config_type_t>(request->configtype()), &threshold);
     if (res != XPUM_OK) {
-                switch (res) {
+        switch (res) {
             case XPUM_RESULT_DEVICE_NOT_FOUND:
                 response->set_errormsg("device not found");
                 break;
@@ -636,7 +633,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     int threshold = request->threshold();
     xpum_result_t res = xpumSetHealthConfigByGroup(request->groupid(), static_cast<xpum_health_config_type_t>(request->configtype()), &threshold);
     if (res != XPUM_OK) {
-                switch (res) {
+        switch (res) {
             case XPUM_RESULT_GROUP_NOT_FOUND:
                 response->set_errormsg("group not found");
                 break;
@@ -721,8 +718,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
-
-::grpc::Status XpumCoreServiceImpl::handleErrorForGetPolicy(xpum_result_t res,::GetPolicyResponse* response) {
+::grpc::Status XpumCoreServiceImpl::handleErrorForGetPolicy(xpum_result_t res, ::GetPolicyResponse* response) {
     switch (res) {
         case XPUM_RESULT_GROUP_NOT_FOUND:
             response->set_errormsg("Error: group_id is invalid.");
@@ -736,7 +732,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         default:
             response->set_errormsg("Error: unknow");
             break;
-    }          
+    }
     return grpc::Status::OK;
 }
 
@@ -748,7 +744,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         int count;
         xpum_result_t res = xpumGetPolicy(id, nullptr, &count);
         if (res != XPUM_OK) {
-            this->handleErrorForGetPolicy(res,response);
+            this->handleErrorForGetPolicy(res, response);
             return grpc::Status::OK;
         }
         if (count <= 0) {
@@ -760,7 +756,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         xpum_policy_t dataList[count];
         res = xpumGetPolicy(id, dataList, &count);
         if (res != XPUM_OK || count < 0) {
-            this->handleErrorForGetPolicy(res,response);
+            this->handleErrorForGetPolicy(res, response);
             return grpc::Status::OK;
         }
 
@@ -784,7 +780,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         int count;
         xpum_result_t res = xpumGetPolicyByGroup(id, nullptr, &count);
         if (res != XPUM_OK) {
-            this->handleErrorForGetPolicy(res,response);
+            this->handleErrorForGetPolicy(res, response);
             return grpc::Status::OK;
         }
         if (count <= 0) {
@@ -796,7 +792,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         xpum_policy_t dataList[count];
         res = xpumGetPolicyByGroup(id, dataList, &count);
         if (res != XPUM_OK || count < 0) {
-            this->handleErrorForGetPolicy(res,response);
+            this->handleErrorForGetPolicy(res, response);
             return grpc::Status::OK;
         }
 
@@ -944,7 +940,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     if (isDevcie) {
         //
         id = request->id();
-        res = xpumSetPolicy(id, policy);        
+        res = xpumSetPolicy(id, policy);
     } else {
         id = request->id();
         res = xpumSetPolicyByGroup(id, policy);
@@ -952,25 +948,25 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     //std::cout << "-----xpum_cor_service_impl--1----xpumSetPolicy res = " << res  << std::endl;
     if (res != XPUM_OK) {
         response->set_isok(false);
-        if(res == XPUM_RESULT_DEVICE_NOT_FOUND){
-            response->set_errormsg("Error: device_id is invalid.");            
-        }else if(res == XPUM_RESULT_GROUP_NOT_FOUND){
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
+            response->set_errormsg("Error: device_id is invalid.");
+        } else if (res == XPUM_RESULT_GROUP_NOT_FOUND) {
             response->set_errormsg("Error: group_id is invalid.");
-        }else if(res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT){
+        } else if (res == XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT) {
             response->set_errormsg("Error: policy type and action do not match.");
-        }else if(res == XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT){
+        } else if (res == XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT) {
             response->set_errormsg("Error: policy type and condition do not match.");
-        }else if(res == XPUM_RESULT_POLICY_NOT_EXIST){
+        } else if (res == XPUM_RESULT_POLICY_NOT_EXIST) {
             response->set_errormsg("Error: policy not exist.");
-        }else if(res == XPUM_RESULT_POLICY_INVALID_FREQUENCY){
+        } else if (res == XPUM_RESULT_POLICY_INVALID_FREQUENCY) {
             response->set_errormsg("Error: frequency is invalid (frequency must greater than 0 and max must greater than or equal min).");
-        }else if(res == XPUM_RESULT_POLICY_INVALID_THRESHOLD){
+        } else if (res == XPUM_RESULT_POLICY_INVALID_THRESHOLD) {
             response->set_errormsg("Error: threshold is invalid (threshold must greater than or equal 0).");
-        }else if(res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR){
+        } else if (res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
             response->set_errormsg("Level Zero Initialization Error");
-        }else{
+        } else {
             response->set_errormsg("Error: unknow");
-        } 
+        }
         return grpc::Status::OK;
     }
     response->set_isok(true);
@@ -1062,13 +1058,13 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
             default:
                 response->set_errormsg("Error");
                 break;
-        }        
+        }
         return grpc::Status::OK;
     }
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].subdevice_Id == (uint32_t)tileId || tileId == -1) {
-            if(val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit) || val2 > 124 || val2 < 1 ) {
+            if (val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit) || val2 > 124 || val2 < 1) {
                 response->set_errormsg("Invalid power limit value");
                 return grpc::Status::OK;
             }
@@ -1211,7 +1207,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     }*/
     //temporary code
     res = XPUM_OK;
-    response->set_deviceid (deviceId);
+    response->set_deviceid(deviceId);
     response->set_retcode(res);
     return grpc::Status::OK;
 }
@@ -1219,14 +1215,14 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 ::grpc::Status XpumCoreServiceImpl::getPerformanceFactor(::grpc::ServerContext* context, const ::DeviceDataRequest* request, ::DevicePerformanceFactorResponse* response) {
     xpum_result_t res;
     if (!request->istiledata()) {
-         response->set_errormsg("Error");
+        response->set_errormsg("Error");
         return grpc::Status::OK;
     }
     xpum_device_id_t deviceId = request->deviceid();
     uint32_t subdevice_Id = request->tileid();
     uint32_t count;
 
-    res = xpumGetPerformanceFactor(deviceId, nullptr , &count);
+    res = xpumGetPerformanceFactor(deviceId, nullptr, &count);
     if (res != XPUM_OK) {
         response->set_errormsg("Error");
         return grpc::Status::OK;
@@ -1236,15 +1232,15 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         res = xpumGetPerformanceFactor(deviceId, dataArray, &count);
         if (res != XPUM_OK) {
             switch (res) {
-            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
-                response->set_errormsg("Level Zero Initialization Error");
-                break;
-            default:
-                response->set_errormsg("Error");
-                break;
-        }
+                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                    response->set_errormsg("Level Zero Initialization Error");
+                    break;
+                default:
+                    response->set_errormsg("Error");
+                    break;
+            }
             return grpc::Status::OK;
-        }else {
+        } else {
             for (uint32_t i = 0; i < count; i++) {
                 if (dataArray[i].subdevice_id == subdevice_Id) {
                     PerformanceFactor* pfh = response->add_pf();
@@ -1253,7 +1249,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                     pfh->set_istiledata(dataArray[i].on_subdevice);
                     pfh->set_engineset(dataArray[i].engine);
                     pfh->set_factor(dataArray[i].factor);
-                }  
+                }
             }
         }
     }
@@ -1270,13 +1266,13 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     xpum_device_id_t deviceId = request->deviceid();
     uint32_t subdevice_Id = request->tileid();
     xpum_device_performancefactor_t pf;
-    
+
     pf.on_subdevice = request->istiledata();
     pf.subdevice_id = subdevice_Id;
     pf.engine = (xpum_engine_type_flags_t)request->engineset();
     pf.factor = request->factor();
 
-    res = xpumSetPerformanceFactor(deviceId,pf);
+    res = xpumSetPerformanceFactor(deviceId, pf);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_RESULT_DEVICE_NOT_FOUND:
@@ -1297,7 +1293,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 ::grpc::Status XpumCoreServiceImpl::getDeviceProcessState(::grpc::ServerContext* context, const ::DeviceId* request, ::DeviceProcessStateResponse* response) {
     xpum_result_t res;
     xpum_device_id_t deviceId = request->id();
-    
+
     uint32_t count;
 
     res = xpumGetDeviceProcessState(deviceId, nullptr, &count);
@@ -1325,7 +1321,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                     break;
             }
             return grpc::Status::OK;
-        }else {
+        } else {
             for (uint32_t i = 0; i < count; i++) {
                 DeviceProcessState* proc = response->add_processlist();
                 proc->set_processid(dataArray[i].processId);
@@ -1339,24 +1335,24 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     response->set_count(count);
     return grpc::Status::OK;
 }
-std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
+std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
     if (engine == 1) {
-        return  "other";
+        return "other";
     }
     if (engine == 2) {
-        return  "compute";
+        return "compute";
     }
     if (engine == 4) {
-        return  "3d";
+        return "3d";
     }
     if (engine == 8) {
-        return  "media";
+        return "media";
     }
     if (engine == 16) {
-        return  "dma";
+        return "dma";
     }
     if (engine == 32) {
-        return  "render";
+        return "render";
     }
     return std::to_string(engine);
 }
@@ -1379,7 +1375,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     portConfig.setting_beaconing = false;
     portConfig.enabled = request->enabled();
 
-    res = xpumSetFabricPortConfig(deviceId,portConfig);
+    res = xpumSetFabricPortConfig(deviceId, portConfig);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_RESULT_DEVICE_NOT_FOUND:
@@ -1416,7 +1412,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     portConfig.setting_beaconing = true;
     portConfig.beaconing = request->beaconing();
 
-    res = xpumSetFabricPortConfig(deviceId,portConfig);
+    res = xpumSetFabricPortConfig(deviceId, portConfig);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_RESULT_DEVICE_NOT_FOUND:
@@ -1446,8 +1442,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
 
     if (istiledata) {
         res = validateDeviceIdAndTileId(deviceId, subdevice_Id);
-    }
-    else {
+    } else {
         res = validateDeviceId(deviceId);
     }
     if (res != XPUM_OK) {
@@ -1512,7 +1507,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     }
     int32_t power = powerLimits.sustained_limit.power / 1000;
     int32_t interval = powerLimits.sustained_limit.interval;
-   /*
+    /*
     bool available;
     bool configurable;
     xpum_ecc_state_t current, pending;
@@ -1536,15 +1531,14 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
     xpum_fabric_port_config_t portConfig[32];
     double availableClocksArray[255];
 
-    
     uint32_t freqCount = 32;
     uint32_t standbyCount = 32;
     uint32_t schedulerCount = 32;
     uint32_t powerRangeCount = 32;
     uint32_t performanceFactorCount = 32;
-    uint32_t portConfigCount =32;
+    uint32_t portConfigCount = 32;
     uint32_t clockCount = 255;
-   
+
     res = xpumGetDeviceFrequencyRanges(deviceId, freqArray, &freqCount);
     if (res != XPUM_OK) {
         switch (res) {
@@ -1625,12 +1619,12 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].on_subdevice == false) {
-            std::string scope = "1 to " + std::to_string(powerRangeArray[i].default_limit/1000);
+            std::string scope = "1 to " + std::to_string(powerRangeArray[i].default_limit / 1000);
             response->set_powerscope(scope);
             break;
         }
     }
-    response->set_intervalscope ("1 to 124");
+    response->set_intervalscope("1 to 124");
 
     for (int j{0}; j < tileCount; ++j) {
         uint32_t tileId = tileList.at(j);
@@ -1647,7 +1641,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
                 break;
             }
         }
-        
+
         tileData->set_otherperformancefactor(-1);
         tileData->set_computeperformancefactor(-1);
         tileData->set_threedperformancefactor(-1);
@@ -1686,30 +1680,30 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         for (uint32_t i = 0; i < portConfigCount; i++) {
             if (portConfig[i].subdeviceId == tileId) {
                 std::string id_str = std::to_string(portConfig[i].portNumber);
-                if( portConfig[i].enabled == true) {
+                if (portConfig[i].enabled == true) {
                     if (enabled_str.empty()) {
                         enabled_str = id_str;
                     } else {
-                        enabled_str += ", "+id_str;
+                        enabled_str += ", " + id_str;
                     }
                 } else {
                     if (disabled_str.empty()) {
                         disabled_str = id_str;
                     } else {
-                        disabled_str += ", "+id_str;
+                        disabled_str += ", " + id_str;
                     }
                 }
-                if( portConfig[i].beaconing == true) {
+                if (portConfig[i].beaconing == true) {
                     if (beaconing_on_str.empty()) {
                         beaconing_on_str = id_str;
                     } else {
-                        beaconing_on_str += ", "+id_str;
+                        beaconing_on_str += ", " + id_str;
                     }
                 } else {
                     if (beaconing_off_str.empty()) {
                         beaconing_off_str = id_str;
                     } else {
-                        beaconing_off_str += ", "+id_str;
+                        beaconing_off_str += ", " + id_str;
                     }
                 }
             }
@@ -1736,11 +1730,11 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine){
         }
         */
 
-        xpumGetFreqAvailableClocks(deviceId, tileId, availableClocksArray,&clockCount);
-        
-        for (uint32_t i= 0; i < clockCount; i++) {
+        xpumGetFreqAvailableClocks(deviceId, tileId, availableClocksArray, &clockCount);
+
+        for (uint32_t i = 0; i < clockCount; i++) {
             clockString += std::to_string(std::lround(availableClocksArray[i]));
-            if (i < clockCount-1) {
+            if (i < clockCount - 1) {
                 clockString += ", ";
             }
         }
@@ -1808,7 +1802,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
 }
 //
 ::grpc::Status XpumCoreServiceImpl::setDeviceMemoryEccState(::grpc::ServerContext* context, const ::ConfigDeviceMemoryEccStateRequest* request, ::ConfigDeviceMemoryEccStateResultData* response) {
-   /* xpum_result_t res;
+    /* xpum_result_t res;
     xpum_device_id_t deviceId = request->deviceid();
     bool available;
     bool configurable;
@@ -1838,9 +1832,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     return grpc::Status::OK;
 }
 
-
-::grpc::Status XpumCoreServiceImpl::getTopoXMLBuffer(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, 
-            ::TopoXMLResponse* response){
+::grpc::Status XpumCoreServiceImpl::getTopoXMLBuffer(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                                                     ::TopoXMLResponse* response) {
     XPUM_LOG_TRACE("call exportTopoXML");
     int size = 0;
     xpum_result_t res = xpumExportTopology2XML(nullptr, &size);
@@ -1867,10 +1860,10 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getXelinkTopology(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, 
-::XpumXelinkTopoInfoArray* response) {
+::grpc::Status XpumCoreServiceImpl::getXelinkTopology(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                                                      ::XpumXelinkTopoInfoArray* response) {
     XPUM_LOG_TRACE("call getXelinkTopology");
-    xpum_xelink_topo_info *topoInfo;
+    xpum_xelink_topo_info* topoInfo;
     int count{16};
     xpum_xelink_topo_info xelink_topo[count];
     topoInfo = xelink_topo;
@@ -1878,7 +1871,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     if (res == XPUM_BUFFER_TOO_SMALL) {
         xpum_xelink_topo_info xelink_topo[count];
         topoInfo = xelink_topo;
-        res = xpumGetXelinkTopology(xelink_topo, &count);        
+        res = xpumGetXelinkTopology(xelink_topo, &count);
     }
 
     if (res == XPUM_OK) {
@@ -1896,22 +1889,22 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             info->mutable_remotedevice()->set_subdeviceid(topoInfo[i].remoteDevice.subdeviceId);
             std::string linkType;
             if (topoInfo[i].linkType == XPUM_LINK_SELF) {
-                linkType = "S"; 
+                linkType = "S";
             } else if (topoInfo[i].linkType == XPUM_LINK_MDF) {
-                linkType = "MDF"; 
+                linkType = "MDF";
             } else if (topoInfo[i].linkType == XPUM_LINK_XE) {
-                linkType = "XL"; 
-                for(int n=0; n<XPUM_MAX_XELINK_PORT;n++){
+                linkType = "XL";
+                for (int n = 0; n < XPUM_MAX_XELINK_PORT; n++) {
                     info->add_linkportlist(topoInfo[i].linkPorts[n]);
                 }
             } else if (topoInfo[i].linkType == XPUM_LINK_SYS) {
-                linkType = "SYS"; 
+                linkType = "SYS";
             } else if (topoInfo[i].linkType == XPUM_LINK_NODE) {
-                linkType = "NODE"; 
-            } else if( topoInfo[i].linkType == XPUM_LINK_XE_TRANSMIT) {
+                linkType = "NODE";
+            } else if (topoInfo[i].linkType == XPUM_LINK_XE_TRANSMIT) {
                 linkType = "XL*";
             } else {
-                linkType = "Unknown"; 
+                linkType = "Unknown";
             }
             info->set_linktype(linkType);
         }
@@ -1929,7 +1922,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     }
 
     return grpc::Status::OK;
- }
+}
 
 void XpumCoreServiceImpl::close() {
     this->stop = true;

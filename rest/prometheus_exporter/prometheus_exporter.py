@@ -40,6 +40,7 @@ def get_metrics(core, pod_resources):
         traceback.print_exc()
         return "#nodata: due to unexpected failure", 500
 
+
 def process_fabric_stats(core, pod_resources, devices):
 
     resp = b''
@@ -61,16 +62,20 @@ def process_fabric_stats(core, pod_resources, devices):
             if link.get('src_device_id') != device_id or link.get('type') != 3:
                 continue
             link['metrics_type'] = 'XPUM_STATS_FABRIC_THROUGHPUT'
-            dst_device = next((x for x in devices if x.get('device_id') == link.get('dst_device_id')), None)
+            dst_device = next((x for x in devices if x.get(
+                'device_id') == link.get('dst_device_id')), None)
             if dst_device is None:
-                logger.warn('Cannot find information for fabric link destination device %s', device_id)
+                logger.warn(
+                    'Cannot find information for fabric link destination device %s', device_id)
                 continue
 
             link['dst_pci_bdf'] = dst_device.get('pci_bdf_address', 'N/A')
-            link['dst_dev_file'] =  get_dev_file(dst_device.get('pci_bdf_address', ''))
+            link['dst_dev_file'] = get_dev_file(
+                dst_device.get('pci_bdf_address', ''))
             data_list.append(link)
 
-        r = convert_to_prometheus_metrics(pod_resources, dev, data_list, device_id, None)
+        r = convert_to_prometheus_metrics(
+            pod_resources, dev, data_list, device_id, None)
         resp = resp + r
 
     return resp
@@ -92,7 +97,8 @@ def process_per_engine_stats(core, pod_resources, devices):
 
         for tile_id, data_map in stat_data['engine_util'].items():
             flatten_per_engine_datalist = flatten_per_engine_data(data_map)
-            r = convert_to_prometheus_metrics(pod_resources, dev, flatten_per_engine_datalist, device_id, None if tile_id == 'device_level' else tile_id)
+            r = convert_to_prometheus_metrics(
+                pod_resources, dev, flatten_per_engine_datalist, device_id, None if tile_id == 'device_level' else tile_id)
             resp = resp + r
 
     return resp
@@ -382,7 +388,7 @@ def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels, stat=Non
 
         ext_labelvalues = []
         for key in ext_labelnames:
-            value:str = ext_labels.get(key, 'n/a')
+            value: str = ext_labels.get(key, 'n/a')
             if value.startswith('$') and stat is not None:
                 value = stat.get(value[1:], 'n/a')
             ext_labelvalues.append(value)

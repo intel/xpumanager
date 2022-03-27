@@ -10,9 +10,9 @@
 #include <map>
 
 #include "../include/xpum_structs.h"
+#include "api/internal_api_structs.h"
 #include "infrastructure/measurement_cache_data.h"
 #include "infrastructure/measurement_data.h"
-#include "api/internal_api_structs.h"
 
 namespace xpum {
 
@@ -21,7 +21,7 @@ class DataLogicQueryInterface {
     virtual ~DataLogicQueryInterface(){};
 
     virtual std::shared_ptr<MeasurementData> getLatestData(MeasurementType type,
-                                          std::string &device_id) = 0;
+                                                           std::string &device_id) = 0;
 
     virtual void getLatestData(MeasurementType type,
                                std::map<std::string, std::shared_ptr<MeasurementData>> &datas) = 0;
@@ -34,7 +34,7 @@ class DataLogicQueryInterface {
                                                uint64_t *begin,
                                                uint64_t *end,
                                                uint64_t session_id) = 0;
-    
+
     virtual xpum_result_t getEngineStatistics(xpum_device_id_t deviceId,
                                               xpum_device_engine_stats_t dataList[],
                                               uint32_t *count,
@@ -49,21 +49,21 @@ class DataLogicQueryInterface {
     virtual xpum_result_t getEngineUtilizations(xpum_device_id_t deviceId,
                                                 xpum_device_engine_metric_t dataList[],
                                                 uint32_t *count) = 0;
-    
+
     virtual xpum_result_t getFabricThroughputStatistics(xpum_device_id_t deviceId,
                                                         xpum_device_fabric_throughput_stats_t dataList[],
-                                                        uint32_t* count,
-                                                        uint64_t* begin,
-                                                        uint64_t* end,
+                                                        uint32_t *count,
+                                                        uint64_t *begin,
+                                                        uint64_t *end,
                                                         uint64_t session_id) = 0;
 
     virtual xpum_result_t getFabricThroughput(xpum_device_id_t deviceId,
                                               xpum_device_fabric_throughput_metric_t dataList[],
-                                              uint32_t* count) = 0;
-    
+                                              uint32_t *count) = 0;
+
     virtual bool getFabricLinkInfo(xpum_device_id_t deviceId,
                                    FabricLinkInfo info[],
-                                   uint32_t* count) = 0;
+                                   uint32_t *count) = 0;
 
     virtual uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types) = 0;
 

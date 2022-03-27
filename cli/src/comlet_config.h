@@ -22,13 +22,13 @@ struct ComletConfigOptions {
     std::string xelinkportBeaconing;
     std::string setecc = "";
     //bool resetDevice = false;
-    
+
     //std::string schedulerTimeslice ="";
     //std::string schedulerTimeout ="";
     //bool schedulerExclusive = false;
-    std::string powerlimit ="";
-    std::string standby ="";
-    std::string frequencyrange ="";
+    std::string powerlimit = "";
+    std::string standby = "";
+    std::string frequencyrange = "";
 };
 
 class ComletConfig : public ComletBase {
@@ -44,17 +44,8 @@ class ComletConfig : public ComletBase {
     virtual void getTableResult(std::ostream &out) override;
 
     inline const bool isQuery() const {
-        return this->opts->deviceId >= 0
-            && this->opts->scheduler.empty()
-            && this->opts->performancefactor.empty()
-            && this->opts->powerlimit.empty()
-            && this->opts->standby.empty()
-            && this->opts->frequencyrange.empty()
-            && this->opts->xelinkportBeaconing.empty()
-            && this->opts->xelinkportEnable.empty()
-            && this->opts->performancefactor.empty()
-            && this->opts->setecc.empty();
-            //&& !this->opts->resetDevice;
+        return this->opts->deviceId >= 0 && this->opts->scheduler.empty() && this->opts->performancefactor.empty() && this->opts->powerlimit.empty() && this->opts->standby.empty() && this->opts->frequencyrange.empty() && this->opts->xelinkportBeaconing.empty() && this->opts->xelinkportEnable.empty() && this->opts->performancefactor.empty() && this->opts->setecc.empty();
+        //&& !this->opts->resetDevice;
     }
 
    private:

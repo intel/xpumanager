@@ -51,7 +51,7 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
 
     std::vector<DumpColumn> columnList;
 
-    std::map<xpum_stats_type_t,xpum_device_metric_data_t> rawDataMap;
+    std::map<xpum_stats_type_t, xpum_device_metric_data_t> rawDataMap;
     std::map<xpum_engine_type_t, std::map<int, xpum_device_engine_metric_t>> engineUtilRawDataMap;
     std::map<std::string, xpum_device_fabric_throughput_metric_t> fabricRawDataMap;
 
@@ -79,6 +79,5 @@ class DumpRawDataTask : public std::enable_shared_from_this<DumpRawDataTask> {
     void buildColumns();
 
     void updateData();
-
 };
 } // namespace xpum

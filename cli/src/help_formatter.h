@@ -12,7 +12,7 @@
 namespace xpum::cli {
 
 class HelpFormatter : public CLI::Formatter {
-  public:
+   public:
     std::string make_option_opts(const CLI::Option *) const override;
 
     std::string make_usage(const CLI::App *app, std::string name) const override;

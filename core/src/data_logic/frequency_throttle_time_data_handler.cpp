@@ -9,7 +9,7 @@
 namespace xpum {
 
 FrequencyThrottleTimeDataHandler::FrequencyThrottleTimeDataHandler(MeasurementType type,
-                                   std::shared_ptr<Persistency>& p_persistency)
+                                                                   std::shared_ptr<Persistency>& p_persistency)
     : TimeWeightedAverageDataHandler(type, p_persistency) {
 }
 

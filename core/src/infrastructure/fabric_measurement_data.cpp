@@ -8,12 +8,12 @@
 
 namespace xpum {
 
-void FabricMeasurementData::addRawData(uint64_t handle, 
-                                       uint64_t timestamp, 
-                                       uint64_t rx_counter, 
-                                       uint64_t tx_counter, 
-                                       uint32_t attach_id, 
-                                       uint32_t remote_fabric_id, 
+void FabricMeasurementData::addRawData(uint64_t handle,
+                                       uint64_t timestamp,
+                                       uint64_t rx_counter,
+                                       uint64_t tx_counter,
+                                       uint32_t attach_id,
+                                       uint32_t remote_fabric_id,
                                        uint32_t remote_attach_id) {
     FabricRawData_t data;
     data.timestamp = timestamp;

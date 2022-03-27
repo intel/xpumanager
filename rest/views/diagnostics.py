@@ -9,6 +9,7 @@ from flask import request
 from flask import jsonify
 from marshmallow import Schema, fields
 
+
 class DiagnosticsLevelSchema(Schema):
     level = fields.Int(
         metadata={"description": "The level for diagnostics to run"})

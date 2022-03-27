@@ -9,8 +9,8 @@
 #include <map>
 #include <nlohmann/json.hpp>
 
-#include "core_stub.h"
 #include "cli_table.h"
+#include "core_stub.h"
 
 namespace xpum::cli {
 
@@ -374,7 +374,7 @@ std::string getXelinkThroughput(std::shared_ptr<nlohmann::json> jsonPtr) {
     return res;
 }
 
-static void showDeviceStatistics(std::ostream &out, std::shared_ptr<nlohmann::json> jsonPtr, const bool cont = false) {
+static void showDeviceStatistics(std::ostream& out, std::shared_ptr<nlohmann::json> jsonPtr, const bool cont = false) {
     nlohmann::json& json = *jsonPtr;
     bool noTile = true;
     auto tileJson = json.find("tile_level");
@@ -413,7 +413,7 @@ static void showDeviceStatistics(std::ostream &out, std::shared_ptr<nlohmann::js
     table.show(out);
 }
 
-void ComletStatistics::getTableResult(std::ostream &out) {
+void ComletStatistics::getTableResult(std::ostream& out) {
     auto res = run();
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;

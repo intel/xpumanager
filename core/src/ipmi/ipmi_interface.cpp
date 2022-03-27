@@ -92,7 +92,7 @@ static int ipmi_init() {
 
     if (g_ipmi_dev < 0) {
         XPUM_LOG_ERROR("Unable to open {}. errno: {}({})\n",
-                  IPMI_DEV0, errno, strerror(errno));
+                       IPMI_DEV0, errno, strerror(errno));
         return NRV_IPMI_ERROR;
     }
 
@@ -405,13 +405,13 @@ retry:
 static int ipmi_validate_res(bsmc_res res, uint16_t res_size) {
     if (res.completion_code != IPMI_CC_SUCCESS) {
         XPUM_LOG_WARN("Non-zero completion code from BSMC: {}\n",
-                    std::to_string(res.completion_code));
+                      std::to_string(res.completion_code));
         return NRV_IPMI_ERROR;
     }
 
     if (res.data_len < res_size) {
         XPUM_LOG_WARN("Size of response is too small ({} < {})\n",
-                    std::to_string(res.data_len), std::to_string(res_size));
+                      std::to_string(res.data_len), std::to_string(res_size));
         return NRV_IPMI_ERROR;
     }
 
@@ -424,4 +424,4 @@ static void ipmi_oem_req_init(bsmc_req *req, void *ipmi_address, uint8_t cmd) {
     req->cmd = cmd;
     req->data_len = 0;
 }
-}
+} // namespace xpum

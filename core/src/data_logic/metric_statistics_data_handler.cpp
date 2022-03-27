@@ -136,7 +136,7 @@ std::shared_ptr<MeasurementData> MetricStatisticsDataHandler::getLatestStatistic
             resetStatistics(device_id, session_id);
         }
     }
-    
+
     if (datas.find(device_id) != datas.end()) {
         return datas[device_id];
     } else {

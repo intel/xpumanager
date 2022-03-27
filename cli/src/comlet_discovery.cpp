@@ -9,8 +9,8 @@
 #include <map>
 #include <nlohmann/json.hpp>
 
-#include "core_stub.h"
 #include "cli_table.h"
+#include "core_stub.h"
 
 namespace xpum::cli {
 
@@ -127,7 +127,7 @@ void ComletDiscovery::getTableResult(std::ostream &out) {
 
     if (this->opts->deviceId != -1) {
         showDetailedInfo(out, json);
-    }else{
+    } else {
         showBasicInfo(out, json);
     }
 }

@@ -18,8 +18,7 @@ using xpum::dump::engineNameMap;
 
 namespace xpum::cli {
 
-static bool isNumber(const std::string& str)
-{
+static bool isNumber(const std::string &str) {
     return str.find_first_not_of("0123456789") == std::string::npos;
 }
 
@@ -309,9 +308,9 @@ void ComletDump::printByLine(std::ostream &out) {
                     columnSchemaList.push_back(dc);
                 }
             }
-        } else if(config.optionType == xpum::dump::DUMP_OPTION_FABRIC){
+        } else if (config.optionType == xpum::dump::DUMP_OPTION_FABRIC) {
             std::string strTileId = tileId == -1 ? "device" : std::to_string(tileId);
-            if(pFabricCountJson->contains(strTileId)){
+            if (pFabricCountJson->contains(strTileId)) {
                 for (auto obj : (*pFabricCountJson)[strTileId]) {
                     std::stringstream ss;
                     std::string key;
@@ -386,7 +385,7 @@ void ComletDump::printByLine(std::ostream &out) {
             if (res->contains("device_level")) {
                 statsJson = std::make_shared<nlohmann::json>((*res)["device_level"]);
             }
-            if(res->contains("engine_util")){
+            if (res->contains("engine_util")) {
                 engineUtilJson = std::make_shared<nlohmann::json>((*res)["engine_util"]);
             }
         } else {
@@ -395,7 +394,7 @@ void ComletDump::printByLine(std::ostream &out) {
                 for (auto tile : tiles) {
                     if (tile.contains("tile_id") && tile["tile_id"].get<int>() == tileId && tile.contains("data_list")) {
                         statsJson = std::make_shared<nlohmann::json>(tile["data_list"]);
-                        if(tile.contains("engine_util")){
+                        if (tile.contains("engine_util")) {
                             engineUtilJson = std::make_shared<nlohmann::json>(tile["engine_util"]);
                         }
                         break;

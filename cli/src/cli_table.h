@@ -5,21 +5,22 @@
  */
 
 #include <math.h>
-#include <nlohmann/json.hpp>
-#include <vector>
-#include <list>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <regex>
 
-#define TABLE_COLUMN_AUTO           -1
+#include <iomanip>
+#include <iostream>
+#include <list>
+#include <nlohmann/json.hpp>
+#include <regex>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#define TABLE_COLUMN_AUTO -1
 
 namespace xpum::cli {
 
 inline void output_repeat_char(std::ostream& out, const char ch, const unsigned int times) {
-    for (unsigned int i=0; i<times; i++) {
+    for (unsigned int i = 0; i < times; i++) {
         out << ch;
     }
 }
@@ -29,40 +30,39 @@ class CharTableRow;
 class CharTableConfigCellSingle;
 
 class CharTableConfigColumn {
-    private:
+   private:
     const int size;
     const std::string title;
 
-    public:
+   public:
     CharTableConfigColumn(const nlohmann::json& conf);
 
     inline const std::string& getTitle() {
         return title;
     }
-    
+
     inline const int getSize() {
         return size;
     }
 };
 
 class CharTableConfigObjectFilter {
-    private:
+   private:
     const bool _enabled;
     const std::string prop_name;
     const std::string value_regex_string;
     const std::regex value_regex;
 
-    public:
-    inline CharTableConfigObjectFilter(const std::string& confValue):
-        _enabled(!confValue.empty()),
-        prop_name((_enabled)?confValue.substr(0,confValue.find("==")):""),
-        value_regex_string((_enabled)?confValue.substr(confValue.find("==")+2):""),
-        value_regex(value_regex_string) {
+   public:
+    inline CharTableConfigObjectFilter(const std::string& confValue) : _enabled(!confValue.empty()),
+                                                                       prop_name((_enabled) ? confValue.substr(0, confValue.find("==")) : ""),
+                                                                       value_regex_string((_enabled) ? confValue.substr(confValue.find("==") + 2) : ""),
+                                                                       value_regex(value_regex_string) {
     }
 
     inline const bool match(const nlohmann::json& obj) const {
         if (_enabled) {
-            std::string prop_value(obj.value(prop_name,""));
+            std::string prop_value(obj.value(prop_name, ""));
             const bool matched = std::regex_match(prop_value, value_regex);
             return matched;
         }
@@ -71,26 +71,24 @@ class CharTableConfigObjectFilter {
 };
 
 class CharTableConfigPathElement {
-    private:
+   private:
     const bool is_array;
     const CharTableConfigObjectFilter object_filter;
     const std::string prop_name;
 
-    public:
-    inline CharTableConfigPathElement(const std::string& confValue):
-        is_array(confValue.find("[")!=std::string::npos),
-        object_filter((is_array)?confValue.substr(confValue.find("[")+1,confValue.find("]")-confValue.find("[")-1):""),
-        prop_name((is_array)?confValue.substr(0,confValue.find("[")):confValue) {
-    };
+   public:
+    inline CharTableConfigPathElement(const std::string& confValue) : is_array(confValue.find("[") != std::string::npos),
+                                                                      object_filter((is_array) ? confValue.substr(confValue.find("[") + 1, confValue.find("]") - confValue.find("[") - 1) : ""),
+                                                                      prop_name((is_array) ? confValue.substr(0, confValue.find("[")) : confValue){};
 
     inline const nlohmann::json apply(const nlohmann::json& obj) const {
         nlohmann::json res = nlohmann::json::array();
-        for (auto inm: obj) {
+        for (auto inm : obj) {
             auto sub = inm.find(prop_name);
             if (sub != inm.end()) {
                 if (is_array) {
                     if (sub->is_array()) {
-                        for (auto inn: *sub) {
+                        for (auto inn : *sub) {
                             if (object_filter.match(inn))
                                 res.push_back(inn);
                         }
@@ -105,14 +103,14 @@ class CharTableConfigPathElement {
 };
 
 class CharTableConfigPath {
-    private:
+   private:
     std::vector<CharTableConfigPathElement*> elements;
 
-    public:
+   public:
     CharTableConfigPath(const std::string& confValue);
 
     ~CharTableConfigPath() {
-        for (auto ele: elements) {
+        for (auto ele : elements) {
             delete ele;
         }
     }
@@ -124,7 +122,7 @@ class CharTableConfigPath {
     inline const nlohmann::json apply(const nlohmann::json& obj) const {
         nlohmann::json ino = nlohmann::json::array();
         if (obj.is_array()) {
-            for (auto m: obj) {
+            for (auto m : obj) {
                 ino.push_back(m);
             }
         } else if (obj.is_object()) {
@@ -134,7 +132,7 @@ class CharTableConfigPath {
             return ino;
         }
         nlohmann::json res;
-        for (auto ele: elements) {
+        for (auto ele : elements) {
             res = ele->apply(ino);
             ino = res;
         }
@@ -143,7 +141,7 @@ class CharTableConfigPath {
 };
 
 class CharTableConfigCellBase {
-    public:
+   public:
     inline virtual ~CharTableConfigCellBase() {
     }
 
@@ -156,11 +154,11 @@ inline const std::string get_json_value_string(const nlohmann::json& value) {
     if (value.is_string()) {
         return value;
     } else if (value.is_number_unsigned()) {
-        return std::to_string((unsigned long) value);
+        return std::to_string((unsigned long)value);
     } else if (value.is_number_integer()) {
-        return std::to_string((long) value);
+        return std::to_string((long)value);
     } else if (value.is_number()) {
-        return std::to_string((double) value);
+        return std::to_string((double)value);
     } else if (value.is_object() || value.is_array()) {
         return value.dump();
     }
@@ -180,7 +178,8 @@ inline auto scale_double_value(const std::string& value, const double scaleValue
     return procValue;
 }
 
-template <typename T> auto fix_value(const std::string& value, std::function<T(double)> conv) {
+template <typename T>
+auto fix_value(const std::string& value, std::function<T(double)> conv) {
     std::string procValue = value;
     try {
         T iv = conv(std::stod(value));
@@ -194,11 +193,11 @@ template <typename T> auto fix_value(const std::string& value, std::function<T(d
 }
 
 class CharTableConfigCellSingleSubItems {
-    private:
+   private:
     const bool _enabled;
     std::vector<CharTableConfigCellSingle*> items;
 
-    public:
+   public:
     CharTableConfigCellSingleSubItems(const nlohmann::json::array_t* conf);
 
     ~CharTableConfigCellSingleSubItems();
@@ -213,7 +212,7 @@ class CharTableConfigCellSingleSubItems {
         std::string res;
         if (obj.is_array()) {
             bool notFirst = false;
-            for (auto it: obj) {
+            for (auto it : obj) {
                 if (notFirst) {
                     if (subrow) {
                         res += "\n";
@@ -227,7 +226,7 @@ class CharTableConfigCellSingleSubItems {
                         const nlohmann::json& ltag = labelTag.apply(it);
                         if (ltag.is_array()) {
                             bool ltNF = false;
-                            for (auto lt: ltag) {
+                            for (auto lt : ltag) {
                                 if (ltNF) {
                                     res += ",";
                                 }
@@ -250,7 +249,7 @@ class CharTableConfigCellSingleSubItems {
 };
 
 class CharTableConfigCellSingle : public CharTableConfigCellBase {
-    private:
+   private:
     const std::string label;
     const CharTableConfigPath label_tag;
     const std::string row_title;
@@ -270,9 +269,9 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
             }
             if (fixer == "round") {
                 procValue = fix_value<long>(procValue,
-                        [](double x) -> long {
-                            return (long) round(x);
-                        });
+                                            [](double x) -> long {
+                                                return (long)round(x);
+                                            });
             }
             if (notFirst) {
                 res += ", ";
@@ -281,9 +280,9 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
             bool normalOut = true;
             if (fixer == "negint_novalue") {
                 procValue = fix_value<long>(procValue,
-                        [](double x) -> long {
-                            return (x<0)? -1: (long) x;
-                        });
+                                            [](double x) -> long {
+                                                return (x < 0) ? -1 : (long)x;
+                                            });
                 if (procValue == "-1") {
                     res += "none";
                     normalOut = false;
@@ -310,7 +309,7 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
         const nlohmann::json propValue = value.apply(obj);
         if (propValue.is_array()) {
             bool notFirst = false;
-            for (auto sVal: propValue) {
+            for (auto sVal : propValue) {
                 notFirst = append_value(res, get_json_value_string(sVal), notFirst);
             }
         } else {
@@ -319,7 +318,7 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
         return res;
     }
 
-    public:
+   public:
     CharTableConfigCellSingle(const nlohmann::json& conf);
 
     inline virtual ~CharTableConfigCellSingle() {
@@ -349,14 +348,14 @@ class CharTableConfigCellSingle : public CharTableConfigCellBase {
 };
 
 class ChatTableConfigCellMulti : public CharTableConfigCellBase {
-    private:
+   private:
     std::vector<CharTableConfigCellSingle*> cells;
 
-    public:
+   public:
     ChatTableConfigCellMulti(const nlohmann::json& conf);
 
     inline virtual ~ChatTableConfigCellMulti() {
-        for (auto cell: cells) {
+        for (auto cell : cells) {
             delete cell;
         }
     }
@@ -374,16 +373,16 @@ class ChatTableConfigCellMulti : public CharTableConfigCellBase {
 };
 
 class CharTableConfigRowObject {
-    private:
+   private:
     const CharTableConfigPath instance;
     const bool in_array_sep;
     std::vector<CharTableConfigCellBase*> cells;
 
-    public:
+   public:
     CharTableConfigRowObject(const nlohmann::json& conf);
 
     inline ~CharTableConfigRowObject() {
-        for (auto cell: cells) {
+        for (auto cell : cells) {
             delete cell;
         }
     }
@@ -398,7 +397,7 @@ class CharTableConfigRowObject {
 
     inline const unsigned int maxRowCount() {
         unsigned int res = 0;
-        for (auto cell: cells) {
+        for (auto cell : cells) {
             res = std::max(cell->rowCount(), res);
         }
         return res;
@@ -410,7 +409,7 @@ class CharTableConfigRowObject {
 };
 
 class CharTableConfig {
-    private:
+   private:
     const unsigned int width;
     const unsigned int indentation;
     const bool show_title_row;
@@ -419,14 +418,14 @@ class CharTableConfig {
     std::vector<CharTableConfigColumn*> columns;
     std::vector<CharTableConfigRowObject*> objects;
 
-    public:
+   public:
     CharTableConfig(const nlohmann::json& conf);
 
     inline ~CharTableConfig() {
-        for (auto col: columns) {
+        for (auto col : columns) {
             delete col;
         }
-        for (auto rowObj: objects) {
+        for (auto rowObj : objects) {
             delete rowObj;
         }
     }
@@ -455,7 +454,7 @@ class CharTableConfig {
 
     // colIndex == -1 means last column
     inline const int getWidthSetting(int colIndex) {
-        if (colIndex < 0) return colWidthSetting[colWidthSetting.size()-1];
+        if (colIndex < 0) return colWidthSetting[colWidthSetting.size() - 1];
         return colWidthSetting[colIndex];
     }
 
@@ -469,7 +468,7 @@ class CharTableConfig {
 };
 
 class CharTableRowBase {
-    public:
+   public:
     inline virtual ~CharTableRowBase() {
     }
 
@@ -481,14 +480,14 @@ class CharTableRowBase {
 };
 
 class CharTableRow : public CharTableRowBase {
-    private:
+   private:
     std::vector<std::string*> cells;
 
-    public:
+   public:
     CharTableRow(const unsigned int colCount);
 
     inline ~CharTableRow() override {
-        for (auto cell: cells) {
+        for (auto cell : cells) {
             delete cell;
         }
     }
@@ -498,14 +497,14 @@ class CharTableRow : public CharTableRowBase {
     }
 
     inline void setCell(const std::string& cellValue, const int colIndex = -1) {
-        int colId = (colIndex < 0) ? cells.size()-1:colIndex;
+        int colId = (colIndex < 0) ? cells.size() - 1 : colIndex;
         delete cells[colId];
         cells[colId] = new std::string(cellValue);
     }
 
     // colIndex == -1 means last column
     inline const int columnSpaceLeft(const int colWidth, const int colIndex = -1) const override {
-        int colId = (colIndex < 0) ? cells.size()-1:colIndex;
+        int colId = (colIndex < 0) ? cells.size() - 1 : colIndex;
         const unsigned long rp = cells[colId]->find("\n");
         if (rp != std::string::npos) return -1;
         int rdiff = colWidth - cells[colId]->length();
@@ -514,35 +513,35 @@ class CharTableRow : public CharTableRowBase {
 
     inline const int getCutPositionForHangRow(const int colWidth, const int indentation, const int colIndex = -1) const {
         int cp = colWidth;
-        const std::string& cStr = *(cells[(colIndex < 0) ? cells.size()-1:colIndex]);
+        const std::string& cStr = *(cells[(colIndex < 0) ? cells.size() - 1 : colIndex]);
         const unsigned long nrp = cStr.find('\n');
         if (nrp != std::string::npos) {
-            if (nrp <= (unsigned long) cp) return nrp;
+            if (nrp <= (unsigned long)cp) return nrp;
         }
         const std::string dels(", \t/");
         while (cp > 0) {
-            const char cc = cStr[cp-1];
+            const char cc = cStr[cp - 1];
             if (dels.find(cc) != std::string::npos) {
                 break;
             }
-            cp --;
+            cp--;
         }
         if (cp > indentation) return cp;
         return colWidth;
     }
 
     inline const bool isNewRow(const unsigned int index, const int colIndex = -1) const {
-        const int ci = (colIndex < 0) ? cells.size()-1:colIndex;
+        const int ci = (colIndex < 0) ? cells.size() - 1 : colIndex;
         return index >= 0 && index < cells[ci]->length() && cells[ci]->at(index) == '\n';
     }
 
     inline std::string cutCellContentAt(const int len, const bool newRow, int colIndex = -1) {
-        int ci = (colIndex < 0) ? cells.size()-1:colIndex;
+        int ci = (colIndex < 0) ? cells.size() - 1 : colIndex;
         std::string* oStr = cells[ci];
-        cells[ci] = new std::string(oStr->substr(0,len));
+        cells[ci] = new std::string(oStr->substr(0, len));
         int lp = len;
         if (newRow) {
-            lp ++;
+            lp++;
         }
         std::string rs(oStr->substr(lp));
         delete oStr;
@@ -553,7 +552,7 @@ class CharTableRow : public CharTableRowBase {
 };
 
 class CharTableRowSeparator : public CharTableRowBase {
-    public:
+   public:
     inline CharTableRowSeparator() {
     }
 
@@ -573,25 +572,25 @@ class CharTableRowSeparator : public CharTableRowBase {
 };
 
 class CharTable {
-	private:
-	CharTableConfig& config;
+   private:
+    CharTableConfig& config;
     const nlohmann::json& result;
     std::list<CharTableRowBase*> rows;
 
     void calculateHangRows();
 
-	public:
-	CharTable(CharTableConfig& tableConf, const nlohmann::json& res, const bool cont = false);
+   public:
+    CharTable(CharTableConfig& tableConf, const nlohmann::json& res, const bool cont = false);
 
     inline ~CharTable() {
-        for (auto row: rows) {
+        for (auto row : rows) {
             delete row;
         }
     }
 
     inline CharTableRow& addRow() {
         rows.push_back(new CharTableRow(config.numOfColumns()));
-        return (CharTableRow&) *(rows.back());
+        return (CharTableRow&)*(rows.back());
     }
 
     inline void removeLatestRow() {
@@ -600,9 +599,9 @@ class CharTable {
 
     inline CharTableRowSeparator& addSeparator() {
         rows.push_back(new CharTableRowSeparator());
-        return (CharTableRowSeparator&) *(rows.back());
+        return (CharTableRowSeparator&)*(rows.back());
     }
 
     void show(std::ostream& out);
 };
-} // namespace xpumn::cli
+} // namespace xpum::cli

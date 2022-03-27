@@ -21,7 +21,7 @@ struct EngineRawData_t {
 };
 
 class EngineCollectionMeasurementData : public MetricCollectionMeasurementData {
-public:
+   public:
     EngineCollectionMeasurementData() {
         p_engine_datas = std::make_shared<std::map<uint64_t, EngineRawData_t>>();
     }
@@ -33,9 +33,9 @@ public:
         return p_engine_datas;
     }
     zes_engine_group_t getEngineType(uint64_t handle);
-private:
+
+   private:
     std::shared_ptr<std::map<uint64_t, EngineRawData_t>> p_engine_datas;
-    
 };
 
 } //namespace xpum

@@ -5,15 +5,17 @@
  */
 
 #include "gpu_utilization_data_handler.h"
+
 #include <algorithm>
 #include <iostream>
-#include "infrastructure/configuration.h"
+
 #include "core/core.h"
+#include "infrastructure/configuration.h"
 
 namespace xpum {
 
 GPUUtilizationDataHandler::GPUUtilizationDataHandler(MeasurementType type,
-                                                           std::shared_ptr<Persistency>& p_persistency)
+                                                     std::shared_ptr<Persistency>& p_persistency)
     : MetricStatisticsDataHandler(type, p_persistency) {
 }
 
@@ -155,7 +157,7 @@ void GPUUtilizationDataHandler::handleData(std::shared_ptr<SharedData>& p_data) 
     if (p_preData == nullptr || p_data == nullptr) {
         return;
     }
-    
+
     calculateData(p_data);
     updateStatistics(p_data);
 }

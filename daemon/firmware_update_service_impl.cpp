@@ -43,4 +43,4 @@ namespace xpum::daemon {
 
     return grpc::Status::OK;
 }
-}
+} // namespace xpum::daemon

@@ -9,13 +9,12 @@
 #include <algorithm>
 #include <set>
 
+#include "core/core.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_capability.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/utility.h"
-#include "infrastructure/configuration.h"
 #include "monitor_task.h"
-#include "core/core.h"
 
 namespace xpum {
 
@@ -34,11 +33,11 @@ void MonitorManager::init() {
     std::unique_lock<std::mutex> lock(this->mutex);
 
     createMonitorTasks();
-    
+
     for (uint64_t session = 0; session < Configuration::MAX_STATISTICS_SESSION_NUM; session++) {
         std::vector<std::shared_ptr<Device>> devices;
         Core::instance().getDeviceManager()->getDeviceList(devices);
-        for (auto device:devices) {
+        for (auto device : devices) {
             Core::instance().getDataLogic()->updateStatsTimestamp(session, std::stoi(device->getId()));
             Core::instance().getDataLogic()->updateEngineStatsTimestamp(session, std::stoi(device->getId()));
             Core::instance().getDataLogic()->updateFabricStatsTimestamp(session, std::stoi(device->getId()));

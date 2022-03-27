@@ -5,26 +5,26 @@
  */
 
 #include "xpum_api.h"
-#include "internal_api.h"
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include <vector>
-#include <algorithm>
 #include <sstream>
+#include <vector>
 
 #include "api_types.h"
 #include "core/core.h"
 #include "device/device.h"
-#include "device/power.h"
 #include "device/memoryEcc.h"
+#include "device/power.h"
 #include "infrastructure/configuration.h"
-#include "infrastructure/device_property.h"
-#include "infrastructure/version.h"
 #include "infrastructure/device_process.h"
+#include "infrastructure/device_property.h"
 #include "infrastructure/exception/level_zero_initialization_exception.h"
+#include "infrastructure/version.h"
+#include "internal_api.h"
 
 namespace xpum {
 
@@ -106,7 +106,7 @@ xpum_result_t validateDeviceId(xpum_device_id_t deviceId) {
     if (res != XPUM_OK) {
         return res;
     }
-    
+
     auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (pDevice == nullptr)
         return XPUM_RESULT_DEVICE_NOT_FOUND;
@@ -227,7 +227,7 @@ xpum_result_t xpumInit() {
         XPUM_LOG_INFO("Build:\t\t{}", Version::getVersionGit());
         XPUM_LOG_INFO("Level Zero:\t{}", Version::getZeLibVersion());
         Core::instance().init();
-    } catch(LevelZeroInitializationException &e) {
+    } catch (LevelZeroInitializationException &e) {
         XPUM_LOG_ERROR("xpumInit LevelZeroInitializationException");
         XPUM_LOG_ERROR("Failed to init xpum core: {}", e.what());
         Core::instance().setZeInitialized(false);
@@ -240,7 +240,7 @@ xpum_result_t xpumInit() {
         return XPUM_GENERIC_ERROR;
     }
     Core::instance().setZeInitialized(true);
-    
+
     XPUM_LOG_INFO("xpumd is providing services");
     return XPUM_OK;
 }
@@ -356,7 +356,7 @@ static bool detectGfxTool() {
     }
 }
 
-static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmware_flash_job* job) {
+static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmware_flash_job *job) {
     if (device == nullptr) {
         return XPUM_GENERIC_ERROR;
     }
@@ -368,8 +368,7 @@ static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmw
             return XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND;
         }
         rc = device->runFirmwareFlash(job->filePath, gfxPath);
-    }
-    else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC) {
+    } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC) {
         rc = device->runFirmwareFlash(job->filePath);
         //rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED;
     }
@@ -451,8 +450,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
                 return res;
             std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
             return runFirmwareFlash(device, job);
-        }
-        else {
+        } else {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         }
     }
@@ -465,7 +463,7 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         return ret;
     }
 
-    if(deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
+    if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         deviceId = 0;
     }
 
@@ -493,9 +491,8 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
-static bool invalidChar (char c) 
-{  
-    return !(c>=32 && c <128);   
+static bool invalidChar(char c) {
+    return !(c >= 32 && c < 128);
 }
 
 xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_property_name_t propName) {
@@ -701,7 +698,7 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
     if (res != XPUM_OK) {
         return res;
     }
-    
+
     if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
         return XPUM_UNSUPPORTED_SESSIONID;
     }
@@ -727,7 +724,7 @@ xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
     if (res != XPUM_OK) {
         return res;
     }
-    
+
     if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
         return XPUM_UNSUPPORTED_SESSIONID;
     }
@@ -777,7 +774,7 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
     if (res != XPUM_OK) {
         return res;
     }
-        
+
     if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
         return XPUM_UNSUPPORTED_SESSIONID;
     }
@@ -925,31 +922,31 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
 
     res = Core::instance().getGroupManager()->getGroupInfo(groupId, &groupInfo);
 
-    if ( res != XPUM_OK) {
+    if (res != XPUM_OK) {
         return res;
     }
 
-    if(pStatus == nullptr){
+    if (pStatus == nullptr) {
         for (int i = 0; i < groupInfo.count; i++) {
             currentCount = *count - totalCount;
             res = Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], nullptr,
-                                                                &currentCount, begin, end, sessionId);
-            if(res != XPUM_OK){
+                                                                        &currentCount, begin, end, sessionId);
+            if (res != XPUM_OK) {
                 break;
             }
-            totalCount += currentCount;        
+            totalCount += currentCount;
         }
     } else {
         for (int i = 0; i < groupInfo.count; i++) {
             currentCount = *count - totalCount;
             res = Core::instance().getDataLogic()->getMetricsStatistics(groupInfo.deviceList[i], pStatus,
-                                                                &currentCount, begin, end, sessionId);
+                                                                        &currentCount, begin, end, sessionId);
 
-            if(currentCount > *count - totalCount){
+            if (currentCount > *count - totalCount) {
                 res = XPUM_BUFFER_TOO_SMALL;
                 break;
             }
-            if(res != XPUM_OK){                
+            if (res != XPUM_OK) {
                 break;
             }
             totalCount += currentCount;
@@ -998,7 +995,7 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value) {
 
     switch (key) {
         case xpum_agent_config_t::XPUM_AGENT_CONFIG_SAMPLE_INTERVAL:
-            *((int64_t *)value) =(int64_t) Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
+            *((int64_t *)value) = (int64_t)Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE;
             return XPUM_OK;
         default:
             break;
@@ -1060,7 +1057,7 @@ xpum_result_t xpumGetHealthConfigByGroup(xpum_group_id_t groupId,
 
     if (deviceIdList == nullptr || valueList == nullptr) {
         *count = xpum_group_info.count;
-        return  XPUM_OK;
+        return XPUM_OK;
     }
 
     if (xpum_group_info.count > (*count)) {
@@ -1103,7 +1100,7 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
 
     if (dataList == nullptr) {
         *count = xpum_group_info.count;
-        return  XPUM_OK;
+        return XPUM_OK;
     }
 
     if (xpum_group_info.count > (*count)) {
@@ -1180,7 +1177,7 @@ xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
 
     if (resultList == nullptr) {
         *count = xpum_group_info.count;
-        return  XPUM_OK;
+        return XPUM_OK;
     }
 
     if (xpum_group_info.count > (*count)) {
@@ -1335,7 +1332,7 @@ xpum_result_t xpumSetDevicePowerSustainedLimits(xpum_device_id_t deviceId,
         if (res != XPUM_OK) {
             return res;
         }
-    }else {
+    } else {
         xpum_result_t res = validateDeviceId(deviceId);
         if (res != XPUM_OK) {
             return res;
@@ -1476,7 +1473,7 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
-xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count){
+xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -1486,7 +1483,7 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
-    
+
     std::vector<Power> powers;
     Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
 
@@ -1632,7 +1629,7 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
     return XPUM_OK;
 }
 
-xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_process_t *dataArray, uint32_t *count) {
+xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_process_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -1658,13 +1655,13 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId,  xpum_device_
             dataArray[i].memSize = proc.getMemSize();
             dataArray[i].sharedSize = proc.getSharedSize();
             dataArray[i].engine = (xpum_engine_type_flags_t)proc.getEngine();
-            strcpy(dataArray[i].processName ,proc.getProcessName().c_str());
+            strcpy(dataArray[i].processName, proc.getProcessName().c_str());
             i++;
         }
     }
     return XPUM_OK;
 }
-xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId,  xpum_device_performancefactor_t * dataArray, uint32_t *count) {
+xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -1715,8 +1712,8 @@ xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_pe
         return res;
     }
 
-    PerformanceFactor pf (performanceFactor.on_subdevice,
-    performanceFactor.subdevice_id,(zes_engine_type_flags_t) performanceFactor.engine, performanceFactor.factor);
+    PerformanceFactor pf(performanceFactor.on_subdevice,
+                         performanceFactor.subdevice_id, (zes_engine_type_flags_t)performanceFactor.engine, performanceFactor.factor);
     //(bool on_subdevice, uint32_t subdevice_id, zes_engine_type_flags_t engine, double factor)
 
     if (Core::instance().getDeviceManager()->setPerformanceFactor(std::to_string(deviceId), pf)) {
@@ -1724,7 +1721,7 @@ xpum_result_t xpumSetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_pe
     }
     return XPUM_GENERIC_ERROR;
 }
-xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t * dataArray, uint32_t *count){
+xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -1742,7 +1739,7 @@ xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
     //std::vector<xpum_fabric_port_config_t> portConfig;
     std::vector<port_info> pi;
 
-    Core::instance().getDeviceManager()->getFabricPorts(std::to_string(deviceId),pi);
+    Core::instance().getDeviceManager()->getFabricPorts(std::to_string(deviceId), pi);
 
     if (pi.size() > *count && dataArray != nullptr) {
         return XPUM_BUFFER_TOO_SMALL;
@@ -1927,11 +1924,11 @@ xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_
 }
 
 xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int *count) {
-xpum_result_t res = Core::instance().apiAccessPreCheck();
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
     }
-    
+
     return Core::instance().getDumpRawDataManager()->listDumpRawDataTasks(taskList, count);
 }
 

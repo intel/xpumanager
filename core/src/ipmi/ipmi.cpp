@@ -13,9 +13,9 @@
 #include "bsmc_ipmi_oem_cmd.h"
 #include "hal.h"
 #include "lcr.h"
-#include "tool.h"
 #include "pci.h"
 #include "scr.h"
+#include "tool.h"
 
 #if !(__linux__) && (_MSC_VER < 1910)
 #include <efi.h>
@@ -115,8 +115,8 @@ static int card_detect(nrv_card *card) {
 
     if (res.card_get_info.board_product >= NUM_BOARD_PRODUCTS) {
         XPUM_LOG_WARN("Unknown card at Bus:{}, PCI Slot:{}, I2C Addr:0x{}",
-                    card->ipmi_address.bus, card->ipmi_address.slot,
-                    card->ipmi_address.i2c_addr);
+                      card->ipmi_address.bus, card->ipmi_address.slot,
+                      card->ipmi_address.i2c_addr);
         return NRV_IPMI_ERROR;
     }
 
@@ -141,7 +141,7 @@ static int card_detect(nrv_card *card) {
     return NRV_SUCCESS;
 }
 
-static int probe_i2c_addr(uint8_t i2c_addr){
+static int probe_i2c_addr(uint8_t i2c_addr) {
     int err = 0;
     nrv_card card;
     unsigned char devid = 0;
@@ -249,4 +249,4 @@ int set_bsmc_interface(char *iface_str) {
 inline int get_total_ipmi_card_count() {
     return g_list.count;
 }
-}
+} // namespace xpum

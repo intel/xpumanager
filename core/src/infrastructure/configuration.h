@@ -5,8 +5,9 @@
  */
 
 #pragma once
-#include <string>
 #include <set>
+#include <string>
+
 #include "measurement_type.h"
 
 namespace xpum {

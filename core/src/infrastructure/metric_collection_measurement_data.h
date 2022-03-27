@@ -25,7 +25,7 @@ struct MetricCollectionMeasurementData_t {
 };
 
 class MetricCollectionMeasurementData : public MeasurementData {
-public:
+   public:
     MetricCollectionMeasurementData() {
         p_collection_datas = std::make_shared<std::map<uint64_t, MetricCollectionMeasurementData_t>>();
     }
@@ -44,7 +44,8 @@ public:
     uint64_t getDataMin(uint64_t handle);
     uint64_t getDataMax(uint64_t handle);
     uint64_t getDataAvg(uint64_t handle);
-private:
+
+   private:
     std::shared_ptr<std::map<uint64_t, MetricCollectionMeasurementData_t>> p_collection_datas;
 };
 

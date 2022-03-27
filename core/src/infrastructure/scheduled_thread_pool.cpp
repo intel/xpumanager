@@ -106,14 +106,14 @@ void ScheduledThreadPoolTask::run() {
     auto start = std::chrono::steady_clock::now();
     auto delay = start - this->scheduled_time;
     XPUM_LOG_DEBUG("calling user function in worker thread, scheduled_time delayed: {}us",
-                  std::chrono::duration_cast<std::chrono::microseconds>(delay).count());
+                   std::chrono::duration_cast<std::chrono::microseconds>(delay).count());
 
 #endif
     this->func();
 #ifdef TRACE_SCHEDULED_TASK_RUN
     auto duration = std::chrono::steady_clock::now() - start;
     XPUM_LOG_DEBUG("user function runs for {}ms",
-                  std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
+                   std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 #endif
 }
 

@@ -20,7 +20,9 @@ class DeviceBasicInfoSchema(Schema):
     pci_bdf_address = fields.Str(
         metadata={"description": "The PCI bdf address of device"})
     vendor_name = fields.Str(metadata={"description": "Vendor name"})
-    odataid = fields.URL(data_key="@odata.id",metadata={"description": "Link to device detail properties"})
+    odataid = fields.URL(
+        data_key="@odata.id", metadata={"description": "Link to device detail properties"})
+
 
 class DeviceListSchema(Schema):
     devices = fields.Nested(DeviceBasicInfoSchema, many=True)
@@ -53,6 +55,7 @@ def get_devices():
 class DevicePropertiesLinkSchema(Schema):
     odataid = fields.URL(data_key="@odata.id",
                          metadata={"description": "Link to detail info"})
+
 
 class DevicePropertiesSchema(Schema):
     device_id = fields.Int(metadata={"description": "Device id"})
@@ -107,7 +110,6 @@ class DevicePropertiesSchema(Schema):
         metadata={"description": "The physical EU simd width"})
     health = fields.Nested(DevicePropertiesLinkSchema)
     topology = fields.Nested(DevicePropertiesLinkSchema)
-
 
 
 def get_device_properties(deviceId):

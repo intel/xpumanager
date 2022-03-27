@@ -7,11 +7,11 @@
 #include "hwinfo.h"
 
 #include <experimental/filesystem>
-#include "hwloc.h"
 
+#include "core/core.h"
+#include "hwloc.h"
 #include "infrastructure/exception/ilegal_parameter_exception.h"
 #include "infrastructure/property.h"
-#include "core/core.h"
 
 namespace xpum {
 
@@ -34,15 +34,14 @@ std::string HWInfo::getDevicePath(const std::string& bdf_address) {
     return result;
 }
 
-bool HWInfo::isPcieDevExist(xpum_device_id_t deviceId){
+bool HWInfo::isPcieDevExist(xpum_device_id_t deviceId) {
     Property prop;
     std::shared_ptr<Device> p_device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (p_device == nullptr) {
         XPUM_LOG_ERROR("isPcieDevExist, device {} not exist", deviceId);
         throw IlegalParameterException("device does not exist");
     }
-    if(!p_device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop)){
-
+    if (!p_device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop)) {
         throw BaseException(ErrorCode::UNKNOWN, "PCI_BDF_ADDRESS not exist");
     }
     bool find = false;

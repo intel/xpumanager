@@ -12,6 +12,7 @@ from dev_file_converter import get_bdf_address
 
 KUBELET_SOCKET = 'unix:///var/lib/kubelet/pod-resources/kubelet.sock'
 
+
 def get_pod_resources():
 
     ret = {}
@@ -39,6 +40,7 @@ def get_pod_resources():
     except Exception as e:
         print('failed to get pod resource list due to: ', e)
     return ret
+
 
 if __name__ == '__main__':
     print(get_pod_resources())

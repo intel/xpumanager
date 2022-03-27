@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "data_logic/data_logic_interface.h"
-#include "device/scheduler.h"
 #include "device/memoryEcc.h"
+#include "device/scheduler.h"
 #include "device_manager_interface.h"
 
 namespace xpum {
@@ -81,12 +81,12 @@ class DeviceManager : public DeviceManagerInterface,
                                          const SchedulerExclusiveMode& mode);
 
     bool resetDevice(const std::string& id, bool force);
-    
+
     void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes);
 
     void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf);
 
-    bool setPerformanceFactor(const std::string& id, PerformanceFactor &pf);
+    bool setPerformanceFactor(const std::string& id, PerformanceFactor& pf);
 
     bool getFabricPorts(const std::string& id, std::vector<port_info>& portInfo);
 

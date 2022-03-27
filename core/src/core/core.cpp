@@ -8,6 +8,7 @@
 
 #include "control/device_manager.h"
 #include "data_logic/data_logic.h"
+#include "device/gpu/gpu_device_stub.h"
 #include "diagnostic/diagnostic_manager.h"
 #include "group/group_manager.h"
 #include "health/health_manager.h"
@@ -16,7 +17,6 @@
 #include "infrastructure/logger.h"
 #include "monitor/monitor_manager.h"
 #include "policy/policy_manager.h"
-#include "device/gpu/gpu_device_stub.h"
 
 namespace xpum {
 

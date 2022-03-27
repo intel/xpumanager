@@ -48,6 +48,7 @@ class EngineUtilSchema(Schema):
     three_d = fields.Nested(EngineUtilDataSchema, many=True, metadata={
         "description": "3d engine utilizations"}, data_key="3d")
 
+
 class FabricThroughputSchema(Schema):
     name = fields.Str(metadata={"description": "Fabric throughput name"})
     value = fields.Number(metadata={"description": "The current value"})
@@ -57,6 +58,7 @@ class FabricThroughputSchema(Schema):
         metadata={"description": "The min value since last query"})
     max = fields.Number(
         metadata={"description": "The max value since last query"})
+
 
 class TileStatisticsSchema(Schema):
     tile_id = fields.Int(
@@ -111,7 +113,7 @@ def get_statistics(deviceId):
     if code == stub.XpumResult["XPUM_RESULT_DEVICE_NOT_FOUND"].value:
         error = dict(message=message)
         return jsonify(error), 400
-    elif code !=0:
+    elif code != 0:
         error = dict(message="Error code: {}, error message: {}".format(
             stub.XpumResult(code).name, message))
         return jsonify(error), 500
@@ -144,6 +146,7 @@ def get_statistics(deviceId):
             if tileId in engineUtilData:
                 t["engine_util"] = engineUtilData[tileId]
     return jsonify(data)
+
 
 class GroupStatisticsSchema(Schema):
     group_id = fields.Int(metadata={"description": "Group id"})
@@ -179,12 +182,13 @@ def get_group_statistics(groupId):
             500:
                 description: Error
     """
-    code, message, group_data = stub.getStatisticsByGroupNotForPrometheus(groupId)
+    code, message, group_data = stub.getStatisticsByGroupNotForPrometheus(
+        groupId)
     if code != 0:
         error = dict(status=code, message=message)
         return jsonify(error), 500
     if "datas" not in group_data:
-        return jsonify(group_data) 
+        return jsonify(group_data)
     for data in group_data["datas"]:
         deviceId = data["device_id"]
         engineCode, engineMsg, engineData = stub.getEngineStatistics(deviceId)

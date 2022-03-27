@@ -4,33 +4,33 @@
  *  @file xpumcli.cpp
  */
 
+#include <errno.h>
+#include <grp.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
-#include <stdlib.h>
-#include <errno.h>
-#include <stdio.h>
-#include <grp.h>
-#include <unistd.h>
-#include <pwd.h>
 
 #include "CLI/App.hpp"
-#include "cli_wrapper.h"
 #include "cli_resource.h"
-
+#include "cli_wrapper.h"
+#include "comlet_agentset.h"
+#include "comlet_config.h"
 #include "comlet_diagnostic.h"
 #include "comlet_discovery.h"
+#include "comlet_dump.h"
+#include "comlet_firmware.h"
 #include "comlet_group.h"
 #include "comlet_health.h"
 #include "comlet_policy.h"
+#include "comlet_reset.h"
 #include "comlet_statistics.h"
 #include "comlet_topology.h"
-#include "comlet_config.h"
-#include "comlet_reset.h"
 #include "comlet_version.h"
-#include "comlet_firmware.h"
-#include "comlet_dump.h"
-#include "comlet_agentset.h"
 #include "core_stub.h"
 #include "logger.h"
 
@@ -41,34 +41,34 @@ bool permissionCheck() {
     if (uid == 0) {
         return true;
     }
-	struct passwd* pw = getpwuid(uid);
-	if(pw == NULL){
-    	perror("getpwuid error");
-	}
-	int ngroups = 0;
-	getgrouplist(pw->pw_name, pw->pw_gid, NULL, &ngroups);
+    struct passwd* pw = getpwuid(uid);
+    if (pw == NULL) {
+        perror("getpwuid error");
+    }
+    int ngroups = 0;
+    getgrouplist(pw->pw_name, pw->pw_gid, NULL, &ngroups);
     if (ngroups == 0) {
         return false;
     }
-	gid_t groups[ngroups];
-	getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
+    gid_t groups[ngroups];
+    getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
     std::string xpum_grp("xpum");
     bool has_permission = false;
-    for (int i = 0; i < ngroups; i++){
-	    struct group* gr = getgrgid(groups[i]);
-	    if(gr == NULL){
-	        perror("getgrgid error");
-	    }
+    for (int i = 0; i < ngroups; i++) {
+        struct group* gr = getgrgid(groups[i]);
+        if (gr == NULL) {
+            perror("getgrgid error");
+        }
         std::string grp_name(gr->gr_name);
-		if (grp_name == xpum_grp) {
+        if (grp_name == xpum_grp) {
             has_permission = true;
         }
-	}
+    }
     return has_permission;
 }
 
 bool serviceStatusCheck() {
-    FILE * f = popen("service xpum status", "r");
+    FILE* f = popen("service xpum status", "r");
     char c_line[1024];
     while (fgets(c_line, 1024, f) != NULL) {
         std::string line(c_line);
@@ -81,7 +81,7 @@ bool serviceStatusCheck() {
 }
 
 bool levelZeroLoaderCheck() {
-    FILE * f = popen("ldd /opt/xpum/bin/xpumd", "r");
+    FILE* f = popen("ldd /opt/xpum/bin/xpumd", "r");
     char c_line[1024];
     while (fgets(c_line, 1024, f) != NULL) {
         std::string line(c_line);
@@ -96,8 +96,7 @@ bool levelZeroLoaderCheck() {
     return true;
 }
 
-int main(int argc, char **argv) {
-
+int main(int argc, char** argv) {
     xpum::cli::init_logger();
     // XPUM_LOG_AUDIT("XPUM CLI (ver.%s) Started", "1.0.0.0");
 

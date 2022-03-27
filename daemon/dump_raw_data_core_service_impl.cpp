@@ -157,13 +157,13 @@ static void removeFileOnStartTaskFail(std::string filePath) {
         response->set_status(res);
         if (res != XPUM_OK || count < 0) {
             switch (res) {
-            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
-                response->set_errormsg("Level Zero Initialization Error");
-                break;
-            default:
-                response->set_errormsg("Error occurs");
-                break;
-        }
+                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                    response->set_errormsg("Level Zero Initialization Error");
+                    break;
+                default:
+                    response->set_errormsg("Error occurs");
+                    break;
+            }
             return grpc::Status::OK;
         }
         if (count == 0) {

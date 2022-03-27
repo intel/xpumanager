@@ -6,15 +6,16 @@
 
 #pragma once
 
+#include <grpc++/channel.h>
+
+#include <chrono>
+#include <map>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
-#include <chrono>
-#include <map>
 
 #include "core.grpc.pb.h"
-#include <grpc++/channel.h>
 #include "xpum_structs.h"
 
 namespace xpum::cli {
@@ -59,8 +60,8 @@ class CoreStub {
     std::string healthTypeEnumToString(HealthType type);
     nlohmann::json appendHealthThreshold(int deviceId, nlohmann::json, HealthType type, uint64_t throttleValue, uint64_t shutdownValue);
 
-    std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter=false);
-    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter=false);
+    std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter = false);
+    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter = false);
     std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId);
     std::shared_ptr<std::map<int, std::map<int, int>>> getEngineCount(int deviceId);
     std::shared_ptr<nlohmann::json> getFabricStatistics(int deviceId);
@@ -88,11 +89,11 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getAllPolicyActionType();
     std::unique_ptr<nlohmann::json> getAllPolicy();
     std::unique_ptr<nlohmann::json> getPolicyById(bool isDevice, int id);
-	std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie,int id);
-    std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie,int id,XpumPolicyData &policy);
+    std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie, int id);
+    std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, int id, XpumPolicyData& policy);
     bool isCliSupportedPolicyType(XpumPolicyType type);
-	
-    std::unique_ptr<nlohmann::json> runFirmwareFlash( int deviceId, unsigned int type, const std::string& filePath );
+
+    std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath);
     std::unique_ptr<nlohmann::json> getFirmwareFlashResult(int deviceId, unsigned int type);
 
     std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> metricsTypeList);
@@ -112,13 +113,12 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getXelinkTopology();
 
     std::shared_ptr<nlohmann::json> getFabricCount(int deviceId);
-    
+
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
-    
-    std::shared_ptr< grpc::Channel> channel;
+
+    std::shared_ptr<grpc::Channel> channel;
 
     std::string getCardUUID(const std::string& rawUUID);
-
 };
 } // end namespace xpum::cli

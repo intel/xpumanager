@@ -28,7 +28,7 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     XpumCoreServiceImpl(void);
     virtual ~XpumCoreServiceImpl();
 
-    void close();    
+    void close();
 
     virtual grpc::Status getVersion(grpc::ServerContext* context, const google::protobuf::Empty* request,
                                     XpumVersionInfoArray* response) override;
@@ -52,7 +52,7 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status groupGetInfo(::grpc::ServerContext* context, const ::GroupId* request,
                                         ::GroupInfo* response) override;
     virtual ::grpc::Status getAllGroups(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
-                                          ::GroupArray* response) override;
+                                        ::GroupArray* response) override;
     virtual ::grpc::Status runDiagnostics(::grpc::ServerContext* context, const ::RunDiagnosticsRequest* request,
                                           ::DiagnosticsTaskInfo* response) override;
     virtual ::grpc::Status runDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunDiagnosticsByGroupRequest* request,
@@ -86,13 +86,12 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
 
     virtual ::grpc::Status runFirmwareFlash(::grpc::ServerContext* context, const ::XpumFirmwareFlashJob* request, ::GeneralEnum* response) override;
     virtual ::grpc::Status getFirmwareFlashResult(::grpc::ServerContext* context, const ::XpumFirmwareFlashTaskRequest* request, ::XpumFirmwareFlashTaskResult* response) override;
-    
+
     virtual ::grpc::Status getPolicy(::grpc::ServerContext* context, const ::GetPolicyRequest* request, ::GetPolicyResponse* response) override;
     virtual ::grpc::Status setPolicy(::grpc::ServerContext* context, const ::SetPolicyRequest* request, ::SetPolicyResponse* response) override;
     virtual ::grpc::Status readPolicyNotifyData(::grpc::ServerContext* context, const google::protobuf::Empty* request, grpc::ServerWriter<ReadPolicyNotifyDataResponse>* writer) override;
-    virtual ::grpc::Status handleErrorForGetPolicy(xpum_result_t res,::GetPolicyResponse* response);
-    
-    
+    virtual ::grpc::Status handleErrorForGetPolicy(xpum_result_t res, ::GetPolicyResponse* response);
+
     virtual ::grpc::Status getDeviceConfig(::grpc::ServerContext* context, const ::ConfigDeviceDataRequest* request, ::ConfigDeviceData* response) override;
     virtual ::grpc::Status setDeviceSchedulerMode(::grpc::ServerContext* context, const ::ConfigDeviceSchdeulerModeRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status setDevicePowerLimit(::grpc::ServerContext* context, const ::ConfigDevicePowerLimitRequest* request, ::ConfigDeviceResultData* response) override;
@@ -126,9 +125,9 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
 
     virtual ::grpc::Status getFabricCount(::grpc::ServerContext* context, const ::GetFabricCountRequest* request, ::GetFabricCountResponse* response) override;
 
-    private:
-        std::atomic_bool stop;
-        std::mutex dumpRawDataFilenameMtx;
+   private:
+    std::atomic_bool stop;
+    std::mutex dumpRawDataFilenameMtx;
 };
 
 } // end namespace xpum::daemon

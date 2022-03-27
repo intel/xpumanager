@@ -47,7 +47,7 @@ enum MeasurementType {
     METRIC_PCIE_WRITE,
     METRIC_ENGINE_UTILIZATION,
     METRIC_FABRIC_THROUGHPUT,
-    
+
     METRIC_MAX,
 };
 

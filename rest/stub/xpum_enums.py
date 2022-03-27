@@ -89,7 +89,7 @@ XpumResult = Enum("xpum_result_t", (
     "XPUM_UNSUPPORTED_SESSIONID",
 ), start=0)
 
-XpumEngineType = Enum("xpum_engine_type_t",(
+XpumEngineType = Enum("xpum_engine_type_t", (
     "XPUM_ENGINE_TYPE_COMPUTE",
     "XPUM_ENGINE_TYPE_RENDER",
     "XPUM_ENGINE_TYPE_DECODE",

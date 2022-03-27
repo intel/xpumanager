@@ -20,12 +20,13 @@ class GroupInfoSchema(Schema):
     group_name = fields.Str(metadata={"description": "The name of the group"})
     group_id = fields.Int(metadata={"description": "The id of the group"})
     device_id_list = fields.List(fields.Int(metadata={
-                                 "description": "The id of devices belong to this group"}) )
+                                 "description": "The id of devices belong to this group"}))
 
 
 class AllGroupInfoSchema(Schema):
     group_list = fields.Nested(GroupInfoSchema, many=True, metadata={
         "description": "Group info list"})
+
 
 def groups():
     """
@@ -78,7 +79,7 @@ def groups():
                 return jsonify(data)
             error = dict(status=code, message=message)
             return jsonify(error), 400
-            
+
         elif request.method == 'GET':
             # get all group ids
             code, message, data = stub.getAllGroups()
@@ -87,15 +88,16 @@ def groups():
             error = dict(status=code, message=message)
             return jsonify(error), 500
     except Exception as e:
-        #print(e)
+        # print(e)
         return "Internal error: " + e.description, 500
 
 
 class ModifyGroupDeviceSchema(Schema):
     device_id_add = fields.List(fields.Int(metadata={
-                                 "description": "The id of devices add to this group"}))
+        "description": "The id of devices add to this group"}))
     device_id_remove = fields.List(fields.Int(metadata={
-                                 "description": "The id of devices remove from this group"}))
+        "description": "The id of devices remove from this group"}))
+
 
 class ModifyGroupErrorSchema(Schema):
     device_id = fields.Int(metadata={
@@ -108,6 +110,7 @@ class ModifyGroupResponseSchema(Schema):
     fail_to_add = fields.Nested(ModifyGroupErrorSchema(many=True))
     fail_to_remove = fields.Nested(ModifyGroupErrorSchema(many=True))
     group_info = fields.Nested(GroupInfoSchema())
+
 
 def group_detail(groupId):
     """
@@ -212,5 +215,5 @@ def group_detail(groupId):
 
             return jsonify(data), 200
     except Exception as e:
-        #print(e)
+        # print(e)
         return "Internal error: " + e.description, 500

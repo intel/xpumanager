@@ -10,9 +10,8 @@
 #include "core.grpc.pb.h"
 #include "core.pb.h"
 #include "core_stub.h"
-#include "xpum_structs.h"
 #include "logger.h"
-
+#include "xpum_structs.h"
 
 namespace xpum::cli {
 
@@ -109,7 +108,7 @@ std::unique_ptr<nlohmann::json> CoreStub::listDumpRawDataTasks() {
         (*json)["error"] = response.errormsg();
         return json;
     }
-    
+
     (*json)["dump_task_ids"] = nlohmann::json::array();
 
     for (auto taskInfo : response.tasklist()) {

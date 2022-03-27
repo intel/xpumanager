@@ -8,9 +8,8 @@
 
 #include <vector>
 
-#include "xpum_structs.h"
-
 #include "internal_api_structs.h"
+#include "xpum_structs.h"
 
 namespace xpum {
 /**
@@ -55,9 +54,7 @@ xpum_result_t xpumGetEngineCount(xpum_device_id_t deviceId,
                                  xpum_engine_type_t type,
                                  uint32_t *count);
 
-
 std::vector<EngineCount> getDeviceAndTileEngineCount(xpum_device_id_t deviceId);
-
 
 std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId);
 

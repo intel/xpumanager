@@ -49,7 +49,7 @@ class DataLogic : public DataLogicInterface {
                                        uint64_t* begin,
                                        uint64_t* end,
                                        uint64_t session_id);
-    
+
     xpum_result_t getEngineStatistics(xpum_device_id_t device_id,
                                       xpum_device_engine_stats_t data_list[],
                                       uint32_t* count,
@@ -71,14 +71,14 @@ class DataLogic : public DataLogicInterface {
     bool getFabricLinkInfo(xpum_device_id_t deviceId,
                            FabricLinkInfo info[],
                            uint32_t* count);
-                                                
+
     void getLatestMetrics(xpum_device_id_t deviceId,
                           xpum_device_metrics_t dataList[],
                           int* count);
 
     xpum_result_t getEngineUtilizations(xpum_device_id_t deviceId,
                                         xpum_device_engine_metric_t dataList[],
-                                        uint32_t *count);
+                                        uint32_t* count);
 
     uint32_t startRawDataCollectionTask(xpum_device_id_t device_id, std::vector<MeasurementType> types);
 

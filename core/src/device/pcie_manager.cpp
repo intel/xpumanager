@@ -5,9 +5,10 @@
  */
 
 #include "pcie_manager.h"
-#include "infrastructure/logger.h"
-#include "infrastructure/exception/base_exception.h"
+
 #include "infrastructure/configuration.h"
+#include "infrastructure/exception/base_exception.h"
+#include "infrastructure/logger.h"
 #include "pcm-iio-gpu.h"
 
 namespace xpum {
@@ -36,7 +37,7 @@ void PCIeManager::init() {
             }
             std::vector<std::string> datas = pcm_iio_gpu_query();
             while (!interrupted.load() && !datas.empty()) {
-                for(auto data : datas) {
+                for (auto data : datas) {
                     std::stringstream sstream(data);
                     std::vector<std::string> line;
                     std::string item;
@@ -50,14 +51,14 @@ void PCIeManager::init() {
                     if (pcie_reads.find(line[1]) == pcie_reads.end()) {
                         pcie_reads[line[1]] = 0;
                     }
-                    pcie_reads[line[1]] +=  read_value * 0.1;
+                    pcie_reads[line[1]] += read_value * 0.1;
 
                     auto write_value = std::stoull(line[3].c_str());
                     pcie_write_throughputs[line[1]] = write_value / 1000;
                     if (pcie_writes.find(line[1]) == pcie_writes.end()) {
                         pcie_writes[line[1]] = 0;
                     }
-                    pcie_writes[line[1]] +=  write_value * 0.1;
+                    pcie_writes[line[1]] += write_value * 0.1;
                 }
                 if (!initialized.load())
                     initialized.store(true);
@@ -89,8 +90,8 @@ void PCIeManager::close() {
 }
 
 uint64_t PCIeManager::getLatestPCIeReadThroughput(std::string bdf) {
-    if (this->interrupted == true || 
-            pcie_read_throughputs.find(bdf) == pcie_read_throughputs.end()) {
+    if (this->interrupted == true ||
+        pcie_read_throughputs.find(bdf) == pcie_read_throughputs.end()) {
         throw BaseException("get PCIe read throughput error");
     }
 
@@ -98,8 +99,8 @@ uint64_t PCIeManager::getLatestPCIeReadThroughput(std::string bdf) {
 }
 
 uint64_t PCIeManager::getLatestPCIeWriteThroughput(std::string bdf) {
-    if (this->interrupted == true || 
-            pcie_write_throughputs.find(bdf) == pcie_write_throughputs.end()) {
+    if (this->interrupted == true ||
+        pcie_write_throughputs.find(bdf) == pcie_write_throughputs.end()) {
         throw BaseException("get PCIe write throughput error");
     }
 
@@ -107,8 +108,8 @@ uint64_t PCIeManager::getLatestPCIeWriteThroughput(std::string bdf) {
 }
 
 uint64_t PCIeManager::getLatestPCIeRead(std::string bdf) {
-    if (this->interrupted == true || 
-            pcie_reads.find(bdf) == pcie_reads.end()) {
+    if (this->interrupted == true ||
+        pcie_reads.find(bdf) == pcie_reads.end()) {
         throw BaseException("get PCIe read error");
     }
 
@@ -116,11 +117,11 @@ uint64_t PCIeManager::getLatestPCIeRead(std::string bdf) {
 }
 
 uint64_t PCIeManager::getLatestPCIeWrite(std::string bdf) {
-    if (this->interrupted == true || 
-            pcie_writes.find(bdf) == pcie_writes.end()) {
+    if (this->interrupted == true ||
+        pcie_writes.find(bdf) == pcie_writes.end()) {
         throw BaseException("get PCIe write error");
     }
 
     return pcie_writes[bdf];
 }
-}
+} // namespace xpum

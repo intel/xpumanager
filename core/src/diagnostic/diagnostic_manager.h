@@ -10,13 +10,13 @@
 #include <dlfcn.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <bitset>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <atomic>
 
 #include "control/device_manager_interface.h"
 #include "data_logic/data_logic_interface.h"
@@ -62,10 +62,10 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     static void doDeviceDiagnosticPermission(int gpu_total_count, std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDeviceDiagnosticExclusive(const zes_device_handle_t &zes_device,
-                                        std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+                                            std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDeviceDiagnosticHardwareSysman(const zes_device_handle_t &zes_device,
-                                           std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+                                                 std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDeviceDiagnosticMediaCodec(const zes_device_handle_t &zes_device,
                                              std::shared_ptr<xpum_diag_task_info_t> p_task_info);
@@ -75,16 +75,16 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                               std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDeviceDiagnosticPeformanceComputationAndPower(const ze_device_handle_t &ze_device,
-                                                            const ze_driver_handle_t &ze_driver,
-                                                            std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+                                                                const ze_driver_handle_t &ze_driver,
+                                                                std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDeviceDiagnosticPeformanceMemoryAllocation(const ze_device_handle_t &ze_device,
-                                                   const ze_driver_handle_t &ze_driver,
-                                                   std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+                                                             const ze_driver_handle_t &ze_driver,
+                                                             std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_device_handle_t &ze_device,
-                                                   const ze_driver_handle_t &ze_driver,
-                                                   std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+                                                            const ze_driver_handle_t &ze_driver,
+                                                            std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t type, std::string error, std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 

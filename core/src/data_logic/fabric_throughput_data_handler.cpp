@@ -4,11 +4,13 @@
  *  @file fabric_throughput_data_handler.cpp
  */
 
-#include <iostream>
 #include "fabric_throughput_data_handler.h"
+
+#include <iostream>
+
+#include "core/core.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/fabric_measurement_data.h"
-#include "core/core.h"
 
 namespace xpum {
 

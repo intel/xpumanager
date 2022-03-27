@@ -40,8 +40,8 @@ UINT32 gFwReqSize;
 #include <time.h>
 
 #include "file_util.h"
-#include "tool.h"
 #include "pci.h"
+#include "tool.h"
 
 namespace xpum {
 
@@ -52,9 +52,8 @@ namespace xpum {
 #define UPDATE_WAIT_TIME_US 10
 #define BSMC_READY_TIMEOUT_S 5
 
-#define FW_UPDATE_TYPE_STR(n) (                                                         \
-    (n == FW_UPDATE_TYPE_BSMC) ? "BSMC" : (n == FW_UPDATE_TYPE_CSMC_FULL) ? "CSMC FULL" \
-                                                                          : "unkown")
+#define FW_UPDATE_TYPE_STR(n) ( \
+    (n == FW_UPDATE_TYPE_BSMC) ? "BSMC" : (n == FW_UPDATE_TYPE_CSMC_FULL) ? "CSMC FULL" : "unkown")
 
 #define CHECK_FW_VERSION 0 // 0 - will not check the firmware version whereas 1 will check firmware version //
 
@@ -424,13 +423,13 @@ static int fw_update(nrv_card *card, const uint8_t *data, size_t data_size, fw_g
     int err;
 
     XPUM_LOG_INFO("Initializing {} firmware update",
-                FW_UPDATE_TYPE_STR(fw_update_type));
+                  FW_UPDATE_TYPE_STR(fw_update_type));
     XPUM_LOG_INFO("Actual {} firmware version {}.{}.{}.{}", FW_UPDATE_TYPE_STR(fw_update_type),
-                std::to_string(version->major), std::to_string(version->minor), std::to_string(version->patch), std::to_string(version->build));
+                  std::to_string(version->major), std::to_string(version->minor), std::to_string(version->patch), std::to_string(version->build));
 
     if (fw_update_start(&card->ipmi_address, fw_update_type)) {
         XPUM_LOG_ERROR("{} firmware update initialization failed",
-                  FW_UPDATE_TYPE_STR(fw_update_type));
+                       FW_UPDATE_TYPE_STR(fw_update_type));
         return NRV_FIRMWARE_UPDATE_ERROR;
     }
 
@@ -443,46 +442,46 @@ static int fw_update(nrv_card *card, const uint8_t *data, size_t data_size, fw_g
     switch (chip_status) {
         case IPMI_FW_UPDATE_COMPLETE:
             XPUM_LOG_INFO("{} image transfer completed",
-                        FW_UPDATE_TYPE_STR(fw_update_type));
+                          FW_UPDATE_TYPE_STR(fw_update_type));
             break;
         case IPMI_FW_UPDATE_FAIL:
             XPUM_LOG_ERROR("{} firmware update failed",
-                      FW_UPDATE_TYPE_STR(fw_update_type));
+                           FW_UPDATE_TYPE_STR(fw_update_type));
             err = NRV_FIRMWARE_UPDATE_ERROR;
             break;
         case IPMI_FW_UPDATE_SIGNATURE_FAIL:
             XPUM_LOG_ERROR("{} firmware signature verification failed",
-                      FW_UPDATE_TYPE_STR(fw_update_type));
+                           FW_UPDATE_TYPE_STR(fw_update_type));
             err = NRV_FIRMWARE_VERIFICATION_ERROR;
             break;
         case IPMI_FW_UPDATE_IMAGE_TO_LARGE_FAIL:
             XPUM_LOG_ERROR("{} firmware image too large",
-                      FW_UPDATE_TYPE_STR(fw_update_type));
+                           FW_UPDATE_TYPE_STR(fw_update_type));
             err = NRV_FIRMWARE_UPDATE_ERROR;
             break;
         case IPMI_FW_UPDATE_NO_IMAGE_SIZE_FAIL:
             XPUM_LOG_ERROR("{} firmware image has invalid header",
-                      FW_UPDATE_TYPE_STR(fw_update_type));
+                           FW_UPDATE_TYPE_STR(fw_update_type));
             err = NRV_FIRMWARE_UPDATE_ERROR;
             break;
         case IPMI_FW_UPDATE_PACKET_TO_LARGE_FAIL:
             XPUM_LOG_ERROR("{} firmware packet transfer is too large",
-                      FW_UPDATE_TYPE_STR(fw_update_type));
+                           FW_UPDATE_TYPE_STR(fw_update_type));
             err = NRV_FIRMWARE_UPDATE_ERROR;
             break;
         case IPMI_FW_UPDATE_TO_MANY_RETRIES_FAIL:
             XPUM_LOG_ERROR("{} firmware transfer too many retries",
-                      FW_UPDATE_TYPE_STR(fw_update_type));
+                           FW_UPDATE_TYPE_STR(fw_update_type));
             err = NRV_FIRMWARE_UPDATE_ERROR;
             break;
         case IPMI_FW_UPDATE_WRITE_TO_FLASH_FAIL:
             XPUM_LOG_ERROR("{} firmware write to flash failed",
-                      FW_UPDATE_TYPE_STR(fw_update_type));
+                           FW_UPDATE_TYPE_STR(fw_update_type));
             err = NRV_FIRMWARE_UPDATE_ERROR;
             break;
         default:
             XPUM_LOG_ERROR("{} unknown chip status received: {}",
-                      FW_UPDATE_TYPE_STR(fw_update_type), chip_status);
+                           FW_UPDATE_TYPE_STR(fw_update_type), chip_status);
             err = NRV_FIRMWARE_UPDATE_ERROR;
             break;
     }
@@ -493,7 +492,6 @@ static int fw_update(nrv_card *card, const uint8_t *data, size_t data_size, fw_g
 static int wait_for_bsmc(ipmi_address_t *addr, fw_get_info_res prev_ver) {
     int retries = BSMC_READY_TIMEOUT_S;
     fw_get_info_res curr_ver;
-
 
     while (retries) {
         if (fw_get_info(addr, &curr_ver, IPMI_FW_GET_INFO_CMD)) {
@@ -540,7 +538,7 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
     /* BSMC firmware update */
     //TODO for all cards:
     for (int i = 0; i < cards.count; i++) {
-    //if ( cards.count > 0 ) { //only one card now
+        //if ( cards.count > 0 ) { //only one card now
         nrv_card *card = &cards.card[i];
 
         err = get_fw_version(&card->ipmi_address, &prev_ver[i]);
@@ -593,7 +591,7 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
     }
 
     /* Firmware update completion check */
-    //TODO for all cards: 
+    //TODO for all cards:
     for (int i = 0; i < cards.count; i++) {
         /*
     if ( cards.count > 0 ) {
@@ -616,9 +614,9 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
 
         if (bsmc_data && !reset_failed)
             XPUM_LOG_INFO("BSMC updated on card {} to version {}.{}.{}.{}",
-                     std::to_string(cards.card[i].id), std::to_string(curr_ver.bsmc.major),
-                     std::to_string(curr_ver.bsmc.minor), std::to_string(curr_ver.bsmc.patch),
-                     std::to_string(curr_ver.bsmc.build));
+                          std::to_string(cards.card[i].id), std::to_string(curr_ver.bsmc.major),
+                          std::to_string(curr_ver.bsmc.minor), std::to_string(curr_ver.bsmc.patch),
+                          std::to_string(curr_ver.bsmc.build));
     }
 exit:
     if (err)
@@ -642,8 +640,8 @@ static int cmd_firmware_info(nrv_list cards, unsigned int versions[4]) {
             return err;
 
         XPUM_LOG_INFO("BSMC firmware version: {}.{}.{}.{}",
-                 std::to_string(fw_ver.bsmc.major), std::to_string(fw_ver.bsmc.minor), std::to_string(fw_ver.bsmc.patch),
-                 std::to_string(fw_ver.bsmc.build));
+                      std::to_string(fw_ver.bsmc.major), std::to_string(fw_ver.bsmc.minor), std::to_string(fw_ver.bsmc.patch),
+                      std::to_string(fw_ver.bsmc.build));
         versions[0] = fw_ver.bsmc.major;
         versions[1] = fw_ver.bsmc.minor;
         versions[2] = fw_ver.bsmc.patch;
@@ -678,18 +676,17 @@ int cmd_probe() {
 
     int err = get_card_list(&cards, card_id);
 
-    if(err)
+    if (err)
         return err;
 
     unsigned int versions[4];
-    
+
     err = cmd_firmware_info(cards, versions);
 
     return err;
-    
 }
 
-int cmd_firmware(const char* file, unsigned int versions[4]) {
+int cmd_firmware(const char *file, unsigned int versions[4]) {
     const char *bsmc_file = file;
     uint8_t *bsmc_data = NULL;
     size_t bsmc_size = 0;
@@ -704,7 +701,7 @@ int cmd_firmware(const char* file, unsigned int versions[4]) {
 
     //#if IS_DEBUG()
     if (bsmc_file) {
-    // check image version before update //
+        // check image version before update //
 #if CHECK_FW_VERSION
         err = check_image_version(cards, bsmc_file);
         if (err != NRV_SUCCESS) {
@@ -738,4 +735,4 @@ exit:
 
     return err;
 }
-}
+} // namespace xpum

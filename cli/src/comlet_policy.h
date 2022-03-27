@@ -26,8 +26,8 @@ struct ComletPolicyOptions {
     std::string policyConditionType = "";
     std::string policyActionType = "";
     int threshold = -200000;
-    double throttlefrequencymin=-200000;
-    double throttlefrequencymax=-200000;
+    double throttlefrequencymin = -200000;
+    double throttlefrequencymax = -200000;
 };
 
 class ComletPolicy : public ComletBase {
@@ -40,11 +40,11 @@ class ComletPolicy : public ComletBase {
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
-    virtual void getTableResult(std::ostream &out) override;
+    virtual void getTableResult(std::ostream& out) override;
 
     XpumPolicyActionType policyActionTypeEnumFromString(std::string& type);
     XpumPolicyConditionType policyConditionTypeEnumFromString(std::string& type);
-    XpumPolicyType policyTypeEnumFromString(std::string &type);
+    XpumPolicyType policyTypeEnumFromString(std::string& type);
 
     bool isTypeConditionActionMatch();
 

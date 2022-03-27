@@ -7,42 +7,56 @@
 from flask import request, jsonify
 import stub
 from marshmallow import Schema, fields
+
+
 class StandbySchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
     standby_mode = fields.String(
         metadata={"description": "The standby mode: never, default"})
+
+
 class PortEnabledSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
     port = fields.Integer(
         metadata={"description": "The port number"})
-    enabled =fields.Integer(
+    enabled = fields.Integer(
         metadata={"description": "The enabled 1; disabled 0"})
+
+
 class MemoryEccStateSchema(Schema):
-    enabled =fields.Integer(
+    enabled = fields.Integer(
         metadata={"description": "The enabled 1; disabled 0"})
+
+
 class PortBeaconingSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
     port = fields.Integer(
         metadata={"description": "The port number"})
-    beaconing =fields.Integer(
+    beaconing = fields.Integer(
         metadata={"description": "The beaconing on 1; off 0"})
+
+
 class PerformancefactorSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
     engine = fields.String(
         metadata={"description": "engine name"})
-    factor =fields.Float(
+    factor = fields.Float(
         metadata={"description": "performance factor"})
+
+
 class PowerLimitSchema(Schema):
-    #tile_id = fields.Integer(
+    # tile_id = fields.Integer(
     #    metadata={"description": "The tile id"})
     power_limit = fields.Integer(
         metadata={"description": "The power limit value"})
     power_average_window = fields.Integer(
         metadata={"description": "The interval window"})
+
+
 class FrequencySchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
@@ -51,10 +65,11 @@ class FrequencySchema(Schema):
     max_frequency = fields.Integer(
         metadata={"description": "The max frequency value"})
 
+
 class SchedulerSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
-    scheduler_mode= fields.String(
+    scheduler_mode = fields.String(
         metadata={"description": "The scheduler mode: timeout, timeslice and exclusive"})
     scheduler_watchdog_timeout = fields.Integer(
         metadata={"description": "The watchdog timeout for timeout mode"})
@@ -63,32 +78,45 @@ class SchedulerSchema(Schema):
     scheduler_timeslice_yield_timeout = fields.Integer(
         metadata={"description": "The yield timeout for timeslice mode"})
 
+
 class ConfigParameterSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
+
 
 class TileConfigSchema(Schema):
     tileId = fields.String(metadata={"description": "Tile id"})
     power_limit = fields.Integer(
         metadata={"description": "The power limit value"})
-    power_vaild_range = fields.String(metadata={"description": "power's scope"})
-    power_average_window = fields.Integer(metadata={"description": "The interval window"})
-    power_average_window_vaild_range = fields.String(metadata={"description": "power's inteval scope"})
+    power_vaild_range = fields.String(
+        metadata={"description": "power's scope"})
+    power_average_window = fields.Integer(
+        metadata={"description": "The interval window"})
+    power_average_window_vaild_range = fields.String(
+        metadata={"description": "power's inteval scope"})
     min_frequency = fields.Integer(metadata={"description": "min frequency"})
     max_frequency = fields.Integer(metadata={"description": "max frequency"})
-    gpu_frequency_valid_options = fields.String(metadata={"description": "frequency scope"})
+    gpu_frequency_valid_options = fields.String(
+        metadata={"description": "frequency scope"})
     standby_mode = fields.String(
         metadata={"description": "The standby mode: never, default"})
-    standby_mode_valid_options = fields.String(metadata={"description": "standby option"})
-    scheduler_mode= fields.String(
+    standby_mode_valid_options = fields.String(
+        metadata={"description": "standby option"})
+    scheduler_mode = fields.String(
         metadata={"description": "The scheduler mode: timeout, timeslice and exclusive"})
-    scheduler_watchdog_timeout = fields.Integer(metadata={"description": "scheduler timeout's value"})
-    scheduler_timeslice_interval = fields.Integer(metadata={"description": "scheduler timeslice's interval value"})
-    scheduler_timeslice_yield_timeout = fields.Integer(metadata={"description": "scheduler timeslice's yield value"})
+    scheduler_watchdog_timeout = fields.Integer(
+        metadata={"description": "scheduler timeout's value"})
+    scheduler_timeslice_interval = fields.Integer(
+        metadata={"description": "scheduler timeslice's interval value"})
+    scheduler_timeslice_yield_timeout = fields.Integer(
+        metadata={"description": "scheduler timeslice's yield value"})
+
+
 class ConfigSchema(Schema):
     deviceId = fields.Integer(metadata={"description": "Device id"})
     tileCount = fields.Integer(metadata={"description": "Tile count"})
     tileConfigData = fields.Nested(TileConfigSchema)
+
 
 def set_standby(deviceId):
     """
@@ -127,16 +155,17 @@ def set_standby(deviceId):
         return jsonify("Invalid Parameter standby mode"), 500
     if type(tileId) != int:
         return jsonify("Invalid Parameter tileId"), 500
-    
-    if tileId<0:
+
+    if tileId < 0:
         return jsonify("invalid Parameter tileId"), 500
-    
+
     code, message, data = stub.setStandby(
         deviceId, tileId, standby)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
+
 
 def set_powerlimit(deviceId):
     """
@@ -166,32 +195,33 @@ def set_powerlimit(deviceId):
     if not request.is_json:
         return jsonify("json string is missing"), 500
     req = request.get_json()
-    if ("power_limit" not in req) or ("power_average_window" not in req) :
+    if ("power_limit" not in req) or ("power_average_window" not in req):
         return jsonify("json string is invalid"), 500
     power = req["power_limit"]
     interval = req["power_average_window"]
     #tileId = req["tile_id"]
     if type(power) != int:
-       return jsonify("Invalid Parameter power_limit"), 500
+        return jsonify("Invalid Parameter power_limit"), 500
     if type(interval) != int:
         return jsonify("Invalid Parameter power_average_window"), 500
-    power = power *1000
-    
-    if power<0 or interval<0:
+    power = power * 1000
+
+    if power < 0 or interval < 0:
         return jsonify("invalid power_limit or power_average_window value"), 500
-    
-    #if type(tileId) != int:
+
+    # if type(tileId) != int:
     #    return jsonify("Invalid Parameter tileId"), 500
-    
-    #if tileId<0:
+
+    # if tileId<0:
     #    return jsonify("invalid Parameter tileId"), 500
-    
+
     #code, message, data = stub.setPowerLimit(deviceId, tileId, power, interval)
     code, message, data = stub.setPowerLimit(deviceId, -1, power, interval)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
+
 
 def set_frequencyrange(deviceId):
     """
@@ -232,16 +262,17 @@ def set_frequencyrange(deviceId):
         return jsonify("Invalid Parameter min_frequency"), 500
     if type(maxFreq) != int:
         return jsonify("Invalid Parameter max_frequency"), 500
-    
-    if tileId<0 or minFreq<0 or maxFreq<0 :
+
+    if tileId < 0 or minFreq < 0 or maxFreq < 0:
         return jsonify("invalid min_frequency or max_frequency value"), 500
-    
+
     code, message, data = stub.setFrequencyRange(
         deviceId, tileId, minFreq, maxFreq)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
+
 
 def set_scheduler(deviceId):
     """
@@ -273,7 +304,7 @@ def set_scheduler(deviceId):
     req = request.get_json()
     if ("tile_id" not in req) or ("scheduler_mode" not in req):
         return jsonify("json string is invalid"), 500
-    
+
     tileId = req["tile_id"]
     mode = req["scheduler_mode"]
 
@@ -292,7 +323,7 @@ def set_scheduler(deviceId):
         val2 = 0
     else:
         return jsonify("invalid scheduler mode"), 500
-    
+
     if type(tileId) != int:
         return jsonify("Invalid Parameter tileId"), 500
     if type(mode) != str:
@@ -302,14 +333,15 @@ def set_scheduler(deviceId):
     if type(val2) != int:
         return jsonify("Invalid Parameter type"), 500
 
-    if tileId<0 or val1<0 or val2 <0:
+    if tileId < 0 or val1 < 0 or val2 < 0:
         return jsonify("invalid Parameter or out of range"), 500
-    
+
     code, message, data = stub.setScheduler(deviceId, tileId, mode, val1, val2)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
+
 
 def set_portenabled(deviceId):
     """
@@ -341,11 +373,11 @@ def set_portenabled(deviceId):
     req = request.get_json()
     if ("tile_id" not in req) or ("port" not in req) or ("enabled" not in req):
         return jsonify("json string is invalid"), 500
-    
+
     tileId = req["tile_id"]
     port = req["port"]
     enabled = req["enabled"]
-   
+
     if type(tileId) != int:
         return jsonify("Invalid Parameter tileId"), 500
     if type(port) != int:
@@ -353,15 +385,15 @@ def set_portenabled(deviceId):
     if type(enabled) != int:
         return jsonify("Invalid Parameter enabled"), 500
 
-    if tileId<0 or port <0 or (enabled != 0 and enabled != 1):
+    if tileId < 0 or port < 0 or (enabled != 0 and enabled != 1):
         return jsonify("invalid Parameter value or out of range"), 500
-    
-    
+
     code, message, data = stub.setPortEnabled(deviceId, tileId, port, enabled)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
+
 
 def set_portbeaconing(deviceId):
     """
@@ -393,11 +425,11 @@ def set_portbeaconing(deviceId):
     req = request.get_json()
     if ("tile_id" not in req) or ("port" not in req) or ("beaconing" not in req):
         return jsonify("json string is invalid"), 500
-    
+
     tileId = req["tile_id"]
     port = req["port"]
     beaconing = req["beaconing"]
-   
+
     if type(tileId) != int:
         return jsonify("Invalid Parameter tileId"), 500
     if type(port) != int:
@@ -405,14 +437,16 @@ def set_portbeaconing(deviceId):
     if type(beaconing) != int:
         return jsonify("Invalid Parameter beaconing"), 500
 
-    if tileId<0 or port <0 or (beaconing != 0 and beaconing != 1):
+    if tileId < 0 or port < 0 or (beaconing != 0 and beaconing != 1):
         return jsonify("invalid Parameter value or out of range"), 500
-    
-    code, message, data = stub.setPortBeaconing(deviceId, tileId, port, beaconing)
+
+    code, message, data = stub.setPortBeaconing(
+        deviceId, tileId, port, beaconing)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
+
 
 def set_performancefactor(deviceId):
     """
@@ -444,31 +478,33 @@ def set_performancefactor(deviceId):
     req = request.get_json()
     if ("tile_id" not in req) or ("engine" not in req) or ("factor" not in req):
         return jsonify("json string is invalid"), 500
-    
+
     tileId = req["tile_id"]
     engine = req["engine"]
     factor = req["factor"]
-   
+
     if type(tileId) != int:
         return jsonify("Invalid Parameter tileId"), 500
     if type(engine) != str:
         return jsonify("Invalid Parameter engine"), 500
-    if type(factor) != float and type(factor)!= int:
+    if type(factor) != float and type(factor) != int:
         return jsonify("Invalid Parameter factor"), 500
 
-    if tileId<0 or factor <0 :
+    if tileId < 0 or factor < 0:
         return jsonify("invalid Parameter value or out of range"), 500
-    
+
     if engine.lower() == "media":
-        engineValue = 1<<3
+        engineValue = 1 << 3
     elif engine.lower() == "compute":
-        engineValue = 1<<1
-    
-    code, message, data = stub.setPerformanceFactor(deviceId, tileId, engineValue, factor)
+        engineValue = 1 << 1
+
+    code, message, data = stub.setPerformanceFactor(
+        deviceId, tileId, engineValue, factor)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
+
 
 def set_memoryecc(deviceId):
     """
@@ -497,23 +533,24 @@ def set_memoryecc(deviceId):
     """
     if not request.is_json:
         return jsonify("json string is missing"), 500
-    
+
     req = request.get_json()
     if "enabled" not in req:
         return jsonify("json string is invalid"), 500
-    
-    enabled = req["enabled"]  
+
+    enabled = req["enabled"]
     if type(enabled) != int:
         return jsonify("Invalid Parameter enabled"), 500
-    
+
     if enabled != 0 and enabled != 1:
         return jsonify("Invalid value of enabled"), 500
-    
+
     code, message, data = stub.setMemoryecc(deviceId, enabled)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500
     return jsonify(data)
+
 
 def run_reset(deviceId):
     code, message, data = stub.resetDevice(deviceId)
