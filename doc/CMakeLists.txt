@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.10.0)
 
 if(NOT DEFINED WORK_PATH)
   set(WORK_PATH ${CMAKE_CURRENT_BINARY_DIR})
