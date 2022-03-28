@@ -31,3 +31,8 @@ RUN pip3 install mistune==0.8.4 apispec apispec_webframeworks \
     Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
     apispec-webframeworks myst-parser marshmallow \
     prometheus-client flask flask_httpauth
+RUN apt-get remove -y cmake && \
+curl -s https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh --output cmake.sh && \
+chmod +x cmake.sh && \
+./cmake.sh --skip-license && \
+cmake --version
