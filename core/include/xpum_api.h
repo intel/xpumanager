@@ -758,7 +758,7 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
  * 
  * @param deviceId      IN: Device id to query 
  * @param tileId        IN: tile id to query, when pass -1, means to get device level data
- * @param metricsTypeList   IN: metrics type to dump
+ * @param dumpTypeList   IN: metrics to dump
  * @param count         IN: The count of entries in \a metricsTypeList
  * @param dumpFilePath  IN: The path of file to dump raw data
  * @param taskInfo      OUT: The info of the task just created

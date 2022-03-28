@@ -222,7 +222,7 @@ typedef struct xpum_device_properties_t {
 } xpum_device_properties_t;
 
 /**
- * @brief Struct 
+ * @brief Struct AMC firmware version
  * 
  */
 typedef struct xpum_amc_fw_version_t {
