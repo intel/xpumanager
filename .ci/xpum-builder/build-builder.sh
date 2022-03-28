@@ -17,7 +17,7 @@ cd "$(dirname "$0")"
 
 if [ ! -d "grpc" ]
 then
-  git clone --depth 1 -b v1.40.0 https://github.com/grpc/grpc
+  git clone --depth 1 -b v1.45.0 https://github.com/grpc/grpc
   pushd grpc
   git submodule update --init
   popd
