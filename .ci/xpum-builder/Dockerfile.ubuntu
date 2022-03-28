@@ -1,9 +1,9 @@
-FROM ubuntu:20.04
+FROM ubuntu:18.04
 
 # Ubuntu release matching "FROM" version
 RUN /bin/echo -e "\
-deb http://linux-ftp.sh.intel.com/pub/mirrors/ubuntu/ focal main universe\n\
-deb http://linux-ftp.sh.intel.com/pub/mirrors/ubuntu/ focal-updates main universe\n\
+deb http://linux-ftp.sh.intel.com/pub/mirrors/ubuntu/ bionic main universe\n\
+deb http://linux-ftp.sh.intel.com/pub/mirrors/ubuntu/ bionic-updates main universe\n\
 " > /etc/apt/sources.list
 
 ADD level-zero-1.7.9.tar.gz /
