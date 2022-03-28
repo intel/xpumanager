@@ -25,7 +25,7 @@ void FirmwareManager::getAMCFwVersions() {
 
 void FirmwareManager::init() {
     // get amc fw versions
-    getAMCFwVersions();
+    amcFwList = cmd_get_amc_firmware_versions();
 };
 
 std::vector<std::string> FirmwareManager::getAMCFirmwareVersions() {

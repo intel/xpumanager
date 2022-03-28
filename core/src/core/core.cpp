@@ -122,7 +122,7 @@ void Core::init() {
     p_dump_raw_data_manager = std::make_shared<DumpRawDataManager>();
     // p_dump_raw_data_manager->init();
 
-    XPUM_LOG_INFO("initialize dump raw data manager");
+    XPUM_LOG_INFO("initialize firmware manager");
     p_firmware_manager = std::make_shared<FirmwareManager>();
     p_firmware_manager->init();
 

@@ -283,8 +283,18 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
     while (true) {
         /* Check FW update status */
         err = fw_update_sync(addr, &offset, &size, status);
-        if (err)
+        if (err) {
+            // retry with new I2C addr
+            ipmi_address_t tmp_addr = *addr;
+            int err_backup = err;
+            tmp_addr.i2c_addr = CARD_FIRST_I2C_ADDR;
+            err = fw_update_sync(&tmp_addr, &offset, &size, status);
+            if (err || *status != IPMI_FW_UPDATE_COMPLETE) {
+                err = err_backup;
+                *status = IPMI_FW_UPDATE_FAIL;
+            }
             goto exit;
+        }
 
         if (*status == IPMI_FW_UPDATE_WAIT) {
             do_sleep(UPDATE_WAIT_TIME_US);
@@ -298,6 +308,17 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
             if (err)
                 goto exit;
             continue;
+        } else if (*status == IPMI_FW_UPDATE_FAIL) {
+            // retry with new I2C addr
+            ipmi_address_t tmp_addr = *addr;
+            int err_backup = err;
+            tmp_addr.i2c_addr = CARD_FIRST_I2C_ADDR;
+            err = fw_update_sync(&tmp_addr, &offset, &size, status);
+            if (err || *status != IPMI_FW_UPDATE_COMPLETE) {
+                err = err_backup;
+                *status = IPMI_FW_UPDATE_FAIL;
+            }
+            goto exit;
         } else if (*status != IPMI_FW_UPDATE_READ) {
             goto exit;
         }
@@ -672,6 +693,23 @@ static int cmd_firmware_info(nrv_list cards, unsigned int versions[4]) {
         */
     }
 
+    return err;
+}
+
+int cmd_test_update_sync() {
+    int err;
+    uint32_t offset = 0;
+    uint32_t size = 0;
+    ipmi_address_t addr;
+    uint8_t status;
+
+    nrv_list cards;
+
+    int card_id = CARD_SELECT_ALL;
+
+    err = get_card_list(&cards, card_id);
+    addr = cards.card[0].ipmi_address;
+    err = fw_update_sync(&addr, &offset, &size, &status);
     return err;
 }
 
