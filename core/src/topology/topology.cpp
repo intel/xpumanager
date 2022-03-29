@@ -306,6 +306,7 @@ xpum_result_t Topology::topo2xml(char* buffer, int* buflen, std::map<device_pair
     hwloc_obj_t obj = nullptr;
     char* xmlbuf;
     int xmlbuflen, err;
+    std::vector<std::shared_ptr<char> > buffers;
 
     hwloc_topology_init(&hwtopology);
     hwloc_topology_set_userdata_export_callback(hwtopology, export_cb);
@@ -347,6 +348,7 @@ xpum_result_t Topology::topo2xml(char* buffer, int* buflen, std::map<device_pair
             }
             std::shared_ptr<char> tmpBuffer(static_cast<char*>(malloc(512)), free);
             if (tmpBuffer != nullptr && tmpBuffer.get() != nullptr) {
+                buffers.push_back(tmpBuffer);
                 memset(tmpBuffer.get(), 0, 512);
 
                 if (!name.empty()) {
