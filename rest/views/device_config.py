@@ -497,6 +497,8 @@ def set_performancefactor(deviceId):
         engineValue = 1 << 3
     elif engine.lower() == "compute":
         engineValue = 1 << 1
+    else:
+        return jsonify("Invalid engine value"), 500
 
     code, message, data = stub.setPerformanceFactor(
         deviceId, tileId, engineValue, factor)
