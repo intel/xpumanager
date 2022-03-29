@@ -62,7 +62,7 @@ popd
 # a standalone build from an archive
 # shellcheck disable=SC2016
 git submodule foreach 'cd $toplevel; rm -rf $name'
-rm /usr/local/lib/libz.so*
+rm -rf /usr/local/lib/libz.so*
 
 # Install gRPC
 mkdir -p "cmake/build"
