@@ -75,13 +75,13 @@ nlohmann::json ComletFirmware::validateArguments() {
     nlohmann::json result;
     // GSC
     if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GSC") == 0) {
-        result["error"] = "upgrading GSC firmware on all devices is not supported";
+        result["error"] = "Updating GSC firmware on all devices is not supported";
         return result;
     }
 
     // AMC
     if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("AMC") == 0) {
-        result["error"] = "upgrading AMC firmware on single device is not supported";
+        result["error"] = "Updating AMC firmware on single device is not supported";
         return result;
     }
     return result;

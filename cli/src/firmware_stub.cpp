@@ -45,13 +45,16 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
             (*json)["error"] = "Firmware image not found.";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND:
-            (*json)["error"] = "/usr/local/bin/GfxFwFPT not found. To enable this feature, install GfxFwFPT first.";
+            (*json)["error"] = "Please get GfxFwFPT tool from Intel and put it into the folder /usr/local/bin.";
             return json;
         case xpum_result_t::XPUM_RESULT_DEVICE_NOT_FOUND:
             (*json)["error"] = "Device not found.";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL:
-            (*json)["error"] = "AMC update don't allow update all devices yet, please add -d argument.";
+            (*json)["error"] = "Updating GSC firmware on all devices is not supported";
+            return json;
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE:
+            (*json)["error"] = "Updating AMC firmware on single device is not supported";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING:
             (*json)["error"] = "Firmware update task already running.";

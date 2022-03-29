@@ -115,15 +115,15 @@ def runFirmwareFlash(deviceId):
         return jsonify({'error': 'missing arguments'}), 400
     pos = filePath.find("/")
     if pos == -1:
-        return jsonify({'error': 'invalid file path, only full path supported'}), 400
+        return jsonify({'error': 'Invalid file path, only full path supported'}), 400
     else:
         filePath = filePath[pos:]    # trunc the file path
 
     fwType = req.get('firmware_name')
     if fwType == 'GSC' and deviceId == 1024:
-        return jsonify({'error': 'upgrading GSC firmware on all devices is not supported'}), 400
+        return jsonify({'error': 'Updating GSC firmware on all devices is not supported'}), 400
     if fwType == 'AMC' and deviceId != 1024:
-        return jsonify({'error': 'upgrading AMC firmware on single device is not supported'}), 400
+        return jsonify({'error': 'Updating AMC firmware on single device is not supported'}), 400
 
     code, msg, data = stub.runFirmwareFlash(deviceId, fwType, filePath)
     if code == stub.XpumResult['XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND'].value:
@@ -232,9 +232,9 @@ def get_firmware_flash_result(deviceId):
     req = request.get_json()
     fwType = req.get('firmware_name')
     if fwType == "GSC" and deviceId == 1024:
-        return jsonify({'error': 'upgrading GSC firmware on all devices is not supported'})
+        return jsonify({'error': 'Updating GSC firmware on all devices is not supported'})
     if fwType == "AMC" and deviceId != 1024:
-        return jsonify({'error': 'upgrading AMC firmware on single device is not supported'})
+        return jsonify({'error': 'Updating AMC firmware on single device is not supported'})
 
     code, msg, data = stub.getFirmwareFlashResult(deviceId, fwType)
     if code == 0:
