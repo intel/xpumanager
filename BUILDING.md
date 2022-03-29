@@ -71,7 +71,7 @@ sudo dnf install -y cmake dnf-plugins-core gcc gcc-c++ git libtool make openssl-
     python3 python3-devel python3-pip rpm-build wget
 
 # only needed on CentOS
-sudo dnf config-manager --set-enabled PowerTools
+sudo dnf config-manager --set-enabled powertools
 # end CentOS
 
 # only needed on RHEL
