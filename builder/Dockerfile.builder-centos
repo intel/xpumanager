@@ -8,13 +8,14 @@ RUN cd /etc/yum.repos.d/ && \
     sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
 
 RUN dnf update -y && \
-    dnf clean all && \
     dnf install -y cmake dnf-plugins-core gcc gcc-c++ git libtool make openssl-devel pkg-config \
-    python3 python3-devel python3-pip rpm-build wget
+    python3 python3-devel python3-pip rpm-build wget && \
+    dnf clean all
 
 RUN dnf config-manager --set-enabled powertools && \
     dnf install -y doxygen glibc-static lua-devel && \
-    dnf remove -y libpciaccess libpciaccess-devel
+    dnf remove -y libpciaccess libpciaccess-devel && \
+    dnf clean all
 
 RUN pip3 --proxy=$http_proxy install grpcio-tools mistune==0.8.4 apispec apispec_webframeworks Sphinx \
     sphinx_rtd_theme sphinxcontrib-openapi apispec-webframeworks myst-parser marshmallow \
@@ -45,4 +46,7 @@ COPY third_party/ /xpum_src/third_party
 COPY build.sh CMakeLists.txt /xpum_src/
 
 RUN cd /xpum_src && \
-    ./build.sh -DGIT_COMMIT=$XPUM_GIT_COMMIT -DBUILD_DOC=ON
+    ./build.sh -DGIT_COMMIT=$XPUM_GIT_COMMIT -DBUILD_DOC=ON && \
+    mkdir /artifacts && \
+    mv build/*.rpm /artifacts && \
+    rm -fr build
