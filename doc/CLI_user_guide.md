@@ -70,12 +70,14 @@ Usage: xpumcli discovery [Options]
   xpumcli discovery
   xpumcli discovery -d [deviceId]
   xpumcli discovery -d [deviceId] -j
+  xpumcli discovery --listamcversions
 
 Options:
   -h,--help                   Print this help message and exit.
   -j,--json                   Print result in JSON format
 
   -d,--device                 Device ID to query. It will show more detailed info.
+  --listamcversions           Show all AMC firmware versions.
 
 ```
 
@@ -128,8 +130,6 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Driver Version: 16929133                                                             |
 |           | Firmware Name: GSC                                                                   |
 |           | Firmware Version: ATS0_1.1                                                           |
-|           | Firmware Name: AMC                                                                   |
-|           | Firmware Version: 3.4.0.0                                                            |
 |           |                                                                                      |
 |           | PCI BDF Address: 0000:4d:00.0                                                        |
 |           | PCI Slot: Riser 1, slot 1                                                            |
@@ -154,6 +154,13 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Max Tx/Rx Speed per Xe Link port: 51879.88 MiB/s                                     |
 |           | Number of Lanes per Xe Link port: 4                                                  |
 +-----------+--------------------------------------------------------------------------------------+
+```
+
+List the versions of all AMC which can be found on this server. 
+```
+./xpumcli discovery --listamcversions
+1 AMC are found
+AMC 1 firmware version: 4.0.0.0
 ```
 
 ## Manage the devices in groups
@@ -948,3 +955,4 @@ Device Type: GPU
 
 
 
+  
