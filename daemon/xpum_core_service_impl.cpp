@@ -175,7 +175,14 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                                                 ::GroupInfo* response) {
     XPUM_LOG_TRACE("call group create");
     xpum_group_id_t id;
-    xpum_result_t res = xpumGroupCreate(request->name().c_str(), &id);
+    std::string validNameChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#_-.";
+    std::string name = request->name().c_str();
+    if(name.find_first_not_of(validNameChars) != std::string::npos){
+        response->set_errormsg("Invalid group name, only support 0~9a~zA~Z@#_-.");
+        return grpc::Status::OK;
+    }
+    
+    xpum_result_t res = xpumGroupCreate(name.c_str(), &id);
     if (res == XPUM_OK) {
         response->set_id(id);
         response->set_groupname(request->name());
