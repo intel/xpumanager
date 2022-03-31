@@ -77,7 +77,8 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
         return "\nUsage: xpumcli discovery [Options]\n"
                "  xpumcli discovery\n"
                "  xpumcli discovery -d [deviceId]\n"
-               "  xpumcli discovery -d [deviceId] -j\n";
+               "  xpumcli discovery -d [deviceId] -j\n"
+               "  xpumcli discovery --listamcversions\n";
     } else if (app->get_name().compare("policy") == 0) {
         return "\nUsage: xpumcli policy [Options]\n"
                "  xpumcli policy -l\n"
