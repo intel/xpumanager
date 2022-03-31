@@ -1,0 +1,30 @@
+XPUM Metric,Definition,Prometheus Metrics,Corresponding LevelZero Methods
+ENGINE_GROUP_COMPUTE_ALL_UTILIZATION,"Avg utilization of all compute engines (in %), per GPU tile","xpum_engine_group_ratio {type=""compute""}",zesEngineGetActivity *
+ENGINE_GROUP_MEDIA_ALL_UTILIZATION,"Avg utilization of all media engines (in %), per GPU tile","xpum_engine_group_ratio {type=""media""}",zesEngineGetActivity *
+ENGINE_GROUP_COPY_ALL_UTILIZATION,"Avg utilization of all copy engines (in %), per GPU tile","xpum_engine_group_ratio {type=""copy""}",zesEngineGetActivity *
+ENGINE_GROUP_RENDER_ALL_UTILIZATION,"Avg utilization of all render engines (in %), per GPU tile","xpum_engine_group_ratio {type=""render""}",zesEngineGetActivity *
+ENGINE_GROUP_3D_ALL_UTILIZATION,"Avg utilization of all 3D engines (in %), per GPU tile","xpum_engine_group_ratio {type=""3d""}",zesEngineGetActivity *
+GPU_FREQUENCY,"Avg actual GPU frequency (in MHz), per GPU tile","xpum_frequency_mhz { location=""gpu"", type=""actual""}",zesFrequencyGetState
+GPU_REQUEST_FREQUENCY,"Avg request GPU frequency (in MHz), per GPU tile","xpum_frequency_mhz { location=""gpu"", type=""request""}",zesFrequencyGetState
+MEMORY_READ,"Total memory read bytes (in bytes), per GPU tile",xpum_memory_read_bytes,zesMemoryGetBandwidth
+MEMORY_WRITE,"Total memory write bytes (in bytes), per GPU tile",xpum_memory_write_bytes,zesMemoryGetBandwidth
+MEMORY_USED,"Used GPU memory (in bytes), per GPU tile",xpum_memory_used_bytes,zesMemoryGetState
+MEMORY_UTILIZATION,"Used GPU memory / Total used GPU memory (in %), per GPU tile",xpum_memory_ratio,zesMemoryGetState
+ENERGY,"Total GPU energy consumption since boot (in J), per GPU",xpum_energy_joules,zesPowerGetEnergyCounter 
+POWER,"Avg GPU power (in watts), per GPU and per card",xpum_power_watts,zesPowerGetEnergyCounter
+RAS_ERROR_CAT_RESET," Total number of GPU reset since Sysman init, per GPU",xpum_resets,zesRasGetState
+GPU_TEMPERATURE,"Avg GPU temperature (in Celsius degree), per tile","xpum_temperature_celsius { location=""gpu"" }",zesTemperatureGetState
+GPU_MEMORY_TEMPERATURE,"Avg GPU Memory temperature (in Celsius degree), per tile","xpum_temperature_celsius { location=""mem"" }",zesTemperatureGetState
+GPU_MAX_TEMPERATURE,"Max GPU temperature (in Celsius degree), per tile","xpum_max_temperature_celsius { location=""gpu"" }",zesTemperatureGetState
+GPU_MEMORY_MAX_TEMPERATURE,"Max GPU Memory temperature (in Celsius degree), per tile","xpum_max_temperature_celsius { location=""mem"" }",zesTemperatureGetState
+GPU_UTILIZATION,"GPU active time of the elapsed time (in %), per GPU tile",xpum_engine_ratio,zesEngineGetActivity *
+MEMORY_BANDWIDTH,"Avg memory throughput / max memory bandwidth (in %), per GPU tile",xpum_memory_bandwidth_ratio,zesMemoryGetBandwidth *
+RAS_ERROR_CAT_PROGRAMMING_ERRORS,"Total number of GPU programming errors since Sysman init, per GPU",xpum_programming_errors,zesRasGetState
+RAS_ERROR_CAT_DRIVER_ERRORS,"Total number of GPU driver errors since Sysman init, per GPU",xpum_driver_errors,zesRasGetState
+RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,"Total number of  GPU cache correctable errors since Sysman init, per GPU","xpum_cache_errors { type=""correctable""}",zesRasGetState
+RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE,"Total number of GPU cache uncorrectable errors since Sysman init, per GPU","xpum_cache_errors { type=""uncorrectable""}",zesRasGetState
+XPUM_STATS_EU_ACTIVE,"GPU EU Array Active (in %), the normalized sum of all cycles on all EUs that were spent actively executing instructions. Per tile.",xpum_eu_active_ratio,zetMetricGetProperties
+XPUM_STATS_EU_STALL,"GPU EU Array Stall (in %), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled. Per tile.",xpum_eu_stall_ratio,zetMetricGetProperties
+XPUM_STATS_EU_IDLE,"GPU EU Array Idle (in %), the normalized sum of all cycles on all cores when no threads were scheduled on a core. Per tile.",xpum_eu_idle_ratio,zetMetricGetProperties
+XPUM_STATS_PCIE_READ,"Total PCIe read bytes (in bytes), per GPU",xpum_pcie_read_bytes,N/A (pcm)
+XPUM_STATS_PCIE_WRITE,"Total PCIe write bytes (in bytes), per GPU",xpum_pcie_write_bytes,N/A (pcm)
