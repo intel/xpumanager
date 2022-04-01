@@ -40,7 +40,7 @@ It supports local command line interface, local library call and remote RESFTul 
   
   
 ## Intel XPU Manager Installation
-Please follow [XPU Manager Installation Guide](doc/Install_guide.md) to install/uninstall Itnel XPU Manager. 
+Please follow [XPU Manager Installation Guide](doc/Install_guide.md) to install/uninstall Intel XPU Manager. 
 
 ### Start to use Intel XPU Manager
 By default, Intel XPU Manager is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to [XPU Manager CLI User Guide](doc/CLI_user_guide.md) for how to use the command line tool. 
