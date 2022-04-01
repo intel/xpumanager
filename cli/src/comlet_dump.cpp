@@ -187,7 +187,7 @@ std::string getJsonValue(nlohmann::json obj, int scale) {
     } else {
         auto value = obj.get<int64_t>();
         if (scale != 1) {
-            return keepTwoDecimalPrecision(value / scale);
+            return keepTwoDecimalPrecision(value / (double)scale);
         } else {
             return std::to_string(value);
         }
