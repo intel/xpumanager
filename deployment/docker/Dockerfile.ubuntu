@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 #
 # Build by:
-# docker build --build-arg git_commit=`git rev-parse --short HEAD` --build-arg https_proxy=http://child-prc.intel.com:913 --build-arg http_proxy=http://child-prc.intel.com:913 -f Dockerfile.ubuntu.ext -t intel-xpumanager-ext ../..
+# docker build --build-arg git_commit=`git rev-parse --short HEAD` -f Dockerfile.ubuntu -t intel-xpumanager ../..
 #
 # Run by (refer to deployment/docker/README.md for details):
-# docker run --cap-drop ALL --cap-add CAP_SYS_ADMIN --user root -e XPUM_REST_NO_TLS=1 -e XPUM_EXPORTER_NO_AUTH=1 -e XPUM_EXPORTER_ONLY=1 --publish 127.0.0.1:29999:29999 --device /dev/dri:/dev/dri --name=xpum intel-xpumanager-ext
+# docker run --cap-drop ALL --cap-add CAP_SYS_ADMIN --user root -e XPUM_REST_NO_TLS=1 -e XPUM_EXPORTER_NO_AUTH=1 -e XPUM_EXPORTER_ONLY=1 --publish 127.0.0.1:29999:29999 --device /dev/dri:/dev/dri --name=xpum intel-xpumanager
 FROM ubuntu:20.04 as builder
 
 ENV HOME=/home/nobody

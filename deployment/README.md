@@ -11,7 +11,7 @@ sudo ${xpum_src_root}/install/tools/rest/rest_config.py --owner=root --group=roo
 ```
 Run the XPUM container:
 ```sh
-xpum_image=... # e.g., ccr-registry.caas.intel.com/dms/intel-xpumanager:20211209.163631-2d46da67
+xpum_image=...
 docker run --rm --cap-drop ALL --cap-add=SYS_ADMIN \
 --publish 29999:29999 \
 --device /dev/dri:/dev/dri \
