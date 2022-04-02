@@ -1,0 +1,6 @@
+version.h export-subst
+.cirrus.yml export-ignore
+.gitlab-ci.yml export-ignore
+.travis.yml export-ignore
+
+* text=true

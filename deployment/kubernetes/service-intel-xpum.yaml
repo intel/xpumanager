@@ -1,0 +1,20 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file service-intel-xpum.yaml
+#
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: intel-xpumanager
+  name: intel-xpumanager
+spec:
+  ports:
+  - name: metrics
+    port: 29999
+    protocol: TCP
+  selector:
+    app: intel-xpumanager
+  sessionAffinity: None

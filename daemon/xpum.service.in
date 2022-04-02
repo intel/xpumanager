@@ -1,0 +1,21 @@
+[Unit]
+Description=XPUM daemon
+
+After=syslog.target
+
+[Service]
+Type=simple
+
+RuntimeDirectory=xpum
+
+LimitCORE=infinity
+ExecStartPre=/bin/sh -c "ulimit -c unlimited"
+
+Environment="LD_LIBRARY_PATH=@CPACK_XPUM_LIB_INSTALL_DIR@:/$LD_LIBRARY_PATH"
+
+ExecStart=@CPACK_PACKAGING_INSTALL_PREFIX@/bin/xpumd  -p /var/xpum_daemon.pid -d @CPACK_PACKAGING_INSTALL_PREFIX@/dump
+
+ExecStop=/bin/kill -s -TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target

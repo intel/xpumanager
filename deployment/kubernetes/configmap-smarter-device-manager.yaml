@@ -1,0 +1,16 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file configmap-smarter-device-manager.yaml
+#
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smarter-device-manager
+data:
+  conf.yaml: |
+    - devicematch: ^cpu$
+      nummaxdevices: 10
+    - devicematch: ^mem$
+      nummaxdevices: 10

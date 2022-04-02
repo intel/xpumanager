@@ -1,0 +1,78 @@
+.TH "hwloc_backend" 3 "Mon Dec 6 2021" "Version 2.7.0" "Hardware Locality (hwloc)" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+hwloc_backend
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <plugins\&.h>\fP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "unsigned \fBphases\fP"
+.br
+.ti -1c
+.RI "unsigned long \fBflags\fP"
+.br
+.ti -1c
+.RI "int \fBis_thissystem\fP"
+.br
+.ti -1c
+.RI "void * \fBprivate_data\fP"
+.br
+.ti -1c
+.RI "void(* \fBdisable\fP )(struct \fBhwloc_backend\fP *backend)"
+.br
+.ti -1c
+.RI "int(* \fBdiscover\fP )(struct \fBhwloc_backend\fP *backend, struct \fBhwloc_disc_status\fP *status)"
+.br
+.ti -1c
+.RI "int(* \fBget_pci_busid_cpuset\fP )(struct \fBhwloc_backend\fP *backend, struct hwloc_pcidev_attr_s *busid, \fBhwloc_bitmap_t\fP cpuset)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Discovery backend structure\&. 
+
+A backend is the instantiation of a discovery component\&. When a component gets enabled for a topology, its instantiate() callback creates a backend\&.
+.PP
+\fBhwloc_backend_alloc()\fP initializes all fields to default values that the component may change (except 'component' and 'next') before enabling the backend with \fBhwloc_backend_enable()\fP\&.
+.PP
+Most backends assume that the topology is_thissystem flag is set because they talk to the underlying operating system\&. However they may still be used in topologies without the is_thissystem flag for debugging reasons\&. In practice, they are usually auto-disabled in such cases (excluded by xml or synthetic backends, or by environment variables when changing the Linux fsroot or the x86 cpuid path)\&. 
+.SH "Field Documentation"
+.PP 
+.SS "void(* hwloc_backend::disable) (struct \fBhwloc_backend\fP *backend)"
+
+.PP
+Callback for freeing the private_data\&. May be NULL\&. 
+.SS "int(* hwloc_backend::discover) (struct \fBhwloc_backend\fP *backend, struct \fBhwloc_disc_status\fP *status)"
+
+.PP
+Main discovery callback\&. returns -1 on error, either because it couldn't add its objects ot the existing topology, or because of an actual discovery/gathering failure\&. May be NULL\&. 
+.SS "unsigned long hwloc_backend::flags"
+
+.PP
+Backend flags, currently always 0\&. 
+.SS "int(* hwloc_backend::get_pci_busid_cpuset) (struct \fBhwloc_backend\fP *backend, struct hwloc_pcidev_attr_s *busid, \fBhwloc_bitmap_t\fP cpuset)"
+
+.PP
+Callback to retrieve the locality of a PCI object\&. Called by the PCI core when attaching PCI hierarchy to CPU objects\&. May be NULL\&. 
+.SS "int hwloc_backend::is_thissystem"
+
+.PP
+Backend-specific 'is_thissystem' property\&. Set to 0 if the backend disables the thissystem flag for this topology (e\&.g\&. loading from xml or synthetic string, or using a different fsroot on Linux, or a x86 CPUID dump)\&. Set to -1 if the backend doesn't care (default)\&. 
+.SS "unsigned hwloc_backend::phases"
+
+.PP
+Discovery phases performed by this component, possibly without some of them if excluded by other components\&. OR'ed set of \fBhwloc_disc_phase_t\fP\&. 
+.SS "void* hwloc_backend::private_data"
+
+.PP
+Backend private data, or NULL if none\&. 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Hardware Locality (hwloc) from the source code\&.
