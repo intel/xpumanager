@@ -20,6 +20,9 @@ then
   git clone --depth 1 -b v1.45.0 https://github.com/grpc/grpc
   pushd grpc
   git submodule update --init
+  pushd third_party/zlib
+  git pull https://github.com/madler/zlib v1.2.12
+  popd
   popd
 else
   echo "Using local grpc repo."
