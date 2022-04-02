@@ -32,7 +32,7 @@ sudo dpkg -i *.deb
 # Get XPUM source
 xpum_git_clone_options="--depth 1"
 xpum_git_repo=https://github.com/intel/xpumanager.git
-xpum_git_branch=main
+xpum_git_branch=master
 git clone $xpum_git_clone_options -b $xpum_git_branch $xpum_git_repo /tmp/xpum_src
 
 # Build and install gRPC first
@@ -93,7 +93,7 @@ make -j$(nproc) install
 # Get XPUM source
 xpum_git_clone_options="--depth 1"
 xpum_git_repo=https://github.com/intel/xpumanager.git
-xpum_git_branch=main
+xpum_git_branch=master
 git clone $xpum_git_clone_options -b $xpum_git_branch $xpum_git_repo /tmp/xpum_src
 
 # Build and install gRPC first
@@ -117,7 +117,7 @@ export https_proxy=...
 rm -fr /tmp/xpum_src
 xpum_git_clone_options="--depth 1 -c http.sslVerify=false"
 xpum_git_repo=https://github.com/intel/xpumanager.git
-xpum_git_branch=main
+xpum_git_branch=master
 git clone $xpum_git_clone_options -b $xpum_git_branch $xpum_git_repo /tmp/xpum_src
 
 cd /tmp/xpum_src
