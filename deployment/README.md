@@ -1,5 +1,12 @@
+# Intel XPU Manager
+Intel XPU Manager is an in-band node-level tool that provides local/remote GPU management. It is easily integrated into the cluster management solutions and cluster scheduler. GPU users may use it to manage Intel GPUs, locally. 
+It supports local command line interface, local library call and remote RESFTul API interface.
+
+***So far, this container image is targeted as a Prometheus exporter.***
+
+The Intel XPU Manager source repository can be found at [intel/xpumanager](https://github.com/intel/xpumanager/).
+
 # Run XPU Manager in Docker
-*So far, XPUM container image is targeted as a Prometheus exporter.*
 
 ## Enable TLS
 Generate certificate for TLS and configure REST user credential:
@@ -49,5 +56,30 @@ docker run --rm --cap-drop ALL --cap-add=SYS_ADMIN \
 -v $(pwd)/rest/conf:/opt/xpum/rest/conf:ro \
 -e XPUM_REST_NO_TLS=1 \
 -e XPUM_REST_PORT=12345 \
+${xpum_image}
+```
+
+## Support PCIe Throughput
+PCIe throughput metrics collection depends on the kernel module '**msr**'. It should be loaded on the host by "***modprobe msr***".  
+
+And this metrics collection is not started in XPUM by default. To make XPUM start to collect it, user needs to pass environment variable ***XPUM_METRICS*** which includes the PCIe throughput metrics index.  
+
+This example shows how to get the list of metrics index from XPUM daemon help text:
+```sh
+docker run --rm --entrypoint /opt/xpum/bin/xpumd ${xpum_image} -h
+```
+This example shows how to make XPUM in container start to collect PCIe throughput metrics by passing the environment variable ***XPUM_METRICS***:
+```sh
+docker run --rm --cap-drop ALL --cap-add=SYS_ADMIN \
+--cap-add=SYS_RAWIO \
+--publish 29999:29999 \
+--device /dev/dri:/dev/dri \
+--device /dev/cpu:/dev/cpu \
+-v /sys/firmware/acpi/tables/MCFG:/pcm/sys/firmware/acpi/tables/MCFG:ro \
+-v /proc/bus/pci/:/pcm/proc/bus/pci/ \
+-v /proc/sys/kernel/nmi_watchdog:/pcm/proc/sys/kernel/nmi_watchdog \
+-v $(pwd)/rest/conf:/opt/xpum/rest/conf:ro \
+-e XPUM_REST_NO_TLS=1 \
+-e XPUM_METRICS=0-37 \
 ${xpum_image}
 ```
