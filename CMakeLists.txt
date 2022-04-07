@@ -165,7 +165,7 @@ install(
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION .)
 
-if(EXISTS install/tools/fwUpgrade/GfxFwFPT)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/install/tools/fwUpgrade/GfxFwFPT)
   install(
     FILES install/tools/fwUpgrade/GfxFwFPT
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE
