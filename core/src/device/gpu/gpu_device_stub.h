@@ -233,6 +233,8 @@ class GPUDeviceStub {
 
     static std::string to_regex_string(zes_pci_address_t address);
 
+    static int get_register_value_from_sys(const zes_device_handle_t& device, std::string deviceId, uint64_t offset);
+
     static void addEuActiveStallIdleCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, ze_driver_handle_t driver, std::vector<DeviceCapability>& capabilities);
 
     static void addCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities);

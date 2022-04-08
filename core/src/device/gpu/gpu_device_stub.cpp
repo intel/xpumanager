@@ -16,6 +16,9 @@
 #include <set>
 #include <sstream>
 #include <thread>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <fcntl.h>
 
 #include "api/api_types.h"
 #include "device/frequency.h"
@@ -1047,6 +1050,53 @@ void GPUDeviceStub::getTemperature(const zes_device_handle_t& device, Callback_t
     invokeTask(callback, toGetTemperature, device, type);
 }
 
+int GPUDeviceStub::get_register_value_from_sys(const zes_device_handle_t& device, std::string deviceId, uint64_t offset) {
+    int val = -1;
+    ze_result_t res;
+    zes_device_properties_t props;
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
+    if (res == ZE_RESULT_SUCCESS && to_hex_string(props.core.deviceId).find("56c0") != std::string::npos) {
+        zes_pci_properties_t pci_props;
+        pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+        if (res == ZE_RESULT_SUCCESS) {
+            std::string bdf_address;
+            bdf_address = to_string(pci_props.address);
+            std::string resource_file = "/sys/bus/pci/devices/" + bdf_address + "/resource0";
+            int fd;
+            void *map_base, *virt_addr;
+            uint64_t read_result;
+            char *filename;
+            off_t target, target_base;
+            int type_width = 4;
+            int map_size = 4096UL;
+
+            filename = const_cast<char*>(resource_file.c_str());
+            target = offset;
+            if ((fd = open(filename, O_RDWR | O_SYNC)) == -1) {
+                return -1;
+            }
+            target_base = target & ~(sysconf(_SC_PAGE_SIZE)-1);
+            if (target + type_width - target_base > map_size)
+                map_size = target + type_width - target_base;
+            
+            map_base = mmap(0, map_size, PROT_READ, MAP_SHARED, fd, target_base);
+
+            if (map_base == (void *) -1) {
+               return -1;
+            }
+            virt_addr = (uint8_t *)map_base + target - target_base;
+            read_result = *((uint32_t *) virt_addr);
+            val = read_result;
+
+            munmap(map_base, map_size);
+            close(fd);
+        }
+    }
+    return val;
+}
+
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_device_handle_t& device, zes_temp_sensors_t type) {
     if (device == nullptr) {
         throw BaseException("toGetTemperature error");
@@ -1058,6 +1108,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
     if (temp_sensor_count == 0) {
+        if (type == ZES_TEMP_SENSORS_GPU) {
+            int val = get_register_value_from_sys(device, "56c0", 0x145978);
+            if (val > 0) {
+                ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                ret->setCurrent(val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                return ret;
+            } else {
+                throw BaseException("Failed to read register value from sys");        
+            }
+        }
         throw BaseException("No temperature sensor detected");
     }
     std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
