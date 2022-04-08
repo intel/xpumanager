@@ -126,6 +126,7 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | UUID: 00000000-0000-0000-0000-020a00008086                                           |
 |           | Serial Number: unknown                                                               |
 |           | Core Clock Rate: 1400 MHz                                                            |
+|           | Stepping: B1                                                                         |
 |           |                                                                                      |
 |           | Driver Version: 16929133                                                             |
 |           | Firmware Name: GSC                                                                   |
@@ -143,12 +144,14 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Max Hardware Contexts: 65536                                                         |
 |           | Max Command Queue Priority: 0                                                        |
 |           |                                                                                      |
+|           | Number of EUs: 512                                                                   |
 |           | Number of Tiles: 2                                                                   |
 |           | Number of Slices: 2                                                                  |
 |           | Number of Sub Slices per Slice: 30                                                   |
-|           | Number of EUs per Sub Slice: 16                                                      |
 |           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
+|           | Number of Media Engines: 2                                                           |
+|           | Number of Media Enhancement Engines: 2                                               |
 |           |                                                                                      |
 |           | Number of Xe Link ports: 16                                                          |
 |           | Max Tx/Rx Speed per Xe Link port: 51879.88 MiB/s                                     |
