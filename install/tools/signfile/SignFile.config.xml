@@ -3,7 +3,7 @@
 	<appSettings>
 		<add key="VerboseMode" value="Moderate"/>
 		<!-- <add key="PgpPublicKeyFileName" value="intelswprod.public" /> -->
-		<add key="DefaultCertificateName" value="DCM_Sign_Op_2021Q2"/>
+		<add key="DefaultCertificateName" value="XPUM_Sign_Op_2022Q2"/>
     <!-- Additional requirements (base64 encoded) for Mac OS signing 
     The MacServerRequirements value below should only be specified when using the Apple Certificate for signing.
     If you are using an Intel issued internal/external certificate then please do not specify this value 
