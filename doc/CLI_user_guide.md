@@ -21,7 +21,7 @@ Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model
 Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
  
 Supported devices: 
-  - Intel ATS-M1/ATS-M3/ATS-P 
+  - Intel Data Center GPU 
  
 Usage: xpumcli [Options]
   xpumcli -v
@@ -643,8 +643,7 @@ Options:
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M
-                                card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
+  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
   -f,--file                   The firmware image file path on this server.
 ```
 
