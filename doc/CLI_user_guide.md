@@ -21,7 +21,7 @@ Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model
 Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
  
 Supported devices: 
-  - Intel ATS-M1/ATS-M3/ATS-P 
+  - Intel Data Center GPU 
  
 Usage: xpumcli [Options]
   xpumcli -v
@@ -126,6 +126,7 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | UUID: 00000000-0000-0000-0000-020a00008086                                           |
 |           | Serial Number: unknown                                                               |
 |           | Core Clock Rate: 1400 MHz                                                            |
+|           | Stepping: B1                                                                         |
 |           |                                                                                      |
 |           | Driver Version: 16929133                                                             |
 |           | Firmware Name: GSC                                                                   |
@@ -143,12 +144,14 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Max Hardware Contexts: 65536                                                         |
 |           | Max Command Queue Priority: 0                                                        |
 |           |                                                                                      |
+|           | Number of EUs: 512                                                                   |
 |           | Number of Tiles: 2                                                                   |
 |           | Number of Slices: 2                                                                  |
 |           | Number of Sub Slices per Slice: 30                                                   |
-|           | Number of EUs per Sub Slice: 16                                                      |
 |           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
+|           | Number of Media Engines: 2                                                           |
+|           | Number of Media Enhancement Engines: 2                                               |
 |           |                                                                                      |
 |           | Number of Xe Link ports: 16                                                          |
 |           | Max Tx/Rx Speed per Xe Link port: 51879.88 MiB/s                                     |
@@ -640,8 +643,7 @@ Options:
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M
-                                card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
+  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
   -f,--file                   The firmware image file path on this server.
 ```
 

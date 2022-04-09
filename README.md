@@ -12,9 +12,7 @@ It supports local command line interface, local library call and remote RESFTul 
 * Support K8s and can export GPU telemetries to Prometheus
 
 ## Suppored Devices
-* Intel Arctic Sound-M75 GPU
-* Intel Arctic Sound-M150 GPU
-* Intel Arctic Sound-P GPU
+* Intel Data Center GPU
 
 ## Supported OS
 * Ubuntu 20.0.4
