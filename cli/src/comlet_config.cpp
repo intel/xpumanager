@@ -85,7 +85,7 @@ void ComletConfig::setupOptions() {
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\".The valid range of all time values (us) is from 5000 to 100,000,000.");
-    //addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
+    addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
 
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
@@ -318,7 +318,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             return json;  
         }
 #endif
-        /*else if (this->opts->tileId == -1 && this->opts->resetDevice) {
+        else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             char confirmed;
             if (this->opts->deviceId >= 0) {
                 json = this->coreStub->getDeviceProcessState(this->opts->deviceId);
@@ -345,7 +345,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 (*json)["return"] = "Succeed to reset the GPU "+ std::to_string(this->opts->deviceId);
             }
             return json;
-        }*/
+        }
         (*json)["return"] = "unknown or invalid command, parameter or device/tile Id";
         return json;
     }

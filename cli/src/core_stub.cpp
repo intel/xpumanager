@@ -1481,14 +1481,14 @@ std::unique_ptr<nlohmann::json> CoreStub::resetDevice(int deviceId, bool force) 
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set frequency range %d", force);
+            XPUM_LOG_AUDIT("Succeed to reset device with force == %d", force);
         } else {
             (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to reset device %s", response.errormsg());
+            XPUM_LOG_AUDIT("Fail to reset device with force == %d, errorMessage: %s", force, response.errormsg());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to reset device %s", status.error_message());
+        XPUM_LOG_AUDIT("Fail to reset device with force == %d, %s", force, status.error_message());
     }
     return json;
 }

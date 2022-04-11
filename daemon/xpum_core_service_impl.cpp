@@ -1220,7 +1220,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 ::grpc::Status XpumCoreServiceImpl::resetDevice(::grpc::ServerContext* context, const ::ResetDeviceRequest* request, ::ResetDeviceResponse* response) {
     xpum_result_t res;
     xpum_device_id_t deviceId = request->deviceid();
-    //bool force = request->force();
+    bool force = request->force();
     res = validateDeviceId(deviceId);
     if (res != XPUM_OK) {
         response->set_errormsg("device Id or tile Id is invalid");
@@ -1230,17 +1230,19 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     //response->set_deviceid (deviceId);
     //response->set_retcode(XPUM_OK);
     //return grpc::Status::OK;
-    /*
+    
     res = xpumResetDevice(deviceId, force);
     if (res != XPUM_OK) {
         if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
             response->set_errormsg("device Id or tile Id is invalid");
+        } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING){
+            response->set_errormsg("device is updating firmware");
         } else {
             response->set_errormsg("Error");
         }
-    }*/
+    }
     //temporary code
-    res = XPUM_OK;
+    // res = XPUM_OK;
     response->set_deviceid(deviceId);
     response->set_retcode(res);
     return grpc::Status::OK;

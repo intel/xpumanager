@@ -1590,18 +1590,22 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
     }
     return XPUM_GENERIC_ERROR;
 }
-/*
+
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+    if (Core::instance().getFirmwareManager()->isUpgradingFw()) {
+        return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
+
     if (Core::instance().getDeviceManager()->resetDevice(std::to_string(deviceId), force)) {
         return XPUM_OK;
     }
     return XPUM_GENERIC_ERROR;
 }
-*/
+
 xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
