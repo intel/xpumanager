@@ -1612,6 +1612,9 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+    if (device->isUpgradingFw()) {
+        return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
     if (Core::instance().getFirmwareManager()->isUpgradingFw()) {
         return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
