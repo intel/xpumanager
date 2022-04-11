@@ -86,7 +86,7 @@ bool levelZeroLoaderCheck() {
     while (fgets(c_line, 1024, f) != NULL) {
         std::string line(c_line);
         if (line.find("libze_loader.so") != std::string::npos) {
-            if (line.find("not found")) {
+            if (line.find("not found") != std::string::npos) {
                 return false;
             }
             return true;
