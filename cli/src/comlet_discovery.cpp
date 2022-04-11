@@ -71,7 +71,6 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
                 { "label": "Number of Tiles", "value": "number_of_tiles" },
                 { "label": "Number of Slices", "value": "number_of_slices" },
                 { "label": "Number of Sub Slices per Slice", "value": "number_of_sub_slices_per_slice" },
-                { "label": "Number of EUs per Sub Slice", "value": "number_of_eus_per_sub_slice" },
                 { "label": "Number of Threads per EU", "value": "number_of_threads_per_eu" },
                 { "label": "Physical EU SIMD Width", "value": "physical_eu_simd_width" },
                 { "label": "Number of Media Engines", "value": "number_of_media_engines" },
