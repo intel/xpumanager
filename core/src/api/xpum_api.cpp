@@ -50,6 +50,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "PCIE_GENERATION";
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
             return "PCIE_MAX_LINK_WIDTH";
+        case XPUM_DEVICE_PROPERTY_DEVICE_STEPPING:
+            return "DEVICE_STEPPING";
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
             return "DRIVER_VERSION";
         case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
@@ -74,6 +76,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "MAX_HARDWARE_CONTEXTS";
         case XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY:
             return "MAX_COMMAND_QUEUE_PRIORITY";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS:
+            return "NUMBER_OF_EUS";
         case XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES:
             return "NUMBER_OF_TILES";
         case XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES:
@@ -86,6 +90,10 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "NUMBER_OF_THREADS_PER_EU";
         case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
             return "PHYSICAL_EU_SIMD_WIDTH";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENGINES:
+            return "NUMBER_OF_MEDIA_ENGINES";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENH_ENGINES:
+            return "NUMBER_OF_MEDIA_ENH_ENGINES";
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
             return "NUMBER_OF_FABRIC_PORTS";
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED:
@@ -526,6 +534,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION;
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH;
+        case XPUM_DEVICE_PROPERTY_DEVICE_STEPPING:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING;
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION;
         case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
@@ -550,6 +560,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX_HARDWARE_CONTEXTS;
         case XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY:
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX_COMMAND_QUEUE_PRIORITY;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS;
         case XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES:
             return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES;
         case XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES:
@@ -562,6 +574,10 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_THREADS_PER_EU;
         case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PHYSICAL_EU_SIMD_WIDTH;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENGINES:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENH_ENGINES:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES;
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_NUMBER;
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED:

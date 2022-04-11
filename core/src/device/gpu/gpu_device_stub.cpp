@@ -611,13 +611,24 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUBDEVICE, std::to_string(props.numSubdevices)));
                 uint32_t tileCount = props.numSubdevices == 0 ? 1 : props.numSubdevices;
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, std::to_string(tileCount)));
-
+                uint32_t euCount = tileCount * props.core.numSlices * props.core.numSubslicesPerSlice * props.core.numEUsPerSubslice;
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS, std::to_string(euCount)));
                 zes_pci_properties_t pci_props;
 
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
                 if (res == ZE_RESULT_SUCCESS) {
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, to_string(pci_props.address)));
-
+                    std::string stepping = "unknown";
+                    std::ifstream infile("/sys/bus/pci/devices/" + to_string(pci_props.address) + "/revision");
+                    if (infile.good()) {
+                        std::string rev;
+                        getline(infile, rev);
+                        if (rev.size() > 0) {
+                            int val = std::stoi(rev, nullptr, 16);
+                            stepping = (char)('A' + val / 4) + std::to_string(val % 4);
+                        }                        
+                    }
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                     std::string bdf_regex = to_regex_string(pci_props.address);
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(bdf_regex)));
                 }
@@ -699,6 +710,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 }
 
                 uint32_t engine_grp_count;
+                uint32_t media_engine_count = 0;
+                uint32_t meida_enhancement_engine_count = 0;
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
                 if (res == ZE_RESULT_SUCCESS) {
                     std::vector<zes_engine_handle_t> engines(engine_grp_count);
@@ -712,11 +725,18 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                                 if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_COPY_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
                                     p_gpu->addEngine((uint64_t)engine, props.type, props.onSubdevice, props.subdeviceId);
                                 }
+                                if (props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE) {
+                                    media_engine_count += 1;
+                                }
+                                if (props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE) {
+                                    meida_enhancement_engine_count += 1;
+                                }
                             }
                         }
                     }
                 }
-
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES, std::to_string(media_engine_count)));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES, std::to_string(meida_enhancement_engine_count)));
                 addPCIeProperties(device, p_gpu);
 
                 p_devices->push_back(p_gpu);
