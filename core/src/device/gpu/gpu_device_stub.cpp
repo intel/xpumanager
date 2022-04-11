@@ -120,7 +120,12 @@ void GPUDeviceStub::checkInitDependency() {
     XPUM_LOG_INFO("GPUDeviceStub::checkInitDependency start");
     std::string details;
 
-    std::vector<std::string> checkEnvVaribles = {"ZES_ENABLE_SYSMAN", "ZET_ENABLE_METRICS"};
+    std::vector<std::string> checkEnvVaribles = {"ZES_ENABLE_SYSMAN"};
+    if (std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
+                    [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
+        checkEnvVaribles.push_back("ZET_ENABLE_METRICS");
+    }
+
     bool findEnvVaribles = true;
     for (auto it = checkEnvVaribles.begin(); it != checkEnvVaribles.end(); it++) {
         if (std::getenv((*it).c_str()) == nullptr) {
