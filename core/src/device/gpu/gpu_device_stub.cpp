@@ -71,7 +71,7 @@ bool checkCapability(const char* device_name, const std::string& bdf_address, co
         return true;
     } catch (BaseException& e) {
         XPUM_LOG_WARN("Device {}{} has no {} capability.", device_name, bdf_address, capability_name);
-        XPUM_LOG_DEBUG("Capability {} detection returned: {}", capability_name, e.what());
+        XPUM_LOG_WARN("Capability {} detection returned: {}", capability_name, e.what());
     }
     return false;
 }
@@ -421,14 +421,21 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
     if (checkCapability(props.core.name, bdf_address, "Frequency Throttle", toGetFrequencyThrottle, device))
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
-    if (checkCapability(props.core.name, bdf_address, "PCIe read throughput", toGetPCIeReadThroughput, device))
-        capabilities.push_back(DeviceCapability::METRIC_PCIE_READ_THROUGHPUT);
-    if (checkCapability(props.core.name, bdf_address, "PCIe write throughput", toGetPCIeWriteThroughput, device))
-        capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT);
-    if (checkCapability(props.core.name, bdf_address, "PCIe read", toGetPCIeRead, device))
-        capabilities.push_back(DeviceCapability::METRIC_PCIE_READ);
-    if (checkCapability(props.core.name, bdf_address, "PCIe write", toGetPCIeWrite, device))
-        capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE);
+    for (auto metric: Configuration::getEnabledMetrics()) {
+        if (metric == METRIC_PCIE_READ_THROUGHPUT) {
+            if (checkCapability(props.core.name, bdf_address, "PCIe read throughput", toGetPCIeReadThroughput, device))
+                capabilities.push_back(DeviceCapability::METRIC_PCIE_READ_THROUGHPUT);
+        } else if (metric == METRIC_PCIE_WRITE_THROUGHPUT) {
+            if (checkCapability(props.core.name, bdf_address, "PCIe write throughput", toGetPCIeWriteThroughput, device))
+                capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT);
+        } else if (metric == METRIC_PCIE_READ) {
+            if (checkCapability(props.core.name, bdf_address, "PCIe read", toGetPCIeRead, device))
+                capabilities.push_back(DeviceCapability::METRIC_PCIE_READ);
+        } else if (metric == METRIC_PCIE_WRITE) {
+            if (checkCapability(props.core.name, bdf_address, "PCIe write", toGetPCIeWrite, device))
+                capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE);   
+        }
+    }
     if (checkCapability(props.core.name, bdf_address, "fabric throughput", toGetFabricThroughput, device))
         capabilities.push_back(DeviceCapability::METRIC_FABRIC_THROUGHPUT);
 }
@@ -1099,7 +1106,7 @@ int GPUDeviceStub::get_register_value_from_sys(const zes_device_handle_t& device
 
             filename = const_cast<char*>(resource_file.c_str());
             target = offset;
-            if ((fd = open(filename, O_RDWR | O_SYNC)) == -1) {
+            if ((fd = open(filename, O_RDONLY | O_SYNC)) == -1) {
                 return -1;
             }
             target_base = target & ~(sysconf(_SC_PAGE_SIZE)-1);
