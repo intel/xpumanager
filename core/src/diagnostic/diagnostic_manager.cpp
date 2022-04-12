@@ -57,6 +57,7 @@ std::map<ze_device_handle_t, std::string> DiagnosticManager::device_names;
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_PATH = "/usr/share/mfx/samples/";
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_DECODE_FILE = "test_stream.264";
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_ENCODE_FILE = "test_stream_176x96.yuv";
+int DiagnosticManager::ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = 600;
 std::string DiagnosticManager::XPUM_DAEMON_INSTALL_PATH;
 
 void DiagnosticManager::readConfigFile() {
@@ -91,6 +92,12 @@ void DiagnosticManager::readConfigFile() {
                 MEDIA_CODER_TOOLS_DECODE_FILE = value;
             } else if (name == "MEDIA_CODER_TOOLS_ENCODE_FILE") {
                 MEDIA_CODER_TOOLS_ENCODE_FILE = value;
+            } else if (name == "ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT") {
+                try {
+                    int val = std::stoi(value);
+                    if (val > 0)
+                        ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = val;
+                } catch(...) { }
             } else if (name == "NAME") {
                 current_device = value;
             } else {
@@ -375,13 +382,16 @@ void DiagnosticManager::doDeviceDiagnosticEnvironmentVariables(std::shared_ptr<x
     updateMessage(component1.message, std::string("Running"));
     std::vector<std::string> check_env_varibles;
     check_env_varibles.push_back(std::string("ZES_ENABLE_SYSMAN"));
-    check_env_varibles.push_back(std::string("ZET_ENABLE_METRICS"));
+    if (std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
+                    [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
+        check_env_varibles.push_back(std::string("ZET_ENABLE_METRICS"));
+    }
 
-    bool find_env_varibles = false;
+    bool find_env_varibles = true;
     for (auto it = check_env_varibles.begin(); it != check_env_varibles.end(); it++) {
         std::string check_env_var = *it;
-        if (std::getenv(check_env_var.c_str()) != nullptr) {
-            find_env_varibles = true;
+        if (std::getenv(check_env_var.c_str()) == nullptr) {
+            find_env_varibles = false;
             details = check_env_var;
             break;
         }
@@ -643,7 +653,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
             std::string result_decode = getCommandResult(command_decode);
 
             std::string encodefileName = mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_ENCODE_FILE;
-            std::string encode_output_file_name = mediadata_folder + std::string("encode.output");
+            std::string encode_output_file_name = "/tmp/" + device_path.substr(device_path.rfind('/') + 1) + "_encode_latest_result.out";
             std::string command_encode = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_encode h264 -device " + device_path +
                                          " -hw -i " + encodefileName + " -w 176 -h 96 -u quality -cqp -qpi 32 -qpp 32 -qpb 32 -async 1 -vaapi -o " + encode_output_file_name + " 2>&1";
             XPUM_LOG_INFO(command_encode);
@@ -816,7 +826,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &
                     if (ret != ZE_RESULT_SUCCESS) {
                         throw BaseException("zeCommandQueueExecuteCommandLists()");
                     }
-                    waitForCommandQueueSynchronize(command_queue, "Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueSynchronize");
+                    waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
                 }
                 time_end = std::chrono::high_resolution_clock::now();
                 total_time_nsec = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
@@ -1791,7 +1801,7 @@ std::string DiagnosticManager::roundDouble(double r, int precision) {
 
 void DiagnosticManager::waitForCommandQueueSynchronize(ze_command_queue_handle_t command_queue, std::string info) {
     ze_result_t ret;
-    int command_queue_synchronize_maximum_round = 600;
+    int command_queue_synchronize_maximum_round = ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
     int command_queue_synchronize_step_duration = 1; //seconds
     ret = zeCommandQueueSynchronize(command_queue, 100 * 1000);
     int current_round = 0;
@@ -1951,7 +1961,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeCommandQueueExecuteCommandLists()");
                 }
-                waitForCommandQueueSynchronize(command_queue, "Error in XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH: zeCommandQueueSynchronize()");
+                waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
                 ret = zeCommandListReset(command_list);
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeCommandListReset()");

@@ -386,7 +386,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level
                 auto endTime = std::chrono::duration_cast<std::chrono::seconds>(
                                    std::chrono::system_clock::now().time_since_epoch())
                                    .count();
-                if (endTime - startTime >= 20 * 60) {
+                if (endTime - startTime >= 30 * 60) {
                     auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
                     (*errorJson)["error"] = "time out for unknown reasons";
                     return errorJson;
@@ -483,7 +483,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runDiagnosticsByGroup(uint32_t groupId
                 auto endTime = std::chrono::duration_cast<std::chrono::seconds>(
                                    std::chrono::system_clock::now().time_since_epoch())
                                    .count();
-                if (endTime - startTime >= 20 * 60) {
+                if (endTime - startTime >= 30 * 60) {
                     auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
                     (*errorJson)["error"] = "time out for unknown reasons";
                     return errorJson;
