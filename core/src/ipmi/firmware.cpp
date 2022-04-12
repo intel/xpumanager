@@ -298,7 +298,7 @@ retry:
 
 static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
                               const uint8_t *data, size_t data_size, uint8_t *status) {
-    XPUM_LOG_INFO("1111111111111111111");
+    XPUM_LOG_INFO("Start transfer");
     bsmc_req req;
     bsmc_res res;
     int err;
