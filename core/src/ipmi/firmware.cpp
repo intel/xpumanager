@@ -298,6 +298,7 @@ retry:
 
 static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
                               const uint8_t *data, size_t data_size, uint8_t *status) {
+    XPUM_LOG_INFO("1111111111111111111");
     bsmc_req req;
     bsmc_res res;
     int err;
@@ -314,16 +315,14 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
         /* Check FW update status */
         err = fw_update_sync(addr, &offset, &size, status);
         if (err) {
+            XPUM_LOG_INFO("Retry with slave addr 0xce");
             // retry with new I2C addr
-            ipmi_address_t tmp_addr = *addr;
-            int err_backup = err;
-            tmp_addr.i2c_addr = CARD_FIRST_I2C_ADDR;
-            err = fw_update_sync(&tmp_addr, &offset, &size, status);
-            if (err || *status != IPMI_FW_UPDATE_COMPLETE) {
-                err = err_backup;
-                *status = IPMI_FW_UPDATE_FAIL;
+            addr->i2c_addr = CARD_FIRST_I2C_ADDR;
+            err = fw_update_sync(addr, &offset, &size, status);
+            if (err){
+                XPUM_LOG_ERROR("Fail to fw_update_sync, err {}", err);
+                goto exit;
             }
-            goto exit;
         }
 
         if (*status == IPMI_FW_UPDATE_WAIT) {
@@ -335,21 +334,13 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
             gNetfn = IPMI_INTEL_OEM_NETFN;
             gCmd = IPMI_FW_UPDATE_SEND_DATA_CMD;
             err = bsmc_hal->cmd(&req, &res);
-            if (err)
+            if (err){
+                XPUM_LOG_ERROR("Fail to do command IPMI_FW_UPDATE_GET_FILE_SIZE, err {}", err);
                 goto exit;
-            continue;
-        } else if (*status == IPMI_FW_UPDATE_FAIL) {
-            // retry with new I2C addr
-            ipmi_address_t tmp_addr = *addr;
-            int err_backup = err;
-            tmp_addr.i2c_addr = CARD_FIRST_I2C_ADDR;
-            err = fw_update_sync(&tmp_addr, &offset, &size, status);
-            if (err || *status != IPMI_FW_UPDATE_COMPLETE) {
-                err = err_backup;
-                *status = IPMI_FW_UPDATE_FAIL;
             }
-            goto exit;
+            continue;
         } else if (*status != IPMI_FW_UPDATE_READ) {
+            XPUM_LOG_ERROR("go to exit, status {}", *status);
             goto exit;
         }
 
@@ -382,11 +373,13 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
 
             err = bsmc_hal->cmd(&req, &res);
             if (err) {
+                XPUM_LOG_ERROR("Error during send data, err {}", err);
                 err = NRV_FIRMWARE_UPDATE_ERROR;
                 goto exit;
             }
 
             if (bsmc_hal->validate_res(res, COMPLETION_CODE_SIZE)) {
+                XPUM_LOG_ERROR("Error validate ipmi response");
                 err = NRV_FIRMWARE_UPDATE_ERROR;
                 goto exit;
             }
@@ -654,18 +647,29 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
         */
         struct firmware_versions curr_ver = {{0}};
 
+        XPUM_LOG_INFO("card {} i2c_addr is: 0x{:x}", i, cards.card[i].ipmi_address.i2c_addr);
+
         if (bsmc_data) {
             err = wait_for_bsmc(&cards.card[i].ipmi_address, prev_ver[i].bsmc);
+            if (err) {
+                XPUM_LOG_INFO("card {} wait_for_bsmc retry with i2c_addr 0x{:x}", i, CARD_FIRST_I2C_ADDR);
+                cards.card[i].ipmi_address.i2c_addr = CARD_FIRST_I2C_ADDR;
+                err = wait_for_bsmc(&cards.card[i].ipmi_address, prev_ver[i].bsmc);
+            }
             if (err == NRV_REBOOT_NEEDED) {
+                XPUM_LOG_INFO("card {} wait_for_bsmc return error NRV_REBOOT_NEEDED", i);
                 reset_failed = true;
             } else if (err) {
+                XPUM_LOG_ERROR("card {} wait_for_bsmc fail with i2c_addr 0x{:x}", i, cards.card[i].ipmi_address.i2c_addr);
                 goto exit;
             }
         }
 
         err = get_fw_version(&cards.card[i].ipmi_address, &curr_ver);
-        if (err)
+        if (err){
+            XPUM_LOG_ERROR("card {} get_fw_version fail with i2c_addr 0x{:x}, err {}", i, cards.card[i].ipmi_address.i2c_addr, err);
             goto exit;
+        }
 
         if (bsmc_data && !reset_failed)
             XPUM_LOG_INFO("BSMC updated on card {} to version {}.{}.{}.{}",
@@ -674,14 +678,14 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
                           std::to_string(curr_ver.bsmc.build));
     }
 exit:
+    // clean discovered cards, since fw update may change I2C addr
+    clean_data();
     if (err)
         XPUM_LOG_ERROR("Failed to update firmware");
     if (reset_failed) {
         XPUM_LOG_WARN("PLEASE do HOST POWER CYCLE to complete update process");
         return NRV_REBOOT_NEEDED;
     }
-    // clean discovered cards, since fw update may change I2C addr
-    clean_data();
     return err;
 }
 

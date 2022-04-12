@@ -95,7 +95,6 @@ static inline bool check_codename(card_get_info_res *card_get_info, const char *
     return memcmp(card_get_info->project_codename, codename, size) == 0;
 }
 
-/*
 static int get_device_id(nrv_card *card, unsigned char *data) {
     bsmc_req req;
     bsmc_res res;
@@ -112,7 +111,6 @@ static int get_device_id(nrv_card *card, unsigned char *data) {
 
     return NRV_SUCCESS;
 }
-*/
 
 static int card_detect(nrv_card *card) {
     bsmc_req req;
@@ -171,8 +169,13 @@ static int card_detect(nrv_card *card) {
     return NRV_SUCCESS;
 }
 
-static int probe_i2c_addr(uint8_t i2c_addr) {
+
+static int init_card_list() {
     int err = 0;
+    err = bsmc_interface_init(iface);
+    if (err)
+        return err;
+
     nrv_card card;
     unsigned char devid = 0;
     uint8_t slot_count = 0;
@@ -180,13 +183,13 @@ static int probe_i2c_addr(uint8_t i2c_addr) {
     card.ipmi_address = (ipmi_address_t){
         .bus = 0,
         .slot = 0,
-        .i2c_addr = i2c_addr,
+        .i2c_addr = CARD_FIRST_I2C_ADDR_OLD,
     };
 
-    // err = get_device_id(&card, &devid);
-    // if (err) {
-    //     XPUM_LOG_ERROR("Error in getting device id");
-    // }
+    err = get_device_id(&card, &devid);
+    if (err) {
+        XPUM_LOG_ERROR("Error in getting device id");
+    }
 
     if (devid == OPEN_BMC_DEV_ID) {
         XPUM_LOG_DEBUG("OPEN BMC platform found");
@@ -196,42 +199,34 @@ static int probe_i2c_addr(uint8_t i2c_addr) {
         slot_count = MAX_PCI_SLOT_COUNT_OPEN_PURELY;
     } else {
         XPUM_LOG_DEBUG("UNKNOWN platform found");
-        slot_count = MAX_PCI_SLOT_COUNT;
+        slot_count = MAX_PCI_SLOT_COUNT_OPEN_PURELY;
     }
 
-    for (uint8_t slot = 0; slot < slot_count; slot++) {
-        card.ipmi_address = (ipmi_address_t){
-            .bus = 0,
-            .slot = slot,
-            .i2c_addr = i2c_addr,
-        };
+    uint8_t slaveAddrs[]{CARD_FIRST_I2C_ADDR_OLD, CARD_FIRST_I2C_ADDR};
 
-        err = card_detect(&card);
-        if (err)
-            continue;
+    for (auto i2c_addr : slaveAddrs) {
+        for (uint8_t slot = 0; slot < slot_count; slot++) {
+            card.ipmi_address = (ipmi_address_t){
+                .bus = 0,
+                .slot = slot,
+                .i2c_addr = i2c_addr,
+            };
 
-        g_list.card[g_list.count] = card;
-        g_list.card[g_list.count].id = g_list.count;
+            err = card_detect(&card);
+            if (err)
+                continue;
 
-        g_list.count++;
+            g_list.card[g_list.count] = card;
+            g_list.card[g_list.count].id = g_list.count;
+
+            g_list.count++;
+        }
     }
 
     if (g_list.count)
         return NRV_SUCCESS;
 
     return NRV_NO_CARD_DETECTED;
-}
-
-static int init_card_list() {
-    int err = 0;
-    err = bsmc_interface_init(iface);
-    if (err)
-        return err;
-    err = probe_i2c_addr(CARD_FIRST_I2C_ADDR);
-    if (err) {
-        err = probe_i2c_addr(CARD_FIRST_I2C_ADDR_OLD);
-    }
-    return err;
 }
 
 /* Returns 0 if there is at least one card in system. */
