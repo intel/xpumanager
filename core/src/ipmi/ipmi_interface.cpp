@@ -179,6 +179,9 @@ static int slot_ipmb_send_devid() {
     req.addr_len = sizeof(req_addr);
     req.msg.netfn = IPMI_GET_DEVID_OEM_NETFN;
     req.msg.cmd = IPMI_FW_GET_INFO_CMD;
+    req.msg.data_len = 0;
+
+    XPUM_LOG_DEBUG("SlotIPMB Request (len: {}):", req.msg.data_len);
 
     err = ioctl(g_ipmi_dev, IPMICTL_SEND_COMMAND, &req);
     if (err) {
