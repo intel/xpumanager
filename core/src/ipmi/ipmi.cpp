@@ -199,7 +199,7 @@ static int init_card_list() {
         slot_count = MAX_PCI_SLOT_COUNT_OPEN_PURELY;
     } else {
         XPUM_LOG_DEBUG("UNKNOWN platform found");
-        slot_count = MAX_PCI_SLOT_COUNT_OPEN_PURELY;
+        slot_count = MAX_PCI_SLOT_COUNT;
     }
 
     uint8_t slaveAddrs[]{CARD_FIRST_I2C_ADDR_OLD, CARD_FIRST_I2C_ADDR};
