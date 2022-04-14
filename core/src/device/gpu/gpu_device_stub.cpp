@@ -637,7 +637,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                         getline(infile, rev);
                         if (rev.size() > 0) {
                             int val = std::stoi(rev, nullptr, 16);
-                            stepping = (char)('A' + val / 4) + std::to_string(val % 4);
+                            if (val >= 0 && val < 8) // A0 ~ A3, B0 ~ B3
+                                stepping = (char)('A' + val / 4) + std::to_string(val % 4);
+                            else if (val >= 8 && val < 18) // C0 ~ C9
+                                stepping = (char)('C') + std::to_string(val - 8);
                         }                        
                     }
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
