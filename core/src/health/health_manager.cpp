@@ -18,7 +18,7 @@ HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
                              std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {
     XPUM_LOG_TRACE("HealthManager()");
-    p_health_device_to_tdps = {{"0x0205", 150}, {"0x0203", 150}, {"0x020A", 300}, {"0x56C0", 150}, {"0x56C1", 37.5}, {"0x0BD5", 600}};
+    p_health_device_to_tdps = {{"0x0205", 150}, {"0x0203", 150}, {"0x020A", 300}, {"0x56C0", 150}, {"0x56C1", 37.5}, {"0x0BD5", 600}, {"0x0BD8", 450}};
 }
 
 HealthManager::~HealthManager() {
