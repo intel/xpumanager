@@ -200,12 +200,11 @@ void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
                                                    });
 }
 
-static std::vector<std::string> getSiblingDeviceBDFAddr(GPUDevice* device) {
+static std::vector<std::string> getSiblingDeviceMeiPath(GPUDevice* device) {
     xpum::Core& core = xpum::Core::instance();
     auto groupManager = core.getGroupManager();
     xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS];
     std::vector<std::string> result;
-    Property pcieAddrProp;
     int count;
     groupManager->getAllGroupIds(groupIds, &count);
     xpum_device_id_t deviceId = std::stoi(device->getId());
@@ -223,41 +222,26 @@ static std::vector<std::string> getSiblingDeviceBDFAddr(GPUDevice* device) {
                         auto siblingId = groupInfo.deviceList[k];
                         std::string siblingIdStr = std::to_string(siblingId);
                         auto pSiblingDevice = deviceManager->getDevice(siblingIdStr);
-                        pSiblingDevice->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, pcieAddrProp);
-                        result.push_back(pcieAddrProp.getValue());
+                        auto meiPath = pSiblingDevice->getMeiDevicePath();
+                        result.push_back(meiPath);
                     }
                     return result;
                 }
             }
         }
     }
-    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, pcieAddrProp);
-    result.push_back(pcieAddrProp.getValue());
+    auto meiPath = device->getMeiDevicePath();
+    result.push_back(meiPath);
     return result;
 }
 
 xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
-    auto bdfAddrs = getSiblingDeviceBDFAddr(this);
+    auto meiPathList = getSiblingDeviceMeiPath(this);
 
     std::vector<std::string> commands;
 
-    for (auto address : bdfAddrs) {
-        // remove first "0000"
-        std::string::size_type begin = address.find(":");
-        if (begin == std::string::npos) {
-            return xpum_result_t::XPUM_GENERIC_ERROR;
-        }
-
-        std::string addrForTool = address.substr(begin + 1, address.length());
-
-        // change last "." to ":"
-        begin = addrForTool.find(".");
-        if (begin == std::string::npos) {
-            return xpum_result_t::XPUM_GENERIC_ERROR;
-        }
-        addrForTool[begin] = ':';
-
-        std::string command = toolPath + " -Y -Device " + addrForTool + " -F " + filePath;
+    for (auto meiPath : meiPathList) {
+        std::string command = toolPath + " -a -d " + meiPath + " -i " + filePath;
         commands.push_back(command);
     }
     if (commands.size() == 0) {

@@ -126,7 +126,7 @@ def runFirmwareFlash(deviceId):
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'}), 400
 
     code, msg, data = stub.runFirmwareFlash(deviceId, fwType, filePath)
-    if code == stub.XpumResult['XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND'].value:
+    if code == stub.XpumResult['XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND'].value:
         return jsonify({'error': msg}), 500
     elif code != 0:
         return jsonify({'error': msg}), 400

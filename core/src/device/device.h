@@ -46,6 +46,19 @@ typedef struct FabricThroughputInfo_t {
     FabricThroughputType type;
 } FabricThroughputInfo;
 
+
+struct pci_address_t {
+    uint32_t domain;    ///< BDF domain
+    uint32_t bus;       ///< BDF bus
+    uint32_t device;    ///< BDF device
+    uint32_t function;  ///< BDF function
+
+    bool operator==(const pci_address_t& addr) {
+        return domain == addr.domain &&
+               bus == addr.bus && device == addr.device && function == addr.function;
+    }
+};
+
 class Device {
    public:
     Device();
@@ -153,6 +166,22 @@ class Device {
 
     std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<FabricThroughputType>>>> getFabricThroughputIDS();
 
+    void setPciAddress(pci_address_t address) {
+        bdfAddr = address;
+    }
+
+    pci_address_t getPciAddress() {
+        return bdfAddr;
+    }
+
+    void setMeiDevicePath(std::string path) {
+        mei_device_path = path;
+    }
+
+    std::string getMeiDevicePath() {
+        return mei_device_path;
+    }
+
    public:
     virtual ~Device() {}
 
@@ -180,6 +209,10 @@ class Device {
     std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<FabricThroughputType>>>> fabric_throughput_ids;
 
     std::map<uint64_t, FabricThroughputInfo> fabric_throughput_info;
+
+    pci_address_t bdfAddr;
+
+    std::string mei_device_path;
 };
 
 } // end namespace xpum

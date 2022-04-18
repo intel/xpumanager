@@ -630,6 +630,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
                 if (res == ZE_RESULT_SUCCESS) {
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, to_string(pci_props.address)));
+                    auto tmpAddr = pci_props.address;
+                    p_gpu->setPciAddress({tmpAddr.domain, tmpAddr.bus, tmpAddr.device, tmpAddr.function});
                     std::string stepping = "unknown";
                     std::ifstream infile("/sys/bus/pci/devices/" + to_string(pci_props.address) + "/revision");
                     if (infile.good()) {
@@ -694,16 +696,16 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFirmwares(device, &firmware_count, firmwares.data()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME, std::string("GSC")));
                 std::string fwVersion = "unknown";
-                if (res == ZE_RESULT_SUCCESS) {
-                    for (auto firmware : firmwares) {
-                        zes_firmware_properties_t prop;
-                        XPUM_ZE_HANDLE_LOCK(firmware, res = zesFirmwareGetProperties(firmware, &prop));
-                        if (strcmp(prop.name, "GSC") != 0 || strcmp(prop.name, "unknown") == 0 || strcmp(prop.version, "unknown") == 0) {
-                            continue;
-                        }
-                        fwVersion = std::string(prop.version);
-                    }
-                }
+                // if (res == ZE_RESULT_SUCCESS) {
+                //     for (auto firmware : firmwares) {
+                //         zes_firmware_properties_t prop;
+                //         XPUM_ZE_HANDLE_LOCK(firmware, res = zesFirmwareGetProperties(firmware, &prop));
+                //         if (strcmp(prop.name, "GSC") != 0 || strcmp(prop.name, "unknown") == 0 || strcmp(prop.version, "unknown") == 0) {
+                //             continue;
+                //         }
+                //         fwVersion = std::string(prop.version);
+                //     }
+                // }
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION, fwVersion));
 
                 uint32_t fabric_count = 0;

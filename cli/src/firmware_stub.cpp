@@ -44,8 +44,8 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND:
             (*json)["error"] = "Firmware image not found.";
             return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND:
-            (*json)["error"] = "Please get GfxFwFPT tool from Intel and put it into the folder /usr/local/bin.";
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND:
+            (*json)["error"] = "Igsc tool doesn't exit";
             return json;
         case xpum_result_t::XPUM_RESULT_DEVICE_NOT_FOUND:
             (*json)["error"] = "Device not found.";
@@ -58,6 +58,12 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING:
             (*json)["error"] = "Firmware update task already running.";
+            return json;
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_INVALID_SOC_FW_IMAGE:
+            (*json)["error"] = "The image file is not a right SOC FW image file.";
+            return json;
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_SOC_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE:
+            (*json)["error"] = "The image file is a right SOC FW image file, but not proper for the target GPU.";
             return json;
         default:
             (*json)["error"] = "Unknown error.";

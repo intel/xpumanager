@@ -366,33 +366,6 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
     return XPUM_OK;
 }
 
-static const std::string gfxPath{"/usr/local/bin/GfxFwFPT"};
-
-static bool detectGfxTool() {
-    if (FILE *file = fopen(gfxPath.c_str(), "r")) {
-        fclose(file);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmware_flash_job *job) {
-    if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
-    }
-
-    xpum_result_t rc = XPUM_GENERIC_ERROR;
-    if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
-        if (!detectGfxTool()) {
-            XPUM_LOG_INFO("flash tool not exists");
-            return XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND;
-        }
-        rc = device->runFirmwareFlash(job->filePath, gfxPath);
-    }
-
-    return rc;
-}
 
 static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
     if (job->filePath == nullptr)
@@ -465,8 +438,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
                 return res;
-            std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-            return runFirmwareFlash(device, job);
+            return Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath);
         } else {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         }
@@ -483,10 +455,8 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
-        auto res = Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult();
-        result->deviceId = deviceId;
-        result->type = XPUM_DEVICE_FIRMWARE_GSC;
-        result->result = res;
+        Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result);
+        
         return XPUM_OK;
     }
 
@@ -494,16 +464,11 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
     }
 
-    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
-    }
+    xpum_result_t res = validateDeviceId(deviceId);
+    if (res != XPUM_OK)
+        return res;
 
-    xpum_firmware_flash_result_t res = device->getFirmwareFlashResult(firmwareType);
-
-    result->deviceId = deviceId;
-    result->type = XPUM_DEVICE_FIRMWARE_GSC;
-    result->result = res;
+    Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
 
     return XPUM_OK;
 }

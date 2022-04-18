@@ -4,16 +4,105 @@
  *  @file dump_manager.h
  */
 #include "firmware_manager.h"
+#include "core/core.h"
 
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <regex>
 
 namespace xpum {
 
 extern int cmd_firmware(const char* file, unsigned int versions[4]);
 
 extern std::vector<std::string> cmd_get_amc_firmware_versions();
+
+class SystemCommandResult {
+    std::string _output;
+    int _exitStatus;
+
+   public:
+    SystemCommandResult(std::string& cmd_output, int cmd_exit_status) {
+        _output = cmd_output;
+        _exitStatus = cmd_exit_status;
+    }
+
+    const std::string& output() {
+        return _output;
+    }
+
+    const int exitStatus() {
+        return _exitStatus;
+    }
+};
+
+static SystemCommandResult execCommand(const std::string& command) {
+    int exitcode = 0;
+    std::array<char, 1048576> buffer{};
+    std::string result;
+
+    FILE* pipe = popen(command.c_str(), "r");
+    if (pipe != nullptr) {
+        try {
+            std::size_t bytesread;
+            while ((bytesread = std::fread(buffer.data(), sizeof(buffer.at(0)), sizeof(buffer), pipe)) != 0) {
+                result += std::string(buffer.data(), bytesread);
+            }
+        } catch (...) {
+            pclose(pipe);
+        }
+        exitcode = WEXITSTATUS(pclose(pipe));
+    }
+
+    return SystemCommandResult(result, exitcode);
+}
+
+struct GscFwVersion {
+    std::string devicePath;
+    pci_address_t bdfAddr;
+    std::string fwVersion;
+};
+
+static const std::string igscPath{"/usr/bin/igsc"};
+
+static std::vector<GscFwVersion> getGscFwVersions() {
+    std::vector<GscFwVersion> res;
+    std::string cmd = igscPath + " list-devices --info 2>&1";
+    SystemCommandResult sc_res = execCommand(cmd);
+    if (sc_res.exitStatus() != 0)
+        return res;
+    auto output = sc_res.output();
+    std::regex regexp(R"(Device \[\d+\] '(/dev/mei\d+)':.*([0-9a-f]{4}):([0-9a-f]{2}):([0-9a-f]{2})\.([0-9a-f]{2})\nFW Version: (.*)\n)");
+
+    std::smatch m;
+    while (regex_search(output, m, regexp)) {
+        GscFwVersion fw;
+        fw.devicePath = m[1];
+        fw.bdfAddr.domain = stoi(m[2], 0, 16);
+        fw.bdfAddr.bus = stoi(m[3], 0, 16);
+        fw.bdfAddr.device = stoi(m[4], 0, 16);
+        fw.bdfAddr.function = stoi(m[5], 0, 16);
+        fw.fwVersion = m[6];
+        output = m.suffix();
+        res.push_back(fw);
+    }
+    return res;
+}
+
+void static detectGscFw() {
+    std::vector<std::shared_ptr<Device>> devices;
+    Core::instance().getDeviceManager()->getDeviceList(devices);
+    auto fwList = getGscFwVersions();
+    for (auto pDevice : devices) {
+        auto address = pDevice->getPciAddress();
+        for (auto fw : fwList) {
+            if (fw.bdfAddr == address) {
+                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION, fw.fwVersion));
+                pDevice->setMeiDevicePath(fw.devicePath);
+            }
+        }
+    }
+}
 
 void FirmwareManager::getAMCFwVersions() {
     if(amcUpdated){
@@ -26,6 +115,8 @@ void FirmwareManager::getAMCFwVersions() {
 void FirmwareManager::init() {
     // get amc fw versions
     amcFwList = cmd_get_amc_firmware_versions();
+    // get gsc fw versions
+    detectGscFw();
 };
 
 std::vector<std::string> FirmwareManager::getAMCFirmwareVersions() {
@@ -57,21 +148,91 @@ xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath) {
     }
 }
 
-xpum_firmware_flash_result_t FirmwareManager::getAMCFirmwareFlashResult() {
+void FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t* result) {
     std::future<xpum_firmware_flash_result_t>* task = &taskAMC;
+
+    xpum_firmware_flash_result_t res;
 
     if (task->valid()) {
         using namespace std::chrono_literals;
         auto status = task->wait_for(0ms);
         if (status == std::future_status::ready) {
             std::lock_guard<std::mutex> lck(mtx);
-            return task->get();
+            res = task->get();
         } else {
-            return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
+            res = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
         }
     } else {
-        return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+        res = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
     }
+    result->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
+    result->type = XPUM_DEVICE_FIRMWARE_AMC;
+    result->result = res;
+}
+
+
+static bool detectGfxTool() {
+    if (FILE *file = fopen(igscPath.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static bool isGscFwImage(const char* filePath) {
+    std::string cmd = igscPath + " image-type -i " + std::string(filePath) +" 2>&1";
+    SystemCommandResult sc_res = execCommand(cmd);
+    if (sc_res.exitStatus() != 0)
+        return false;
+    auto output = sc_res.output();
+
+    std::string flag = "GFX FW Update image";
+
+    return output.find(flag) != output.npos;
+}
+
+static bool isFwImageAndDeviceCompatible(std::string meiPath, const char* filePath) {
+    std::string cmd = igscPath + " fw hwconfig -d " + meiPath + " -i " + std::string(filePath) + " 2>&1";
+    SystemCommandResult sc_res = execCommand(cmd);
+    return sc_res.exitStatus() == 0;
+}
+
+xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath) {
+    // check tool if tool exists
+    if (!detectGfxTool()) {
+        XPUM_LOG_INFO("flash tool not exists");
+        return XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND;
+    }
+
+    // validate the image file
+    if (!isGscFwImage(filePath)) {
+        return XPUM_UPDATE_FIRMWARE_INVALID_SOC_FW_IMAGE;
+    }
+
+    // check device exists
+    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (pDevice == nullptr) {
+        return XPUM_GENERIC_ERROR;
+    }
+
+    // validate the image is compatible with the device
+    if (!isFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), filePath)) {
+        return XPUM_UPDATE_FIRMWARE_SOC_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+    }
+
+    return pDevice->runFirmwareFlash(filePath, igscPath);
+}
+
+void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t *result) {
+    xpum_firmware_flash_result_t res;
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+
+    res = device->getFirmwareFlashResult(XPUM_DEVICE_FIRMWARE_GSC);
+
+    result->deviceId = deviceId;
+    result->type = XPUM_DEVICE_FIRMWARE_GSC;
+    result->result = res;
 }
 
 bool FirmwareManager::isUpgradingFw(void) {

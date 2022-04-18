@@ -115,8 +115,10 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
     XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
-    XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND, /// "/usr/local/bin/GfxFwFPT" not found
+    XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND, /// "/usr/bin/igsc" not found
     XPUM_UPDATE_FIRMWARE_TASK_RUNNING,       /// Firmware update task is already running
+    XPUM_UPDATE_FIRMWARE_INVALID_SOC_FW_IMAGE,       /// The image file is not a valid SOC FW image file
+    XPUM_UPDATE_FIRMWARE_SOC_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE,       /// The image file is not compatible with device
     XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT,
     XPUM_METRIC_NOT_SUPPORTED, ///< Unsupported metric
     XPUM_METRIC_NOT_ENABLED,   ///< Unenabled metric

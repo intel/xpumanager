@@ -31,7 +31,8 @@ class FirmwareManager {
 
     std::vector<std::string> getAMCFirmwareVersions();
     xpum_result_t runAMCFirmwareFlash(const char* filePath);
-    xpum_firmware_flash_result_t getAMCFirmwareFlashResult();
-
+    void getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result);
+    xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath);
+    void getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 };
 } // namespace xpum

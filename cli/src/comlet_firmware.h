@@ -45,5 +45,10 @@ class ComletFirmware : public ComletBase {
 
    private:
     std::unique_ptr<FlashFirmwareOptions> opts;
+
+    std::string getCurrentFwVersion();
+    std::string getImageFwVersion();
+    bool checkIgscExist();
+    bool checkImageValid();
 };
 } // namespace xpum::cli

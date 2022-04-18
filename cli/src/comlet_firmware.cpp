@@ -8,11 +8,15 @@
 
 #include <chrono>
 #include <nlohmann/json.hpp>
+#include <regex>
 #include <thread>
 
 #include "core_stub.h"
 
 namespace xpum::cli {
+
+static const std::string igscPath{"/usr/bin/igsc"};
+
 ComletFirmware::ComletFirmware() : ComletBase("updatefw", "Update GPU firmware") {
     this->printHelpWhenNoArgs = true;
 }
@@ -159,6 +163,60 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     }
 }
 
+std::string ComletFirmware::getCurrentFwVersion() {
+    std::string res = "unknown";
+    auto json = coreStub->getDeviceProperties(opts->deviceId);
+    if (json->contains("error")) {
+        return res;
+    }
+    if (!json->contains("firmware_version")) {
+        return res;
+    }
+    return (*json)["firmware_version"];
+}
+
+std::string ComletFirmware::getImageFwVersion() {
+    std::string version = "unknown";
+    std::string cmd = igscPath+" fw version -i "+ opts->firmwarePath + " 2>&1";
+    std::regex regexp(R"(FW Version: (.*)\n)");
+    FILE* f = popen(cmd.c_str(), "r");
+    char c_line[1024];
+    while (fgets(c_line, 1024, f) != NULL) {
+        std::string line(c_line);
+        std::smatch m;
+        while (std::regex_search(line, m, regexp)) {
+            version = m[1];
+            break;
+        }
+    }
+    pclose(f);
+    return version;
+}
+
+bool ComletFirmware::checkImageValid() {
+    std::string cmd = igscPath + " image-type -i " + opts->firmwarePath + " 2>&1";
+    FILE *f = popen(cmd.c_str(), "r");
+    char c_line[1024];
+    bool valid = false;
+    while (fgets(c_line, 1024, f) != NULL) {
+        std::string line(c_line);
+        if (line.find("GFX FW Update image") != line.npos)
+            valid = true;
+    }
+    pclose(f);
+    return valid;
+}
+
+bool ComletFirmware::checkIgscExist() {
+    FILE *file = fopen(igscPath.c_str(), "r");
+
+    if (!file) {
+        return false;
+    }
+    fclose(file);
+    return true;
+}
+
 void ComletFirmware::getTableResult(std::ostream &out) {
     auto validateResultJson = validateArguments();
     if (validateResultJson.contains("error")) {
@@ -178,6 +236,16 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             return;
         }
     } else { // GSC caution
+        // check igsc
+        if (!checkIgscExist()) {
+            out << "Error: Igsc tool doesn't exit." << std::endl;
+            exit(1);
+        }
+        if(!checkImageValid()){
+            out << "Error: The image file is not a right SOC FW image file." << std::endl;
+            exit(1);
+        }
+        // for ats-m3
         auto allGroups = coreStub->groupListAll();
         if (allGroups != nullptr && allGroups->contains("group_list")) {
             for (auto groupJson : (*allGroups)["group_list"]) {
@@ -197,6 +265,16 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                     }
                 }
             }
+        }
+        // version confirmation
+        out << "Current GPU FW version: " << getCurrentFwVersion() << std::endl;
+        out << "Image FW version: " << getImageFwVersion()<<std::endl;
+        out << "Do you want to continue? (y/n) " << std::endl;
+        std::string confirm;
+        std::cin >> confirm;
+        if (confirm != "Y" && confirm != "y") {
+            out << "update aborted" << std::endl;
+            return;
         }
     }
 
