@@ -163,9 +163,9 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     }
 }
 
-std::string ComletFirmware::getCurrentFwVersion() {
+std::string ComletFirmware::getCurrentFwVersion(int deviceId) {
     std::string res = "unknown";
-    auto json = coreStub->getDeviceProperties(opts->deviceId);
+    auto json = coreStub->getDeviceProperties(deviceId);
     if (json->contains("error")) {
         return res;
     }
@@ -247,6 +247,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         }
         // for ats-m3
         auto allGroups = coreStub->groupListAll();
+        std::vector<int> deviceIdsToFlashFirmware;
         if (allGroups != nullptr && allGroups->contains("group_list")) {
             for (auto groupJson : (*allGroups)["group_list"]) {
                 int groupId = groupJson["group_id"].get<int>();
@@ -261,13 +262,24 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                                 out << "update aborted" << std::endl;
                                 return;
                             }
+                            for (auto tmpId : deviceIdList) {
+                                deviceIdsToFlashFirmware.push_back(tmpId.get<int>());
+                            }
+                            break;
                         }
                     }
+                    if (deviceIdsToFlashFirmware.size() > 0)
+                        break;
                 }
             }
         }
+        if(deviceIdsToFlashFirmware.size()==0){
+            deviceIdsToFlashFirmware.push_back(opts->deviceId);
+        }
         // version confirmation
-        out << "Current GPU FW version: " << getCurrentFwVersion() << std::endl;
+        for(int deviceId: deviceIdsToFlashFirmware){
+            out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(deviceId) << std::endl;
+        }
         out << "Image FW version: " << getImageFwVersion()<<std::endl;
         out << "Do you want to continue? (y/n) " << std::endl;
         std::string confirm;

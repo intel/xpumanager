@@ -46,7 +46,7 @@ class ComletFirmware : public ComletBase {
    private:
     std::unique_ptr<FlashFirmwareOptions> opts;
 
-    std::string getCurrentFwVersion();
+    std::string getCurrentFwVersion(int deviceId);
     std::string getImageFwVersion();
     bool checkIgscExist();
     bool checkImageValid();
