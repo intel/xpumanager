@@ -241,7 +241,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
     std::vector<std::string> commands;
 
     for (auto meiPath : meiPathList) {
-        std::string command = toolPath + " -a -d " + meiPath + " -i " + filePath;
+        std::string command = toolPath + " fw update -a -d " + meiPath + " -i " + filePath;
         commands.push_back(command);
     }
     if (commands.size() == 0) {
