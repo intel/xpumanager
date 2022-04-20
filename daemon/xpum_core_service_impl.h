@@ -21,7 +21,7 @@
 
 namespace xpum::daemon {
 
-class XpumCoreServiceImpl final : public XpumCoreService::Service {
+class XpumCoreServiceImpl : public XpumCoreService::Service {
    public:
     static std::string dumpRawDataFileFolder;
 
@@ -86,7 +86,7 @@ class XpumCoreServiceImpl final : public XpumCoreService::Service {
     virtual ::grpc::Status getStatisticsNotForPrometheus(::grpc::ServerContext* context, const ::XpumGetStatsRequest* request, ::XpumGetStatsResponse* response);
     virtual ::grpc::Status getStatisticsByGroupNotForPrometheus(::grpc::ServerContext* context, const ::XpumGetStatsByGroupRequest* request, ::XpumGetStatsResponse* response);
 
-    virtual ::grpc::Status runFirmwareFlash(::grpc::ServerContext* context, const ::XpumFirmwareFlashJob* request, ::GeneralEnum* response) override;
+    virtual ::grpc::Status runFirmwareFlash(::grpc::ServerContext* context, const ::XpumFirmwareFlashJob* request, ::XpumFirmwareFlashJobResponse* response) override;
     virtual ::grpc::Status getFirmwareFlashResult(::grpc::ServerContext* context, const ::XpumFirmwareFlashTaskRequest* request, ::XpumFirmwareFlashTaskResult* response) override;
 
     virtual ::grpc::Status getPolicy(::grpc::ServerContext* context, const ::GetPolicyRequest* request, ::GetPolicyResponse* response) override;

@@ -14,7 +14,7 @@ def runFirmwareFlash(deviceId, firmwareType, filePath):
     job.id.id = deviceId
     job.type.value = 0 if firmwareType == 'GSC' else 1
     job.path = filePath
-    resp = stub.runFirmwareFlash(job)
+    resp = stub.runFirmwareFlash(job).type
     if resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC'].value:
         return 1, "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.", None
     elif resp.value == XpumResult['XPUM_RESULT_DEVICE_NOT_FOUND'].value:

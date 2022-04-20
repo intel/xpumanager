@@ -22,7 +22,7 @@ namespace xpum::cli {
 
 class CoreStub {
    public:
-    CoreStub();
+    CoreStub(bool priv);
 
     bool isChannelReady();
 

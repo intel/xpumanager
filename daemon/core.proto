@@ -277,6 +277,11 @@ message XpumFirmwareFlashJob {
     string path = 3;
 }
 
+message XpumFirmwareFlashJobResponse {
+    GeneralEnum type = 1;
+    string errorMsg = 2;
+}
+
 message XpumFirmwareFlashTaskRequest {
     DeviceId id = 1;
     GeneralEnum type = 2;
@@ -734,6 +739,7 @@ message GetFabricCountResponse {
     bool isTileLevel = 1;
     int32 tileId = 2;
     repeated FabricCountInfo fabricCountList= 3;
+    string errorMsg = 4;
 }
 
 /* services */
@@ -767,7 +773,7 @@ service XpumCoreService {
     rpc getStatisticsByGroup( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );
     rpc getStatisticsNotForPrometheus( XpumGetStatsRequest ) returns ( XpumGetStatsResponse );
     rpc getStatisticsByGroupNotForPrometheus( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );
-    rpc runFirmwareFlash( XpumFirmwareFlashJob ) returns ( GeneralEnum );
+    rpc runFirmwareFlash( XpumFirmwareFlashJob ) returns ( XpumFirmwareFlashJobResponse );
     rpc getFirmwareFlashResult( XpumFirmwareFlashTaskRequest ) returns ( XpumFirmwareFlashTaskResult );
     rpc getPolicy( GetPolicyRequest ) returns ( GetPolicyResponse );
     rpc setPolicy( SetPolicyRequest ) returns ( SetPolicyResponse );

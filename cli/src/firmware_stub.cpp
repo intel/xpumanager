@@ -18,7 +18,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     request.mutable_type()->set_value(type);
     request.set_path(filePath);
 
-    GeneralEnum response;
+    XpumFirmwareFlashJobResponse response;
     grpc::Status status = stub->runFirmwareFlash(&context, request, &response);
 
     if (!status.ok()) {
@@ -26,7 +26,12 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
         return json;
     }
 
-    xpum_result_t code = (xpum_result_t)response.value();
+    if (response.errormsg().length() > 0) {
+        (*json)["error"] = response.errormsg();
+        return json;
+    }
+
+    xpum_result_t code = (xpum_result_t)response.type().value();
 
     switch (code) {
         case xpum_result_t::XPUM_OK:

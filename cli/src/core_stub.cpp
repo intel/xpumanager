@@ -24,9 +24,13 @@
 
 namespace xpum::cli {
 
-CoreStub::CoreStub() {
-    char* xpum_socket_file_env = std::getenv("XPUM_SOCKET_FILE");
-    std::string unixSockName{xpum_socket_file_env != NULL ? xpum_socket_file_env : "/tmp/xpum.sock"};
+CoreStub::CoreStub(bool priv) {
+    char* xpum_socket_dir_env = std::getenv("XPUM_SOCKET_DIR");
+    std::string unixSockDir{xpum_socket_dir_env != NULL ? xpum_socket_dir_env : "/tmp/"};
+    if (unixSockDir.length() == 0 || unixSockDir.back() != '/') {
+        unixSockDir += "/";
+    }
+    std::string unixSockName{unixSockDir + (priv ? "xpum_p.sock" : "xpum_up.sock")};
     std::string serverAddr{"unix://" + unixSockName};
     this->channel = grpc::CreateChannel(serverAddr, grpc::InsecureChannelCredentials());
     this->stub = XpumCoreService::NewStub(this->channel);

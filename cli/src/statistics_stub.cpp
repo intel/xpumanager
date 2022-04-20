@@ -97,16 +97,22 @@ std::shared_ptr<nlohmann::json> CoreStub::getFabricCount(int deviceId) {
     request.set_deviceid(deviceId);
     grpc::Status status = stub->getFabricCount(&context, request, &response);
 
+
     nlohmann::json json;
-    for (auto &tileInfo : response.fabriccountlist()) {
-        std::string tileId = tileInfo.istilelevel() ? std::to_string(tileInfo.tileid()) : "device";
-        nlohmann::json obj;
-        for (auto &countInfo : tileInfo.datalist()) {
-            obj["tile_id"] = countInfo.tileid();
-            obj["remote_device_id"] = countInfo.remotedeviceid();
-            obj["remote_tile_id"] = countInfo.remotetileid();
+    if (response.errormsg().length() == 0) {
+        for (auto &tileInfo : response.fabriccountlist()) {
+            std::string tileId = tileInfo.istilelevel() ? std::to_string(tileInfo.tileid()) : "device";
+            nlohmann::json obj;
+            for (auto &countInfo : tileInfo.datalist()) {
+                obj["tile_id"] = countInfo.tileid();
+                obj["remote_device_id"] = countInfo.remotedeviceid();
+                obj["remote_tile_id"] = countInfo.remotetileid();
+            }
+            json[tileId].push_back(obj);
         }
-        json[tileId].push_back(obj);
+    }
+    else {
+        json["error"] = response.errormsg();
     }
     return std::make_shared<nlohmann::json>(json);
 }

@@ -36,7 +36,7 @@
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
 
-bool permissionCheck() {
+bool privilegeCheck() {
     uid_t uid = getuid();
     if (uid == 0) {
         return true;
@@ -53,7 +53,7 @@ bool permissionCheck() {
     gid_t groups[ngroups];
     getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
     std::string xpum_grp("xpum");
-    bool has_permission = false;
+    bool has_privilege = false;
     for (int i = 0; i < ngroups; i++) {
         struct group* gr = getgrgid(groups[i]);
         if (gr == NULL) {
@@ -61,10 +61,11 @@ bool permissionCheck() {
         }
         std::string grp_name(gr->gr_name);
         if (grp_name == xpum_grp) {
-            has_permission = true;
+            has_privilege = true;
         }
     }
-    return has_permission;
+
+    return has_privilege;
 }
 
 bool serviceStatusCheck() {
@@ -100,14 +101,11 @@ int main(int argc, char** argv) {
     xpum::cli::init_logger();
     // XPUM_LOG_AUDIT("XPUM CLI (ver.%s) Started", "1.0.0.0");
 
-    if (!permissionCheck()) {
-        std::cout << "Error: User Permission Error\r\n";
-        return 0;
-    }
+    bool priv = privilegeCheck();
 
     CLI::App app{xpum::cli::getResourceString("CLI_APP_DESC")};
 
-    xpum::cli::CLIWrapper wrapper(app);
+    xpum::cli::CLIWrapper wrapper(app, priv);
     if (!wrapper.getCoreStub()->isChannelReady()) {
         std::cout << "Error: XPUM Service Status Error. ";
         if (!levelZeroLoaderCheck()) {
