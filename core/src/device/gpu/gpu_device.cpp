@@ -286,6 +286,8 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
             }
             // dumpFirmwareFlashLog();
             log.clear();
+            // refresh SoC fw version
+            Core::instance().getFirmwareManager()->detectGscFw();
             xpum_firmware_flash_result_t rc;
             if (ok) {
                 rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;

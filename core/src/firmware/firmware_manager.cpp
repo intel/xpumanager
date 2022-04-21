@@ -89,7 +89,7 @@ static std::vector<GscFwVersion> getGscFwVersions() {
     return res;
 }
 
-void static detectGscFw() {
+void FirmwareManager::detectGscFw() {
     std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
     auto fwList = getGscFwVersions();

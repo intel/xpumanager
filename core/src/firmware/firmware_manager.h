@@ -30,6 +30,7 @@ class FirmwareManager {
     bool isUpgradingFw(void);
 
     std::vector<std::string> getAMCFirmwareVersions();
+    void detectGscFw();
     xpum_result_t runAMCFirmwareFlash(const char* filePath);
     void getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result);
     xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath);
