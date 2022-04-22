@@ -203,10 +203,13 @@ void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
 static std::vector<std::string> getSiblingDeviceMeiPath(GPUDevice* device) {
     xpum::Core& core = xpum::Core::instance();
     auto groupManager = core.getGroupManager();
-    xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS];
     std::vector<std::string> result;
-    int count;
-    groupManager->getAllGroupIds(groupIds, &count);
+
+    int count = 0;
+    groupManager->getAllGroupIds(nullptr, &count);
+    std::vector<xpum_group_id_t> groupIds(count);
+    groupManager->getAllGroupIds(groupIds.data(), &count);
+
     xpum_device_id_t deviceId = std::stoi(device->getId());
     for (int i = 0; i < count; i++) {
         auto groupId = groupIds[i];
@@ -241,6 +244,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
     std::vector<std::string> commands;
 
     for (auto meiPath : meiPathList) {
+        XPUM_LOG_INFO("prepare update GSC on {}", meiPath);
         std::string command = toolPath + " fw update -a -d " + meiPath + " -i " + filePath;
         commands.push_back(command);
     }
@@ -254,8 +258,10 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     } else {
         taskGSC = std::async(std::launch::async, [&, commands] {
+            XPUM_LOG_INFO("Start update GSC fw, total {} commands", commands.size());
             bool ok = true;
             for (std::string command : commands) {
+                XPUM_LOG_INFO("Execute command: {}", command);
                 FILE* commandExec = popen(command.c_str(), "r");
                 if (!commandExec) {
                     ok = false;
@@ -265,9 +271,12 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
                     char buf[BUFFERSIZE];
                     char* res = fgets(buf, BUFFERSIZE, commandExec);
                     if (res != nullptr) {
-                        log += std::string{res};
+                        // log += std::string{res};
+                        XPUM_LOG_DEBUG("GSC FW update log: {}", res);
                     } else {
-                        ok = ok && pclose(commandExec) == 0;
+                        bool commandResult = pclose(commandExec) == 0;
+                        XPUM_LOG_INFO("Command success: {}", commandResult);
+                        ok = ok && commandResult;
                         commandExec = nullptr;
                         break;
                     }
@@ -277,6 +286,8 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
             }
             // dumpFirmwareFlashLog();
             log.clear();
+            // refresh SoC fw version
+            Core::instance().getFirmwareManager()->detectGscFw();
             xpum_firmware_flash_result_t rc;
             if (ok) {
                 rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
