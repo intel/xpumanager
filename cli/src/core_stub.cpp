@@ -1137,22 +1137,12 @@ std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie, int id, XpumP
         }
     } else {
         (*json)["is_success"] = false;
-        if (response.errormsg().length() == 0) {
-            if (isRemove) {
-                (*json)["error"] = "Failed to remove the " + policyType + " policy. Error message: unknown.";
-                XPUM_LOG_AUDIT("Failed to remove the %s policy. Error message: unknown.", policyType.c_str());
-            } else {
-                (*json)["error"] = "Failed to set the " + policyType + " policy. Error message: unknown.";
-                XPUM_LOG_AUDIT("Failed to set the %s policy. Error message: unknown.", policyType.c_str());
-            }
+        if (isRemove) {
+            (*json)["error"] = "Failed to remove the " + policyType + " policy. Error message: " + status.error_message();
+            XPUM_LOG_AUDIT("Failed to remove the %s policy. Error message: %s", policyType.c_str(), status.error_message().c_str());
         } else {
-            if (isRemove) {
-                (*json)["error"] = "Failed to remove the " + policyType + " policy. Error message: " + response.errormsg();
-                XPUM_LOG_AUDIT("Failed to remove the %s policy. Error message: %s", policyType.c_str(), response.errormsg().c_str());
-            } else {
-                (*json)["error"] = "Failed to set the " + policyType + " policy. Error message: " + response.errormsg();
-                XPUM_LOG_AUDIT("Failed to set the %s policy. Error message: %s", policyType.c_str(), response.errormsg().c_str());
-            }
+            (*json)["error"] = "Failed to set the " + policyType + " policy. Error message: " + status.error_message();
+            XPUM_LOG_AUDIT("Failed to set the %s policy. Error message: %s", policyType.c_str(), status.error_message().c_str());
         }
     }
     return json;
@@ -1215,6 +1205,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie, int id) {
             (*json)["error"] = "Failed to list policies. Error message: " + response.errormsg();
             return json;
         }
+    }else{
+        (*json)["is_success"] = false;
+        (*json)["error"] = "Failed to list policies. Error message: " + status.error_message();
+        return json;
     }
     if (isDevcie) {
         (*json)["device_id"] = id;
