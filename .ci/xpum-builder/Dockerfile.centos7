@@ -1,0 +1,23 @@
+FROM centos:7
+ADD level-zero-1.7.9.tar.gz /
+RUN yum update -y && \
+    yum install -y rpm-build gcc gcc-c++ cmake make python3 libtool glibc-static \
+    openssl-devel git python3-pip python3-devel lua-devel doxygen curl && \
+    yum clean all
+RUN yum remove -y cmake && \
+    curl -s https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh --output cmake.sh && \
+    chmod +x cmake.sh && \
+    ./cmake.sh --skip-license && \
+    /bin/cmake --version
+RUN cd /level-zero-1.7.9 && \
+    mkdir build && \
+    cd build && \
+    /bin/cmake .. && \
+    /bin/cmake --build . --config Release && \
+    /bin/cmake --build . --config Release --target install
+ADD grpc /grpc
+ADD build_grpc.sh /grpc
+RUN chmod +x /grpc/build_grpc.sh && /grpc/build_grpc.sh
+RUN pip3 install grpcio-tools mistune==0.8.4 apispec apispec_webframeworks \
+    Sphinx sphinx_rtd_theme sphinxcontrib-openapi myst-parser marshmallow \
+    prometheus-client flask flask_httpauth
