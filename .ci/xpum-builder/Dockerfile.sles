@@ -12,6 +12,7 @@ RUN cd /level-zero-1.7.9 && \
     cmake --build . --config Release && \
     cmake --build . --config Release --target install
 ADD grpc /grpc
+RUN zypper install -y git openssl-devel
 ADD build_grpc.sh /grpc
 RUN chmod +x /grpc/build_grpc.sh && /grpc/build_grpc.sh
 RUN pip3 install mistune==0.8.4 apispec apispec_webframeworks \
