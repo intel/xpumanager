@@ -195,7 +195,25 @@ static bool isGscFwImage(const char* filePath) {
 static bool isFwImageAndDeviceCompatible(std::string meiPath, const char* filePath) {
     std::string cmd = igscPath + " fw hwconfig -d " + meiPath + " -i " + std::string(filePath) + " 2>&1";
     SystemCommandResult sc_res = execCommand(cmd);
-    return sc_res.exitStatus() == 0;
+    if (sc_res.exitStatus() != 0) {
+        return false;
+    }
+    auto output = sc_res.output();
+    XPUM_LOG_INFO("image and device compatible check: {}", output);
+    std::smatch m;
+    std::regex imageHwSkuRegexp(R"(image:\s+hw sku:\s+\[\s+(.*)\s+\]\s+hw step:\s+\[.*\n)");
+    auto matched = regex_search(output, m, imageHwSkuRegexp);
+    if (!matched)
+        return false;
+    std::string imageHwSku = m[1];
+    XPUM_LOG_INFO("image hw sku: {}", imageHwSku);
+    std::regex deviceHwSkuRegexp(R"(device:\s+hw sku:\s+\[\s+(.*)\s+\]\s+hw step:\s+\[.*\n)");
+    matched = regex_search(output, m, deviceHwSkuRegexp);
+    if (!matched)
+        return false;
+    std::string deviceHwSku = m[1];
+    XPUM_LOG_INFO("device hw sku: {}", deviceHwSku);
+    return imageHwSku.compare(deviceHwSku) == 0;
 }
 
 xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath) {
