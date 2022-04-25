@@ -6,33 +6,55 @@ deb http://linux-ftp.sh.intel.com/pub/mirrors/ubuntu/ bionic main universe\n\
 deb http://linux-ftp.sh.intel.com/pub/mirrors/ubuntu/ bionic-updates main universe\n\
 " > /etc/apt/sources.list
 
-ADD level-zero-1.7.9.tar.gz /
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && apt-get upgrade -y && \
-    apt-get install -y gcc g++ build-essential \
-    dpkg-dev curl cmake nano python3 python3-pip \
-    autoconf libtool pkg-config
-RUN cd /level-zero-1.7.9 && \
+    apt-get install -y gcc \
+    g++ \
+    build-essential \
+    dpkg-dev \
+    curl \
+    cmake \
+    nano \
+    python3 \
+    python3-pip \
+    autoconf \
+    libtool \
+    pkg-config \
+    python3-dev \
+    liblua5.2-0 \
+    doxygen \
+    libssl-dev \
+    git && \
+    apt-get remove -y cmake && \
+    curl -s https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh --output cmake.sh && \
+    chmod +x cmake.sh && \
+    ./cmake.sh --skip-license && \
+    cmake --version && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl -s --location https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.9.tar.gz | tar -xz && \
+    cd /level-zero-1.7.9 && \
     mkdir build && \
     cd build && \
     cmake .. && \
     cmake --build . --config Release && \
-    cmake --build . --config Release --target install
-ADD grpc /grpc
-RUN export DEBIAN_FRONTEND=noninteractive && \
-    apt-get install -y libssl-dev git
-ADD build_grpc.sh /grpc
-RUN chmod +x /grpc/build_grpc.sh && /grpc/build_grpc.sh
-RUN export DEBIAN_FRONTEND=noninteractive && \
-    apt-get install -y python3-dev liblua5.2-0
+    cmake --build . --config Release --target install && \
+    rm -fr /level-zero-1.7.9
+
+COPY build_grpc.sh /
+RUN git clone --depth 1 -b v1.45.0 https://github.com/grpc/grpc && \
+    cd /grpc && \
+    cp /build_grpc.sh . && \
+    git submodule update --init && \
+    git -C third_party/zlib pull https://github.com/madler/zlib v1.2.12 && \
+    git -C third_party/protobuf pull https://github.com/protocolbuffers/protobuf.git v3.19.4 && \
+    chmod +x ./build_grpc.sh && \
+    ./build_grpc.sh && \
+    rm -fr /grpc
+
 RUN pip3 install grpcio-tools
-RUN apt-get install -y doxygen
 RUN pip3 install mistune==0.8.4 apispec apispec_webframeworks \
     Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
     apispec-webframeworks myst-parser marshmallow \
     prometheus-client flask flask_httpauth
-RUN apt-get remove -y cmake && \
-curl -s https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh --output cmake.sh && \
-chmod +x cmake.sh && \
-./cmake.sh --skip-license && \
-cmake --version
+

@@ -1,20 +1,38 @@
 FROM opensuse/leap
 
-RUN zypper install -y -t pattern devel_basis
-RUN zypper install -y cmake gcc-c++ glibc-devel-static rpm-build
-RUN zypper in -y python3 python3-pip
+RUN zypper install -y -t pattern devel_basis && \
+    zypper install -y \
+    cmake \
+    curl \
+    gcc-c++ \
+    git \
+    glibc-devel-static \
+    openssl-devel \
+    python3 \
+    python3-pip \
+    rpm-build && \
+    zypper clean -a
 
-ADD level-zero-1.7.9.tar.gz /
-RUN cd /level-zero-1.7.9 && \
+RUN curl -s --location https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.9.tar.gz | tar -xz && \
+    cd /level-zero-1.7.9 && \
     mkdir build && \
     cd build && \
     cmake .. && \
     cmake --build . --config Release && \
-    cmake --build . --config Release --target install
-ADD grpc /grpc
-RUN zypper install -y git openssl-devel
-ADD build_grpc.sh /grpc
-RUN chmod +x /grpc/build_grpc.sh && /grpc/build_grpc.sh
+    cmake --build . --config Release --target install && \
+    rm -fr /level-zero-1.7.9
+
+COPY build_grpc.sh /
+RUN git clone --depth 1 -b v1.45.0 https://github.com/grpc/grpc && \
+    cd /grpc && \
+    cp /build_grpc.sh . && \
+    git submodule update --init && \
+    git -C third_party/zlib pull https://github.com/madler/zlib v1.2.12 && \
+    git -C third_party/protobuf pull https://github.com/protocolbuffers/protobuf.git v3.19.4 && \
+    chmod +x ./build_grpc.sh && \
+    ./build_grpc.sh && \
+    rm -fr /grpc
+
 RUN pip3 install mistune==0.8.4 apispec apispec_webframeworks \
     Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
     apispec-webframeworks myst-parser marshmallow \

@@ -1,23 +1,66 @@
 FROM centos:7
-ADD level-zero-1.7.9.tar.gz /
-RUN yum update -y && \
-    yum install -y rpm-build gcc gcc-c++ cmake make python3 libtool glibc-static \
-    openssl-devel git python3-pip python3-devel lua-devel doxygen curl && \
-    yum clean all
-RUN yum remove -y cmake && \
+
+RUN yum install -y https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm && \
+    yum update -y && \
+    yum install -y centos-release-scl \
+    curl \
+    doxygen \
+    git \
+    glibc-static \
+    libtool \
+    lua-devel \
+    make \
+    openssl-devel \
+    python3 \
+    python3-devel \
+    python3-pip \
+    rpm-build && \
+    yum install -y devtoolset-9-gcc* && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+RUN echo "source /opt/rh/devtoolset-9/enable" >> /etc/bashrc
+
+SHELL ["/bin/bash", "--login", "-c"]
+
+RUN mkdir cmake && \
+    cd cmake && \
     curl -s https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh --output cmake.sh && \
     chmod +x cmake.sh && \
     ./cmake.sh --skip-license && \
-    /bin/cmake --version
-RUN cd /level-zero-1.7.9 && \
+    rm -f cmake.sh
+
+ENV PATH="/cmake/bin:${PATH}".
+
+RUN curl -s --location https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.9.tar.gz | tar -xz && \
+    cd /level-zero-1.7.9 && \
     mkdir build && \
     cd build && \
-    /bin/cmake .. && \
-    /bin/cmake --build . --config Release && \
-    /bin/cmake --build . --config Release --target install
-ADD grpc /grpc
-ADD build_grpc.sh /grpc
-RUN chmod +x /grpc/build_grpc.sh && /grpc/build_grpc.sh
+    cmake .. && \
+    cmake --build . --config Release && \
+    cmake --build . --config Release --target install && \
+    rm -fr /level-zero-1.7.9
+
+COPY build_grpc.sh /
+RUN git clone --depth 1 -b v1.45.0 https://github.com/grpc/grpc && \
+    cd /grpc && \
+    cp /build_grpc.sh . && \
+    git submodule update --init && \
+    cd /grpc/third_party/zlib && \
+    git pull https://github.com/madler/zlib v1.2.12 && \
+    cd /grpc/third_party/protobuf && \
+    git pull https://github.com/protocolbuffers/protobuf.git v3.19.4 && \
+    cd /grpc && \
+    chmod +x ./build_grpc.sh && \
+    ./build_grpc.sh && \
+    rm -fr /grpc
+
 RUN pip3 install grpcio-tools mistune==0.8.4 apispec apispec_webframeworks \
     Sphinx sphinx_rtd_theme sphinxcontrib-openapi myst-parser marshmallow \
     prometheus-client flask flask_httpauth
+
+RUN curl -s --location https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.gz | tar -xz && \
+    cd automake-1.16.5 && \
+    ./configure && \
+    make install && \
+    rm -fr /automake-1.16.5
