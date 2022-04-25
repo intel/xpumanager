@@ -19,30 +19,30 @@ spec:
   containers:
     - args:
       - "99d"
-    command:
-      - "sleep"
-    image: "sh1sdev002.sh.intel.com/xpum-builder-sles"
-    imagePullPolicy: "IfNotPresent"
-    name: "xpum-builder-sles"
-    resources:
-      limits: {}
-      requests: {}
-    securityContext:
-      privileged: true
-    tty: false
-    volumeMounts:
-      - mountPath: "/var/run/docker.sock"
-        name: "volume-0"
-        readOnly: false
-      - mountPath: "/xpum-docker"
-        name: "volume-1"
-        readOnly: false
-      - mountPath: "/home/jenkins/agent"
-        name: "workspace-volume"
-        readOnly: false
-      - name: sign-secret
-        mountPath: "/root"
-        readOnly: true
+      command:
+        - "sleep"
+      image: "sh1sdev002.sh.intel.com/xpum-builder-sles"
+      imagePullPolicy: "IfNotPresent"
+      name: "xpum-builder-sles"
+      resources:
+        limits: {}
+        requests: {}
+      securityContext:
+        privileged: true
+      tty: false
+      volumeMounts:
+        - mountPath: "/var/run/docker.sock"
+          name: "volume-0"
+          readOnly: false
+        - mountPath: "/xpum-docker"
+          name: "volume-1"
+          readOnly: false
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
       workingDir: "/home/jenkins/agent"
     - args:
         - "99d"
