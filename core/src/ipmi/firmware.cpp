@@ -121,7 +121,8 @@ static inline int shell(const char *cmd) {
      * WEXISTATUS translates system return code to exit code returned
      * by executed shell command.
      */
-    return WEXITSTATUS(system(cmd));
+    int ret = system(cmd);
+    return WEXITSTATUS(ret);
 #endif
 }
 

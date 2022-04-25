@@ -240,7 +240,8 @@ static SystemCommandResult execCommand(const std::string& command) {
         } catch (...) {
             pclose(pipe);
         }
-        exitcode = WEXITSTATUS(pclose(pipe));
+        int ret = pclose(pipe);
+        exitcode = WEXITSTATUS(ret);
     }
 
     return SystemCommandResult(result, exitcode);
