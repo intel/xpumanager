@@ -40,7 +40,7 @@ else
 fi
 cd build
 cmake ..  $@ 
-make -j
+make -j4
 
 echo "---------Create installation package-----------"
 cpack   
