@@ -77,6 +77,10 @@ std::shared_ptr<std::map<int, std::map<int, int>>> CoreStub::getEngineCount(int 
 
     std::map<int, std::map<int, int>> m;
 
+    if (!status.ok()) {
+        return std::make_shared<std::map<int, std::map<int, int>>>(m);
+    }
+
     for (auto &tileInfo : response.enginecountlist()) {
         std::map<int, int> mm;
         for (auto &countInfo : tileInfo.datalist()) {
@@ -96,9 +100,13 @@ std::shared_ptr<nlohmann::json> CoreStub::getFabricCount(int deviceId) {
     GetFabricCountResponse response;
     request.set_deviceid(deviceId);
     grpc::Status status = stub->getFabricCount(&context, request, &response);
-
-
     nlohmann::json json;
+
+    if (!status.ok()) {
+        json["error"] = status.error_message();
+        return std::make_shared<nlohmann::json>(json);
+    }
+
     if (response.errormsg().length() == 0) {
         for (auto &tileInfo : response.fabriccountlist()) {
             std::string tileId = tileInfo.istilelevel() ? std::to_string(tileInfo.tileid()) : "device";

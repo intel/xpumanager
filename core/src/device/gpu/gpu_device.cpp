@@ -245,7 +245,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
 
     for (auto meiPath : meiPathList) {
         XPUM_LOG_INFO("prepare update GSC on {}", meiPath);
-        std::string command = toolPath + " fw update -a -d " + meiPath + " -i " + filePath;
+        std::string command = toolPath + " fw update -a -d " + meiPath + " -i " + filePath +" 2>&1";
         commands.push_back(command);
     }
     if (commands.size() == 0) {
@@ -273,6 +273,15 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
                     if (res != nullptr) {
                         // log += std::string{res};
                         XPUM_LOG_DEBUG("GSC FW update log: {}", res);
+                        std::string line(res);
+                        int i = 0;
+                        while (res[i]) {
+                            line[i] = tolower(res[i]);
+                            i++;
+                        }
+                        if (line.find("error") != line.npos || line.find("fail") != line.npos) {
+                            ok = false;
+                        }
                     } else {
                         bool commandResult = pclose(commandExec) == 0;
                         XPUM_LOG_INFO("Command success: {}", commandResult);

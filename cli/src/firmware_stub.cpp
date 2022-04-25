@@ -22,7 +22,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     grpc::Status status = stub->runFirmwareFlash(&context, request, &response);
 
     if (!status.ok()) {
-        (*json)["error"] = "Failed to run firmware flash";
+        (*json)["error"] = status.error_message();
         return json;
     }
 
@@ -87,8 +87,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, u
     XpumFirmwareFlashTaskResult res;
     auto status = stub->getFirmwareFlashResult(&ct, rq, &res);
 
-    if (!status.ok() || res.errormsg().length() != 0) {
-        (*json)["error"] = "Failed to get firmware reuslt";
+    if (!status.ok()) {
+        (*json)["error"] = status.error_message();
+    }
+
+    if (res.errormsg().length() != 0) {
+        (*json)["error"] = res.errormsg();
         return json;
     }
 
