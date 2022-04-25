@@ -5,12 +5,16 @@ if(NOT DEFINED WORK_PATH)
 endif()
 
 include(.cmake/xpum_version.cmake)
+include(.cmake/os_release_info.cmake)
 
 project(xpumanager VERSION ${PROJECT_VERSION})
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+get_os_release_info(os_name os_version os_code)
+message(STATUS "OS_name:=${os_name} OS_vsr=${os_version} OS_code=${os_code}")
 
 # Set compilation options
 include(CheckCXXCompilerFlag)
@@ -41,7 +45,7 @@ set(CPACK_RPM_PACKAGE_RELOCATABLE ON)
 set(CPACK_XPUM_LIB_INSTALL_DIR "/usr/lib")
 set(CPACK_XPUM_INCLUDE_INSTALL_DIR "/usr/include")
 set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/xpum")
-set(SYSTEMD_UNIT_NAME "${CMAKE_CURRENT_LIST_DIR}/daemon/xpum.service")
+set(SYSTEMD_UNIT_NAME "${CMAKE_CURRENT_LIST_DIR}/daemon/xpum.service.template")
 
 set(XPUM_CONFIG_DIR "${CPACK_PACKAGING_INSTALL_PREFIX}/config")
 
@@ -88,7 +92,7 @@ message("CPACK_PACKAGE_NAME=${PROJECT_NAME}")
 set(CPACK_PACKAGE_CONTACT "Intel Corporation")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_FILE_NAME
-    "${PROJECT_NAME}.${PROJECT_VERSION}.${BUILD_TIME}.${GIT_COMMIT}")
+    "${PROJECT_NAME}_${os_name}.${PROJECT_VERSION}.${BUILD_TIME}.${GIT_COMMIT}")
 set(CPACK_PACKAGE_VENDOR "Intel")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "XPU Manager")
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
@@ -97,8 +101,8 @@ set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
 if(CPACK_GENERATOR MATCHES "RPM")
   configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" COPYONLY)
-  configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.in"
-                 "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service" COPYONLY)
+  configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template.in"
+                 "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template" COPYONLY)
 
   file(WRITE "${CMAKE_BINARY_DIR}/package_file_name"
        "${CPACK_PACKAGE_FILE_NAME}.rpm")
@@ -137,8 +141,8 @@ endif()
 
 if(CPACK_GENERATOR MATCHES "DEB")
   configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" @ONLY)
-  configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.in"
-                 "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service" @ONLY)
+  configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template.in"
+                 "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template" @ONLY)
 
   file(WRITE "${CMAKE_BINARY_DIR}/package_file_name"
        "${CPACK_PACKAGE_FILE_NAME}.deb")
@@ -146,7 +150,7 @@ if(CPACK_GENERATOR MATCHES "DEB")
   set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
   set(CPACK_DEBIAN_PACKAGE_RELEASE "${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}")
   set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-  set(CPACK_DEBIAN_XPUM_PACKAGE_NAME "${PROJECT_NAME}")
+  set(CPACK_DEBIAN_XPUM_PACKAGE_NAME "${PROJECT_NAME}.${os_name}")
   set(CPACK_DEB_COMPONENT_INSTALL ON)
   set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 
@@ -173,7 +177,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/install/tools/fwUpgrade/GfxFwFPT)
 endif()
 
 install(FILES "${SYSTEMD_UNIT_NAME}"
-              "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service"
+              "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template"
         DESTINATION ".")
 
 include(CPack)
