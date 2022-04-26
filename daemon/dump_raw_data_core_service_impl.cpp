@@ -33,6 +33,9 @@ static std::string isotimestamp(uint64_t t) {
 
 static void createEmptyFile(std::string filePath) {
     std::ofstream output(filePath);
+    // chmod of file
+    if (chmod(filePath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH) != 0)
+        XPUM_LOG_ERROR("Fail to add read permission to file {}", filePath);
     // chwon of file
     passwd* pwd = getpwnam("xpum");
     if (pwd != nullptr) {
