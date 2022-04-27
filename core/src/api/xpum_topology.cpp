@@ -134,7 +134,7 @@ void setXelinkTransfer(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelin
 }
 
 void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_topo_info& info,
-                     zes_fabric_port_id_t& localPort, zes_fabric_port_id_t& remotePort) {
+                     zes_fabric_port_id_t& localPort, zes_fabric_port_id_t& remotePort, bool x_fabric_existing, bool y_fabric_existing) {
     bool bFound = false;
     xpum_xelink_topo_info* currentInfo = nullptr;
 
@@ -148,8 +148,12 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
 
     if (info.localDevice == info.remoteDevice) {
         info.linkType = XPUM_LINK_SELF;
-    } else if (localPort.fabricId == remotePort.fabricId) {
+    } else if ((localPort.fabricId == remotePort.fabricId) && x_fabric_existing && y_fabric_existing) {
         info.linkType = XPUM_LINK_MDF;
+    } else if ((info.localDevice.numaIdx == info.remoteDevice.numaIdx) && !x_fabric_existing && !y_fabric_existing){
+        info.linkType = XPUM_LINK_NODE;
+    } else if ((info.localDevice.numaIdx != info.remoteDevice.numaIdx) && !x_fabric_existing && !y_fabric_existing){
+        info.linkType = XPUM_LINK_SYS;
     }
 
     if (!bFound) {
@@ -215,7 +219,7 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int* co
 
             topoInfo.linkType = XPUM_LINK_UNKNOWN;
 
-            if (fabricPorts[x].enabled && fabricPorts[x].healthy) {
+            if (fabricPorts[x].enabled && fabricPorts[x].healthy && fabricPorts[x].fabric_existing) {
                 if (fabricPorts[x].remotePortId == fabricPorts[y].localPortProp.portId) {
                     topoInfo.linkType = XPUM_LINK_XE;
                     //XPUM_LOG_DEBUG("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}",
@@ -233,7 +237,8 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int* co
                 }
             }
 
-            changeOrAddInfo(topoInfos, topoInfo, fabricPorts[x].localPortProp.portId, fabricPorts[y].localPortProp.portId);
+            changeOrAddInfo(topoInfos, topoInfo, fabricPorts[x].localPortProp.portId, fabricPorts[y].localPortProp.portId, 
+            fabricPorts[x].fabric_existing, fabricPorts[y].fabric_existing);
         }
     }
 

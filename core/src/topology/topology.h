@@ -29,6 +29,7 @@ struct xpum_fabric_port_pair {
 
     bool healthy;
     bool enabled;
+    bool fabric_existing;
     uint32_t numaIdx;
     std::string cpuAffinity;
     zes_fabric_port_id_t remotePortId;
