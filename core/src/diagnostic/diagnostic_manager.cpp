@@ -28,24 +28,29 @@ DiagnosticManager::~DiagnosticManager() {
 }
 
 void DiagnosticManager::init() {
-    std::string service_file_name = "/lib/systemd/system/xpum.service";
-    std::ifstream service_file(service_file_name);
-    if (service_file.is_open()) {
-        std::string line;
-        while (getline(service_file, line)) {
-            if (line.find("ExecStart=") != std::string::npos) {
-                auto lpos = line.find("=");
-                auto rpos = line.find(" ");
-                if (rpos == std::string::npos) {
-                    XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1);
-                } else {
-                    XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1, rpos - lpos - 1);
+    std::vector<std::string> service_file_names = {"/lib/systemd/system/xpum.service",
+                                                "/etc/systemd/system/xpum.service"};
+    for (auto service_file_name : service_file_names) {
+        std::ifstream service_file(service_file_name);
+        if (service_file.is_open()) {
+            std::string line;
+            while (getline(service_file, line)) {
+                if (line.find("ExecStart=") != std::string::npos) {
+                    auto lpos = line.find("=");
+                    auto rpos = line.find(" ");
+                    if (rpos == std::string::npos) {
+                        XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1);
+                    } else {
+                        XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1, rpos - lpos - 1);
+                    }
+                    break;
                 }
             }
         }
     }
     if (XPUM_DAEMON_INSTALL_PATH.empty()) {
-        XPUM_LOG_ERROR("couldn't find xpum install path in service file: {}", service_file_name);
+        XPUM_LOG_ERROR("couldn't find xpum install path in service file: {} and {}",
+                    service_file_names.front(), service_file_names.back());
     }
 }
 
