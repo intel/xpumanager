@@ -33,9 +33,9 @@ def runFirmwareFlash(deviceId, firmwareType, filePath):
         return resp.value, "Igsc tool doesn't exit.", None
     elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_TASK_RUNNING'].value:
         return resp.value, "Firmware update task already running.", None
-    elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_INVALID_SOC_FW_IMAGE'].value:
+    elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE'].value:
         return resp.value, "The image file is not a right SOC FW image file.", None
-    elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_SOC_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE'].value:
+    elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE'].value:
         return resp.value, "The image file is a right SOC FW image file, but not proper for the target GPU.", None
     elif resp.value != XpumResult['XPUM_OK'].value:
         return 1, "Fail to run firmware flash", None

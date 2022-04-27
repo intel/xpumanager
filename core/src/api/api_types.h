@@ -153,6 +153,8 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION,                 ///< The driver version
     XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME,                  ///< The firmware name of device
     XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION,               ///< The firmware version of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME,           ///< The firmware name of fwdata of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION,        ///< The firmware version of fwdata of device
     XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes

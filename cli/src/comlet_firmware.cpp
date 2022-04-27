@@ -12,6 +12,7 @@
 #include <thread>
 
 #include "core_stub.h"
+#include "xpum_structs.h"
 
 namespace xpum::cli {
 
@@ -47,11 +48,11 @@ void ComletFirmware::setupOptions() {
         return std::string();
     });
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.");
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC, GSC_DATA. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.");
     fwTypeOpt->required();
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
-        if (str.compare("GSC") == 0 || str.compare("AMC") == 0) {
+        if (str.compare("GSC") == 0 || str.compare("AMC") == 0 || str.compare("GSC_DATA") == 0) {
             return std::string();
         } else {
             return errStr;
@@ -78,7 +79,7 @@ void ComletFirmware::setupOptions() {
 nlohmann::json ComletFirmware::validateArguments() {
     nlohmann::json result;
     // GSC
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GSC") == 0) {
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && (opts->firmwareType.compare("GSC") == 0 || opts->firmwareType.compare("GSC_DATA") == 0)) {
         result["error"] = "Updating GSC firmware on all devices is not supported";
         return result;
     }
@@ -110,9 +111,11 @@ static void printJson(std::shared_ptr<nlohmann::json> json, std::ostream &out, b
 
 static int getIntFirmwareType(std::string firmwareType) {
     if (firmwareType.compare("GSC") == 0)
-        return 0;
+        return XPUM_DEVICE_FIRMWARE_GSC;
     if (firmwareType.compare("AMC") == 0)
-        return 1;
+        return XPUM_DEVICE_FIRMWARE_AMC;
+    if(firmwareType.compare("GSC_DATA") == 0)
+        return XPUM_DEVICE_FIRMWARE_FW_DATA;
     return -1;
 }
 
@@ -169,16 +172,43 @@ std::string ComletFirmware::getCurrentFwVersion(int deviceId) {
     if (json->contains("error")) {
         return res;
     }
-    if (!json->contains("firmware_version")) {
-        return res;
+    int type = getIntFirmwareType(opts->firmwareType);
+    if (type == XPUM_DEVICE_FIRMWARE_GSC) {
+        if (!json->contains("firmware_version")) {
+            return res;
+        }
+        return (*json)["firmware_version"];
+    } else {
+        if (!json->contains("fw_data_firmware_version")) {
+            return res;
+        }
+        return (*json)["fw_data_firmware_version"];
     }
-    return (*json)["firmware_version"];
 }
 
 std::string ComletFirmware::getImageFwVersion() {
     std::string version = "unknown";
     std::string cmd = igscPath+" fw version -i "+ opts->firmwarePath + " 2>&1";
     std::regex regexp(R"(FW Version: (.*)\n)");
+    FILE* f = popen(cmd.c_str(), "r");
+    char c_line[1024];
+    while (fgets(c_line, 1024, f) != NULL) {
+        std::string line(c_line);
+        std::smatch m;
+        while (std::regex_search(line, m, regexp)) {
+            version = m[1];
+            break;
+        }
+    }
+    pclose(f);
+    return version;
+}
+
+std::string ComletFirmware::getFwDataImageFwVersion() {
+    std::string version = "unknown";
+    std::string cmd = igscPath+" fw-data version -i "+ opts->firmwarePath + " 2>&1";
+    //Fw Data Version: 101->1->0
+    std::regex regexp(R"(Fw Data Version: (.*)\n)");
     FILE* f = popen(cmd.c_str(), "r");
     char c_line[1024];
     while (fgets(c_line, 1024, f) != NULL) {
@@ -201,6 +231,20 @@ bool ComletFirmware::checkImageValid() {
     while (fgets(c_line, 1024, f) != NULL) {
         std::string line(c_line);
         if (line.find("GFX FW Update image") != line.npos)
+            valid = true;
+    }
+    pclose(f);
+    return valid;
+}
+
+bool ComletFirmware::validateFwDataImage(){
+    std::string cmd = igscPath + " image-type -i " + opts->firmwarePath + " 2>&1";
+    FILE *f = popen(cmd.c_str(), "r");
+    char c_line[1024];
+    bool valid = false;
+    while (fgets(c_line, 1024, f) != NULL) {
+        std::string line(c_line);
+        if (line.find("Firmware Data update image") != line.npos)
             valid = true;
     }
     pclose(f);
@@ -235,15 +279,22 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             out << "update aborted" << std::endl;
             return;
         }
-    } else { // GSC caution
+    } else { // GSC and FW-DATA caution
         // check igsc
         if (!checkIgscExist()) {
             out << "Error: Igsc tool doesn't exit." << std::endl;
             exit(1);
         }
-        if(!checkImageValid()){
-            out << "Error: The image file is not a right SOC FW image file." << std::endl;
-            exit(1);
+        if (type == XPUM_DEVICE_FIRMWARE_GSC) {
+            if (!checkImageValid()) {
+                out << "Error: The image file is not a right SOC FW image file." << std::endl;
+                exit(1);
+            }
+        } else {
+            if (!validateFwDataImage()) {
+                out << "Error: The image file is not a right FW-DATA image file." << std::endl;
+                exit(1);
+            }
         }
         // for ats-m3
         auto allGroups = coreStub->groupListAll();
@@ -277,10 +328,14 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             deviceIdsToFlashFirmware.push_back(opts->deviceId);
         }
         // version confirmation
-        for(int deviceId: deviceIdsToFlashFirmware){
+        for (int deviceId : deviceIdsToFlashFirmware) {
             out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(deviceId) << std::endl;
         }
-        out << "Image FW version: " << getImageFwVersion()<<std::endl;
+        if (type == XPUM_DEVICE_FIRMWARE_GSC) {
+            out << "Image FW version: " << getImageFwVersion() << std::endl;
+        } else {
+            out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
+        }
         out << "Do you want to continue? (y/n) " << std::endl;
         std::string confirm;
         std::cin >> confirm;

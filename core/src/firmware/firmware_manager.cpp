@@ -5,6 +5,9 @@
  */
 #include "firmware_manager.h"
 #include "core/core.h"
+#include "system_cmd.h"
+#include "fwdata_mgmt.h"
+#include "group/group_manager.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -17,26 +20,7 @@ extern int cmd_firmware(const char* file, unsigned int versions[4]);
 
 extern std::vector<std::string> cmd_get_amc_firmware_versions();
 
-class SystemCommandResult {
-    std::string _output;
-    int _exitStatus;
-
-   public:
-    SystemCommandResult(std::string& cmd_output, int cmd_exit_status) {
-        _output = cmd_output;
-        _exitStatus = cmd_exit_status;
-    }
-
-    const std::string& output() {
-        return _output;
-    }
-
-    const int exitStatus() {
-        return _exitStatus;
-    }
-};
-
-static SystemCommandResult execCommand(const std::string& command) {
+SystemCommandResult execCommand(const std::string& command) {
     int exitcode = 0;
     std::array<char, 1048576> buffer{};
     std::string result;
@@ -63,8 +47,6 @@ struct GscFwVersion {
     pci_address_t bdfAddr;
     std::string fwVersion;
 };
-
-static const std::string igscPath{"/usr/bin/igsc"};
 
 static std::vector<GscFwVersion> getGscFwVersions() {
     std::vector<GscFwVersion> res;
@@ -113,11 +95,22 @@ void FirmwareManager::getAMCFwVersions() {
     }
 }
 
+void FirmwareManager::initFwDataMgmt(){
+    std::vector<std::shared_ptr<Device>> devices;
+    Core::instance().getDeviceManager()->getDeviceList(devices);
+    for (auto pDevice : devices) {
+        pDevice->setFwDataMgmt(std::make_shared<FwDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
+        pDevice->getFwDataMgmt()->getFwDataVersion();
+    }
+}
+
 void FirmwareManager::init() {
     // get amc fw versions
     amcFwList = cmd_get_amc_firmware_versions();
     // get gsc fw versions
     detectGscFw();
+    // init fw-data management
+    initFwDataMgmt();
 };
 
 std::vector<std::string> FirmwareManager::getAMCFirmwareVersions() {
@@ -226,7 +219,7 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
 
     // validate the image file
     if (!isGscFwImage(filePath)) {
-        return XPUM_UPDATE_FIRMWARE_INVALID_SOC_FW_IMAGE;
+        return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
     }
 
     // check device exists
@@ -237,7 +230,7 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
 
     // validate the image is compatible with the device
     if (!isFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), filePath)) {
-        return XPUM_UPDATE_FIRMWARE_SOC_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+        return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
     }
 
     return pDevice->runFirmwareFlash(filePath, igscPath);
@@ -256,5 +249,68 @@ void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_
 
 bool FirmwareManager::isUpgradingFw(void) {
     return taskAMC.valid();
+}
+
+static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<Device> pDevice) {
+    xpum::Core& core = xpum::Core::instance();
+    auto groupManager = core.getGroupManager();
+    std::vector<std::shared_ptr<Device>> result;
+
+    int count = 0;
+    groupManager->getAllGroupIds(nullptr, &count);
+    std::vector<xpum_group_id_t> groupIds(count);
+    groupManager->getAllGroupIds(groupIds.data(), &count);
+
+    xpum_device_id_t deviceId = std::stoi(pDevice->getId());
+    for (int i = 0; i < count; i++) {
+        auto groupId = groupIds[i];
+        if (groupId & BUILD_IN_GROUP_MASK) {
+            xpum_group_info_t groupInfo;
+            groupManager->getGroupInfo(groupId, &groupInfo);
+
+            for (int j = 0; j < groupInfo.count; j++) {
+                // device in build in group
+                if (groupInfo.deviceList[j] == deviceId) {
+                    auto deviceManager = core.getDeviceManager();
+                    for (int k = 0; k < groupInfo.count; k++) {
+                        auto siblingId = groupInfo.deviceList[k];
+                        std::string siblingIdStr = std::to_string(siblingId);
+                        auto pSiblingDevice = deviceManager->getDevice(siblingIdStr);
+                        result.push_back(pSiblingDevice);
+                    }
+                    return result;
+                }
+            }
+        }
+    }
+    result.push_back(pDevice);
+    return result;
+}
+
+xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const char* filePath) {
+    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (pDevice == nullptr) {
+        return XPUM_GENERIC_ERROR;
+    }
+    xpum_result_t res;
+    // check for ats-m3
+    auto deviceList = getSiblingDevices(pDevice);
+    for (auto pd : deviceList) {
+        res = pd->getFwDataMgmt()->flashFwData(filePath);
+        if (res != XPUM_OK)
+            break;
+    }
+    return res;
+}
+
+void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result) {
+    xpum_firmware_flash_result_t res;
+    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+
+    res = pDevice->getFwDataMgmt()->getFlashFwDataResult();
+
+    result->deviceId = deviceId;
+    result->type = XPUM_DEVICE_FIRMWARE_FW_DATA;
+    result->result = res;
 }
 } // namespace xpum

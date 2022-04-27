@@ -58,6 +58,10 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "FIRMWARE_NAME";
         case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
             return "FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME:
+            return "FW_DATA_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION:
+            return "FW_DATA_FIRMWARE_VERSION";
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return "SERIAL_NUMBER";
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
@@ -439,6 +443,11 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
             if (res != XPUM_OK)
                 return res;
             return Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath);
+        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_FW_DATA) {
+            res = validateDeviceId(deviceId);
+            if (res != XPUM_OK)
+                return res;
+            return Core::instance().getFirmwareManager()->runFwDataFlash(deviceId, job->filePath);
         } else {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         }
@@ -468,7 +477,12 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     if (res != XPUM_OK)
         return res;
 
-    Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
+    if (firmwareType == XPUM_DEVICE_FIRMWARE_GSC)
+        Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
+    else if (firmwareType == XPUM_DEVICE_FIRMWARE_FW_DATA)
+        Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result);
+    else
+        return XPUM_GENERIC_ERROR;
 
     return XPUM_OK;
 }
@@ -507,6 +521,10 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME;
         case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION;
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER;
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:

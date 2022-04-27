@@ -24,6 +24,7 @@ class FirmwareManager {
     std::future<xpum_firmware_flash_result_t> taskAMC;
 
     void getAMCFwVersions();
+    void initFwDataMgmt();
 
    public:
     void init();
@@ -35,5 +36,10 @@ class FirmwareManager {
     void getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result);
     xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath);
     void getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
+
+    xpum_result_t runFwDataFlash(xpum_device_id_t deviceId, const char* filePath);
+    void getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 };
+
+static const std::string igscPath{"/usr/bin/igsc"};
 } // namespace xpum

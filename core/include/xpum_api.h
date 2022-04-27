@@ -561,8 +561,8 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL
  *      - \ref XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE
  *      - \ref XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND
- *      - \ref XPUM_UPDATE_FIRMWARE_INVALID_SOC_FW_IMAGE
- *      - \ref XPUM_UPDATE_FIRMWARE_SOC_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE
+ *      - \ref XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE
+ *      - \ref XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE
  *      - \ref XPUM_GENERIC_ERROR
  */
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,

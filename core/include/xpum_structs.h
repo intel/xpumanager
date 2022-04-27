@@ -117,8 +117,8 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
     XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND, /// "/usr/bin/igsc" not found
     XPUM_UPDATE_FIRMWARE_TASK_RUNNING,       /// Firmware update task is already running
-    XPUM_UPDATE_FIRMWARE_INVALID_SOC_FW_IMAGE,       /// The image file is not a valid SOC FW image file
-    XPUM_UPDATE_FIRMWARE_SOC_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE,       /// The image file is not compatible with device
+    XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE,       /// The image file is not a valid FW image file
+    XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE,       /// The image file is not compatible with device
     XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT,
     XPUM_METRIC_NOT_SUPPORTED, ///< Unsupported metric
     XPUM_METRIC_NOT_ENABLED,   ///< Unenabled metric
@@ -183,6 +183,8 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_DRIVER_VERSION,                 ///< The driver version
     XPUM_DEVICE_PROPERTY_FIRMWARE_NAME,                  ///< The firmware name of device
     XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION,               ///< The firmware version of device
+    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME,          ///< The firmware name of FW-DATA of device
+    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION,       ///< The firmware version of FW-DATA of device
     XPUM_DEVICE_PROPERTY_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes
@@ -314,7 +316,8 @@ typedef enum xpum_device_config_type_enum {
  */
 typedef enum xpum_firmware_type_enum {
     XPUM_DEVICE_FIRMWARE_GSC = 0, ///< GSC firmware
-    XPUM_DEVICE_FIRMWARE_AMC = 1, ///< GSC firmware
+    XPUM_DEVICE_FIRMWARE_AMC = 1, ///< AMC firmware
+    XPUM_DEVICE_FIRMWARE_FW_DATA = 2, ///< GSC FW DATA
 } xpum_firmware_type_t;
 
 /**

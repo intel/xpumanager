@@ -697,17 +697,9 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFirmwares(device, &firmware_count, firmwares.data()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME, std::string("GSC")));
                 std::string fwVersion = "unknown";
-                // if (res == ZE_RESULT_SUCCESS) {
-                //     for (auto firmware : firmwares) {
-                //         zes_firmware_properties_t prop;
-                //         XPUM_ZE_HANDLE_LOCK(firmware, res = zesFirmwareGetProperties(firmware, &prop));
-                //         if (strcmp(prop.name, "GSC") != 0 || strcmp(prop.name, "unknown") == 0 || strcmp(prop.version, "unknown") == 0) {
-                //             continue;
-                //         }
-                //         fwVersion = std::string(prop.version);
-                //     }
-                // }
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION, fwVersion));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME, std::string("GSC_DATA")));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION, fwVersion));
 
                 uint32_t fabric_count = 0;
                 XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFabricPorts(device, &fabric_count, nullptr));

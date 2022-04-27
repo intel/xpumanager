@@ -50,5 +50,7 @@ class ComletFirmware : public ComletBase {
     std::string getImageFwVersion();
     bool checkIgscExist();
     bool checkImageValid();
+    bool validateFwDataImage();
+    std::string getFwDataImageFwVersion();
 };
 } // namespace xpum::cli

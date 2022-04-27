@@ -25,6 +25,8 @@
 
 namespace xpum {
 
+class FwDataMgmt;
+
 /*
   Device class defines various interfaces for communication with devices.
 */
@@ -182,6 +184,14 @@ class Device {
         return mei_device_path;
     }
 
+    void setFwDataMgmt(std::shared_ptr<FwDataMgmt> pFwDataMgmt) {
+        this->pFwDataMgmt = pFwDataMgmt;
+    }
+
+    std::shared_ptr<FwDataMgmt> getFwDataMgmt() {
+        return pFwDataMgmt;
+    }
+
    public:
     virtual ~Device() {}
 
@@ -213,6 +223,8 @@ class Device {
     pci_address_t bdfAddr;
 
     std::string mei_device_path;
+
+    std::shared_ptr<FwDataMgmt> pFwDataMgmt;
 };
 
 } // end namespace xpum

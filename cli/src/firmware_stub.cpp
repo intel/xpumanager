@@ -64,11 +64,11 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING:
             (*json)["error"] = "Firmware update task already running.";
             return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_INVALID_SOC_FW_IMAGE:
-            (*json)["error"] = "The image file is not a right SOC FW image file.";
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE:
+            (*json)["error"] = "The image file is not a right FW image file.";
             return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_SOC_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE:
-            (*json)["error"] = "The image file is a right SOC FW image file, but not proper for the target GPU.";
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE:
+            (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
             return json;
         default:
             (*json)["error"] = "Unknown error.";
