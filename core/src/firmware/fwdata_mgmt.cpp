@@ -54,9 +54,14 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
 
             SystemCommandResult sc_res = execCommand(command);
 
-            ok = sc_res.exitStatus() == 0;
+            std::string output = sc_res.output();
 
-            XPUM_LOG_INFO("Command success: {}", ok);
+            if (sc_res.exitStatus() != 0 || output.find("Error") != output.npos) {
+                XPUM_LOG_ERROR("Error occurs: {}", output);
+                ok = false;
+            } else {
+                XPUM_LOG_INFO("Command success");
+            }
 
             // refresh fw-data version
             getFwDataVersion();
