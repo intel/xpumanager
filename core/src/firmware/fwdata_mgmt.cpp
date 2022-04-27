@@ -86,7 +86,7 @@ void FwDataMgmt::getFwDataVersion() {
 
     std::smatch m;
     if (regex_search(output, m, regexp)) {
-        pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME, m[1]));
+        pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION, m[1]));
     }
 }
 
