@@ -113,7 +113,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getTopology(int deviceId) {
             (*json)["error"] = response.errormsg();
         }
     } else {
-        (*json)["error"] = response.errormsg();
+        (*json)["error"] = status.error_message();
     }
 
     return json;
@@ -127,22 +127,27 @@ std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName) {
     GroupName name;
     name.set_name(groupName);
     grpc::Status status = stub->groupCreate(&context, name, &response);
-    if (status.ok() && response.errormsg().length() == 0) {
-        XPUM_LOG_AUDIT("Succeed to create group %d,%s", response.id(), groupName);
-        (*json)["group_id"] = response.id();
-        (*json)["group_name"] = response.groupname();
-        (*json)["device_count"] = response.count();
+    if (status.ok()) {
+        if( response.errormsg().length() == 0 ) {
+            XPUM_LOG_AUDIT("Succeed to create group %d,%s", response.id(), groupName);
+            (*json)["group_id"] = response.id();
+            (*json)["group_name"] = response.groupname();
+            (*json)["device_count"] = response.count();
 
-        std::vector<int32_t> deviceIdList;
-        for (uint32_t j{0}; j < response.count(); ++j) {
-            deviceIdList.push_back(response.devicelist(j).id());
+            std::vector<int32_t> deviceIdList;
+            for (uint32_t j{0}; j < response.count(); ++j) {
+                deviceIdList.push_back(response.devicelist(j).id());
+            }
+
+            (*json)["device_id_list"] = deviceIdList;
+        } else {
+            XPUM_LOG_AUDIT("Fail to create group %s", groupName);
+            (*json)["error"] = response.errormsg();
         }
-
-        (*json)["device_id_list"] = deviceIdList;
 
     } else {
         XPUM_LOG_AUDIT("Fail to create group %s", groupName);
-        (*json)["error"] = response.errormsg();
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -155,11 +160,16 @@ std::unique_ptr<nlohmann::json> CoreStub::groupDelete(int groupId) {
     GroupId id;
     id.set_id(groupId);
     grpc::Status status = stub->groupDestory(&context, id, &response);
-    if (status.ok() && response.errormsg().length() == 0) {
-        (*json)["group_id"] = response.id();
-        XPUM_LOG_AUDIT("Succeed to delete group %d", groupId);
+    if (status.ok() ) {
+        if(response.errormsg().length() == 0){
+            (*json)["group_id"] = response.id();
+            XPUM_LOG_AUDIT("Succeed to delete group %d", groupId);
+        } else {
+            XPUM_LOG_AUDIT("Fail to delete group %d", groupId);
+            (*json)["error"] = response.errormsg();
+        }
     } else {
-        (*json)["error"] = response.errormsg();
+        (*json)["error"] = status.error_message();
         XPUM_LOG_AUDIT("Fail to delete group %d", groupId);
     }
     return json;
@@ -196,7 +206,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupListAll() {
             (*json)["error"] = response.errormsg();
         }
     } else {
-        (*json)["error"] = response.errormsg();
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -223,10 +233,10 @@ std::unique_ptr<nlohmann::json> CoreStub::groupList(int groupId) {
             (*json)["device_id_list"] = deviceIdList;
 
         } else {
-            (*json)["error message"] = response.errormsg();
+            (*json)["error"] = response.errormsg();
         }
     } else {
-        (*json)["error"] = response.errormsg();
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -262,7 +272,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupAddDevice(int groupId, int device
     } else {
         XPUM_LOG_AUDIT("Fail to add device(%d) to group %d", deviceId, groupId);
         (*json)["device_id"] = deviceId;
-        (*json)["error"] = response.errormsg();
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -297,7 +307,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupRemoveDevice(int groupId, int dev
     } else {
         XPUM_LOG_AUDIT("Fail to remove device(%d) from group %d", deviceId, groupId);
         (*json)["device_id"] = deviceId;
-        (*json)["error"] = response.errormsg();
+        (*json)["error"] = status.error_message();
     }
     return json;
 }
@@ -1745,7 +1755,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getXelinkTopology() {
             (*json)["error"] = response.errormsg();
         }
     } else {
-        (*json)["error"] = response.errormsg();
+        (*json)["error"] = status.error_message();
     }
 
     return json;
