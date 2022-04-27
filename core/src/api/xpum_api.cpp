@@ -1571,6 +1571,17 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
     }
     return XPUM_GENERIC_ERROR;
 }
+/**
+ * @brief Reset the device
+ * @details This function is used to reset the device
+ *
+ * @param deviceId          IN: The device Id
+ * @param force             IN: force to reset the device or not
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_UPDATE_FIRMWARE_TASK_RUNNING    if device is updating firmware
+ */
+//xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
 
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));

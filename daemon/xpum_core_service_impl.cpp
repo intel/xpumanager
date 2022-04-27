@@ -1217,6 +1217,10 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     return grpc::Status::OK;
 }
 
+xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
+    return XPUM_GENERIC_ERROR;
+}
+
 ::grpc::Status XpumCoreServiceImpl::resetDevice(::grpc::ServerContext* context, const ::ResetDeviceRequest* request, ::ResetDeviceResponse* response) {
     xpum_result_t res;
     xpum_device_id_t deviceId = request->deviceid();
