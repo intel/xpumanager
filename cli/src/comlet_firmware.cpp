@@ -166,23 +166,24 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     }
 }
 
-std::string ComletFirmware::getCurrentFwVersion(int deviceId) {
-    std::string res = "unknown";
+nlohmann::json ComletFirmware::getDeviceProperties(int deviceId) {
     auto json = coreStub->getDeviceProperties(deviceId);
-    if (json->contains("error")) {
-        return res;
-    }
+    return *json;
+}
+
+std::string ComletFirmware::getCurrentFwVersion(nlohmann::json json) {
+    std::string res = "unknown";
     int type = getIntFirmwareType(opts->firmwareType);
     if (type == XPUM_DEVICE_FIRMWARE_GSC) {
-        if (!json->contains("firmware_version")) {
+        if (!json.contains("firmware_version")) {
             return res;
         }
-        return (*json)["firmware_version"];
+        return json["firmware_version"];
     } else {
-        if (!json->contains("fw_data_firmware_version")) {
+        if (!json.contains("fw_data_firmware_version")) {
             return res;
         }
-        return (*json)["fw_data_firmware_version"];
+        return json["fw_data_firmware_version"];
     }
 }
 
@@ -329,7 +330,12 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         }
         // version confirmation
         for (int deviceId : deviceIdsToFlashFirmware) {
-            out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(deviceId) << std::endl;
+            auto json = getDeviceProperties(deviceId);
+            if (json.contains("error")) {
+                out << "Error: " << json["error"].get<std::string>() << std::endl;
+                exit(1);
+            }
+            out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(json) << std::endl;
         }
         if (type == XPUM_DEVICE_FIRMWARE_GSC) {
             out << "Image FW version: " << getImageFwVersion() << std::endl;

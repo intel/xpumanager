@@ -12,7 +12,12 @@ from .xpum_enums import XpumResult
 def runFirmwareFlash(deviceId, firmwareType, filePath):
     job = core_pb2.XpumFirmwareFlashJob()
     job.id.id = deviceId
-    job.type.value = 0 if firmwareType == 'GSC' else 1
+    if firmwareType == 'GSC':
+        job.type.value = 0
+    elif firmwareType == 'AMC':
+        job.type.value = 1
+    else:
+        job.type.value = 2
     job.path = filePath
     resp = stub.runFirmwareFlash(job).type
     if resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC'].value:
@@ -48,7 +53,12 @@ def runFirmwareFlash(deviceId, firmwareType, filePath):
 def getFirmwareFlashResult(deviceId, firmwareType):
     request = core_pb2.XpumFirmwareFlashTaskRequest()
     request.id.id = deviceId
-    request.type.value = 0 if firmwareType == 'GSC' else 1
+    if firmwareType == 'GSC':
+        request.type.value = 0
+    elif firmwareType == 'AMC':
+        request.type.value = 1
+    else:
+        request.type.value = 2
     resp = stub.getFirmwareFlashResult(request)
 
     if len(resp.errorMsg) != 0:
