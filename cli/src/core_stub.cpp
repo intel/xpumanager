@@ -1381,7 +1381,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceSchedulerMode(int deviceId, i
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set scheduler mode %s,%s", mode, status.error_message());
+        XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode, status.error_message());
     }
     return json;
 }
