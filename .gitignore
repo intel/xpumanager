@@ -30,3 +30,5 @@ rest/key.pem
 rest/cert.pem
 third_party/hwloc/install/*
 *.log
+daemon/xpum.service.template
+rest/xpum_rest.service.template

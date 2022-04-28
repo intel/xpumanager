@@ -4,8 +4,10 @@ LOG_FILE="/dev/null"
 
 function RemoveUser()
 {
-  group=$( userdel -rf ${1} 2>&1 | grep "group ${1} not removed" )    
+  userdel -rf ${1} >> ${LOG_FILE} 2>&1
+  group=$( getent group ${1} )    
   if [ -n "$group" ]; then
+    #echo "remove group: ${group}"
 	 	groupdel xpum -f >> ${LOG_FILE} 2>&1	
 	fi
 }
