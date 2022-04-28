@@ -4,7 +4,8 @@ LOG_FILE="/dev/null"
 
 function CreateUser()
 {
-  useradd "$1" -s /bin/sh >> ${LOG_FILE} 2>&1
+  groupadd "$1"
+  useradd "$1" -s /bin/sh -g "$1" >> ${LOG_FILE} 2>&1
   if [ $? -ne 0 ]; then
    	echo "CreateUser $1 failed!"
   fi
