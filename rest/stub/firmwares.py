@@ -31,7 +31,10 @@ def runFirmwareFlash(deviceId, firmwareType, filePath):
     elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE'].value:
         return resp.value, "Updating AMC firmware on single device is not supported", None
     elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL'].value:
-        return resp.value, "Updating GSC firmware on all devices is not supported", None
+        if firmwareType == 'GSC':
+            return resp.value, "Updating GSC firmware on all devices is not supported", None
+        else:
+            return resp.value, "Updating GSC_DATA firmware on all devices is not supported", None
     elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE'].value:
         return resp.value, "Device models are inconsistent, failed to upgrade all.", None
     elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND'].value:
@@ -39,9 +42,9 @@ def runFirmwareFlash(deviceId, firmwareType, filePath):
     elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_TASK_RUNNING'].value:
         return resp.value, "Firmware update task already running.", None
     elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE'].value:
-        return resp.value, "The image file is not a right SOC FW image file.", None
+        return resp.value, "The image file is not a right FW image file.", None
     elif resp.value == XpumResult['XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE'].value:
-        return resp.value, "The image file is a right SOC FW image file, but not proper for the target GPU.", None
+        return resp.value, "The image file is a right FW image file, but not proper for the target GPU.", None
     elif resp.value != XpumResult['XPUM_OK'].value:
         return 1, "Fail to run firmware flash", None
     else:

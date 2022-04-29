@@ -81,17 +81,27 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
 
 void FwDataMgmt::getFwDataVersion() {
     std::string command = igscPath + " fw-data version -d " + devicePath + " 2>&1";
+
+    XPUM_LOG_INFO("Get fw-data version info command: {}", command);
+
     SystemCommandResult sc_res = execCommand(command);
 
-    if (sc_res.exitStatus() != 0) return;
+    auto output = sc_res.output();
+    if (sc_res.exitStatus() != 0) {
+        XPUM_LOG_ERROR("Fail to get fw-data version, command exit code not equal 0, {}", output);
+        return;
+    }
 
     // Device: Fw Data Version: 101->0->0
-    auto output = sc_res.output();
     std::regex regexp(R"(Fw Data Version: (.*)\n)");
 
     std::smatch m;
     if (regex_search(output, m, regexp)) {
-        pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION, m[1]));
+        std::string version = m[1];
+        XPUM_LOG_INFO("Get fw-data version info success, version: {}", version);
+        pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION, version));
+    } else {
+        XPUM_LOG_ERROR("Fail to get fw-data version, command output is: {}", output);
     }
 }
 

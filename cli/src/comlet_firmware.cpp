@@ -79,8 +79,13 @@ void ComletFirmware::setupOptions() {
 nlohmann::json ComletFirmware::validateArguments() {
     nlohmann::json result;
     // GSC
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && (opts->firmwareType.compare("GSC") == 0 || opts->firmwareType.compare("GSC_DATA") == 0)) {
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GSC") == 0) {
         result["error"] = "Updating GSC firmware on all devices is not supported";
+        return result;
+    }
+
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GSC_DATA") == 0) {
+        result["error"] = "Updating GSC_DATA firmware on all devices is not supported";
         return result;
     }
 
