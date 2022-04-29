@@ -121,23 +121,25 @@ Show the detailed info of one device. The device info includes the model, freque
 | Device ID | Device Information                                                                   |
 +-----------+--------------------------------------------------------------------------------------+
 | 0         | Device Type: GPU                                                                     |
-|           | Device Name: Intel(R) Graphics [0x020a]                                              |
+|           | Device Name: Intel(R) Graphics [0x56c0]                                              |
 |           | Vendor Name: Intel(R) Corporation                                                    |
 |           | UUID: 00000000-0000-0000-0000-020a00008086                                           |
 |           | Serial Number: unknown                                                               |
-|           | Core Clock Rate: 1400 MHz                                                            |
-|           | Stepping: B1                                                                         |
+|           | Core Clock Rate: 2050 MHz                                                            |
+|           | Stepping: C0                                                                         |
 |           |                                                                                      |
 |           | Driver Version: 16929133                                                             |
 |           | Firmware Name: GSC                                                                   |
-|           | Firmware Version: ATS0_1.1                                                           |
+|           | Firmware Version: DG02->1->3041                                                      |
+|           | Firmware Name: GSC_DATA                                                              |
+|           | Firmware Version: 101->0->0                                                          |
 |           |                                                                                      |
 |           | PCI BDF Address: 0000:4d:00.0                                                        |
 |           | PCI Slot: Riser 1, slot 1                                                            |
 |           | PCIe Generation: 4                                                                   |
 |           | PCIe Max Link Width: 16                                                              |
 |           |                                                                                      |
-|           | Memory Physical Size: 32768.00 MiB                                                   |
+|           | Memory Physical Size: 14248.00 MiB                                                   |
 |           | Max Mem Alloc Size: 4095.99 MiB                                                      |
 |           | Number of Memory Channels: 2                                                         |
 |           | Memory Bus Width: 128                                                                |
@@ -145,9 +147,9 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Max Command Queue Priority: 0                                                        |
 |           |                                                                                      |
 |           | Number of EUs: 512                                                                   |
-|           | Number of Tiles: 2                                                                   |
-|           | Number of Slices: 2                                                                  |
-|           | Number of Sub Slices per Slice: 30                                                   |
+|           | Number of Tiles: 1                                                                   |
+|           | Number of Slices: 1                                                                  |
+|           | Number of Sub Slices per Slice: 32                                                   |
 |           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
 |           | Number of Media Engines: 2                                                           |
@@ -643,7 +645,7 @@ Options:
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
+  -t,--type                   The firmware name. Valid options: GSC, AMC, GSC_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
   -f,--file                   The firmware image file path on this server.
 ```
 
