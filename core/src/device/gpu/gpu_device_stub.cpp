@@ -1136,7 +1136,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
         zes_device_properties_t props;
         props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
-        if (type == ZES_TEMP_SENSORS_GPU && res == ZE_RESULT_SUCCESS && to_hex_string(props.core.deviceId).find("56c0") != std::string::npos) {
+        if (type == ZES_TEMP_SENSORS_GPU && res == ZE_RESULT_SUCCESS 
+            && (to_hex_string(props.core.deviceId).find("56c0") != std::string::npos 
+                || to_hex_string(props.core.deviceId).find("56c1") != std::string::npos)) {
             int val = get_register_value_from_sys(device, 0x145978);
             if (val > 0) {
                 ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
