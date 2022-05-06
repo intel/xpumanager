@@ -115,6 +115,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setAgentConfig(std::string jsonName, v
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        return json;
     }
 
     if (response.errormsg().length() != 0) {
@@ -144,6 +145,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getAgentConfig() {
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        return json;
     }
 
     if (response.errormsg().length() != 0) {

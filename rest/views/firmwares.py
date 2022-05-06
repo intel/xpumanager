@@ -139,7 +139,7 @@ class FirmwareFlashResultQuerySingleDeviceSchema(Schema):
     firmware_name = fields.Str(
         required=True,
         validate=validate.OneOf(["GSC","GSC_DATA"]),
-        metadata={"description": "Firmware name, options are: GSC"}
+        metadata={"description": "Firmware name, options are: GSC, GSC_DATA"}
     )
 
 
