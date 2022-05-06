@@ -1375,6 +1375,46 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
     response->set_count(count);
     return grpc::Status::OK;
 }
+
+::grpc::Status XpumCoreServiceImpl::getDeviceUtilizationByProcess(::grpc::ServerContext* context, const ::DeviceUtilizationByProcessRequest* request, ::DeviceUtilizationByProcessResponse* response) {
+    xpum_result_t res;
+    xpum_device_id_t deviceId = request->deviceid();
+
+    uint32_t count = 1024;
+    xpum_device_util_by_process_t dataArray[count];
+
+    res = xpumGetDeviceUtilizationByProcess(deviceId,
+            request->utilizationinterval(), dataArray, &count);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_BUFFER_TOO_SMALL:
+                response->set_errormsg("Buffer is too small");
+                break;
+            case XPUM_INTERVAL_INVALID:
+                response->set_errormsg("Interval must be (0, 1000*1000]");
+                break;
+            default:
+                response->set_errormsg("Error");
+        }
+    } else {
+        for (uint32_t i = 0; i < count; i++) {
+            DeviceUtilizationByProcess *proc = response->add_processlist();
+            proc->set_processid(dataArray[i].processId);
+            proc->set_processname(dataArray[i].processName);
+            proc->set_memsize(dataArray[i].memSize);
+            proc->set_sharedmemsize(dataArray[i].sharedMemSize);
+            proc->set_renderingengineutil(dataArray[i].renderingEngineUtil);
+            proc->set_computeengineutil(dataArray[i].computeEngineUtil);
+            proc->set_copyengineutil(dataArray[i].copyEngineUtil);
+            proc->set_mediaengineutil(dataArray[i].mediaEngineUtil);
+            proc->set_mediaenhancementutil(
+                    dataArray[i].mediaEnhancementUtil);
+        }
+    }
+    response->set_count(count);
+    return grpc::Status::OK;
+}
+
 std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
     if (engine == 1) {
         return "other";

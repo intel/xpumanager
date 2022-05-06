@@ -21,6 +21,7 @@
 #include "device/power.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_process.h"
+#include "infrastructure/device_util_by_proc.h"
 #include "infrastructure/device_property.h"
 #include "infrastructure/exception/level_zero_initialization_exception.h"
 #include "infrastructure/version.h"
@@ -1683,6 +1684,54 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_p
     }
     return XPUM_OK;
 }
+
+xpum_result_t xpumGetDeviceUtilizationByProcess(xpum_device_id_t deviceId,
+        uint32_t utilInterval, xpum_device_util_by_process_t dataArray[],
+        uint32_t *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    std::shared_ptr<Device> device =
+        Core::instance().getDeviceManager()->getDevice(
+                std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    if (utilInterval == 0 || utilInterval > 1000 * 1000) {
+        return XPUM_INTERVAL_INVALID;
+    }
+    if (dataArray == nullptr || count == nullptr || *count <= 0) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    std::vector<device_util_by_proc> utils;
+    Core::instance().getDeviceManager()->getDeviceUtilByProcess(
+            std::to_string(deviceId), utilInterval, utils);
+    if (utils.size() > *count) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    *count = utils.size();
+
+    int i = 0;
+    for (auto &util : utils) {
+        dataArray[i].processId = util.getProcessId();
+        dataArray[i].memSize = util.getMemSize();
+        dataArray[i].sharedMemSize = util.getSharedMemSize();
+        strncpy(dataArray[i].processName, util.getProcessName().c_str(),
+                util.getProcessName().length() + 1);
+        dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
+        dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
+        dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
+        dataArray[i].mediaEngineUtil = util.getMediaEnigineUtil();
+        dataArray[i].mediaEnhancementUtil = util.getMediaEnhancementUtil();
+        i++;
+    }
+
+    return XPUM_OK;
+}
+
 xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {

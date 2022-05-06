@@ -129,6 +129,7 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_AGENT_SET_INVALID_VALUE,  /// Agent set value is invalid
     XPUM_LEVEL_ZERO_INITIALIZATION_ERROR, ///< Level Zero initialization error.
     XPUM_UNSUPPORTED_SESSIONID,           ///< Unsupported session id
+    XPUM_INTERVAL_INVALID,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -725,6 +726,18 @@ typedef struct xpum_device_process_t {
     xpum_engine_type_flags_t engine;
     char processName[XPUM_MAX_STR_LENGTH];
 } xpum_device_process_t;
+
+typedef struct {
+    uint32_t processId;
+    double renderingEngineUtil;
+    double computeEngineUtil;
+    double copyEngineUtil;
+    double mediaEngineUtil;
+    double mediaEnhancementUtil;
+    uint64_t memSize;
+    uint64_t sharedMemSize;
+    char processName[XPUM_MAX_STR_LENGTH];
+} xpum_device_util_by_process_t;
 
 typedef struct xpum_device_performancefactor_t {
     bool on_subdevice;

@@ -1698,6 +1698,48 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProcessState(int deviceId) {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> CoreStub::getDeviceUtilizationByProcess(
+        int deviceId, int utilizationInterval) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceUtilizationByProcessRequest request;
+    DeviceUtilizationByProcessResponse response;
+
+    request.set_deviceid(deviceId);
+    request.set_utilizationinterval(utilizationInterval);
+    grpc::Status status = stub->getDeviceUtilizationByProcess(&context,
+        request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            return json;
+        }
+        std::vector<nlohmann::json> utilByProcessList;
+        for (uint i{0}; i < response.count(); ++i) {
+            auto util = nlohmann::json();
+            util["process_id"] = response.processlist(i).processid();
+            util["process_name"] = response.processlist(i).processname();
+            util["mem_size"] = response.processlist(i).memsize();
+            util["shared_mem_size"] = response.processlist(i).sharedmemsize();
+            util["rendering_engine_util"] =
+                response.processlist(i).renderingengineutil();
+            util["copy_engine_util"] = response.processlist(i).copyengineutil();
+            util["media_engine_util"] =
+                response.processlist(i).mediaengineutil();
+            util["media_enhancement_util"] =
+                response.processlist(i).mediaenhancementutil();
+            util["compute_engine_util"] =
+                response.processlist(i).computeengineutil();
+            utilByProcessList.push_back(util);
+        }
+        (*json)["device_util_by_proc_list"] = utilByProcessList;
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;
+}
+
 std::string CoreStub::getTopoXMLBuffer() {
     assert(this->stub != nullptr);
     std::string result;

@@ -14,6 +14,7 @@
 
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/device_process.h"
+#include "infrastructure/device_util_by_proc.h"
 #include "infrastructure/exception/ilegal_parameter_exception.h"
 #include "infrastructure/handle_lock.h"
 #include "infrastructure/logger.h"
@@ -232,6 +233,13 @@ void DeviceManager::getFreqAvailableClocks(const std::string& id, uint32_t subde
 void DeviceManager::getDeviceProcessState(const std::string& id, std::vector<device_process>& processes) {
     std::unique_lock<std::mutex> lock(this->mutex);
     GPUDeviceStub::instance().getDeviceProcessState(getDeviceHandle(id), processes);
+}
+
+void DeviceManager::getDeviceUtilByProcess(const std::string& id,
+        uint32_t utilInterval, std::vector<device_util_by_proc>& utils) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    GPUDeviceStub::getDeviceUtilByProc(getDeviceHandle(id), utilInterval,
+            utils);
 }
 
 void DeviceManager::getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) {

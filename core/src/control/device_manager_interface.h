@@ -18,6 +18,7 @@
 #include "device/standby.h"
 #include "infrastructure/device_capability.h"
 #include "infrastructure/device_process.h"
+#include "infrastructure/device_util_by_proc.h"
 #include "infrastructure/init_close_interface.h"
 #include "infrastructure/measurement_data.h"
 #include "infrastructure/measurement_type.h"
@@ -87,6 +88,8 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual void getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id, std::vector<double>& clocks) = 0;
 
     virtual void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes) = 0;
+
+    virtual void getDeviceUtilByProcess(const std::string & id, uint32_t utilInterval, std::vector<device_util_by_proc>& utils) = 0;
 
     virtual void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) = 0;
 

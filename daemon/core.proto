@@ -352,6 +352,29 @@ message DeviceProcessStateResponse{
     string errorMsg = 3;
 }
 
+message DeviceUtilizationByProcess {
+    uint32 processId = 1;
+    double renderingEngineUtil = 2;
+    double computeEngineUtil = 3;
+    double copyEngineUtil = 4;
+    double mediaEngineUtil = 5;
+    double mediaEnhancementUtil = 6;
+    uint64 memSize = 7;
+    uint64 sharedMemSize = 8;
+    string processName = 9;
+}
+
+message DeviceUtilizationByProcessRequest {
+    uint32 deviceId = 1;
+    uint32 utilizationInterval = 2;
+}
+
+message DeviceUtilizationByProcessResponse {
+    uint32 count = 1;
+    repeated DeviceUtilizationByProcess processList = 2;
+    string errorMsg = 3;
+}
+
 message PerformanceFactor{
     uint32 deviceId = 1;
     bool isTileData = 2;
@@ -780,6 +803,7 @@ service XpumCoreService {
     rpc readPolicyNotifyData( google.protobuf.Empty ) returns ( stream ReadPolicyNotifyDataResponse );
     rpc getDeviceConfig( ConfigDeviceDataRequest ) returns ( ConfigDeviceData );
     rpc getDeviceProcessState( DeviceId ) returns ( DeviceProcessStateResponse );
+    rpc getDeviceUtilizationByProcess( DeviceUtilizationByProcessRequest ) returns ( DeviceUtilizationByProcessResponse );
     rpc getPerformanceFactor( DeviceDataRequest ) returns ( DevicePerformanceFactorResponse );
     rpc setPerformanceFactor( PerformanceFactor ) returns ( DevicePerformanceFactorSettingResponse );
     rpc resetDevice( ResetDeviceRequest ) returns ( ResetDeviceResponse );
