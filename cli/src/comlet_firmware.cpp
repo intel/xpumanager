@@ -32,7 +32,7 @@ static bool isNumber(const std::string &str) {
 void ComletFirmware::setupOptions() {
     opts = std::unique_ptr<FlashFirmwareOptions>(new FlashFirmwareOptions());
 
-    auto deviceIdOpt = addOption("-d, --device", opts->deviceId, "device ID, optional");
+    auto deviceIdOpt = addOption("-d, --device", opts->deviceId, "The device ID");
     deviceIdOpt->check([](const std::string &str) {
         std::string errStr = "Device id should be integer larger than or equal to 0";
         if (!isNumber(str))
@@ -48,8 +48,8 @@ void ComletFirmware::setupOptions() {
         return std::string();
     });
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC, GSC_DATA. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.");
-    fwTypeOpt->required();
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC, GSC_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).");
+    // fwTypeOpt->required();
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
         if (str.compare("GSC") == 0 || str.compare("AMC") == 0 || str.compare("GSC_DATA") == 0) {
@@ -60,7 +60,7 @@ void ComletFirmware::setupOptions() {
     });
 
     auto fwPathOpt = addOption("-f, --file", opts->firmwarePath, "The firmware image file path on this server");
-    fwPathOpt->required();
+    // fwPathOpt->required();
     fwPathOpt->transform([](const std::string &str) {
         if (FILE *file = fopen(str.c_str(), "r")) {
             fclose(file);
@@ -72,6 +72,9 @@ void ComletFirmware::setupOptions() {
             throw CLI::ValidationError("Invalid file path.");
         }
     });
+    
+    fwPathOpt->needs(fwTypeOpt);
+    fwTypeOpt->needs(fwPathOpt);
 
     opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
 }
