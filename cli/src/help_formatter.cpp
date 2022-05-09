@@ -30,6 +30,11 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli group -l \n"
                "  xpumcli -l -j \n"
                "  xpumcli group -l -g [groupId] \n";
+    } else if (app->get_name().compare("top") == 0) {
+        return "\n"
+               "Usage: xpumcli top [Options] \n"
+               "  xpumcli top -d [deviceId] \n"
+               "  xpumcli top -d [deviceId] -j \n";
     } else if (app->get_name().compare("topology") == 0) {
         return "\n"
                "Usage: xpumcli topology [Options] \n"

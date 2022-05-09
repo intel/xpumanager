@@ -15,7 +15,18 @@
 namespace xpum::cli {
 
 ComletTop::ComletTop() : ComletBase("top", 
-        "List GPU engine utilization per process.") {
+    "List GPU engine utilization per process.\n"
+    "PID:      Process ID\n"
+    "Command:  Process command name\n"
+    "%REN:     Render engine utilization\n"
+    "%COM:     Compute engine utilization\n"
+    "%CPY:     Copy engine utilization\n"
+    "%MED:     Media engine utilization\n"
+    "%MEE:     Media enhancement engine utilization\n"
+    "SHR:      The size of shared device memory mapped into this process (may "
+    "not necessarily be resident on the device at the time of reading) (kB)\n"
+    "MEM:      Device memory size in bytes allocated by this process (may not "
+    "necessarily be resident on the device at the time of reading) (kB)\n") {
     printHelpWhenNoArgs = true;
 }
 
