@@ -958,7 +958,7 @@ Device Type: GPU
 ## List GPU engine utilization per process
 Help info for GPU top
 ```
-./xpumcli top
+./xpumcli top -h
 
 List GPU engine utilization per process.
 PID:      Process ID
@@ -972,7 +972,9 @@ SHR:      The size of shared device memory mapped into this process (may not nec
 MEM:      Device memory size in bytes allocated by this process (may not necessarily be resident on the device at the time of reading) (kB)   
 
 Usage: xpumcli top [Options]
+  xpumcli top
   xpumcli top -d [deviceId]
+  xpumcli top -d [deviceId] -j
   
 Options:
   -h,--help                   Print this help message and exit
@@ -981,11 +983,20 @@ Options:
   -d,--device                 To specify a device ID to query.
 ```
 
-List GPU engine utilization per process on one specified GPU
+List GPU engine utilization per process for all GPUs
+```
+./xpumcli top
+PID      Command     GPU_ID    %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
+7296     xpumd       0         0      0      0      0      0      0         196
+2716180  clpeak      0         0      0      0      0      0      0         138412
+7296     xpumd       1         0      0      0      0      0      0         196
+```
+
+List GPU engine utilization per process for one specified GPU
 ```
 ./xpumcli top -d 0
-PID      Command         %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
-7296     xpumd           0      0      0      0      0      0         196
+PID      Command      GPU_ID   %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
+7296     xpumd        0        0      0      0      0      0      0         196
 ```
 
 
