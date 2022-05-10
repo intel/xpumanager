@@ -44,7 +44,7 @@ void ComletTopology::setupOptions() {
                      "Print the CPU/GPU topology matrix.\n"
                      "  S: Self\n"
                      "  XL#: Connected with Xe Link.  Xe Link LAN count is also provided.\n"
-                     "  XL*: Two tiles on the differen cards are connected by Xe Link + MDF. They are not directly connected by Xe Link."
+                     "  XL*: Two tiles on the differen cards are connected by Xe Link + MDF. They are not directly connected by Xe Link.\n"
                      "  SYS: Connected with PCIe between NUMA nodes\n"
                      "  NODE: Connected with PCIe within a NUMA node\n"
                      "  MDF: Connected with Multi-Die Fabric Interface");
