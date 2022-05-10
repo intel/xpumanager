@@ -986,7 +986,7 @@ Options:
 List GPU engine utilization per process for all GPUs
 ```
 ./xpumcli top
-PID      Command     GPU_ID    %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
+PID      Command     DeviceID    %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
 7296     xpumd       0         0      0      0      0      0      0         196
 2716180  clpeak      0         0      0      0      0      0      0         138412
 7296     xpumd       1         0      0      0      0      0      0         196
@@ -995,7 +995,7 @@ PID      Command     GPU_ID    %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
 List GPU engine utilization per process for one specified GPU
 ```
 ./xpumcli top -d 0
-PID      Command      GPU_ID   %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
+PID      Command      DeviceID   %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
 7296     xpumd        0        0      0      0      0      0      0         196
 ```
 
