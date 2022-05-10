@@ -25,6 +25,7 @@ from views import agent_settings
 from views import statistics
 from views import device_config
 from views import topology
+from views import top
 from views import dump_raw_data
 
 import xpum_logger as logger
@@ -174,6 +175,10 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(topology.export_topology))
     app.add_url_rule('/rest/v1/topology/xelink', methods=['GET'],
                      view_func=auth.login_required(topology.get_topo_xelink))
+
+    # top
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/top', methods=['GET'],
+                     view_func=auth.login_required(top.get_device_util_by_proc))
 
     # dump raw data
     app.add_url_rule('/rest/v1/dump', methods=['POST'],
