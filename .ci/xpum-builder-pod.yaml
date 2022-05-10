@@ -75,7 +75,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "sh1sdev002.sh.intel.com/xpum-builder-centos"
+      image: "sh1sdev002.sh.intel.com/xpum-builder-centos7"
       imagePullPolicy: "IfNotPresent"
       name: "xpum-builder-centos"
       resources:
