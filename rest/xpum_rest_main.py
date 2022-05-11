@@ -179,6 +179,8 @@ def main(*args, **kwargs):
     # top
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/top', methods=['GET'],
                      view_func=auth.login_required(top.get_device_util_by_proc))
+    app.add_url_rule('/rest/v1/top', methods=['GET'],
+                     view_func=auth.login_required(top.get_all_device_util_by_proc))
 
     # dump raw data
     app.add_url_rule('/rest/v1/dump', methods=['POST'],
