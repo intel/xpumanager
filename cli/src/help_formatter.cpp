@@ -32,9 +32,24 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli group -l -g [groupId] \n";
     } else if (app->get_name().compare("top") == 0) {
         return "\n"
-               "Usage: xpumcli top [Options] \n"
-               "  xpumcli top -d [deviceId] \n"
-               "  xpumcli top -d [deviceId] -j \n";
+                "Usage: xpumcli top [Options] \n"
+                "  xpumcli top  \n"
+                "  xpumcli top -d [deviceId] \n"
+                "  xpumcli top -d [deviceId] -j \n"
+                "\nPID:      Process ID\n"
+                "Command:  Process command name\n"
+                "DeviceID: Device ID\n"
+                "%REN:     Render engine utilization\n"
+                "%COM:     Compute engine utilization\n"
+                "%CPY:     Copy engine utilization\n"
+                "%MED:     Media engine utilization\n"
+                "%MEE:     Media enhancement engine utilization\n"
+                "SHR:      The size of shared device memory mapped "
+                "into this process (may not necessarily be resident "
+                "on the device at the time of reading) (kB)\n"
+                "MEM:      Device memory size in bytes allocated by "
+                "this process (may not necessarily be resident on "
+                "the device at the time of reading) (kB)\n";
     } else if (app->get_name().compare("topology") == 0) {
         return "\n"
                "Usage: xpumcli topology [Options] \n"
