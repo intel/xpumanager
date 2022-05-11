@@ -353,20 +353,25 @@ message DeviceProcessStateResponse{
 }
 
 message DeviceUtilizationByProcess {
-    uint32 processId = 1;
-    double renderingEngineUtil = 2;
-    double computeEngineUtil = 3;
-    double copyEngineUtil = 4;
-    double mediaEngineUtil = 5;
-    double mediaEnhancementUtil = 6;
-    uint64 memSize = 7;
-    uint64 sharedMemSize = 8;
-    string processName = 9;
+    uint32 deviceId = 1;
+    uint32 processId = 2;
+    double renderingEngineUtil = 3;
+    double computeEngineUtil = 4;
+    double copyEngineUtil = 5;
+    double mediaEngineUtil = 6;
+    double mediaEnhancementUtil = 7;
+    uint64 memSize = 8;
+    uint64 sharedMemSize = 9;
+    string processName = 10;
 }
 
 message DeviceUtilizationByProcessRequest {
     uint32 deviceId = 1;
     uint32 utilizationInterval = 2;
+}
+
+message UtilizationInterval {
+    uint32 utilInterval = 1;
 }
 
 message DeviceUtilizationByProcessResponse {
@@ -804,6 +809,7 @@ service XpumCoreService {
     rpc getDeviceConfig( ConfigDeviceDataRequest ) returns ( ConfigDeviceData );
     rpc getDeviceProcessState( DeviceId ) returns ( DeviceProcessStateResponse );
     rpc getDeviceUtilizationByProcess( DeviceUtilizationByProcessRequest ) returns ( DeviceUtilizationByProcessResponse );
+    rpc getAllDeviceUtilizationByProcess( UtilizationInterval ) returns ( DeviceUtilizationByProcessResponse );
     rpc getPerformanceFactor( DeviceDataRequest ) returns ( DevicePerformanceFactorResponse );
     rpc setPerformanceFactor( PerformanceFactor ) returns ( DevicePerformanceFactorSettingResponse );
     rpc resetDevice( ResetDeviceRequest ) returns ( ResetDeviceResponse );

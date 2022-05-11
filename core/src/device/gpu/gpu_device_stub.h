@@ -152,8 +152,10 @@ class GPUDeviceStub {
 
     void getDeviceProcessState(const zes_device_handle_t& device, std::vector<device_process>& processes);
 
-    static bool getDeviceUtilByProc(const zes_device_handle_t& device,
-            uint32_t utilInterval, std::vector<device_util_by_proc>& utils);
+    static bool getDeviceUtilByProc(
+        const std::vector<zes_device_handle_t>& devices, 
+        const std::vector<std::string>& device_ids, uint32_t utilInterval,
+        std::vector<std::vector<device_util_by_proc>>& utils);
 
     static void getFreqAvailableClocks(const zes_device_handle_t& device, uint32_t subdevice_id, std::vector<double>& clocks);
 

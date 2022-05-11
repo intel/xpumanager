@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2022 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_top.cpp
  */
@@ -18,6 +18,7 @@ ComletTop::ComletTop() : ComletBase("top",
     "List GPU engine utilization per process.\n"
     "PID:      Process ID\n"
     "Command:  Process command name\n"
+    "DeviceID:  Device ID\n"
     "%REN:     Render engine utilization\n"
     "%COM:     Compute engine utilization\n"
     "%CPY:     Copy engine utilization\n"
@@ -27,7 +28,6 @@ ComletTop::ComletTop() : ComletBase("top",
     "not necessarily be resident on the device at the time of reading) (kB)\n"
     "MEM:      Device memory size in bytes allocated by this process (may not "
     "necessarily be resident on the device at the time of reading) (kB)\n") {
-    printHelpWhenNoArgs = true;
 }
 
 void ComletTop::setupOptions() {
@@ -37,14 +37,13 @@ void ComletTop::setupOptions() {
 }
 
 std::unique_ptr<nlohmann::json> ComletTop::run() {
+    std::unique_ptr<nlohmann::json> json;
     if (this->opts->deviceId == -1) {
-        auto result = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-        (*result)["error"] = 
-            "Wrong argument or unknow operation, run with --help for more information."; 
-        return result;
-    }
-    auto json = this->coreStub->getDeviceUtilizationByProcess(
+        json = this->coreStub->getAllDeviceUtilizationByProcess(200 * 1000);
+    } else {
+        json = this->coreStub->getDeviceUtilizationByProcess(
             this->opts->deviceId, 200 * 1000);
+    }
     return json;
 }
 
@@ -58,8 +57,9 @@ void ComletTop::getTableResult(std::ostream &out) {
     *json = *res;
     std::cout 
         << std::left << std::setfill(' ') 
-        << std::setw(9) << "PID" 
-        << std::setw(16) <<"Command"
+        << std::setw(10) << "PID" 
+        << std::setw(19) << "Command"
+        << std::setw(11) << "DeviceID"
         << std::setw(7) << "%REN"
         << std::setw(7) << "%COM"
         << std::setw(7) << "%CPY"
@@ -72,8 +72,9 @@ void ComletTop::getTableResult(std::ostream &out) {
             iter != (*json)["device_util_by_proc_list"].end(); iter++) {
         std::cout 
             << std::left << std::setfill(' ') 
-            << std::setw(9) << (*iter)["process_id"].get<uint32_t>()
-            << std::setw(16) << (*iter)["process_name"].get<std::string>()
+            << std::setw(10) << (*iter)["process_id"].get<uint32_t>()
+            << std::setw(19) << (*iter)["process_name"].get<std::string>()
+            << std::setw(11) << (*iter)["device_id"].get<uint32_t>()
             << std::setprecision(4)
             << std::setw(7) << rnd_2(
                     (*iter)["rendering_engine_util"].get<double>())
@@ -85,9 +86,8 @@ void ComletTop::getTableResult(std::ostream &out) {
                     (*iter)["media_engine_util"].get<double>()) 
             << std::setw(7) << rnd_2(
                     (*iter)["media_enhancement_util"].get<double>()) 
-            << std::setw(10) << 
-            (*iter)["shared_mem_size"].get<uint64_t>() / 1000
-            << (*iter)["mem_size"].get<uint64_t>() / 1000
+            << std::setw(10) << (*iter)["shared_mem_size"].get<uint64_t>() 
+            << std::setw(10) << (*iter)["mem_size"].get<uint64_t>() 
             << std::endl;
     } 
 }

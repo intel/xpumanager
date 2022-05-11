@@ -11,6 +11,7 @@ namespace xpum {
 
 class device_util_by_proc {
 private:
+    uint32_t deviceId;
     uint32_t processId;
     uint64_t memSize;
     uint64_t sharedMemSize;
@@ -19,6 +20,7 @@ private:
 public:
     device_util_by_proc(uint32_t processId);
     ~device_util_by_proc();
+    uint32_t getDeviceId();
     uint32_t getProcessId();
     double getRenderingEngineUtil();
     double getComputeEngineUtil();
@@ -31,6 +33,7 @@ public:
 
     void setval(device_util_by_proc *putil);
     void merge(device_util_by_proc *ptuil);
+    void setDeviceId(uint32_t deviceId);
     void setMemSize(uint64_t memSize);
     void setSharedMemSize(uint64_t sharedMemSize);
     void setProcessName(std::string processName);

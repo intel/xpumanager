@@ -1706,29 +1706,76 @@ xpum_result_t xpumGetDeviceUtilizationByProcess(xpum_device_id_t deviceId,
         return XPUM_BUFFER_TOO_SMALL;
     }
 
-    std::vector<device_util_by_proc> utils;
+    std::vector<std::vector<device_util_by_proc>> utils;
     Core::instance().getDeviceManager()->getDeviceUtilByProcess(
             std::to_string(deviceId), utilInterval, utils);
-    if (utils.size() > *count) {
+    uint32_t i = 0;
+    auto iter = utils.begin();
+    while (iter != utils.end()) {
+        for (auto &util : *iter) {
+            dataArray[i].processId = util.getProcessId();
+            dataArray[i].deviceId = util.getDeviceId();
+            dataArray[i].memSize = util.getMemSize();
+            dataArray[i].sharedMemSize = util.getSharedMemSize();
+            strncpy(dataArray[i].processName, util.getProcessName().c_str(),
+                    util.getProcessName().length() + 1);
+            dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
+            dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
+            dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
+            dataArray[i].mediaEngineUtil = util.getMediaEnigineUtil();
+            dataArray[i].mediaEnhancementUtil = util.getMediaEnhancementUtil();
+            i++;
+            if (i >= *count) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+        }
+        iter++;
+    }
+    *count = i;
+    return XPUM_OK;
+}
+
+xpum_result_t xpumGetAllDeviceUtilizationByProcess(uint32_t utilInterval, 
+        xpum_device_util_by_process_t dataArray[], 
+        uint32_t *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (utilInterval == 0 || utilInterval > 1000 * 1000) {
+        return XPUM_INTERVAL_INVALID;
+    }
+
+    if (dataArray == nullptr || count == nullptr || *count <= 0) {
         return XPUM_BUFFER_TOO_SMALL;
     }
-    *count = utils.size();
 
-    int i = 0;
-    for (auto &util : utils) {
-        dataArray[i].processId = util.getProcessId();
-        dataArray[i].memSize = util.getMemSize();
-        dataArray[i].sharedMemSize = util.getSharedMemSize();
-        strncpy(dataArray[i].processName, util.getProcessName().c_str(),
-                util.getProcessName().length() + 1);
-        dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
-        dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
-        dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
-        dataArray[i].mediaEngineUtil = util.getMediaEnigineUtil();
-        dataArray[i].mediaEnhancementUtil = util.getMediaEnhancementUtil();
-        i++;
+    std::vector<std::vector<device_util_by_proc>> utils;
+    Core::instance().getDeviceManager()->getDeviceUtilByProcess(
+            "", utilInterval, utils);
+    uint32_t i = 0;
+    auto iter = utils.begin();
+    while (iter != utils.end()) {
+        for (auto &util : *iter) {
+            dataArray[i].processId = util.getProcessId();
+            dataArray[i].deviceId = util.getDeviceId();
+            dataArray[i].memSize = util.getMemSize();
+            dataArray[i].sharedMemSize = util.getSharedMemSize();
+            strncpy(dataArray[i].processName, util.getProcessName().c_str(),
+                    util.getProcessName().length() + 1);
+            dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
+            dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
+            dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
+            dataArray[i].mediaEngineUtil = util.getMediaEnigineUtil();
+            dataArray[i].mediaEnhancementUtil = util.getMediaEnhancementUtil();
+            i++;
+            if (i >= *count) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+        }
+        iter++;
     }
-
+    *count = i;
     return XPUM_OK;
 }
 

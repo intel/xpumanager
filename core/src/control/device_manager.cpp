@@ -235,11 +235,22 @@ void DeviceManager::getDeviceProcessState(const std::string& id, std::vector<dev
     GPUDeviceStub::instance().getDeviceProcessState(getDeviceHandle(id), processes);
 }
 
-void DeviceManager::getDeviceUtilByProcess(const std::string& id,
-        uint32_t utilInterval, std::vector<device_util_by_proc>& utils) {
+void DeviceManager::getDeviceUtilByProcess(const std::string& id, 
+    uint32_t utilInterval, 
+    std::vector<std::vector<device_util_by_proc>>& utils) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    GPUDeviceStub::getDeviceUtilByProc(getDeviceHandle(id), utilInterval,
-            utils);
+    std::vector<zes_device_handle_t> devices;
+    std::vector<std::string> device_ids;
+    if (id == "") {
+        for (auto& p_device : this->devices) {
+            devices.push_back(p_device->getDeviceHandle());
+            device_ids.push_back(p_device->getId());
+        }
+    } else {
+        devices.push_back(getDeviceHandle(id));
+        device_ids.push_back(id);
+    }
+    GPUDeviceStub::getDeviceUtilByProc(devices, device_ids, utilInterval, utils);
 }
 
 void DeviceManager::getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) {

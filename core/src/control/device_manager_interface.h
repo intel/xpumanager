@@ -89,7 +89,9 @@ class DeviceManagerInterface : public InitCloseInterface {
 
     virtual void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes) = 0;
 
-    virtual void getDeviceUtilByProcess(const std::string & id, uint32_t utilInterval, std::vector<device_util_by_proc>& utils) = 0;
+    virtual void getDeviceUtilByProcess(const std::string& id, 
+      uint32_t utilInterval, 
+      std::vector<std::vector<device_util_by_proc>>& utils) = 0;
 
     virtual void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) = 0;
 

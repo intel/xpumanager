@@ -85,7 +85,7 @@ class DeviceManager : public DeviceManagerInterface,
     void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes);
 
     void getDeviceUtilByProcess(const std::string& id, uint32_t utilInterval,
-            std::vector<device_util_by_proc>& utils);
+            std::vector<std::vector<device_util_by_proc>>& utils);
 
     void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf);
 

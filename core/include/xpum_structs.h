@@ -728,6 +728,7 @@ typedef struct xpum_device_process_t {
 } xpum_device_process_t;
 
 typedef struct {
+    uint32_t deviceId;
     uint32_t processId;
     double renderingEngineUtil;
     double computeEngineUtil;

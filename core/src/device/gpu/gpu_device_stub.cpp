@@ -2630,7 +2630,7 @@ typedef struct {
     device_util_by_proc *putil;
 } dup_proc_t;
 
-bool mergeDupProc(std::map<uint32_t, dup_proc_t>& dup_proc_map,
+static bool mergeDupProc(std::map<uint32_t, dup_proc_t>& dup_proc_map,
         std::vector<device_util_by_proc>& utils) {
     //Convert dupilication counter to number of duplicated process (n)
     //n * (n - 1) = counted number
@@ -2678,24 +2678,22 @@ bool mergeDupProc(std::map<uint32_t, dup_proc_t>& dup_proc_map,
     return true;
 }
 
-bool GPUDeviceStub::getDeviceUtilByProc(const zes_device_handle_t& device,
-        uint32_t utilInterval, std::vector<device_util_by_proc>& utils) {
-
+//The first round to read utilization (active time) data per device/ card
+static bool readUtil1(std::vector<device_util_by_proc>& vec, 
+		uint32_t& card_idx, const zes_device_handle_t& device, 
+		std::string device_id) {
+    
     char path[PATH_MAX];
     int len = 0;
-    DIR *pdir = NULL;
-    struct dirent *pdirent = NULL;
-    uint32_t card_idx = 0;
-
+    DIR* pdir = NULL;
+    struct dirent* pdirent = NULL;
+    
     if (getCardIdx(card_idx, device) == false) {
         return false;
     }
 
-    auto begin = std::chrono::high_resolution_clock::now();
-
-    //First round read
     len = snprintf(path, PATH_MAX,
-            "/sys/class/drm/card%d/clients", card_idx);
+                   "/sys/class/drm/card%d/clients", card_idx);
     if (len <= 0 || len >= PATH_MAX) {
         return false;
     }
@@ -2713,28 +2711,31 @@ bool GPUDeviceStub::getDeviceUtilByProc(const zes_device_handle_t& device,
             return false;
         }
         device_util_by_proc util(pid);
+        util.setDeviceId(std::stoi(device_id));
         strncpy(util.d_name, pdirent->d_name, 32);
         if (getEngineActiveTime(util, 0, card_idx, pdirent->d_name) == false) {
             closedir(pdir);
             return false;
         }
-        utils.push_back(util);
+        vec.push_back(util);
     }
     closedir(pdir);
+    return true;
+}
 
-    //Nap time
-    std::this_thread::sleep_for(std::chrono::microseconds(utilInterval));
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> dura = (end - begin) * 1000 * 1000 * 1000;
-    uint64_t elapsed = (uint64_t)dura.count();
-    //A map to record duplicaed pid
+//The second round to read utilization (active time) data per device/ card
+static bool readUtil2(std::vector<device_util_by_proc>& vec, 
+    uint32_t card_idx, uint64_t elapsed) { 
+
+    char path[PATH_MAX];
+    int len = 0;
+    DIR* pdir = NULL;
+    struct dirent* pdirent = NULL;
     std::map<uint32_t, dup_proc_t> dup_proc_map;
 
-    //Second round read
     len = snprintf(path, PATH_MAX,
             "/sys/class/drm/card%d/clients", card_idx);
     if (len <= 0 || len >= PATH_MAX) {
-        utils.clear();
         return false;
     }
     pdir = opendir(path);
@@ -2745,11 +2746,10 @@ bool GPUDeviceStub::getDeviceUtilByProc(const zes_device_handle_t& device,
         uint32_t pid = 0;
         if (getProcID(pid, card_idx, pdirent->d_name) == false) {
             closedir(pdir);
-            utils.clear();
             return false;
         }
         device_util_by_proc *putil = NULL;
-        for (auto &util : utils) {
+        for (auto &util : vec) {
             if (util.getProcessId() == pid) {
                 if (strncmp(util.d_name,
                             pdirent->d_name, strnlen(util.d_name, 32)) == 0) {
@@ -2784,17 +2784,13 @@ bool GPUDeviceStub::getDeviceUtilByProc(const zes_device_handle_t& device,
                 delete iter->second.putil;
                 iter++;
             }
-            utils.clear();
             return false;
         }
         putil->elapsed = elapsed;
     }
     closedir(pdir);
 
-    bool ret = mergeDupProc(dup_proc_map, utils);
-    if (ret == false) {
-        utils.clear();
-    }
+    bool ret = mergeDupProc(dup_proc_map, vec);
     //Whatever release the memory, though it could be done in the merge process
     //but there is risk if the the sysfs does not behave as expected
     auto iter = dup_proc_map.begin();
@@ -2802,7 +2798,49 @@ bool GPUDeviceStub::getDeviceUtilByProc(const zes_device_handle_t& device,
         delete iter->second.putil;
         iter++;
     }
+
     return ret;
+}
+
+//Get per process utilization for multple devices
+//For each device/ card, there is a card_idx, device_id, device_handle
+//and a vector of utilizations, the utilizations of all devices are returned
+//by a vector of utilzation vector
+bool GPUDeviceStub::getDeviceUtilByProc(
+    const std::vector<zes_device_handle_t>& devices,
+    const std::vector<std::string>& device_ids,
+    uint32_t utilInterval,
+    std::vector<std::vector<device_util_by_proc>>& utils) {
+
+    std::vector<uint32_t> card_idxes;
+    auto begin = std::chrono::high_resolution_clock::now();
+    auto size0 = devices.size();
+    for (uint64_t i = 0; i < size0; i++) {
+        std::vector<device_util_by_proc> vec;
+        uint32_t card_idx = 0;
+        if (readUtil1(vec, card_idx, devices[i], device_ids[i]) == false) {
+            utils.clear();
+            return false;
+        }
+        utils.push_back(vec);
+        card_idxes.push_back(card_idx);
+    }
+
+    //Nap time
+    std::this_thread::sleep_for(std::chrono::microseconds(utilInterval));
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> dura = (end - begin) * 1000 * 1000 * 1000;
+    uint64_t elapsed = (uint64_t)dura.count();
+    
+    auto size1 = utils.size();
+    for (uint64_t i = 0; i < size1;  i++) {
+        if (readUtil2(utils[i], card_idxes[i], elapsed) == false) {
+            utils.clear();
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 std::string GPUDeviceStub::getProcessName(uint32_t processId) {

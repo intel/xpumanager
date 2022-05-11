@@ -26,6 +26,7 @@ namespace xpum {
 
     void device_util_by_proc::setval(device_util_by_proc *putil) {
         this->processId = putil->getProcessId();
+        this->deviceId = putil->getDeviceId();
         this->processName = putil->getProcessName();
         this->memSize = putil->getMemSize();
         this->sharedMemSize = putil->getSharedMemSize();
@@ -52,6 +53,10 @@ namespace xpum {
 
     device_util_by_proc::~device_util_by_proc() {}
 
+    void device_util_by_proc::setDeviceId(uint32_t deviceId) {
+        this->deviceId = deviceId;
+    }
+
     void device_util_by_proc::setMemSize(uint64_t memSize) {
         this->memSize = memSize;
     }
@@ -62,6 +67,10 @@ namespace xpum {
 
     void device_util_by_proc::setProcessName(std::string processName) {
         this->processName = processName;
+    }
+
+    uint32_t device_util_by_proc::getDeviceId() {
+        return this->deviceId;
     }
 
     uint32_t device_util_by_proc::getProcessId() {

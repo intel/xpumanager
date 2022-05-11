@@ -460,6 +460,23 @@ xpum_result_t xpumGetDeviceUtilizationByProcess(xpum_device_id_t deviceId,
         uint32_t *count);
 
 /**
+ * @brief Get the device (all) utiliztions by processes
+ * @details This function is used to get the device utiliztions by process
+ *
+ * @param utilInterval      IN: The interval in microseond to caculate utilization, range (0, 1000 * 1000]
+ * @param dataArray         IN/OUT: The array to store raw data.
+ * @param count             IN/OUT: The count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_INTERVAL_INVALID    if \a interval is not in (0, 1000 * 1000]
+ */
+
+xpum_result_t xpumGetAllDeviceUtilizationByProcess(uint32_t utilInterval, 
+        xpum_device_util_by_process_t dataArray[], 
+        uint32_t *count);
+
+/**
  * @brief Get the performance factor of the device
  * @details This function is used to get the performance factor of device
  *
