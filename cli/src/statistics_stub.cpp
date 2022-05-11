@@ -274,6 +274,17 @@ std::shared_ptr<nlohmann::json> CoreStub::getFabricStatistics(int deviceId) {
     return std::make_shared<nlohmann::json>(json);
 }
 
+static int32_t getCliScale(xpum_stats_type_t metricsType) {
+    switch (metricsType) {
+        case XPUM_STATS_ENERGY:
+            return 1000;
+        case XPUM_STATS_MEMORY_USED:
+            return 1048576;
+        default:
+            return 1;
+    }
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enableFilter) {
     assert(this->stub != nullptr);
 
@@ -329,7 +340,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
             auto tmp = nlohmann::json();
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
-            int32_t scale = stats_data.scale();
+            int32_t cliScale = getCliScale(metricsType);
+            int32_t scale = stats_data.scale() * cliScale;
             if (scale == 1) {
                 tmp["value"] = stats_data.value();
                 if (!stats_data.iscounter()) {
@@ -420,7 +432,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
             auto tmp = nlohmann::json();
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
-            int32_t scale = stats_data.scale();
+            int32_t cliScale = getCliScale(metricsType);
+            int32_t scale = stats_data.scale() * cliScale;
             if (scale == 1) {
                 tmp["value"] = stats_data.value();
                 if (!stats_data.iscounter()) {
