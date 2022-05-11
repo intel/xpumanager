@@ -184,8 +184,8 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_DRIVER_VERSION,                 ///< The driver version
     XPUM_DEVICE_PROPERTY_FIRMWARE_NAME,                  ///< The firmware name of device
     XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION,               ///< The firmware version of device
-    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME,          ///< The firmware name of FW-DATA of device
-    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION,       ///< The firmware version of FW-DATA of device
+    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME,           ///< The firmware name of FW-DATA of device
+    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION,        ///< The firmware version of FW-DATA of device
     XPUM_DEVICE_PROPERTY_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes

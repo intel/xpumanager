@@ -62,8 +62,8 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
                 { "label": "PCIe Generation", "value": "pcie_generation" },
                 { "label": "PCIe Max Link Width", "value": "pcie_max_link_width" },
                 { "rowTitle": " " },
-                { "label": "Memory Physical Size", "value": "memory_physical_size_byte", "suffix": " MiB", "scale": 1048576 },
-                { "label": "Max Mem Alloc Size", "value": "max_mem_alloc_size_byte", "suffix": " MiB", "scale": 1048576 },
+                { "label": "Memory Physical Size", "value": "memory_physical_size", "suffix": " MiB", "scale": 1 },
+                { "label": "Max Mem Alloc Size", "value": "max_mem_alloc_size", "suffix": " MiB", "scale": 1 },
                 { "label": "Number of Memory Channels", "value": "number_of_memory_channels" },
                 { "label": "Memory Bus Width", "value": "memory_bus_width" },
                 { "label": "Max Hardware Contexts", "value": "max_hardware_contexts" },
@@ -79,7 +79,7 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
                 { "label": "Number of Media Enhancement Engines", "value": "number_of_media_enh_engines" },
                 { "rowTitle": " " },
                 { "label": "Number of Xe Link ports", "value": "number_of_fabric_ports" },
-                { "label": "Max Tx/Rx Speed per Xe Link port", "value": "max_fabric_port_speed", "suffix": " MiB/s", "scale": 1048576 },
+                { "label": "Max Tx/Rx Speed per Xe Link port", "value": "max_fabric_port_speed", "suffix": " MiB/s", "scale": 1 },
                 { "label": "Number of Lanes per Xe Link port", "value": "number_of_lanes_per_fabric_port" }
             ]
         ]

@@ -16,7 +16,7 @@ class FirmwareFlashJobOnAllDevicesSchema(Schema):
         metadata={"description": "The path of firmware binary file to flash"}
     )
     firmware_name = fields.Str(
-        validate=validate.OneOf(["AMC"]),
+        validate=validate.Equal("AMC"),
         metadata={"description": "Firmware name, options are: AMC"}
     )
 
@@ -66,7 +66,10 @@ def run_firmware_flash_all():
     try:
         FirmwareFlashJobOnAllDevicesSchema().load(req)
     except ValidationError as err:
-        return jsonify(err.messages), 400
+        key = next(iter(err.messages))
+        value = err.messages[key]
+        errStr = key+": "+";".join(value)
+        return jsonify({'error': errStr}), 400
     return runFirmwareFlash(1024)
 
 
@@ -103,7 +106,10 @@ def run_firmware_flash_single(deviceId):
     try:
         FirmwareFlashJobOnSingleDeviceSchema().load(req)
     except ValidationError as err:
-        return jsonify(err.messages), 400
+        key = next(iter(err.messages))
+        value = err.messages[key]
+        errStr = key+": "+";".join(value)
+        return jsonify({'error': errStr}), 400
     return runFirmwareFlash(deviceId)
 
 
@@ -146,7 +152,7 @@ class FirmwareFlashResultQuerySingleDeviceSchema(Schema):
 class FirmwareFlashResultQueryAllDevicesSchema(Schema):
     firmware_name = fields.Str(
         required=True,
-        validate=validate.OneOf(["AMC"]),
+        validate=validate.Equal("AMC"),
         metadata={"description": "Firmware name, options are: AMC"}
     )
 
@@ -187,7 +193,10 @@ def get_firmware_flash_result_all():
     try:
         FirmwareFlashResultQueryAllDevicesSchema().load(req)
     except ValidationError as err:
-        return jsonify(err.messages), 400
+        key = next(iter(err.messages))
+        value = err.messages[key]
+        errStr = key+": "+";".join(value)
+        return jsonify({'error': errStr}), 400
     return get_firmware_flash_result(1024)
 
 
@@ -226,7 +235,10 @@ def get_firmware_flash_result_single(deviceId):
     try:
         FirmwareFlashResultQuerySingleDeviceSchema().load(req)
     except ValidationError as err:
-        return jsonify(err.messages), 400
+        key = next(iter(err.messages))
+        value = err.messages[key]
+        errStr = key+": "+";".join(value)
+        return jsonify({'error': errStr}), 400
     return get_firmware_flash_result(deviceId)
 
 
