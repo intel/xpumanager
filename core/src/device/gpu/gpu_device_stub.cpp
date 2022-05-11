@@ -961,7 +961,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
             if (res == ZE_RESULT_SUCCESS) {
                 zes_freq_state_t freq_state;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
-                if (res == ZE_RESULT_SUCCESS) {
+                if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.actual) : ret->setCurrent(freq_state.actual);
                     data_acquired = true;
                 } else {
