@@ -3467,40 +3467,55 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             thermal_threshold = core_thermal_threshold;
         else
             thermal_threshold = memory_thermal_threshold;
+        double temp_val = 0;
         description = "The temperature health cannot be determined.";
         uint32_t temp_sensor_count = 0;
         ze_result_t res;
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
-        std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
-        if (res == ZE_RESULT_SUCCESS) {
-            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
-            for (auto& temp : temp_sensors) {
-                zes_temp_properties_t props;
-                XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetProperties(temp, &props));
-                if (res != ZE_RESULT_SUCCESS) {
-                    continue;
+        if (temp_sensor_count == 0 && type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
+            zes_device_properties_t props;
+            props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
+            if (res == ZE_RESULT_SUCCESS && (to_hex_string(props.core.deviceId).find("56c0") != std::string::npos 
+                    || to_hex_string(props.core.deviceId).find("56c1") != std::string::npos)) {
+                int val = get_register_value_from_sys(device, 0x145978);
+                if (val > 0) {
+                    temp_val = val;
                 }
-                if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL && props.type != ZES_TEMP_SENSORS_GPU) {
-                    continue;
-                }
-                if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL && props.type != ZES_TEMP_SENSORS_MEMORY) {
-                    continue;
-                }
-                double temp_val = 0;
-                XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
-                if (res == ZE_RESULT_SUCCESS) {
-                    if (temp_val < thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
-                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
-                        description = "All temperature sensors are healthy.";
+            }
+        } else if (temp_sensor_count > 0) {
+            std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
+            if (res == ZE_RESULT_SUCCESS) {
+                XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
+                for (auto& temp : temp_sensors) {
+                    zes_temp_properties_t props;
+                    XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetProperties(temp, &props));
+                    if (res != ZE_RESULT_SUCCESS) {
+                        continue;
                     }
-                    if (temp_val >= thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
-                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
-                        std::stringstream temp_buffer;
-                        temp_buffer << std::fixed << std::setprecision(2) << temp_val;
-                        description = "Find an unhealthy temperature sensor. Its temperature is " + temp_buffer.str() + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(thermal_threshold) + ".";
+                    if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL && props.type != ZES_TEMP_SENSORS_GPU) {
+                        continue;
+                    }
+                    if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL && props.type != ZES_TEMP_SENSORS_MEMORY) {
+                        continue;
+                    }
+                    double val = 0;
+                    XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &val));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        temp_val = val;
                     }
                 }
             }
+        }
+        if (temp_val > 0 && temp_val < thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
+            status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
+            description = "All temperature sensors are healthy.";
+        }
+        if (temp_val >= thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
+            status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
+            std::stringstream temp_buffer;
+            temp_buffer << std::fixed << std::setprecision(2) << temp_val;
+            description = "Find an unhealthy temperature sensor. Its temperature is " + temp_buffer.str() + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(thermal_threshold) + ".";
         }
     } else if (type == xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT) {
         description = "All port statuses cannot be determined.";
