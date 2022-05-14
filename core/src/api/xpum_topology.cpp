@@ -211,7 +211,7 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int* co
             topoInfo.localDevice.subdeviceId = fabricPorts[x].localPortProp.subdeviceId;
             len = fabricPorts[x].cpuAffinity.copy(topoInfo.localDevice.cpuAffinity, XPUM_MAX_CPU_LIST_LEN);
             topoInfo.localDevice.cpuAffinity[len] = '\0';
-            //XPUM_LOG_INFO("cpu affinity {}", topoInfo.localDevice.cpuAffinity);
+            XPUM_LOG_INFO("cpu affinity {}", topoInfo.localDevice.cpuAffinity);
 
             XPUM_LOG_INFO("local deviceId {}, numaIdx {}, subdeviceId {},  ", topoInfo.localDevice.deviceId,topoInfo.localDevice.numaIdx,topoInfo.localDevice.subdeviceId);
 
