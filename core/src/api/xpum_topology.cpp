@@ -213,10 +213,13 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int* co
             topoInfo.localDevice.cpuAffinity[len] = '\0';
             //XPUM_LOG_INFO("cpu affinity {}", topoInfo.localDevice.cpuAffinity);
 
+            XPUM_LOG_INFO("local deviceId {}, numaIdx {}, subdeviceId {},  ", topoInfo.localDevice.deviceId,topoInfo.localDevice.numaIdx,topoInfo.localDevice.subdeviceId);
+
             topoInfo.remoteDevice.deviceId = fabricPorts[y].deviceId;
             topoInfo.remoteDevice.numaIdx = fabricPorts[y].numaIdx;
             topoInfo.remoteDevice.onSubdevice = fabricPorts[y].localPortProp.onSubdevice;
             topoInfo.remoteDevice.subdeviceId = fabricPorts[y].localPortProp.subdeviceId;
+            XPUM_LOG_INFO("remote deviceId {}, numaIdx {}, subdeviceId {},  ", topoInfo.remoteDevice.deviceId,topoInfo.remoteDevice.numaIdx,topoInfo.remoteDevice.subdeviceId);
 
             topoInfo.linkType = XPUM_LINK_UNKNOWN;
 
