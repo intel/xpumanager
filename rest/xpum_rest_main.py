@@ -176,11 +176,12 @@ def main(*args, **kwargs):
     app.add_url_rule('/rest/v1/topology/xelink', methods=['GET'],
                      view_func=auth.login_required(topology.get_topo_xelink))
 
+    # Temporarily hide the top feature 
     # top
-    app.add_url_rule('/rest/v1/devices/<int:deviceId>/top', methods=['GET'],
-                     view_func=auth.login_required(top.get_device_util_by_proc))
-    app.add_url_rule('/rest/v1/top', methods=['GET'],
-                     view_func=auth.login_required(top.get_all_device_util_by_proc))
+    # app.add_url_rule('/rest/v1/devices/<int:deviceId>/top', methods=['GET'],
+    #                 view_func=auth.login_required(top.get_device_util_by_proc))
+    # app.add_url_rule('/rest/v1/top', methods=['GET'],
+    #                 view_func=auth.login_required(top.get_all_device_util_by_proc))
 
     # dump raw data
     app.add_url_rule('/rest/v1/dump', methods=['POST'],

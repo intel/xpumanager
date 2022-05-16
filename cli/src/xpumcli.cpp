@@ -126,7 +126,9 @@ int main(int argc, char** argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletFirmware))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletConfig))
         //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletReset))
-        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTop))
+        //Temporarily hide the top command becuase the sysfs interface 
+        //does not work as expected
+        //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTop))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet));
