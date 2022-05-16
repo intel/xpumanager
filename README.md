@@ -25,11 +25,13 @@ It supports local command line interface, local library call and remote RESFTul 
   
 
 ## Intel XPU Manager Command Line Interface
-* Show GPU basic information
+* Show GPU basic information 
+ 
 ![Show GPU basic information](doc/img/cli_gpu_info.PNG)
   
 
-* Show GPU settings
+* Show GPU settings 
+ 
 ![Show GPU settings](doc/img/cli_settings.PNG)
   
   

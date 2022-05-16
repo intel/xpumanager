@@ -1,6 +1,10 @@
 
 # Intel XPU Manager Installation Guide
 
+## Requirements
+oneAPI Level Zero
+openssl11-libs
+
 ## DEB install
 sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
 
