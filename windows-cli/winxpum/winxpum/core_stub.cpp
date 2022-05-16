@@ -957,6 +957,10 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
                 if (data.value == 0 && (item.key == XPUM_STATS_GPU_CORE_TEMPERATURE
                     || item.key == XPUM_STATS_MEMORY_TEMPERATURE))
                     continue;
+                if (item.key == XPUM_STATS_GPU_CORE_TEMPERATURE && tmp["value"] > 130)
+                    continue;
+                if (item.key == XPUM_STATS_MEMORY_TEMPERATURE && tmp["value"] > 100)
+                    continue;
                 dataList.push_back(tmp);
                 if (sub_device_handles.size() == 1)
                     deviceLevelStatsDataList.push_back(tmp);
