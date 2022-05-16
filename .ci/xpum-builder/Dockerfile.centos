@@ -49,3 +49,25 @@ RUN pip3 install mistune==0.8.4 apispec apispec_webframeworks \
     Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
     apispec-webframeworks myst-parser marshmallow \
     prometheus-client flask flask_httpauth
+
+RUN dnf update -y && \
+    dnf install -y libudev-devel && \
+    dnf clean all
+
+RUN curl -s --location https://github.com/intel/metee/archive/refs/tags/3.1.3.tar.gz | tar -xz && \
+    cd /metee-3.1.3 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j4 && \
+    make install && \
+    rm -fr /metee-3.1.3
+
+RUN curl -s --location https://github.com/intel/igsc/archive/refs/tags/V0.6.0.tar.gz | tar -xz && \
+    cd /igsc-0.6.0 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j4 && \
+    make install && \
+    rm -fr /igsc-0.6.0
