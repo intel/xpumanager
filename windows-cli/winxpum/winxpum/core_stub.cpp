@@ -585,6 +585,8 @@ struct MetricsTypeEntry {
 };
 
 static MetricsTypeEntry metricsTypeArray[]{
+    {XPUM_STATS_COMPUTE_UTILIZATION, "XPUM_STATS_COMPUTE_UTILIZATION"},
+    {XPUM_STATS_MEDIA_UTILIZATION, "XPUM_STATS_MEDIA_UTILIZATION"},
     {XPUM_STATS_GPU_UTILIZATION, "XPUM_STATS_GPU_UTILIZATION"},
     {XPUM_STATS_EU_ACTIVE, "XPUM_STATS_EU_ACTIVE"},
     {XPUM_STATS_EU_STALL, "XPUM_STATS_EU_STALL"},
@@ -829,6 +831,57 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
         }
     }
 
+    if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION || metricsType == XPUM_STATS_MEDIA_UTILIZATION || metricsType == XPUM_STATS_GPU_UTILIZATION) {
+        static uint64_t compute_engine = 0;
+        static uint64_t media_engine = 0;
+
+        if (metricsType == XPUM_STATS_GPU_UTILIZATION) {
+            data.max = data.min = data.avg = data.value = std::max(compute_engine, media_engine);
+            return data;
+        }
+
+        uint32_t engine_count = 0;
+        ze_result_t res;
+        res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr);
+        if (res == ZE_RESULT_SUCCESS) {
+            std::vector<zes_engine_handle_t> engines(engine_count);
+            res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data());
+            if (res == ZE_RESULT_SUCCESS) {
+                for (auto& engine : engines) {
+                    zes_engine_properties_t props;
+                    props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+                    res = zesEngineGetProperties(engine, &props);
+                    if (res != ZE_RESULT_SUCCESS)
+                        continue;
+
+                    if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION && props.type != ZES_ENGINE_GROUP_COMPUTE_ALL)
+                        continue;
+
+                    if (metricsType == XPUM_STATS_MEDIA_UTILIZATION && props.type != ZES_ENGINE_GROUP_MEDIA_ALL)
+                        continue;
+
+                    zes_engine_stats_t snap1;
+                    res = zesEngineGetActivity(engine, &snap1);
+                    if (res == ZE_RESULT_SUCCESS) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(engine_sampling_interval));
+                        zes_engine_stats_t snap2;
+                        res = zesEngineGetActivity(engine, &snap2);
+                        double val = 0.0;
+                        if (res == ZE_RESULT_SUCCESS) {
+                            val = (snap2.activeTime - snap1.activeTime) * measurement_data_scale * 100.0 / (snap2.timestamp - snap1.timestamp);
+                            if (val > measurement_data_scale * 100.0)
+                                val = measurement_data_scale * 100.0;
+                            if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION) {
+                                data.max = data.min = data.avg = data.value = compute_engine = (uint64_t)val;
+                            } else {
+                                data.max = data.min = data.avg = data.value = media_engine = (uint64_t)val;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     return data;
 }
 
@@ -877,13 +930,16 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
         for (auto item : metricsTypeArray) {
             if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE
                 || item.key == XPUM_STATS_MEMORY_TEMPERATURE || item.key == XPUM_STATS_GPU_FREQUENCY
-                || item.key == XPUM_STATS_MEMORY_BANDWIDTH || item.key == XPUM_STATS_MEMORY_USED
+                || item.key == XPUM_STATS_MEMORY_BANDWIDTH || item.key == XPUM_STATS_MEMORY_USED 
+                || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
+                || item.key == XPUM_STATS_GPU_UTILIZATION
                 // || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT
-                 ) {
+            ) {
                 xpum_device_stats_data_t data = getMetricsByLevel0(sub_device_handles[i], item.key);
                 auto tmp = nlohmann::json();
-                if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE
-                    || item.key == XPUM_STATS_MEMORY_TEMPERATURE) {
+                if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE 
+                    || item.key == XPUM_STATS_MEMORY_TEMPERATURE || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
+                    || item.key == XPUM_STATS_GPU_UTILIZATION) {
                     tmp["avg"] = data.avg * 1.0 / measurement_data_scale;
                     tmp["min"] = data.min * 1.0 / measurement_data_scale;
                     tmp["max"] = data.max * 1.0 / measurement_data_scale;
