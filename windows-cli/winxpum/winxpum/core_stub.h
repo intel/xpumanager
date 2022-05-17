@@ -72,5 +72,7 @@ private:
     int measurement_data_scale = 100;
 
     int engine_sampling_interval = 100;
+
+    int power_limit = 300;
 };
 

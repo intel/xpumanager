@@ -67,6 +67,21 @@ CoreStub::CoreStub() {
     for (uint32_t device = 0; device < deviceCount; ++device) {
         ze_device_handles.push_back(devices[device]);
         zes_device_handles.push_back((zes_device_handle_t)devices[device]);
+
+        ze_device_properties_t ze_device_properties;
+        ze_device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        status = zeDeviceGetProperties(devices[device], &ze_device_properties);
+        if (status != ZE_RESULT_SUCCESS) {
+            std::cout << "zeDeviceGetProperties Failed with return code: " << to_string(status) << std::endl;
+            exit(-1);
+        }
+        std::string devicename = ze_device_properties.name;
+        if (devicename.find("56c1") != std::string::npos) {
+            power_limit = 23;
+        } else if (devicename.find("56c0") != std::string::npos) {
+            power_limit = 120;
+        }
+
     }
 
     std::ifstream conf_file("xpum.conf");
@@ -350,9 +365,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
         return json;
     }
     (*json)["power_limit"] = power_datas[0];
-    (*json)["power_vaild_range"] = "1 to " + std::to_string(power_datas[0]);
+    (*json)["power_vaild_range"] = "1 to " + std::to_string(power_limit);
     (*json)["power_average_window"] = power_datas[1];
-    (*json)["power_average_window_vaild_range"] = "1 to " + std::to_string(power_datas[1]);
+    (*json)["power_average_window_vaild_range"] = "1 to 20800";
     return json;
 }
 
@@ -438,7 +453,7 @@ std::vector<int> CoreStub::handlePowerByLevel0(zes_device_handle_t device, bool 
                 }
 
                 if (set) {
-                    if (limit < 1 || limit/1000 > res[0] || interval < 1 || interval > res[1]) {
+                    if (limit < 1 || limit / 1000 > power_limit || interval < 1 || interval > 20800) {
                         res.push_back(-1);
                         return res;
                     }
