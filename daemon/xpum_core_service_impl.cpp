@@ -1982,15 +1982,15 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
                                                       ::XpumXelinkTopoInfoArray* response) {
     XPUM_LOG_TRACE("call getXelinkTopology");
     xpum_xelink_topo_info* topoInfo;
-    int count{16};
+    int count{256};
     xpum_xelink_topo_info xelink_topo[count];
     topoInfo = xelink_topo;
     xpum_result_t res = xpumGetXelinkTopology(xelink_topo, &count);
-    if (res == XPUM_BUFFER_TOO_SMALL) {
+    /*if (res == XPUM_BUFFER_TOO_SMALL) {
         xpum_xelink_topo_info xelink_topo[count];
         topoInfo = xelink_topo;
         res = xpumGetXelinkTopology(xelink_topo, &count);
-    }
+    }*/
 
     if (res == XPUM_OK) {
         for (int i{0}; i < count; ++i) {
