@@ -1,7 +1,7 @@
 FROM centos:8.4.2105
 
 ARG XPUM_GIT_COMMIT=00000000
-ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.9.tar.gz
+ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.15.tar.gz
 
 RUN cd /etc/yum.repos.d/ && \
     sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* &&\

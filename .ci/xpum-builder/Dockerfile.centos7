@@ -33,15 +33,6 @@ RUN mkdir cmake && \
 
 ENV PATH="/cmake/bin:${PATH}".
 
-RUN curl -s --location https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.9.tar.gz | tar -xz && \
-    cd /level-zero-1.7.9 && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    cmake --build . --config Release && \
-    cmake --build . --config Release --target install && \
-    rm -fr /level-zero-1.7.9
-
 COPY build_grpc.sh /
 RUN git clone --depth 1 -b v1.45.0 https://github.com/grpc/grpc && \
     cd /grpc && \
@@ -92,3 +83,12 @@ RUN curl -s --location https://github.com/intel/igsc/archive/refs/tags/V0.6.0.ta
     make -j4 && \
     make install && \
     rm -fr /igsc-0.6.0
+
+RUN curl -s --location https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.15.tar.gz | tar -xz && \
+    cd /level-zero-1.7.15 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    cmake --build . --config Release && \
+    cmake --build . --config Release --target install && \
+    rm -fr /level-zero-1.7.15

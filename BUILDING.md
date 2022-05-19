@@ -29,9 +29,9 @@ pip3 --proxy=$http_proxy install grpcio-tools mistune==0.8.4 apispec apispec_web
 # Install level-zero
 mkdir work && cd work
 wget -q --no-check-certificate \
-https://github.com/oneapi-src/level-zero/releases/download/v1.7.9/level-zero-devel_1.7.9+u18.04_amd64.deb
+https://github.com/oneapi-src/level-zero/releases/download/v1.7.15/level-zero-devel_1.7.15+u18.04_amd64.deb
 wget -q --no-check-certificate \
-https://github.com/oneapi-src/level-zero/releases/download/v1.7.9/level-zero_1.7.9+u18.04_amd64.deb
+https://github.com/oneapi-src/level-zero/releases/download/v1.7.15/level-zero_1.7.15+u18.04_amd64.deb
 sudo dpkg -i *.deb
 
 # Get XPUM source
@@ -89,8 +89,8 @@ pip3 --proxy=$http_proxy install grpcio-tools mistune==0.8.4 apispec apispec_web
     prometheus-client flask flask_httpauth
 
 # Build and install levelzero from its source
-wget -qc --no-check-certificate https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.9.tar.gz -O - | tar -xz
-cd level-zero-1.7.9
+wget -qc --no-check-certificate https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.15.tar.gz -O - | tar -xz
+cd level-zero-1.7.15
 mkdir build && cd build
 cmake ..
 make -j$(nproc) install
