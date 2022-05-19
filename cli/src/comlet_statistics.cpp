@@ -286,10 +286,10 @@ void ComletStatistics::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     if (isDeviceOp()) {
-        auto json = this->coreStub->getStatistics(this->opts->deviceId, true);
+        auto json = this->coreStub->getStatistics(this->opts->deviceId, true, true);
         return json;
     } else if (isGroupOp()) {
-        auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId, true);
+        auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId, true, true);
         return json;
     }
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

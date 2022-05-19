@@ -285,7 +285,7 @@ static int32_t getCliScale(xpum_stats_type_t metricsType) {
     }
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enableFilter) {
+std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enableFilter, bool enableScale) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -341,7 +341,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
             int32_t cliScale = getCliScale(metricsType);
-            int32_t scale = stats_data.scale() * cliScale;
+            int32_t scale = enableScale ? stats_data.scale() * cliScale : stats_data.scale();
             if (scale == 1) {
                 tmp["value"] = stats_data.value();
                 if (!stats_data.iscounter()) {
@@ -388,7 +388,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId, bool enableFilter) {
+std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId, bool enableFilter, bool enableScale) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -433,7 +433,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
             int32_t cliScale = getCliScale(metricsType);
-            int32_t scale = stats_data.scale() * cliScale;
+            int32_t scale = enableScale ? stats_data.scale() * cliScale : stats_data.scale();
             if (scale == 1) {
                 tmp["value"] = stats_data.value();
                 if (!stats_data.iscounter()) {

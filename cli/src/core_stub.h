@@ -62,8 +62,8 @@ class CoreStub {
     std::string healthTypeEnumToString(HealthType type);
     nlohmann::json appendHealthThreshold(int deviceId, nlohmann::json, HealthType type, uint64_t throttleValue, uint64_t shutdownValue);
 
-    std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter = false);
-    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter = false);
+    std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter = false, bool enableScale = false);
+    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter = false, bool enableScale = false);
     std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId);
     std::shared_ptr<std::map<int, std::map<int, int>>> getEngineCount(int deviceId);
     std::shared_ptr<nlohmann::json> getFabricStatistics(int deviceId);

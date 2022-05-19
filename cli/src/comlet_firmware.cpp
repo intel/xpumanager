@@ -76,6 +76,9 @@ void ComletFirmware::setupOptions() {
     fwPathOpt->needs(fwTypeOpt);
     fwTypeOpt->needs(fwPathOpt);
 
+    deviceIdOpt->needs(fwTypeOpt);
+    deviceIdOpt->needs(fwPathOpt);
+
     opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
 }
 
