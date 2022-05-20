@@ -76,7 +76,7 @@ void FirmwareManager::detectGscFw() {
     std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
     auto fwList = getGscFwVersions();
-    for (auto pDevice : devices) {
+    for (auto& pDevice : devices) {
         auto address = pDevice->getPciAddress();
         for (auto fw : fwList) {
             if (fw.bdfAddr == address) {
@@ -292,7 +292,7 @@ xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const c
     if (pDevice == nullptr) {
         return XPUM_GENERIC_ERROR;
     }
-    xpum_result_t res;
+    xpum_result_t res = XPUM_GENERIC_ERROR;
     // check for ats-m3
     auto deviceList = getSiblingDevices(pDevice);
     for (auto pd : deviceList) {

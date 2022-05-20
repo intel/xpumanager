@@ -243,7 +243,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
 
     std::vector<std::string> commands;
 
-    for (auto meiPath : meiPathList) {
+    for (auto& meiPath : meiPathList) {
         XPUM_LOG_INFO("prepare update GSC on {}", meiPath);
         std::string command = toolPath + " fw update -a -d " + meiPath + " -i " + filePath +" 2>&1";
         commands.push_back(command);
