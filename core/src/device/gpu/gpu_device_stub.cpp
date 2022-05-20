@@ -2740,6 +2740,9 @@ static bool readUtil2(std::vector<device_util_by_proc>& vec,
         return false;
     }
     pdir = opendir(path);
+    if (pdir == NULL) {
+        return false;
+    }
     while ((pdirent = readdir(pdir))) {
         if (pdirent->d_name[0] == '.') {
             continue;
