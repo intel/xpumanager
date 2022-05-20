@@ -1115,6 +1115,7 @@ int GPUDeviceStub::get_register_value_from_sys(const zes_device_handle_t& device
         map_base = mmap(0, map_size, PROT_READ, MAP_SHARED, fd, target_base);
 
         if (map_base == (void *) -1) {
+            close(fd);
             return -1;
         }
         virt_addr = (uint8_t *)map_base + target - target_base;
