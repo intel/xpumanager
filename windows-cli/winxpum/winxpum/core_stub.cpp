@@ -80,8 +80,9 @@ CoreStub::CoreStub() {
             power_limit = 23;
         } else if (devicename.find("56c0") != std::string::npos) {
             power_limit = 120;
+        } else if (devicename.find("4905") != std::string::npos) {
+            power_limit = 25;
         }
-
     }
 
     std::ifstream conf_file("xpum.conf");
