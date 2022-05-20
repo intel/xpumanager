@@ -1747,6 +1747,10 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     uint64_t euActive = totalEuActive / totalGPUElapsedTime;
     uint64_t euStall = totalEuStall / totalGPUElapsedTime;
     uint64_t euIdle = 100 - euActive - euStall;
+    euActive *= Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+    euStall *= Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+    euIdle *= Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+    data->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
     if (type == MeasurementType::METRIC_EU_ACTIVE) {
         if (subdeviceId == UINT32_MAX)
             data->setCurrent(euActive);

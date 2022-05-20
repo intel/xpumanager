@@ -50,13 +50,13 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_UTILIZATION].avg", "fixer": "round" }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].avg" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].avg", "scale": 1 }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].avg" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].avg", "scale": 1 }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].avg" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].avg", "scale": 1 }
             ]}
         ]]
     }, {
