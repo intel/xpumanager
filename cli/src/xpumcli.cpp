@@ -45,6 +45,7 @@ bool privilegeCheck() {
     struct passwd* pw = getpwuid(uid);
     if (pw == NULL) {
         perror("getpwuid error");
+        return false;
     }
     int ngroups = 0;
     getgrouplist(pw->pw_name, pw->pw_gid, NULL, &ngroups);
@@ -59,6 +60,7 @@ bool privilegeCheck() {
         struct group* gr = getgrgid(groups[i]);
         if (gr == NULL) {
             perror("getgrgid error");
+            return false;
         }
         std::string grp_name(gr->gr_name);
         if (grp_name == xpum_grp) {
@@ -67,19 +69,6 @@ bool privilegeCheck() {
     }
 
     return has_privilege;
-}
-
-bool serviceStatusCheck() {
-    FILE* f = popen("service xpum status", "r");
-    char c_line[1024];
-    while (fgets(c_line, 1024, f) != NULL) {
-        std::string line(c_line);
-        if (line.find("active (running)") != std::string::npos) {
-            return true;
-        }
-    }
-    pclose(f);
-    return false;
 }
 
 bool levelZeroLoaderCheck() {
