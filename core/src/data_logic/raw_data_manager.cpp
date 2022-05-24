@@ -64,15 +64,15 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_MEMORY_UTILIZATION]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_BANDWIDTH] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_BANDWIDTH, p_persistency);
+        std::make_shared<MemoryDataHandler>(MeasurementType::METRIC_MEMORY_BANDWIDTH, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_BANDWIDTH]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_READ] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_READ, p_persistency);
+        std::make_shared<MemoryDataHandler>(MeasurementType::METRIC_MEMORY_READ, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_READ]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_WRITE] =
-        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_MEMORY_WRITE, p_persistency);
+        std::make_shared<MemoryDataHandler>(MeasurementType::METRIC_MEMORY_WRITE, p_persistency);
     data_handlers[MeasurementType::METRIC_MEMORY_WRITE]->init();
 
     data_handlers[MeasurementType::METRIC_MEMORY_READ_THROUGHPUT] =

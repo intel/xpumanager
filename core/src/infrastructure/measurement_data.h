@@ -144,6 +144,8 @@ class MeasurementData {
 
     void setSubdeviceDataCurrent(uint32_t subdevice_id, uint64_t data);
 
+    void clearSubdeviceDataCurrent(uint32_t subdevice_id);
+
     void setSubdeviceDataMin(uint32_t subdevice_id, uint64_t data);
 
     void setSubdeviceDataMax(uint32_t subdevice_id, uint64_t data);
@@ -184,6 +186,8 @@ class MeasurementData {
     }
 
     void setSubdeviceRawData(uint32_t subdevice_id, uint64_t data);
+
+    void clearSubdeviceRawdata(uint32_t subdevice_id);
 
     uint64_t getSubdeviceRawData(uint32_t subdevice_id);
 

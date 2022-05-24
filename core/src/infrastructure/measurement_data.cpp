@@ -12,12 +12,26 @@ void MeasurementData::setSubdeviceDataCurrent(uint32_t subdevice_id, uint64_t da
     (*p_subdevice_datas)[subdevice_id].current = data;
 }
 
+void MeasurementData::clearSubdeviceDataCurrent(uint32_t subdevice_id) {
+    auto iter = p_subdevice_datas->find(subdevice_id);
+    if (iter != p_subdevice_datas->end()) {
+        p_subdevice_datas->erase(iter);
+    }
+}
+
 void MeasurementData::setSubdeviceDataRawTimestamp(uint32_t subdevice_id, uint64_t data) {
     (*p_subdevice_rawdatas)[subdevice_id].raw_timestamp = data;
 }
 
 void MeasurementData::setSubdeviceRawData(uint32_t subdevice_id, uint64_t data) {
     (*p_subdevice_rawdatas)[subdevice_id].raw_data = data;
+}
+
+void MeasurementData::clearSubdeviceRawdata(uint32_t subdevice_id) {
+    auto iter = p_subdevice_rawdatas->find(subdevice_id);
+    if (iter != p_subdevice_rawdatas->end()) {
+        p_subdevice_rawdatas->erase(iter);
+    }
 }
 
 void MeasurementData::setSubdeviceDataMin(uint32_t subdevice_id, uint64_t data) {
