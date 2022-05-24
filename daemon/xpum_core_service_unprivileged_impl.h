@@ -47,9 +47,6 @@ public:
     virtual ::grpc::Status setPolicy(::grpc::ServerContext* context, const ::SetPolicyRequest* request, ::SetPolicyResponse* response) override {
         return PD;
     }
-    virtual ::grpc::Status handleErrorForGetPolicy(xpum_result_t res, ::GetPolicyResponse* response) {
-        return PD;
-    }
     virtual ::grpc::Status setDeviceSchedulerMode(::grpc::ServerContext* context, const ::ConfigDeviceSchdeulerModeRequest* request, ::ConfigDeviceResultData* response) override {
         return PD;
     }
