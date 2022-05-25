@@ -1,9 +1,7 @@
 @echo off
 SETLOCAL
 
-SET SIGN_USER=%1
-SET SIGN_PASS=%2
-SET REV=%3
+SET REV=%1
 
 cd "%~dp0"
 powershell -Command "(Get-Content winxpum\winxpum\winxpum.rc) -replace '\"ProductVersion\".*', '\"ProductVersion\", \"%REV%\"' | Out-File -encoding ASCII winxpum\winxpum\winxpum.rc"
