@@ -72,7 +72,7 @@ BEGIN
             VALUE "InternalName", "xpumcli"
             VALUE "LegalCopyright", "Copyright (C) 2022"
             VALUE "OriginalFilename", "xpumcli.exe"
-            VALUE "ProductName", "Intel XPUM Manager CLI for Windows"
+            VALUE "ProductName", "Intel XPU Manager CLI for Windows"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
