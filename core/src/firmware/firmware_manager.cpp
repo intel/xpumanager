@@ -55,7 +55,8 @@ static std::vector<GscFwVersion> getGscFwVersions() {
     if (sc_res.exitStatus() != 0)
         return res;
     auto output = sc_res.output();
-    std::regex regexp(R"(Device \[\d+\] '(/dev/mei\d+)':.*([0-9a-f]{4}):([0-9a-f]{2}):([0-9a-f]{2})\.([0-9a-f]{2})\nFW Version: (.*)\n)");
+    //XPUM_LOG_INFO("getGscFwVersions output {}", output);
+    std::regex regexp(R"(Device \[\d+\] '(/dev/mei\d+)':.*([0-9a-f]{4}):([0-9a-f]{2}):([0-9a-f]{2})\.([0-9a-f]{2})\n)");
 
     std::smatch m;
     while (regex_search(output, m, regexp)) {
@@ -68,6 +69,11 @@ static std::vector<GscFwVersion> getGscFwVersions() {
         fw.fwVersion = m[6];
         output = m.suffix();
         res.push_back(fw);
+        //XPUM_LOG_INFO("getGscFwVersions fw.devicePath {}", fw.devicePath);
+        //XPUM_LOG_INFO("getGscFwVersions fw.bdfAddr.domain {}", fw.bdfAddr.domain);
+        //XPUM_LOG_INFO("getGscFwVersions fw.bdfAddr.bus {}", fw.bdfAddr.bus);
+        //XPUM_LOG_INFO("getGscFwVersions fw.bdfAddr.device {}", fw.bdfAddr.device);
+        //XPUM_LOG_INFO("getGscFwVersions fw.bdfAddr.function {}", fw.bdfAddr.function);
     }
     return res;
 }

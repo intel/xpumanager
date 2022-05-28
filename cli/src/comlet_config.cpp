@@ -71,7 +71,14 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "  Up", "value": "port_up" },
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
-                { "label": "  Beaconing Off", "value": "beaconing_off" }
+                { "label": "  Beaconing Off", "value": "beaconing_off" },
+                {"rowTitle": " " },
+                { "label": "Memory Ecc", "value": " " },
+                { "label": "  Available", "value": "memory_ecc_available" },
+                { "label": "  Configurable", "value": "memory_ecc_configurable" },
+                { "label": "  Current", "value": "memory_ecc_current_state" },
+                { "label": "  Pending", "value": "memory_ecc_pending_state" },
+                { "label": "  Action", "value": "memory_ecc_pending_action" }
             ]
         ]
     }]
@@ -96,7 +103,7 @@ void ComletConfig::setupOptions() {
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
     addOption("--xelinkport", this->opts->xelinkportEnable, "Change the Xe Link port status. The value 0 means down and 1 means up.");
     addOption("--xelinkportbeaconing", this->opts->xelinkportBeaconing, "Change the Xe Link port beaconing status. The value 0 means off and 1 means on.");
-    //addOption("--memoryecc", this->opts->setecc,"Enable/disable memory Ecc setting.");
+    addOption("--memoryecc", this->opts->setecc,"Enable/disable memory Ecc setting.");
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter) {
     size_t pos = 0;
@@ -276,7 +283,6 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;
         }
-#if 0
         else if (!this->opts->setecc.empty()) {
             bool enabled = false;
             int eccVal;
@@ -317,7 +323,6 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;  
         }
-#endif
         else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             char confirmed;
             if (this->opts->deviceId >= 0) {

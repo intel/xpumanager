@@ -1290,7 +1290,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                     tileJson["scheduler_timeslice_interval"] = response.tileconfigdata(i).schedulertimesliceinterval();
                     tileJson["scheduler_timeslice_yield_timeout"] = response.tileconfigdata(i).schedulertimesliceyieldtimeout();
                 }
-#if 0                
                 if (response.tileconfigdata(i).memoryeccavailable() == true) {
                     tileJson["memory_ecc_available"] = "true";
                 } else {
@@ -1305,7 +1304,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["memory_ecc_current_state"] = response.tileconfigdata(i).memoryeccstate();
                 tileJson["memory_ecc_pending_state"] = response.tileconfigdata(i).memoryeccpendingstate();
                 tileJson["memory_ecc_pending_action"] = response.tileconfigdata(i).memoryeccpendingaction();
-#endif
                 tileJsonList.push_back(tileJson);
             }
             (*json)["tile_config_data"] = tileJsonList;
@@ -1658,7 +1656,12 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
                            (*json)["memory_ecc_current_state"], (*json)["memory_ecc_pending_state"],
                            (*json)["memory_ecc_pending_action"]);
         } else {
-            (*json)["error"] = response.errormsg();
+            (*json)["error"] = response.errormsg() +
+            " Failed to set memory Ecc state: available: " + std::string((*json)["memory_ecc_available"]) +
+            ", configurable: " + std::string((*json)["memory_ecc_configurable"]) +
+            ", current: " + std::string((*json)["memory_ecc_current_state"]) +
+            ", pending: " + std::string((*json)["memory_ecc_pending_state"]) +
+            ", action: " + std::string((*json)["memory_ecc_pending_action"]);
             XPUM_LOG_AUDIT("Failed to set memory Ecc state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
                            (*json)["memory_ecc_available"], (*json)["memory_ecc_configurable"],
                            (*json)["memory_ecc_current_state"], (*json)["memory_ecc_pending_state"],

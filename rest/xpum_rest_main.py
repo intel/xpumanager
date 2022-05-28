@@ -165,8 +165,8 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(device_config.set_portenabled))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/portbeaconing', methods=['PUT'],
                      view_func=auth.login_required(device_config.set_portbeaconing))
-    # app.add_url_rule('/rest/v1/devices/<int:deviceId>/memoryecc', methods=['PUT'],
-    #                view_func=auth.login_required(device_config.set_memoryecc))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/memoryecc', methods=['PUT'],
+                    view_func=auth.login_required(device_config.set_memoryecc))
 
     # topology
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'],
