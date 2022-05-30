@@ -124,7 +124,7 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                " xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]\n"
                " xpumcli config -d [deviceId] -t [tileId] --xelinkport [portId,value]\n"
                " xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]\n"
-               " xpumcli config -d [deviceId] --memoryecc [enable/disable]\n";
+               " xpumcli config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable\n";
                //" xpumcli config -d [deviceId] --reset\n";
     } else {
         return CLI::Formatter::make_usage(app, name);

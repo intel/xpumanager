@@ -1926,8 +1926,10 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
     const std::string str_igscDeviceIterDestroy{"igsc_device_iterator_destroy"};
     const std::string str_igscDeviceIterNext{"igsc_device_iterator_next"};
     const std::string str_igscDeviceInitDeviceInfo{"igsc_device_init_by_device_info"};
-    const std::string str_igscDeviceMemEccSet{"igsc_set_ecc_config"};
-    const std::string str_igscDeviceMemEccGet{"igsc_get_ecc_config"};
+    const std::string str_igscDeviceMemEccSet1{"igsc_set_ecc_config"};
+    const std::string str_igscDeviceMemEccGet1{"igsc_get_ecc_config"};
+    const std::string str_igscDeviceMemEccSet2{"igsc_ecc_config_set"};
+    const std::string str_igscDeviceMemEccGet2{"igsc_ecc_config_get"};
 
     void *handle = NULL;
     char *error;
@@ -2001,18 +2003,26 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
         //goto out;
     }
 
-    igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet.c_str());
+    igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet1.c_str());
     error = dlerror();
     if (error || igsc_device_mem_ecc_set == NULL) {
-        XPUM_LOG_WARN("XPUM can't load find igsc_ecc_config_set.");
-        goto out;
+        igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet2.c_str());
+        error = dlerror();
+        if (error || igsc_device_mem_ecc_set == NULL) {
+            XPUM_LOG_WARN("XPUM can't load find igsc_ecc_config_set.");
+            goto out;
+        }
     }
 
-    igsc_device_mem_ecc_get = (int (*) (struct igsc_device_handle *handle, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccGet.c_str());
+    igsc_device_mem_ecc_get = (int (*) (struct igsc_device_handle *handle, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccGet1.c_str());
     error = dlerror();
     if (error || igsc_device_mem_ecc_get == NULL) {
-        XPUM_LOG_WARN("XPUM can't load find igsc_ecc_config_get.");
-        goto out;
+        igsc_device_mem_ecc_get = (int (*) (struct igsc_device_handle *handle, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccGet2.c_str());
+        error = dlerror();
+        if (error || igsc_device_mem_ecc_get == NULL) {
+            XPUM_LOG_WARN("XPUM can't load find igsc_ecc_config_get.");
+            goto out;
+        }
     }
 
     ret = (*igsc_device_init)(&igsc_handle, path.c_str());

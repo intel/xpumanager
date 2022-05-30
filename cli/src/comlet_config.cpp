@@ -103,7 +103,7 @@ void ComletConfig::setupOptions() {
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
     addOption("--xelinkport", this->opts->xelinkportEnable, "Change the Xe Link port status. The value 0 means down and 1 means up.");
     addOption("--xelinkportbeaconing", this->opts->xelinkportBeaconing, "Change the Xe Link port beaconing status. The value 0 means off and 1 means on.");
-    addOption("--memoryecc", this->opts->setecc,"Enable/disable memory Ecc setting.");
+    addOption("--memoryecc", this->opts->setecc,"Enable/disable memory Ecc setting. 0:disable; 1:enable");
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter) {
     size_t pos = 0;
