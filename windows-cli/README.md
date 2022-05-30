@@ -8,7 +8,6 @@ Please refer to [XPU Manager CLI User Guide](../doc/CLI_user_guide.md) for how t
 
 ## Supported OS
 * Windows Server 2022
-* Windows 10
 
 ## How to build
 Visual Studio 16 2019 (Recommended)
