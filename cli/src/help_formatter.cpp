@@ -28,7 +28,6 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli group -r -d [deviceIds] -g [groupId] \n"
                "  xpumcli group -D -g [groupId] \n"
                "  xpumcli group -l \n"
-               "  xpumcli -l -j \n"
                "  xpumcli group -l -g [groupId] \n";
     } else if (app->get_name().compare("top") == 0) {
         return "\n"

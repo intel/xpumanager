@@ -181,9 +181,8 @@ Usage: xpumcli group [Options]
   xpumcli group -a -g [groupId] -d [deviceIds]
   xpumcli group -r -d [deviceIds] -g [groupId]
   xpumcli group -D -g [groupId]
-  xpumcli -l
-  xpumcli -l -j
-  xpumcli -l -g [groupId]
+  xpumcli group -l
+  xpumcli group -l -g [groupId]
 
 
 Options:
