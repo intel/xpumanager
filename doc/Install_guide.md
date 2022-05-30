@@ -26,7 +26,7 @@ sudo rpm -e xpumanager
 ## How to enable or disable some daemon monitor metrics
 By default, Intel XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrices or disable some metrices. 
   
-1. edit file "/lib/systemd/system/xpum.service"
+1. edit file "/lib/systemd/system/xpum.service" or "/etc/systemd/system/xpum.service" in some system.
    add "-m metric-indexes" to ExecStart. 
    Use "/opt/xpum/bin/xpumd -h" to get detailed info.  
    Sample:
