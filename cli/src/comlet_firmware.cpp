@@ -16,7 +16,7 @@
 
 namespace xpum::cli {
 
-static const std::string igscPath{"/usr/bin/igsc"};
+static const std::string igscPath{"igsc"};
 
 ComletFirmware::ComletFirmware() : ComletBase("updatefw", "Update GPU firmware") {
     this->printHelpWhenNoArgs = true;
@@ -264,13 +264,12 @@ bool ComletFirmware::validateFwDataImage(){
 }
 
 bool ComletFirmware::checkIgscExist() {
-    FILE *file = fopen(igscPath.c_str(), "r");
-
-    if (!file) {
-        return false;
+    std::string cmd = igscPath + " -V 2>&1";
+    FILE *f = popen(cmd.c_str(), "r");
+    char c_line[1024];
+    while (fgets(c_line, 1024, f) != NULL) {
     }
-    fclose(file);
-    return true;
+    return pclose(f) == 0;
 }
 
 void ComletFirmware::getTableResult(std::ostream &out) {

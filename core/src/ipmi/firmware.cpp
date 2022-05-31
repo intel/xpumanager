@@ -72,6 +72,7 @@ UINT32 gFwReqSize;
 #include "file_util.h"
 #include "pci.h"
 #include "tool.h"
+#include "ipmi_mock.h"
 
 #include <vector>
 #include <string>
@@ -766,6 +767,9 @@ int cmd_probe() {
 }
 
 std::vector<std::string> cmd_get_amc_firmware_versions() {
+#ifdef XPUM_FIRMWARE_MOCK
+    return cmd_get_amc_firmware_versions_mock();
+#endif 
     std::vector<std::string> versions;
 
     int err = NRV_SUCCESS;
@@ -795,6 +799,9 @@ std::vector<std::string> cmd_get_amc_firmware_versions() {
 }
 
 int cmd_firmware(const char* file, unsigned int versions[4]) {
+#ifdef XPUM_FIRMWARE_MOCK
+    return cmd_firmware_mock(file, versions);
+#endif
     const char *bsmc_file = file;
     uint8_t *bsmc_data = NULL;
     size_t bsmc_size = 0;

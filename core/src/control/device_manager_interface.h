@@ -110,6 +110,14 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual void discoverFabricLinks() = 0;
 
     virtual std::string getDeviceIDByFabricID(uint64_t fabric_id) = 0;
+
+    virtual bool tryLockDevices(const std::vector<std::string>& deviceList) = 0;
+
+    virtual bool tryLockDevices(std::vector<std::shared_ptr<Device>>& deviceList) = 0;
+
+    virtual void unlockDevices(const std::vector<std::string>& deviceList) = 0;
+
+    virtual void unlockDevices(std::vector<std::shared_ptr<Device>>& deviceList) = 0;
 };
 
 } // end namespace xpum

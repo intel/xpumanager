@@ -348,4 +348,69 @@ void DeviceManager::discoverFabricLinks() {
     }
 }
 
+bool DeviceManager::tryLockDevices(const std::vector<std::string>& deviceList) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    std::vector<std::shared_ptr<Device>> tryLockDeviceList;
+    for (auto deviceId : deviceList) {
+        std::shared_ptr<Device> pDeviceToFind = nullptr;
+        for (auto& p_device : this->devices) {
+            if (deviceId.compare(p_device->getId()) == 0) {
+                pDeviceToFind = p_device;
+                break;
+            }
+        }
+        if (pDeviceToFind)
+            tryLockDeviceList.push_back(pDeviceToFind);
+        else
+            return false;
+    }
+    std::vector<std::shared_ptr<Device>> lockedDeviceList;
+    for (auto p_device : tryLockDeviceList) {
+        if (p_device->try_lock()) {
+            lockedDeviceList.push_back(p_device);
+        } else {
+            for (auto pDeviceToUnlock : lockedDeviceList) {
+                pDeviceToUnlock->unlock();
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
+bool DeviceManager::tryLockDevices(std::vector<std::shared_ptr<Device>>& deviceList) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    std::vector<std::shared_ptr<Device>> lockedDeviceList;
+    for (auto p_device : deviceList) {
+        if (p_device->try_lock()) {
+            lockedDeviceList.push_back(p_device);
+        } else {
+            for (auto pDeviceToUnlock : lockedDeviceList) {
+                pDeviceToUnlock->unlock();
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
+void DeviceManager::unlockDevices(const std::vector<std::string>& deviceList) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    for (auto deviceId : deviceList) {
+        for (auto& p_device : this->devices) {
+            if (deviceId.compare(p_device->getId()) == 0) {
+                p_device->unlock();
+                break;
+            }
+        }
+    }
+}
+
+void DeviceManager::unlockDevices(std::vector<std::shared_ptr<Device>>& deviceList) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    for (auto& p_device : deviceList) {
+        p_device->unlock();
+    }
+}
+
 } // end namespace xpum

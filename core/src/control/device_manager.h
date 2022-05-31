@@ -104,6 +104,14 @@ class DeviceManager : public DeviceManagerInterface,
 
     std::string getDeviceIDByFabricID(uint64_t fabric_id);
 
+    bool tryLockDevices(const std::vector<std::string>& deviceList);
+
+    bool tryLockDevices(std::vector<std::shared_ptr<Device>>& deviceList);
+
+    void unlockDevices(const std::vector<std::string>& deviceList);
+
+    void unlockDevices(std::vector<std::shared_ptr<Device>>& deviceList);
+
    private:
     DeviceManager() = default;
 

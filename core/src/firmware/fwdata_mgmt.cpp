@@ -46,7 +46,7 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
 
         std::string command = igscPath + " fw-data update -a -d " + devicePath + " -i " + filePath +" 2>&1";
 
-        taskFwData = std::async(std::launch::async, [&, command] {
+        taskFwData = std::async(std::launch::async, [&, command, this] {
             // XPUM_LOG_INFO("Start update GSC fw, total {} commands", commands.size());
             bool ok = true;
 
@@ -72,6 +72,7 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
             } else {
                 rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
+            pDevice->unlock();
             return rc;
         });
 
@@ -123,5 +124,13 @@ xpum_firmware_flash_result_t FwDataMgmt::getFlashFwDataResult(){
 
 bool FwDataMgmt::isUpgradingFw() {
     return taskFwData.valid();
+}
+
+bool FwDataMgmt::isReady() {
+    if (!taskFwData.valid()) {
+        return true;
+    }
+    auto status = taskFwData.wait_for(0ms);
+    return status == std::future_status::ready;
 }
 }
