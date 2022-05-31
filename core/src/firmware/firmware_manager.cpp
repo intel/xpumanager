@@ -398,7 +398,7 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
     result->result = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
 
     for (auto pd : deviceList) {
-        res = pDevice->getFwDataMgmt()->getFlashFwDataResult();
+        res = pd->getFwDataMgmt()->getFlashFwDataResult();
         if (res != xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK) {
             result->result = res;
         }
