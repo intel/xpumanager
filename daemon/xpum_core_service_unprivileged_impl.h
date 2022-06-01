@@ -1,3 +1,9 @@
+/* 
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file xpum_core_service_unprivileged_impl.h
+ */
+
 #pragma once
 
 #include "xpum_core_service_impl.h"
