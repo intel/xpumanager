@@ -1919,30 +1919,30 @@ xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
 }
 
 bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur, uint8_t* pen) {
-    const std::string str_igscLibPath{"/usr/lib/x86_64-linux-gnu/libigsc.so"};
+    const std::string str_igscLibPath{"libigsc.so"};
     const std::string str_igscDeviceInit{"igsc_device_init_by_device"};
     const std::string str_igscDeviceClose{"igsc_device_close"};
     const std::string str_igscDeviceIterCreate{"igsc_device_iterator_create"};
     const std::string str_igscDeviceIterDestroy{"igsc_device_iterator_destroy"};
     const std::string str_igscDeviceIterNext{"igsc_device_iterator_next"};
     const std::string str_igscDeviceInitDeviceInfo{"igsc_device_init_by_device_info"};
-    const std::string str_igscDeviceMemEccSet1{"igsc_set_ecc_config"};
-    const std::string str_igscDeviceMemEccGet1{"igsc_get_ecc_config"};
+    //const std::string str_igscDeviceMemEccSet1{"igsc_set_ecc_config"};
+    //const std::string str_igscDeviceMemEccGet1{"igsc_get_ecc_config"};
     const std::string str_igscDeviceMemEccSet2{"igsc_ecc_config_set"};
     const std::string str_igscDeviceMemEccGet2{"igsc_ecc_config_get"};
 
     void *handle = NULL;
     char *error;
     struct igsc_device_handle igsc_handle;
-    struct igsc_device_info igsc_dev_info;
-    struct igsc_device_iterator *iter = NULL;
+    //struct igsc_device_info igsc_dev_info;
+    //struct igsc_device_iterator *iter = NULL;
     uint8_t cur_ecc_state = *cur = 0xFF;
     uint8_t pen_ecc_state = *pen = 0xFF;
     int ret;
     bool result = false;
     bool device_handle_inited = false;
     memset(&igsc_handle, 0, sizeof(igsc_handle));
-    memset(&igsc_dev_info, 0, sizeof(igsc_dev_info));
+    //memset(&igsc_dev_info, 0, sizeof(igsc_dev_info));
 
     int (*igsc_device_init) (struct igsc_device_handle *handle, const char *device_path);
     int (*igsc_device_close) (struct igsc_device_handle *handle);
@@ -2003,35 +2003,35 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
         //goto out;
     }
 
-    igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet1.c_str());
+    igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet2.c_str());
     error = dlerror();
     if (error || igsc_device_mem_ecc_set == NULL) {
-        igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet2.c_str());
-        error = dlerror();
-        if (error || igsc_device_mem_ecc_set == NULL) {
+        //igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet2.c_str());
+        //error = dlerror();
+        //if (error || igsc_device_mem_ecc_set == NULL) {
             XPUM_LOG_WARN("XPUM can't load find igsc_ecc_config_set.");
             goto out;
-        }
+        //}    
     }
 
-    igsc_device_mem_ecc_get = (int (*) (struct igsc_device_handle *handle, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccGet1.c_str());
+    igsc_device_mem_ecc_get = (int (*) (struct igsc_device_handle *handle, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccGet2.c_str());
     error = dlerror();
     if (error || igsc_device_mem_ecc_get == NULL) {
-        igsc_device_mem_ecc_get = (int (*) (struct igsc_device_handle *handle, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccGet2.c_str());
-        error = dlerror();
-        if (error || igsc_device_mem_ecc_get == NULL) {
+        //igsc_device_mem_ecc_get = (int (*) (struct igsc_device_handle *handle, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccGet2.c_str());
+        //error = dlerror();
+        //if (error || igsc_device_mem_ecc_get == NULL) {
             XPUM_LOG_WARN("XPUM can't load find igsc_ecc_config_get.");
             goto out;
-        }
+        //}
     }
 
-    ret = (*igsc_device_init)(&igsc_handle, path.c_str());
+    ret = (igsc_device_init)(&igsc_handle, path.c_str());
     if (ret) {
         XPUM_LOG_WARN("XPUM call igsc_device_init_by_device failed {}", ret);
         goto out;
     }
     device_handle_inited = true;
-
+/*
     ret = (*igsc_device_iter_create)(&iter);
     if (ret) {
         XPUM_LOG_WARN("XPUM call igsc_device_iterator_create failed {}", ret);
@@ -2043,7 +2043,7 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
         XPUM_LOG_WARN("XPUM call igsc_device_iterator_next failed {}", ret);
         goto out;
     }
-
+*/
     /*ret = (*igsc_device_iter_destory)(iter);
     if (ret) {
         XPUM_LOG_WARN("XPUM call igsc_device_iterator_destory failed {}", ret);
@@ -2051,17 +2051,17 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
     }*/
 
     //XPUM_LOG_WARN("XPUM call dev_info {} {} {}", igsc_dev_info.name, igsc_dev_info.device_id, igsc_dev_info.domain,igsc_dev_info.vendor_id);
-
+/*
     ret = (*igsc_device_init_device_info)(&igsc_handle, &igsc_dev_info);
     if (ret) {
         XPUM_LOG_WARN("XPUM call igsc_device_init_by_device_info failed {}", ret);
         goto out;
     }
     
-    //XPUM_LOG_WARN("XPUM call dev_info {} {} {}", igsc_dev_info.name, igsc_dev_info.device_id, igsc_dev_info.domain,igsc_dev_info.vendor_id);
-
+    XPUM_LOG_WARN("XPUM call dev_info {} {} {}", igsc_dev_info.name, igsc_dev_info.device_id, igsc_dev_info.domain,igsc_dev_info.vendor_id);
+*/
     if(getting) {
-        ret = (*igsc_device_mem_ecc_get)(&igsc_handle, &cur_ecc_state, &pen_ecc_state);
+        ret = (igsc_device_mem_ecc_get)(&igsc_handle, &cur_ecc_state, &pen_ecc_state);
         if (ret) {
             XPUM_LOG_WARN("XPUM call igsc_ecc_config_get failed {}", ret);
             goto out;
@@ -2071,7 +2071,7 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
             result = true;
         }
     }else {
-        ret = (*igsc_device_mem_ecc_set)(&igsc_handle, req, &cur_ecc_state, &pen_ecc_state);
+        ret = (igsc_device_mem_ecc_set)(&igsc_handle, req, &cur_ecc_state, &pen_ecc_state);
         if (ret) {
             XPUM_LOG_WARN("XPUM call igsc_ecc_config_set failed {}", ret);
             goto out;
@@ -2084,7 +2084,7 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
 
     out:
     if (device_handle_inited && igsc_device_close != NULL) {
-        ret = (*igsc_device_close)(&igsc_handle);
+        ret = (igsc_device_close)(&igsc_handle);
         if (ret) {
             XPUM_LOG_WARN("XPUM call igsc_device_close failed {}", ret);
             result = false;
