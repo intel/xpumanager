@@ -205,6 +205,8 @@ class Device {
         _operation_lock.clear();
     }
 
+    int getDeviceModel();
+
    public:
     virtual ~Device() {}
 

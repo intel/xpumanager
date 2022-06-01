@@ -8,6 +8,7 @@
 #include "system_cmd.h"
 #include "fwdata_mgmt.h"
 #include "group/group_manager.h"
+#include "api/device_model.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -210,6 +211,43 @@ static bool isFwImageAndDeviceCompatible(std::string meiPath, const char* filePa
     return true;
 }
 
+static bool isPVCFwImageAndDeviceCompatible(std::string meiPath, const char* filePath) {
+    //FW Version: PVC1->0->1427
+    std::regex regexp(R"(FW Version: (.*)->\d+->\d+\n)");
+    // check image
+    std::string imageCmd = igscPath + " fw version -i " + std::string(filePath) + " 2>&1";
+    std::string imageProjectCodeName;
+    SystemCommandResult imageCommandResult = execCommand(imageCmd);
+    if (imageCommandResult.exitStatus() != 0) {
+        return false;
+    }
+    std::string imageFwVersionOutput = imageCommandResult.output();
+    std::smatch m;
+    while (std::regex_search(imageFwVersionOutput, m, regexp)) {
+        imageProjectCodeName = m[1];
+        break;
+    }
+    if (imageProjectCodeName.empty())
+        return false;
+    // check device
+    std::string deviceCmd = igscPath + " fw version -d " + meiPath + " 2>&1";
+    std::string deviceProjectCodeName;
+    SystemCommandResult deviceCommandResult = execCommand(deviceCmd);
+    if (deviceCommandResult.exitStatus() != 0) {
+        return false;
+    }
+    std::string deviceFwVersionOutput = deviceCommandResult.output();
+    while (std::regex_search(deviceFwVersionOutput, m, regexp)) {
+        deviceProjectCodeName = m[1];
+        break;
+    }
+    if(deviceProjectCodeName.empty()){
+        return false;
+    }
+    // check project code name equals or not
+    return deviceProjectCodeName.compare(imageProjectCodeName) == 0;
+}
+
 xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath) {
     // check tool if tool exists
     if (!detectGfxTool()) {
@@ -229,8 +267,14 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
     }
 
     // validate the image is compatible with the device
-    if (!isFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), filePath)) {
-        return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+    if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
+        if (!isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), filePath)) {
+            return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+        }
+    } else {
+        if (!isFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), filePath)) {
+            return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+        }
     }
 
     xpum_result_t res = XPUM_GENERIC_ERROR;

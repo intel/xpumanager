@@ -10,6 +10,7 @@
 
 #include "infrastructure/exception/ilegal_parameter_exception.h"
 #include "infrastructure/logger.h"
+#include "api/device_model.h"
 
 namespace xpum {
 
@@ -321,6 +322,17 @@ uint32_t Device::getFabricThroughputInfoCount() {
 std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<FabricThroughputType>>>> Device::getFabricThroughputIDS() {
     std::unique_lock<std::mutex> lock(this->mutex);
     return fabric_throughput_ids;
+}
+
+int Device::getDeviceModel() {
+    Property prop;
+    bool res = getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop);
+    if (!res)
+        return XPUM_DEVICE_MODEL_UNKNOWN;
+    std::string strValue = prop.getValue();
+    std::string stripped = strValue.substr(2); // remove 0x prefix
+    int deviceId = std::stoi(stripped, nullptr, 16);
+    return getDeviceModelByPciDeviceId(deviceId);
 }
 
 } // end namespace xpum
