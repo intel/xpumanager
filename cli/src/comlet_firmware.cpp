@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp>
 #include <regex>
 #include <thread>
+#include <igsc_lib.h>
 
 #include "core_stub.h"
 #include "xpum_structs.h"
@@ -106,7 +107,6 @@ nlohmann::json ComletFirmware::validateArguments() {
 std::unique_ptr<nlohmann::json> ComletFirmware::run() {
     std::unique_ptr<nlohmann::json> json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
-    // json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
     return json;
 }
 
@@ -198,69 +198,89 @@ std::string ComletFirmware::getCurrentFwVersion(nlohmann::json json) {
     }
 }
 
+static std::string print_fw_version(const struct igsc_fw_version* fw_version) {
+    std::stringstream ss;
+    ss << fw_version->project[0];
+    ss << fw_version->project[1];
+    ss << fw_version->project[2];
+    ss << fw_version->project[3];
+    ss << "_";
+    ss << fw_version->hotfix;
+    ss << ".";
+    ss << fw_version->build;
+    return ss.str();
+}
+
 std::string ComletFirmware::getImageFwVersion() {
     std::string version = "unknown";
-    std::string cmd = igscPath+" fw version -i "+ opts->firmwarePath + " 2>&1";
-    std::regex regexp(R"(FW Version: (.*)\n)");
-    FILE* f = popen(cmd.c_str(), "r");
-    char c_line[1024];
-    while (fgets(c_line, 1024, f) != NULL) {
-        std::string line(c_line);
-        std::smatch m;
-        while (std::regex_search(line, m, regexp)) {
-            version = m[1];
-            break;
-        }
+    auto &buffer = imgBuffer;
+    if (buffer.size() == 0) return version;
+
+    struct igsc_fw_version fw_version;
+    int ret;
+    ret = igsc_image_fw_version((const uint8_t *)buffer.data(), buffer.size(), &fw_version);
+    if (ret == IGSC_SUCCESS) {
+        version = print_fw_version(&fw_version);
     }
-    pclose(f);
     return version;
+}
+
+static std::string print_fwdata_version(const struct igsc_fwdata_version *fwdata_version) {
+    std::stringstream ss;
+    ss << fwdata_version->major_version;
+    ss << ".";
+    ss << fwdata_version->oem_manuf_data_version;
+    ss << ".";
+    ss << fwdata_version->major_vcn;
+    return ss.str();
 }
 
 std::string ComletFirmware::getFwDataImageFwVersion() {
     std::string version = "unknown";
-    std::string cmd = igscPath+" fw-data version -i "+ opts->firmwarePath + " 2>&1";
-    //Fw Data Version: 101->1->0
-    std::regex regexp(R"(Fw Data Version: (.*)\n)");
-    FILE* f = popen(cmd.c_str(), "r");
-    char c_line[1024];
-    while (fgets(c_line, 1024, f) != NULL) {
-        std::string line(c_line);
-        std::smatch m;
-        while (std::regex_search(line, m, regexp)) {
-            version = m[1];
-            break;
-        }
+    auto &buffer = imgBuffer;
+    if (buffer.size() == 0) return version;
+
+    struct igsc_fwdata_image *oimg = NULL;
+    struct igsc_fwdata_version fwdata_version;
+    int ret;
+
+    ret = igsc_image_fwdata_init(&oimg, (const uint8_t *)buffer.data(), buffer.size());
+    if (ret != IGSC_SUCCESS) {
+        igsc_image_fwdata_release(oimg);
+        return version;
     }
-    pclose(f);
+
+    ret = igsc_image_fwdata_version(oimg, &fwdata_version);
+    if (ret == IGSC_SUCCESS) {
+        version = print_fwdata_version(&fwdata_version);
+    }
     return version;
 }
 
 bool ComletFirmware::checkImageValid() {
-    std::string cmd = igscPath + " image-type -i " + opts->firmwarePath + " 2>&1";
-    FILE *f = popen(cmd.c_str(), "r");
-    char c_line[1024];
-    bool valid = false;
-    while (fgets(c_line, 1024, f) != NULL) {
-        std::string line(c_line);
-        if (line.find("GFX FW Update image") != line.npos)
-            valid = true;
+    auto& buffer = imgBuffer;
+    if (buffer.size() == 0) return false;
+    uint8_t type;
+    int ret;
+    ret = igsc_image_get_type((const uint8_t*)buffer.data(), buffer.size(), &type);
+    if (ret != IGSC_SUCCESS)
+    {
+        return false;
     }
-    pclose(f);
-    return valid;
+    return type == IGSC_IMAGE_TYPE_GFX_FW;
 }
 
 bool ComletFirmware::validateFwDataImage(){
-    std::string cmd = igscPath + " image-type -i " + opts->firmwarePath + " 2>&1";
-    FILE *f = popen(cmd.c_str(), "r");
-    char c_line[1024];
-    bool valid = false;
-    while (fgets(c_line, 1024, f) != NULL) {
-        std::string line(c_line);
-        if (line.find("Firmware Data update image") != line.npos)
-            valid = true;
+    auto& buffer = imgBuffer;
+    if (buffer.size() == 0) return false;
+    uint8_t type;
+    int ret;
+    ret = igsc_image_get_type((const uint8_t*)buffer.data(), buffer.size(), &type);
+    if (ret != IGSC_SUCCESS)
+    {
+        return false;
     }
-    pclose(f);
-    return valid;
+    return type == IGSC_IMAGE_TYPE_FW_DATA;
 }
 
 bool ComletFirmware::checkIgscExist() {
@@ -279,6 +299,8 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         return;
     }
 
+    // read file
+    readImageContent(opts->firmwarePath.c_str());
     // warn user
     int type = getIntFirmwareType(opts->firmwareType);
     if (type == 1) { // AMC caution
@@ -401,5 +423,25 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     }
 
     out << "unknown error" << std::endl;
+}
+
+void ComletFirmware::readImageContent(const char *filePath) {
+    struct stat s;
+    if (stat(filePath, &s) != 0 || !(s.st_mode & S_IFREG))
+        return;
+    std::ifstream is(std::string(filePath), std::ifstream::binary);
+    if (!is) {
+        return;
+    }
+    // get length of file:
+    is.seekg(0, is.end);
+    int length = is.tellg();
+    is.seekg(0, is.beg);
+
+    std::vector<char> buffer(length);
+
+    is.read(buffer.data(), length);
+    is.close();
+    imgBuffer = buffer;
 }
 } // namespace xpum::cli

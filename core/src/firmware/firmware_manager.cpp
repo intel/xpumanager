@@ -14,6 +14,9 @@
 #include <condition_variable>
 #include <mutex>
 #include <regex>
+#include <igsc_lib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 namespace xpum {
 
@@ -51,27 +54,75 @@ struct GscFwVersion {
     std::string fwVersion;
 };
 
+static std::string print_fw_version(const struct igsc_fw_version* fw_version) {
+    std::stringstream ss;
+    ss << fw_version->project[0];
+    ss << fw_version->project[1];
+    ss << fw_version->project[2];
+    ss << fw_version->project[3];
+    ss << "_";
+    ss << fw_version->hotfix;
+    ss << ".";
+    ss << fw_version->build;
+    return ss.str();
+}
+
 static std::vector<GscFwVersion> getGscFwVersions() {
     std::vector<GscFwVersion> res;
-    std::string cmd = igscPath + " list-devices --info 2>&1";
-    SystemCommandResult sc_res = execCommand(cmd);
-    if (sc_res.exitStatus() != 0)
-        return res;
-    auto output = sc_res.output();
-    std::regex regexp(R"(Device \[\d+\] '(/dev/mei\d+)':.*([0-9a-f]{4}):([0-9a-f]{2}):([0-9a-f]{2})\.([0-9a-f]{2})(\nFW Version: (.*)\n*){0,1})");
+    struct igsc_device_iterator* iter;
+    struct igsc_device_info info;
+    int ret;
+    struct igsc_device_handle handle;
+    struct igsc_fw_version fw_version;
+    unsigned int ndevices = 0;
 
-    std::smatch m;
-    while (regex_search(output, m, regexp)) {
+    // XPUM_LOG_INFO("Start iterate GSC fw");
+    memset(&handle, 0, sizeof(handle));
+    memset(&fw_version, 0, sizeof(fw_version));
+    ret = igsc_device_iterator_create(&iter);
+    if (ret != IGSC_SUCCESS) {
+        XPUM_LOG_ERROR("Cannot create device iterator {}", ret);
+        return res;
+    }
+    info.name[0] = '\0';
+    while ((ret = igsc_device_iterator_next(iter, &info)) == IGSC_SUCCESS) {
+        // XPUM_LOG_INFO("Find one");
         GscFwVersion fw;
-        fw.devicePath = m[1];
-        fw.bdfAddr.domain = stoi(m[2], 0, 16);
-        fw.bdfAddr.bus = stoi(m[3], 0, 16);
-        fw.bdfAddr.device = stoi(m[4], 0, 16);
-        fw.bdfAddr.function = stoi(m[5], 0, 16);
-        fw.fwVersion = m.length(7) ? std::string(m[7]) : "unknown";
-        output = m.suffix();
+        ret = igsc_device_init_by_device_info(&handle, &info);
+        if (ret != IGSC_SUCCESS) {
+            /* make sure we have a printable name */
+            info.name[0] = '\0';
+            continue;
+        }
+        // XPUM_LOG_INFO("Get info");
+
+        // igsc_device_update_device_info(&handle, &info);
+
+        // XPUM_LOG_INFO("Update info");
+
+        ndevices++;
+
+        fw.devicePath = info.name;
+        fw.bdfAddr.domain = info.domain;
+        fw.bdfAddr.bus = info.bus;
+        fw.bdfAddr.device = info.dev;
+        fw.bdfAddr.function = info.func;
+
+        ret = igsc_device_fw_version(&handle, &fw_version);
+        // XPUM_LOG_INFO("Get fw version");
+        if (ret == IGSC_SUCCESS) {
+            fw.fwVersion = print_fw_version(&fw_version);
+        } else {
+            XPUM_LOG_ERROR("Fail to get SoC fw version from device: {}", fw.devicePath);
+            fw.fwVersion = "unknown";
+        }
+        /* make sure we have a printable name */
+        info.name[0] = '\0';
+        (void)igsc_device_close(&handle);
+
         res.push_back(fw);
     }
+    igsc_device_iterator_destroy(iter);
     return res;
 }
 
@@ -184,62 +235,100 @@ static bool detectGfxTool() {
     return true;
 }
 
-static bool isGscFwImage(const char* filePath) {
-    std::string cmd = igscPath + " image-type -i " + std::string(filePath) +" 2>&1";
-    SystemCommandResult sc_res = execCommand(cmd);
-    if (sc_res.exitStatus() != 0)
+static bool isGscFwImage(std::vector<char>& buffer) {
+    uint8_t type;
+    int ret;
+    ret = igsc_image_get_type((const uint8_t*)buffer.data(), buffer.size(), &type);
+    if (ret != IGSC_SUCCESS)
+    {
         return false;
-    auto output = sc_res.output();
-
-    std::string flag = "GFX FW Update image";
-
-    return output.find(flag) != output.npos;
+    }
+    return type == IGSC_IMAGE_TYPE_GFX_FW;
 }
 
-static bool isFwImageAndDeviceCompatible(std::string meiPath, const char* filePath) {
-    std::string cmd = igscPath + " fw hwconfig --check -d " + meiPath + " -i " + std::string(filePath) + " 2>&1";
-    SystemCommandResult sc_res = execCommand(cmd);
-    if (sc_res.exitStatus() != 0) {
+static bool isFwImageAndDeviceCompatible(std::string meiPath, std::vector<char>& buffer) {
+    struct igsc_hw_config img_hw_config, dev_hw_config;
+    int ret;
+    // image hw config
+    ret = igsc_image_hw_config((const uint8_t*)buffer.data(), buffer.size(), &img_hw_config);
+    if (ret != IGSC_SUCCESS) {
+        return false;
+    }
+
+    // device hw config
+    struct igsc_device_handle handle;
+
+    memset(&handle, 0, sizeof(handle));
+    ret = igsc_device_init_by_device(&handle, meiPath.c_str());
+    if (ret != IGSC_SUCCESS) {
+        (void)igsc_device_close(&handle);
+        return false;
+    }
+
+    ret = igsc_device_hw_config(&handle, &dev_hw_config);
+    if (ret != IGSC_SUCCESS) {
+        (void)igsc_device_close(&handle);
+        return false;
+    }
+
+    (void)igsc_device_close(&handle);
+
+    ret = igsc_hw_config_compatible(&img_hw_config, &dev_hw_config);
+    if (ret != IGSC_SUCCESS) {
         return false;
     }
     return true;
 }
 
-static bool isPVCFwImageAndDeviceCompatible(std::string meiPath, const char* filePath) {
-    //FW Version: PVC1->0->1427
-    std::regex regexp(R"(FW Version: (.*)->\d+->\d+\n)");
-    // check image
-    std::string imageCmd = igscPath + " fw version -i " + std::string(filePath) + " 2>&1";
-    std::string imageProjectCodeName;
-    SystemCommandResult imageCommandResult = execCommand(imageCmd);
-    if (imageCommandResult.exitStatus() != 0) {
+static bool isPVCFwImageAndDeviceCompatible(std::string meiPath, std::vector<char>& buffer) {
+    struct igsc_fw_version img_fw_version, dev_fw_version;
+    int ret;
+    // image fw version
+    ret = igsc_image_fw_version((const uint8_t*)buffer.data(), buffer.size(), &img_fw_version);
+    if (ret != IGSC_SUCCESS)
+    {
         return false;
     }
-    std::string imageFwVersionOutput = imageCommandResult.output();
-    std::smatch m;
-    while (std::regex_search(imageFwVersionOutput, m, regexp)) {
-        imageProjectCodeName = m[1];
-        break;
-    }
-    if (imageProjectCodeName.empty())
-        return false;
-    // check device
-    std::string deviceCmd = igscPath + " fw version -d " + meiPath + " 2>&1";
-    std::string deviceProjectCodeName;
-    SystemCommandResult deviceCommandResult = execCommand(deviceCmd);
-    if (deviceCommandResult.exitStatus() != 0) {
+    // device fw version
+    struct igsc_device_handle handle;
+
+    memset(&handle, 0, sizeof(handle));
+    ret = igsc_device_init_by_device(&handle, meiPath.c_str());
+    if (ret != IGSC_SUCCESS) {
         return false;
     }
-    std::string deviceFwVersionOutput = deviceCommandResult.output();
-    while (std::regex_search(deviceFwVersionOutput, m, regexp)) {
-        deviceProjectCodeName = m[1];
-        break;
-    }
-    if(deviceProjectCodeName.empty()){
+
+    memset(&dev_fw_version, 0, sizeof(dev_fw_version));
+    ret = igsc_device_fw_version(&handle, &dev_fw_version);
+    if (ret != IGSC_SUCCESS)
+    {
+        (void)igsc_device_close(&handle);
         return false;
     }
-    // check project code name equals or not
-    return deviceProjectCodeName.compare(imageProjectCodeName) == 0;
+
+    (void)igsc_device_close(&handle);
+
+    return std::equal(std::begin(dev_fw_version.project), std::end(dev_fw_version.project), std::begin(img_fw_version.project));
+}
+
+std::vector<char> readImageContent(const char* filePath) {
+    struct stat s;
+    if (stat(filePath, &s) != 0 || !(s.st_mode & S_IFREG))
+        return std::vector<char>();
+    std::ifstream is(std::string(filePath), std::ifstream::binary);
+    if (!is) {
+        return std::vector<char>();
+    }
+    // get length of file:
+    is.seekg(0, is.end);
+    int length = is.tellg();
+    is.seekg(0, is.beg);
+
+    std::vector<char> buffer(length);
+
+    is.read(buffer.data(), length);
+    is.close();
+    return buffer;
 }
 
 xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath) {
@@ -249,8 +338,11 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
         return XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND;
     }
 
+    // read image file
+    auto buffer = readImageContent(filePath);
+
     // validate the image file
-    if (!isGscFwImage(filePath)) {
+    if (!isGscFwImage(buffer)) {
         return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
     }
 
@@ -262,11 +354,11 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
 
     // validate the image is compatible with the device
     if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
-        if (!isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), filePath)) {
+        if (!isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer)) {
             return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
         }
     } else {
-        if (!isFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), filePath)) {
+        if (!isFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer)) {
             return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
         }
     }
@@ -376,6 +468,12 @@ static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<De
 }
 
 xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const char* filePath) {
+    // check tool if tool exists
+    if (!detectGfxTool()) {
+        XPUM_LOG_INFO("flash tool not exists");
+        return XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND;
+    }
+    
     std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (pDevice == nullptr) {
         return XPUM_GENERIC_ERROR;

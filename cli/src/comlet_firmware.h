@@ -45,6 +45,7 @@ class ComletFirmware : public ComletBase {
 
    private:
     std::unique_ptr<FlashFirmwareOptions> opts;
+    std::vector<char> imgBuffer;
 
     std::string getCurrentFwVersion(nlohmann::json json);
     std::string getImageFwVersion();
@@ -53,5 +54,7 @@ class ComletFirmware : public ComletBase {
     bool validateFwDataImage();
     std::string getFwDataImageFwVersion();
     nlohmann::json getDeviceProperties(int deviceId);
+
+    void readImageContent(const char* filePath);
 };
 } // namespace xpum::cli

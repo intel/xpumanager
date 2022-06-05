@@ -41,6 +41,8 @@ class FirmwareManager {
     void getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 };
 
+std::vector<char> readImageContent(const char* filePath);
+
 #ifndef XPUM_FIRMWARE_MOCK
 static const std::string igscPath{"igsc"};
 #else

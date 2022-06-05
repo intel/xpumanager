@@ -193,7 +193,8 @@ if(HAVE_PCIACCESS_H)
             hwloc
             stdc++fs
             pcm-iio-gpu
-            pciaccess)
+            pciaccess
+            igsc)
   if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
     target_link_libraries(
       test_xpum_api
@@ -203,14 +204,15 @@ if(HAVE_PCIACCESS_H)
               hwloc
               stdc++fs
               pcm-iio-gpu
-              pciaccess)
+              pciaccess
+              igsc)
   endif()
 else()
   target_link_libraries(xpum PRIVATE ze_loader dl ${LibSpd} hwloc pcm-iio-gpu
-                                     stdc++fs)
+                                     stdc++fs igsc)
   if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
     target_link_libraries(test_xpum_api PRIVATE ze_loader dl ${LibSpd} hwloc
-                                                pcm-iio-gpu stdc++fs)
+                                                pcm-iio-gpu stdc++fs igsc)
   endif()
 endif()
 
