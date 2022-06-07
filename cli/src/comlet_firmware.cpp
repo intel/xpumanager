@@ -401,10 +401,12 @@ void ComletFirmware::getTableResult(std::ostream &out) {
 
         json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
         if (json->contains("error")) {
+            out << std::endl;
             out << "Error: " << (*json)["error"] << std::endl;
             return;
         }
         if (!json->contains("result")) {
+            out << std::endl;
             out << "Error: Failed to get firmware reuslt" << std::endl;
             return;
         }
@@ -412,9 +414,12 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         std::string flashStatus = (*json)["result"].get<std::string>();
 
         if (flashStatus.compare("OK") == 0) {
-            out << "Update firmware successfully. Please reboot OS to take effect." << std::endl;
+            out << std::endl;
+            out << "Update firmware successfully." << std::endl;
+            out << "Please reboot OS to take effect." << std::endl;
             return;
         } else if (flashStatus.compare("FAILED") == 0) {
+            out << std::endl;
             out << "Update firmware failed" << std::endl;
             return;
         } else {
