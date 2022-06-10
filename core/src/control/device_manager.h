@@ -68,6 +68,9 @@ class DeviceManager : public DeviceManagerInterface,
     bool setDeviceFrequencyRange(const std::string& id,
                                  const Frequency& freq);
 
+    bool setDeviceFrequencyRangeForAll(const std::string& id,
+                                 const Frequency& freq);
+
     bool setDeviceStandby(const std::string& id,
                           const Standby& standby);
 

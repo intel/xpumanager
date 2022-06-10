@@ -3217,6 +3217,10 @@ void GPUDeviceStub::getFreqAvailableClocks(const zes_device_handle_t& device, ui
     }
 }
 
+bool GPUDeviceStub::setFrequencyRangeForAll(const zes_device_handle_t& device, const Frequency& freq) {
+    
+    return false;
+}
 bool GPUDeviceStub::setFrequencyRange(const zes_device_handle_t& device, const Frequency& freq) {
     if (device == nullptr) {
         return false;

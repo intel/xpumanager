@@ -71,6 +71,9 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual bool setDeviceFrequencyRange(const std::string& id,
                                          const Frequency& freq) = 0;
 
+    virtual bool setDeviceFrequencyRangeForAll(const std::string& id,
+                                         const Frequency& freq) = 0;
+
     virtual bool setDeviceStandby(const std::string& id,
                                   const Standby& standby) = 0;
 

@@ -130,6 +130,9 @@ class GPUDeviceStub {
     static void getFrequencyRanges(const zes_device_handle_t& device,
                                    std::vector<Frequency>& frequencies);
 
+    static bool setFrequencyRangeForAll(const zes_device_handle_t& device,
+                                  const Frequency& freq);
+
     static bool setFrequencyRange(const zes_device_handle_t& device,
                                   const Frequency& freq);
 
