@@ -3218,7 +3218,34 @@ void GPUDeviceStub::getFreqAvailableClocks(const zes_device_handle_t& device, ui
 }
 
 bool GPUDeviceStub::setFrequencyRangeForAll(const zes_device_handle_t& device, const Frequency& freq) {
-    
+    if (device == nullptr) {
+        return false;
+    }
+    uint32_t freq_count = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
+    std::vector<zes_freq_handle_t> freq_handles(freq_count);
+    if (res == ZE_RESULT_SUCCESS) {
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
+        for (auto& ph_freq : freq_handles) {
+            zes_freq_properties_t prop = {};
+            prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+            XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetProperties(ph_freq, &prop));
+            if (res == ZE_RESULT_SUCCESS) {
+                if (prop.type != freq.getType()) {
+                    continue;
+                }
+                zes_freq_range_t range;
+                range.min = freq.getMin();
+                range.max = freq.getMax();
+                XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencySetRange(ph_freq, &range));
+                /*if (res != ZE_RESULT_SUCCESS) {
+                    return false;
+                }*/
+            }
+        }
+        return true;
+    }
     return false;
 }
 bool GPUDeviceStub::setFrequencyRange(const zes_device_handle_t& device, const Frequency& freq) {
