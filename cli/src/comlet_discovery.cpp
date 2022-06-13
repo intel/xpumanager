@@ -27,7 +27,8 @@ static CharTableConfig ComletConfigDiscoveryBasic(R"({
                 { "label": "Device Name", "value": "device_name" },
                 { "label": "Vendor Name", "value": "vendor_name" },
                 { "label": "UUID", "value": "uuid" },
-                { "label": "PCI BDF Address", "value": "pci_bdf_address" }
+                { "label": "PCI BDF Address", "value": "pci_bdf_address" },
+                { "label": "DRM Device", "value": "drm_device" }
             ]
         ]
     }]

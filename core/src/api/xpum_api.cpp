@@ -47,6 +47,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "PCI_VENDOR_ID";
         case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
             return "PCI_BDF_ADDRESS";
+        case XPUM_DEVICE_PROPERTY_DRM_DEVICE:
+            return "DRM_DEVICE";
         case XPUM_DEVICE_PROPERTY_PCI_SLOT:
             return "PCI_SLOT";
         case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
@@ -346,6 +348,10 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
                     value.copy(info.VendorName, value.size());
                     info.VendorName[value.size()] = 0;
                     break;
+                case XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE:
+                    value.copy(info.drmDevice, value.size());
+                    info.drmDevice[value.size()] = 0;
+                    break;
                 default:
                     break;
             }
@@ -510,6 +516,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID;
         case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS;
+        case XPUM_DEVICE_PROPERTY_DRM_DEVICE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE;
         case XPUM_DEVICE_PROPERTY_PCI_SLOT:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT;
         case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:

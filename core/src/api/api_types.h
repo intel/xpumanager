@@ -146,6 +146,7 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID,                  ///< The PCI device id of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID,                  ///< The PCI vendor id of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS,                ///< The PCI bdf address of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE,                     ///< DRM Device 
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT,                       ///< PCI slot of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION,                ///< PCIe generation
     XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH,            ///< PCIe max link width

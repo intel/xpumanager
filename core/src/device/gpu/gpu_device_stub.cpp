@@ -636,6 +636,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
                 if (res == ZE_RESULT_SUCCESS) {
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, to_string(pci_props.address)));
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, getDRMDevice(pci_props)));
                     auto tmpAddr = pci_props.address;
                     p_gpu->setPciAddress({tmpAddr.domain, tmpAddr.bus, tmpAddr.device, tmpAddr.function});
                     std::string stepping = "unknown";
@@ -760,6 +761,58 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
     }
 
     return p_devices;
+}
+
+std::string GPUDeviceStub::getDRMDevice(const zes_pci_properties_t& pci_props) {
+    char path[PATH_MAX];
+    char buf[128];
+    char uevent[1024];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    int len = 0;
+    std::string ret = "";
+
+    pdir = opendir("/sys/class/drm");
+    if (pdir == NULL) {
+        return ret;
+    }
+
+    while ((pdirent = readdir(pdir)) != NULL) {
+        if (pdirent->d_name[0] == '.') {
+            continue;
+        }
+        if (strncmp(pdirent->d_name, "card", 4) != 0) {
+            continue;
+        }
+        if (strstr(pdirent->d_name, "-") != NULL) {
+            continue;
+        }
+        len = snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent",
+                pdirent->d_name);
+        if (len <= 0 || len >= PATH_MAX) {
+            break;
+        }
+        int fd = open(path, O_RDONLY);
+        if (fd < 0) {
+            break;
+        }
+        int szRead = read(fd, uevent, 1024);
+        close(fd);
+        if (szRead < 0 || szRead >= 1024) {
+            break;
+        }
+        uevent[szRead] = 0;
+        len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
+                pci_props.address.domain, pci_props.address.bus,
+                pci_props.address.device, pci_props.address.function);
+        if (strstr(uevent, buf) != NULL) {
+            ret = "/dev/dri/";
+            ret += pdirent->d_name;
+            break;
+        }
+    }
+    closedir(pdir);
+    return ret;
 }
 
 std::string GPUDeviceStub::get_health_state_string(zes_mem_health_t val) {

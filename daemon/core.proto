@@ -30,6 +30,7 @@ message XpumDeviceBasicInfoArray {
         string pcieDeviceId = 5;
         string pciBdfAddress = 6;
         string vendorName = 7;
+        string drmDevice = 8;
     }
     repeated XpumDeviceBasicInfo info = 1;
     string errorMsg = 2;

@@ -258,6 +258,8 @@ class GPUDeviceStub {
     static std::string getProcessName(uint32_t processId);
 
     static void logSupportedMetrics(zes_device_handle_t device, const zes_device_properties_t& props, const std::vector<DeviceCapability>& capabilities);
+    
+    static std::string getDRMDevice(const zes_pci_properties_t& pci_props);
 
    private:
     bool initialized;
