@@ -25,6 +25,7 @@ def getDeviceList():
         device['pci_device_id'] = d.pcieDeviceId
         device['pci_bdf_address'] = d.pciBdfAddress
         device['vendor_name'] = d.vendorName
+        device['drm_device'] = d.drmDevice
         device['@odata.id'] = "/rest/v1/devices/{}".format(d.id.id)
         data.append(device)
     return 0, "OK", data
