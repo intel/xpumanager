@@ -71,7 +71,14 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "  Up", "value": "port_up" },
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
-                { "label": "  Beaconing Off", "value": "beaconing_off" }
+                { "label": "  Beaconing Off", "value": "beaconing_off" },
+                {"rowTitle": " " },
+                { "label": "Memory Ecc", "value": " " },
+                { "label": "  Available", "value": "memory_ecc_available" },
+                { "label": "  Configurable", "value": "memory_ecc_configurable" },
+                { "label": "  Current", "value": "memory_ecc_current_state" },
+                { "label": "  Pending", "value": "memory_ecc_pending_state" },
+                { "label": "  Action", "value": "memory_ecc_pending_action" }
             ]
         ]
     }]
@@ -95,7 +102,7 @@ void ComletConfig::setupOptions() {
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
     addOption("--xelinkport", this->opts->xelinkportEnable, "Change the Xe Link port status. The value 0 means down and 1 means up.");
     addOption("--xelinkportbeaconing", this->opts->xelinkportBeaconing, "Change the Xe Link port beaconing status. The value 0 means off and 1 means on.");
-    //addOption("--memoryecc", this->opts->setecc,"Enable/disable memory Ecc setting.");
+    addOption("--memoryecc", this->opts->setecc, "Enable/disable memory Ecc setting. 0:disable; 1:enable");
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter) {
     size_t pos = 0;
@@ -213,25 +220,20 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         else if (this->opts->tileId >= 0 && !this->opts->xelinkportBeaconing.empty()) {
             (*json)["return"] = "unsupported feature";
             return json;
-        }
-#if 0
-        else if (!this->opts->setecc.empty()) {
+        } else if (!this->opts->setecc.empty()) {
             bool enabled = false;
             int eccVal;
             try {
                 eccVal = std::stoi(this->opts->setecc);
-            }
-            catch (std::invalid_argument const& e) {
+            } catch (std::invalid_argument const& e) {
                 (*json)["return"] = "invalid parameter value";
                 return json;
             }
             if (eccVal == 1) {
                 enabled = true;
-            }
-            else if (eccVal == 0) {
+            } else if (eccVal == 0) {
                 enabled = false;
-            }
-            else {
+            } else {
                 (*json)["return"] = "invalid parameter value";
                 return json;
             }
@@ -244,22 +246,20 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 std::string pendingAction = (*json)["memory_ecc_pending_action"];
 
                 /* (*json)["return"] = "Succeed to set memory Ecc state: available: " + available +
-                    " configurable: " + configurable +
-                    " current: " + current +
-                    " pending: " + pending +
-                    " action: " +  pendingAction;*/
+                " configurable: " + configurable +
+                " current: " + current +
+                " pending: " + pending + 
+                " action: " +  pendingAction;*/
                 if (available.compare("true") == 0 && configurable.compare("true") == 0) {
-                    (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU "
-                        + std::to_string(this->opts->deviceId) + " Please reset GPU or reboot OS to take effect.";
-                }
-                else {
+                    (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU " + std::to_string(this->opts->deviceId) + " Please reset GPU or reboot OS to take effect.";
+                } else {
                     (*json)["return"] = "Failed to change the ECC mode. The current Ecc mode is " + current + ", the pending Ecc mode is " + pending +
-                        " and the pending action is " + pendingAction; " on GPU " + std::to_string(this->opts->deviceId);
+                                        " and the pending action is " + pendingAction;
+                    " on GPU " + std::to_string(this->opts->deviceId);
                 }
             }
             return json;
         }
-#endif
         /*else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             char confirmed;
             if (this->opts->deviceId >= 0) {

@@ -101,7 +101,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)winxpum\ze_loader.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)winxpum\ze_loader.lib;$(SolutionDir)winxpum\igsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -115,6 +115,7 @@
     <ClCompile Include="comlet_version.cpp" />
     <ClCompile Include="core_stub.cpp" />
     <ClCompile Include="help_formatter.cpp" />
+    <ClCompile Include="igsc_manager.cpp" />
     <ClCompile Include="pretty_table.cpp" />
     <ClCompile Include="xpumcli.cpp" />
   </ItemGroup>
@@ -130,6 +131,7 @@
     <ClInclude Include="comlet_version.h" />
     <ClInclude Include="core_stub.h" />
     <ClInclude Include="help_formatter.h" />
+    <ClInclude Include="igsc_manager.h" />
     <ClInclude Include="pretty_table.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="xpum_structs.h" />

@@ -1,0 +1,43 @@
+/*
+ *  Copyright (C) 2021-2022 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file igsc_manager.cpp
+ */
+#include <string>
+#include <unordered_map>
+
+class IGSC_Manager {
+
+public:
+	IGSC_Manager() {
+
+	}
+
+    int init();
+
+    std::string getDeviceGSCVersion(std::string bdf);
+
+	std::string getDeviceGSCDataVersion(std::string bdf);
+
+	int runFlashGSC(std::string& bdf, std::string& image_file);
+
+	int runFlashGSCData(std::string bdf, std::string& image_file);
+
+	bool isValidGSCImage(std::string image_file);
+
+	bool isValidGSCDataImage(std::string image_file);
+
+	bool isValidFwFileName(std::string& image_file);
+
+	bool setDeviceEccState(std::string bdf, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state);
+
+	bool getDeviceEccState(std::string bdf, uint8_t* cur_state, uint8_t* pen_state);
+
+	std::vector<char> readImageContent(const char* filePath);
+
+ private:
+	 bool initialized = false;
+
+	 std::unordered_map<std::string, std::string> bdf_to_devicepath;
+
+};

@@ -49,6 +49,13 @@ CoreStub::CoreStub() {
     }
 
     ze_driver_handle = drivers[0];
+    ze_driver_properties_t driver_prop;
+    status = zeDriverGetProperties(ze_driver_handle, &driver_prop); 
+    if (status != ZE_RESULT_SUCCESS) {
+        std::cout << "zeDriverGetProperties Failed with return code: " << to_string(status) << std::endl;
+        exit(-1);
+    }
+    driver_version = std::to_string(driver_prop.driverVersion);
 
     uint32_t deviceCount = 0;
     status = zeDeviceGet(ze_driver_handle, &deviceCount, nullptr);
@@ -75,12 +82,12 @@ CoreStub::CoreStub() {
             std::cout << "zeDeviceGetProperties Failed with return code: " << to_string(status) << std::endl;
             exit(-1);
         }
-        std::string devicename = ze_device_properties.name;
-        if (devicename.find("56c1") != std::string::npos) {
+        uint32_t deviceId = ze_device_properties.deviceId;
+        if (deviceId == 0x56c1) {
             power_limit = 23;
-        } else if (devicename.find("56c0") != std::string::npos) {
+        } else if (deviceId == 0x56c0) {
             power_limit = 120;
-        } else if (devicename.find("4905") != std::string::npos) {
+        } else if (deviceId == 0x4905) {
             power_limit = 25;
         }
     }
@@ -121,7 +128,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
                 std::string str = std::to_string(versions[0].component_lib_version.major)
                     + "." + std::to_string(versions[0].component_lib_version.minor)
                     + "." + std::to_string(versions[0].component_lib_version.patch);
-                driver_version = str;
                 (*json)["level_zero_version"] = str;
             }
            
@@ -176,7 +182,7 @@ std::string CoreStub::getUUID(uint8_t(&uuidBuf)[16]) {
     return uuid;
 }
 
-std::string CoreStub::getBdfAddress(const ze_device_handle_t& zes_device) {
+std::string CoreStub::getBdfAddress(const zes_device_handle_t& zes_device) {
     zes_pci_properties_t pci_props;
     pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
     ze_result_t res = zesDevicePciGetProperties(zes_device, &pci_props);
@@ -222,8 +228,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     (*deviceJson)["core_clock_rate_mhz"] = zes_device_properties.core.coreClockRate;
     (*deviceJson)["device_stepping"] = "unknown";
     (*deviceJson)["driver_version"] = driver_version;
-
     (*deviceJson)["pci_bdf_address"] = getBdfAddress(zes_device);
+    (*deviceJson)["firmware_name"] = "GSC";
+    (*deviceJson)["firmware_version"] = igsc_instance.getDeviceGSCVersion((*deviceJson)["pci_bdf_address"]);
+    (*deviceJson)["fw_data_firmware_name"] = "GSC_DATA";
+    (*deviceJson)["fw_data_firmware_version"] = igsc_instance.getDeviceGSCDataVersion((*deviceJson)["pci_bdf_address"]);
     zes_pci_properties_t pci_props;
     pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
     res = zesDevicePciGetProperties(zes_device, &pci_props);
@@ -313,6 +322,16 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     return deviceJson;
 }
 
+static std::string eccStateToString(uint8_t state) {
+    if (state == 1) {
+        return "enabled";
+    } else if (state == 0) {
+        return "disabled";
+    } else {
+        return "unavailable";
+    }
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tileId) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
@@ -323,12 +342,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     std::vector<nlohmann::json> tileJsonList;
     ze_result_t res;
     uint32_t sub_device_count = 0;
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, nullptr);
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
@@ -341,13 +360,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
             (*json)["error"] = "invalid tile id";
             return json;
         }
-        sub_device_handles.push_back(zes_device_handles[deviceId]);
+        sub_device_handles.push_back(ze_device_handles[deviceId]);
     }
     for (int i = 0; i < sub_device_handles.size(); ++i) {
         auto tileJson = nlohmann::json();
         tileJson["tile_id"] = i;
         bool freq_supported = true;
-        auto freq_datas = handleFreqByLevel0(sub_device_handles[i], false, 0, 0, freq_supported);
+        auto freq_datas = handleFreqByLevel0((zes_device_handle_t)sub_device_handles[i], false, 0, 0, freq_supported);
         if (!freq_supported) {
             (*json)["error"] = "unsupported feature or insufficient privilege";
             return json;
@@ -355,6 +374,22 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
         tileJson["min_frequency"] = freq_datas[0];
         tileJson["max_frequency"] = freq_datas[1];
         tileJson["gpu_frequency_valid_options"] = freq_datas[2];
+        uint8_t cur = 0xFF;
+        uint8_t pen = 0xFF;
+        std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
+        if (igsc_instance.getDeviceEccState(bdf, &cur, &pen)) {
+            tileJson["memory_ecc_available"] = "true";
+            tileJson["memory_ecc_configurable"] = "true";
+            tileJson["memory_ecc_current_state"] = eccStateToString(cur);
+            tileJson["memory_ecc_pending_state"] = eccStateToString(pen);
+            tileJson["memory_ecc_pending_action"] = cur == pen ? "none" : "cold system reboot";
+        } else {
+            tileJson["memory_ecc_available"] = "false";
+            tileJson["memory_ecc_configurable"] = "false";
+            tileJson["memory_ecc_current_state"] = "unavailable";
+            tileJson["memory_ecc_pending_state"] = "unavailable";
+            tileJson["memory_ecc_pending_action"] = "none";
+        }
         tileJson["tile_id"] = std::to_string(deviceId) + "/" + std::to_string(i);
         tileJsonList.push_back(tileJson); 
     }
@@ -381,12 +416,12 @@ std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int 
     }
     ze_result_t res;
     uint32_t sub_device_count = 0;
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, nullptr);
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
@@ -401,10 +436,10 @@ std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int 
             (*json)["error"] = "invalid tile id";
             return json;
         }
-        sub_device_handles.push_back(zes_device_handles[deviceId]);
+        sub_device_handles.push_back(ze_device_handles[deviceId]);
     }
     bool supported = true;
-    auto power_datas = handlePowerByLevel0(sub_device_handles[tileId], true, power * 1000, interval, supported);
+    auto power_datas = handlePowerByLevel0((zes_device_handle_t)sub_device_handles[tileId], true, power * 1000, interval, supported);
     if (supported) {
         if (power_datas.size() > 2 && power_datas[2] == -1) {
             (*json)["error"] = "Invalid power limit value";
@@ -483,12 +518,12 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceFrequencyRange(int deviceId, 
     }
     ze_result_t res;
     uint32_t sub_device_count = 0;
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, nullptr);
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
@@ -501,10 +536,10 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceFrequencyRange(int deviceId, 
             (*json)["error"] = "invalid tile id";
             return json;
         }
-        sub_device_handles.push_back(zes_device_handles[deviceId]);
+        sub_device_handles.push_back(ze_device_handles[deviceId]);
     }
     bool supported = true;
-    handleFreqByLevel0(sub_device_handles[tileId], true, minFreq, maxFreq, supported);
+    handleFreqByLevel0((zes_device_handle_t)sub_device_handles[tileId], true, minFreq, maxFreq, supported);
     if (supported)
         (*json)["status"] = "OK";
     else
@@ -827,13 +862,13 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                         double val = 0.0;
                         if (res == ZE_RESULT_SUCCESS) {
                             if (metricsType == XPUM_STATS_MEMORY_READ_THROUGHPUT) {
-                                if (mem_bandwidth2.readCounter > mem_bandwidth1.readCounter)
+                                if (mem_bandwidth2.readCounter >= mem_bandwidth1.readCounter)
                                     val = (mem_bandwidth2.readCounter - mem_bandwidth1.readCounter) * (1000.0 / memory_sampling_interval) / 1024;
                                 else
                                     val = -1;
                             }
                             else {
-                                if (mem_bandwidth2.writeCounter > mem_bandwidth1.writeCounter)
+                                if (mem_bandwidth2.writeCounter >= mem_bandwidth1.writeCounter)
                                     val = (mem_bandwidth2.writeCounter - mem_bandwidth1.writeCounter) * (1000.0 / memory_sampling_interval) / 1024;
                                 else
                                     val = -1;
@@ -929,17 +964,17 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
     std::vector<nlohmann::json> tileJsonList;
     ze_result_t res;
     uint32_t sub_device_count = 0;
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, nullptr);
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     if (sub_device_count == 0) {
-        sub_device_handles.push_back(zes_device_handles[deviceId]);
+        sub_device_handles.push_back(ze_device_handles[deviceId]);
     }
     for (int i = 0; i < sub_device_handles.size(); ++i) {
         std::vector<nlohmann::json> dataList;
@@ -949,9 +984,9 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
                 || item.key == XPUM_STATS_MEMORY_BANDWIDTH || item.key == XPUM_STATS_MEMORY_USED 
                 || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
                 || item.key == XPUM_STATS_GPU_UTILIZATION
-                // || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT
+                || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT
             ) {
-                xpum_device_stats_data_t data = getMetricsByLevel0(sub_device_handles[i], item.key);
+                xpum_device_stats_data_t data = getMetricsByLevel0((zes_device_handle_t)sub_device_handles[i], item.key);
                 auto tmp = nlohmann::json();
                 if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE 
                     || item.key == XPUM_STATS_MEMORY_TEMPERATURE || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
@@ -990,5 +1025,36 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
     (*json)["device_level"] = deviceLevelStatsDataList;
     if (tileLevelStatsDataList.size() > 0 && sub_device_handles.size() > 1)
         (*json)["tile_level"] = tileLevelStatsDataList;
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool enabled) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+        (*json)["error"] = "invalid device id";
+        return json;
+    }
+    bool available = false;
+    bool configurable = false;
+    uint8_t cur = 0xFF;
+    uint8_t pen = 0xFF;
+    uint8_t req = enabled ? 1 : 0;
+    std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
+    if (igsc_instance.setDeviceEccState(bdf, req, &cur, &pen)) {
+        (*json)["memory_ecc_available"] = "true";
+        (*json)["memory_ecc_configurable"] = "true";
+        (*json)["status"] = "OK";
+
+        (*json)["memory_ecc_current_state"] = eccStateToString(cur);
+        (*json)["memory_ecc_pending_state"] = eccStateToString(pen);
+        (*json)["memory_ecc_pending_action"] = cur == pen ? "none" : "cold system reboot";
+
+    } else {
+        (*json)["memory_ecc_available"] = "false";
+        (*json)["memory_ecc_configurable"] = "false";
+        (*json)["memory_ecc_current_state"] = "unavailable";
+        (*json)["memory_ecc_pending_state"] = "unavailable";
+        (*json)["memory_ecc_pending_action"] = "none";
+    }
     return json;
 }
