@@ -18,19 +18,22 @@
 #include "comlet_config.h"
 #include "comlet_statistics.h"
 #include "comlet_dump.h"
+#include "comlet_firmware.h"
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<ComletBase>(std::make_shared<comlet_type>()))
 
 int main(int argc, char** argv)
 {
     _putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
+    _putenv(const_cast<char*>("ZE_ENABLE_PCI_ID_DEVICE_ORDER=1"));
 
     CLI::App app{ getResourceString("CLI_APP_DESC") };
 
     CLIWrapper wrapper(app);
     wrapper.addComlet(MAKE_COMLET_PTR(ComletDiscovery)).
-        addComlet(MAKE_COMLET_PTR(ComletStatistics)).
+        addComlet(MAKE_COMLET_PTR(ComletFirmware)).
         addComlet(MAKE_COMLET_PTR(ComletConfig)).
+        addComlet(MAKE_COMLET_PTR(ComletStatistics)).
         addComlet(MAKE_COMLET_PTR(ComletDump));
     app.require_subcommand(0, 1);
 

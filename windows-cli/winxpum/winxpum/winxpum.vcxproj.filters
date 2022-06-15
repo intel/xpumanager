@@ -54,6 +54,9 @@
     <ClCompile Include="igsc_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="comlet_firmware.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ze_log.h">
@@ -102,6 +105,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="igsc_manager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="comlet_firmware.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

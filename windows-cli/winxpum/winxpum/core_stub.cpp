@@ -71,19 +71,24 @@ CoreStub::CoreStub() {
         exit(-1);
     }
 
-    for (uint32_t device = 0; device < deviceCount; ++device) {
-        ze_device_handles.push_back(devices[device]);
-        zes_device_handles.push_back((zes_device_handle_t)devices[device]);
+    for (int deviceIdx = 0; deviceIdx < deviceCount; deviceIdx++) {
+        ze_device_handles.push_back(devices[deviceIdx]);
+        zes_device_handles.push_back((zes_device_handle_t)devices[deviceIdx]);
 
         ze_device_properties_t ze_device_properties;
         ze_device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-        status = zeDeviceGetProperties(devices[device], &ze_device_properties);
+        status = zeDeviceGetProperties(devices[deviceIdx], &ze_device_properties);
         if (status != ZE_RESULT_SUCCESS) {
             std::cout << "zeDeviceGetProperties Failed with return code: " << to_string(status) << std::endl;
             exit(-1);
         }
         uint32_t deviceId = ze_device_properties.deviceId;
         if (deviceId == 0x56c1) {
+            if (deviceIdx % 2 == 0) {
+                sibling_devices[deviceIdx] = {deviceIdx, deviceIdx + 1};
+            } else {
+                sibling_devices[deviceIdx] = {deviceIdx - 1, deviceIdx};
+            }
             power_limit = 23;
         } else if (deviceId == 0x56c0) {
             power_limit = 120;
@@ -1057,4 +1062,39 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
         (*json)["memory_ecc_pending_action"] = "none";
     }
     return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+        (*json)["error"] = "invalid device id";
+        return json;
+    }
+
+    std::string invalidChars = "{}()><&*'|=?;[]$-#~!\"%:+,`";
+    auto file_name_pos = filePath.find_last_of('\\');
+    auto itr = std::find_if(filePath.begin() + file_name_pos, filePath.end(),
+                            [invalidChars](unsigned char ch) { return invalidChars.find(ch) != invalidChars.npos; });
+    if (itr != filePath.end()) {
+        (*json)["error"] = "Illegal firmware image filename. Image filename should not contain following characters: {}()><&*'|=?;[]$-#~!\"%:+,`";
+    }
+    (*json)["result"] = "OK";
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, unsigned int type) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+        (*json)["error"] = "invalid device id";
+        return json;
+    }
+    (*json)["result"] = "OK";
+    return json;
+}
+
+std::vector<int> CoreStub::getSiblingDevices(int deviceId) {
+    std::vector<int> res;
+    for (int id : sibling_devices[deviceId])
+        res.push_back(id);
+    return res;
 }

@@ -27,8 +27,6 @@ public:
 
 	bool isValidGSCDataImage(std::string image_file);
 
-	bool isValidFwFileName(std::string& image_file);
-
 	bool setDeviceEccState(std::string bdf, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state);
 
 	bool getDeviceEccState(std::string bdf, uint8_t* cur_state, uint8_t* pen_state);

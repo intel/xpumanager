@@ -192,17 +192,6 @@ bool IGSC_Manager::isValidGSCDataImage(std::string image_file) {
     return type == IGSC_IMAGE_TYPE_FW_DATA;
 }
 
-bool IGSC_Manager::isValidFwFileName(std::string& image_file) {
-    if (!initialized) {
-        if (init() < 0) {
-            std::cout << "IGSC init failed" << std::endl;
-            exit(-1);
-        }
-    }
-
-    return false;
-}
-
 std::vector<char> IGSC_Manager::readImageContent(const char* filePath) {
     struct stat s;
     if (stat(filePath, &s) != 0 || !(s.st_mode & S_IFREG))
