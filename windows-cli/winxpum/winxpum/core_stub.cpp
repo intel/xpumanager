@@ -1085,7 +1085,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
 
     std::string image_file = filePath;
     for (auto id : deviceList) {
-        std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
+        std::string bdf = getBdfAddress(zes_device_handles[id]);
         if (type == XPUM_DEVICE_FIRMWARE_GSC && !igsc_instance.isFwImageAndDeviceCompatible(bdf, image_file)) {
             (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
             return json;        
