@@ -1077,7 +1077,38 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
                             [invalidChars](unsigned char ch) { return invalidChars.find(ch) != invalidChars.npos; });
     if (itr != filePath.end()) {
         (*json)["error"] = "Illegal firmware image filename. Image filename should not contain following characters: {}()><&*'|=?;[]$-#~!\"%:+,`";
+        return json;
     }
+    auto deviceList = getSiblingDevices(deviceId);
+    if (deviceList.size() == 0)
+        deviceList.push_back(deviceId);
+
+    std::string image_file = filePath;
+    for (auto id : deviceList) {
+        std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
+        if (type == XPUM_DEVICE_FIRMWARE_GSC && !igsc_instance.isFwImageAndDeviceCompatible(bdf, image_file)) {
+            (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
+            return json;        
+        }
+        std::string error_message;
+        if (type == XPUM_DEVICE_FIRMWARE_FW_DATA && !igsc_instance.isFwDataImageAndDeviceCompatible(bdf, image_file, error_message)) {
+            (*json)["error"] = error_message;
+            return json;  
+        }
+
+        flash_results.push_back(std::async(std::launch::async, [bdf, image_file, type, this] {
+            int res = 0;
+            if (type == XPUM_DEVICE_FIRMWARE_GSC)
+                res = igsc_instance.runFlashGSC(bdf, image_file);
+            else
+                res = igsc_instance.runFlashGSCData(bdf, image_file);
+            if (res == 0)
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+            else
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+        }));
+    }
+
     (*json)["result"] = "OK";
     return json;
 }
@@ -1087,6 +1118,19 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, u
     if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
         (*json)["error"] = "invalid device id";
         return json;
+    }
+    for (int i = 0; i < flash_results.size(); i++) {
+        std::future_status status = flash_results[i].wait_for(std::chrono::milliseconds(0));
+        if (status != std::future_status::ready) {
+            (*json)["result"] = "ONGOING";
+            return json;
+        }
+    }
+    for (int i = 0; i < flash_results.size(); i++) {
+        if (flash_results[i].get() == xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR) {
+            (*json)["result"] = "FAILED";
+            return json;
+        }
     }
     (*json)["result"] = "OK";
     return json;

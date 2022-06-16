@@ -307,6 +307,14 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     deviceIdsToFlashFirmware = coreStub->getSiblingDevices(opts->deviceId);
     if (deviceIdsToFlashFirmware.size() == 0) {
         deviceIdsToFlashFirmware.push_back(opts->deviceId);
+    } else {
+        std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) " << std::endl;
+        std::string confirm;
+        std::cin >> confirm;
+        if (confirm != "Y" && confirm != "y") {
+            out << "update aborted" << std::endl;
+            return;
+        }
     }
     // version confirmation
     for (int deviceId : deviceIdsToFlashFirmware) {

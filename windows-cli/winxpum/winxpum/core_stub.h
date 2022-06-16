@@ -15,6 +15,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <future>
 #include <unordered_map>
 #include <unordered_set>
 #include <ze_api.h>
@@ -88,5 +89,7 @@ private:
     IGSC_Manager igsc_instance;
 
     std::unordered_map<int, std::set<int>> sibling_devices;
+
+    std::vector<std::future<xpum_firmware_flash_result_t>> flash_results;
 };
 

@@ -8,34 +8,31 @@
 
 class IGSC_Manager {
 
-public:
-	IGSC_Manager() {
+   public:
+    IGSC_Manager() {
 
-	}
+    }
 
     int init();
 
     std::string getDeviceGSCVersion(std::string bdf);
 
-	std::string getDeviceGSCDataVersion(std::string bdf);
+    std::string getDeviceGSCDataVersion(std::string bdf);
 
-	int runFlashGSC(std::string& bdf, std::string& image_file);
+    int runFlashGSC(std::string bdf, std::string image_file);
 
-	int runFlashGSCData(std::string bdf, std::string& image_file);
+    int runFlashGSCData(std::string bdf, std::string image_file);
 
-	bool isValidGSCImage(std::string image_file);
+    bool setDeviceEccState(std::string bdf, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state);
 
-	bool isValidGSCDataImage(std::string image_file);
+    bool getDeviceEccState(std::string bdf, uint8_t* cur_state, uint8_t* pen_state);
 
-	bool setDeviceEccState(std::string bdf, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state);
+    bool isFwImageAndDeviceCompatible(std::string bdf, std::string image_file);
 
-	bool getDeviceEccState(std::string bdf, uint8_t* cur_state, uint8_t* pen_state);
+    bool isFwDataImageAndDeviceCompatible(std::string bdf, std::string image_file, std::string& error_message);
 
-	std::vector<char> readImageContent(const char* filePath);
+   private:
+    bool initialized = false;
 
- private:
-	 bool initialized = false;
-
-	 std::unordered_map<std::string, std::string> bdf_to_devicepath;
-
+    std::unordered_map<std::string, std::string> bdf_to_devicepath;
 };
