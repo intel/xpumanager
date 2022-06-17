@@ -1499,6 +1499,18 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
+    Property prop;
+    int32_t default_maxLimit = -1;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, prop);
+
+    if (Utility::isATSM1(prop.getValue())) {
+        default_maxLimit = 120 *1000;
+    }
+
+    if (Utility::isATSM3(prop.getValue())) {
+        default_maxLimit = 23 *1000;
+    }
+
     std::vector<Power> powers;
     Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
 
@@ -1516,7 +1528,12 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
             dataArray[i].is_energy_threshold_supported = power.isEnergyThresholdSupported();
             dataArray[i].default_limit = power.getDefaultLimit();
             dataArray[i].min_limit = power.getMinLimit();
-            dataArray[i].max_limit = power.getMaxLimit();
+            if (power.getMaxLimit() == -1) {
+                dataArray[i].max_limit = default_maxLimit;
+            } else {
+                dataArray[i].max_limit = power.getMaxLimit();
+            }
+            
             i++;
         }
     }

@@ -580,4 +580,12 @@ bool Utility::isATSPlatform(std::string device_name) {
     || device_name == "Intel(R) Graphics [0x0207]";
 }
 
+bool Utility::isATSM1(std::string device_name) {
+    return device_name == "Intel(R) Graphics [0x56c0]";
+}
+
+bool Utility::isATSM3(std::string device_name) {
+    return device_name == "Intel(R) Graphics [0x56c1]";
+}
+
 } // end namespace xpum

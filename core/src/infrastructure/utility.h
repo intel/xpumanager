@@ -53,6 +53,10 @@ class Utility {
     static xpum_fabric_throughput_type_t toXPUMFabricThroughputType(FabricThroughputType type);
 
     static bool isATSPlatform(std::string device_name);
+
+    static bool isATSM1(std::string device_name);
+
+    static bool isATSM3(std::string device_name);
 };
 
 } // end namespace xpum
