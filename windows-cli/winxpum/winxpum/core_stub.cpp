@@ -383,17 +383,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
         uint8_t pen = 0xFF;
         std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
         if (igsc_instance.getDeviceEccState(bdf, &cur, &pen)) {
-            tileJson["memory_ecc_available"] = "true";
-            tileJson["memory_ecc_configurable"] = "true";
             tileJson["memory_ecc_current_state"] = eccStateToString(cur);
             tileJson["memory_ecc_pending_state"] = eccStateToString(pen);
-            tileJson["memory_ecc_pending_action"] = cur == pen ? "none" : "cold system reboot";
-        } else {
-            tileJson["memory_ecc_available"] = "false";
-            tileJson["memory_ecc_configurable"] = "false";
-            tileJson["memory_ecc_current_state"] = "unavailable";
-            tileJson["memory_ecc_pending_state"] = "unavailable";
-            tileJson["memory_ecc_pending_action"] = "none";
         }
         tileJson["tile_id"] = std::to_string(deviceId) + "/" + std::to_string(i);
         tileJsonList.push_back(tileJson); 
@@ -1046,20 +1037,10 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
     uint8_t req = enabled ? 1 : 0;
     std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
     if (igsc_instance.setDeviceEccState(bdf, req, &cur, &pen)) {
-        (*json)["memory_ecc_available"] = "true";
-        (*json)["memory_ecc_configurable"] = "true";
         (*json)["status"] = "OK";
-
         (*json)["memory_ecc_current_state"] = eccStateToString(cur);
         (*json)["memory_ecc_pending_state"] = eccStateToString(pen);
-        (*json)["memory_ecc_pending_action"] = cur == pen ? "none" : "cold system reboot";
 
-    } else {
-        (*json)["memory_ecc_available"] = "false";
-        (*json)["memory_ecc_configurable"] = "false";
-        (*json)["memory_ecc_current_state"] = "unavailable";
-        (*json)["memory_ecc_pending_state"] = "unavailable";
-        (*json)["memory_ecc_pending_action"] = "none";
     }
     return json;
 }

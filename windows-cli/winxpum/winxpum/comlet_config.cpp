@@ -54,6 +54,10 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
                 { "label": "  Valid Options", "value": "gpu_frequency_valid_options" },
                 {"rowTitle": " " },
+                { "label": "Memory ECC", "value": " " },
+                { "label": "  Current", "value": "memory_ecc_current_state" },
+                { "label": "  Pending", "value": "memory_ecc_pending_state" },
+                {"rowTitle": " " },
                 { "label": "Standby Mode", "value": "standby_mode" },
                 { "label": "  Valid Options", "value": "standby_mode_valid_options" },
                 {"rowTitle": " " },
@@ -71,14 +75,7 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "  Up", "value": "port_up" },
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
-                { "label": "  Beaconing Off", "value": "beaconing_off" },
-                {"rowTitle": " " },
-                { "label": "Memory Ecc", "value": " " },
-                { "label": "  Available", "value": "memory_ecc_available" },
-                { "label": "  Configurable", "value": "memory_ecc_configurable" },
-                { "label": "  Current", "value": "memory_ecc_current_state" },
-                { "label": "  Pending", "value": "memory_ecc_pending_state" },
-                { "label": "  Action", "value": "memory_ecc_pending_action" }
+                { "label": "  Beaconing Off", "value": "beaconing_off" }
             ]
         ]
     }]
@@ -90,6 +87,7 @@ void ComletConfig::setupOptions() {
     addOption("-t,--tile", this->opts->tileId, "tile id");
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
+    addOption("--memoryecc", this->opts->setecc, "Enable/disable memory Ecc setting. 0:disable; 1:enable");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\".The valid range of all time values (us) is from 5000 to 100,000,000.");
     //addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
@@ -102,7 +100,6 @@ void ComletConfig::setupOptions() {
 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased.");
     addOption("--xelinkport", this->opts->xelinkportEnable, "Change the Xe Link port status. The value 0 means down and 1 means up.");
     addOption("--xelinkportbeaconing", this->opts->xelinkportBeaconing, "Change the Xe Link port beaconing status. The value 0 means off and 1 means on.");
-    addOption("--memoryecc", this->opts->setecc, "Enable/disable memory Ecc setting. 0:disable; 1:enable");
 }
 std::vector<std::string> ComletConfig::split(std::string str, std::string delimiter) {
     size_t pos = 0;
@@ -239,24 +236,17 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             json = this->coreStub->setMemoryEccState(this->opts->deviceId, enabled);
             if ((*json)["status"] == "OK") {
-                std::string available = (*json)["memory_ecc_available"];
-                std::string configurable = (*json)["memory_ecc_configurable"];
                 std::string current = (*json)["memory_ecc_current_state"];
                 std::string pending = (*json)["memory_ecc_pending_state"];
-                std::string pendingAction = (*json)["memory_ecc_pending_action"];
 
                 /* (*json)["return"] = "Succeed to set memory Ecc state: available: " + available +
                 " configurable: " + configurable +
                 " current: " + current +
                 " pending: " + pending + 
                 " action: " +  pendingAction;*/
-                if (available.compare("true") == 0 && configurable.compare("true") == 0) {
-                    (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU " + std::to_string(this->opts->deviceId) + " Please reset GPU or reboot OS to take effect.";
-                } else {
-                    (*json)["return"] = "Failed to change the ECC mode. The current Ecc mode is " + current + ", the pending Ecc mode is " + pending +
-                                        " and the pending action is " + pendingAction;
-                    " on GPU " + std::to_string(this->opts->deviceId);
-                }
+                (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU " + std::to_string(this->opts->deviceId) + " Please reset GPU or reboot OS to take effect.";
+            } else {
+                (*json)["return"] = "Failed to change the ECC mode.";
             }
             return json;
         }
