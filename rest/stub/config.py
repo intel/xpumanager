@@ -35,8 +35,8 @@ def getConfig(deviceId, tileId):
     data['device_id'] = resp.deviceId
     data['power_limit'] = resp.powerLimit
     data['power_vaild_range'] = resp.powerScope
-    data['power_average_window'] = resp.interval
-    data['power_average_window_vaild_range'] = resp.intervalScope
+    #data['power_average_window'] = resp.interval
+    #data['power_average_window_vaild_range'] = resp.intervalScope
     #data['tileCount'] = resp.tileCount
 
     tilelist = list()

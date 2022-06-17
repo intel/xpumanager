@@ -3100,8 +3100,8 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_sustained_limit_t sustained;
-            zes_power_burst_limit_t burst;
-            zes_power_peak_limit_t peak;
+            //zes_power_burst_limit_t burst;
+            //zes_power_peak_limit_t peak;
             zes_power_properties_t props;
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
@@ -3109,17 +3109,19 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
                     continue;
                 }
             }
-            XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetLimits(power, &sustained, &burst, &peak));
+            XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetLimits(power, &sustained, nullptr, nullptr));
             if (res == ZE_RESULT_SUCCESS) {
                 sustained_limit.enabled = sustained.enabled;
                 sustained_limit.power = sustained.power;
+                sustained_limit.interval = 0;
+/*
                 sustained_limit.interval = sustained.interval;
-
                 burst_limit.enabled = burst.enabled;
                 burst_limit.power = burst.power;
 
                 peak_limit.power_AC = peak.powerAC;
                 peak_limit.power_DC = peak.powerDC;
+*/
             }
         }
     }

@@ -1258,8 +1258,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
             (*json)["device_id"] = deviceId;
             (*json)["power_limit"] = response.powerlimit();
             (*json)["power_vaild_range"] = response.powerscope();
-            (*json)["power_average_window"] = response.interval();
-            (*json)["power_average_window_vaild_range"] = response.intervalscope();
+            //(*json)["power_average_window"] = response.interval();
+            //(*json)["power_average_window_vaild_range"] = response.intervalscope();
 
             std::vector<nlohmann::json> tileJsonList;
             for (uint i{0}; i < response.tilecount(); ++i) {

@@ -28,9 +28,7 @@ static CharTableConfig ComletDeviceConfiguration(R"({
             { "rowTitle": "GPU" },
             "device_id", [
                 { "label": "Power Limit (w) ", "value": "power_limit" },
-                { "label": "  Valid Range", "value": "power_vaild_range" },
-                { "label": "Power Average Window (ms) ", "value": "power_average_window" },
-                { "label": "  Valid Range", "value": "power_average_window_vaild_range" }
+                { "label": "  Valid Range", "value": "power_vaild_range" }
             ]
         ]
     }]
@@ -53,6 +51,12 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "GPU Min Frequency (MHz) ", "value": "min_frequency" },
                 { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
                 { "label": "  Valid Options", "value": "gpu_frequency_valid_options" },
+                { "label": "Memory Ecc", "value": " " },
+                { "label": "  Available", "value": "memory_ecc_available" },
+                { "label": "  Configurable", "value": "memory_ecc_configurable" },
+                { "label": "  Current", "value": "memory_ecc_current_state" },
+                { "label": "  Pending", "value": "memory_ecc_pending_state" },
+                { "label": "  Action", "value": "memory_ecc_pending_action" },
                 {"rowTitle": " " },
                 { "label": "Standby Mode", "value": "standby_mode" },
                 { "label": "  Valid Options", "value": "standby_mode_valid_options" },
@@ -72,13 +76,7 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
                 { "label": "  Beaconing Off", "value": "beaconing_off" },
-                {"rowTitle": " " },
-                { "label": "Memory Ecc", "value": " " },
-                { "label": "  Available", "value": "memory_ecc_available" },
-                { "label": "  Configurable", "value": "memory_ecc_configurable" },
-                { "label": "  Current", "value": "memory_ecc_current_state" },
-                { "label": "  Pending", "value": "memory_ecc_pending_state" },
-                { "label": "  Action", "value": "memory_ecc_pending_action" }
+                {"rowTitle": " " }
             ]
         ]
     }]
@@ -167,9 +165,13 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             return json;
         } else if (/*this->opts->tileId >= 0 &&*/ !this->opts->powerlimit.empty()) {
             std::vector<std::string> paralist = split(this->opts->powerlimit, ",");
-            if (paralist.size() == 2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
+            if (paralist.size() >= 1 && !paralist.at(0).empty()) {
                 int val1 = std::stoi(paralist.at(0));
-                int val2 = std::stoi(paralist.at(1));
+                if (paralist.size() == 2 && paralist.at(1).empty()) {
+                    (*json)["return"] = "invalid parameter: please check help information";
+                    return json;
+                }
+                int val2 = 0; //std::stoi(paralist.at(1));
                 this->opts->tileId = -1;
                 json = this->coreStub->setDevicePowerlimit(this->opts->deviceId, this->opts->tileId, val1, val2);
                 if ((*json)["status"] == "OK") {
