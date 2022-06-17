@@ -9,7 +9,6 @@ import os
 import glob
 
 dev_file_2_bdf_map = {}
-bdf_2_dev_file_map = {}
 
 pci_slot_name_pattern = re.compile(
     '^PCI_SLOT_NAME=([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]{1}\S*)')
@@ -23,7 +22,6 @@ for dev_file in glob.glob("/dev/dri/card*"):
             line = line.strip()
             match = pci_slot_name_pattern.match(line)
             if match is not None:
-                bdf_2_dev_file_map[match.group(1)] = dev_file_basename
                 dev_file_2_bdf_map[dev_file_basename] = match.group(1)
 
 
@@ -35,10 +33,5 @@ def get_bdf_address(dev_file):
     return None
 
 
-def get_dev_file(bdf_addr):
-    return bdf_2_dev_file_map.get(bdf_addr)
-
-
 if __name__ == '__main__':
-    print(get_dev_file('0000:02:00.0'))
     print(get_bdf_address('card1-0'))
