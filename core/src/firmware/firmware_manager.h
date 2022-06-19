@@ -12,8 +12,15 @@
 #include <vector>
 
 #include "xpum_structs.h"
+#include "amc/amc_manager.h"
 
 namespace xpum {
+
+struct AmcCredential {
+    std::string username;
+    std::string password;
+};
+
 class FirmwareManager {
    private:
     bool amcUpdated = false;
@@ -23,17 +30,22 @@ class FirmwareManager {
 
     std::future<xpum_firmware_flash_result_t> taskAMC;
 
-    void getAMCFwVersions();
+    std::shared_ptr<AmcManager> p_amc_manager;
+
     void initFwDataMgmt();
+
+    void initAmcManager();
 
    public:
     void init();
     bool isUpgradingFw(void);
 
-    std::vector<std::string> getAMCFirmwareVersions();
     void detectGscFw();
-    xpum_result_t runAMCFirmwareFlash(const char* filePath);
-    void getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result);
+    std::vector<std::string> getAMCFirmwareVersions(AmcCredential credential);
+    xpum_result_t runAMCFirmwareFlash(const char* filePath, AmcCredential credential);
+    void getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result, AmcCredential credential);
+    std::string getAmcWarnMsg();
+
     xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath);
     void getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 

@@ -36,7 +36,7 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
     virtual grpc::Status getDeviceList(grpc::ServerContext* context, const google::protobuf::Empty* request,
                                        XpumDeviceBasicInfoArray* response) override;
 
-    virtual grpc::Status getAMCFirmwareVersions(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAMCFirmwareVersionsResponse* response) override;
+    virtual grpc::Status getAMCFirmwareVersions(::grpc::ServerContext* context, const ::GetAMCFirmwareVersionsRequest* request, ::GetAMCFirmwareVersionsResponse* response) override;
 
     virtual grpc::Status getDeviceProperties(grpc::ServerContext* context, const DeviceId* request, XpumDeviceProperties* response) override;
 

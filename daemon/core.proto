@@ -45,6 +45,11 @@ message XpumDeviceProperties {
     string errorMsg = 2;
 }
 
+message GetAMCFirmwareVersionsRequest {
+    string username = 1;
+    string password = 2;
+}
+
 message GetAMCFirmwareVersionsResponse {
     repeated string versions = 1;
     string errorMsg = 2;
@@ -276,6 +281,8 @@ message XpumFirmwareFlashJob {
     DeviceId id = 1;
     GeneralEnum type = 2;
     string path = 3;
+    string username = 4;
+    string password = 5;
 }
 
 message XpumFirmwareFlashJobResponse {
@@ -286,6 +293,8 @@ message XpumFirmwareFlashJobResponse {
 message XpumFirmwareFlashTaskRequest {
     DeviceId id = 1;
     GeneralEnum type = 2;
+    string username = 3;
+    string password = 4;
 }
 
 message XpumFirmwareFlashTaskResult {
@@ -776,7 +785,7 @@ service XpumCoreService {
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
     rpc getDeviceList( google.protobuf.Empty ) returns ( XpumDeviceBasicInfoArray );
     rpc getDeviceProperties( DeviceId ) returns ( XpumDeviceProperties );
-    rpc getAMCFirmwareVersions( google.protobuf.Empty ) returns ( GetAMCFirmwareVersionsResponse );
+    rpc getAMCFirmwareVersions( GetAMCFirmwareVersionsRequest ) returns ( GetAMCFirmwareVersionsResponse );
     rpc getTopology(  DeviceId ) returns ( XpumTopologyInfo );
     rpc groupCreate( GroupName ) returns ( GroupInfo );
     rpc groupDestory( GroupId ) returns ( GroupInfo );

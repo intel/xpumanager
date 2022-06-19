@@ -362,8 +362,9 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
     return XPUM_OK;
 }
 
-xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count) {
-    auto versions = Core::instance().getFirmwareManager()->getAMCFirmwareVersions();
+xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count, const char *username, const char *password) {
+    AmcCredential credential{username, password};
+    auto versions = Core::instance().getFirmwareManager()->getAMCFirmwareVersions(credential);
     if (versionList == nullptr) {
         *count = versions.size();
         return XPUM_OK;
@@ -405,7 +406,7 @@ static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
     return XPUM_OK;
 }
 
-xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job) {
+xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -443,8 +444,8 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
                 }
             }
         }
-
-        rc = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath);
+        AmcCredential credential{username, password};
+        rc = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath, credential);
         return rc;
     } else {
         if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
@@ -464,7 +465,10 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
 }
 
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
-                                         xpum_firmware_type_t firmwareType, xpum_firmware_flash_task_result_t *result) {
+                                         xpum_firmware_type_t firmwareType,
+                                         xpum_firmware_flash_task_result_t *result,
+                                         const char *username,
+                                         const char *password) {
     xpum_result_t ret = Core::instance().apiAccessPreCheck();
     if (ret != XPUM_OK) {
         return ret;
@@ -473,8 +477,9 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
-        Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result);
-        
+        AmcCredential credential{username, password};
+        Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result, credential);
+
         return XPUM_OK;
     }
 

@@ -107,9 +107,9 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
     return grpc::Status::OK;
 }
 
-grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAMCFirmwareVersionsResponse* response) {
+grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* context, const ::GetAMCFirmwareVersionsRequest* request, ::GetAMCFirmwareVersionsResponse* response) {
     int count;
-    auto res = xpumGetAMCFirmwareVersions(nullptr, &count);
+    auto res = xpumGetAMCFirmwareVersions(nullptr, &count, request->username().c_str(), request->password().c_str());
     if (res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
         response->set_errormsg("Level Zero Initialization Error");
         return grpc::Status::OK;
@@ -119,7 +119,7 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
         return grpc::Status::OK;
     }
     std::vector<xpum_amc_fw_version_t> versions(count);
-    res = xpumGetAMCFirmwareVersions(versions.data(), &count);
+    res = xpumGetAMCFirmwareVersions(versions.data(), &count, request->username().c_str(), request->password().c_str());
     if (res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
         response->set_errormsg("Level Zero Initialization Error");
         return grpc::Status::OK;

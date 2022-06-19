@@ -99,9 +99,11 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
  * @param versionList   IN/OUT: The array to store AMC firmware version
  * @param count         IN/OUT: When \a versionList is NULL, \a count will be filled with the number of AMC firmware versions, and return.
  *                              When \a versionList is not NULL, \a count denotes the length of \a versionList, \a count should be equal to or larger than the number of AMC firmware versions, when return, the \a count will store real number of AMC firmware versions returned by \a versionList
+ * @param username      IN: Username used for authentication
+ * @param password      IN: Password used for authentication
  * @return xpum_result_t 
  */
-xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count);
+xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count, const char *username, const char *password);
 
 /** @} */ // Closing for DEVICE_API
 
@@ -577,9 +579,11 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
  * 
  * @param deviceId      IN: Device id
  * @param job           IN: The job description for firmware flash
+ * @param username      IN: Username used for authentication
+ * @param password      IN: Password used for authentication
  * @return xpum_result_t 
  */
-xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job);
+xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password);
 
 /**
  * @brief Get the status of firmware flash job
@@ -589,6 +593,8 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
  * @param deviceId          IN: Device id
  * @param firmwareType      IN: The firmware type to query status
  * @param result           OUT: The result of the job 
+ * @param username          IN: Username used for authentication
+ * @param password          IN: Password used for authentication
  * @return 
  *      - \ref XPUM_OK
  *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
@@ -605,7 +611,9 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
  */
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
                                          xpum_firmware_type_t firmwareType,
-                                         xpum_firmware_flash_task_result_t *result);
+                                         xpum_firmware_flash_task_result_t *result,
+                                         const char *username,
+                                         const char *password);
 
 /** @} */ // Closing for FIRMWARE_UPDATE_API
 

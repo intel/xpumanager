@@ -100,9 +100,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions() {
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
+    GetAMCFirmwareVersionsRequest request;
     GetAMCFirmwareVersionsResponse response;
 
-    grpc::Status status = stub->getAMCFirmwareVersions(&context, google::protobuf::Empty(), &response);
+    grpc::Status status = stub->getAMCFirmwareVersions(&context, request, &response);
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();

@@ -12,15 +12,21 @@ namespace xpum::daemon {
     xpum_firmware_flash_job job;
     job.type = (xpum_firmware_type_enum)request->type().value();
     job.filePath = request->path().c_str();
-    response->mutable_type()->set_value(xpumRunFirmwareFlash(request->id().id(), &job));
+    response->mutable_type()->set_value(xpumRunFirmwareFlash(request->id().id(), &job, request->username().c_str(), request->password().c_str()));
 
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getFirmwareFlashResult(::grpc::ServerContext* context, const ::XpumFirmwareFlashTaskRequest* request, ::XpumFirmwareFlashTaskResult* response) {
+::grpc::Status XpumCoreServiceImpl::getFirmwareFlashResult(::grpc::ServerContext* context,
+                                                           const ::XpumFirmwareFlashTaskRequest* request,
+                                                           ::XpumFirmwareFlashTaskResult* response) {
     xpum_firmware_flash_task_result_t result;
 
-    xpum_result_t res = xpumGetFirmwareFlashResult(request->id().id(), (xpum_firmware_type_t)request->type().value(), &result);
+    xpum_result_t res = xpumGetFirmwareFlashResult(request->id().id(),
+                                                   (xpum_firmware_type_t)request->type().value(),
+                                                   &result,
+                                                   request->username().c_str(),
+                                                   request->password().c_str());
     if (res == XPUM_OK) {
         response->mutable_id()->set_id(request->id().id());
         response->mutable_type()->set_value(request->type().value());
