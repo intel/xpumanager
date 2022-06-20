@@ -1,5 +1,7 @@
 FROM opensuse/leap
 
+ARG level_zero_version
+
 RUN zypper install -y libudev-devel && \
     zypper clean -a
 
@@ -51,11 +53,11 @@ RUN curl -s --location https://github.com/intel/igsc/archive/refs/tags/V0.6.0.ta
     make install && \
     rm -fr /igsc-0.6.0
 
-RUN curl -s --location https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.7.15.tar.gz | tar -xz && \
-    cd /level-zero-1.7.15 && \
+RUN curl -s --location https://github.com/oneapi-src/level-zero/archive/refs/tags/v${level_zero_version}.tar.gz | tar -xz && \
+    cd /level-zero-${level_zero_version} && \
     mkdir build && \
     cd build && \
     cmake .. && \
     cmake --build . --config Release && \
     cmake --build . --config Release --target install && \
-    rm -fr /level-zero-1.7.15
+    rm -fr /level-zero-${level_zero_version}
