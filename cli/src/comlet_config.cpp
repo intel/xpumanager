@@ -52,11 +52,8 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
                 { "label": "  Valid Options", "value": "gpu_frequency_valid_options" },
                 { "label": "Memory Ecc", "value": " " },
-                { "label": "  Available", "value": "memory_ecc_available" },
-                { "label": "  Configurable", "value": "memory_ecc_configurable" },
                 { "label": "  Current", "value": "memory_ecc_current_state" },
                 { "label": "  Pending", "value": "memory_ecc_pending_state" },
-                { "label": "  Action", "value": "memory_ecc_pending_action" },
                 {"rowTitle": " " },
                 { "label": "Standby Mode", "value": "standby_mode" },
                 { "label": "  Valid Options", "value": "standby_mode_valid_options" },
@@ -81,6 +78,11 @@ static CharTableConfig ComletTileConfiguration(R"({
         ]
     }]
 })"_json);
+/*
+{ "label": "  Available", "value": "memory_ecc_available" },
+                { "label": "  Configurable", "value": "memory_ecc_configurable" },
+{ "label": "  Action", "value": "memory_ecc_pending_action" }, 
+*/
 
 void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
