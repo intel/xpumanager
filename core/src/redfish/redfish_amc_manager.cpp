@@ -35,6 +35,7 @@ void curlBasicConfig(CURL* curl, std::string& buffer, std::string username, std:
     libcurl.curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
 
     // buffer
     libcurl.curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriteToStringCallback);
@@ -63,6 +64,7 @@ bool getBasePage(RedfishHostInterface interface) {
         libcurl.curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
 
         res = libcurl.curl_easy_perform(curl);
     }
