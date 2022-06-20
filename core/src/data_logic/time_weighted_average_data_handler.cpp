@@ -30,13 +30,16 @@ void TimeWeightedAverageDataHandler::counterOverflowDetection(std::shared_ptr<Sh
     while (iter != p_data->getData().end()) {
         if (iter->second->hasRawDataOnDevice() 
         && p_preData->getData().find(iter->first) != p_preData->getData().end()
+        && p_preData->getData()[iter->first]->hasRawDataOnDevice()
         && p_data->getData().find(iter->first) != p_data->getData().end()) {
             uint64_t pre_data = p_preData->getData()[iter->first]->getRawdata();
             uint64_t cur_data = p_data->getData()[iter->first]->getRawdata();
-            if (pre_data > cur_data) {
-                p_preData = nullptr;
-                return;
-            }   
+            if (pre_data != std::numeric_limits<uint64_t>::max() && cur_data != std::numeric_limits<uint64_t>::max()) {
+                if (pre_data > cur_data) {
+                    p_preData = nullptr;
+                    return;
+                }
+            }
         }
 
         if (iter->second->hasSubdeviceRawData()
@@ -74,8 +77,10 @@ void TimeWeightedAverageDataHandler::calculateData(std::shared_ptr<SharedData>& 
             uint64_t pre_data_raw_timestamp = p_preData->getData()[iter->first]->getRawTimestamp();
             uint64_t cur_data = p_data->getData()[iter->first]->getRawdata();
             uint64_t cur_data_raw_timestamp = p_data->getData()[iter->first]->getRawTimestamp();
-            if (cur_data_raw_timestamp - pre_data_raw_timestamp != 0) {
-                p_data->getData()[iter->first]->setCurrent((cur_data - pre_data) / (cur_data_raw_timestamp - pre_data_raw_timestamp));
+            if (pre_data != std::numeric_limits<uint64_t>::max() && cur_data != std::numeric_limits<uint64_t>::max()) {
+                if (cur_data_raw_timestamp - pre_data_raw_timestamp != 0) {
+                    p_data->getData()[iter->first]->setCurrent((cur_data - pre_data) / (cur_data_raw_timestamp - pre_data_raw_timestamp));
+                }
             }
         }
 
