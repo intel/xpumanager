@@ -8,7 +8,7 @@
 
 namespace xpum::cli {
 
-std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath) {
+std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -17,6 +17,8 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     request.mutable_id()->set_id(deviceId);
     request.mutable_type()->set_value(type);
     request.set_path(filePath);
+    request.set_username(username);
+    request.set_password(password);
 
     XpumFirmwareFlashJobResponse response;
     grpc::Status status = stub->runFirmwareFlash(&context, request, &response);
@@ -79,13 +81,15 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     }
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, unsigned int type) {
+std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, unsigned int type, std::string username, std::string password) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext ct;
     XpumFirmwareFlashTaskRequest rq;
     rq.mutable_id()->set_id(deviceId);
     rq.mutable_type()->set_value(type);
+    rq.set_username(username);
+    rq.set_password(password);
 
     XpumFirmwareFlashTaskResult res;
     auto status = stub->getFirmwareFlashResult(&ct, rq, &res);
@@ -113,6 +117,14 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, u
             break;
     }
     return json;
+}
+
+std::string CoreStub::getRedfishAmcWarnMsg(){
+    assert(this->stub != nullptr);
+    grpc::ClientContext ct;
+    GetRedfishAmcWarnMsgResponse response;
+    stub->getRedfishAmcWarnMsg(&ct, google::protobuf::Empty(), &response);
+    return response.warnmsg();
 }
 
 } // namespace xpum::cli

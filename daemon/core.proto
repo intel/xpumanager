@@ -780,12 +780,17 @@ message GetFabricCountResponse {
     string errorMsg = 4;
 }
 
+message GetRedfishAmcWarnMsgResponse {
+    string warnMsg = 1;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
     rpc getDeviceList( google.protobuf.Empty ) returns ( XpumDeviceBasicInfoArray );
     rpc getDeviceProperties( DeviceId ) returns ( XpumDeviceProperties );
     rpc getAMCFirmwareVersions( GetAMCFirmwareVersionsRequest ) returns ( GetAMCFirmwareVersionsResponse );
+    rpc getRedfishAmcWarnMsg( google.protobuf.Empty ) returns ( GetRedfishAmcWarnMsgResponse );
     rpc getTopology(  DeviceId ) returns ( XpumTopologyInfo );
     rpc groupCreate( GroupName ) returns ( GroupInfo );
     rpc groupDestory( GroupId ) returns ( GroupInfo );

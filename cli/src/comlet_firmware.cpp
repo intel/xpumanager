@@ -81,6 +81,9 @@ void ComletFirmware::setupOptions() {
     deviceIdOpt->needs(fwPathOpt);
 
     opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
+
+    addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
+    addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
 }
 
 nlohmann::json ComletFirmware::validateArguments() {
@@ -138,7 +141,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     }
 
     int type = getIntFirmwareType(opts->firmwareType);
-    auto uniqueJson = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
+    auto uniqueJson = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->username, opts->password);
     std::shared_ptr<nlohmann::json> json = std::move(uniqueJson);
     if (json->contains("error")) {
         printJson(json, out, raw);
@@ -147,7 +150,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(5));
 
-        json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
+        json = coreStub->getFirmwareFlashResult(opts->deviceId, type, opts->username, opts->password);
         if (json->contains("error")) {
             printJson(json, out, raw);
             return;
@@ -304,6 +307,10 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     // warn user
     int type = getIntFirmwareType(opts->firmwareType);
     if (type == 1) { // AMC caution
+        std::string amcWarnMsg = coreStub->getRedfishAmcWarnMsg();
+        if (amcWarnMsg.length()) {
+            std::cout << coreStub->getRedfishAmcWarnMsg() << std::endl;
+        }
         std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model. Updating AMC firmware may cause OS to reboot." << std::endl;
         std::cout << "Please comfirm to proceed ( Y/N ) ?" << std::endl;
         std::string confirm;
@@ -384,7 +391,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     }
 
     // start run
-    auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
+    auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->username, opts->password);
 
     auto status = (*json)["error"];
     if (!status.is_null()) {
@@ -399,7 +406,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         std::this_thread::sleep_for(std::chrono::seconds(5));
         out << "." << std::flush;
 
-        json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
+        json = coreStub->getFirmwareFlashResult(opts->deviceId, type, opts->username, opts->password);
         if (json->contains("error")) {
             out << std::endl;
             out << "Error: " << (*json)["error"] << std::endl;

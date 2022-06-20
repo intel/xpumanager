@@ -95,13 +95,16 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions() {
+std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions(std::string username, std::string password) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     GetAMCFirmwareVersionsRequest request;
     GetAMCFirmwareVersionsResponse response;
+
+    request.set_username(username);
+    request.set_password(password);
 
     grpc::Status status = stub->getAMCFirmwareVersions(&context, request, &response);
 

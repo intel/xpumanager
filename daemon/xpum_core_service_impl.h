@@ -38,6 +38,8 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
 
     virtual grpc::Status getAMCFirmwareVersions(::grpc::ServerContext* context, const ::GetAMCFirmwareVersionsRequest* request, ::GetAMCFirmwareVersionsResponse* response) override;
 
+    virtual grpc::Status getRedfishAmcWarnMsg(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetRedfishAmcWarnMsgResponse* response) override;
+
     virtual grpc::Status getDeviceProperties(grpc::ServerContext* context, const DeviceId* request, XpumDeviceProperties* response) override;
 
     virtual grpc::Status getTopology(grpc::ServerContext* context, const DeviceId* request,

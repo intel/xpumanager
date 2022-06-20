@@ -113,11 +113,16 @@ void ComletDiscovery::setupOptions() {
     });
     auto listamcversionsOpt = addFlag("--listamcversions", this->opts->listamcversions, "Show all AMC firmware versions.");
     deviceIdOpt->excludes(listamcversionsOpt);
+
+    auto usernameOpt = addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
+    auto passwordOpt = addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
+    usernameOpt->needs(listamcversionsOpt);
+    passwordOpt->needs(listamcversionsOpt);
 }
 
 std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     if (this->opts->listamcversions) {
-        auto json = this->coreStub->getAMCFirmwareVersions();
+        auto json = this->coreStub->getAMCFirmwareVersions(this->opts->username, this->opts->password);
         return json;
     }
 
