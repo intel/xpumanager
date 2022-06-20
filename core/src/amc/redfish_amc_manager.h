@@ -33,6 +33,7 @@ struct RedfishHostInterface {
 
 class RedfishAmcManager : public AmcManager {
    public:
+    virtual bool preInit() override;
     virtual bool init() override;
     virtual std::string getProtocol() override {
         return "redfish";
@@ -44,6 +45,8 @@ class RedfishAmcManager : public AmcManager {
     virtual void getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& param) override;
 
    private:
+    bool initialized = false;
+
     RedfishHostInterface hostInterface;
 
     std::mutex mtx;
@@ -51,6 +54,9 @@ class RedfishAmcManager : public AmcManager {
     std::vector<std::string> taskUriList;
 
     bool redfishHostInterfaceInit();
+
+    bool bindIpToInterface();
+
 };
 
 RedfishHostInterface parseInterface(std::string dmiDecodeOutput);

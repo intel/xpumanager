@@ -232,6 +232,8 @@ class LibCurlApi {
         curl_slist_append = reinterpret_cast<curl_slist_append_t>(dlsym(handle, "curl_slist_append"));
     }
     ~LibCurlApi() {
+        if (!handle)
+            return;
         dlclose(handle);
     }
     bool initialized() {

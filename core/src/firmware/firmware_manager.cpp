@@ -154,23 +154,35 @@ void FirmwareManager::init() {
     detectGscFw();
     // init fw-data management
     initFwDataMgmt();
+    // init amc manager
+    preInitAmcManager();
 };
 
-void FirmwareManager::initAmcManager() {
-    if (p_amc_manager) {
-        XPUM_LOG_INFO("amc manager already initialized");
-        return;
-    }
-    XPUM_LOG_INFO("initialize amc manager");
+void FirmwareManager::preInitAmcManager() {
+    XPUM_LOG_INFO("pre-initialize amc manager");
     p_amc_manager = std::make_shared<RedfishAmcManager>();
-    auto redfish_enabled = p_amc_manager->init();
+    auto redfish_enabled = p_amc_manager->preInit();
     if (!redfish_enabled) {
         p_amc_manager = std::make_shared<IpmiAmcManager>();
+        p_amc_manager->preInit();
     }
 }
 
+bool FirmwareManager::initAmcManager() {
+    if (p_amc_manager->init())
+        return true;
+    if (p_amc_manager->getProtocol().compare("redfish") == 0) {
+        p_amc_manager = std::make_shared<IpmiAmcManager>();
+        p_amc_manager->preInit();
+        return p_amc_manager->init();
+    }
+    return false;
+}
+
 std::vector<std::string> FirmwareManager::getAMCFirmwareVersions(AmcCredential credential) {
-    initAmcManager();
+    if (!initAmcManager()) {
+        return std::vector<std::string>();
+    }
     GetAmcFirmwareVersionsParam param;
     param.username = credential.username;
     param.password = credential.password;
@@ -180,6 +192,9 @@ std::vector<std::string> FirmwareManager::getAMCFirmwareVersions(AmcCredential c
 }
 
 xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCredential credential) {
+    if (!initAmcManager()) {
+        return xpum_result_t::XPUM_GENERIC_ERROR;
+    }
 
     std::vector<std::shared_ptr<Device>> allDevices;
     Core::instance().getDeviceManager()->getDeviceList(allDevices);
@@ -187,8 +202,6 @@ xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCred
     bool locked = Core::instance().getDeviceManager()->tryLockDevices(allDevices);
     if (!locked)
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
-
-    initAmcManager();
 
     FlashAmcFirmwareParam param;
     param.file = std::string(filePath);
@@ -199,7 +212,6 @@ xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCred
         std::vector<std::shared_ptr<Device>> allDevices;
         Core::instance().getDeviceManager()->getDeviceList(allDevices);
         Core::instance().getDeviceManager()->unlockDevices(allDevices);
-        amcUpdated = true;
     };
 
     p_amc_manager->flashAMCFirmware(param);

@@ -42,13 +42,28 @@ extern int cmd_firmware(const char* file, unsigned int versions[4]);
 
 extern std::vector<std::string> cmd_get_amc_firmware_versions();
 
+bool IpmiAmcManager::preInit(){
+    return init();
+}
+
 bool IpmiAmcManager::init() {
+    if (initialized)
+        return true;
+    updateAmcFwList();
+    initialized = true;
     return true;
 }
 
+void IpmiAmcManager::updateAmcFwList() {
+    amcFwList = cmd_get_amc_firmware_versions();
+}
+
 void IpmiAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) {
-    auto versions = cmd_get_amc_firmware_versions();
-    for (auto version : versions) {
+    if (fwUpdated) {
+        updateAmcFwList();
+        fwUpdated = false;
+    }
+    for (auto version : amcFwList) {
         param.versions.push_back(version);
     }
     param.errCode = xpum_result_t::XPUM_OK;
@@ -62,6 +77,9 @@ void IpmiAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
     task = std::async(std::launch::async, [param, this] {
+
+        fwUpdated = true;
+
         int rc = cmd_firmware(param.file.c_str(), nullptr);
 
         auto result = rc == 0 ? xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK : xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;

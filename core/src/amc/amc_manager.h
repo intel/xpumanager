@@ -40,6 +40,7 @@ struct GetAmcFirmwareFlashResultParam {
 
 class AmcManager {
    public:
+    virtual bool preInit() = 0;
     virtual bool init() = 0;
     virtual std::string getProtocol() = 0;
     virtual void flashAMCFirmware(FlashAmcFirmwareParam& param) = 0;

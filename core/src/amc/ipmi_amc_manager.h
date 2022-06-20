@@ -5,18 +5,28 @@
  */
 #pragma once
 
-#include<future>
+#include <future>
+#include <string>
 
 #include "amc_manager.h"
 
 namespace xpum {
 class IpmiAmcManager : public AmcManager {
    private:
+    bool initialized = false;
+
     std::mutex mtx;
+
+    std::vector<std::string> amcFwList;
 
     std::future<xpum_firmware_flash_result_t> task;
 
+    void updateAmcFwList();
+
+    bool fwUpdated = false;
+
    public:
+    virtual bool preInit() override;
     virtual bool init() override;
     virtual std::string getProtocol() override {
         return "ipmi";

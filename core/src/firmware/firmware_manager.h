@@ -23,9 +23,6 @@ struct AmcCredential {
 
 class FirmwareManager {
    private:
-    bool amcUpdated = false;
-    std::vector<std::string> amcFwList;
-
     std::mutex mtx;
 
     std::future<xpum_firmware_flash_result_t> taskAMC;
@@ -34,7 +31,9 @@ class FirmwareManager {
 
     void initFwDataMgmt();
 
-    void initAmcManager();
+    void preInitAmcManager();
+
+    bool initAmcManager();
 
    public:
     void init();

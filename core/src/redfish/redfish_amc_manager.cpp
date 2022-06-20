@@ -195,7 +195,7 @@ std::vector<std::string> getAmcFwVersions(RedfishHostInterface interface,
     return versions;
 }
 
-bool RedfishAmcManager::init() {
+bool RedfishAmcManager::preInit(){
     if (!libcurl.initialized()) {
         // fail to load libcurl.so
         return false;
@@ -203,8 +203,22 @@ bool RedfishAmcManager::init() {
     // configure interface
     if (!redfishHostInterfaceInit())
         return false;
+    return true;
+}
+
+bool RedfishAmcManager::init() {
+    if (initialized)
+        return true;
+    if(!preInit())
+        return false;
+    // bind ip to interface
+    if (!bindIpToInterface())
+        return false;
     // try to get /redfish/v1
-    return getBasePage(hostInterface);
+    if (!getBasePage(hostInterface))
+        return false;
+    initialized = true;
+    return true;
 }
 
 void RedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) {
@@ -224,7 +238,7 @@ void RedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& para
 int doCmd(std::string cmd, std::string& output) {
     char buffer[1024];
     std::string result;
-    int ret;
+    int ret = -1;
 
     cmd += " 2>&1";
 
@@ -386,25 +400,8 @@ std::string getRedfishAmcWarn() {
     return "";
 }
 
-bool RedfishAmcManager::redfishHostInterfaceInit() {
-    // configure interface
+bool RedfishAmcManager::bindIpToInterface(){
     auto output = getDmiDecodeOutput();
-
-    auto interfaces = splitInterfaces(output);
-
-    // for (int i = 1; i < interfaces.size(); i++) {
-    for (auto& itf : interfaces) {
-        // auto itf = interfaces.at(i);
-
-        auto info = parseInterface(itf);
-        if (!info.valid())
-            continue;
-        hostInterface = info;
-        break;
-    }
-    if (!hostInterface.valid())
-        return false;
-    
     // ifconfig interface
     std::string ifconfig_cmd = "ifconfig " +
                                hostInterface.interface_name +
@@ -416,6 +413,22 @@ bool RedfishAmcManager::redfishHostInterfaceInit() {
     int ret = doCmd(ifconfig_cmd, output);
 
     return ret == 0;
+}
+
+bool RedfishAmcManager::redfishHostInterfaceInit() {
+    // configure interface
+    auto output = getDmiDecodeOutput();
+
+    auto interfaces = splitInterfaces(output);
+
+    for (auto& itf : interfaces) {
+        auto info = parseInterface(itf);
+        if (!info.valid())
+            continue;
+        hostInterface = info;
+        break;
+    }
+    return hostInterface.valid();
 }
 
 void getPushUri(RedfishHostInterface interface,
