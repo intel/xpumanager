@@ -398,8 +398,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     }
     (*json)["power_limit"] = power_datas[0];
     (*json)["power_vaild_range"] = "1 to " + std::to_string(power_limit);
-    (*json)["power_average_window"] = power_datas[1];
-    (*json)["power_average_window_vaild_range"] = "1 to 20800";
     return json;
 }
 
@@ -485,7 +483,7 @@ std::vector<int> CoreStub::handlePowerByLevel0(zes_device_handle_t device, bool 
                 }
 
                 if (set) {
-                    if (limit < 1 || limit / 1000 > power_limit || interval < 1 || interval > 20800) {
+                    if (limit < 1 || limit / 1000 > power_limit) {
                         res.push_back(-1);
                         return res;
                     }
