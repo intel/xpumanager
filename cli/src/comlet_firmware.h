@@ -18,6 +18,9 @@ struct FlashFirmwareOptions {
     std::string firmwareType;
     std::string firmwarePath;
 
+    std::string username = "";
+    std::string password = "";
+
     /*
         FlashFirmwareOptions( unsigned int id, const std::string& type, const std::string& path )
             : deviceId( id ), firmwarePath( path ) {

@@ -5,6 +5,7 @@
  */
 
 #include "xpum_core_service_impl.h"
+#include "redfish_amc_manager.h"
 
 namespace xpum::daemon {
 
@@ -47,6 +48,14 @@ namespace xpum::daemon {
         }
     }
 
+    return grpc::Status::OK;
+}
+
+grpc::Status XpumCoreServiceImpl::getRedfishAmcWarnMsg(::grpc::ServerContext* context,
+                                                       const ::google::protobuf::Empty* request,
+                                                       ::GetRedfishAmcWarnMsgResponse* response) {
+    auto msg = getRedfishAmcWarn();
+    response->set_warnmsg(msg);
     return grpc::Status::OK;
 }
 } // namespace xpum::daemon
