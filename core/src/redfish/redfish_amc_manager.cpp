@@ -539,7 +539,7 @@ bool uploadImage(RedfishHostInterface interface,
         for (auto link : targetLinks) {
             updateParams["Targets"].push_back(link);
         }
-        updateParams["OperationApplyTime"] = "OnStartUpdateRequest";
+        updateParams["@Redfish.OperationApplyTime"] = "OnStartUpdateRequest";
         auto updateParamsStr = updateParams.dump();
         libcurl.curl_mime_data(part, updateParamsStr.c_str(), CURL_ZERO_TERMINATED);
 
@@ -614,20 +614,15 @@ bool uploadImage(RedfishHostInterface interface,
         return true;
     }
     // parse error to see it is already updating
-    if (uploadJson.contains("error")) {
-        if (uploadJson["error"].contains("@Message.ExtendedInfo") &&
-            uploadJson["error"]["@Message.ExtendedInfo"].is_array() &&
-            uploadJson["error"]["@Message.ExtendedInfo"].size() > 0 &&
-            uploadJson["error"]["@Message.ExtendedInfo"].at(0).contains("Message")) {
-            std::string error_msg = uploadJson["error"]["@Message.ExtendedInfo"].at(0)["Message"].get<std::string>();
-            if (error_msg.compare("The GPU firmware update was already in update mode.") == 0) {
-                flashAmcParam.errCode = XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
-            } else {
-                flashAmcParam.errCode = XPUM_GENERIC_ERROR;
-            }
-            flashAmcParam.errMsg = error_msg;
-            return false;
-        }
+    if (uploadJson.contains("error") &&
+        uploadJson["error"].contains("@Message.ExtendedInfo") &&
+        uploadJson["error"]["@Message.ExtendedInfo"].is_array() &&
+        uploadJson["error"]["@Message.ExtendedInfo"].size() > 0 &&
+        uploadJson["error"]["@Message.ExtendedInfo"].at(0).contains("Message") &&
+        uploadJson["error"]["@Message.ExtendedInfo"].at(0)["Message"].get<std::string>().compare("The GPU firmware update was already in update mode.") == 0) {
+        flashAmcParam.errCode = XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+        flashAmcParam.errMsg = "The GPU firmware update was already in update mode.";
+        return false;
     }
 
     flashAmcParam.errCode = XPUM_GENERIC_ERROR;
