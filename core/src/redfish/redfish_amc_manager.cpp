@@ -507,9 +507,12 @@ bool uploadImage(RedfishHostInterface interface,
                  FlashAmcFirmwareParam& flashAmcParam,
                  std::string pushUri,
                  std::vector<std::string> targetLinks) {
+    XPUM_LOG_INFO("Start upload image");
     std::string& username = flashAmcParam.username;
     std::string& password = flashAmcParam.password;
     std::string imagePath = flashAmcParam.file;
+
+    XPUM_LOG_INFO("Image path: {}", imagePath);
 
     std::stringstream url;
     url << "https://";
@@ -517,6 +520,8 @@ bool uploadImage(RedfishHostInterface interface,
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << pushUri;
+
+    XPUM_LOG_INFO("Push uri: {}", url.str());
 
     CURL* curl;
     CURLcode res = CURL_LAST;
@@ -541,6 +546,9 @@ bool uploadImage(RedfishHostInterface interface,
         }
         updateParams["@Redfish.OperationApplyTime"] = "OnStartUpdateRequest";
         auto updateParamsStr = updateParams.dump();
+
+        XPUM_LOG_INFO("UpdateParameters json: {}", updateParamsStr);
+
         libcurl.curl_mime_data(part, updateParamsStr.c_str(), CURL_ZERO_TERMINATED);
 
         part = libcurl.curl_mime_addpart(mime);
@@ -554,6 +562,7 @@ bool uploadImage(RedfishHostInterface interface,
     }
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
+        XPUM_LOG_ERROR("Fail to upload image, error code: {}", res);
         flashAmcParam.errMsg = "Fail to upload image";
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         return false;
@@ -563,6 +572,7 @@ bool uploadImage(RedfishHostInterface interface,
         uploadJson = json::parse(buffer);
     } catch (...) {
         // parse error
+        XPUM_LOG_ERROR("Fail to parse upload image json: {}", buffer);
         flashAmcParam.errMsg = "Fail to parse upload image json";
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         return false;
@@ -611,6 +621,7 @@ bool uploadImage(RedfishHostInterface interface,
     */
 
     if (uploadJson.contains("Accepted")) {
+        XPUM_LOG_INFO("upload image successfully");
         return true;
     }
     // parse error to see it is already updating
@@ -619,12 +630,14 @@ bool uploadImage(RedfishHostInterface interface,
         uploadJson["error"]["@Message.ExtendedInfo"].is_array() &&
         uploadJson["error"]["@Message.ExtendedInfo"].size() > 0 &&
         uploadJson["error"]["@Message.ExtendedInfo"].at(0).contains("Message") &&
-        uploadJson["error"]["@Message.ExtendedInfo"].at(0)["Message"].get<std::string>().compare("The GPU firmware update was already in update mode.") == 0) {
+        uploadJson["error"]["@Message.ExtendedInfo"].at(0)["Message"].get<std::string>().compare(
+            "The GPU firmware update was already in update mode.") == 0) {
+        XPUM_LOG_ERROR("The GPU firmware update was already in update mode.");
         flashAmcParam.errCode = XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
         flashAmcParam.errMsg = "The GPU firmware update was already in update mode.";
         return false;
     }
-
+    XPUM_LOG_ERROR("Unknown error happens when upload image, json: {}", uploadJson.dump(2));
     flashAmcParam.errCode = XPUM_GENERIC_ERROR;
     flashAmcParam.errMsg = uploadJson.dump(2);
     return false;
@@ -634,6 +647,8 @@ bool trigerUpdate(RedfishHostInterface interface,
                   FlashAmcFirmwareParam& flashAmcParam,
                   std::string trigerUri,
                   std::vector<std::string>& taskUriList) {
+
+    XPUM_LOG_INFO("Start triger update");
 
     std::string& username = flashAmcParam.username;
     std::string& password = flashAmcParam.password;
@@ -645,6 +660,8 @@ bool trigerUpdate(RedfishHostInterface interface,
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << trigerUri;
+
+    XPUM_LOG_INFO("triger uri: {}", url.str());
 
     CURL* curl;
     CURLcode res = CURL_LAST;
@@ -665,6 +682,7 @@ bool trigerUpdate(RedfishHostInterface interface,
     }
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
+        XPUM_LOG_ERROR("Fail to triger update, error code: {}", res);
         flashAmcParam.errMsg = "Fail to triger update";
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         return false;
@@ -674,6 +692,7 @@ bool trigerUpdate(RedfishHostInterface interface,
         trigerJson = json::parse(buffer);
     } catch (...) {
         // parse error
+        XPUM_LOG_ERROR("Fail to parse triger update json: {}", buffer);
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         flashAmcParam.errMsg = "Fail to parse triger update json";
         return false;
@@ -689,11 +708,14 @@ bool trigerUpdate(RedfishHostInterface interface,
         for (auto uri : trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"]) {
             taskUriList.push_back(uri.get<std::string>());
         }
+        XPUM_LOG_INFO("triger update successfully");
         return true;
     }
     
     // contains error or not, dump the content to errMsg
     errMsg = trigerJson.dump(2);
+
+    XPUM_LOG_ERROR("Unknown error happens when triger update: {}", errMsg);
 
     return false;
 }
