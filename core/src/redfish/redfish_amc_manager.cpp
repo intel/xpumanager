@@ -52,7 +52,7 @@ bool getBasePage(RedfishHostInterface interface) {
     std::string path = "/redfish/v1";
     std::stringstream url;
     url << "https://";
-    url << interface.ipv4_addr;
+    url << interface.ipv4_service_addr;
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << path;
@@ -87,7 +87,7 @@ bool getAmcFwVersionByOdataId(RedfishHostInterface interface,
                               std::string& errMsg) {
     std::stringstream url;
     url << "https://";
-    url << interface.ipv4_addr;
+    url << interface.ipv4_service_addr;
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << odataid;
@@ -135,7 +135,7 @@ std::vector<std::string> getGPUFwInventoryList(RedfishHostInterface interface,
     std::string path = "/redfish/v1/UpdateService/FirmwareInventory";
     std::stringstream url;
     url << "https://";
-    url << interface.ipv4_addr;
+    url << interface.ipv4_service_addr;
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << path;
@@ -464,7 +464,7 @@ void getPushUri(RedfishHostInterface interface,
     std::string path = "/redfish/v1/UpdateService";
     std::stringstream url;
     url << "https://";
-    url << interface.ipv4_addr;
+    url << interface.ipv4_service_addr;
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << path;
@@ -525,7 +525,7 @@ bool uploadImage(RedfishHostInterface interface,
 
     std::stringstream url;
     url << "https://";
-    url << interface.ipv4_addr;
+    url << interface.ipv4_service_addr;
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << pushUri;
@@ -658,7 +658,7 @@ bool trigerUpdate(RedfishHostInterface interface,
 
     std::stringstream url;
     url << "https://";
-    url << interface.ipv4_addr;
+    url << interface.ipv4_service_addr;
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << trigerUri;
@@ -775,7 +775,7 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
                             std::string& errMsg) {
     std::stringstream url;
     url << "https://";
-    url << interface.ipv4_addr;
+    url << interface.ipv4_service_addr;
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << taskUri;
