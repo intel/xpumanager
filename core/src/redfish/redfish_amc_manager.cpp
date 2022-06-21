@@ -44,8 +44,8 @@ void curlBasicConfig(CURL* curl, std::string& buffer, std::string username, std:
 
     // credential
     libcurl.curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
-    libcurl.curl_easy_setopt(curl, CURLOPT_USERNAME, username);
-    libcurl.curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
+    libcurl.curl_easy_setopt(curl, CURLOPT_USERNAME, username.c_str());
+    libcurl.curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
 }
 
 bool getBasePage(RedfishHostInterface interface) {
@@ -62,7 +62,7 @@ bool getBasePage(RedfishHostInterface interface) {
     curl = libcurl.curl_easy_init();
     if (curl) {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
-        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str());
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
         libcurl.curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
@@ -97,7 +97,7 @@ bool getAmcFwVersionByOdataId(RedfishHostInterface interface,
     curl = libcurl.curl_easy_init();
     if (curl) {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
-        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str());
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
         curlBasicConfig(curl, buffer, username, password);
 
@@ -146,7 +146,7 @@ std::vector<std::string> getGPUFwInventoryList(RedfishHostInterface interface,
     curl = libcurl.curl_easy_init();
     if (curl) {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
-        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str());
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
         curlBasicConfig(curl, buffer, username, password);
 
@@ -475,7 +475,7 @@ void getPushUri(RedfishHostInterface interface,
     curl = libcurl.curl_easy_init();
     if (curl) {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
-        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str());
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
         curlBasicConfig(curl, buffer, username, password);
 
         res = libcurl.curl_easy_perform(curl);
@@ -536,7 +536,7 @@ bool uploadImage(RedfishHostInterface interface,
     curl = libcurl.curl_easy_init();
     if (curl) {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
-        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str());
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
         curlBasicConfig(curl, buffer, username, password);
 
         // set up mime
@@ -669,7 +669,7 @@ bool trigerUpdate(RedfishHostInterface interface,
     curl = libcurl.curl_easy_init();
     if (curl) {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
-        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str());
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
         curlBasicConfig(curl, buffer, username, password);
 
@@ -786,7 +786,7 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
     curl = libcurl.curl_easy_init();
     if (curl) {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
-        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str());
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
         curlBasicConfig(curl, buffer, username, password);
 
         res = libcurl.curl_easy_perform(curl);
