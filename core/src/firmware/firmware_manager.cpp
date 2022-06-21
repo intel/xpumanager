@@ -193,8 +193,8 @@ xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& 
     if (param.errCode != xpum_result_t::XPUM_OK) {
         return param.errCode;
     }
-    for(auto version:param.versions){
-        param.versions.push_back(version);
+    for (auto version : param.versions) {
+        versions.push_back(version);
     }
     return param.errCode;
 }
