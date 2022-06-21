@@ -231,13 +231,19 @@ xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCred
     return (xpum_result_t)param.errCode;
 }
 
-void FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t* result, AmcCredential credential) {
+xpum_result_t FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t* result, AmcCredential credential) {
     GetAmcFirmwareFlashResultParam param;
     param.username = credential.username;
     param.password = credential.password;
     p_amc_manager->getAMCFirmwareFlashResult(param);
-    *result = param.result;
+
     flashFwErrMsg = param.errMsg;
+
+    if (param.errCode != XPUM_OK) {
+        return param.errCode;
+    }
+    *result = param.result;
+    return XPUM_OK;
 }
 
 std::string FirmwareManager::getAmcWarnMsg() {

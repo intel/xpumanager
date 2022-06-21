@@ -45,7 +45,7 @@ class FirmwareManager {
     void detectGscFw();
     xpum_result_t getAMCFirmwareVersions(std::vector<std::string> &versions,AmcCredential credential);
     xpum_result_t runAMCFirmwareFlash(const char* filePath, AmcCredential credential);
-    void getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result, AmcCredential credential);
+    xpum_result_t getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result, AmcCredential credential);
     std::string getAmcWarnMsg();
 
     xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath);

@@ -103,7 +103,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, u
         return json;
     }
 
-    int result = res.mutable_result()->value();
+    int result = res.result().value();
 
     switch (result) {
         case 0:

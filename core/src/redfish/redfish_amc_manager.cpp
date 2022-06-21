@@ -823,6 +823,11 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
 
+    XPUM_LOG_INFO("Start flash amc fw successfully, task uri:");
+    for (auto uri : taskUriList) {
+        XPUM_LOG_INFO("{}", uri);
+    }
+
     // if start new update task successfully, replace the taskUriList
     std::lock_guard<std::mutex> lck(mtx);
     this->taskUriList = taskUriList;
@@ -831,10 +836,24 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     param.callback();
 }
 
+/**
+ * @brief Get the One Task Update Result object, return true if query successfully
+ * 
+ * @param interface 
+ * @param taskUri 
+ * @param username 
+ * @param password 
+ * @param finished  IN: task is finished or not, valid only when return true
+ * @param success   IN: task is successful or not, valid only when return true and finished true
+ * @param errMsg 
+ * @return true 
+ * @return false 
+ */
 bool getOneTaskUpdateResult(RedfishHostInterface interface,
                             std::string taskUri,
                             std::string username,
                             std::string password,
+                            bool& finished,
                             bool& success,
                             std::string& errMsg) {
     std::stringstream url;
@@ -859,7 +878,7 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
     success = false;
     if (res != CURLE_OK) {
         errMsg = "Fail to get task status";
-        return true;
+        return false;
     }
     json taskJson;
     try {
@@ -867,19 +886,21 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
     } catch (...) {
         // parse error
         errMsg = "Fail to parse task json";
-        return true;
+        return false;
     }
 
     // set errMsg if json contains error
     if (taskJson.contains("error")) {
         errMsg = taskJson.dump(2);
-        return true;
+        return false;
     }
 
     // if end time, return ture
     if (!taskJson.contains("EndTime")) {
-        return false;
+        finished = false;
+        return true;
     } else {
+        finished = true;
         // success if percentage is 100
         if (taskJson.contains("PercentComplete")) {
             auto percentage = taskJson["PercentComplete"].get<std::string>();
@@ -900,25 +921,43 @@ void RedfishAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam
 
     for (auto taskUri : taskUriList) {
         bool success;
+        bool finished;
         std::string errMsg;
-        if (!getOneTaskUpdateResult(hostInterface,
-                                    taskUri,
-                                    param.username,
-                                    param.password,
-                                    success,
-                                    errMsg)) {
+        auto querySuccessfully = getOneTaskUpdateResult(hostInterface,
+                                                        taskUri,
+                                                        param.username,
+                                                        param.password,
+                                                        finished,
+                                                        success,
+                                                        errMsg);
+        if (!querySuccessfully) {
+            // fail to query result
+            XPUM_LOG_ERROR("Fail to query task uri: {}", taskUri);
+            param.errCode = XPUM_GENERIC_ERROR;
+            param.errMsg = errMsg;
+            return;
+        }
+        if (!finished) {
             // task ongoing
-            res = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
+            XPUM_LOG_INFO("Task {} on going", taskUri);
             auto& result = param.result;
             result.deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
             result.type = XPUM_DEVICE_FIRMWARE_AMC;
-            result.result = res;
+            result.result = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
+            param.errCode = XPUM_OK;
+            return;
         }
         totalSuccess = totalSuccess && success;
         if (!success) {
+            XPUM_LOG_INFO("Task {} failed", taskUri);
             totalErrMsg += errMsg;
+        } else {
+            XPUM_LOG_INFO("Task {} succeeded", taskUri);
         }
     }
+
+    param.errCode = XPUM_OK;
+    param.errMsg = totalErrMsg;
 
     res = totalSuccess ? xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK : xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
     auto& result = param.result;

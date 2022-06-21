@@ -498,9 +498,7 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
         AmcCredential credential{username, password};
-        Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result, credential);
-
-        return XPUM_OK;
+        return Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result, credential);
     }
 
     if(firmwareType == XPUM_DEVICE_FIRMWARE_AMC){
