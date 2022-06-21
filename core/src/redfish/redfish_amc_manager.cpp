@@ -126,11 +126,11 @@ bool getAmcFwVersionByOdataId(RedfishHostInterface interface,
     return true;
 }
 
-std::vector<std::string> getGPUFwInventoryList(RedfishHostInterface interface,
-                                               std::string username,
-                                               std::string password,
-                                               std::string& errMsg) {
-    std::vector<std::string> gpuOdataIdList;
+xpum_result_t getGPUFwInventoryList(RedfishHostInterface interface,
+                                    std::string username,
+                                    std::string password,
+                                    std::vector<std::string>& gpuOdataIdList,
+                                    std::string& errMsg) {
     // get gpu list
     std::string path = "/redfish/v1/UpdateService/FirmwareInventory";
     std::stringstream url;
@@ -153,26 +153,25 @@ std::vector<std::string> getGPUFwInventoryList(RedfishHostInterface interface,
         res = libcurl.curl_easy_perform(curl);
     }
     libcurl.curl_easy_cleanup(curl);
-    if (res != CURLE_OK)
-        return gpuOdataIdList;
+    if (res != CURLE_OK){
+        errMsg = "Fail to get fw inventory list";
+        return XPUM_GENERIC_ERROR;
+    }
     json fwInventoryJson;
     try {
         fwInventoryJson = json::parse(buffer);
     } catch (...) {
         // parse error
-        return gpuOdataIdList;
+        errMsg = "Fail to parse fw inventory json";
+        return XPUM_GENERIC_ERROR;
     }
 
     // if contains error
-    if(fwInventoryJson.contains("error")){
+    if(fwInventoryJson.contains("error") || !fwInventoryJson.contains("Members")){
         errMsg = fwInventoryJson.dump(2);
-        return gpuOdataIdList;
+        return XPUM_GENERIC_ERROR;
     }
 
-    if (!fwInventoryJson.contains("Members")) {
-        return gpuOdataIdList;
-    }
-    
     for (auto inv : fwInventoryJson["Members"]) {
         if (inv.contains("@odata.id")) {
             std::string link = inv["@odata.id"].get<std::string>();
@@ -181,26 +180,7 @@ std::vector<std::string> getGPUFwInventoryList(RedfishHostInterface interface,
             }
         }
     }
-    return gpuOdataIdList;
-}
-
-std::vector<std::string> getAmcFwVersions(RedfishHostInterface interface,
-                                          std::string username,
-                                          std::string password,
-                                          std::string& errMsg) {
-    std::vector<std::string> versions;
-    auto gpuOdataIdList = getGPUFwInventoryList(interface, username, password, errMsg);
-    if (errMsg.length()) {
-        return versions;
-    }
-    for (auto link : gpuOdataIdList) {
-        std::string version;
-        std::string message;
-        if (getAmcFwVersionByOdataId(interface, username, password, link, version, message)) {
-            versions.push_back(version);
-        }
-    }
-    return versions;
+    return XPUM_OK;
 }
 
 bool RedfishAmcManager::preInit(){
@@ -243,17 +223,24 @@ bool RedfishAmcManager::init() {
 }
 
 void RedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) {
-    auto versions = getAmcFwVersions(hostInterface,
-                                     param.username,
-                                     param.password,
-                                     param.errMsg);
-    if(param.errMsg.length()){
-        // error occurs
+    std::vector<std::string> gpuOdataIdList;
+    auto errCode = getGPUFwInventoryList(hostInterface, param.username, param.password, gpuOdataIdList, param.errMsg);
+    if (errCode != XPUM_OK) {
+        param.errCode = errCode;
         return;
     }
-    for (auto version : versions) {
-        param.versions.push_back(version);
+    for (auto link : gpuOdataIdList) {
+        std::string version;
+        std::string message;
+        if (getAmcFwVersionByOdataId(hostInterface, param.username, param.password, link, version, message)) {
+            param.versions.push_back(version);
+        } else {
+            param.errCode = XPUM_GENERIC_ERROR;
+            param.errMsg = message;
+            return;
+        }
     }
+    param.errCode = XPUM_OK;
 }
 
 int doCmd(std::string cmd, std::string& output) {
@@ -730,12 +717,14 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
     // get gpu fw inventory list
-    auto targetLinks = getGPUFwInventoryList(hostInterface,
+    std::vector<std::string> targetLinks;
+    auto result = getGPUFwInventoryList(hostInterface,
                                              param.username,
                                              param.password,
+                                             targetLinks,
                                              param.errMsg);
-    if(param.errMsg.length()){
-        param.errCode = XPUM_GENERIC_ERROR;
+    if (result != XPUM_OK) {
+        param.errCode = result;
         param.callback();
         return;
     }

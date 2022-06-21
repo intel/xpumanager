@@ -189,11 +189,14 @@ xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& 
     param.password = credential.password;
     
     p_amc_manager->getAmcFirmwareVersions(param);
+    getAmcFwErrMsg = param.errMsg;
+    if (param.errCode != xpum_result_t::XPUM_OK) {
+        return param.errCode;
+    }
     for(auto version:param.versions){
         param.versions.push_back(version);
     }
-    getAmcFwErrMsg = param.errMsg;
-    return (xpum_result_t)param.errCode;
+    return param.errCode;
 }
 
 xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCredential credential) {

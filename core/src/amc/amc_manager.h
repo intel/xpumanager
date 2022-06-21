@@ -26,7 +26,7 @@ struct GetAmcFirmwareVersionsParam{
     std::string username;
     std::string password;
     std::vector<std::string> versions;
-    int errCode;
+    xpum_result_t errCode;
     std::string errMsg;
 };
 

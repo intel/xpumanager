@@ -363,7 +363,9 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
 }
 
 xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count, const char *username, const char *password) {
-    AmcCredential credential{username, password};
+    AmcCredential credential;
+    credential.username = std::string(username);
+    credential.password = std::string(password);
     std::vector<std::string> versions;
     auto result = Core::instance().getFirmwareManager()->getAMCFirmwareVersions(versions, credential);
     if (result != XPUM_OK) 
@@ -460,7 +462,9 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
                 }
             }
         }
-        AmcCredential credential{username, password};
+        AmcCredential credential;
+        credential.username = std::string(username);
+        credential.password = std::string(password);
         rc = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath, credential);
         return rc;
     } else {
