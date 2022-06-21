@@ -441,7 +441,7 @@ bool RedfishAmcManager::redfishHostInterfaceInit() {
     return hostInterface.valid();
 }
 
-void getPushUri(RedfishHostInterface interface,
+xpum_result_t getPushUriAndTrigerUri(RedfishHostInterface interface,
                 std::string username,
                 std::string password,
                 std::string& pushUri,
@@ -470,7 +470,7 @@ void getPushUri(RedfishHostInterface interface,
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
         errMsg = "Fail to query UpdateService";
-        return;
+        return XPUM_GENERIC_ERROR;
     }
 
     json updateServiceJson;
@@ -479,26 +479,27 @@ void getPushUri(RedfishHostInterface interface,
     } catch (...) {
         // parse error
         errMsg = "Fail to parse UpdateService json";
-        return;
+        return XPUM_GENERIC_ERROR;
     }
 
     if (updateServiceJson.contains("error")) {
         errMsg = updateServiceJson.dump(2);
-        return;
+        return XPUM_GENERIC_ERROR;
     }
 
     if (!updateServiceJson.contains("MultipartHttpPushUri")) {
         errMsg = "Can't find MultipartHttpPushUri from UpdateService json";
-        return;
+        return XPUM_GENERIC_ERROR;
     }
     pushUri = updateServiceJson["MultipartHttpPushUri"].get<std::string>();
     if (!updateServiceJson.contains("Actions") ||
         !updateServiceJson["Actions"].contains("#UpdateService.StartUpdate") ||
         !updateServiceJson["Actions"]["#UpdateService.StartUpdate"].contains("target")) {
         errMsg = "Can't find #UpdateService.StartUpdate from UpdateService json";
-        return;
+        return XPUM_GENERIC_ERROR;
     }
     trigerUri = updateServiceJson["Actions"]["#UpdateService.StartUpdate"]["target"];
+    return XPUM_OK;
 }
 
 
@@ -702,38 +703,116 @@ bool trigerUpdate(RedfishHostInterface interface,
     return false;
 }
 
+bool getTargetUriByOdataId(RedfishHostInterface interface,
+                           std::string username,
+                           std::string password,
+                           std::string odataid,
+                           std::string& targetUri,
+                           std::string& errMsg) {
+    std::stringstream url;
+    url << "https://";
+    url << interface.ipv4_service_addr;
+    if (interface.ipv4_service_port.length() > 0)
+        url << ":" << interface.ipv4_service_port;
+    url << odataid;
+    CURL* curl;
+    CURLcode res = CURL_LAST;
+    std::string buffer;
+    curl = libcurl.curl_easy_init();
+    if (curl) {
+        libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
+        curlBasicConfig(curl, buffer, username, password);
+
+        res = libcurl.curl_easy_perform(curl);
+    }
+    libcurl.curl_easy_cleanup(curl);
+    if (res != CURLE_OK){
+        errMsg = "Fail to get " + odataid;
+        return false;
+    }
+    json fwJson;
+    try {
+        fwJson = json::parse(buffer);
+    } catch (...) {
+        // parse error
+        errMsg = "Fail to parse json from " + odataid;
+        return false;
+    }
+    if (fwJson.contains("RelatedItem") &&
+        fwJson["RelatedItem"].is_array() &&
+        fwJson["RelatedItem"].size() > 0 &&
+        fwJson["RelatedItem"].at(0).contains("@odata.id")) {
+        targetUri = fwJson["RelatedItem"].at(0)["@odata.id"].get<std::string>();
+        return true;
+    }
+    errMsg = fwJson.dump(2);
+    return false;
+}
 
 void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     
     // get push uri
     std::string pushUri, trigerUri;
+    
+    xpum_result_t result;
 
-    getPushUri(hostInterface, param.username, param.password, pushUri, trigerUri, param.errMsg);
+    result = getPushUriAndTrigerUri(hostInterface, param.username, param.password, pushUri, trigerUri, param.errMsg);
 
-    if (!pushUri.length() || !trigerUri.length() || param.errMsg.length()) {
-        param.errCode = XPUM_GENERIC_ERROR;
-        param.callback();
-        return;
-    }
-    // get gpu fw inventory list
-    std::vector<std::string> targetLinks;
-    auto result = getGPUFwInventoryList(hostInterface,
-                                             param.username,
-                                             param.password,
-                                             targetLinks,
-                                             param.errMsg);
     if (result != XPUM_OK) {
         param.errCode = result;
         param.callback();
         return;
     }
 
+    XPUM_LOG_INFO("Get pushUri: {} and trigerUri: {}", pushUri, trigerUri);
+    if (!pushUri.length() || !trigerUri.length()) {
+        param.errCode = XPUM_GENERIC_ERROR;
+        param.errMsg = "pushUri or trigerUri is empty";
+        param.callback();
+        return;
+    }
+    // get gpu fw inventory list
+    std::vector<std::string> odataIds;
+    result = getGPUFwInventoryList(hostInterface,
+                                   param.username,
+                                   param.password,
+                                   odataIds,
+                                   param.errMsg);
+    if (result != XPUM_OK) {
+        XPUM_LOG_INFO("Fail to get gpu fw inventory list");
+        param.errCode = result;
+        param.callback();
+        return;
+    }
+
+    XPUM_LOG_INFO("Get odata.ids:");
+    
+    std::vector<std::string> targetUriList;
+    for (auto oid : odataIds) {
+        XPUM_LOG_INFO("{}", oid);
+        std::string targetUri;
+        if (getTargetUriByOdataId(hostInterface,
+                                  param.username,
+                                  param.password,
+                                  oid, targetUri,
+                                  param.errMsg)) {
+            targetUriList.push_back(targetUri);
+        }
+    }
+
+    XPUM_LOG_INFO("Get target uri list:");
+    for (auto targetUri : targetUriList) {
+        XPUM_LOG_INFO("{}", targetUri);
+    }
+
     // upload image
     if (!uploadImage(hostInterface,
                      param,
                      pushUri,
-                     targetLinks)) {
+                     targetUriList)) {
+        XPUM_LOG_ERROR("Fail to upload image");
         param.callback();
         return;
     }
@@ -744,6 +823,7 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
                       param,
                       trigerUri,
                       taskUriList)) {
+        XPUM_LOG_ERROR("Fail to triger update");
         param.callback();
         return;
     }
