@@ -21,7 +21,7 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "sh1sdev002.sh.intel.com/xpum-builder-sles"
+      image: "sh1sdev002.sh.intel.com/xpum-builder-sles:lz-1.8.1"
       imagePullPolicy: "IfNotPresent"
       name: "xpum-builder-sles"
       resources:
@@ -48,7 +48,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "sh1sdev002.sh.intel.com/xpum-builder-ubuntu"
+      image: "sh1sdev002.sh.intel.com/xpum-builder-ubuntu:lz-1.8.1"
       imagePullPolicy: "IfNotPresent"
       name: "xpum-builder-ubuntu"
       resources:
@@ -75,7 +75,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "sh1sdev002.sh.intel.com/xpum-builder-centos7"
+      image: "sh1sdev002.sh.intel.com/xpum-builder-centos7:lz-1.8.1"
       imagePullPolicy: "IfNotPresent"
       name: "xpum-builder-centos"
       resources:

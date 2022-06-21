@@ -50,11 +50,17 @@ void MetricStatisticsDataHandler::updateStatistics(std::shared_ptr<SharedData>& 
                 }
                 iter_statistics->second.latest_time = p_data->getTime();
             } else {
-                statistics_datas[session].insert(std::make_pair(iter->first, Statistics_data(iter->second->getCurrent(), p_data->getTime())));
+                if (iter->second->getCurrent() != std::numeric_limits<uint64_t>::max()) {
+                    statistics_datas[session].insert(std::make_pair(iter->first, Statistics_data(iter->second->getCurrent(), p_data->getTime())));
+                }
             }
 
             std::map<uint32_t, SubdeviceData>::const_iterator iter_subdevice = iter->second->getSubdeviceDatas()->begin();
             while (iter_subdevice != iter->second->getSubdeviceDatas()->end()) {
+                if (statistics_datas[session].find(iter->first) == statistics_datas[session].end()) {
+                    statistics_datas[session].insert(std::make_pair(iter->first, Statistics_data(iter_subdevice->first, iter->second->getSubdeviceDataCurrent(iter_subdevice->first), p_data->getTime())));
+                    continue;
+                }
                 std::map<uint32_t, Statistics_subdevice_data>::iterator iter_subdevice_statistics = statistics_datas[session].find(iter->first)->second.subdevice_datas.find(iter_subdevice->first);
                 if (iter_subdevice_statistics != statistics_datas[session].find(iter->first)->second.subdevice_datas.end()) {
                     if (iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first) != std::numeric_limits<uint64_t>::max()) {
@@ -70,7 +76,11 @@ void MetricStatisticsDataHandler::updateStatistics(std::shared_ptr<SharedData>& 
                     }
                 } else {
                     if (iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first) != std::numeric_limits<uint64_t>::max()) {
-                        statistics_datas[session].find(iter->first)->second.subdevice_datas.insert(std::make_pair(iter_subdevice->first, Statistics_subdevice_data(iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first))));
+                        if (statistics_datas[session].find(iter->first) == statistics_datas[session].end()) {
+                            statistics_datas[session].insert(std::make_pair(iter->first, Statistics_data(iter_subdevice->first, iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first), p_data->getTime())));
+                        } else {
+                            statistics_datas[session].find(iter->first)->second.subdevice_datas.insert(std::make_pair(iter_subdevice->first, Statistics_subdevice_data(iter->second->getSubdeviceDataCurrent(iter_subdevice_statistics->first))));
+                        }
                     }
                 }
                 ++iter_subdevice;

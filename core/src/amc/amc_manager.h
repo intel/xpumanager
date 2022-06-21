@@ -26,14 +26,14 @@ struct GetAmcFirmwareVersionsParam{
     std::string username;
     std::string password;
     std::vector<std::string> versions;
-    int errCode;
+    xpum_result_t errCode;
     std::string errMsg;
 };
 
 struct GetAmcFirmwareFlashResultParam {
     std::string username;
     std::string password;
-    int errCode;
+    xpum_result_t errCode;
     std::string errMsg;
     xpum_firmware_flash_task_result_t result;
 };

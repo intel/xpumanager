@@ -310,6 +310,12 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         std::string amcWarnMsg = coreStub->getRedfishAmcWarnMsg();
         if (amcWarnMsg.length()) {
             std::cout << coreStub->getRedfishAmcWarnMsg() << std::endl;
+            std::string confirm;
+            std::cin >> confirm;
+            if (confirm != "Y" && confirm != "y") {
+                out << "update aborted" << std::endl;
+                return;
+            }
         }
         std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model. Updating AMC firmware may cause OS to reboot." << std::endl;
         std::cout << "Please comfirm to proceed ( Y/N ) ?" << std::endl;

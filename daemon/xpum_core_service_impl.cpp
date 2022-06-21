@@ -107,7 +107,18 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
     return grpc::Status::OK;
 }
 
-grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* context, const ::GetAMCFirmwareVersionsRequest* request, ::GetAMCFirmwareVersionsResponse* response) {
+static std::string getGetAmcFwErrMsg() {
+    // get error message
+    int count = 0;
+    xpumGetAMCFirmwareVersionsErrorMsg(nullptr, &count);
+    char buffer[count];
+    xpumGetAMCFirmwareVersionsErrorMsg(buffer, &count);
+    return std::string(buffer);
+}
+
+grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* context,
+                                                         const ::GetAMCFirmwareVersionsRequest* request,
+                                                         ::GetAMCFirmwareVersionsResponse* response) {
     int count;
     auto res = xpumGetAMCFirmwareVersions(nullptr, &count, request->username().c_str(), request->password().c_str());
     if (res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
@@ -115,7 +126,11 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
         return grpc::Status::OK;
     } else if (res != XPUM_OK) {
         response->set_status(res);
-        response->set_errormsg("Fail to get AMC firmware version count");
+        auto errMsg = getGetAmcFwErrMsg();
+        if (errMsg.length())
+            response->set_errormsg(errMsg);
+        else
+            response->set_errormsg("Fail to get AMC firmware version count");
         return grpc::Status::OK;
     }
     std::vector<xpum_amc_fw_version_t> versions(count);
@@ -125,7 +140,11 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
         return grpc::Status::OK;
     } else if (res != XPUM_OK) {
         response->set_status(res);
-        response->set_errormsg("Fail to get AMC firmware versions");
+        auto errMsg = getGetAmcFwErrMsg();
+        if (errMsg.length())
+            response->set_errormsg(errMsg);
+        else
+            response->set_errormsg("Fail to get AMC firmware versions");
         return grpc::Status::OK;
     }
     for (auto version : versions) {

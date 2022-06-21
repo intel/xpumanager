@@ -9,12 +9,27 @@
 
 namespace xpum::daemon {
 
-::grpc::Status XpumCoreServiceImpl::runFirmwareFlash(::grpc::ServerContext* context, const ::XpumFirmwareFlashJob* request, ::XpumFirmwareFlashJobResponse* response) {
+static std::string getFlashFwErrMsg() {
+    // get error message
+    int count;
+    xpumGetFirmwareFlashErrorMsg(nullptr, &count);
+    char buffer[count];
+    xpumGetFirmwareFlashErrorMsg(buffer, &count);
+    return std::string(buffer);
+}
+
+::grpc::Status XpumCoreServiceImpl::runFirmwareFlash(::grpc::ServerContext* context,
+                                                     const ::XpumFirmwareFlashJob* request,
+                                                     ::XpumFirmwareFlashJobResponse* response) {
     xpum_firmware_flash_job job;
     job.type = (xpum_firmware_type_enum)request->type().value();
     job.filePath = request->path().c_str();
-    response->mutable_type()->set_value(xpumRunFirmwareFlash(request->id().id(), &job, request->username().c_str(), request->password().c_str()));
-
+    xpum_result_t result = xpumRunFirmwareFlash(request->id().id(),
+                             &job,
+                             request->username().c_str(),
+                             request->password().c_str());
+    response->mutable_type()->set_value(result);
+    response->set_errormsg(getFlashFwErrMsg());
     return grpc::Status::OK;
 }
 
@@ -35,16 +50,21 @@ namespace xpum::daemon {
         response->set_desc("");
         response->set_version("");
     } else {
-        switch (res) {
-            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
-                response->set_errormsg("Level Zero Initialization Error");
-                break;
-            case XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC:
-                response->set_errormsg("Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.");
-                break;
-            default:
-                response->set_errormsg("Fail to get firmware flash result.");
-                break;
+        auto errMsg = getFlashFwErrMsg();
+        if (errMsg.length()) {
+            response->set_errormsg(errMsg);
+        } else {
+            switch (res) {
+                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                    response->set_errormsg("Level Zero Initialization Error");
+                    break;
+                case XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC:
+                    response->set_errormsg("Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.");
+                    break;
+                default:
+                    response->set_errormsg("Fail to get firmware flash result.");
+                    break;
+            }
         }
     }
 

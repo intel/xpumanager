@@ -105,6 +105,19 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
  */
 xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count, const char *username, const char *password);
 
+
+/**
+ * @brief Get error message when fail to get amc firmware versions
+ * 
+ * @param buffer        IN/OUT: The buffer to store error message
+ * @param count         IN/OUT: When \a buffer is NULL, \a count will be filled with the length of buffer needed, and return.
+ *                              When \a buffer is not NULL, \a count denotes the length of \a buffer, \a count should be equal to or larger than needed length, if not, it will return XPUM_BUFFER_TOO_SMALL; if return successfully, the error message will be stored in \a buffer
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char* buffer, int *count);
+
 /** @} */ // Closing for DEVICE_API
 
 /**************************************************************************/
@@ -614,6 +627,18 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
                                          xpum_firmware_flash_task_result_t *result,
                                          const char *username,
                                          const char *password);
+
+/**
+ * @brief Get error message when fail to flash firmware
+ * 
+ * @param buffer        IN/OUT: The buffer to store error message
+ * @param count         IN/OUT: When \a buffer is NULL, \a count will be filled with the length of buffer needed, and return.
+ *                              When \a buffer is not NULL, \a count denotes the length of \a buffer, \a count should be equal to or larger than needed length, if not, it will return XPUM_BUFFER_TOO_SMALL; if return successfully, the error message will be stored in \a buffer
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetFirmwareFlashErrorMsg(char* buffer, int *count);
 
 /** @} */ // Closing for FIRMWARE_UPDATE_API
 

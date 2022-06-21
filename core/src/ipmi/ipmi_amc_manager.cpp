@@ -35,6 +35,7 @@
  */
 
 #include "amc/ipmi_amc_manager.h"
+#include "infrastructure/logger.h"
 
 namespace xpum {
 
@@ -43,6 +44,7 @@ extern int cmd_firmware(const char* file, unsigned int versions[4]);
 extern std::vector<std::string> cmd_get_amc_firmware_versions();
 
 bool IpmiAmcManager::preInit(){
+    XPUM_LOG_INFO("IpmiAmcManager preInit");
     return init();
 }
 
@@ -51,6 +53,7 @@ bool IpmiAmcManager::init() {
         return true;
     updateAmcFwList();
     initialized = true;
+    XPUM_LOG_INFO("IpmiAmcManager init");
     return true;
 }
 
