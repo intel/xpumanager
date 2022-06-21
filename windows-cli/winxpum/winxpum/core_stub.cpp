@@ -483,7 +483,7 @@ std::vector<int> CoreStub::handlePowerByLevel0(zes_device_handle_t device, bool 
                 }
 
                 if (set) {
-                    if (limit < 1 || limit / 1000 > power_limit) {
+                    if (limit < 1) {
                         res.push_back(-1);
                         return res;
                     }
