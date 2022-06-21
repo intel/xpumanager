@@ -5,12 +5,13 @@
  */
 #include "amc/redfish_amc_manager.h"
 
+#include <nlohmann/json.hpp>
 #include <regex>
 #include <sstream>
-#include <nlohmann/json.hpp>
-#include "libcurl.h"
 
 #include "core/core.h"
+#include "infrastructure/logger.h"
+#include "libcurl.h"
 
 using namespace nlohmann;
 
@@ -198,27 +199,40 @@ std::vector<std::string> getAmcFwVersions(RedfishHostInterface interface,
 }
 
 bool RedfishAmcManager::preInit(){
+    XPUM_LOG_INFO("RedfishAmcManager preInit");
     if (!libcurl.initialized()) {
         // fail to load libcurl.so
+        XPUM_LOG_INFO("fail to load libcurl.so");
         return false;
     }
     // configure interface
-    if (!redfishHostInterfaceInit())
+    if (!redfishHostInterfaceInit()) {
+        XPUM_LOG_INFO("fail to parse redfish host interface");
         return false;
+    }
     return true;
 }
 
 bool RedfishAmcManager::init() {
-    if (initialized)
+    if (initialized) {
+        XPUM_LOG_INFO("RedfishAmcManager already initialized");
         return true;
-    if(!preInit())
+    }
+    XPUM_LOG_INFO("RedfishAmcManager init");
+    if (!preInit()) {
+        XPUM_LOG_INFO("RedfishAmcManager fail to preInit");
         return false;
+    }
     // bind ip to interface
-    if (!bindIpToInterface())
+    if (!bindIpToInterface()) {
+        XPUM_LOG_INFO("RedfishAmcManager fail to bind ip to interface");
         return false;
+    }
     // try to get /redfish/v1
-    if (!getBasePage(hostInterface))
+    if (!getBasePage(hostInterface)) {
+        XPUM_LOG_INFO("RedfishAmcManager fail to get base url");
         return false;
+    }
     initialized = true;
     return true;
 }
@@ -377,15 +391,17 @@ std::vector<std::string> splitInterfaces(std::string output) {
     return interfaces;
 }
 
+static bool ipBinded = false;
+
 std::string getRedfishAmcWarn() {
+    if(ipBinded)
+        return "";
     // check if redfish amc supported
     auto output = getDmiDecodeOutput();
 
     auto interfaces = splitInterfaces(output);
 
-    // for (int i = 1; i < interfaces.size(); i++) {
     for (auto& itf : interfaces) {
-        // auto itf = interfaces.at(i);
 
         auto info = parseInterface(itf);
         if (!info.valid())
@@ -402,7 +418,7 @@ std::string getRedfishAmcWarn() {
     return "";
 }
 
-bool RedfishAmcManager::bindIpToInterface(){
+bool RedfishAmcManager::bindIpToInterface() {
     auto output = getDmiDecodeOutput();
     // ifconfig interface
     std::string ifconfig_cmd = "ifconfig " +
@@ -413,7 +429,7 @@ bool RedfishAmcManager::bindIpToInterface(){
                                hostInterface.ipv4_mask;
 
     int ret = doCmd(ifconfig_cmd, output);
-
+    ipBinded = true;
     return ret == 0;
 }
 

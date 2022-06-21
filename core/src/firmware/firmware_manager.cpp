@@ -159,7 +159,6 @@ void FirmwareManager::init() {
 };
 
 void FirmwareManager::preInitAmcManager() {
-    XPUM_LOG_INFO("pre-initialize amc manager");
     p_amc_manager = std::make_shared<RedfishAmcManager>();
     auto redfish_enabled = p_amc_manager->preInit();
     if (!redfish_enabled) {
@@ -179,29 +178,39 @@ bool FirmwareManager::initAmcManager() {
     return false;
 }
 
-std::vector<std::string> FirmwareManager::getAMCFirmwareVersions(AmcCredential credential) {
+xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& versions, AmcCredential credential) {
+    getAmcFwErrMsg.clear();
     if (!initAmcManager()) {
-        return std::vector<std::string>();
+        getAmcFwErrMsg = "Fail to get AMC firmware versions";
+        return XPUM_GENERIC_ERROR;
     }
     GetAmcFirmwareVersionsParam param;
     param.username = credential.username;
     param.password = credential.password;
     
     p_amc_manager->getAmcFirmwareVersions(param);
-    return param.versions;
+    for(auto version:param.versions){
+        param.versions.push_back(version);
+    }
+    getAmcFwErrMsg = param.errMsg;
+    return (xpum_result_t)param.errCode;
 }
 
 xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCredential credential) {
+    flashFwErrMsg.clear();
     if (!initAmcManager()) {
-        return xpum_result_t::XPUM_GENERIC_ERROR;
+        flashFwErrMsg = "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.";
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
     }
 
     std::vector<std::shared_ptr<Device>> allDevices;
     Core::instance().getDeviceManager()->getDeviceList(allDevices);
     // lock all devices
     bool locked = Core::instance().getDeviceManager()->tryLockDevices(allDevices);
-    if (!locked)
+    if (!locked) {
+        flashFwErrMsg = "Device is bussy";
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
 
     FlashAmcFirmwareParam param;
     param.file = std::string(filePath);
@@ -215,7 +224,8 @@ xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCred
     };
 
     p_amc_manager->flashAMCFirmware(param);
-    return xpum_result_t::XPUM_OK;
+    flashFwErrMsg = param.errMsg;
+    return (xpum_result_t)param.errCode;
 }
 
 void FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t* result, AmcCredential credential) {
@@ -224,6 +234,7 @@ void FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_
     param.password = credential.password;
     p_amc_manager->getAMCFirmwareFlashResult(param);
     *result = param.result;
+    flashFwErrMsg = param.errMsg;
 }
 
 std::string FirmwareManager::getAmcWarnMsg() {

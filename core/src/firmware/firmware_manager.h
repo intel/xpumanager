@@ -35,12 +35,15 @@ class FirmwareManager {
 
     bool initAmcManager();
 
+    std::string getAmcFwErrMsg;
+    std::string flashFwErrMsg;
+
    public:
     void init();
     bool isUpgradingFw(void);
 
     void detectGscFw();
-    std::vector<std::string> getAMCFirmwareVersions(AmcCredential credential);
+    xpum_result_t getAMCFirmwareVersions(std::vector<std::string> &versions,AmcCredential credential);
     xpum_result_t runAMCFirmwareFlash(const char* filePath, AmcCredential credential);
     void getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result, AmcCredential credential);
     std::string getAmcWarnMsg();
@@ -50,6 +53,14 @@ class FirmwareManager {
 
     xpum_result_t runFwDataFlash(xpum_device_id_t deviceId, const char* filePath);
     void getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
+
+    std::string getGetAmcFwErrMsg() {
+        return getAmcFwErrMsg;
+    }
+
+    std::string getFlashFwErrMsg() {
+        return flashFwErrMsg;
+    }
 };
 
 std::vector<char> readImageContent(const char* filePath);

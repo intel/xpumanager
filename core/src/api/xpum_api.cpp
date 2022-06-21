@@ -364,7 +364,10 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
 
 xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count, const char *username, const char *password) {
     AmcCredential credential{username, password};
-    auto versions = Core::instance().getFirmwareManager()->getAMCFirmwareVersions(credential);
+    std::vector<std::string> versions;
+    auto result = Core::instance().getFirmwareManager()->getAMCFirmwareVersions(versions, credential);
+    if (result != XPUM_OK) 
+        return result;
     if (versionList == nullptr) {
         *count = versions.size();
         return XPUM_OK;
@@ -380,6 +383,19 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
     return XPUM_OK;
 }
 
+xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char *buffer, int *count) {
+    auto errMsg = Core::instance().getFirmwareManager()->getGetAmcFwErrMsg();
+    if (buffer == nullptr) {
+        *count = errMsg.length() + 1;
+        return XPUM_OK;
+    }
+    if (*count < (int) errMsg.length() + 1) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    std::strcpy(buffer, errMsg.c_str());
+    buffer[errMsg.length() + 1] = '\0';
+    return XPUM_OK;
+}
 
 static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
     if (job->filePath == nullptr)
@@ -498,6 +514,20 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     else
         return XPUM_GENERIC_ERROR;
 
+    return XPUM_OK;
+}
+
+xpum_result_t xpumGetFirmwareFlashErrorMsg(char *buffer, int *count) {
+    auto errMsg = Core::instance().getFirmwareManager()->getFlashFwErrMsg();
+    if (buffer == nullptr) {
+        *count = errMsg.length() + 1;
+        return XPUM_OK;
+    }
+    if (*count < (int) errMsg.length() + 1) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    std::strcpy(buffer, errMsg.c_str());
+    buffer[errMsg.length() + 1] = '\0';
     return XPUM_OK;
 }
 
