@@ -56,6 +56,7 @@ bool getBasePage(RedfishHostInterface interface) {
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
     url << path;
+    XPUM_LOG_INFO("redfish base url: {}", url.str());
     CURL* curl;
     CURLcode res = CURL_LAST;
     curl = libcurl.curl_easy_init();
@@ -70,6 +71,10 @@ bool getBasePage(RedfishHostInterface interface) {
         res = libcurl.curl_easy_perform(curl);
     }
     libcurl.curl_easy_cleanup(curl);
+
+    if (res != CURLE_OK) {
+        XPUM_LOG_INFO("Get base url error code: {}", res);
+    }
 
     return res == CURLE_OK;
 }
