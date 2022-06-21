@@ -140,6 +140,11 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                     return json;
                 }
                 val1 = std::stoi(paralist.at(1));
+                if (val1 <= 0) {
+                    (*json)["return"] = "invalid parameter: timeout should bigger than 0.";
+                    return json;
+                }
+
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMEOUT,
                                                               val1, 0);
             } else if (command.compare("timeslice") == 0) {
@@ -149,6 +154,10 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 }
                 val1 = std::stoi(paralist.at(1));
                 val2 = std::stoi(paralist.at(2));
+                if (val1 <= 0 || val2 <= 0) {
+                    (*json)["return"] = "invalid parameter: time slice should bigger than 0.";
+                    return json;
+                }
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMESLICE, val1, val2);
             } else if (command.compare("exclusive") == 0) {
                 if (paralist.size() != 1) {
@@ -171,6 +180,10 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 int val1 = std::stoi(paralist.at(0));
                 if (paralist.size() == 2 && paralist.at(1).empty()) {
                     (*json)["return"] = "invalid parameter: please check help information";
+                    return json;
+                }
+                if (val1 <= 0) {
+                    (*json)["return"] = "invalid parameter: power limit should bigger than 0.";
                     return json;
                 }
                 int val2 = 0; //std::stoi(paralist.at(1));
@@ -210,6 +223,10 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             if (paralist.size() == 2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
                 int val1 = std::stoi(paralist.at(0));
                 int val2 = std::stoi(paralist.at(1));
+                if (val1 <= 0 || val2 <= 0) {
+                    (*json)["return"] = "invalid parameter: min/max frequency should bigger than 0.";
+                    return json;
+                }
                 json = this->coreStub->setDeviceFrequencyRange(this->opts->deviceId, this->opts->tileId, val1, val2);
                 if ((*json)["status"] == "OK") {
                     (*json)["return"] = "Succeed to change the core frequency range on GPU " + std::to_string(this->opts->deviceId) +

@@ -203,6 +203,8 @@ def set_powerlimit(deviceId):
     power = req["power_limit"]
     if type(power) != int:
         return jsonify("Invalid Parameter power_limit"), 500
+    if power <= 0:
+        return jsonify("Invalid Parameter power_limit"), 500
     power = power * 1000
 
     if power < 0 :
