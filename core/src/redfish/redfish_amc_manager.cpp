@@ -707,7 +707,7 @@ bool trigerUpdate(RedfishHostInterface interface,
         trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"].is_array() &&
         trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"].size() > 0) {
         // get task list
-        for (auto uri : trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"]) {
+        for (auto uri : trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"]) {
             taskUriList.push_back(uri.get<std::string>());
         }
         XPUM_LOG_INFO("triger update successfully");
