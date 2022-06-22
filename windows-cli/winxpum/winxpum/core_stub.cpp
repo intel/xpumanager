@@ -119,8 +119,8 @@ CoreStub::~CoreStub() {
 std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
-    (*json)["xpum_version"] = "1.0";
-    (*json)["xpum_version_git"] = "1.0";
+    // (*json)["xpum_version"] = "1.1";
+    // (*json)["xpum_version_git"] = "1.1";
     (*json)["level_zero_version"] = "Not Detected";
     ze_result_t res;
     size_t size = 0;
