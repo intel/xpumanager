@@ -59,6 +59,7 @@ bool getBasePage(RedfishHostInterface interface) {
     XPUM_LOG_INFO("redfish base url: {}", url.str());
     CURL* curl;
     CURLcode res = CURL_LAST;
+    std::string buffer;
     curl = libcurl.curl_easy_init();
     if (curl) {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
@@ -67,6 +68,9 @@ bool getBasePage(RedfishHostInterface interface) {
         libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
         libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
+
+        libcurl.curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriteToStringCallback);
+        libcurl.curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
 
         res = libcurl.curl_easy_perform(curl);
     }
@@ -77,6 +81,44 @@ bool getBasePage(RedfishHostInterface interface) {
     }
 
     return res == CURLE_OK;
+}
+
+bool parseErrorMsg(json obj, std::string& errMsg) {
+    /*
+    {
+      "error": {
+        "@Message.ExtendedInfo": [
+          {
+            "Message": "While accessing the resource at /redfish/v1/UpdateService/FirmwareInventory, the service received an authorization error unauthorized.",
+            "MessageArgs": [
+              "/redfish/v1/UpdateService/FirmwareInventory",
+              "unauthorized"
+            ],
+            "MessageId": "Base.1.4.ResourceAtUriUnauthorized",
+            "RelatedProperties": [
+              "unauthorized"
+            ],
+            "Resolution": "Ensure that the appropriate access is provided for the service in order for it to access the URI.",
+            "Severity": "Critical"
+          }
+        ],
+        "Message": "A general error has occurred. See ExtendedInfo for more information.",
+        "code": "Base.v1_4_0.GeneralError"
+      }
+    }
+    */
+    std::string total = obj.dump(2);
+    XPUM_LOG_ERROR(total);
+    if (obj.contains("error") &&
+        obj["error"].contains("@Message.ExtendedInfo") &&
+        obj["error"]["@Message.ExtendedInfo"].is_array() &&
+        obj["error"]["@Message.ExtendedInfo"].size() > 0 &&
+        obj["error"]["@Message.ExtendedInfo"].at(0).contains("Message")) {
+        errMsg = obj["error"]["@Message.ExtendedInfo"].at(0)["Message"];
+        return true;
+    }
+    errMsg = total;
+    return false;
 }
 
 bool getAmcFwVersionByOdataId(RedfishHostInterface interface,
@@ -116,14 +158,12 @@ bool getAmcFwVersionByOdataId(RedfishHostInterface interface,
         errMsg = "Fail to parse json from " + odataid;
         return false;
     }
-    if(fwJson.contains("error")){
-        errMsg = fwJson.dump(2);
-        return false;
+    if (fwJson.contains("Version")) {
+        version = fwJson["Version"].get<std::string>();
+        return true;
     }
-    if (!fwJson.contains("Version"))
-        return false;
-    version = fwJson["Version"].get<std::string>();
-    return true;
+    parseErrorMsg(fwJson, errMsg);
+    return false;
 }
 
 xpum_result_t getGPUFwInventoryList(RedfishHostInterface interface,
@@ -166,21 +206,20 @@ xpum_result_t getGPUFwInventoryList(RedfishHostInterface interface,
         return XPUM_GENERIC_ERROR;
     }
 
-    // if contains error
-    if(fwInventoryJson.contains("error") || !fwInventoryJson.contains("Members")){
-        errMsg = fwInventoryJson.dump(2);
-        return XPUM_GENERIC_ERROR;
-    }
-
-    for (auto inv : fwInventoryJson["Members"]) {
-        if (inv.contains("@odata.id")) {
-            std::string link = inv["@odata.id"].get<std::string>();
-            if (link.find("/redfish/v1/UpdateService/FirmwareInventory/GPU") != link.npos) {
-                gpuOdataIdList.push_back(link);
+    if (fwInventoryJson.contains("Members")) {
+        for (auto inv : fwInventoryJson["Members"]) {
+            if (inv.contains("@odata.id")) {
+                std::string link = inv["@odata.id"].get<std::string>();
+                if (link.find("/redfish/v1/UpdateService/FirmwareInventory/GPU") != link.npos) {
+                    gpuOdataIdList.push_back(link);
+                }
             }
         }
+        return XPUM_OK;
     }
-    return XPUM_OK;
+    // if contains error
+    parseErrorMsg(fwInventoryJson, errMsg);
+    return XPUM_GENERIC_ERROR;
 }
 
 bool RedfishAmcManager::preInit(){
@@ -383,6 +422,56 @@ std::vector<std::string> splitInterfaces(std::string output) {
     return interfaces;
 }
 
+static unsigned short toCidr(const char* ipAddress) {
+    unsigned short netmask_cidr;
+    int ipbytes[4];
+
+    netmask_cidr = 0;
+    sscanf(ipAddress, "%d.%d.%d.%d", &ipbytes[0], &ipbytes[1], &ipbytes[2], &ipbytes[3]);
+
+    for (int i = 0; i < 4; i++) {
+        switch (ipbytes[i]) {
+            case 0x80:
+                netmask_cidr += 1;
+                break;
+
+            case 0xC0:
+                netmask_cidr += 2;
+                break;
+
+            case 0xE0:
+                netmask_cidr += 3;
+                break;
+
+            case 0xF0:
+                netmask_cidr += 4;
+                break;
+
+            case 0xF8:
+                netmask_cidr += 5;
+                break;
+
+            case 0xFC:
+                netmask_cidr += 6;
+                break;
+
+            case 0xFE:
+                netmask_cidr += 7;
+                break;
+
+            case 0xFF:
+                netmask_cidr += 8;
+                break;
+
+            default:
+                return netmask_cidr;
+                break;
+        }
+    }
+
+    return netmask_cidr;
+}
+
 static bool ipBinded = false;
 
 std::string getRedfishAmcWarn() {
@@ -394,33 +483,43 @@ std::string getRedfishAmcWarn() {
     auto interfaces = splitInterfaces(output);
 
     for (auto& itf : interfaces) {
-
         auto info = parseInterface(itf);
         if (!info.valid())
             continue;
         // warning string
         std::stringstream ss;
-        ss << "XPUM will bind ";
+        ss << "XPUM will config the address ";
         ss << info.ipv4_addr;
-        ss << "/" << info.ipv4_mask;
+        ss << "/" << toCidr(info.ipv4_mask.c_str());
         ss << " to interface " << info.interface_name;
-        ss << ", do you want to continue? (y/n)";
+        ss << ".";
         return ss.str();
     }
     return "";
 }
 
 bool RedfishAmcManager::bindIpToInterface() {
-    auto output = getDmiDecodeOutput();
-    // ifconfig interface
-    std::string ifconfig_cmd = "ifconfig " +
-                               hostInterface.interface_name +
-                               " " +
-                               hostInterface.ipv4_addr +
-                               " netmask " +
-                               hostInterface.ipv4_mask;
-
-    int ret = doCmd(ifconfig_cmd, output);
+    auto cidr = toCidr(hostInterface.ipv4_mask.c_str());
+    std::string output;
+    int ret;
+    // delete old value
+    std::string ip_del_cmd = "ip addr del " +
+                             hostInterface.ipv4_addr +
+                             "/" +
+                             std::to_string(cidr) +
+                             " dev " +
+                             hostInterface.interface_name;
+    XPUM_LOG_INFO("remove old config: {}", ip_del_cmd);
+    ret = doCmd(ip_del_cmd, output);
+    // config new value
+    std::string ip_add_cmd = "ip addr add " +
+                             hostInterface.ipv4_addr +
+                             "/" +
+                             std::to_string(cidr) +
+                             " dev " +
+                             hostInterface.interface_name;
+    ret = doCmd(ip_add_cmd, output);
+    XPUM_LOG_INFO("interface config: {}", ip_add_cmd);
     ipBinded = true;
     return ret == 0;
 }
@@ -441,12 +540,12 @@ bool RedfishAmcManager::redfishHostInterfaceInit() {
     return hostInterface.valid();
 }
 
-xpum_result_t getPushUriAndTrigerUri(RedfishHostInterface interface,
-                std::string username,
-                std::string password,
-                std::string& pushUri,
-                std::string& trigerUri,
-                std::string& errMsg) {
+xpum_result_t getPushUriAndTriggerUri(RedfishHostInterface interface,
+                                      std::string username,
+                                      std::string password,
+                                      std::string& pushUri,
+                                      std::string& triggerUri,
+                                      std::string& errMsg) {
     // get gpu list
     std::string path = "/redfish/v1/UpdateService";
     std::stringstream url;
@@ -487,6 +586,55 @@ xpum_result_t getPushUriAndTrigerUri(RedfishHostInterface interface,
         return XPUM_GENERIC_ERROR;
     }
 
+/*
+{
+  "@odata.type": "#UpdateService.v1_8_0.UpdateService",
+  "@odata.id": "/redfish/v1/UpdateService",
+  "Id": "UpdateService",
+  "Name": "Update Service",
+  "Description": "Service for updating firmware and includes inventory of firmware",
+  "Status": {
+    "State": "Enabled",
+    "Health": "OK",
+    "HealthRollup": "OK"
+  },
+  "ServiceEnabled": true,
+  "MultipartHttpPushUri": "/redfish/v1/UpdateService/upload",
+  "FirmwareInventory": {
+    "@odata.id": "/redfish/v1/UpdateService/FirmwareInventory"
+  },
+  "Actions": {
+    "Oem": {
+      "#SmcUpdateService.Install": {
+        "target": "/redfish/v1/UpdateService/Actions/Oem/SmcUpdateService.Install",
+        "@Redfish.ActionInfo": "/redfish/v1/UpdateService/Oem/Supermicro/InstallActionInfo"
+      }
+    },
+    "#UpdateService.SimpleUpdate": {
+      "target": "/redfish/v1/UpdateService/Actions/UpdateService.SimpleUpdate",
+      "@Redfish.ActionInfo": "/redfish/v1/UpdateService/SimpleUpdateActionInfo"
+    },
+    "#UpdateService.StartUpdate": {
+      "target": "/redfish/v1/UpdateService/Actions/UpdateService.StartUpdate"
+    }
+  },
+  "Oem": {
+    "Supermicro": {
+      "@odata.type": "#SmcUpdateServiceExtensions.v1_0_0.UpdateService",
+      "SSLCert": {
+        "@odata.id": "/redfish/v1/UpdateService/Oem/Supermicro/SSLCert"
+      },
+      "IPMIConfig": {
+        "@odata.id": "/redfish/v1/UpdateService/Oem/Supermicro/IPMIConfig"
+      },
+      "FirmwareInventory": {
+        "@odata.id": "/redfish/v1/UpdateService/Oem/Supermicro/FirmwareInventory"
+      }
+    }
+  }
+}
+*/
+
     if (!updateServiceJson.contains("MultipartHttpPushUri")) {
         errMsg = "Can't find MultipartHttpPushUri from UpdateService json";
         return XPUM_GENERIC_ERROR;
@@ -498,10 +646,9 @@ xpum_result_t getPushUriAndTrigerUri(RedfishHostInterface interface,
         errMsg = "Can't find #UpdateService.StartUpdate from UpdateService json";
         return XPUM_GENERIC_ERROR;
     }
-    trigerUri = updateServiceJson["Actions"]["#UpdateService.StartUpdate"]["target"];
+    triggerUri = updateServiceJson["Actions"]["#UpdateService.StartUpdate"]["target"];
     return XPUM_OK;
 }
-
 
 bool uploadImage(RedfishHostInterface interface,
                  FlashAmcFirmwareParam& flashAmcParam,
@@ -643,12 +790,12 @@ bool uploadImage(RedfishHostInterface interface,
     return false;
 }
 
-bool trigerUpdate(RedfishHostInterface interface,
+bool triggerUpdate(RedfishHostInterface interface,
                   FlashAmcFirmwareParam& flashAmcParam,
-                  std::string trigerUri,
+                  std::string triggerUri,
                   std::vector<std::string>& taskUriList) {
 
-    XPUM_LOG_INFO("Start triger update");
+    XPUM_LOG_INFO("Start trigger update");
 
     std::string& username = flashAmcParam.username;
     std::string& password = flashAmcParam.password;
@@ -659,7 +806,7 @@ bool trigerUpdate(RedfishHostInterface interface,
     url << interface.ipv4_service_addr;
     if (interface.ipv4_service_port.length() > 0)
         url << ":" << interface.ipv4_service_port;
-    url << trigerUri;
+    url << triggerUri;
 
     CURL* curl;
     CURLcode res = CURL_LAST;
@@ -669,7 +816,7 @@ bool trigerUpdate(RedfishHostInterface interface,
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
         libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
-        XPUM_LOG_INFO("triger uri: {}", url.str());
+        XPUM_LOG_INFO("trigger uri: {}", url.str());
 
         // empty body
         struct curl_slist *headers = NULL;
@@ -682,19 +829,19 @@ bool trigerUpdate(RedfishHostInterface interface,
     }
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
-        XPUM_LOG_ERROR("Fail to triger update, error code: {}", res);
-        flashAmcParam.errMsg = "Fail to triger update";
+        XPUM_LOG_ERROR("Fail to trigger update, error code: {}", res);
+        flashAmcParam.errMsg = "Fail to trigger update";
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         return false;
     }
-    json trigerJson;
+    json triggerJson;
     try {
-        trigerJson = json::parse(buffer);
+        triggerJson = json::parse(buffer);
     } catch (...) {
         // parse error
-        XPUM_LOG_ERROR("Fail to parse triger update json: {}", buffer);
+        XPUM_LOG_ERROR("Fail to parse trigger update json: {}", buffer);
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
-        flashAmcParam.errMsg = "Fail to parse triger update json";
+        flashAmcParam.errMsg = "Fail to parse trigger update json";
         return false;
     }
     /*
@@ -721,25 +868,25 @@ bool trigerUpdate(RedfishHostInterface interface,
     */
 
     // parse task uri
-    if (trigerJson.contains("Accepted") &&
-        trigerJson["Accepted"].contains("@Message.ExtendedInfo") &&
-        trigerJson["Accepted"]["@Message.ExtendedInfo"].is_array() &&
-        trigerJson["Accepted"]["@Message.ExtendedInfo"].size() > 0 &&
-        trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0).contains("MessageArgs") &&
-        trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"].is_array() &&
-        trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"].size() > 0) {
+    if (triggerJson.contains("Accepted") &&
+        triggerJson["Accepted"].contains("@Message.ExtendedInfo") &&
+        triggerJson["Accepted"]["@Message.ExtendedInfo"].is_array() &&
+        triggerJson["Accepted"]["@Message.ExtendedInfo"].size() > 0 &&
+        triggerJson["Accepted"]["@Message.ExtendedInfo"].at(0).contains("MessageArgs") &&
+        triggerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"].is_array() &&
+        triggerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"].size() > 0) {
         // get task list
-        for (auto uri : trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"]) {
+        for (auto uri : triggerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"]) {
             taskUriList.push_back(uri.get<std::string>());
         }
-        XPUM_LOG_INFO("triger update successfully");
+        XPUM_LOG_INFO("trigger update successfully");
         return true;
     }
 
     // contains error or not, dump the content to errMsg
-    errMsg = trigerJson.dump(2);
+    errMsg = triggerJson.dump(2);
 
-    XPUM_LOG_ERROR("Unknown error happens when triger update: {}", errMsg);
+    XPUM_LOG_ERROR("Unknown error happens when trigger update: {}", errMsg);
 
     return false;
 }
@@ -795,11 +942,11 @@ bool getTargetUriByOdataId(RedfishHostInterface interface,
 void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     
     // get push uri
-    std::string pushUri, trigerUri;
+    std::string pushUri, triggerUri;
     
     xpum_result_t result;
 
-    result = getPushUriAndTrigerUri(hostInterface, param.username, param.password, pushUri, trigerUri, param.errMsg);
+    result = getPushUriAndTriggerUri(hostInterface, param.username, param.password, pushUri, triggerUri, param.errMsg);
 
     if (result != XPUM_OK) {
         param.errCode = result;
@@ -807,10 +954,10 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
 
-    XPUM_LOG_INFO("Get pushUri: {} and trigerUri: {}", pushUri, trigerUri);
-    if (!pushUri.length() || !trigerUri.length()) {
+    XPUM_LOG_INFO("Get pushUri: {} and triggerUri: {}", pushUri, triggerUri);
+    if (!pushUri.length() || !triggerUri.length()) {
         param.errCode = XPUM_GENERIC_ERROR;
-        param.errMsg = "pushUri or trigerUri is empty";
+        param.errMsg = "pushUri or triggerUri is empty";
         param.callback();
         return;
     }
@@ -858,13 +1005,13 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
 
-    // triger update
+    // trigger update
     std::vector<std::string> taskUriList;
-    if (!trigerUpdate(hostInterface,
+    if (!triggerUpdate(hostInterface,
                       param,
-                      trigerUri,
+                      triggerUri,
                       taskUriList)) {
-        XPUM_LOG_ERROR("Fail to triger update");
+        XPUM_LOG_ERROR("Fail to trigger update");
         param.callback();
         return;
     }
@@ -937,14 +1084,13 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
 
     // set errMsg if json contains error
     if (taskJson.contains("error")) {
-        errMsg = taskJson.dump(2);
+        parseErrorMsg(taskJson, errMsg);
         return false;
     }
 
     // if end time, return ture
     if (!taskJson.contains("EndTime")) {
         finished = false;
-        return true;
     } else {
         finished = true;
         // success if percentage is 100
@@ -952,8 +1098,19 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
             int percentage = taskJson["PercentComplete"];
             success = percentage == 100;
         }
-        return true;
+        if (!success) {
+            // parse fail error message
+            if (taskJson.contains("Messages") &&
+                taskJson["Messages"].is_array() &&
+                taskJson["Messages"].size() > 0 &&
+                taskJson["Messages"].at(0).contains("Message")) {
+                errMsg = taskJson["Messages"].at(0)["Message"];
+            } else {
+                errMsg = taskJson.dump(2);
+            }
+        }
     }
+    return true;
 }
 
 void RedfishAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& param) {
