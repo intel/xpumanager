@@ -661,8 +661,6 @@ bool trigerUpdate(RedfishHostInterface interface,
         url << ":" << interface.ipv4_service_port;
     url << trigerUri;
 
-    XPUM_LOG_INFO("triger uri: {}", url.str());
-
     CURL* curl;
     CURLcode res = CURL_LAST;
     std::string buffer;
@@ -671,12 +669,14 @@ bool trigerUpdate(RedfishHostInterface interface,
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
         libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
 
-        curlBasicConfig(curl, buffer, username, password);
+        XPUM_LOG_INFO("triger uri: {}", url.str());
 
         // empty body
         struct curl_slist *headers = NULL;
         headers = libcurl.curl_slist_append(headers, "Content-Length: 0");
         libcurl.curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        curlBasicConfig(curl, buffer, username, password);
 
         res = libcurl.curl_easy_perform(curl);
     }
@@ -699,10 +699,10 @@ bool trigerUpdate(RedfishHostInterface interface,
     }
 
     // parse task uri
-    if (trigerJson.contains("Accepted") ||
-        trigerJson["Accepted"].contains("@Message.ExtendedInfo") ||
-        trigerJson["Accepted"]["@Message.ExtendedInfo"].contains("MessageArgs") ||
-        trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"].is_array() ||
+    if (trigerJson.contains("Accepted") &&
+        trigerJson["Accepted"].contains("@Message.ExtendedInfo") &&
+        trigerJson["Accepted"]["@Message.ExtendedInfo"].contains("MessageArgs") &&
+        trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"].is_array() &&
         trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"].size() > 0) {
         // get task list
         for (auto uri : trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"]) {
