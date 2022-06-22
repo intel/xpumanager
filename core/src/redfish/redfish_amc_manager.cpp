@@ -701,7 +701,9 @@ bool trigerUpdate(RedfishHostInterface interface,
     // parse task uri
     if (trigerJson.contains("Accepted") &&
         trigerJson["Accepted"].contains("@Message.ExtendedInfo") &&
-        trigerJson["Accepted"]["@Message.ExtendedInfo"].contains("MessageArgs") &&
+        trigerJson["Accepted"]["@Message.ExtendedInfo"].is_array() &&
+        trigerJson["Accepted"]["@Message.ExtendedInfo"].size() > 0 &&
+        trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0).contains("MessageArgs") &&
         trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"].is_array() &&
         trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"].size() > 0) {
         // get task list
@@ -711,7 +713,7 @@ bool trigerUpdate(RedfishHostInterface interface,
         XPUM_LOG_INFO("triger update successfully");
         return true;
     }
-    
+
     // contains error or not, dump the content to errMsg
     errMsg = trigerJson.dump(2);
 
