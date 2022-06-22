@@ -697,6 +697,28 @@ bool trigerUpdate(RedfishHostInterface interface,
         flashAmcParam.errMsg = "Fail to parse triger update json";
         return false;
     }
+    /*
+    {
+        "Accepted": {
+            "code": "Base.v1_4_0.Accepted",
+            "Message": "Successfully Accepted Request. Please see the location header and ExtendedInfo for more information.",
+            "@Message.ExtendedInfo": [
+                {
+                    "MessageId": "SMC.1.0.OemSimpleupdateAcceptedMessage",
+                    "Severity": "Ok",
+                    "Resolution": "No resolution was required.",
+                    "Message": "Please also check Task Resource /redfish/v1/TaskService/Tasks/4 to see more information.",
+                    "MessageArgs": [
+                        "/redfish/v1/TaskService/Tasks/4"
+                    ],
+                    "RelatedProperties": [
+                        "GPUUpdateAccepted"
+                    ]
+                }
+            ]
+        }
+    }
+    */
 
     // parse task uri
     if (trigerJson.contains("Accepted") &&
@@ -704,8 +726,8 @@ bool trigerUpdate(RedfishHostInterface interface,
         trigerJson["Accepted"]["@Message.ExtendedInfo"].is_array() &&
         trigerJson["Accepted"]["@Message.ExtendedInfo"].size() > 0 &&
         trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0).contains("MessageArgs") &&
-        trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"].is_array() &&
-        trigerJson["Accepted"]["@Message.ExtendedInfo"]["MessageArgs"].size() > 0) {
+        trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"].is_array() &&
+        trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"].size() > 0) {
         // get task list
         for (auto uri : trigerJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"]) {
             taskUriList.push_back(uri.get<std::string>());
