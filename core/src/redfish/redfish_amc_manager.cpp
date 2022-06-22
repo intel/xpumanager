@@ -948,9 +948,9 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
     } else {
         finished = true;
         // success if percentage is 100
-        if (taskJson.contains("PercentComplete")) {
-            auto percentage = taskJson["PercentComplete"].get<std::string>();
-            success = percentage.compare("100") == 0;
+        if (taskJson.contains("PercentComplete") && taskJson["PercentComplete"].is_number()) {
+            int percentage = taskJson["PercentComplete"];
+            success = percentage == 100;
         }
         return true;
     }
