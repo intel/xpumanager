@@ -9,13 +9,15 @@ import core_pb2
 from .xpum_enums import XpumResult
 
 
-def runFirmwareFlash(deviceId, firmwareType, filePath):
+def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password=""):
     job = core_pb2.XpumFirmwareFlashJob()
     job.id.id = deviceId
     if firmwareType == 'GSC':
         job.type.value = 0
     elif firmwareType == 'AMC':
         job.type.value = 1
+        job.username = username
+        job.password = password
     else:
         job.type.value = 2
     job.path = filePath
@@ -53,13 +55,15 @@ def runFirmwareFlash(deviceId, firmwareType, filePath):
         return 0, "OK", data
 
 
-def getFirmwareFlashResult(deviceId, firmwareType):
+def getFirmwareFlashResult(deviceId, firmwareType, username="", password=""):
     request = core_pb2.XpumFirmwareFlashTaskRequest()
     request.id.id = deviceId
     if firmwareType == 'GSC':
         request.type.value = 0
     elif firmwareType == 'AMC':
         request.type.value = 1
+        request.username = username
+        request.password = password
     else:
         request.type.value = 2
     resp = stub.getFirmwareFlashResult(request)

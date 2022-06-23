@@ -19,6 +19,10 @@ class FirmwareFlashJobOnAllDevicesSchema(Schema):
         validate=validate.Equal("AMC"),
         metadata={"description": "Firmware name, options are: AMC"}
     )
+    username = fields.Str(
+        metadata={"description": "Username for redfish auth"})
+    password = fields.Str(
+        metadata={"description": "Password for redfish auth"})
 
 
 class FirmwareFlashJobOnSingleDeviceSchema(Schema):
@@ -70,7 +74,7 @@ def run_firmware_flash_all():
         value = err.messages[key]
         errStr = key+": "+";".join(value)
         return jsonify({'error': errStr}), 400
-    return runFirmwareFlash(1024)
+    return runFirmwareFlash(1024, req.get("username", ""), req.get("password", ""))
 
 
 def run_firmware_flash_single(deviceId):
@@ -113,7 +117,7 @@ def run_firmware_flash_single(deviceId):
     return runFirmwareFlash(deviceId)
 
 
-def runFirmwareFlash(deviceId):
+def runFirmwareFlash(deviceId, username="", password=""):
     req = request.get_json()
     # validate file path
     filePath = req.get('file')
@@ -133,7 +137,7 @@ def runFirmwareFlash(deviceId):
     if fwType == 'AMC' and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'}), 400
 
-    code, msg, data = stub.runFirmwareFlash(deviceId, fwType, filePath)
+    code, msg, data = stub.runFirmwareFlash(deviceId, fwType, filePath, username, password)
     if code == stub.XpumResult['XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND'].value:
         return jsonify({'error': msg}), 500
     elif code != 0:
@@ -155,6 +159,10 @@ class FirmwareFlashResultQueryAllDevicesSchema(Schema):
         validate=validate.Equal("AMC"),
         metadata={"description": "Firmware name, options are: AMC"}
     )
+    username = fields.Str(
+        metadata={"description": "Username for redfish auth"})
+    password = fields.Str(
+        metadata={"description": "Password for redfish auth"})
 
 
 class FirmwareFlashResultSchema(Schema):
@@ -197,7 +205,7 @@ def get_firmware_flash_result_all():
         value = err.messages[key]
         errStr = key+": "+";".join(value)
         return jsonify({'error': errStr}), 400
-    return get_firmware_flash_result(1024)
+    return get_firmware_flash_result(1024, req.get("username", ""), req.get("password", ""))
 
 
 def get_firmware_flash_result_single(deviceId):
@@ -242,7 +250,7 @@ def get_firmware_flash_result_single(deviceId):
     return get_firmware_flash_result(deviceId)
 
 
-def get_firmware_flash_result(deviceId):
+def get_firmware_flash_result(deviceId, username="", password=""):
     req = request.get_json()
     fwType = req.get('firmware_name')
     if fwType == "GSC" and deviceId == 1024:
@@ -252,7 +260,7 @@ def get_firmware_flash_result(deviceId):
     if fwType == "AMC" and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'})
 
-    code, msg, data = stub.getFirmwareFlashResult(deviceId, fwType)
+    code, msg, data = stub.getFirmwareFlashResult(deviceId, fwType, username, password)
     if code == 0:
         return jsonify(data)
     else:

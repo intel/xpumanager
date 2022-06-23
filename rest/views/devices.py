@@ -5,8 +5,8 @@
 #
 
 import stub
-from flask import jsonify
-from marshmallow import Schema, fields
+from flask import jsonify, request
+from marshmallow import Schema, fields, ValidationError
 
 
 class DeviceBasicInfoSchema(Schema):
@@ -160,8 +160,16 @@ def get_device_properties(deviceId):
         return "Internal error", 500
 
 
+class RequestAMCFwVersionSchema(Schema):
+    username = fields.Str(
+        metadata={"description": "Username for redfish auth"})
+    password = fields.Str(
+        metadata={"description": "Password for redfish auth"})
+
+
 class AMCFwVersionSchema(Schema):
-    amc_fw_version = fields.Str(many=True,metadata={"description": "AMC versions"})
+    amc_fw_version = fields.Str(
+        many=True, metadata={"description": "AMC versions"})
     error = fields.Str(metadata={"description": "Error message"})
 
 
@@ -173,6 +181,14 @@ def get_amc_fw_versions():
         tags:
             - "Devices"
         description: Get amc firmware versions.
+        consumes:
+            - application/json
+        parameters:
+            - 
+                name: Get AMC firmware version request schema
+                in: body
+                description: Credential used for redfish auth
+                schema: FirmwareFlashJobOnAllDevicesSchema
         produces: 
             - application/json
         responses:
@@ -182,7 +198,16 @@ def get_amc_fw_versions():
             500:
                 description: Error
     """
-    code, message, data = stub.getAMCFirmwareVersions()
+    req = request.get_json()
+    try:
+        RequestAMCFwVersionSchema().load(req)
+    except ValidationError as err:
+        key = next(iter(err.messages))
+        value = err.messages[key]
+        errStr = key+": "+";".join(value)
+        return jsonify({'error': errStr}), 400
+    code, message, data = stub.getAMCFirmwareVersions(
+        req.get("username", ""), req.get("password", ""))
     if code != 0:
         return jsonify({"error": message}), 500
     return jsonify(data)

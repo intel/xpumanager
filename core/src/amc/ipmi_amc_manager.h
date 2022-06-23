@@ -15,6 +15,8 @@ class IpmiAmcManager : public AmcManager {
    private:
     bool initialized = false;
 
+    bool initSuccess = false;
+
     std::mutex mtx;
 
     std::vector<std::string> amcFwList;

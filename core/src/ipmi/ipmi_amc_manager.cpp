@@ -50,10 +50,16 @@ bool IpmiAmcManager::preInit(){
 
 bool IpmiAmcManager::init() {
     if (initialized)
-        return true;
+        return initSuccess;
     updateAmcFwList();
     initialized = true;
+    if (amcFwList.size() == 0) {
+        XPUM_LOG_INFO("IpmiAmcManager can not find AMC device");
+        initSuccess = false;
+        return false;
+    }
     XPUM_LOG_INFO("IpmiAmcManager init");
+    initSuccess = true;
     return true;
 }
 

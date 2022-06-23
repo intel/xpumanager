@@ -47,8 +47,10 @@ def getDeviceProperties(deviceId):
         "@odata.id": "/rest/v1/devices/{}/topology".format(deviceId)}
     return 0, "OK", data
 
-def getAMCFirmwareVersions():
-    resp = stub.getAMCFirmwareVersions(empty_pb2.Empty())
+
+def getAMCFirmwareVersions(username="", password=""):
+    resp = stub.getAMCFirmwareVersions(
+        core_pb2.GetAMCFirmwareVersionsRequest(username=username, password=password))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     versions = [v for v in resp.versions]
