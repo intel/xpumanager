@@ -12,6 +12,7 @@
 #include "core/core.h"
 #include "infrastructure/logger.h"
 #include "libcurl.h"
+#include "detect_usb_interface.h"
 
 using namespace nlohmann;
 
@@ -341,35 +342,35 @@ Management Controller Host Interface
 
 */
 
-// TODO: remove grep
-std::string getUsbInterfaceName(std::string idVendor, std::string idProduct) {
-    std::string base_folder = "/sys/bus/usb/devices";
-    std::string output;
-    std::stringstream ss;
-    std::string idVendorPath;
-    std::string devPath;
-    std::string grep_id_vendor_cmd = "grep -rls " + idVendor + " " + base_folder + "/**/idVendor";
-    doCmd(grep_id_vendor_cmd, output);
-    ss.str(output);
-    while (std::getline(ss, idVendorPath)) {
-        devPath = idVendorPath.substr(0, idVendorPath.length() - 9); // remove suffix '/idVendor'
-        std::string grep_id_product_cmd = "grep -rls " + idProduct + " " + devPath + "/idProduct";
-        doCmd(grep_id_product_cmd, output);
-        if (output.length()) {
-            break;
-        } else {
-            devPath = "";
-        }
-    }
-    if (!devPath.length())
-        return "";
-    std::string get_interface_name_cmd = "ls " + devPath + "/**/net";
-    doCmd(get_interface_name_cmd, output);
-    ss.str(output);
-    std::string interfaceName;
-    std::getline(ss, interfaceName);
-    return interfaceName;
-}
+// // TODO: remove grep
+// std::string getUsbInterfaceName(std::string idVendor, std::string idProduct) {
+//     std::string base_folder = "/sys/bus/usb/devices";
+//     std::string output;
+//     std::stringstream ss;
+//     std::string idVendorPath;
+//     std::string devPath;
+//     std::string grep_id_vendor_cmd = "grep -rls " + idVendor + " " + base_folder + "/**/idVendor";
+//     doCmd(grep_id_vendor_cmd, output);
+//     ss.str(output);
+//     while (std::getline(ss, idVendorPath)) {
+//         devPath = idVendorPath.substr(0, idVendorPath.length() - 9); // remove suffix '/idVendor'
+//         std::string grep_id_product_cmd = "grep -rls " + idProduct + " " + devPath + "/idProduct";
+//         doCmd(grep_id_product_cmd, output);
+//         if (output.length()) {
+//             break;
+//         } else {
+//             devPath = "";
+//         }
+//     }
+//     if (!devPath.length())
+//         return "";
+//     std::string get_interface_name_cmd = "ls " + devPath + "/**/net";
+//     doCmd(get_interface_name_cmd, output);
+//     ss.str(output);
+//     std::string interfaceName;
+//     std::getline(ss, interfaceName);
+//     return interfaceName;
+// }
 
 std::string search_by_regex(std::string content, std::regex pattern) {
     std::smatch sm;
