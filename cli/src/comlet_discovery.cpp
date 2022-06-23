@@ -160,6 +160,20 @@ static void showAmcFwVersion(std::ostream &out, std::shared_ptr<nlohmann::json> 
 }
 
 void ComletDiscovery::getTableResult(std::ostream &out) {
+    if (this->opts->listamcversions) {
+        // show warning message
+        std::string amcWarnMsg = coreStub->getRedfishAmcWarnMsg();
+        if (amcWarnMsg.length()) {
+            out << coreStub->getRedfishAmcWarnMsg() << std::endl;
+            out << "Do you want to continue? (y/n)" << std::endl;
+            std::string confirm;
+            std::cin >> confirm;
+            if (confirm != "Y" && confirm != "y") {
+                out << "Aborted" << std::endl;
+                return;
+            }
+        }
+    }
     auto res = run();
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;

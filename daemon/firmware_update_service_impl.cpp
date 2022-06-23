@@ -49,6 +49,10 @@ static std::string getFlashFwErrMsg() {
         response->mutable_result()->set_value(result.result);
         response->set_desc("");
         response->set_version("");
+        auto errMsg = getFlashFwErrMsg();
+        if (errMsg.length()) {
+            response->set_errormsg(errMsg);
+        }
     } else {
         auto errMsg = getFlashFwErrMsg();
         if (errMsg.length()) {

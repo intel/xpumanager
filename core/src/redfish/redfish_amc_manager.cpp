@@ -342,36 +342,6 @@ Management Controller Host Interface
 
 */
 
-// // TODO: remove grep
-// std::string getUsbInterfaceName(std::string idVendor, std::string idProduct) {
-//     std::string base_folder = "/sys/bus/usb/devices";
-//     std::string output;
-//     std::stringstream ss;
-//     std::string idVendorPath;
-//     std::string devPath;
-//     std::string grep_id_vendor_cmd = "grep -rls " + idVendor + " " + base_folder + "/**/idVendor";
-//     doCmd(grep_id_vendor_cmd, output);
-//     ss.str(output);
-//     while (std::getline(ss, idVendorPath)) {
-//         devPath = idVendorPath.substr(0, idVendorPath.length() - 9); // remove suffix '/idVendor'
-//         std::string grep_id_product_cmd = "grep -rls " + idProduct + " " + devPath + "/idProduct";
-//         doCmd(grep_id_product_cmd, output);
-//         if (output.length()) {
-//             break;
-//         } else {
-//             devPath = "";
-//         }
-//     }
-//     if (!devPath.length())
-//         return "";
-//     std::string get_interface_name_cmd = "ls " + devPath + "/**/net";
-//     doCmd(get_interface_name_cmd, output);
-//     ss.str(output);
-//     std::string interfaceName;
-//     std::getline(ss, interfaceName);
-//     return interfaceName;
-// }
-
 std::string search_by_regex(std::string content, std::regex pattern) {
     std::smatch sm;
     if (std::regex_search(content, sm, pattern)) {
@@ -583,7 +553,7 @@ xpum_result_t getPushUriAndTriggerUri(RedfishHostInterface interface,
     }
 
     if (updateServiceJson.contains("error")) {
-        errMsg = updateServiceJson.dump(2);
+        parseErrorMsg(updateServiceJson, errMsg);
         return XPUM_GENERIC_ERROR;
     }
 
