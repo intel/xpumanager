@@ -469,9 +469,7 @@ std::vector<int> CoreStub::handlePowerByLevel0(zes_device_handle_t device, bool 
                 status = zesPowerGetProperties(power, &props);
                 if (status == ZE_RESULT_SUCCESS) {
                     zes_power_sustained_limit_t sustained;
-                    zes_power_burst_limit_t burst;
-                    zes_power_peak_limit_t peak;
-                    status = zesPowerGetLimits(power, &sustained, &burst, &peak);
+                    status = zesPowerGetLimits(power, &sustained, nullptr, nullptr);
                     if (status == ZE_RESULT_SUCCESS) {
                         res.push_back(sustained.power/1000);
                         res.push_back(sustained.interval);
