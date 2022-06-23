@@ -14,7 +14,7 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
 	* GPU Firmware updating
 * Monitoring:
 	* GPU health – memory, power, temperature, fabric port, etc.
-	* GPU telemetry – utilization, power, frequency, temprature, fabric speed, memory bandwidth, errrors
+	* GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory bandwidth, errors
 * Diagnostics:
 	* 3 levels of GPU diagnostic tests
 * Configuration:
@@ -23,7 +23,7 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
 * Supported Frameworks:
 	* Prometheus exporter, Docker container support, Icinga plugin
 
-## Suppored Devices
+## Supported Devices
 * Intel Data Center GPUs
 
 ## Supported OSes
