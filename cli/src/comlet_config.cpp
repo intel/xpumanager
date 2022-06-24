@@ -28,7 +28,10 @@ static CharTableConfig ComletDeviceConfiguration(R"({
             { "rowTitle": "GPU" },
             "device_id", [
                 { "label": "Power Limit (w) ", "value": "power_limit" },
-                { "label": "  Valid Range", "value": "power_vaild_range" }
+                { "label": "  Valid Range", "value": "power_vaild_range" },
+                { "label": "Memory Ecc", "value": " " },
+                { "label": "  Current", "value": "memory_ecc_current_state" },
+                { "label": "  Pending", "value": "memory_ecc_pending_state" }
             ]
         ]
     }]
@@ -51,9 +54,6 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "GPU Min Frequency (MHz) ", "value": "min_frequency" },
                 { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
                 { "label": "  Valid Options", "value": "gpu_frequency_valid_options" },
-                { "label": "Memory Ecc", "value": " " },
-                { "label": "  Current", "value": "memory_ecc_current_state" },
-                { "label": "  Pending", "value": "memory_ecc_pending_state" },
                 {"rowTitle": " " },
                 { "label": "Standby Mode", "value": "standby_mode" },
                 { "label": "  Valid Options", "value": "standby_mode_valid_options" },
@@ -79,11 +79,10 @@ static CharTableConfig ComletTileConfiguration(R"({
     }]
 })"_json);
 /*
-{ "label": "  Available", "value": "memory_ecc_available" },
+                { "label": "  Available", "value": "memory_ecc_available" },
                 { "label": "  Configurable", "value": "memory_ecc_configurable" },
-{ "label": "  Action", "value": "memory_ecc_pending_action" }, 
+                { "label": "  Action", "value": "memory_ecc_pending_action" },
 */
-
 void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
     addOption("-d,--device", this->opts->deviceId, "device id");

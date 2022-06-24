@@ -1304,6 +1304,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["memory_ecc_current_state"] = response.tileconfigdata(i).memoryeccstate();
                 tileJson["memory_ecc_pending_state"] = response.tileconfigdata(i).memoryeccpendingstate();
                 tileJson["memory_ecc_pending_action"] = response.tileconfigdata(i).memoryeccpendingaction();
+                (*json)["memory_ecc_current_state"] = tileJson["memory_ecc_current_state"];
+                (*json)["memory_ecc_pending_state"] = tileJson["memory_ecc_pending_state"];
                 tileJsonList.push_back(tileJson);
             }
             (*json)["tile_config_data"] = tileJsonList;
