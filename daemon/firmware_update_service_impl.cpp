@@ -105,7 +105,7 @@ grpc::Status XpumCoreServiceImpl::getRedfishAmcWarnMsg(::grpc::ServerContext* co
     if (res == XPUM_OK) {
         for (int i = 0; i < count; i++) {
             auto data = response->add_datalist();
-            data->set_deviceidx(dataList[i].deviceIndex);
+            data->set_deviceidx(dataList[i].amcIndex);
             data->set_value(dataList[i].value);
             data->set_sensorname(std::string(dataList[i].sensorName));
             data->set_sensorlow(std::string(dataList[i].sensorLow));

@@ -89,6 +89,7 @@ XpumResult = Enum("xpum_result_t", (
     "XPUM_RESULT_AGENT_SET_INVALID_VALUE",
     "XPUM_LEVEL_ZERO_INITIALIZATION_ERROR",
     "XPUM_UNSUPPORTED_SESSIONID",
+    "XPUM_INTERVAL_INVALID"
 ), start=0)
 
 XpumEngineType = Enum("xpum_engine_type_t", (

@@ -394,7 +394,7 @@ std::vector<xpum_sensor_reading_t> read_sensor() {
             std::string sensorHigh = sensor_high_str((sensor_index_t)id);
             std::string sensorUnit = sensor_unit_str((unit_t)sensor_read.unit);
             xpum_sensor_reading_t data;
-            data.deviceIndex = i;
+            data.amcIndex = i;
             data.value = value;
 
             sensorName.copy(data.sensorName, sensorName.length());
