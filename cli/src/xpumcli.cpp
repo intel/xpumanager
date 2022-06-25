@@ -32,6 +32,7 @@
 #include "comlet_topology.h"
 #include "comlet_version.h"
 #include "comlet_top.h"
+#include "comlet_sensor.h"
 #include "core_stub.h"
 #include "logger.h"
 
@@ -120,7 +121,8 @@ int main(int argc, char** argv) {
         //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTop))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
-        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet));
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletSensor));
     app.require_subcommand(0, 1);
 
     if (argc == 1) {

@@ -961,6 +961,15 @@ typedef struct xpum_dump_raw_data_task_t {
     char dumpFilePath[XPUM_MAX_STR_LENGTH];       ///< The dump file path
 } xpum_dump_raw_data_task_t;
 
+typedef struct {
+    int deviceIndex;                      ///< Device index
+    int value;                            ///< Sensor reading value
+    char sensorName[XPUM_MAX_STR_LENGTH]; ///< Sensor name
+    char sensorLow[XPUM_MAX_STR_LENGTH];  ///< Sensor low bound
+    char sensorHigh[XPUM_MAX_STR_LENGTH]; ///< Sensor high bound
+    char sensorUnit[XPUM_MAX_STR_LENGTH]; ///< Sensor reading unit
+} xpum_sensor_reading_t;
+
 #if defined(__cplusplus)
 } // extern "C"
 } // end namespace xpum

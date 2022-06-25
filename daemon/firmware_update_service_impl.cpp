@@ -82,4 +82,47 @@ grpc::Status XpumCoreServiceImpl::getRedfishAmcWarnMsg(::grpc::ServerContext* co
     response->set_warnmsg(msg);
     return grpc::Status::OK;
 }
+
+::grpc::Status XpumCoreServiceImpl::getSensorReading(::grpc::ServerContext* context,
+                                const ::google::protobuf::Empty* request,
+                                ::GetSensorReadingResponse* response) {
+    int count;
+    auto res = xpumGetSensorReading(nullptr, &count);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Fail to get sensor reading count.");
+                break;
+        }
+        response->set_errcode(res);
+        return grpc::Status::OK;
+    }
+    xpum_sensor_reading_t dataList[count];
+    res = xpumGetSensorReading(dataList, &count);
+    if (res == XPUM_OK) {
+        for (int i = 0; i < count; i++) {
+            auto data = response->add_datalist();
+            data->set_deviceidx(dataList[i].deviceIndex);
+            data->set_value(dataList[i].value);
+            data->set_sensorname(std::string(dataList[i].sensorName));
+            data->set_sensorlow(std::string(dataList[i].sensorLow));
+            data->set_sensorhigh(std::string(dataList[i].sensorHigh));
+            data->set_sensorunit(std::string(dataList[i].sensorUnit));
+        }
+    } else {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Fail to get sensor reading.");
+                break;
+        }
+    }
+    response->set_errcode(res);
+    return grpc::Status::OK;
+}
 } // namespace xpum::daemon

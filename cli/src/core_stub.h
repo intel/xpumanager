@@ -119,6 +119,8 @@ class CoreStub {
 
     std::shared_ptr<nlohmann::json> getFabricCount(int deviceId);
 
+    std::unique_ptr<nlohmann::json> getSensorReading();
+
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
 

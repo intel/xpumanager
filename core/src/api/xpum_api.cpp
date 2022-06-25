@@ -2377,4 +2377,21 @@ xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int
     return Core::instance().getDumpRawDataManager()->listDumpRawDataTasks(taskList, count);
 }
 
+extern std::vector<xpum_sensor_reading_t> read_sensor();
+
+xpum_result_t xpumGetSensorReading(xpum_sensor_reading_t data[], int *count) {
+    auto readingDataList = read_sensor();
+    if (data == nullptr) {
+        *count = readingDataList.size();
+        return XPUM_OK;
+    }
+    if (*count < (int)readingDataList.size()) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    for (std::size_t i = 0; i < readingDataList.size(); i++) {
+        data[i] = readingDataList.at(i);
+    }
+    return XPUM_OK;
+}
+
 } // end namespace xpum

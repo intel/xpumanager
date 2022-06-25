@@ -92,7 +92,8 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/src/ipmi)
 
   target_include_directories(
     amcfw
-    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
             ${CMAKE_CURRENT_LIST_DIR}/src
             ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 

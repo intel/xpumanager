@@ -99,6 +99,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId,
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        return json;
     }
 
     if (res.errormsg().length() != 0) {
@@ -128,6 +129,35 @@ std::string CoreStub::getRedfishAmcWarnMsg(){
     GetRedfishAmcWarnMsgResponse response;
     stub->getRedfishAmcWarnMsg(&ct, google::protobuf::Empty(), &response);
     return response.warnmsg();
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getSensorReading() {
+    assert(this->stub != nullptr);
+    nlohmann::json json;
+    grpc::ClientContext ct;
+    GetSensorReadingResponse response;
+    auto status = this->stub->getSensorReading(&ct, google::protobuf::Empty(), &response);
+    if (!status.ok()) {
+        json["error"] = status.error_message();
+        return std::make_unique<nlohmann::json>(json);
+    }
+
+    if (response.errormsg().length() != 0) {
+        json["error"] = response.errormsg();
+        return std::make_unique<nlohmann::json>(json);
+    }
+    json["sensor_reading"] = nlohmann::json::array();
+    for (auto& data : response.datalist()) {
+        nlohmann::json obj;
+        obj["amc_index"] = data.deviceidx();
+        obj["value"] = data.value();
+        obj["sensor_name"] = data.sensorname();
+        obj["sensor_high"] = data.sensorhigh();
+        obj["sensor_low"] = data.sensorlow();
+        obj["sensor_unit"] = data.sensorunit();
+        json["sensor_reading"].push_back(obj);
+    }
+    return std::make_unique<nlohmann::json>(json);
 }
 
 } // namespace xpum::cli

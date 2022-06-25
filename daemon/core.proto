@@ -784,6 +784,21 @@ message GetRedfishAmcWarnMsgResponse {
     string warnMsg = 1;
 }
 
+message SensorReadingSchema{
+    int32 deviceIdx=1;
+    int32 value=2;
+    string sensorName=3;
+    string sensorHigh=4;
+    string sensorLow=5;
+    string sensorUnit=6;
+}
+
+message GetSensorReadingResponse {
+    repeated SensorReadingSchema dataList=1;
+    int32 errCode=2;
+    string errorMsg =3; 
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -844,4 +859,5 @@ service XpumCoreService {
     rpc getXelinkTopology( google.protobuf.Empty ) returns ( XpumXelinkTopoInfoArray );
     rpc getFabricStatistics( GetFabricStatsRequest ) returns ( GetFabricStatsResponse );
     rpc getFabricCount( GetFabricCountRequest ) returns ( GetFabricCountResponse );
+    rpc getSensorReading( google.protobuf.Empty ) returns ( GetSensorReadingResponse );
 }

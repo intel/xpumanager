@@ -131,6 +131,8 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
 
     virtual ::grpc::Status getFabricCount(::grpc::ServerContext* context, const ::GetFabricCountRequest* request, ::GetFabricCountResponse* response) override;
 
+    virtual ::grpc::Status getSensorReading(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetSensorReadingResponse* response) override;
+
    private:
     std::atomic_bool stop;
     std::mutex dumpRawDataFilenameMtx;
