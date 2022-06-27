@@ -683,7 +683,8 @@ Get and change the GPU settings.
 Usage: xpumcli config [Options]
   xpumcli config -d [deviceId]
   xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]
-  xpumcli config -d [deviceId] --powerlimit [powerValue,averageWindow]
+  xpumcli config -d [deviceId] --powerlimit [powerValue]
+  xpumcli config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable
   xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
   xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
   xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
@@ -707,6 +708,7 @@ Options:
                                 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
+  --memoryecc                 Enable/disable memory Ecc setting. 0:disable; 1:enable
 
 ```
 
@@ -718,8 +720,10 @@ show the GPU settings
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0                 | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 1 to 500                                        |
-|             |                   | Power Average Window (ms): 1                                   |
-|             |                   |   Valid Range: 1 to 124                                        |
+|             |                   |                                                                |
+|             |                   | Memory Ecc:                                                    |
+|             |                   |   Current: enabled                                             |
+|             |                   |   Pending: enabled                                             |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
@@ -779,8 +783,14 @@ Succeed to change the core frequency range on GPU 0 tile 0.
  
 Change the GPU power limit.
 ```
-./xpumcli config -d 0 --powerlimit 299,1000
+./xpumcli config -d 0 --powerlimit 299
 Succeed to set the power limit on GPU 0.
+```
+
+Change the GPU memory Ecc mode.
+```
+./xpumcli config -d 0 --memoryecc 0
+Return: Succeed to change the ECC mode to be disabled on GPU 0. Please reset GPU or reboot OS to take effect.
 ```
  
 Change the GPU tile standby mode.
