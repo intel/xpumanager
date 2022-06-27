@@ -36,5 +36,6 @@ class IpmiAmcManager : public AmcManager {
     virtual void flashAMCFirmware(FlashAmcFirmwareParam& param) override;
     virtual void getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) override;
     virtual void getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& param) override;
+    virtual void getAMCSensorReading(GetAmcSensorReadingParam& param) override;
 };
 } // namespace xpum

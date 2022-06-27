@@ -38,6 +38,12 @@ struct GetAmcFirmwareFlashResultParam {
     xpum_firmware_flash_task_result_t result;
 };
 
+struct GetAmcSensorReadingParam{
+    std::vector<xpum_sensor_reading_t> dataList;
+    xpum_result_t errCode;
+    std::string errMsg;
+};
+
 class AmcManager {
    public:
     virtual bool preInit() = 0;
@@ -46,5 +52,6 @@ class AmcManager {
     virtual void flashAMCFirmware(FlashAmcFirmwareParam& param) = 0;
     virtual void getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) = 0;
     virtual void getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& param) = 0;
+    virtual void getAMCSensorReading(GetAmcSensorReadingParam& param) = 0;
 };
 } // namespace xpum

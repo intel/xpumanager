@@ -570,4 +570,27 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
         }
     }
 }
+
+xpum_result_t FirmwareManager::getAMCSensorReading(xpum_sensor_reading_t data[], int* count) {
+    if (!initAmcManager()) {
+        return xpum_result_t::XPUM_GENERIC_ERROR;
+    }
+    GetAmcSensorReadingParam param;
+    p_amc_manager->getAMCSensorReading(param);
+    if (param.errCode != XPUM_OK) {
+        return param.errCode;
+    }
+    auto& readingDataList = param.dataList;
+    if (data == nullptr) {
+        *count = readingDataList.size();
+        return XPUM_OK;
+    }
+    if (*count < (int)readingDataList.size()) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    for (std::size_t i = 0; i < readingDataList.size(); i++) {
+        data[i] = readingDataList.at(i);
+    }
+    return XPUM_OK;
+}
 } // namespace xpum

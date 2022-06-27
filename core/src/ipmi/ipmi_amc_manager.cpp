@@ -43,6 +43,8 @@ extern int cmd_firmware(const char* file, unsigned int versions[4]);
 
 extern std::vector<std::string> cmd_get_amc_firmware_versions();
 
+extern std::vector<xpum_sensor_reading_t> read_sensor();
+
 bool IpmiAmcManager::preInit(){
     XPUM_LOG_INFO("IpmiAmcManager preInit");
     return init();
@@ -123,6 +125,12 @@ void IpmiAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& p
     result.deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
     result.type = XPUM_DEVICE_FIRMWARE_AMC;
     result.result = res;
+}
+
+void IpmiAmcManager::getAMCSensorReading(GetAmcSensorReadingParam& param){
+    auto readingDataList = read_sensor();
+    param.dataList = readingDataList;
+    param.errCode = XPUM_OK;
 }
 
 } // namespace xpum

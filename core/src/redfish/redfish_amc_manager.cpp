@@ -1139,4 +1139,8 @@ void RedfishAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam
     result.type = XPUM_DEVICE_FIRMWARE_AMC;
     result.result = res;
 }
+
+void RedfishAmcManager::getAMCSensorReading(GetAmcSensorReadingParam& param){
+    param.errCode = XPUM_OK;
+}
 } // namespace xpum

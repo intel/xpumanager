@@ -44,6 +44,8 @@ class RedfishAmcManager : public AmcManager {
 
     virtual void getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& param) override;
 
+    virtual void getAMCSensorReading(GetAmcSensorReadingParam& param) override;
+
    private:
     bool initialized = false;
 
