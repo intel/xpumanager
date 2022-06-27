@@ -1912,7 +1912,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
 
 std::string XpumCoreServiceImpl::eccStateToString(xpum_ecc_state_t state) {
     if (state == XPUM_ECC_STATE_UNAVAILABLE) {
-        return " ";//"unavailable";
+        return "";//"unavailable";
     }
     if (state == XPUM_ECC_STATE_ENABLED) {
         return "enabled";
@@ -1920,7 +1920,7 @@ std::string XpumCoreServiceImpl::eccStateToString(xpum_ecc_state_t state) {
     if (state == XPUM_ECC_STATE_DISABLED) {
         return "disabled";
     }
-    return " ";//"unavailable";
+    return "";//"unavailable";
 }
 
 std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {

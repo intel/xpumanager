@@ -1290,6 +1290,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                     tileJson["scheduler_timeslice_interval"] = response.tileconfigdata(i).schedulertimesliceinterval();
                     tileJson["scheduler_timeslice_yield_timeout"] = response.tileconfigdata(i).schedulertimesliceyieldtimeout();
                 }
+/*
                 if (response.tileconfigdata(i).memoryeccavailable() == true) {
                     tileJson["memory_ecc_available"] = "true";
                 } else {
@@ -1304,8 +1305,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
                 tileJson["memory_ecc_current_state"] = response.tileconfigdata(i).memoryeccstate();
                 tileJson["memory_ecc_pending_state"] = response.tileconfigdata(i).memoryeccpendingstate();
                 tileJson["memory_ecc_pending_action"] = response.tileconfigdata(i).memoryeccpendingaction();
-                (*json)["memory_ecc_current_state"] = tileJson["memory_ecc_current_state"];
-                (*json)["memory_ecc_pending_state"] = tileJson["memory_ecc_pending_state"];
+*/
+                (*json)["memory_ecc_current_state"] = response.tileconfigdata(i).memoryeccstate();
+                (*json)["memory_ecc_pending_state"] = response.tileconfigdata(i).memoryeccpendingstate();
                 tileJsonList.push_back(tileJson);
             }
             (*json)["tile_config_data"] = tileJsonList;
