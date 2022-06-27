@@ -29,6 +29,7 @@ static CharTableConfig ComletDeviceConfiguration(R"({
             "device_id", [
                 { "label": "Power Limit (w) ", "value": "power_limit" },
                 { "label": "  Valid Range", "value": "power_vaild_range" },
+                {"rowTitle": " " },
                 { "label": "Memory Ecc", "value": " " },
                 { "label": "  Current", "value": "memory_ecc_current_state" },
                 { "label": "  Pending", "value": "memory_ecc_pending_state" }
@@ -72,8 +73,7 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "  Up", "value": "port_up" },
                 { "label": "  Down", "value": "port_down" },
                 { "label": "  Beaconing On", "value": "beaconing_on" },
-                { "label": "  Beaconing Off", "value": "beaconing_off" },
-                {"rowTitle": " " }
+                { "label": "  Beaconing Off", "value": "beaconing_off" }
             ]
         ]
     }]
@@ -335,7 +335,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 " action: " +  pendingAction;*/
                 if (available.compare("true") == 0 && configurable.compare("true") == 0) {
                     (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU "
-                + std::to_string(this->opts->deviceId) + " Please reset GPU or reboot OS to take effect.";
+                + std::to_string(this->opts->deviceId) + ". Please reset GPU or reboot OS to take effect.";
                 } else {
                     (*json)["return"] = "Failed to change the ECC mode. The current Ecc mode is " + current + ", the pending Ecc mode is " + pending +
                     " and the pending action is "+ pendingAction; " on GPU "+ std::to_string(this->opts->deviceId);
