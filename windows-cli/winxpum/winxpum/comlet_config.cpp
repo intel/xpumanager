@@ -28,7 +28,11 @@ static CharTableConfig ComletDeviceConfiguration(R"({
             { "rowTitle": "GPU" },
             "device_id", [
                 { "label": "Power Limit (w) ", "value": "power_limit" },
-                { "label": "  Valid Range", "value": "power_vaild_range" }
+                { "label": "  Valid Range", "value": "power_vaild_range" },
+                {"rowTitle": " " },
+                { "label": "Memory ECC", "value": " " },
+                { "label": "  Current", "value": "memory_ecc_current_state" },
+                { "label": "  Pending", "value": "memory_ecc_pending_state" }
             ]
         ]
     }]
@@ -51,10 +55,6 @@ static CharTableConfig ComletTileConfiguration(R"({
                 { "label": "GPU Min Frequency (MHz) ", "value": "min_frequency" },
                 { "label": "GPU Max Frequency (MHz) ", "value": "max_frequency" },
                 { "label": "  Valid Options", "value": "gpu_frequency_valid_options" },
-                {"rowTitle": " " },
-                { "label": "Memory ECC", "value": " " },
-                { "label": "  Current", "value": "memory_ecc_current_state" },
-                { "label": "  Pending", "value": "memory_ecc_pending_state" },
                 {"rowTitle": " " },
                 { "label": "Standby Mode", "value": "standby_mode" },
                 { "label": "  Valid Options", "value": "standby_mode_valid_options" },

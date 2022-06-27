@@ -379,13 +379,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
         tileJson["min_frequency"] = freq_datas[0];
         tileJson["max_frequency"] = freq_datas[1];
         tileJson["gpu_frequency_valid_options"] = freq_datas[2];
-        uint8_t cur = 0xFF;
-        uint8_t pen = 0xFF;
-        std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
-        if (igsc_instance.getDeviceEccState(bdf, &cur, &pen)) {
-            tileJson["memory_ecc_current_state"] = eccStateToString(cur);
-            tileJson["memory_ecc_pending_state"] = eccStateToString(pen);
-        }
         tileJson["tile_id"] = std::to_string(deviceId) + "/" + std::to_string(i);
         tileJsonList.push_back(tileJson); 
     }
@@ -398,6 +391,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     }
     (*json)["power_limit"] = power_datas[0];
     (*json)["power_vaild_range"] = "1 to " + std::to_string(power_limit);
+    uint8_t cur = 0xFF;
+    uint8_t pen = 0xFF;
+    std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
+    if (igsc_instance.getDeviceEccState(bdf, &cur, &pen)) {
+        (*json)["memory_ecc_current_state"] = eccStateToString(cur);
+        (*json)["memory_ecc_pending_state"] = eccStateToString(pen);
+    }
     return json;
 }
 
