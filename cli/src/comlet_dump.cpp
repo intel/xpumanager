@@ -114,7 +114,7 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
     } else {
         json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
         for (auto deviceId : this->opts->deviceIds) {
-            deviceJsons[deviceId] = this->coreStub->getStatistics(this->opts->deviceIds[deviceId]);
+            deviceJsons[deviceId] = this->coreStub->getStatistics(deviceId);
         }
     }
     return json;
