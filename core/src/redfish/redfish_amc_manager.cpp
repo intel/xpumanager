@@ -227,6 +227,8 @@ bool RedfishAmcManager::preInit(){
     XPUM_LOG_INFO("RedfishAmcManager preInit");
     if (!libcurl.initialized()) {
         // fail to load libcurl.so
+        XPUM_LOG_INFO("libcurl version: {}", libcurl.getLibCurlVersion());
+        XPUM_LOG_INFO("libcurl path: {}", libcurl.getLibPath());
         XPUM_LOG_INFO("fail to load libcurl.so");
         return false;
     }

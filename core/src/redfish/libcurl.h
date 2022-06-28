@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <dlfcn.h>
+#include <link.h>
 
 typedef void CURL;
 
@@ -185,6 +186,77 @@ struct curl_slist {
   struct curl_slist *next;
 };
 
+typedef enum {
+  CURLVERSION_FIRST,
+  CURLVERSION_SECOND,
+  CURLVERSION_THIRD,
+  CURLVERSION_FOURTH,
+  CURLVERSION_FIFTH,
+  CURLVERSION_SIXTH,
+  CURLVERSION_SEVENTH,
+  CURLVERSION_EIGHTH,
+  CURLVERSION_NINTH,
+  CURLVERSION_TENTH,
+  CURLVERSION_LAST /* never actually use this */
+} CURLversion;
+
+struct curl_version_info_data {
+  CURLversion age;          /* age of the returned struct */
+  const char *version;      /* LIBCURL_VERSION */
+  unsigned int version_num; /* LIBCURL_VERSION_NUM */
+  const char *host;         /* OS/host/cpu/machine when configured */
+  int features;             /* bitmask, see defines below */
+  const char *ssl_version;  /* human readable string */
+  long ssl_version_num;     /* not used anymore, always 0 */
+  const char *libz_version; /* human readable string */
+  /* protocols is terminated by an entry with a NULL protoname */
+  const char * const *protocols;
+
+  /* The fields below this were added in CURLVERSION_SECOND */
+  const char *ares;
+  int ares_num;
+
+  /* This field was added in CURLVERSION_THIRD */
+  const char *libidn;
+
+  /* These field were added in CURLVERSION_FOURTH */
+
+  /* Same as '_libiconv_version' if built with HAVE_ICONV */
+  int iconv_ver_num;
+
+  const char *libssh_version; /* human readable string */
+
+  /* These fields were added in CURLVERSION_FIFTH */
+  unsigned int brotli_ver_num; /* Numeric Brotli version
+                                  (MAJOR << 24) | (MINOR << 12) | PATCH */
+  const char *brotli_version; /* human readable string. */
+
+  /* These fields were added in CURLVERSION_SIXTH */
+  unsigned int nghttp2_ver_num; /* Numeric nghttp2 version
+                                   (MAJOR << 16) | (MINOR << 8) | PATCH */
+  const char *nghttp2_version; /* human readable string. */
+  const char *quic_version;    /* human readable quic (+ HTTP/3) library +
+                                  version or NULL */
+
+  /* These fields were added in CURLVERSION_SEVENTH */
+  const char *cainfo;          /* the built-in default CURLOPT_CAINFO, might
+                                  be NULL */
+  const char *capath;          /* the built-in default CURLOPT_CAPATH, might
+                                  be NULL */
+
+  /* These fields were added in CURLVERSION_EIGHTH */
+  unsigned int zstd_ver_num; /* Numeric Zstd version
+                                  (MAJOR << 24) | (MINOR << 12) | PATCH */
+  const char *zstd_version; /* human readable string. */
+
+  /* These fields were added in CURLVERSION_NINTH */
+  const char *hyper_version; /* human readable string. */
+
+  /* These fields were added in CURLVERSION_TENTH */
+  const char *gsasl_version; /* human readable string. */
+};
+typedef struct curl_version_info_data curl_version_info_data;
+
 typedef CURL *(*curl_easy_init_t)(void);
 typedef CURLcode (*curl_easy_setopt_t)(CURL *curl, CURLoption option, ...);
 typedef CURLcode (*curl_easy_perform_t)(CURL *curl);
@@ -196,11 +268,13 @@ typedef CURLcode (*curl_mime_type_t)(curl_mimepart *part, const char *mimetype);
 typedef CURLcode (*curl_mime_data_t)(curl_mimepart *part, const char *data, size_t datasize);
 typedef CURLcode (*curl_mime_filedata_t)(curl_mimepart *part, const char *filename);
 typedef struct curl_slist *(*curl_slist_append_t)(struct curl_slist *, const char *);
+typedef curl_version_info_data *(*curl_version_info_t)(CURLversion age);
 
 
 class LibCurlApi {
    private:
     void *handle;
+    std::string libPath = "Unknown";
 
    public:
     curl_easy_init_t curl_easy_init;
@@ -214,12 +288,18 @@ class LibCurlApi {
     curl_mime_data_t curl_mime_data;
     curl_mime_filedata_t curl_mime_filedata;
     curl_slist_append_t curl_slist_append;
+    curl_version_info_t curl_version_info;
 
    public:
     LibCurlApi() {
         handle = dlopen("libcurl.so", RTLD_LAZY);
         if (!handle)
             return;
+        struct link_map *p;
+        int err = dlinfo(handle, RTLD_DI_LINKMAP, &p);
+        if (err == 0 && p != NULL) {
+            libPath = p->l_name;
+        }
         curl_easy_init = reinterpret_cast<curl_easy_init_t>(dlsym(handle, "curl_easy_init"));
         curl_easy_setopt = reinterpret_cast<curl_easy_setopt_t>(dlsym(handle, "curl_easy_setopt"));
         curl_easy_perform = reinterpret_cast<curl_easy_perform_t>(dlsym(handle, "curl_easy_perform"));
@@ -231,6 +311,7 @@ class LibCurlApi {
         curl_mime_data = reinterpret_cast<curl_mime_data_t>(dlsym(handle, "curl_mime_data"));
         curl_mime_filedata = reinterpret_cast<curl_mime_filedata_t>(dlsym(handle, "curl_mime_filedata"));
         curl_slist_append = reinterpret_cast<curl_slist_append_t>(dlsym(handle, "curl_slist_append"));
+        curl_version_info = reinterpret_cast<curl_version_info_t>(dlsym(handle, "curl_version_info"));
     }
     ~LibCurlApi() {
         if (!handle)
@@ -249,6 +330,18 @@ class LibCurlApi {
                curl_mime_type != NULL &&
                curl_mime_data != NULL &&
                curl_mime_filedata != NULL &&
-               curl_slist_append != NULL;
+               curl_slist_append != NULL &&
+               curl_version_info != NULL;
+    }
+
+    std::string getLibCurlVersion() {
+        if (curl_version_info == NULL)
+            return "Unknown";
+        auto version_data = curl_version_info(CURLVERSION_FIRST);
+        return version_data->version;
+    }
+
+    std::string getLibPath() {
+        return libPath;
     }
 };
