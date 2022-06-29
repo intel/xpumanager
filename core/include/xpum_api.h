@@ -546,14 +546,14 @@ xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
  */
 xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t fabricPortConfig);
 /**
- * @brief Get the memory Ecc state of the device
- * @details This function is used to get the memory Ecc state of the device
+ * @brief Get the memory ECC state of the device
+ * @details This function is used to get the memory ECC state of the device
  *
  * @param deviceId          IN: The device Id
- * @param available    OUT: memory Ecc is available, or not
- * @param configurable    OUT: memory Ecc is configurable, or not
- * @param current    OUT: the current state of memory Ecc
- * @param pending    OUT: the pending state of memory Ecc
+ * @param available    OUT: memory ECC is available, or not
+ * @param configurable    OUT: memory ECC is configurable, or not
+ * @param current    OUT: the current state of memory ECC
+ * @param pending    OUT: the pending state of memory ECC
  * @param action     OUT: the action need to do to switch to the pending state
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
@@ -562,15 +562,15 @@ xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
 xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* configurable,
         xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);
 /**
- * @brief Set the memory Ecc state of the device
- * @details This function is used to set the memory Ecc state of the device
+ * @brief Set the memory ECC state of the device
+ * @details This function is used to set the memory ECC state of the device
  *
  * @param deviceId          IN: The device Id
  * @param newState          IN: new state to set
- * @param available    OUT: memory Ecc is available, or not
- * @param configurable    OUT: memory Ecc is configurable, or not
- * @param current    OUT: the current state of memory Ecc
- * @param pending    OUT: the pending state of memory Ecc
+ * @param available    OUT: memory ECC is available, or not
+ * @param configurable    OUT: memory ECC is configurable, or not
+ * @param current    OUT: the current state of memory ECC
+ * @param pending    OUT: the pending state of memory ECC
  * @param action     OUT: the action need to do to switch to the pending state
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully

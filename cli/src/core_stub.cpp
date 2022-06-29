@@ -1655,7 +1655,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
     if (status.ok()) {
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set memory Ecc state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
+            XPUM_LOG_AUDIT("Succeed to set memory ECC state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
                            (*json)["memory_ecc_available"], (*json)["memory_ecc_configurable"],
                            (*json)["memory_ecc_current_state"], (*json)["memory_ecc_pending_state"],
                            (*json)["memory_ecc_pending_action"]);
@@ -1666,14 +1666,14 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
             ", current: " + std::string((*json)["memory_ecc_current_state"]) +
             ", pending: " + std::string((*json)["memory_ecc_pending_state"]) +
             ", action: " + std::string((*json)["memory_ecc_pending_action"]);
-            XPUM_LOG_AUDIT("Failed to set memory Ecc state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
+            XPUM_LOG_AUDIT("Failed to set memory ECC state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
                            (*json)["memory_ecc_available"], (*json)["memory_ecc_configurable"],
                            (*json)["memory_ecc_current_state"], (*json)["memory_ecc_pending_state"],
                            (*json)["memory_ecc_pending_action"]);
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set memory Ecc state: %s", status.error_message());
+        XPUM_LOG_AUDIT("Fail to set memory ECC state: %s", status.error_message());
     }
     return json;
 }
