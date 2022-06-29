@@ -167,7 +167,16 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         else if (/*this->opts->tileId >= 0 &&*/ !this->opts->powerlimit.empty()) {
             std::vector<std::string> paralist = split(this->opts->powerlimit, ",");
             if (paralist.size() >= 1 && !paralist.at(0).empty()) {
-                int val1 = std::stoi(paralist.at(0));
+                int val1;
+                try {
+                    val1 = std::stoi(paralist.at(0));
+                } catch (std::invalid_argument const& e) {
+                    (*json)["return"] = "invalid parameter: powerlimit";
+                    return json;
+                } catch (std::out_of_range const& e) {
+                    (*json)["return"] = "invalid parameter: powerlimit";
+                    return json;                
+                }
                 if (paralist.size() == 2 && paralist.at(1).empty()) {
                     (*json)["return"] = "invalid parameter: please check help information";
                     return json;
@@ -194,8 +203,22 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         else if (this->opts->tileId >= 0 && !this->opts->frequencyrange.empty()) {
             std::vector<std::string> paralist = split(this->opts->frequencyrange, ",");
             if (paralist.size() == 2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
-                int val1 = std::stoi(paralist.at(0));
-                int val2 = std::stoi(paralist.at(1));
+                int val1;
+                int val2;
+                try {
+                    val1 = std::stoi(paralist.at(0));
+                    val2 = std::stoi(paralist.at(1));
+                } catch (std::invalid_argument const& e) {
+                    (*json)["return"] = "invalid parameter: frequencyrange";
+                    return json;
+                } catch (std::out_of_range const& e) {
+                    (*json)["return"] = "invalid parameter: frequencyrange";
+                    return json;
+                }
+                if (val1 > val2) {
+                    (*json)["return"] = "invalid parameter: frequencyrange";
+                    return json; 
+                }
                 json = this->coreStub->setDeviceFrequencyRange(this->opts->deviceId, this->opts->tileId, val1, val2);
                 if ((*json)["status"] == "OK") {
                     (*json)["return"] = "Succeed to change the core frequency range on GPU " + std::to_string(this->opts->deviceId) +
@@ -225,7 +248,10 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             try {
                 eccVal = std::stoi(this->opts->setecc);
             } catch (std::invalid_argument const& e) {
-                (*json)["return"] = "invalid parameter value";
+                (*json)["return"] = "invalid parameter: memoryecc";
+                return json;
+            } catch (std::out_of_range const& e) {
+                (*json)["return"] = "invalid parameter: memoryecc";
                 return json;
             }
             if (eccVal == 1) {
@@ -233,7 +259,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             } else if (eccVal == 0) {
                 enabled = false;
             } else {
-                (*json)["return"] = "invalid parameter value";
+                (*json)["return"] = "invalid parameter: memoryecc";
                 return json;
             }
             json = this->coreStub->setMemoryEccState(this->opts->deviceId, enabled);
@@ -246,7 +272,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 " current: " + current +
                 " pending: " + pending + 
                 " action: " +  pendingAction;*/
-                (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU " + std::to_string(this->opts->deviceId) + " Please reset GPU or reboot OS to take effect.";
+                (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU " + std::to_string(this->opts->deviceId) + ". Please reset GPU or reboot OS to take effect.";
             } else {
                 (*json)["return"] = "Failed to change the ECC mode.";
             }
