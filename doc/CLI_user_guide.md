@@ -708,7 +708,7 @@ Options:
                                 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
-  --memoryecc                 Enable/disable memory Ecc setting. 0:disable; 1:enable
+  --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
 
 ```
 
@@ -721,7 +721,7 @@ show the GPU settings
 | GPU         | 0                 | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 1 to 500                                        |
 |             |                   |                                                                |
-|             |                   | Memory Ecc:                                                    |
+|             |                   | Memory ECC:                                                    |
 |             |                   |   Current: enabled                                             |
 |             |                   |   Pending: enabled                                             |
 +-------------+-------------------+----------------------------------------------------------------+
@@ -787,7 +787,7 @@ Change the GPU power limit.
 Succeed to set the power limit on GPU 0.
 ```
 
-Change the GPU memory Ecc mode.
+Change the GPU memory ECC mode.
 ```
 ./xpumcli config -d 0 --memoryecc 0
 Return: Succeed to change the ECC mode to be disabled on GPU 0. Please reset GPU or reboot OS to take effect.
