@@ -193,8 +193,8 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(dump_raw_data.listDumpRawDataTasks))
 
     # sensor reading
-    app.add_url_rule('/rest/v1/sensor', methods=['GET'],
-                     view_func=auth.login_required(sensor.getSensorReading))
+    # app.add_url_rule('/rest/v1/sensor', methods=['GET'],
+    #                  view_func=auth.login_required(sensor.getSensorReading))
 
     return app
 

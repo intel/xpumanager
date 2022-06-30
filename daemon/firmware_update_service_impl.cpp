@@ -6,6 +6,7 @@
 
 #include "xpum_core_service_impl.h"
 #include "redfish_amc_manager.h"
+#include "internal_api.h"
 
 namespace xpum::daemon {
 

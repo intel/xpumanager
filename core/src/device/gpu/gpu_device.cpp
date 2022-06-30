@@ -248,8 +248,9 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
                         }
                     } else {
                         bool commandResult = pclose(commandExec) == 0;
-                        XPUM_LOG_INFO("Command success: {}", commandResult);
+                        XPUM_LOG_INFO("pclose success: {}", commandResult);
                         ok = ok && commandResult;
+                        XPUM_LOG_INFO("Command success: {}", ok);
                         commandExec = nullptr;
                         break;
                     }
