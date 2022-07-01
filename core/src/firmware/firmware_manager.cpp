@@ -159,22 +159,19 @@ void FirmwareManager::init() {
 };
 
 void FirmwareManager::preInitAmcManager() {
-    p_amc_manager = std::make_shared<RedfishAmcManager>();
-    auto redfish_enabled = p_amc_manager->preInit();
-    if (!redfish_enabled) {
-        p_amc_manager = std::make_shared<IpmiAmcManager>();
+    p_amc_manager = std::make_shared<IpmiAmcManager>();
+    auto ipmi_enabled = p_amc_manager->preInit();
+    if (!ipmi_enabled) {
+        p_amc_manager = std::make_shared<RedfishAmcManager>();
         p_amc_manager->preInit();
     }
 }
 
 bool FirmwareManager::initAmcManager() {
-    if (p_amc_manager->init())
+    InitParam param;
+    if (p_amc_manager->init(param))
         return true;
-    if (p_amc_manager->getProtocol().compare("redfish") == 0) {
-        p_amc_manager = std::make_shared<IpmiAmcManager>();
-        p_amc_manager->preInit();
-        return p_amc_manager->init();
-    }
+    getAmcFwErrMsg = flashFwErrMsg = param.errMsg;
     return false;
 }
 
@@ -182,8 +179,8 @@ xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& 
     getAmcFwErrMsg.clear();
     if (!initAmcManager()) {
         // getAmcFwErrMsg = "Fail to get AMC firmware versions";
-        // return XPUM_GENERIC_ERROR;
-        return XPUM_OK;
+        return XPUM_GENERIC_ERROR;
+        // return XPUM_OK;
     }
     GetAmcFirmwareVersionsParam param;
     param.username = credential.username;
@@ -203,7 +200,7 @@ xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& 
 xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCredential credential) {
     flashFwErrMsg.clear();
     if (!initAmcManager()) {
-        flashFwErrMsg = "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.";
+        // flashFwErrMsg = "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.";
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
     }
 

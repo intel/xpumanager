@@ -14,6 +14,8 @@
 #include "libcurl.h"
 #include "detect_usb_interface.h"
 
+#define XPUM_CURL_TIMEOUT 10L
+
 using namespace nlohmann;
 
 namespace xpum {
@@ -21,6 +23,8 @@ namespace xpum {
 static LibCurlApi libcurl;
 
 int doCmd(std::string cmd, std::string& output);
+
+static unsigned short toCidr(const char* ipAddress);
 
 size_t curlWriteToStringCallback(void* contents, size_t size, size_t nmemb, std::string* s) {
     size_t newLength = size * nmemb;
@@ -38,6 +42,9 @@ void curlBasicConfig(CURL* curl, std::string& buffer, std::string username, std:
     libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
     libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
     libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
+
+    // timeout
+    libcurl.curl_easy_setopt(curl, CURLOPT_TIMEOUT, XPUM_CURL_TIMEOUT);
 
     // buffer
     libcurl.curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriteToStringCallback);
@@ -69,6 +76,8 @@ bool getBasePage(RedfishHostInterface interface) {
         libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
         libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
+
+        libcurl.curl_easy_setopt(curl, CURLOPT_TIMEOUT, XPUM_CURL_TIMEOUT);
 
         libcurl.curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriteToStringCallback);
         libcurl.curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
@@ -148,7 +157,13 @@ bool getAmcFwVersionByOdataId(RedfishHostInterface interface,
     }
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK){
-        errMsg = "Fail to get " + odataid;
+        switch (res) {
+            case CURLOPT_TIMEOUT:
+                errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                errMsg = "Fail to get " + odataid;
+        }
         return false;
     }
     json fwJson;
@@ -195,7 +210,13 @@ xpum_result_t getGPUFwInventoryList(RedfishHostInterface interface,
     }
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK){
-        errMsg = "Fail to get fw inventory list";
+        switch (res) {
+            case CURLOPT_TIMEOUT:
+                errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                errMsg = "Fail to get fw inventory list";
+        }
         return XPUM_GENERIC_ERROR;
     }
     json fwInventoryJson;
@@ -223,41 +244,60 @@ xpum_result_t getGPUFwInventoryList(RedfishHostInterface interface,
     return XPUM_GENERIC_ERROR;
 }
 
+static std::string initErrMsg;
+
 bool RedfishAmcManager::preInit(){
     XPUM_LOG_INFO("RedfishAmcManager preInit");
+    // check interface
+    if (!redfishHostInterfaceInit()) {
+        XPUM_LOG_INFO("fail to parse redfish host interface");
+        initErrMsg = "Can't find any redfish host services";
+        return false;
+    }
+
+    // load libcurl.so
     if (!libcurl.initialized()) {
+        // if fail to initialize libcurl, try to re-initialize, so that no need to restart xpum
+        LibCurlApi tmp;
+        libcurl = tmp;
         // fail to load libcurl.so
         XPUM_LOG_INFO("libcurl version: {}", libcurl.getLibCurlVersion());
         XPUM_LOG_INFO("libcurl path: {}", libcurl.getLibPath());
         XPUM_LOG_INFO("fail to load libcurl.so");
+        initErrMsg = libcurl.getInitErrMsg();
         return false;
     }
-    // configure interface
-    if (!redfishHostInterfaceInit()) {
-        XPUM_LOG_INFO("fail to parse redfish host interface");
-        return false;
-    }
+    
     return true;
 }
 
-bool RedfishAmcManager::init() {
+bool RedfishAmcManager::init(InitParam& param) {
     if (initialized) {
         XPUM_LOG_INFO("RedfishAmcManager already initialized");
         return true;
     }
     XPUM_LOG_INFO("RedfishAmcManager init");
+    initErrMsg.clear();
+
     if (!preInit()) {
         XPUM_LOG_INFO("RedfishAmcManager fail to preInit");
+        param.errMsg = initErrMsg;
         return false;
     }
     // bind ip to interface
     if (!bindIpToInterface()) {
         XPUM_LOG_INFO("RedfishAmcManager fail to bind ip to interface");
+        std::stringstream ss;
+        ss << "Fail to configure address ";
+        ss << hostInterface.ipv4_addr + "/" + std::to_string(toCidr(hostInterface.ipv4_mask.c_str()));
+        ss << " to interface " << hostInterface.interface_name;
+        param.errMsg = ss.str();
         return false;
     }
     // try to get /redfish/v1
     if (!getBasePage(hostInterface)) {
         XPUM_LOG_INFO("RedfishAmcManager fail to get base url");
+        param.errMsg = "Fail to access /redfish/v1";
         return false;
     }
     initialized = true;
@@ -541,7 +581,13 @@ xpum_result_t getPushUriAndTriggerUri(RedfishHostInterface interface,
     }
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
-        errMsg = "Fail to query UpdateService";
+        switch (res) {
+            case CURLOPT_TIMEOUT:
+                errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                errMsg = "Fail to query UpdateService";
+        }
         return XPUM_GENERIC_ERROR;
     }
 
@@ -683,7 +729,13 @@ bool uploadImage(RedfishHostInterface interface,
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
         XPUM_LOG_ERROR("Fail to upload image, error code: {}", res);
-        flashAmcParam.errMsg = "Fail to upload image";
+        switch (res) {
+            case CURLOPT_TIMEOUT:
+                flashAmcParam.errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                flashAmcParam.errMsg = "Fail to upload image";
+        }
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         return false;
     }
@@ -803,7 +855,13 @@ bool triggerUpdate(RedfishHostInterface interface,
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
         XPUM_LOG_ERROR("Fail to trigger update, error code: {}", res);
-        flashAmcParam.errMsg = "Fail to trigger update";
+        switch (res) {
+            case CURLOPT_TIMEOUT:
+                flashAmcParam.errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                flashAmcParam.errMsg = "Fail to trigger update";
+        }
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         return false;
     }
@@ -890,7 +948,13 @@ bool getTargetUriByOdataId(RedfishHostInterface interface,
     }
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK){
-        errMsg = "Fail to get " + odataid;
+        switch (res) {
+            case CURLOPT_TIMEOUT:
+                errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                errMsg = "Fail to get " + odataid;
+        }
         return false;
     }
     json fwJson;
@@ -1043,7 +1107,13 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
     libcurl.curl_easy_cleanup(curl);
     success = false;
     if (res != CURLE_OK) {
-        errMsg = "Fail to get task status";
+        switch (res) {
+            case CURLOPT_TIMEOUT:
+                errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                errMsg = "Fail to get task status";
+        }
         return false;
     }
     json taskJson;

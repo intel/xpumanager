@@ -23,6 +23,7 @@ typedef void CURL;
 #define CINIT(na,t,nu) CURLOPT_ ## na = CURLOPTTYPE_ ## t + nu
 
 typedef enum {
+    CINIT(TIMEOUT, LONG, 13),
     CINIT(VERBOSE, LONG, 41),
     CINIT(WRITEDATA, OBJECTPOINT, 1),
     CINIT(URL, STRINGPOINT, 2),
@@ -275,6 +276,7 @@ class LibCurlApi {
    private:
     void *handle;
     std::string libPath = "Unknown";
+    std::string initErrMsg;
 
    public:
     curl_easy_init_t curl_easy_init;
@@ -293,8 +295,10 @@ class LibCurlApi {
    public:
     LibCurlApi() {
         handle = dlopen("libcurl.so", RTLD_LAZY);
-        if (!handle)
+        if (!handle) {
+            initErrMsg = "Fail to load libcurl.so. Please install libcurl.so with version equal to or higer than 7.56.0 first, and make sure it can be found in LD_LIBRARY_PATH.";
             return;
+        }
         struct link_map *p;
         int err = dlinfo(handle, RTLD_DI_LINKMAP, &p);
         if (err == 0 && p != NULL) {
@@ -312,6 +316,14 @@ class LibCurlApi {
         curl_mime_filedata = reinterpret_cast<curl_mime_filedata_t>(dlsym(handle, "curl_mime_filedata"));
         curl_slist_append = reinterpret_cast<curl_slist_append_t>(dlsym(handle, "curl_slist_append"));
         curl_version_info = reinterpret_cast<curl_version_info_t>(dlsym(handle, "curl_version_info"));
+        
+        if (!initialized()) {
+            if (!libPath.compare("Unknown")) {
+                initErrMsg = "Fail to load " + libPath + ", please install libcurl.so with version equal to or higer than 7.56.0.";
+            } else {
+                initErrMsg = "Fail to load libcurl.so, please install libcurl.so with version equal to or higer than 7.56.0.";
+            }
+        }
     }
     ~LibCurlApi() {
         if (!handle)
@@ -330,8 +342,7 @@ class LibCurlApi {
                curl_mime_type != NULL &&
                curl_mime_data != NULL &&
                curl_mime_filedata != NULL &&
-               curl_slist_append != NULL &&
-               curl_version_info != NULL;
+               curl_slist_append != NULL;
     }
 
     std::string getLibCurlVersion() {
@@ -343,5 +354,9 @@ class LibCurlApi {
 
     std::string getLibPath() {
         return libPath;
+    }
+
+    std::string getInitErrMsg() {
+        return initErrMsg;
     }
 };

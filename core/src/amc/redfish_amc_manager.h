@@ -34,7 +34,7 @@ struct RedfishHostInterface {
 class RedfishAmcManager : public AmcManager {
    public:
     virtual bool preInit() override;
-    virtual bool init() override;
+    virtual bool init(InitParam& param) override;
     virtual std::string getProtocol() override {
         return "redfish";
     }

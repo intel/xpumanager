@@ -47,15 +47,22 @@ extern std::vector<xpum_sensor_reading_t> read_sensor();
 
 bool IpmiAmcManager::preInit(){
     XPUM_LOG_INFO("IpmiAmcManager preInit");
-    return init();
+    InitParam param;
+    return init(param);
 }
 
-bool IpmiAmcManager::init() {
-    if (initialized)
+static std::string initErrMsg;
+
+bool IpmiAmcManager::init(InitParam& param) {
+    if (initialized){
+        param.errMsg = initErrMsg;
         return initSuccess;
+    }
     updateAmcFwList();
     initialized = true;
     if (amcFwList.size() == 0) {
+        initErrMsg = "Can not find AMC device through ipmi";
+        param.errMsg = initErrMsg;
         XPUM_LOG_INFO("IpmiAmcManager can not find AMC device");
         initSuccess = false;
         return false;

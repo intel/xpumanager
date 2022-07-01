@@ -13,6 +13,10 @@
 
 namespace xpum {
 
+struct InitParam {
+    std::string errMsg;
+};
+
 struct FlashAmcFirmwareParam {
     std::string file;
     std::string username;
@@ -47,7 +51,7 @@ struct GetAmcSensorReadingParam{
 class AmcManager {
    public:
     virtual bool preInit() = 0;
-    virtual bool init() = 0;
+    virtual bool init(InitParam& param) = 0;
     virtual std::string getProtocol() = 0;
     virtual void flashAMCFirmware(FlashAmcFirmwareParam& param) = 0;
     virtual void getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) = 0;
