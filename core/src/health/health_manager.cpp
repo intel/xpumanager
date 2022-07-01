@@ -64,7 +64,7 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
             p_health_core_thermal_configs[deviceId] = threshold;
             break;
         case xpum_health_config_type_t::XPUM_HEALTH_MEMORY_THERMAL_LIMIT:
-            if (threshold <= 0 || threshold > 100) // (0, 100])
+            if (threshold <= 0 || threshold > 105) // (0, 105])
                 return XPUM_RESULT_HEALTH_INVALID_THRESHOLD;
             p_health_memory_thermal_configs[deviceId] = threshold;
             break;
