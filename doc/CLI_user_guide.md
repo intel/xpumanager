@@ -44,7 +44,6 @@ Subcommands:
   dump                        Dump device statistics data.
   topology                    get the system topology
   policy                      Get and set the GPU policies.
-  top                         List GPU engine utilization per process.
 ```
   
 Show Intel XPU Manager version and Level Zero version. 
@@ -962,54 +961,5 @@ Device Type: GPU
 +------------------------+-------------------------------------------------------------------------+
 
 ```
-
-  
-## List GPU engine utilization per process
-Help info for GPU top
-```
-./xpumcli top -h
-
-List GPU engine utilization per process.
-PID:      Process ID
-Command:  Process command name
-%REN:     Render engine utilization
-%COM:     Compute engine utilization
-%CPY:     Copy engine utilization
-%MED:     Media engine utilization
-%MEE:     Media enhancement engine utilization
-SHR:      The size of shared device memory mapped into this process (may not necessarily be resident on the device at the time of reading) (kB)
-MEM:      Device memory size in bytes allocated by this process (may not necessarily be resident on the device at the time of reading) (kB)   
-
-Usage: xpumcli top [Options]
-  xpumcli top
-  xpumcli top -d [deviceId]
-  xpumcli top -d [deviceId] -j
-  
-Options:
-  -h,--help                   Print this help message and exit
-  -j,--json                   Print result in JSON format
-
-  -d,--device                 To specify a device ID to query.
-```
-
-List GPU engine utilization per process for all GPUs
-```
-./xpumcli top
-PID      Command     DeviceID    %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
-7296     xpumd       0         0      0      0      0      0      0         196
-2716180  clpeak      0         0      0      0      0      0      0         138412
-7296     xpumd       1         0      0      0      0      0      0         196
-```
-
-List GPU engine utilization per process for one specified GPU
-```
-./xpumcli top -d 0
-PID      Command      DeviceID   %REN   %COM   %CPY   %MED   %MEE   SHR       MEM
-7296     xpumd        0        0      0      0      0      0      0         196
-```
-
-
-
-
 
   
