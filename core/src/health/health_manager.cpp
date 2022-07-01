@@ -18,7 +18,9 @@ HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
                              std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {
     XPUM_LOG_TRACE("HealthManager()");
-    p_health_device_to_tdps = {{"0x0205", 150}, {"0x0203", 150}, {"0x020A", 300}, {"0x56C0", 150}, {"0x56C1", 37.5}, {"0x0BD5", 600}, {"0x0BD8", 450}};
+    p_health_device_to_tdps = {{0x0205, 150}, {0x0203, 150}, {0x020A, 300}, {0x56C0, 150}, {0x56C1, 37.5}, {0x0BD5, 600}, {0x0BD8, 450}};
+    p_health_device_to_throttle_core_temperatures = {{0x56C0, 100}, {0x56C1, 95}};
+    p_health_device_to_shutdown_memory_temperatures = {{0x56C0, 105}, {0x56C1, 105}};
 }
 
 HealthManager::~HealthManager() {
@@ -122,19 +124,19 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
     data->type = type;
     data->status = xpum_health_status_t::XPUM_HEALTH_STATUS_UNKNOWN;
 
+    Property prop;
+    std::string pciDeviceId;
+    if (this->p_device_manager->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
+        pciDeviceId = prop.getValue();
+    }
     if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
-        data->throttleThreshold = 105;
+        data->throttleThreshold = getThrottleCoreTemperature(pciDeviceId);
         data->shutdownThreshold = 130;
     } else if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL) {
         data->throttleThreshold = 85;
-        data->shutdownThreshold = 100;
+        data->shutdownThreshold = getShutdownMemoryTemperature(pciDeviceId);
     } else if (type == xpum_health_type_t::XPUM_HEALTH_POWER) {
-        Property prop;
-        std::string deviceName;
-        if (this->p_device_manager->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, prop)) {
-            deviceName = prop.getValue();
-        }
-        data->throttleThreshold = getThrottlePower(deviceName);
+        data->throttleThreshold = getThrottlePower(pciDeviceId);
     } else {
         if (type != xpum_health_type_t::XPUM_HEALTH_MEMORY && type != xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT)
             return XPUM_RESULT_HEALTH_INVALID_TYPE;
@@ -165,22 +167,48 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
     return XPUM_OK;
 }
 
-uint64_t HealthManager::getThrottlePower(std::string deviceName) {
+uint64_t HealthManager::getThrottlePower(std::string pciDeviceId) {
     uint64_t value = 300; // default throttle power
 
-    if (deviceName.empty()) {
+    if (pciDeviceId.empty()) {
         return value;
     }
 
-    std::transform(deviceName.begin(), deviceName.end(), deviceName.begin(), ::toupper);
-    for (auto item : p_health_device_to_tdps) {
-        auto pciDeviceId = item.first;
-        std::transform(pciDeviceId.begin(), pciDeviceId.end(), pciDeviceId.begin(), ::toupper);
-        if (deviceName.find(pciDeviceId) != std::string::npos) {
-            value = p_health_device_to_tdps[item.first];
-            break;
-        }
+    uint32_t id = std::stoi(pciDeviceId, nullptr, 16);
+
+    if (p_health_device_to_tdps.count(id) > 0)
+        value = p_health_device_to_tdps[id];
+
+    return value;
+}
+
+uint64_t HealthManager::getThrottleCoreTemperature(std::string pciDeviceId) {
+    uint64_t value = 105; // default throttle core temperature
+
+    if (pciDeviceId.empty()) {
+        return value;
     }
+
+    uint32_t id = std::stoi(pciDeviceId, nullptr, 16);
+
+    if (p_health_device_to_throttle_core_temperatures.count(id) > 0)
+        value = p_health_device_to_throttle_core_temperatures[id];
+
+    return value;
+}
+
+uint64_t HealthManager::getShutdownMemoryTemperature(std::string pciDeviceId) {
+    uint64_t value = 100; // default shutdown memory temperature
+
+    if (pciDeviceId.empty()) {
+        return value;
+    }
+
+    uint32_t id = std::stoi(pciDeviceId, nullptr, 16);
+
+    if (p_health_device_to_shutdown_memory_temperatures.count(id) > 0)
+        value = p_health_device_to_shutdown_memory_temperatures[id];
+
     return value;
 }
 } // end namespace xpum
