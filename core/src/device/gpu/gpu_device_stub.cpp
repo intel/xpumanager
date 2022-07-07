@@ -1579,7 +1579,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadThroughput(const 
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, mem_bandwidth.readCounter / 1024) : ret->setRawData(mem_bandwidth.readCounter / 1024);
-                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond() / 1000) : ret->setRawTimestamp(Utility::getCurrentMillisecond() / 1000);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond()) : ret->setRawTimestamp(Utility::getCurrentMillisecond());
+                    ret->setScale(Configuration::MEMORY_IO_THROUGHPUT_DATA_SCALE);
                     data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;
@@ -1631,7 +1632,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWriteThroughput(const
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, mem_bandwidth.writeCounter / 1024) : ret->setRawData(mem_bandwidth.writeCounter / 1024);
-                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond() / 1000) : ret->setRawTimestamp(Utility::getCurrentMillisecond() / 1000);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond()) : ret->setRawTimestamp(Utility::getCurrentMillisecond());
+                    ret->setScale(Configuration::MEMORY_IO_THROUGHPUT_DATA_SCALE);
                     data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;
