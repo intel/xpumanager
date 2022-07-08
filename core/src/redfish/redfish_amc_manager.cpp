@@ -251,7 +251,7 @@ bool RedfishAmcManager::preInit(){
     // check interface
     if (!redfishHostInterfaceInit()) {
         XPUM_LOG_INFO("fail to parse redfish host interface");
-        initErrMsg = "Can't find any redfish host services";
+        initErrMsg = "No AMC are found";
         return false;
     }
 
