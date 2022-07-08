@@ -132,6 +132,7 @@ void IpmiAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& p
     result.deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
     result.type = XPUM_DEVICE_FIRMWARE_AMC;
     result.result = res;
+    param.errCode = XPUM_OK;
 }
 
 void IpmiAmcManager::getAMCSensorReading(GetAmcSensorReadingParam& param){
