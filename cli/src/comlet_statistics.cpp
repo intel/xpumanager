@@ -153,10 +153,10 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Read (kB/s) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].avg" },
-                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].min" },
-                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].max" },
-                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].value" }
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].avg", "fixer": "round" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].min", "fixer": "round" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].max", "fixer": "round" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].value", "fixer": "round" }
             ]}
         ]]
     }, {
@@ -165,10 +165,10 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Write (kB/s) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].avg" },
-                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].min" },
-                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].max" },
-                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].value" }
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].avg", "fixer": "round" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].min", "fixer": "round" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].max", "fixer": "round" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].value", "fixer": "round" }
             ]}
         ]]
     }, {
