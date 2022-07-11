@@ -346,7 +346,7 @@ class LibCurlApi {
     }
 
     std::string getLibCurlVersion() {
-        if (curl_version_info == NULL)
+        if (handle == NULL || curl_version_info == NULL)
             return "Unknown";
         auto version_data = curl_version_info(CURLVERSION_FIRST);
         return version_data->version;

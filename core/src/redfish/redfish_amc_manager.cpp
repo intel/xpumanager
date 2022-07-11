@@ -158,7 +158,7 @@ bool getAmcFwVersionByOdataId(RedfishHostInterface interface,
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK){
         switch (res) {
-            case CURLOPT_TIMEOUT:
+            case CURLE_OPERATION_TIMEDOUT:
                 errMsg = "Request to " + url.str() + " timeout";
                 break;
             default:
@@ -211,11 +211,11 @@ xpum_result_t getGPUFwInventoryList(RedfishHostInterface interface,
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK){
         switch (res) {
-            case CURLOPT_TIMEOUT:
+            case CURLE_OPERATION_TIMEDOUT:
                 errMsg = "Request to " + url.str() + " timeout";
                 break;
             default:
-                errMsg = "Fail to get fw inventory list";
+                errMsg = "Fail to request " + url.str();
         }
         return XPUM_GENERIC_ERROR;
     }
@@ -260,12 +260,14 @@ bool RedfishAmcManager::preInit(){
         // if fail to initialize libcurl, try to re-initialize, so that no need to restart xpum
         LibCurlApi tmp;
         libcurl = tmp;
+        if(!libcurl.initialized()){
+            XPUM_LOG_INFO("fail to load libcurl.so");
+            initErrMsg = libcurl.getInitErrMsg();
+            return false;
+        }
         // fail to load libcurl.so
         XPUM_LOG_INFO("libcurl version: {}", libcurl.getLibCurlVersion());
         XPUM_LOG_INFO("libcurl path: {}", libcurl.getLibPath());
-        XPUM_LOG_INFO("fail to load libcurl.so");
-        initErrMsg = libcurl.getInitErrMsg();
-        return false;
     }
     
     return true;
@@ -297,8 +299,8 @@ bool RedfishAmcManager::init(InitParam& param) {
     // try to get /redfish/v1
     if (!getBasePage(hostInterface)) {
         XPUM_LOG_INFO("RedfishAmcManager fail to get base url");
-        param.errMsg = "Fail to access /redfish/v1";
-        return false;
+        // param.errMsg = "Fail to access /redfish/v1";
+        // return false;
     }
     initialized = true;
     return true;
@@ -582,11 +584,11 @@ xpum_result_t getPushUriAndTriggerUri(RedfishHostInterface interface,
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
         switch (res) {
-            case CURLOPT_TIMEOUT:
+            case CURLE_OPERATION_TIMEDOUT:
                 errMsg = "Request to " + url.str() + " timeout";
                 break;
             default:
-                errMsg = "Fail to query UpdateService";
+                errMsg = "Fail to request " + url.str();
         }
         return XPUM_GENERIC_ERROR;
     }
@@ -730,11 +732,11 @@ bool uploadImage(RedfishHostInterface interface,
     if (res != CURLE_OK) {
         XPUM_LOG_ERROR("Fail to upload image, error code: {}", res);
         switch (res) {
-            case CURLOPT_TIMEOUT:
+            case CURLE_OPERATION_TIMEDOUT:
                 flashAmcParam.errMsg = "Request to " + url.str() + " timeout";
                 break;
             default:
-                flashAmcParam.errMsg = "Fail to upload image";
+                flashAmcParam.errMsg = "Fail to request " + url.str();
         }
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         return false;
@@ -856,11 +858,11 @@ bool triggerUpdate(RedfishHostInterface interface,
     if (res != CURLE_OK) {
         XPUM_LOG_ERROR("Fail to trigger update, error code: {}", res);
         switch (res) {
-            case CURLOPT_TIMEOUT:
+            case CURLE_OPERATION_TIMEDOUT:
                 flashAmcParam.errMsg = "Request to " + url.str() + " timeout";
                 break;
             default:
-                flashAmcParam.errMsg = "Fail to trigger update";
+                flashAmcParam.errMsg = "Fail to request " + url.str();
         }
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         return false;
@@ -949,7 +951,7 @@ bool getTargetUriByOdataId(RedfishHostInterface interface,
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK){
         switch (res) {
-            case CURLOPT_TIMEOUT:
+            case CURLE_OPERATION_TIMEDOUT:
                 errMsg = "Request to " + url.str() + " timeout";
                 break;
             default:
@@ -1108,11 +1110,11 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
     success = false;
     if (res != CURLE_OK) {
         switch (res) {
-            case CURLOPT_TIMEOUT:
+            case CURLE_OPERATION_TIMEDOUT:
                 errMsg = "Request to " + url.str() + " timeout";
                 break;
             default:
-                errMsg = "Fail to get task status";
+                errMsg = "Fail to request " + url.str();;
         }
         return false;
     }

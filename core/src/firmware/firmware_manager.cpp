@@ -179,8 +179,8 @@ xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& 
     getAmcFwErrMsg.clear();
     if (!initAmcManager()) {
         // getAmcFwErrMsg = "Fail to get AMC firmware versions";
-        // return XPUM_GENERIC_ERROR;
-        return XPUM_OK;
+        return XPUM_GENERIC_ERROR;
+        // return XPUM_OK;
     }
     GetAmcFirmwareVersionsParam param;
     param.username = credential.username;
