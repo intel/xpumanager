@@ -477,6 +477,41 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             case XPUM_RESULT_DEVICE_NOT_FOUND:
                 response->set_errormsg("device not found");
                 break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND:
+                response->set_errormsg("task not found");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
+    }
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getDiagnosticsMediaCodecResult(::grpc::ServerContext* context, const ::DeviceId* request, 
+                                                                   ::DiagnosticsMediaCodecInfoArray* response) {
+    int count = 6; // Resolution: 1080p, 4K; Format: H264, H265, AV1
+    xpum_diag_media_codec_metrics_t resultList[6];
+    xpum_result_t res = xpumGetDiagnosticsMediaCodecResult(request->id(), resultList, &count);
+    if (res == XPUM_OK) {
+        for (int i = 0; i < count; i++) {
+            DiagnosticsMediaCodecInfo * data = response->add_datalist();
+            data->set_deviceid(resultList[i].deviceId);
+            data->set_resolution(static_cast<DiagnosticsMediaCodecResolution>(resultList[i].resolution));
+            data->set_format(static_cast<DiagnosticsMediaCodecFormat>(resultList[i].format));
+            data->set_fps(resultList[i].fps);
+        }
+    } else {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND:
+                response->set_errormsg("task not found");
+                break;
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
                 break;
@@ -526,6 +561,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
             case XPUM_RESULT_DEVICE_NOT_FOUND:
                 response->set_errormsg("device not found");
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND:
+                response->set_errormsg("task not found");
                 break;
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");

@@ -24,5 +24,7 @@ class DiagnosticManagerInterface : public InitCloseInterface {
     virtual bool isDiagnosticsRunning(xpum_device_id_t deviceId) = 0;
 
     virtual xpum_result_t getDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result) = 0;
+
+    virtual xpum_result_t getDiagnosticsMediaCodecResult(xpum_device_id_t deviceId, xpum_diag_media_codec_metrics_t resultList[], int *count) = 0;
 };
 } // end namespace xpum

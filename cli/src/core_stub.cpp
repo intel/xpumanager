@@ -371,6 +371,39 @@ std::string CoreStub::diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type t
     }
     return ret;
 }
+
+std::string CoreStub::diagnosticsMediaCodecResolutionEnumToString(DiagnosticsMediaCodecResolution resolution) {
+    std::string ret;
+    switch (resolution) {
+        case DIAG_MEDIA_1080p:
+            ret = "1080p";
+            break;
+        case DIAG_MEDIA_4K:
+            ret = "4K";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+std::string CoreStub::diagnosticsMediaCodecFormatEnumToString(DiagnosticsMediaCodecFormat format) {
+    std::string ret;
+    switch (format) {
+        case DIAG_MEDIA_H265:
+            ret = "H.265";
+            break;
+        case DIAG_MEDIA_H264:
+            ret = "H.264";
+            break;
+        case DIAG_MEDIA_AV1:
+            ret = "AV1";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
 std::unique_ptr<nlohmann::json> CoreStub::runDiagnostics(int deviceId, int level, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -456,9 +489,40 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResult(int deviceId, boo
                         componentJson["process_list"] = processList;
                     }
                 }
+                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 
+                    && response.componentinfo(i).result() == DIAG_RESULT_PASS) {
+                    componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(response.deviceid(), rawComponentTypeStr))["media_codec_list"];
+                }                
                 componentJsonList.push_back(componentJson);
             }
             (*json)["component_list"] = componentJsonList;
+        } else {
+            (*json)["error"] = response.errormsg();
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;
+}
+
+std::shared_ptr<nlohmann::json> CoreStub::getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr) {
+    auto json = std::shared_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceId request;
+    request.set_id(deviceId);
+    DiagnosticsMediaCodecInfoArray response;
+    grpc::Status status = stub->getDiagnosticsMediaCodecResult(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> mediaPerfJsonList;
+            for (int i = 0; i < response.datalist_size(); ++i) {
+                auto perfJson = nlohmann::json();
+                std::string resolution = diagnosticsMediaCodecResolutionEnumToString(response.datalist(i).resolution());
+                std::string format = diagnosticsMediaCodecFormatEnumToString(response.datalist(i).format());
+                perfJson["fps"] = (rawFpsStr ? "" : " ") + resolution + " " + format + " : " + response.datalist(i).fps();
+                mediaPerfJsonList.push_back(perfJson); 
+            }
+            (*json)["media_codec_list"] = mediaPerfJsonList;
         } else {
             (*json)["error"] = response.errormsg();
         }
@@ -560,6 +624,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getDiagnosticsResultByGroup(uint32_t g
                             componentJson["process_list"] = processList;
                         }
                     }
+                    if (response.taskinfo(i).componentinfo(j).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 
+                        && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_PASS) {
+                        componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(response.taskinfo(i).deviceid(), rawComponentTypeStr))["media_codec_list"];
+                    } 
                     componentJsonList.push_back(componentJson);
                 }
                 deviceInfoJson["component_list"] = componentJsonList;

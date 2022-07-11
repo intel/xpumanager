@@ -699,6 +699,19 @@ xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
                                               xpum_diag_task_info_t resultList[],
                                               int *count);
 
+/**
+ * @brief Get diagnostics media codec result
+ * 
+ * @param deviceId          IN: The device id to query diagnostics media codec result
+ * @param resultList       OUT: The result of diagnostics media codec result run on device with \a deviceId
+ * @param count         IN/OUT: When \a resultList is NULL, \a count will be filled with the number of available entries, and return. When \a resultList is not NULL, \a count denotes the length of \a resultList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a resultList
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t deviceId,
+                                                xpum_diag_media_codec_metrics_t resultList[],
+                                                int *count);
 /** @} */ // Closing for DIAGNOSTICS_API
 
 /**************************************************************************/

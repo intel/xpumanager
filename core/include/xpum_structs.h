@@ -103,6 +103,7 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_POLICY_INVALID_FREQUENCY,          //Policy frequency invalid
     XPUM_RESULT_POLICY_NOT_EXIST,                  //Policy not exist
     XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE,
+    XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND,
     XPUM_GROUP_DEVICE_DUPLICATED,
     XPUM_GROUP_CHANGE_NOT_ALLOWED,
     XPUM_NOT_INITIALIZED,                      ///< XPUM is not initialized.
@@ -411,6 +412,23 @@ typedef struct xpum_diag_task_info_t {
     uint64_t endTime;
 } xpum_diag_task_info_t;
 
+typedef enum xpum_media_format_enum {
+    XPUM_MEDIA_FORMAT_H265 = 0,
+    XPUM_MEDIA_FORMAT_H264,
+    XPUM_MEDIA_FORMAT_AV1
+} xpum_media_format_t;
+
+typedef enum xpum_media_resolution_enum {
+    XPUM_MEDIA_RESOLUTION_1080P = 0,
+    XPUM_MEDIA_RESOLUTION_4K
+} xpum_media_resolution_t;
+
+typedef struct xpum_diag_media_codec_metrics_t {
+    xpum_device_id_t deviceId;
+    xpum_media_format_t format;
+    xpum_media_resolution_t resolution;
+    char fps[XPUM_MAX_STR_LENGTH];
+} xpum_diag_media_codec_metrics_t;
 /**************************************************************************/
 /**
  * Definitions for agent setting

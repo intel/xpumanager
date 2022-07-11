@@ -148,6 +148,29 @@ message DiagnosticsTaskInfo{
     string errorMsg = 10;
 }
 
+enum DiagnosticsMediaCodecResolution {
+    DIAG_MEDIA_1080p = 0;
+    DIAG_MEDIA_4K = 1;
+}
+
+enum DiagnosticsMediaCodecFormat {
+    DIAG_MEDIA_H265 = 0;
+    DIAG_MEDIA_H264 = 1;
+    DIAG_MEDIA_AV1 = 2;
+}
+
+message DiagnosticsMediaCodecInfo{
+    uint32 deviceId = 1;
+    DiagnosticsMediaCodecResolution resolution = 2;
+    DiagnosticsMediaCodecFormat format = 3;
+    string fps = 4;
+}
+
+message DiagnosticsMediaCodecInfoArray{
+    repeated DiagnosticsMediaCodecInfo dataList = 1;
+    string errorMsg = 2;
+}
+
 message DiagnosticsGroupTaskInfo{
     uint32 groupId = 1;
     repeated DiagnosticsTaskInfo taskInfo = 2;
@@ -816,6 +839,7 @@ service XpumCoreService {
     rpc runDiagnostics( RunDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
     rpc runDiagnosticsByGroup( RunDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
     rpc getDiagnosticsResult ( DeviceId ) returns ( DiagnosticsTaskInfo );
+    rpc getDiagnosticsMediaCodecResult ( DeviceId ) returns ( DiagnosticsMediaCodecInfoArray );
     rpc getDiagnosticsResultByGroup( GroupId ) returns (DiagnosticsGroupTaskInfo);
     rpc getHealth( HealthDataRequest ) returns ( HealthData );
     rpc getHealthByGroup( HealthDataByGroupRequest ) returns ( HealthDataByGroup );

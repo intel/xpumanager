@@ -35,6 +35,9 @@ public:
     virtual ::grpc::Status getDiagnosticsResult(::grpc::ServerContext* context, const ::DeviceId* request, ::DiagnosticsTaskInfo* response) override {
         return PD;
     }
+    virtual ::grpc::Status getDiagnosticsMediaCodecResult(::grpc::ServerContext* context, const ::DeviceId* request, ::DiagnosticsMediaCodecInfoArray* response) {
+        return PD;
+    }
     virtual ::grpc::Status getDiagnosticsResultByGroup(::grpc::ServerContext* context, const ::GroupId* request, ::DiagnosticsGroupTaskInfo* response) override {
         return PD;
     }

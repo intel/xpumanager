@@ -46,6 +46,9 @@ static CharTableConfig ComletConfigDiagnosticDevice(R"({
             { "value": "process_list[]", "subrow": true, "subs": [
                 { "label": "  PID", "value": "process_id" },
                 { "label": "Command", "value": "process_name" }
+            ]},
+            { "value": "media_codec_list[]", "subrow": true, "subs": [
+                { "label": "", "value": "fps" }
             ]}
         ]]
     }]
