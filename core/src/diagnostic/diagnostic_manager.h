@@ -95,7 +95,10 @@ class DiagnosticManager : public DiagnosticManagerInterface {
    private:
     static bool countDevEntry(const std::string &entry_name);
 
-    static std::string getCommandResult(std::string command);
+    static std::string getCommandResult(std::string command, int& fps);
+
+    static std::vector<xpum_diag_media_codec_metrics_t> getMediaCodecMetricsData(xpum_device_id_t deviceId, std::string device_path,
+                                                                                bool h265_1080p_file_exist, bool h265_4k_file_exist);
 
     static void calculateBandwidthLatency(long double total_time_nsec, long double total_data_transfer,
                                           long double &total_bandwidth, long double &total_latency, std::size_t number_iterations);
