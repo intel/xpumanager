@@ -342,9 +342,10 @@ std::string getLibCurlPath() {
         std::string line(c_line);
         auto idx = line.find("libcurl.so");
         if (idx != line.npos) {
-            auto endIdx = line.substr(idx + 10).find(' ');
+            line = line.substr(idx);
+            auto endIdx = line.find(' ');
             if (endIdx != line.npos) {
-                std::string name = line.substr(idx, endIdx - idx);
+                std::string name = line.substr(0, endIdx);
                 if (name.length() > 0) {
                     CurlLibVersion lib(name);
                     if (lib.valid)
