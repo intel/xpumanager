@@ -82,17 +82,13 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
 }
 
 std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId,
-                                                                 unsigned int type,
-                                                                 std::string username,
-                                                                 std::string password) {
+                                                                 unsigned int type) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext ct;
     XpumFirmwareFlashTaskRequest rq;
     rq.mutable_id()->set_id(deviceId);
     rq.mutable_type()->set_value(type);
-    rq.set_username(username);
-    rq.set_password(password);
 
     XpumFirmwareFlashTaskResult res;
     auto status = stub->getFirmwareFlashResult(&ct, rq, &res);

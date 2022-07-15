@@ -159,11 +159,6 @@ class FirmwareFlashResultQueryAllDevicesSchema(Schema):
         validate=validate.Equal("AMC"),
         metadata={"description": "Firmware name, options are: AMC"}
     )
-    username = fields.Str(
-        metadata={"description": "Username for redfish auth"})
-    password = fields.Str(
-        metadata={"description": "Password for redfish auth"})
-
 
 class FirmwareFlashResultSchema(Schema):
     result = fields.Str(

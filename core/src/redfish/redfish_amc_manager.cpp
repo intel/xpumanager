@@ -675,7 +675,8 @@ xpum_result_t getPushUriAndTriggerUri(RedfishHostInterface interface,
 bool uploadImage(RedfishHostInterface interface,
                  FlashAmcFirmwareParam& flashAmcParam,
                  std::string pushUri,
-                 std::string targetLink) {
+                 std::string targetLink,
+                 std::string &verifyTaskLink) {
     XPUM_LOG_INFO("Start upload image");
     std::string& username = flashAmcParam.username;
     std::string& password = flashAmcParam.password;
@@ -796,8 +797,15 @@ bool uploadImage(RedfishHostInterface interface,
     }
     */
 
-    if (uploadJson.contains("Accepted")) {
+    if (uploadJson.contains("Accepted") &&
+        uploadJson["Accepted"].contains("@Message.ExtendedInfo") &&
+        uploadJson["Accepted"]["@Message.ExtendedInfo"].is_array() &&
+        uploadJson["Accepted"]["@Message.ExtendedInfo"].size() > 0 &&
+        uploadJson["Accepted"]["@Message.ExtendedInfo"].at(0).contains("MessageArgs") &&
+        uploadJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"].is_array() &&
+        uploadJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"].size() > 0) {
         XPUM_LOG_INFO("upload image successfully");
+        verifyTaskLink = uploadJson["Accepted"]["@Message.ExtendedInfo"].at(0)["MessageArgs"].at(0);
         return true;
     }
     // parse error to see it is already updating
@@ -817,6 +825,138 @@ bool uploadImage(RedfishHostInterface interface,
     flashAmcParam.errCode = XPUM_GENERIC_ERROR;
     flashAmcParam.errMsg = uploadJson.dump(2);
     return false;
+}
+
+bool imageVerifyResult(RedfishHostInterface interface,
+                       FlashAmcFirmwareParam& flashAmcParam,
+                       std::string verifyTaskLink,
+                       bool& finished,
+                       bool& success) {
+    XPUM_LOG_INFO("Check fw image verify status");
+    std::stringstream url;
+    url << "https://";
+    url << interface.ipv4_service_addr;
+    if (interface.ipv4_service_port.length() > 0)
+        url << ":" << interface.ipv4_service_port;
+    url << verifyTaskLink;
+
+    CURL* curl;
+    CURLcode res = CURL_LAST;
+    std::string buffer;
+    curl = libcurl.curl_easy_init();
+    if (curl) {
+        libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
+        curlBasicConfig(curl, buffer, flashAmcParam.username, flashAmcParam.password);
+
+        res = libcurl.curl_easy_perform(curl);
+    }
+    libcurl.curl_easy_cleanup(curl);
+    if (res != CURLE_OK) {
+        switch (res) {
+            case CURLE_OPERATION_TIMEDOUT:
+                flashAmcParam.errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                flashAmcParam.errMsg = "Fail to request " + url.str();
+        }
+        return false;
+    }
+    json taskJson;
+    try {
+        taskJson = json::parse(buffer);
+    } catch (...) {
+        // parse error
+        flashAmcParam.errMsg = "Fail to parse task json";
+        return false;
+    }
+
+    // set errMsg if json contains error
+    if (taskJson.contains("error")) {
+        parseErrorMsg(taskJson, flashAmcParam.errMsg);
+        return false;
+    }
+
+    // if end time, return ture
+    if (!taskJson.contains("EndTime")) {
+        finished = false;
+    } else {
+        finished = true;
+        success = false;
+        // success if TaskState is Completed
+        if (taskJson.contains("TaskState") && taskJson["TaskState"].get<std::string>().compare("Completed")==0) {
+            success = true;
+        }
+        if (!success) {
+            // parse fail error message
+            if (taskJson.contains("Messages") &&
+                taskJson["Messages"].is_array() &&
+                taskJson["Messages"].size() > 0 &&
+                taskJson["Messages"].at(0).contains("Message")) {
+                flashAmcParam.errMsg = taskJson["Messages"].at(0)["Message"];
+            } else {
+                flashAmcParam.errMsg = taskJson.dump(2);
+            }
+        }
+    }
+    return true;
+    /*
+    {
+      "@odata.type": "#Task.v1_4_3.Task",
+      "@odata.id": "/redfish/v1/TaskService/Tasks/5",
+      "Id": "5",
+      "Name": "GPU Verify",
+      "TaskState": "Completed",
+      "StartTime": "2022-07-15T03:20:30+00:00",
+      "EndTime": "2022-07-15T03:20:30+00:00",
+      "PercentComplete": 100,
+      "HidePayload": true,
+      "TaskMonitor": "/redfish/v1/TaskMonitor/zxlFrXL8b7mtKLHIGhIh5JuWcFwrgJK",
+      "TaskStatus": "OK",
+      "Messages": [
+        {
+          "MessageId": "Event.1.0.ComponentGPUFwUpload",
+          "RelatedProperties": [
+            "No resolution is required."
+          ],
+          "Message": "GPU firmware was verified successfully",
+          "MessageArgs": [
+            "successfully"
+          ],
+          "Severity": "Info"
+        }
+      ],
+      "Oem": {}
+    }
+
+    {
+      "@odata.type": "#Task.v1_4_3.Task",
+      "@odata.id": "/redfish/v1/TaskService/Tasks/18",
+      "Id": "18",
+      "Name": "GPU Verify",
+      "TaskState": "Exception",
+      "StartTime": "2022-07-15T03:11:53+00:00",
+      "EndTime": "2022-07-15T03:11:53+00:00",
+      "PercentComplete": 0,
+      "HidePayload": true,
+      "TaskMonitor": "/redfish/v1/TaskMonitor/QoCSbysV6Nyp5Fl8wCfiE81uF1O736d",
+      "TaskStatus": "OK",
+      "Messages": [
+        {
+          "MessageId": "Event.1.0.ComponentGPUFwUpload",
+          "RelatedProperties": [
+            "No resolution is required."
+          ],
+          "Message": "GPU firmware was verified unsuccessfully",
+          "MessageArgs": [
+            "unsuccessfully"
+          ],
+          "Severity": "Info"
+        }
+      ],
+      "Oem": {}
+    }
+    */
 }
 
 bool triggerUpdate(RedfishHostInterface interface,
@@ -1058,14 +1198,37 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
 
         for (auto targetLink : targetUriList) {
             // upload image
+            std::string verifyTaskLink;
             if (!uploadImage(hostInterface,
                              parameters,
                              pushUri,
-                             targetLink)) {
+                             targetLink,
+                             verifyTaskLink)) {
                 XPUM_LOG_ERROR("Fail to upload image");
                 flashFwErrMsg = parameters.errMsg;
                 param.callback();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            // check image verify result
+            while (true) {
+                bool finished = false;
+                bool success = false;
+                bool querySuccessfully = imageVerifyResult(hostInterface,
+                                                           parameters,
+                                                           verifyTaskLink,
+                                                           finished,
+                                                           success);
+                if (!querySuccessfully || (finished && !success)) {
+                    flashFwErrMsg = parameters.errMsg;
+                    param.callback();
+                    return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+                }
+                if (finished) {
+                    XPUM_LOG_INFO("GPU firmware was verified successfully");
+                    break;
+                }
+                std::this_thread::sleep_for(std::chrono::seconds(1));
             }
 
             // trigger update

@@ -9,6 +9,9 @@
 #include <cstddef>
 #include <dlfcn.h>
 #include <link.h>
+#include <sstream>
+#include <vector>
+#include <iostream>
 
 typedef void CURL;
 
@@ -271,6 +274,97 @@ typedef CURLcode (*curl_mime_filedata_t)(curl_mimepart *part, const char *filena
 typedef struct curl_slist *(*curl_slist_append_t)(struct curl_slist *, const char *);
 typedef curl_version_info_data *(*curl_version_info_t)(CURLversion age);
 
+struct CurlLibVersion {
+    std::string name;
+    int major;
+    int minor;
+    int patch;
+    bool valid;
+    CurlLibVersion(std::string str) {
+        valid = true;
+        name = str;
+        major = minor = patch = 0;
+        int dotNum = 0;
+        try {
+            std::string versionPart = name.substr(10);
+            for (char c : versionPart) {
+                if (c == '.')
+                    dotNum++;
+            }
+            if (dotNum == 0)
+                return;
+            versionPart = versionPart.substr(1);
+            std::istringstream iss;
+            iss.str(versionPart);
+            std::string buffer;
+
+            if (std::getline(iss, buffer, '.')) {
+                major = std::stoi(buffer);
+            } else {
+                return;
+            }
+            if (std::getline(iss, buffer, '.')) {
+                minor = std::stoi(buffer);
+            } else {
+                return;
+            }
+            if (std::getline(iss, buffer, '.')) {
+                patch = std::stoi(buffer);
+            }
+        } catch (...) {
+            valid = false;
+        }
+    }
+    bool operator<(const CurlLibVersion &other) {
+        if (major < other.major)
+            return true;
+        if (major > other.major)
+            return false;
+        if (minor < other.minor)
+            return true;
+        if (minor > other.minor)
+            return false;
+        if (patch < other.patch)
+            return true;
+        else
+            return false;
+    }
+};
+
+std::string getLibCurlPath() {
+    std::string cmd = "ldconfig -p 2>&1";
+    FILE *f = popen(cmd.c_str(), "r");
+    char c_line[1024];
+
+    std::vector<CurlLibVersion> libList;
+
+    while (fgets(c_line, 1024, f) != NULL) {
+        std::string line(c_line);
+        auto idx = line.find("libcurl.so");
+        if (idx != line.npos) {
+            auto endIdx = line.substr(idx + 10).find(' ');
+            if (endIdx != line.npos) {
+                std::string name = line.substr(idx, endIdx - idx);
+                if (name.length() > 0) {
+                    CurlLibVersion lib(name);
+                    if (lib.valid)
+                        libList.push_back(lib);
+                }
+            }
+        }
+    }
+    pclose(f);
+    if (libList.size() > 0) {
+        auto &lib = libList.at(0);
+        for (size_t i = 1; i < libList.size(); i++) {
+            if (lib < libList.at(i)) {
+                lib = libList.at(i);
+            }
+        }
+        return lib.name;
+    }
+    return "libcurl.so";
+}
 
 class LibCurlApi {
    private:
@@ -295,8 +389,13 @@ class LibCurlApi {
    public:
     LibCurlApi() {
         handle = dlopen("libcurl.so", RTLD_LAZY);
+        if(!handle){
+            // can not find libcurl.so, try to find with version id
+            std::string libCurlPath = getLibCurlPath();
+            handle = dlopen(libCurlPath.c_str(), RTLD_LAZY);
+        }
         if (!handle) {
-            initErrMsg = "Fail to load libcurl.so. Please install libcurl.so with version equal to or higer than 7.56.0 first, and make sure it can be found in LD_LIBRARY_PATH.";
+            initErrMsg = "Fail to load libcurl.so. Please install libcurl.so with version equal to or higer than 7.56.0 first.";
             return;
         }
         struct link_map *p;

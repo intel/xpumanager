@@ -150,7 +150,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(5));
 
-        json = coreStub->getFirmwareFlashResult(opts->deviceId, type, opts->username, opts->password);
+        json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
         if (json->contains("error")) {
             printJson(json, out, raw);
             return;
@@ -413,7 +413,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         std::this_thread::sleep_for(std::chrono::seconds(5));
         out << "." << std::flush;
 
-        json = coreStub->getFirmwareFlashResult(opts->deviceId, type, opts->username, opts->password);
+        json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
         if (json->contains("error")) {
             out << std::endl;
             out << "Error: " << (*json)["error"] << std::endl;
