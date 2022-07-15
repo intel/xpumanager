@@ -41,9 +41,7 @@ static std::string getFlashFwErrMsg() {
 
     xpum_result_t res = xpumGetFirmwareFlashResult(request->id().id(),
                                                    (xpum_firmware_type_t)request->type().value(),
-                                                   &result,
-                                                   request->username().c_str(),
-                                                   request->password().c_str());
+                                                   &result);
     if (res == XPUM_OK) {
         response->mutable_id()->set_id(request->id().id());
         response->mutable_type()->set_value(request->type().value());

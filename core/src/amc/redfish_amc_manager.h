@@ -6,6 +6,7 @@
 #pragma once
 
 #include <mutex>
+#include <future>
 
 #include "amc_manager.h"
 
@@ -54,6 +55,10 @@ class RedfishAmcManager : public AmcManager {
     std::mutex mtx;
 
     std::vector<std::string> taskUriList;
+
+    std::future<xpum_firmware_flash_result_t> task;
+
+    std::string flashFwErrMsg;
 
     bool redfishHostInterfaceInit();
 

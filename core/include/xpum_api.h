@@ -608,8 +608,6 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
  * @param deviceId          IN: Device id
  * @param firmwareType      IN: The firmware type to query status
  * @param result           OUT: The result of the job 
- * @param username          IN: Username used for authentication
- * @param password          IN: Password used for authentication
  * @return 
  *      - \ref XPUM_OK
  *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
@@ -626,9 +624,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
  */
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
                                          xpum_firmware_type_t firmwareType,
-                                         xpum_firmware_flash_task_result_t *result,
-                                         const char *username,
-                                         const char *password);
+                                         xpum_firmware_flash_task_result_t *result);
 
 /**
  * @brief Get error message when fail to flash firmware

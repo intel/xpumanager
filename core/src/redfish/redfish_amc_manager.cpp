@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 #include <regex>
 #include <sstream>
+#include <future>
 
 #include "core/core.h"
 #include "infrastructure/logger.h"
@@ -674,7 +675,7 @@ xpum_result_t getPushUriAndTriggerUri(RedfishHostInterface interface,
 bool uploadImage(RedfishHostInterface interface,
                  FlashAmcFirmwareParam& flashAmcParam,
                  std::string pushUri,
-                 std::vector<std::string> targetLinks) {
+                 std::string targetLink) {
     XPUM_LOG_INFO("Start upload image");
     std::string& username = flashAmcParam.username;
     std::string& password = flashAmcParam.password;
@@ -709,9 +710,10 @@ bool uploadImage(RedfishHostInterface interface,
         libcurl.curl_mime_name(part, "UpdateParameters");
         libcurl.curl_mime_type(part, "application/json");
         json updateParams;
-        for (auto link : targetLinks) {
-            updateParams["Targets"].push_back(link);
-        }
+        // for (auto link : targetLinks) {
+        //     updateParams["Targets"].push_back(link);
+        // }
+        updateParams["Targets"].push_back(targetLink);
         updateParams["@Redfish.OperationApplyTime"] = "OnStartUpdateRequest";
         auto updateParamsStr = updateParams.dump();
 
@@ -978,7 +980,24 @@ bool getTargetUriByOdataId(RedfishHostInterface interface,
     return false;
 }
 
+bool getOneTaskUpdateResult(RedfishHostInterface interface,
+                            std::string taskUri,
+                            std::string username,
+                            std::string password,
+                            bool& finished,
+                            bool& success,
+                            std::string& errMsg);
+
 void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
+    std::lock_guard<std::mutex> lck(mtx);
+    if (task.valid()) {
+        param.errCode =  xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+        param.callback();
+        return;
+    }
+
+    // clear previous error message
+    flashFwErrMsg.clear();
     
     // get push uri
     std::string pushUri, triggerUri;
@@ -1034,38 +1053,79 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         XPUM_LOG_INFO("{}", targetUri);
     }
 
-    // upload image
-    if (!uploadImage(hostInterface,
-                     param,
-                     pushUri,
-                     targetUriList)) {
-        XPUM_LOG_ERROR("Fail to upload image");
+    task = std::async(std::launch::async, [this, targetUriList, pushUri, triggerUri, param] {
+        FlashAmcFirmwareParam parameters = param;
+
+        for (auto targetLink : targetUriList) {
+            // upload image
+            if (!uploadImage(hostInterface,
+                             parameters,
+                             pushUri,
+                             targetLink)) {
+                XPUM_LOG_ERROR("Fail to upload image");
+                flashFwErrMsg = parameters.errMsg;
+                param.callback();
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            // trigger update
+            std::vector<std::string> taskUriList;
+            if (!triggerUpdate(hostInterface,
+                               parameters,
+                               triggerUri,
+                               taskUriList)) {
+                XPUM_LOG_ERROR("Fail to trigger update");
+                flashFwErrMsg = parameters.errMsg;
+                param.callback();
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            XPUM_LOG_INFO("Start flash amc fw successfully, task uri:");
+            for (auto uri : taskUriList) {
+                XPUM_LOG_INFO("{}", uri);
+            }
+
+            auto taskUri = taskUriList.at(0); // get first task link
+
+            while (true) {
+                // get task result
+                bool success;
+                bool finished;
+                // std::string errMsg;
+                auto querySuccessfully = getOneTaskUpdateResult(hostInterface,
+                                                                taskUri,
+                                                                param.username,
+                                                                param.password,
+                                                                finished,
+                                                                success,
+                                                                flashFwErrMsg);
+                if (!querySuccessfully) {
+                    // fail to query result
+                    XPUM_LOG_ERROR("Fail to query task uri: {}", taskUri);
+                    param.callback();
+                    return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+                }
+                if (finished) {
+                    if (!success) {
+                        XPUM_LOG_INFO("Task {} failed", taskUri);
+                        param.callback();
+                        return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+                    } else {
+                        XPUM_LOG_INFO("Task {} succeeded", taskUri);
+                        break;
+                    }
+                }
+                // task ongoing, wait 2 sec
+                XPUM_LOG_INFO("Task {} on going", taskUri);
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+            }
+        }
+
         param.callback();
-        return;
-    }
-
-    // trigger update
-    std::vector<std::string> taskUriList;
-    if (!triggerUpdate(hostInterface,
-                      param,
-                      triggerUri,
-                      taskUriList)) {
-        XPUM_LOG_ERROR("Fail to trigger update");
-        param.callback();
-        return;
-    }
-
-    XPUM_LOG_INFO("Start flash amc fw successfully, task uri:");
-    for (auto uri : taskUriList) {
-        XPUM_LOG_INFO("{}", uri);
-    }
-
-    // if start new update task successfully, replace the taskUriList
-    std::lock_guard<std::mutex> lck(mtx);
-    this->taskUriList = taskUriList;
+        return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+    });
 
     param.errCode = xpum_result_t::XPUM_OK;
-    param.callback();
 }
 
 /**
@@ -1159,55 +1219,27 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
 }
 
 void RedfishAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& param) {
-    // check taskUriList
     std::lock_guard<std::mutex> lck(mtx);
+
+    std::future<xpum_firmware_flash_result_t>* p_task = &task;
 
     xpum_firmware_flash_result_t res;
 
-    bool totalSuccess = true;
-    std::string totalErrMsg;
-
-    for (auto taskUri : taskUriList) {
-        bool success;
-        bool finished;
-        std::string errMsg;
-        auto querySuccessfully = getOneTaskUpdateResult(hostInterface,
-                                                        taskUri,
-                                                        param.username,
-                                                        param.password,
-                                                        finished,
-                                                        success,
-                                                        errMsg);
-        if (!querySuccessfully) {
-            // fail to query result
-            XPUM_LOG_ERROR("Fail to query task uri: {}", taskUri);
-            param.errCode = XPUM_GENERIC_ERROR;
-            param.errMsg = errMsg;
-            return;
-        }
-        if (!finished) {
-            // task ongoing
-            XPUM_LOG_INFO("Task {} on going", taskUri);
-            auto& result = param.result;
-            result.deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
-            result.type = XPUM_DEVICE_FIRMWARE_AMC;
-            result.result = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
-            param.errCode = XPUM_OK;
-            return;
-        }
-        totalSuccess = totalSuccess && success;
-        if (!success) {
-            XPUM_LOG_INFO("Task {} failed", taskUri);
-            totalErrMsg += errMsg;
+    if (p_task->valid()) {
+        using namespace std::chrono_literals;
+        auto status = p_task->wait_for(0ms);
+        if (status == std::future_status::ready) {
+            res = p_task->get();
+            param.errMsg = flashFwErrMsg;
         } else {
-            XPUM_LOG_INFO("Task {} succeeded", taskUri);
+            res = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
         }
+    } else {
+        res = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
     }
 
     param.errCode = XPUM_OK;
-    param.errMsg = totalErrMsg;
 
-    res = totalSuccess ? xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK : xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
     auto& result = param.result;
     result.deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
     result.type = XPUM_DEVICE_FIRMWARE_AMC;

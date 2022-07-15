@@ -463,8 +463,8 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
             }
         }
         AmcCredential credential;
-        credential.username = std::string(username);
-        credential.password = std::string(password);
+        credential.username = username ? std::string(username) : "";
+        credential.password = password ? std::string(password) : "";
         rc = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath, credential);
         return rc;
     } else {
@@ -486,9 +486,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
 
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
                                          xpum_firmware_type_t firmwareType,
-                                         xpum_firmware_flash_task_result_t *result,
-                                         const char *username,
-                                         const char *password) {
+                                         xpum_firmware_flash_task_result_t *result) {
     xpum_result_t ret = Core::instance().apiAccessPreCheck();
     if (ret != XPUM_OK) {
         return ret;
@@ -497,7 +495,7 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
-        AmcCredential credential{username, password};
+        AmcCredential credential;
         return Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result, credential);
     }
 
