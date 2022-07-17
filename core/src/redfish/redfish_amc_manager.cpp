@@ -518,6 +518,10 @@ bool RedfishAmcManager::bindIpToInterface() {
     auto cidr = toCidr(hostInterface.ipv4_mask.c_str());
     std::string output;
     int ret;
+    // enable link
+    std::string ip_link_up_cmd = "ip link set dev " + hostInterface.interface_name + " up";
+    XPUM_LOG_INFO("enable link: {}", ip_link_up_cmd);
+    ret = doCmd(ip_link_up_cmd, output);
     // delete old value
     std::string ip_del_cmd = "ip addr del " +
                              hostInterface.ipv4_addr +
