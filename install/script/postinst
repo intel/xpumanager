@@ -33,13 +33,14 @@ if [ -n "${RPM_INSTALL_PREFIX}" ]; then
 
   chown -R xpum ${RPM_INSTALL_PREFIX}
   chmod g+x ${RPM_INSTALL_PREFIX}/keytool.sh
-  #chmod +x ${RPM_INSTALL_PREFIX}/rest/exporter_main.py
+  ln -s ${RPM_INSTALL_PREFIX}/bin/xpumcli /usr/bin/xpumcli
+  
 else
   cp -f /opt/xpum/xpum.service.template ${SERVICE_PATH}/xpum.service
   cp -f /opt/xpum/xpum_rest.service.template ${SERVICE_PATH}/xpum_rest.service
   chown -R xpum /opt/xpum
   chmod g+x /opt/xpum/keytool.sh
-  #chmod +x /opt/xpum/rest/exporter_main.py
+  ln -s /opt/xpum/bin/xpumcli /usr/bin/xpumcli
 fi
 
 sed -e "s:@CPACK_XPUM_LIB_INSTALL_DIR@:${LIB_PATH}:g" ${SERVICE_PATH}/xpum.service > ${SERVICE_PATH}/xpum.service.n
