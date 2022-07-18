@@ -519,7 +519,12 @@ std::shared_ptr<nlohmann::json> CoreStub::getDiagnosticsMediaCodecResult(int dev
                 auto perfJson = nlohmann::json();
                 std::string resolution = diagnosticsMediaCodecResolutionEnumToString(response.datalist(i).resolution());
                 std::string format = diagnosticsMediaCodecFormatEnumToString(response.datalist(i).format());
-                perfJson["fps"] = (rawFpsStr ? "" : " ") + resolution + " " + format + " : " + response.datalist(i).fps();
+                if (rawFpsStr) {
+                    perfJson[resolution + " " + format] = response.datalist(i).fps();
+                } else {
+                    perfJson["fps"] = " " + resolution + " " + format + " : " + response.datalist(i).fps();
+                }
+                
                 mediaPerfJsonList.push_back(perfJson); 
             }
             (*json)["media_codec_list"] = mediaPerfJsonList;

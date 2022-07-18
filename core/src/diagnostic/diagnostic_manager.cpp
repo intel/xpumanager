@@ -856,6 +856,10 @@ std::vector<xpum_diag_media_codec_metrics_t> DiagnosticManager::getMediaCodecMet
                 async_para = " -async 3";
             }
 
+            bool to_be_comparable = true;
+            if (!to_be_comparable) {
+                async_para = "";
+            }
             transcode_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
                     " -hw" + async_para + " -i::" + format + " " + target_src_file + " -o::" + format + " " + target_dst_file + " 2>&1";
             XPUM_LOG_INFO("Transcoding command: {}", transcode_command);
@@ -1523,7 +1527,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                             std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
                             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
-                                int value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+                                int value = std::ceil((snap2.energy - snap1.energy) * 1.0 / (snap2.timestamp - snap1.timestamp));
                                 if (!props.onSubdevice) {
                                     current_device_value = value;
                                 } else {

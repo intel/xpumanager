@@ -119,7 +119,8 @@ def getDiagnosticsResult(deviceId):
                 mediaPerfList = []
                 for media_codec_data in media_codec_list_resp.dataList:
                     new_perf_data = dict()
-                    new_perf_data["fps"] = diagnosticMediaCodecResolutionEnumToString[media_codec_data.resolution] + " " + diagnosticMediaCodecFormatEnumToString[media_codec_data.format] + " : " + media_codec_data.fps
+                    fps_key = diagnosticMediaCodecResolutionEnumToString[media_codec_data.resolution] + " " + diagnosticMediaCodecFormatEnumToString[media_codec_data.format]
+                    new_perf_data[fps_key] = media_codec_data.fps
                     mediaPerfList.append(new_perf_data)
                 new_component['media_codec_list'] = mediaPerfList
         componentList.append(new_component)
@@ -183,7 +184,8 @@ def getDiagnosticsResultByGroup(groupId):
                     mediaPerfList = []
                     for media_codec_data in media_codec_list_resp.dataList:
                         new_perf_data = dict()
-                        new_perf_data["fps"] = diagnosticMediaCodecResolutionEnumToString[media_codec_data.resolution]+ " " + diagnosticMediaCodecFormatEnumToString[media_codec_data.format] + " : " + media_codec_data.fps
+                        fps_key = diagnosticMediaCodecResolutionEnumToString[media_codec_data.resolution]+ " " + diagnosticMediaCodecFormatEnumToString[media_codec_data.format]
+                        new_perf_data[fps_key] = media_codec_data.fps
                         mediaPerfList.append(new_perf_data)
                     new_component['media_codec_list'] = mediaPerfList
             componentList.append(new_component)
