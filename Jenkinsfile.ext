@@ -89,8 +89,10 @@ pipeline {
             sh 'docker pull ccr-registry.caas.intel.com/cache/library/ubuntu:20.04 && docker tag ccr-registry.caas.intel.com/cache/library/ubuntu:20.04 ubuntu:20.04'
             sh '''docker build \
             --build-arg git_commit=$GIT_COMMIT_SHORT \
-            --build-arg https_proxy=http://child-prc.intel.com:913 \
-            --build-arg http_proxy=http://child-prc.intel.com:913 \
+            --build-arg https_proxy=${https_proxy:-http://child-prc.intel.com:913} \
+            --build-arg http_proxy=${http_proxy:-http://child-prc.intel.com:913} \
+            --build-arg HTTPS_PROXY=${HTTPS_PROXY:-http://child-prc.intel.com:913} \
+            --build-arg HTTP_PROXY=${HTTP_PROXY:-http://child-prc.intel.com:913} \
             -f ./deployment/docker/Dockerfile.ubuntu \
             -t $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:$DOCKER_IMG_TAG \
             -t $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:latest .'''
