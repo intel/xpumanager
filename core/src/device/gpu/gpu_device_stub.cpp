@@ -383,6 +383,37 @@ static std::string getPciSlot(const std::string& bdf_regex) {
     return res;
 }
 
+static std::string getDriverVersion() {
+    std::string version;
+    std::string release;
+    std::string name = "intel-i915-dkms";
+    std::string rpm_cmd = "rpm -qa | grep " + name;
+    SystemCommandResult rpm_res = execCommand(rpm_cmd);
+    if (rpm_res.exitStatus() == 0) {
+        std::string strData = rpm_res.output();
+        auto pos1 = strData.find(name);
+        pos1 += name.length();
+        pos1 = strData.find_first_of("0123456789",pos1);
+        auto pos2 = strData.find_first_of("-",pos1);
+        version = strData.substr(pos1,pos2-pos1);
+        pos1 = pos2 + 1;
+        pos2 = strData.find_first_of(".",pos1);
+        release = strData.substr(pos1,pos2-pos1);
+    } else {
+        std::string deb_cmd = "dpkg -l | grep " + name;
+        SystemCommandResult deb_res = execCommand(deb_cmd);
+        if (deb_res.exitStatus() == 0) {
+            std::string strData = deb_res.output();
+            auto pos1 = strData.find(name);
+            pos1 += name.length();
+            pos1 = strData.find_first_of("0123456789", pos1);
+            auto pos2 = strData.find_first_of(" ", pos1);
+            version = strData.substr(pos1, pos2 - pos1);
+        }
+    }
+    return version;
+}
+
 void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities) {
     zes_pci_properties_t pci_props;
     ze_result_t res;
@@ -600,7 +631,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));
                 // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
                 // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, std::to_string(driver_prop.driverVersion)));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER, std::string(props.serialNumber)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME, std::string(props.vendorName)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ, std::to_string(props.core.coreClockRate)));
