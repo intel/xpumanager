@@ -53,8 +53,8 @@ RUN wget -qc --no-check-certificate https://github.com/intel/metee/archive/refs/
     make -j4 && \
     make install
 
-RUN wget -qc --no-check-certificate https://github.com/intel/igsc/archive/refs/tags/V0.8.0.tar.gz -O - | tar -xz && \
-    cd /igsc-0.8.0 && \
+RUN wget -qc --no-check-certificate https://github.com/intel/igsc/archive/refs/tags/V0.6.0.tar.gz -O - | tar -xz && \
+    cd /igsc-0.6.0 && \
     mkdir build && \
     cd build && \
     cmake .. && \
