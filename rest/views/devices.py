@@ -198,16 +198,19 @@ def get_amc_fw_versions():
             500:
                 description: Error
     """
-    req = request.get_json()
-    try:
-        RequestAMCFwVersionSchema().load(req)
-    except ValidationError as err:
-        key = next(iter(err.messages))
-        value = err.messages[key]
-        errStr = key+": "+";".join(value)
-        return jsonify({'error': errStr}), 400
-    code, message, data = stub.getAMCFirmwareVersions(
-        req.get("username", ""), req.get("password", ""))
+    if request.data:
+        req = request.get_json()
+        try:
+            RequestAMCFwVersionSchema().load(req)
+        except ValidationError as err:
+            key = next(iter(err.messages))
+            value = err.messages[key]
+            errStr = key+": "+";".join(value)
+            return jsonify({'error': errStr}), 400
+        code, message, data = stub.getAMCFirmwareVersions(
+            req.get("username", ""), req.get("password", ""))
+    else:
+        code, message, data = stub.getAMCFirmwareVersions("", "")
     if code != 0:
         return jsonify({"error": message}), 500
     return jsonify(data)
