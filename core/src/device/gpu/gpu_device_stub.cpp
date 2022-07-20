@@ -399,6 +399,7 @@ static std::string getDriverVersion() {
         pos1 = pos2 + 1;
         pos2 = strData.find_first_of(".",pos1);
         release = strData.substr(pos1,pos2-pos1);
+        version = version + "-" + release;
     } else {
         std::string deb_cmd = "dpkg -l | grep " + name;
         SystemCommandResult deb_res = execCommand(deb_cmd);
