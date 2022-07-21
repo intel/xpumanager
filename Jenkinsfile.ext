@@ -95,7 +95,7 @@ pipeline {
             --build-arg HTTP_PROXY=${HTTP_PROXY:-http://child-prc.intel.com:913} \
             -f ./deployment/docker/Dockerfile.ubuntu \
             -t $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:$DOCKER_IMG_TAG \
-            -t $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:latest .'''
+            -t $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:latest ./deployment/docker'''
             sh '''docker push $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:$DOCKER_IMG_TAG &&
             docker push $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:latest'''
             sh returnStatus: true, script: 'docker rmi $(docker image ls $PUBLISH_DOCKER_REGISTRY/intel-xpumanager -q | tail -n +6)'
