@@ -842,24 +842,17 @@ std::vector<xpum_diag_media_codec_metrics_t> DiagnosticManager::getMediaCodecMet
             }
 
             std::string format;
-            std::string async_para;  //To make results more comparable 
+            std::string async_para = " -async 5";
             if (f == XPUM_MEDIA_FORMAT_H265) {
                 format = "h265";
-                async_para = "";
             }
             else if (f == XPUM_MEDIA_FORMAT_H264) {
                 format = "h264";
-                async_para = " -async 6";
             }
             else {
                 format = "av1";
-                async_para = " -async 3";
             }
 
-            bool to_be_comparable = true;
-            if (!to_be_comparable) {
-                async_para = "";
-            }
             transcode_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
                     " -hw" + async_para + " -i::" + format + " " + target_src_file + " -o::" + format + " " + target_dst_file + " 2>&1";
             XPUM_LOG_INFO("Transcoding command: {}", transcode_command);
