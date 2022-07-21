@@ -766,12 +766,7 @@ int cmd_probe() {
     return err;
 }
 
-std::vector<std::string> cmd_get_amc_firmware_versions() {
-#ifdef XPUM_FIRMWARE_MOCK
-    return cmd_get_amc_firmware_versions_mock();
-#endif 
-    std::vector<std::string> versions;
-
+int cmd_get_amc_firmware_versions(int buf[][4], int *count) {
     int err = NRV_SUCCESS;
     int card_id = CARD_SELECT_ALL;
 
@@ -779,7 +774,19 @@ std::vector<std::string> cmd_get_amc_firmware_versions() {
 
     err = get_card_list(&cards, card_id);
     if (err)
-        return versions;
+        return err;
+
+    if (buf == nullptr) {
+        *count = cards.count;
+        return 0;
+    }
+
+    if (*count < cards.count) {
+        // buffer too small
+        return -1;
+    }
+
+    *count = 0;
 
     for (int i = 0; i < cards.count; i++) {
         struct firmware_versions fw_ver = {{0}};
@@ -787,15 +794,13 @@ std::vector<std::string> cmd_get_amc_firmware_versions() {
         if (err)
             continue;
 
-        std::stringstream ss;
-
-        ss << fw_ver.bsmc.major << ".";
-        ss << fw_ver.bsmc.minor << ".";
-        ss << fw_ver.bsmc.patch << ".";
-        ss << fw_ver.bsmc.build;
-        versions.push_back(ss.str());
+        buf[i][0] = fw_ver.bsmc.major;
+        buf[i][1] = fw_ver.bsmc.minor;
+        buf[i][2] = fw_ver.bsmc.patch;
+        buf[i][3] = fw_ver.bsmc.build;
+        (*count)++;
     }
-    return versions;
+    return 0;
 }
 
 int cmd_firmware(const char* file, unsigned int versions[4]) {
