@@ -24,5 +24,6 @@ systemctl stop xpum_rest >> ${LOG_FILE} 2>&1
 systemctl disable xpum_rest >> ${LOG_FILE} 2>&1 
 rm -rf ${SERVICE_PATH}/xpum.service
 rm -rf ${SERVICE_PATH}/xpum_rest.service
+rm -rf /usr/bin/xpumcli
 systemctl daemon-reload
 RemoveUser xpum
