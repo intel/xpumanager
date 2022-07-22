@@ -371,7 +371,6 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         if (flashStatus.compare("OK") == 0) {
             out << std::endl;
             out << "Update firmware successfully." << std::endl;
-            out << "Please reboot OS to take effect." << std::endl;
             return;
         } else if (flashStatus.compare("FAILED") == 0) {
             out << std::endl;
