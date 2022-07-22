@@ -9,7 +9,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: jenkins-pvc
-  namespace: jenkins
+  namespace: dms-cluster
 spec:
   accessModes:
     - ReadWriteOnce
@@ -22,7 +22,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jenkins
-  namespace: jenkins
+  namespace: dms-cluster
 spec:
   replicas: 1
   selector:
@@ -82,7 +82,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jenkins
-  namespace: jenkins
+  namespace: dms-cluster
 spec:
   type: NodePort
   ports:
@@ -103,7 +103,7 @@ apiVersion: v1
 # kind: Secret
 metadata:
   name: sign-secret
-  namespace: jenkins
+  namespace: dms-cluster
 type: kubernetes.io/basic-auth
 stringData:
   username: sys_dcm
@@ -113,7 +113,7 @@ apiVersion: v1
 # kind: Secret
 metadata:
  name: docker-config-secret
- namespace: jenkins
+ namespace: dms-cluster
 data:
   ## cat ~/.docker/config.json | base64
  .dockerconfigjson: "PLACEHOLDER"
