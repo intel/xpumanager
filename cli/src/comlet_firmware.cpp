@@ -318,7 +318,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 return;
             }
         }
-        std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model. Updating AMC firmware may cause OS to reboot." << std::endl;
+        std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model." << std::endl;
         std::cout << "Please confirm to proceed (y/n)" << std::endl;
         std::string confirm;
         std::cin >> confirm;
