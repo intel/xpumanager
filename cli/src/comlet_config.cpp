@@ -85,8 +85,8 @@ static CharTableConfig ComletTileConfiguration(R"({
 */
 void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
-    addOption("-d,--device", this->opts->deviceId, "device id");
-    addOption("-t,--tile", this->opts->tileId, "tile id");
+    addOption("-d,--device", this->opts->deviceId, "The device ID");
+    addOption("-t,--tile", this->opts->tileId, "The tile ID");
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
