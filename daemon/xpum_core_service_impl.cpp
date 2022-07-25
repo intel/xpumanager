@@ -2000,6 +2000,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     if (res != XPUM_OK) {
         if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
             response->set_errormsg("device Id or tile Id is invalid");
+        } else if (res == XPUM_RESULT_MEMORY_ECC_LIB_NOT_SUPPORT){
+            response->set_errormsg("Failed to enable/disable ECC memory on GPU " + std::to_string(deviceId)+ ". This feature requires the igsc-0.8.3 library or newer. Please check the installation instructions on how to install or update to the latest igsc version.");
         } else {
             response->set_errormsg("Error");
         }

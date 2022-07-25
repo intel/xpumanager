@@ -130,6 +130,7 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_AGENT_SET_INVALID_VALUE,  /// Agent set value is invalid
     XPUM_LEVEL_ZERO_INITIALIZATION_ERROR, ///< Level Zero initialization error.
     XPUM_UNSUPPORTED_SESSIONID,           ///< Unsupported session id
+    XPUM_RESULT_MEMORY_ECC_LIB_NOT_SUPPORT,
     XPUM_INTERVAL_INVALID,
 } xpum_result_t;
 
