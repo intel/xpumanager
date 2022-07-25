@@ -24,7 +24,7 @@ static bool isNumber(const std::string &str) {
 
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device ids to query");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device IDs to query");
     deviceIdOpt->delimiter(',');
     auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
 
