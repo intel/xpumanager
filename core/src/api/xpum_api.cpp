@@ -659,14 +659,13 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 if (prop_map.find(propNameInternal) == prop_map.end()) {
                     continue;
                 }
-                propertyLen++;
                 auto &prop = prop_map[propNameInternal];
                 std::string value = prop.getValue();
 
                 if (propName == XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION) {
                     value.erase(remove_if(value.begin(), value.end(), invalidChar), value.end());
                 }
-                auto &copy = pXpumProperties->properties[i];
+                auto &copy = pXpumProperties->properties[propertyLen++];
                 copy.name = propName;
                 strcpy(copy.value, value.c_str());
             }
