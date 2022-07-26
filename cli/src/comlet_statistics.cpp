@@ -281,7 +281,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
 void ComletStatistics::setupOptions() {
     this->opts = std::unique_ptr<ComletStatisticsOptions>(new ComletStatisticsOptions());
     addOption("-d,--device", this->opts->deviceId, "The device ID to query");
-    addOption("-g,--group", this->opts->groupId, "The group id to query");
+    addOption("-g,--group", this->opts->groupId, "The group ID to query");
 }
 
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
