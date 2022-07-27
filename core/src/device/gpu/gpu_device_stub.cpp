@@ -421,7 +421,9 @@ static std::string getKernelVersion() {
     SystemCommandResult res = execCommand(cmd);
     if (res.exitStatus() == 0) {
         version = res.output();
-        version.erase(std::remove(version.begin(), version.end(), '\n'), version.cend());
+        version.erase(std::remove_if(version.begin(), version.end(),
+                                     [](unsigned char x) { return !std::isprint(x); }),
+                      version.end());
     }
     return version;
 }
