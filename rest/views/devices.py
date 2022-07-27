@@ -78,6 +78,7 @@ class DevicePropertiesSchema(Schema):
     device_stepping = fields.Str(
         metadata={"description": "The stepping of device"})
     driver_version = fields.Str(metadata={"description": "The driver version"})
+    kernel_version = fields.Str(metadata={"description": "Linux kernel version"})
     firmware_name = fields.Str(
         metadata={"description": "The firmware name of device"})
     firmware_version = fields.Str(

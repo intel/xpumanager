@@ -384,7 +384,7 @@ static std::string getPciSlot(const std::string& bdf_regex) {
 }
 
 static std::string getDriverVersion() {
-    std::string version;
+    std::string version = "unknown";
     std::string release;
     std::string name = "intel-i915-dkms";
     std::string rpm_cmd = "rpm -qa | grep " + name;
@@ -411,6 +411,17 @@ static std::string getDriverVersion() {
             auto pos2 = strData.find_first_of(" ", pos1);
             version = strData.substr(pos1, pos2 - pos1);
         }
+    }
+    return version;
+}
+
+static std::string getKernelVersion() {
+    std::string version = "unknown";
+    std::string cmd = "uname -r";
+    SystemCommandResult res = execCommand(cmd);
+    if (res.exitStatus() == 0) {
+        version = res.output();
+        version.erase(std::remove(version.begin(), version.end(), '\n'), version.cend());
     }
     return version;
 }
@@ -633,6 +644,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
                 // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion()));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION, getKernelVersion()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER, std::string(props.serialNumber)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME, std::string(props.vendorName)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ, std::to_string(props.core.coreClockRate)));

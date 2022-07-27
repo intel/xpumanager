@@ -175,6 +175,7 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_PHYSICAL_EU_SIMD_WIDTH,         ///< The physical EU simd width
     XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES,        ///< The number of media engines
     XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES,    ///< The number of media enhancement engines
+    XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION,           ///< Linux kenel version
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_NUMBER,             ///< Number of fabric ports
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_RX_SPEED,       ///< Maximum speed supported by the receive side of the port (sum of all lanes)
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_TX_SPEED,       ///< Maximum speed supported by the transmit side of the port (sum of all lanes)

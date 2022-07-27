@@ -109,6 +109,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "MAX_FABRIC_PORT_SPEED";
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER:
             return "NUMBER_OF_LANES_PER_FABRIC_PORT";
+        case XPUM_DEVICE_PROPERTY_LINUX_KERNEL_VERSION:
+            return "KERNEL_VERSION";
         default:
             return "";
     }
@@ -613,6 +615,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_RX_SPEED;
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_RX_LANES_NUMBER;
+        case XPUM_DEVICE_PROPERTY_LINUX_KERNEL_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION;
         default:
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX;
     }
@@ -655,14 +659,13 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 if (prop_map.find(propNameInternal) == prop_map.end()) {
                     continue;
                 }
-                propertyLen++;
                 auto &prop = prop_map[propNameInternal];
                 std::string value = prop.getValue();
 
                 if (propName == XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION) {
                     value.erase(remove_if(value.begin(), value.end(), invalidChar), value.end());
                 }
-                auto &copy = pXpumProperties->properties[i];
+                auto &copy = pXpumProperties->properties[propertyLen++];
                 copy.name = propName;
                 strcpy(copy.value, value.c_str());
             }
