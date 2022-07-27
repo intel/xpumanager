@@ -384,7 +384,7 @@ static std::string getPciSlot(const std::string& bdf_regex) {
 }
 
 static std::string getDriverVersion() {
-    std::string version = "unknown";
+    std::string version;
     std::string release;
     std::string name = "intel-i915-dkms";
     std::string rpm_cmd = "rpm -qa | grep " + name;
@@ -416,7 +416,7 @@ static std::string getDriverVersion() {
 }
 
 static std::string getKernelVersion() {
-    std::string version = "unknown";
+    std::string version;
     std::string cmd = "uname -r";
     SystemCommandResult res = execCommand(cmd);
     if (res.exitStatus() == 0) {
