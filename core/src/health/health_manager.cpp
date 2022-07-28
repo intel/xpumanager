@@ -20,6 +20,7 @@ HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
     XPUM_LOG_TRACE("HealthManager()");
     p_health_device_to_tdps = {{0x0205, 150}, {0x0203, 150}, {0x020A, 300}, {0x56C0, 150}, {0x56C1, 37.5}, {0x0BD5, 600}, {0x0BD8, 450}};
     p_health_device_to_throttle_core_temperatures = {{0x56C0, 100}, {0x56C1, 95}};
+    p_health_device_to_shutdown_core_temperatures = {{0x56C0, 125}, {0x56C1, 125}};
     p_health_device_to_shutdown_memory_temperatures = {{0x56C0, 105}, {0x56C1, 105}};
 }
 
@@ -57,19 +58,28 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
     }
 
     int threshold = *static_cast<int*>(value);
+    Property prop;
+    std::string pciDeviceId;
+    if (this->p_device_manager->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, prop)) {
+        pciDeviceId = prop.getValue();
+    }
+    int limit = -1;
     switch (key) {
         case xpum_health_config_type_t::XPUM_HEALTH_CORE_THERMAL_LIMIT:
-            if (threshold <= 0 || threshold > 130) // (0, 130]
+            limit = getShutdownCoreTemperature(pciDeviceId);
+            if (threshold <= 0 || threshold > limit)
                 return XPUM_RESULT_HEALTH_INVALID_THRESHOLD;
             p_health_core_thermal_configs[deviceId] = threshold;
             break;
         case xpum_health_config_type_t::XPUM_HEALTH_MEMORY_THERMAL_LIMIT:
-            if (threshold <= 0 || threshold > 105) // (0, 105])
+            limit = getShutdownMemoryTemperature(pciDeviceId);
+            if (threshold <= 0 || threshold > limit)
                 return XPUM_RESULT_HEALTH_INVALID_THRESHOLD;
             p_health_memory_thermal_configs[deviceId] = threshold;
             break;
         case xpum_health_config_type_t::XPUM_HEALTH_POWER_LIMIT:
-            if (threshold <= 0 || threshold > 600) // (0, 600])
+            limit = getThrottlePower(pciDeviceId);
+            if (threshold <= 0 || threshold > limit)
                 return XPUM_RESULT_HEALTH_INVALID_THRESHOLD;
             p_health_power_configs[deviceId] = threshold;
             break;
@@ -131,7 +141,7 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
     }
     if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
         data->throttleThreshold = getThrottleCoreTemperature(pciDeviceId);
-        data->shutdownThreshold = 130;
+        data->shutdownThreshold = getShutdownCoreTemperature(pciDeviceId);
     } else if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL) {
         data->throttleThreshold = 85;
         data->shutdownThreshold = getShutdownMemoryTemperature(pciDeviceId);
@@ -193,6 +203,21 @@ uint64_t HealthManager::getThrottleCoreTemperature(std::string pciDeviceId) {
 
     if (p_health_device_to_throttle_core_temperatures.count(id) > 0)
         value = p_health_device_to_throttle_core_temperatures[id];
+
+    return value;
+}
+
+uint64_t HealthManager::getShutdownCoreTemperature(std::string pciDeviceId) {
+    uint64_t value = 130; // default shutdown core temperature
+
+    if (pciDeviceId.empty()) {
+        return value;
+    }
+
+    uint32_t id = std::stoi(pciDeviceId, nullptr, 16);
+
+    if (p_health_device_to_shutdown_core_temperatures.count(id) > 0)
+        value = p_health_device_to_shutdown_core_temperatures[id];
 
     return value;
 }
