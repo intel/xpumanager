@@ -1,4 +1,4 @@
-mistune==0.8.4
+mistune==2.0.3
 Sphinx==4.2.0
 sphinxcontrib-openapi==0.7.0
 apispec-webframeworks==0.5.2
