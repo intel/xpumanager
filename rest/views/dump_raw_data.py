@@ -49,8 +49,8 @@ class DumpRawDataTaskInfoSchema(Schema):
 
 
 class ListAllDumpRawDataTaskSchema(Schema):
-    dump_task_ids = fields.Int(
-        many=True, metadata={"description": "The id list of all tasks"})
+    dump_task_ids = fields.List(fields.Int(
+        metadata={"description": "The id list of all tasks"}))
 
 
 def startDumpRawDataTask():
