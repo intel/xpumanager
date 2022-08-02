@@ -95,9 +95,9 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getAllPolicyConditionType();
     std::unique_ptr<nlohmann::json> getAllPolicyActionType();
     std::unique_ptr<nlohmann::json> getAllPolicy();
-    std::unique_ptr<nlohmann::json> getPolicyById(bool isDevice, int id);
-    std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie, int id);
-    std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, int id, XpumPolicyData& policy);
+    std::unique_ptr<nlohmann::json> getPolicyById(bool isDevice, uint32_t id);
+    std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie, uint32_t id);
+    std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, uint32_t id, XpumPolicyData& policy);
     bool isCliSupportedPolicyType(XpumPolicyType type);
 
     std::string getRedfishAmcWarnMsg();

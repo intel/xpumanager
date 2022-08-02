@@ -415,6 +415,19 @@ static std::string getDriverVersion() {
     return version;
 }
 
+static std::string getKernelVersion() {
+    std::string version;
+    std::string cmd = "uname -r";
+    SystemCommandResult res = execCommand(cmd);
+    if (res.exitStatus() == 0) {
+        version = res.output();
+        version.erase(std::remove_if(version.begin(), version.end(),
+                                     [](unsigned char x) { return !std::isprint(x); }),
+                      version.end());
+    }
+    return version;
+}
+
 void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities) {
     zes_pci_properties_t pci_props;
     ze_result_t res;
@@ -633,6 +646,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
                 // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(props.brandName)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion()));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION, getKernelVersion()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER, std::string(props.serialNumber)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME, std::string(props.vendorName)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ, std::to_string(props.core.coreClockRate)));

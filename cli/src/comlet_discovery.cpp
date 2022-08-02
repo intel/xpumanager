@@ -53,6 +53,7 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
                 { "label": "Stepping", "value": "device_stepping" },
                 { "rowTitle": " " },
                 { "label": "Driver Version", "value": "driver_version" },
+                { "label": "Kernel Version", "value": "kernel_version" },
                 { "label": "Firmware Name", "value": "firmware_name" },
                 { "label": "Firmware Version", "value": "firmware_version" },
                 { "label": "Firmware Name", "value": "fw_data_firmware_name" },

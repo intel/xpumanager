@@ -1061,7 +1061,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllPolicy() {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getPolicyById(bool isDevice, int id) {
+std::unique_ptr<nlohmann::json> CoreStub::getPolicyById(bool isDevice, uint32_t id) {
     assert(this->stub != nullptr);
     grpc::ClientContext context;
     XpumDeviceBasicInfoArray response;
@@ -1173,7 +1173,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getAllPolicyActionType() {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie, int id, XpumPolicyData& policy) {
+std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie, uint32_t id, XpumPolicyData& policy) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -1238,7 +1238,7 @@ bool CoreStub::isCliSupportedPolicyType(XpumPolicyType type) {
     return false;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie, int id) {
+std::unique_ptr<nlohmann::json> CoreStub::getPolicy(bool isDevcie, uint32_t id) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;

@@ -84,6 +84,8 @@ void ComletFirmware::setupOptions() {
 
     addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
+
+    addFlag("-y, --assumeyes", opts->assumeyes, "Assume that the answer to any question which would be asked is yes");
 }
 
 nlohmann::json ComletFirmware::validateArguments() {
@@ -311,20 +313,24 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         if (amcWarnMsg.length()) {
             std::cout << coreStub->getRedfishAmcWarnMsg() << std::endl;
             std::cout << "Do you want to continue? (y/n)" << std::endl;
+            if (!opts->assumeyes) {
+                std::string confirm;
+                std::cin >> confirm;
+                if (confirm != "Y" && confirm != "y") {
+                    out << "update aborted" << std::endl;
+                    return;
+                }
+            }
+        }
+        std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model." << std::endl;
+        std::cout << "Please confirm to proceed (y/n)" << std::endl;
+        if (!opts->assumeyes) {
             std::string confirm;
             std::cin >> confirm;
             if (confirm != "Y" && confirm != "y") {
                 out << "update aborted" << std::endl;
                 return;
             }
-        }
-        std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model." << std::endl;
-        std::cout << "Please confirm to proceed (y/n)" << std::endl;
-        std::string confirm;
-        std::cin >> confirm;
-        if (confirm != "Y" && confirm != "y") {
-            out << "update aborted" << std::endl;
-            return;
         }
     } else { // GSC and FW-DATA caution
         // check igsc
@@ -354,11 +360,13 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                     for (auto deviceIdInGroup : deviceIdList) {
                         if (deviceIdInGroup.get<int>() == opts->deviceId) {
                             std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) " << std::endl;
-                            std::string confirm;
-                            std::cin >> confirm;
-                            if (confirm != "Y" && confirm != "y") {
-                                out << "update aborted" << std::endl;
-                                return;
+                            if (!opts->assumeyes) {
+                                std::string confirm;
+                                std::cin >> confirm;
+                                if (confirm != "Y" && confirm != "y") {
+                                    out << "update aborted" << std::endl;
+                                    return;
+                                }
                             }
                             for (auto tmpId : deviceIdList) {
                                 deviceIdsToFlashFirmware.push_back(tmpId.get<int>());
@@ -389,11 +397,13 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
         }
         out << "Do you want to continue? (y/n) " << std::endl;
-        std::string confirm;
-        std::cin >> confirm;
-        if (confirm != "Y" && confirm != "y") {
-            out << "update aborted" << std::endl;
-            return;
+        if (!opts->assumeyes) {
+            std::string confirm;
+            std::cin >> confirm;
+            if (confirm != "Y" && confirm != "y") {
+                out << "update aborted" << std::endl;
+                return;
+            }
         }
     }
 
