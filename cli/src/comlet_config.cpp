@@ -370,7 +370,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 std::string current = (*json)["memory_ecc_current_state"];
                 std::string pending = (*json)["memory_ecc_pending_state"];
                 std::string pendingAction = (*json)["memory_ecc_pending_action"];
-                (*json)["return"] = "Successfully enabled/disabled ECC memory on GPU " + std::to_string(this->opts->deviceId)+". Please reset the GPU or reboot the OS for the change to take effect.";
+                (*json)["return"] = "Successfully " + (enabled?std::string("enable"): std::string("disable")) + " ECC memory on GPU " + std::to_string(this->opts->deviceId)+". Please reset the GPU or reboot the OS for the change to take effect.";
 
                /* (*json)["return"] = "Succeed to set memory Ecc state: available: " + available +
                 " configurable: " + configurable +
