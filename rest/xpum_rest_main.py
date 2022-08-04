@@ -25,6 +25,7 @@ from views import agent_settings
 from views import statistics
 from views import device_config
 from views import topology
+from views import top
 from views import dump_raw_data
 
 import xpum_logger as logger
@@ -158,14 +159,14 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(device_config.get_config))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/performancefactor', methods=['PUT'],
                      view_func=auth.login_required(device_config.set_performancefactor))
-    # app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
+    #app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
     #                view_func=auth.login_required(device_config.run_reset))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/portenabled', methods=['PUT'],
                      view_func=auth.login_required(device_config.set_portenabled))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/portbeaconing', methods=['PUT'],
                      view_func=auth.login_required(device_config.set_portbeaconing))
-    # app.add_url_rule('/rest/v1/devices/<int:deviceId>/memoryecc', methods=['PUT'],
-    #                view_func=auth.login_required(device_config.set_memoryecc))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/memoryecc', methods=['PUT'],
+                    view_func=auth.login_required(device_config.set_memoryecc))
 
     # topology
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/topology', methods=['GET'],
@@ -174,6 +175,13 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(topology.export_topology))
     app.add_url_rule('/rest/v1/topology/xelink', methods=['GET'],
                      view_func=auth.login_required(topology.get_topo_xelink))
+
+    # Temporarily hide the top feature 
+    # top
+    # app.add_url_rule('/rest/v1/devices/<int:deviceId>/top', methods=['GET'],
+    #                 view_func=auth.login_required(top.get_device_util_by_proc))
+    # app.add_url_rule('/rest/v1/top', methods=['GET'],
+    #                 view_func=auth.login_required(top.get_all_device_util_by_proc))
 
     # dump raw data
     app.add_url_rule('/rest/v1/dump', methods=['POST'],

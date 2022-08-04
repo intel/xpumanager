@@ -142,11 +142,12 @@ def process_device_stats(core, pod_resources, devices):
                 pod_resources, dev, stat_data['device_level'], device_id)
             resp = resp + r
 
-            # export tile metrics to Prometheus registry
+        # export tile metrics to Prometheus registry
         for tile_data in stat_data.get('tile_level', []):
             r = convert_to_prometheus_metrics(
                 pod_resources, dev, tile_data['data_list'], device_id, tile_data['tile_id'])
             resp = resp + r
+
     return resp, all_device_data
 
 
@@ -251,9 +252,11 @@ def tidy_response(resp):
     metrics = []
     for line in resp_str.splitlines():
         if not line.startswith('#'):
-            metrics.append(line)
+            if line not in metrics:
+                metrics.append(line)
         elif line not in comments:
             comments.append(line)
+    metrics.sort()
     return '\n'.join(comments + metrics)
 
 

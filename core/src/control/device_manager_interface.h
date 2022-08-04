@@ -18,6 +18,7 @@
 #include "device/standby.h"
 #include "infrastructure/device_capability.h"
 #include "infrastructure/device_process.h"
+#include "infrastructure/device_util_by_proc.h"
 #include "infrastructure/init_close_interface.h"
 #include "infrastructure/measurement_data.h"
 #include "infrastructure/measurement_type.h"
@@ -70,6 +71,9 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual bool setDeviceFrequencyRange(const std::string& id,
                                          const Frequency& freq) = 0;
 
+    virtual bool setDeviceFrequencyRangeForAll(const std::string& id,
+                                         const Frequency& freq) = 0;
+
     virtual bool setDeviceStandby(const std::string& id,
                                   const Standby& standby) = 0;
 
@@ -88,6 +92,10 @@ class DeviceManagerInterface : public InitCloseInterface {
 
     virtual void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes) = 0;
 
+    virtual void getDeviceUtilByProcess(const std::string& id, 
+      uint32_t utilInterval, 
+      std::vector<std::vector<device_util_by_proc>>& utils) = 0;
+
     virtual void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) = 0;
 
     virtual bool setPerformanceFactor(const std::string& id, PerformanceFactor& pf) = 0;
@@ -105,6 +113,14 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual void discoverFabricLinks() = 0;
 
     virtual std::string getDeviceIDByFabricID(uint64_t fabric_id) = 0;
+
+    virtual bool tryLockDevices(const std::vector<std::string>& deviceList) = 0;
+
+    virtual bool tryLockDevices(std::vector<std::shared_ptr<Device>>& deviceList) = 0;
+
+    virtual void unlockDevices(const std::vector<std::string>& deviceList) = 0;
+
+    virtual void unlockDevices(std::vector<std::shared_ptr<Device>>& deviceList) = 0;
 };
 
 } // end namespace xpum

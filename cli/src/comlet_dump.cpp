@@ -24,7 +24,7 @@ static bool isNumber(const std::string &str) {
 
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device id to query");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
     auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
 
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
@@ -187,7 +187,7 @@ std::string getJsonValue(nlohmann::json obj, int scale) {
     } else {
         auto value = obj.get<int64_t>();
         if (scale != 1) {
-            return keepTwoDecimalPrecision(value / scale);
+            return keepTwoDecimalPrecision(value / (double)scale);
         } else {
             return std::to_string(value);
         }

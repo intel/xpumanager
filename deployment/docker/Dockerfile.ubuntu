@@ -2,13 +2,15 @@
 # SPDX-License-Identifier: MIT
 #
 # Build by:
-# docker build --build-arg git_commit=`git rev-parse --short HEAD` -f Dockerfile.ubuntu -t intel-xpumanager ../..
+# docker build --build-arg git_commit=`git rev-parse --short HEAD` -f Dockerfile.ubuntu -t intel-xpumanager .
 #
 # Run by (refer to deployment/docker/README.md for details):
 # docker run --cap-drop ALL --cap-add CAP_SYS_ADMIN --user root -e XPUM_REST_NO_TLS=1 -e XPUM_EXPORTER_NO_AUTH=1 -e XPUM_EXPORTER_ONLY=1 --publish 127.0.0.1:29999:29999 --device /dev/dri:/dev/dri --name=xpum intel-xpumanager
 FROM ubuntu:20.04 as builder
 
 ENV HOME=/home/nobody
+ENV no_proxy=localhost,127.0.0.1
+ENV NO_PROXY=localhost,127.0.0.1
 
 ARG git_commit=1234abcd
 
@@ -16,80 +18,59 @@ ARG git_commit=1234abcd
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update  && \
-apt-get install -y \
-autoconf \
-automake \
-build-essential \
-cmake \
-doxygen \
-dpkg-dev \
-git \
-gcc \
-g++ \
-libtool \
-liblua5.2-0 \
-libdrm-dev \
-libgrpc++-dev \
-libgrpc++1 \
-ocl-icd-libopencl1 \
-pkg-config \
-python3 \
-python3-dev \
-python3-pip \
-python3-venv \
-protobuf-compiler \
-protobuf-compiler-grpc \
-wget && \
+apt-get install -y --no-install-recommends \ 
+  autoconf \
+  automake \
+  build-essential \
+  cmake \
+  doxygen \
+  dpkg-dev \
+  gcc \
+  gnupg2 \
+  g++ \
+  libtool \
+  liblua5.2-0 \
+  libdrm-dev \
+  libgrpc++-dev \
+  libgrpc++1 \
+  pkg-config \
+  python3 \
+  python3-dev \
+  python3-pip \
+  python3-venv \
+  protobuf-compiler \
+  protobuf-compiler-grpc \
+  wget && \
 rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install grpcio-tools mistune==0.8.4 apispec apispec_webframeworks \
-    Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
-    apispec-webframeworks myst-parser marshmallow \
-    prometheus-client flask flask_httpauth
+      Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
+      apispec-webframeworks myst-parser marshmallow \
+      prometheus-client flask flask_httpauth
 
-RUN mkdir neo && \
-cd neo && \
-wget -q --no-check-certificate https://github.com/oneapi-src/level-zero/releases/download/v1.7.9/level-zero_1.7.9+u18.04_amd64.deb && \
-wget -q --no-check-certificate https://github.com/oneapi-src/level-zero/releases/download/v1.7.9/level-zero-devel_1.7.9+u18.04_amd64.deb && \
-wget -q --no-check-certificate https://github.com/intel/compute-runtime/releases/download/22.11.22682/intel-gmmlib_22.0.2_amd64.deb && \
-wget -q --no-check-certificate https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.10409/intel-igc-core_1.0.10409_amd64.deb && \
-wget -q --no-check-certificate https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.10409/intel-igc-opencl_1.0.10409_amd64.deb && \
-wget -q --no-check-certificate https://github.com/intel/compute-runtime/releases/download/22.11.22682/intel-level-zero-gpu_1.3.22682_amd64.deb && \
-dpkg -i *.deb
-
-RUN git clone --depth 1 https://github.com/intel/metrics-discovery.git && \
-cd metrics-discovery && \
-mkdir build && cd build && \
-cmake .. && \
-make -j$(nproc) && \
-make install DESTDIR=/stage
-
-RUN git clone --depth 1 https://github.com/intel/metrics-library.git && \
-cd metrics-library && \
-mkdir build && cd build && \
-cmake .. && \
-make -j$(nproc) && \
-make install DESTDIR=/stage
+RUN wget -qc --no-check-certificate https://github.com/intel/metee/archive/refs/tags/3.1.3.tar.gz -O - | tar -xz && \
+    cd /metee-3.1.3 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j4 && \
+    make install
+    
+RUN wget -qc --no-check-certificate https://github.com/intel/igsc/archive/refs/tags/V0.8.0.tar.gz -O - | tar -xz && \
+    cd /igsc-0.8.0 && \
+    mkdir build && \
+    cd build && \
+    cmake -DENABLE_ENUM=OFF .. && \
+    make -j4 && \
+    make install DESTDIR=/stage
 
 RUN apt-get remove -y libpciaccess-dev libpciaccess0 && \
-apt-get autoremove -y
-
-WORKDIR /xpum-src
-COPY .cmake ./.cmake
-COPY cli ./cli
-COPY core ./core
-COPY daemon ./daemon
-COPY icinga ./icinga
-COPY install ./install
-COPY rest ./rest
-COPY third_party ./third_party
-COPY icinga ./icinga
-COPY build.sh CMakeLists.txt third-party-programs.txt ./
-RUN ./build.sh -DGIT_COMMIT=$git_commit
+  apt-get autoremove -y
 
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install -r ./rest/requirements.txt
+COPY requirements.txt /requirements.txt
+RUN pip install -r /requirements.txt
 RUN pip install gunicorn[gthread]
 WORKDIR /opt/venv
 RUN find . -name "pip*" -exec rm -rf {} \; ;exit 0
@@ -104,6 +85,8 @@ RUN find . -name "__pycache__" -exec rm -rf {} \; ;exit 0
 FROM ubuntu:20.04
 
 ENV HOME=/home/nobody
+ENV no_proxy=localhost,127.0.0.1
+ENV NO_PROXY=localhost,127.0.0.1
 
 # don't ask anything
 ARG DEBIAN_FRONTEND=noninteractive
@@ -114,29 +97,29 @@ COPY third-party-programs.txt .
 WORKDIR /tmp/work
 
 RUN apt-get update && \
-apt-get install -y --no-install-recommends wget \
-dmidecode \
-libdrm2 \
-python3 \
-ocl-icd-libopencl1 \
-libnl-genl-3-200 \
-libgrpc++1 && \
-wget -q --no-check-certificate https://github.com/oneapi-src/level-zero/releases/download/v1.7.9/level-zero_1.7.9+u18.04_amd64.deb && \
-wget -q --no-check-certificate https://github.com/intel/compute-runtime/releases/download/22.11.22682/intel-gmmlib_22.0.2_amd64.deb && \
-wget -q --no-check-certificate https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.10409/intel-igc-core_1.0.10409_amd64.deb && \
-wget -q --no-check-certificate https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.10409/intel-igc-opencl_1.0.10409_amd64.deb && \
-wget -q --no-check-certificate https://github.com/intel/compute-runtime/releases/download/22.11.22682/intel-level-zero-gpu_1.3.22682_amd64.deb && \
-dpkg -i *.deb && \
-rm -fr *.deb && \
-apt-get remove -y wget ocl-icd-libopencl1 && \
-apt-get autoremove -y && \
-rm -rf /var/lib/apt/lists/*
+  apt-get install -y --no-install-recommends wget gnupg2 ca-certificates && \
+  wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | apt-key add - && \
+  echo "deb [trusted=yes arch=amd64] https://repositories.intel.com/graphics/ubuntu focal main" > /etc/apt/sources.list.d/intel-graphics.list && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends \
+    dmidecode \
+    python3 \
+    libnl-genl-3-200 \
+    libgrpc++1 \
+    intel-level-zero-gpu \
+    level-zero \
+    libdrm2 \
+    libmd1 \
+    libigdml1 && \
+  apt-get remove -y wget gnupg2 ca-certificates && \
+  apt-get autoremove -y && \
+  rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /stage/* /usr
 COPY --from=builder /opt/venv /opt/venv
 
-COPY --from=builder /xpum-src/build/*.deb .
-RUN dpkg -i *.deb
+COPY build-deb/*.deb .
+RUN ldconfig && dpkg -i --force-all *.deb
 
 WORKDIR /
 
@@ -145,12 +128,12 @@ ENV PATH="/opt/venv/bin:$PATH"
 # set up entry point
 RUN /bin/echo -e "#!/bin/sh\n\
 export PYTHONUNBUFFERED=1\n\
-socket_file=\${XPUM_SOCKET_FILE:-/tmp/xpum.sock}\n\
+socket_folder=\${XPUM_SOCKET_FOLDER:-/tmp}\n\
 rest_host=\${XPUM_REST_HOST:-0.0.0.0}\n\
 rest_port=\${XPUM_REST_PORT:-29999}\n\
 rest_no_tls=\${XPUM_REST_NO_TLS:-0}\n\
-/opt/xpum/bin/xpumd -s \${socket_file} &\n\
-until [ -e \${socket_file} ]; do sleep 0.1; done\n\
+/opt/xpum/bin/xpumd -s \${socket_folder} &\n\
+until [ -e \${socket_folder}/xpum_p.sock ]; do sleep 0.1; done\n\
 if [ \"\${rest_no_tls}\" != \"1\" ]\n\
 then\n\
   rest_tls_param=\"--certfile conf/cert.pem --keyfile conf/key.pem\"\n\

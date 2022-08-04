@@ -24,14 +24,28 @@ class FirmwareManager {
     std::future<xpum_firmware_flash_result_t> taskAMC;
 
     void getAMCFwVersions();
+    void initFwDataMgmt();
 
    public:
     void init();
     bool isUpgradingFw(void);
 
     std::vector<std::string> getAMCFirmwareVersions();
+    void detectGscFw();
     xpum_result_t runAMCFirmwareFlash(const char* filePath);
-    xpum_firmware_flash_result_t getAMCFirmwareFlashResult();
+    void getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result);
+    xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath);
+    void getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 
+    xpum_result_t runFwDataFlash(xpum_device_id_t deviceId, const char* filePath);
+    void getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 };
+
+std::vector<char> readImageContent(const char* filePath);
+
+#ifndef XPUM_FIRMWARE_MOCK
+static const std::string igscPath{"igsc"};
+#else
+static const std::string igscPath{XPUM_FIRMWARE_MOCK_IGSC_PATH};
+#endif
 } // namespace xpum

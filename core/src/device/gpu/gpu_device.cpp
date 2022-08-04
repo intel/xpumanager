@@ -200,64 +200,16 @@ void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
                                                    });
 }
 
-static std::vector<std::string> getSiblingDeviceBDFAddr(GPUDevice* device) {
-    xpum::Core& core = xpum::Core::instance();
-    auto groupManager = core.getGroupManager();
-    xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS];
-    std::vector<std::string> result;
-    Property pcieAddrProp;
-    int count;
-    groupManager->getAllGroupIds(groupIds, &count);
-    xpum_device_id_t deviceId = std::stoi(device->getId());
-    for (int i = 0; i < count; i++) {
-        auto groupId = groupIds[i];
-        if (groupId & BUILD_IN_GROUP_MASK) {
-            xpum_group_info_t groupInfo;
-            groupManager->getGroupInfo(groupId, &groupInfo);
-
-            for (int j = 0; j < groupInfo.count; j++) {
-                // device in build in group
-                if (groupInfo.deviceList[j] == deviceId) {
-                    auto deviceManager = core.getDeviceManager();
-                    for (int k = 0; k < groupInfo.count; k++) {
-                        auto siblingId = groupInfo.deviceList[k];
-                        std::string siblingIdStr = std::to_string(siblingId);
-                        auto pSiblingDevice = deviceManager->getDevice(siblingIdStr);
-                        pSiblingDevice->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, pcieAddrProp);
-                        result.push_back(pcieAddrProp.getValue());
-                    }
-                    return result;
-                }
-            }
-        }
-    }
-    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, pcieAddrProp);
-    result.push_back(pcieAddrProp.getValue());
-    return result;
-}
 
 xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
-    auto bdfAddrs = getSiblingDeviceBDFAddr(this);
+    // auto meiPathList = getSiblingDeviceMeiPath(this);
+    std::vector<std::string> meiPathList{getMeiDevicePath()};
 
     std::vector<std::string> commands;
 
-    for (auto address : bdfAddrs) {
-        // remove first "0000"
-        std::string::size_type begin = address.find(":");
-        if (begin == std::string::npos) {
-            return xpum_result_t::XPUM_GENERIC_ERROR;
-        }
-
-        std::string addrForTool = address.substr(begin + 1, address.length());
-
-        // change last "." to ":"
-        begin = addrForTool.find(".");
-        if (begin == std::string::npos) {
-            return xpum_result_t::XPUM_GENERIC_ERROR;
-        }
-        addrForTool[begin] = ':';
-
-        std::string command = toolPath + " -Y -Device " + addrForTool + " -F " + filePath;
+    for (auto& meiPath : meiPathList) {
+        XPUM_LOG_INFO("prepare update GSC on {}", meiPath);
+        std::string command = toolPath + " fw update -a -d " + meiPath + " -i " + filePath +" 2>&1";
         commands.push_back(command);
     }
     if (commands.size() == 0) {
@@ -270,8 +222,10 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     } else {
         taskGSC = std::async(std::launch::async, [&, commands] {
+            XPUM_LOG_INFO("Start update GSC fw, total {} commands", commands.size());
             bool ok = true;
             for (std::string command : commands) {
+                XPUM_LOG_INFO("Execute command: {}", command);
                 FILE* commandExec = popen(command.c_str(), "r");
                 if (!commandExec) {
                     ok = false;
@@ -281,9 +235,21 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
                     char buf[BUFFERSIZE];
                     char* res = fgets(buf, BUFFERSIZE, commandExec);
                     if (res != nullptr) {
-                        log += std::string{res};
+                        // log += std::string{res};
+                        XPUM_LOG_DEBUG("GSC FW update log: {}", res);
+                        std::string line(res);
+                        int i = 0;
+                        while (res[i]) {
+                            line[i] = tolower(res[i]);
+                            i++;
+                        }
+                        if (line.find("error") != line.npos || line.find("fail") != line.npos) {
+                            ok = false;
+                        }
                     } else {
-                        ok = ok && pclose(commandExec) == 0;
+                        bool commandResult = pclose(commandExec) == 0;
+                        XPUM_LOG_INFO("Command success: {}", commandResult);
+                        ok = ok && commandResult;
                         commandExec = nullptr;
                         break;
                     }
@@ -293,12 +259,15 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
             }
             // dumpFirmwareFlashLog();
             log.clear();
+            // refresh SoC fw version
+            Core::instance().getFirmwareManager()->detectGscFw();
             xpum_firmware_flash_result_t rc;
             if (ok) {
                 rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
             } else {
                 rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
+            unlock();
             return rc;
         });
 
@@ -341,6 +310,14 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_typ
 
 bool GPUDevice::isUpgradingFw(void) noexcept {
     return taskGSC.valid();
+}
+
+bool GPUDevice::isUpgradingFwResultReady(void) noexcept {
+    if (!taskGSC.valid()) {
+        return true;
+    }
+    auto status = taskGSC.wait_for(0ms);
+    return status == std::future_status::ready;
 }
 
 void GPUDevice::getPCIeReadThroughput(Callback_t callback) noexcept {

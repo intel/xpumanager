@@ -28,6 +28,7 @@
 #include "logger.h"
 #include "xpum_api.h"
 #include "xpum_core_service_impl.h"
+#include "xpum_core_service_unprivileged_impl.h"
 #include "xpum_structs.h"
 
 #pragma GCC diagnostic ignored "-Wunused-result"
@@ -44,11 +45,13 @@ using std::endl;
 using std::string;
 using std::unique_ptr;
 
-static const string defaultSockName{"/tmp/xpum.sock"};
+static const string defaultSockDir{"/tmp/"};
+static const string defaultPrivilegedSockName{"xpum_p.sock"};
+static const string defaultUnprivilegedSockName{"xpum_up.sock"};
 
 int pidFilehandle = -1;
 char* pid_file_name = nullptr;
-char* sock_file_name = nullptr;
+char* sock_file_dir = nullptr;
 char* dump_folder_name = nullptr;
 char* log_file_name = nullptr;
 char* enabled_metrics = nullptr;
@@ -68,7 +71,7 @@ void print_help(const char* app_name) {
     printf("  Options:\n");
     printf("   -h, --help                       print this help\n");
     printf("   -p, --pid_file=filename          PID file used by daemonized app\n");
-    printf("   -s, --socket_file=filename       socket file used by daemonized app\n");
+    printf("   -s, --socket_folder=foldername   folder for socket files used by daemonized app\n");
     printf("   -d, --dump_folder=foldername     dump folder used by daemonized app\n");
     printf("       --log_level=LEVEL            log level (trace, debug, info, warn, error)\n");
     printf("   -l, --log_file=filename          logfile to write\n");
@@ -119,49 +122,64 @@ void print_help(const char* app_name) {
     printf("\n");
 }
 
-void runRPCServer() {
-    XPUM_LOG_INFO("XPUM: start RPC server ...");
-    string unixSockName;
+unique_ptr<grpc::Server> buildAndStartRPCServer(const string& unixSockAddr, XpumCoreServiceImpl& service) {
+    grpc::ServerBuilder builder;
+    builder.AddListeningPort(unixSockAddr, grpc::InsecureServerCredentials());
+    builder.RegisterService(&service);
+    return builder.BuildAndStart();
+}
 
-    if (sock_file_name != nullptr) {
-        unixSockName = sock_file_name;
-        delete sock_file_name;
-        sock_file_name = nullptr;
+void runRPCServers() {
+    XPUM_LOG_INFO("XPUM: start RPC server ...");
+
+    string unixSockDir;
+    if (sock_file_dir != nullptr ) {
+        unixSockDir = sock_file_dir;
+        if (unixSockDir.length() == 0 || unixSockDir.back() != '/') {
+            unixSockDir += "/";
+        }
+        delete sock_file_dir;
+        sock_file_dir = nullptr;
     } else {
-        unixSockName = defaultSockName;
+        unixSockDir = defaultSockDir;
     }
-    unlink(unixSockName.c_str());
+
+    string privSock{unixSockDir + defaultPrivilegedSockName};
+    string upriSock{unixSockDir + defaultUnprivilegedSockName};
+
+    unlink(privSock.c_str());
+    unlink(upriSock.c_str());
 
     umask(S_IXUSR | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
 
-    string serverAddr("unix://" + unixSockName);
-
-    XpumCoreServiceImpl service;
-
-    grpc::ServerBuilder builder;
-    builder.AddListeningPort(serverAddr, grpc::InsecureServerCredentials());
-    //TODO: limit thread pool size
-    builder.RegisterService(&service);
-
-    unique_ptr<grpc::Server> server = builder.BuildAndStart();
-    XPUM_LOG_INFO("XPUM: RPC server is listening at {}", unixSockName);
+    //privileged socket
+    XpumCoreServiceImpl privService;
+    unique_ptr<grpc::Server> privServer =  buildAndStartRPCServer("unix://" + privSock, privService);
+    XPUM_LOG_INFO("XPUM: RPC server is listening at {}", privSock);
 
     passwd* pwd = getpwnam("xpum");
     if (pwd != nullptr) {
-        chown(unixSockName.c_str(), pwd->pw_uid, pwd->pw_gid);
+        chown(privSock.c_str(), pwd->pw_uid, pwd->pw_gid);
     } else {
         XPUM_LOG_ERROR("XPUM: no xpum account exists, abort");
         return;
     }
 
-    chmod(unixSockName.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+    chmod(privSock.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+
+    //non-privileged socket
+    XpumCoreServiceUnprivilegedImpl upriService;
+    unique_ptr<grpc::Server> upriServer = buildAndStartRPCServer("unix://" + upriSock, upriService);
+
+    chown(upriSock.c_str(), pwd->pw_uid, pwd->pw_gid);
+    chmod(upriSock.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH );
 
     // start a background thread for the server.
     std::thread grpc_server_thread(
         [](::grpc::Server* grpc_server_ptr) {
             grpc_server_ptr->Wait();
         },
-        server.get());
+        privServer.get());
 
     while (!stop) {
         // Wait for the stop signal and then shut the server.
@@ -171,8 +189,10 @@ void runRPCServer() {
     // Shut down server.
     XPUM_LOG_INFO("XPUM: Shutting down RPC server...");
     // must close service before shutdown the server to avoid stuck in server->Shutdown()
-    service.close();
-    server->Shutdown();
+    privService.close();
+    privServer->Shutdown();
+    upriService.close();
+    upriServer->Shutdown();
     XPUM_LOG_INFO("XPUM: Waiting for RPC server shutdown...");
     grpc_server_thread.join();
 }
@@ -265,7 +285,7 @@ bool to_log_level(const char* level, std::string& log_level) {
 void parse_opts(int argc, char* argv[]) {
     int lopt;
     static struct option long_options[] = {
-        {"socket_file", required_argument, 0, 's'},
+        {"socket_folder", required_argument, 0, 's'},
         {"help", no_argument, 0, 'h'},
         {"pid_file", required_argument, 0, 'p'},
         {"dump_folder", required_argument, 0, 'd'},
@@ -301,8 +321,8 @@ void parse_opts(int argc, char* argv[]) {
                 break;
             }
             case 's':
-                if (sock_file_name == nullptr) {
-                    sock_file_name = strdup(optarg);
+                if (sock_file_dir == nullptr) {
+                    sock_file_dir = strdup(optarg);
                 }
                 break;
             case 'p':
@@ -369,7 +389,7 @@ int main(int argc, char* argv[]) {
     }
 
     XPUM_LOG_INFO("XPUM: start XPUM RPC Server.");
-    runRPCServer();
+    runRPCServers();
 
     XPUM_LOG_INFO("XPUM: Shut down.");
     res = xpum::xpumShutdown();

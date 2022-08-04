@@ -125,6 +125,7 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
             for (auto& type : subdeviceAdditionalCurrentDataTypes) {
                 for (auto& data : (*datas)) {
                     auto mData = std::make_shared<MeasurementData>();
+                    mData->setScale(data.second->getScale());
                     for (auto& sData : subdeviceAdditionalCurrentDatasAll[data.first]) {
                         if (sData.first == UINT32_MAX)
                             mData->setCurrent(sData.second[type]);

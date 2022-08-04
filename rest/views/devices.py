@@ -75,6 +75,8 @@ class DevicePropertiesSchema(Schema):
     pcie_generation = fields.Str(metadata={"description": "PCIe generation"})
     pcie_max_link_width = fields.Str(
         metadata={"description": "PCIe max link width"})
+    device_stepping = fields.Str(
+        metadata={"description": "The stepping of device"})
     driver_version = fields.Str(metadata={"description": "The driver version"})
     firmware_name = fields.Str(
         metadata={"description": "The firmware name of device"})
@@ -96,6 +98,8 @@ class DevicePropertiesSchema(Schema):
         metadata={"description": "Maximum number of logical hardware contexts"})
     max_command_queue_priority = fields.Str(metadata={
                                             "description": "Maximum priority for command queues. Higher value is higher priority"})
+    number_of_eus = fields.Str(
+        metadata={"description": "The number of EUs"})
     number_of_tiles = fields.Str(
         metadata={"description": "The number of tiles"})
     number_of_slices = fields.Str(
@@ -108,6 +112,10 @@ class DevicePropertiesSchema(Schema):
         metadata={"description": "Maximum number of threads per EU"})
     physical_eu_simd_width = fields.Str(
         metadata={"description": "The physical EU simd width"})
+    number_of_media_engines = fields.Str(
+        metadata={"description": "The number of media engines"})
+    number_of_media_enh_engines = fields.Str(
+        metadata={"description": "The number of media enhancement engines"})
     health = fields.Nested(DevicePropertiesLinkSchema)
     topology = fields.Nested(DevicePropertiesLinkSchema)
 
@@ -153,7 +161,8 @@ def get_device_properties(deviceId):
 
 
 class AMCFwVersionSchema(Schema):
-    amc_fw_version = fields.Str(many=True,metadata={"description": "AMC versions"})
+    amc_fw_version = fields.List(
+        fields.Str(metadata={"description": "AMC versions"}))
     error = fields.Str(metadata={"description": "Error message"})
 
 

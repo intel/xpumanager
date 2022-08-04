@@ -28,8 +28,27 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli group -r -d [deviceIds] -g [groupId] \n"
                "  xpumcli group -D -g [groupId] \n"
                "  xpumcli group -l \n"
-               "  xpumcli -l -j \n"
                "  xpumcli group -l -g [groupId] \n";
+    } else if (app->get_name().compare("top") == 0) {
+        return "\n"
+                "Usage: xpumcli top [Options] \n"
+                "  xpumcli top  \n"
+                "  xpumcli top -d [deviceId] \n"
+                "  xpumcli top -d [deviceId] -j \n"
+                "\nPID:      Process ID\n"
+                "Command:  Process command name\n"
+                "DeviceID: Device ID\n"
+                "%REN:     Render engine utilization\n"
+                "%COM:     Compute engine utilization\n"
+                "%CPY:     Copy engine utilization\n"
+                "%MED:     Media engine utilization\n"
+                "%MEE:     Media enhancement engine utilization\n"
+                "SHR:      The size of shared device memory mapped "
+                "into this process (may not necessarily be resident "
+                "on the device at the time of reading) (kB)\n"
+                "MEM:      Device memory size in bytes allocated by "
+                "this process (may not necessarily be resident on "
+                "the device at the time of reading) (kB)\n";
     } else if (app->get_name().compare("topology") == 0) {
         return "\n"
                "Usage: xpumcli topology [Options] \n"
@@ -77,7 +96,8 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
         return "\nUsage: xpumcli discovery [Options]\n"
                "  xpumcli discovery\n"
                "  xpumcli discovery -d [deviceId]\n"
-               "  xpumcli discovery -d [deviceId] -j\n";
+               "  xpumcli discovery -d [deviceId] -j\n"
+               "  xpumcli discovery --listamcversions\n";
     } else if (app->get_name().compare("policy") == 0) {
         return "\nUsage: xpumcli policy [Options]\n"
                "  xpumcli policy -l\n"
@@ -92,19 +112,20 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli policy -r -g [groupId] --type [policyTypeValue]\n";
     } else if (app->get_name().compare("updatefw") == 0) {
         return "\nUsage: xpumcli updatefw [Options]\n"
-               "  xpumcli updatefw -d [deviceId] -t [firmwareName] -f [imageFilePath]\n"
-               "  xpumcli updatefw -d [deviceId] -t [firmwareName] -f [imageFilePath] -j\n";
+               "  xpumcli updatefw -d [deviceId] -t GSC -f [imageFilePath]\n"
+               "  xpumcli updatefw -t AMC -f [imageFilePath]\n";
     } else if (app->get_name().compare("config") == 0) {
         return "\nUsage: xpumcli config [Options]\n"
                " xpumcli config -d [deviceId]\n"
                " xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]\n"
-               " xpumcli config -d [deviceId] --powerlimit [powerValue,averageWindow]\n"
+               " xpumcli config -d [deviceId] --powerlimit [powerValue]\n"
                " xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]\n"
                " xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]\n"
                " xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]\n"
                " xpumcli config -d [deviceId] -t [tileId] --xelinkport [portId,value]\n"
-               " xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]\n";
-        //" xpumcli config -d [deviceId] --reset\n";
+               " xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]\n"
+               " xpumcli config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable\n";
+               //" xpumcli config -d [deviceId] --reset\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }

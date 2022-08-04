@@ -29,7 +29,7 @@ struct CLIWrapperOptions {
 
 class CLIWrapper {
    public:
-    CLIWrapper(CLI::App &cliApp);
+    CLIWrapper(CLI::App &cliApp, bool privilege);
     CLIWrapper &addComlet(const std::shared_ptr<ComletBase> &comlet);
     void printResult(std::ostream &out);
     std::shared_ptr<CoreStub> getCoreStub();

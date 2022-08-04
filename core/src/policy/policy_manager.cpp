@@ -348,9 +348,9 @@ bool PolicyManager::triggerAction(std::shared_ptr<xpum_policy_data> p_policy) {
     //XPUM_LOG_INFO("---PolicyManager::triggerAction()---1--deviceId={}",p_policy->deviceId);
     if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE) {
         Frequency freq(ZES_FREQ_DOMAIN_GPU, p_policy->deviceId, p_policy->action.throttle_device_frequency_min, p_policy->action.throttle_device_frequency_max);
-        XPUM_LOG_INFO("PolicyManager::triggerAction():before setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})", p_policy->deviceId, p_policy->action.throttle_device_frequency_min, p_policy->action.throttle_device_frequency_max);
-        this->p_device_manager->setDeviceFrequencyRange(std::to_string(p_policy->deviceId), freq);
-        XPUM_LOG_INFO("PolicyManager::triggerAction():after setDeviceFrequencyRange(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})", p_policy->deviceId, p_policy->action.throttle_device_frequency_min, p_policy->action.throttle_device_frequency_max);
+        XPUM_LOG_INFO("PolicyManager::triggerAction():before setDeviceFrequencyRangeForAll(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})", p_policy->deviceId, p_policy->action.throttle_device_frequency_min, p_policy->action.throttle_device_frequency_max);
+        this->p_device_manager->setDeviceFrequencyRangeForAll(std::to_string(p_policy->deviceId), freq);
+        XPUM_LOG_INFO("PolicyManager::triggerAction():after setDeviceFrequencyRangeForAll(deviceId={},throttle_device_frequency_min={},throttle_device_frequency_max={})", p_policy->deviceId, p_policy->action.throttle_device_frequency_min, p_policy->action.throttle_device_frequency_max);
         return false;
     }
     // else if (p_policy->action.type == XPUM_POLICY_ACTION_TYPE_RESET_DEVICE) {

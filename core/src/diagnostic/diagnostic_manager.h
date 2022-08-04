@@ -136,6 +136,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static std::string MEDIA_CODER_TOOLS_ENCODE_FILE;
 
+    static int ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
+
     static std::string XPUM_DAEMON_INSTALL_PATH;
 
     std::shared_ptr<DeviceManagerInterface> p_device_manager;

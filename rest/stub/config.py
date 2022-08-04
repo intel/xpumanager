@@ -35,8 +35,8 @@ def getConfig(deviceId, tileId):
     data['device_id'] = resp.deviceId
     data['power_limit'] = resp.powerLimit
     data['power_vaild_range'] = resp.powerScope
-    data['power_average_window'] = resp.interval
-    data['power_average_window_vaild_range'] = resp.intervalScope
+    #data['power_average_window'] = resp.interval
+    #data['power_average_window_vaild_range'] = resp.intervalScope
     #data['tileCount'] = resp.tileCount
 
     tilelist = list()
@@ -75,20 +75,20 @@ def getConfig(deviceId, tileId):
         if resp.tileConfigData[i].schedulerTimesliceInterval > 0:
             tiledata['scheduler_timeslice_interval'] = resp.tileConfigData[i].schedulerTimesliceInterval
             tiledata['scheduler_timeslice_yield_timeout'] = resp.tileConfigData[i].schedulerTimesliceYieldTimeout
-        '''
-        if resp.tileConfigData[i].memoryEccAvailable == True:
-            tiledata['memory_ecc_available'] = "True"
-        else:
-            tiledata['memory_ecc_available'] = "False"
+        #if resp.tileConfigData[i].memoryEccAvailable == True:
+        #    tiledata['memory_ecc_available'] = "True"
+        #else:
+        #    tiledata['memory_ecc_available'] = "False"
         
-        if resp.tileConfigData[i].memoryEccConfigurable == True:
-            tiledata['memory_ecc_configurable'] = "True"
-        else:
-            tiledata['memory_ecc_configurable'] = "False"
-        '''
-       # tiledata['memory_ecc_current_state'] = resp.tileConfigData[i].memoryEccState
-       # tiledata['memory_ecc_pending_state'] = resp.tileConfigData[i].memoryEccPendingState
+        #if resp.tileConfigData[i].memoryEccConfigurable == True:
+        #    tiledata['memory_ecc_configurable'] = "True"
+        #else:
+        #    tiledata['memory_ecc_configurable'] = "False"
+        #tiledata['memory_ecc_current_state'] = resp.tileConfigData[i].memoryEccState
+        #tiledata['memory_ecc_pending_state'] = resp.tileConfigData[i].memoryEccPendingState
         #tiledata['memory_ecc_pending_action'] = resp.tileConfigData[i].memoryEccPendingAction
+        data['memory_ecc_current_state'] = resp.tileConfigData[i].memoryEccState
+        data['memory_ecc_pending_state'] = resp.tileConfigData[i].memoryEccPendingState
         tilelist.append(tiledata)
     data['tile_config_data'] = tilelist
     return 0, "OK", data
@@ -208,8 +208,9 @@ def setMemoryecc(deviceId, enabled):
     return 0, "OK", {"result": "OK"}
 
 
-def runReset(deviceId):
-    #resp = stub.ResetDevice()
-    # if len(resp.errorMsg) != 0:
-    #    return 1, resp.errorMsg, None
+def runReset(deviceId, force):
+    resp = stub.ResetDevice(core_pb2.ResetDeviceRequest(
+        deviceId=deviceId, force=force))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}

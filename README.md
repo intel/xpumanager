@@ -1,44 +1,45 @@
 # Intel XPU Manager
-Intel XPU Manager is an in-band node-level tool that provides local/remote GPU management. It is easily integrated into the cluster management solutions and cluster scheduler. GPU users may use it to manage Intel GPUs, locally. 
-It supports local command line interface, local library call and remote RESFTul API interface. 
+Intel XPU Manager is a free and open-source solution for monitoring and managing Intel data center GPUs.
 
-## Intel XPU Manager feature
-* Provide GPU basic information, including GPU model, frequency, GPU memory capacity, firmware version
-* Provide lots of GPU telemetries, including GPU utilization, performance metrics, GPU memory bandwidth, temperature
-* Provide GPU health status, memory health, temperature health
-* GPU diagnotics through different levels of GPU test suites
-* GPU firmware update
-* Get/change GPU settings, including power limit, GPU frequency, standby mode and scheduler mode
-* Support K8s and can export GPU telemetries to Prometheus
+It is designed to simplify administration, maximize reliability and uptime, and improve utilization.
 
-## Suppored Devices
-* Intel Data Center GPU
+Intel XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely.
 
-## Supported OS
-* Ubuntu 20.0.4
-* RHEL 8.4
+3rd party open-source and commercial workload and cluster managers, job schedulers, and monitoring solutions can also integrate the Intel XPU Manager to support Intel data center GPUs.
+
+## Intel XPU Manager features
+* Administration:
+	* GPU discovery and information - name, model, serial, stepping, location, frequency, memory capacity, firmware version
+	* GPU topology and grouping
+	* GPU Firmware updating
+* Monitoring:
+	* GPU health – memory, power, temperature, fabric port, etc.
+	* GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory bandwidth, errors
+* Diagnostics:
+	* 3 levels of GPU diagnostic tests
+* Configuration:
+	* GPU Settings - GPU power limits, frequency range, standby mode, scheduler mode, ECC On/Off, performance factor, fabric port status, fabric port beaconing
+	* GPU policies - Throttle GPU when the temperature set threshold is reached, reset GPU when hanging etc. 
+* Supported Frameworks:
+	* Prometheus exporter, Docker container support, Icinga plugin
+
+## Supported Devices
+* Intel Data Center GPUs
+
+## Supported OSes
+* Ubuntu 20.04.3
+* RHEL 8.4 and CentOS 8 Stream
+* SLES 15 SP3
+* Windows Server 2022 (limited features including: GPU device info, GPU telemetry and GPU settings)
   
-
 ## Intel XPU Manager Architecture
 ![Intel XPU Manager Architecture](doc/img/architecture.PNG)
   
+## GPU telemetry exported from Intel XPU Manager to Grafana
+![GPU telemetry exported from Intel XPU Manager to Grafana](doc/img/Grafana.PNG)
+for a Docker container image that can be used as a Prometheus exporter in a K8s environment.
   
-
-## Intel XPU Manager Command Line Interface
-* Show GPU basic information
-![Show GPU basic information](doc/img/cli_gpu_info.PNG)
-  
-
-* Show GPU settings
-![Show GPU settings](doc/img/cli_settings.PNG)
-  
-  
-## GPU telemetries in Grafana exported by Intel XPU Manager
-![GPU telemetries in Grafana exported by Intel XPU Manager](doc/img/Grafana.PNG)
-  
-  
-## Intel XPU Manager Installation
-Please follow [XPU Manager Installation Guide](doc/Install_guide.md) to install/uninstall Intel XPU Manager. 
-
-### Start to use Intel XPU Manager
-By default, Intel XPU Manager is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to [XPU Manager CLI User Guide](doc/CLI_user_guide.md) for how to use the command line tool. 
+## Intel XPU Manager Documentation
+* Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) for how to install/uninstall Intel XPU Manager.
+* Refer to the [XPU Manager CLI User Guide](doc/CLI_user_guide.md) to start using Intel XPU Manager.
+* Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.

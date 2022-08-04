@@ -117,12 +117,12 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
     if (this->opts->listAll) {
         //std::cout << "--GangDebug----listAll---1---" << std::endl;
         bool isDevcie;
-        int id;
+        uint32_t id;
         if (this->opts->deviceId != -1) {
             isDevcie = true;
             id = this->opts->deviceId;
             json = this->coreStub->getPolicyById(isDevcie, id);
-        } else if (this->opts->groupId != -1) {
+        } else if (this->opts->groupId != 0) {
             isDevcie = false;
             id = this->opts->groupId;
             json = this->coreStub->getPolicyById(isDevcie, id);
@@ -136,7 +136,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         return json;
     }
     if (this->opts->create) {
-        if (this->opts->deviceId == -1 && this->opts->groupId == -1) {
+        if (this->opts->deviceId == -1 && this->opts->groupId == 0) {
             // (*json)["error"] = "Too many operation flags";
             // return json;
             (*json)["is_success"] = false;
@@ -146,10 +146,10 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
 
         //
         bool isDevcie = true;
-        int id = this->opts->deviceId;
+        uint32_t id = this->opts->deviceId;
 
         //std::cout << "--GangDebug--id=" << id << std::endl;
-        if (this->opts->groupId != -1) {
+        if (this->opts->groupId != 0) {
             isDevcie = false;
             id = this->opts->groupId;
         }
@@ -248,7 +248,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         return json;
     }
     if (this->opts->remove) {
-        if (this->opts->deviceId == -1 && this->opts->groupId == -1) {
+        if (this->opts->deviceId == -1 && this->opts->groupId == 0) {
             // (*json)["error"] = "Too many operation flags";
             // return json;
             (*json)["is_success"] = false;
@@ -258,8 +258,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
 
         //
         bool isDevcie = true;
-        int id = this->opts->deviceId;
-        if (this->opts->groupId != -1) {
+        uint32_t id = this->opts->deviceId;
+        if (this->opts->groupId != 0) {
             isDevcie = false;
             id = this->opts->groupId;
         }

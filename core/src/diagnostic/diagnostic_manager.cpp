@@ -28,24 +28,29 @@ DiagnosticManager::~DiagnosticManager() {
 }
 
 void DiagnosticManager::init() {
-    std::string service_file_name = "/lib/systemd/system/xpum.service";
-    std::ifstream service_file(service_file_name);
-    if (service_file.is_open()) {
-        std::string line;
-        while (getline(service_file, line)) {
-            if (line.find("ExecStart=") != std::string::npos) {
-                auto lpos = line.find("=");
-                auto rpos = line.find(" ");
-                if (rpos == std::string::npos) {
-                    XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1);
-                } else {
-                    XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1, rpos - lpos - 1);
+    std::vector<std::string> service_file_names = {"/lib/systemd/system/xpum.service",
+                                                "/etc/systemd/system/xpum.service"};
+    for (auto service_file_name : service_file_names) {
+        std::ifstream service_file(service_file_name);
+        if (service_file.is_open()) {
+            std::string line;
+            while (getline(service_file, line)) {
+                if (line.find("ExecStart=") != std::string::npos) {
+                    auto lpos = line.find("=");
+                    auto rpos = line.find(" ");
+                    if (rpos == std::string::npos) {
+                        XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1);
+                    } else {
+                        XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1, rpos - lpos - 1);
+                    }
+                    break;
                 }
             }
         }
     }
     if (XPUM_DAEMON_INSTALL_PATH.empty()) {
-        XPUM_LOG_ERROR("couldn't find xpum install path in service file: {}", service_file_name);
+        XPUM_LOG_ERROR("couldn't find xpum install path in service file: {} and {}",
+                    service_file_names.front(), service_file_names.back());
     }
 }
 
@@ -57,6 +62,7 @@ std::map<ze_device_handle_t, std::string> DiagnosticManager::device_names;
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_PATH = "/usr/share/mfx/samples/";
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_DECODE_FILE = "test_stream.264";
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_ENCODE_FILE = "test_stream_176x96.yuv";
+int DiagnosticManager::ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = 600;
 std::string DiagnosticManager::XPUM_DAEMON_INSTALL_PATH;
 
 void DiagnosticManager::readConfigFile() {
@@ -91,6 +97,12 @@ void DiagnosticManager::readConfigFile() {
                 MEDIA_CODER_TOOLS_DECODE_FILE = value;
             } else if (name == "MEDIA_CODER_TOOLS_ENCODE_FILE") {
                 MEDIA_CODER_TOOLS_ENCODE_FILE = value;
+            } else if (name == "ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT") {
+                try {
+                    int val = std::stoi(value);
+                    if (val > 0)
+                        ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = val;
+                } catch(...) { }
             } else if (name == "NAME") {
                 current_device = value;
             } else {
@@ -375,13 +387,16 @@ void DiagnosticManager::doDeviceDiagnosticEnvironmentVariables(std::shared_ptr<x
     updateMessage(component1.message, std::string("Running"));
     std::vector<std::string> check_env_varibles;
     check_env_varibles.push_back(std::string("ZES_ENABLE_SYSMAN"));
-    check_env_varibles.push_back(std::string("ZET_ENABLE_METRICS"));
+    if (std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
+                    [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
+        check_env_varibles.push_back(std::string("ZET_ENABLE_METRICS"));
+    }
 
-    bool find_env_varibles = false;
+    bool find_env_varibles = true;
     for (auto it = check_env_varibles.begin(); it != check_env_varibles.end(); it++) {
         std::string check_env_var = *it;
-        if (std::getenv(check_env_var.c_str()) != nullptr) {
-            find_env_varibles = true;
+        if (std::getenv(check_env_var.c_str()) == nullptr) {
+            find_env_varibles = false;
             details = check_env_var;
             break;
         }
@@ -544,32 +559,33 @@ void DiagnosticManager::doDeviceDiagnosticHardwareSysman(const zes_device_handle
     p_task_info->count += 1;
     updateMessage(component.message, std::string("Running"));
     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
-    uint32_t test_suite_count = 0;
-    ze_result_t res;
+    // disable hardware diagnostics due to instability
+    // uint32_t test_suite_count = 0;
+    // ze_result_t res;
     bool find_test_suite = false;
     bool pass_test_suite = true;
-    XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumDiagnosticTestSuites(zes_device, &test_suite_count, nullptr));
-    if (res != ZE_RESULT_SUCCESS) {
-        throw BaseException("zesDeviceEnumDiagnosticTestSuites()");
-    }
-    if (test_suite_count > 0) {
-        find_test_suite = true;
-        std::vector<zes_diag_handle_t> test_suites(test_suite_count);
-        XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumDiagnosticTestSuites(zes_device, &test_suite_count, test_suites.data()));
-        if (res != ZE_RESULT_SUCCESS) {
-            throw BaseException("zesDeviceEnumDiagnosticTestSuites()");
-        }
-        for (auto &test_suite : test_suites) {
-            zes_diag_result_t result;
-            XPUM_ZE_HANDLE_LOCK(test_suite, res = zesDiagnosticsRunTests(test_suite, ZES_DIAG_FIRST_TEST_INDEX, ZES_DIAG_LAST_TEST_INDEX, &result));
-            if (res == ZE_RESULT_SUCCESS) {
-                if (result != zes_diag_result_t::ZES_DIAG_RESULT_NO_ERRORS) {
-                    pass_test_suite = false;
-                    break;
-                }
-            }
-        }
-    }
+    // XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumDiagnosticTestSuites(zes_device, &test_suite_count, nullptr));
+    // if (res != ZE_RESULT_SUCCESS) {
+    //     throw BaseException("zesDeviceEnumDiagnosticTestSuites()");
+    // }
+    // if (test_suite_count > 0) {
+    //     find_test_suite = true;
+    //     std::vector<zes_diag_handle_t> test_suites(test_suite_count);
+    //     XPUM_ZE_HANDLE_LOCK(zes_device, res = zesDeviceEnumDiagnosticTestSuites(zes_device, &test_suite_count, test_suites.data()));
+    //     if (res != ZE_RESULT_SUCCESS) {
+    //         throw BaseException("zesDeviceEnumDiagnosticTestSuites()");
+    //     }
+    //     for (auto &test_suite : test_suites) {
+    //         zes_diag_result_t result;
+    //         XPUM_ZE_HANDLE_LOCK(test_suite, res = zesDiagnosticsRunTests(test_suite, ZES_DIAG_FIRST_TEST_INDEX, ZES_DIAG_LAST_TEST_INDEX, &result));
+    //         if (res == ZE_RESULT_SUCCESS) {
+    //             if (result != zes_diag_result_t::ZES_DIAG_RESULT_NO_ERRORS) {
+    //                 pass_test_suite = false;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    // }
     if (find_test_suite == true && pass_test_suite == true) {
         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
         updateMessage(component.message, std::string("Pass to do hardware sysman diagnostics."));
@@ -643,7 +659,7 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
             std::string result_decode = getCommandResult(command_decode);
 
             std::string encodefileName = mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_ENCODE_FILE;
-            std::string encode_output_file_name = mediadata_folder + std::string("encode.output");
+            std::string encode_output_file_name = "/tmp/" + device_path.substr(device_path.rfind('/') + 1) + "_encode_latest_result.out";
             std::string command_encode = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_encode h264 -device " + device_path +
                                          " -hw -i " + encodefileName + " -w 176 -h 96 -u quality -cqp -qpi 32 -qpp 32 -qpb 32 -async 1 -vaapi -o " + encode_output_file_name + " 2>&1";
             XPUM_LOG_INFO(command_encode);
@@ -816,7 +832,7 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &
                     if (ret != ZE_RESULT_SUCCESS) {
                         throw BaseException("zeCommandQueueExecuteCommandLists()");
                     }
-                    waitForCommandQueueSynchronize(command_queue, "Error in XPUM_DIAG_INTEGRATION_PCIE: zeCommandQueueSynchronize");
+                    waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
                 }
                 time_end = std::chrono::high_resolution_clock::now();
                 total_time_nsec = std::chrono::duration<long double, std::chrono::nanoseconds::period>(time_end - time_start).count();
@@ -938,19 +954,19 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
             for (auto &memory_type : memory_types) {
                 if (!pass_test)
                     continue;
-                ze_context_desc_t context_desc = {};
-                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
-                ze_context_handle_t context;
-                XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeContextCreate()");
-                }
                 ze_device_properties_t device_properties;
                 device_properties.pNext = nullptr;
                 device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeDeviceGetProperties(ze_device, &device_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetProperties()");
+                }
+                ze_context_desc_t context_desc = {};
+                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                ze_context_handle_t context;
+                XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeContextCreate()");
                 }
                 uint64_t max_allocation_size = workgroup_size_x_ * (device_properties.maxMemAllocSize / workgroup_size_x_) * memory_use;
                 uint64_t one_case_requested_allocation_size = allocate_size * number_of_kernel_args_;
@@ -961,8 +977,10 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
 
                 std::size_t one_case_allocation_count = one_case_requested_allocation_size / (number_of_kernel_args_ * sizeof(uint8_t));
                 std::uint64_t number_of_dispatch = max_allocation_size / one_case_requested_allocation_size;
-                // Turn down number_of_dispatch and allocate_size to support unstable PVC
-                if (device_names.find(ze_device) != device_names.end() && device_names[ze_device].find("0x0bd5") != std::string::npos) {
+                // Turn down number_of_dispatch and allocate_size to support unstable PVC and DUAL-ATSM3
+                if (device_names.find(ze_device) != device_names.end() 
+                    && (device_names[ze_device].find("0x0bd5") != std::string::npos
+                        || device_names[ze_device].find("0x56c1") != std::string::npos)) {
                     if (allocate_size == one_GB) {
                         continue;
                     }
@@ -1383,6 +1401,19 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 struct ZeWorkGroups workgroup_info;
                 float input_value = 1.3f;
 
+                ze_device_properties_t device_properties;
+                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeDeviceGetProperties()");
+                }
+
+                ze_device_compute_properties_t device_compute_properties;
+                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeDeviceGetComputeProperties()");
+                }
                 ze_context_handle_t context;
                 ze_context_desc_t context_desc = {};
                 context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
@@ -1402,18 +1433,6 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeModuleCreate(context, device_handles[i], &module_description, &module_handle, nullptr));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeModuleCreate()");
-                }
-                ze_device_properties_t device_properties;
-                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeDeviceGetProperties()");
-                }
-                ze_device_compute_properties_t device_compute_properties;
-                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeDeviceGetComputeProperties()");
                 }
                 uint64_t max_work_items = device_properties.numSlices *
                                           device_properties.numSubslicesPerSlice *
@@ -1791,7 +1810,7 @@ std::string DiagnosticManager::roundDouble(double r, int precision) {
 
 void DiagnosticManager::waitForCommandQueueSynchronize(ze_command_queue_handle_t command_queue, std::string info) {
     ze_result_t ret;
-    int command_queue_synchronize_maximum_round = 600;
+    int command_queue_synchronize_maximum_round = ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
     int command_queue_synchronize_step_duration = 1; //seconds
     ret = zeCommandQueueSynchronize(command_queue, 100 * 1000);
     int current_round = 0;
@@ -1849,6 +1868,18 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 long double timed_lo, timed_go, timed, gbps;
                 struct ZeWorkGroups workgroup_info;
                 uint64_t temp_global_size;
+                ze_device_properties_t device_properties;
+                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeDeviceGetProperties()");
+                }
+                ze_device_compute_properties_t device_compute_properties;
+                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeDeviceGetComputeProperties()");
+                }
                 ze_context_handle_t context;
                 ze_context_desc_t context_desc = {};
                 context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
@@ -1868,18 +1899,6 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeModuleCreate(context, device_handles[i], &module_description, &module_handle, nullptr));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeModuleCreate()");
-                }
-                ze_device_properties_t device_properties;
-                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeDeviceGetProperties()");
-                }
-                ze_device_compute_properties_t device_compute_properties;
-                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw BaseException("zeDeviceGetComputeProperties()");
                 }
                 uint64_t max_items = device_properties.maxMemAllocSize / sizeof(float) / 2;
                 uint64_t num_items = std::min(max_items, (uint64_t)(1 << 29));
@@ -1951,7 +1970,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeCommandQueueExecuteCommandLists()");
                 }
-                waitForCommandQueueSynchronize(command_queue, "Error in XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH: zeCommandQueueSynchronize()");
+                waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
                 ret = zeCommandListReset(command_list);
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeCommandListReset()");

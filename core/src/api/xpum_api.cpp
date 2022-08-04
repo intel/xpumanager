@@ -13,6 +13,7 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <dlfcn.h>
 
 #include "api_types.h"
 #include "core/core.h"
@@ -21,10 +22,12 @@
 #include "device/power.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_process.h"
+#include "infrastructure/device_util_by_proc.h"
 #include "infrastructure/device_property.h"
 #include "infrastructure/exception/level_zero_initialization_exception.h"
 #include "infrastructure/version.h"
 #include "internal_api.h"
+#include "ext-include/igsc_lib.h"
 
 namespace xpum {
 
@@ -50,12 +53,18 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "PCIE_GENERATION";
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
             return "PCIE_MAX_LINK_WIDTH";
+        case XPUM_DEVICE_PROPERTY_DEVICE_STEPPING:
+            return "DEVICE_STEPPING";
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
             return "DRIVER_VERSION";
         case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
             return "FIRMWARE_NAME";
         case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
             return "FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME:
+            return "FW_DATA_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION:
+            return "FW_DATA_FIRMWARE_VERSION";
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return "SERIAL_NUMBER";
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
@@ -74,6 +83,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "MAX_HARDWARE_CONTEXTS";
         case XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY:
             return "MAX_COMMAND_QUEUE_PRIORITY";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS:
+            return "NUMBER_OF_EUS";
         case XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES:
             return "NUMBER_OF_TILES";
         case XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES:
@@ -86,6 +97,10 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "NUMBER_OF_THREADS_PER_EU";
         case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
             return "PHYSICAL_EU_SIMD_WIDTH";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENGINES:
+            return "NUMBER_OF_MEDIA_ENGINES";
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENH_ENGINES:
+            return "NUMBER_OF_MEDIA_ENH_ENGINES";
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
             return "NUMBER_OF_FABRIC_PORTS";
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED:
@@ -358,33 +373,6 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
     return XPUM_OK;
 }
 
-static const std::string gfxPath{"/usr/local/bin/GfxFwFPT"};
-
-static bool detectGfxTool() {
-    if (FILE *file = fopen(gfxPath.c_str(), "r")) {
-        fclose(file);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-static xpum_result_t runFirmwareFlash(std::shared_ptr<Device> device, xpum_firmware_flash_job *job) {
-    if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
-    }
-
-    xpum_result_t rc = XPUM_GENERIC_ERROR;
-    if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
-        if (!detectGfxTool()) {
-            XPUM_LOG_INFO("flash tool not exists");
-            return XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND;
-        }
-        rc = device->runFirmwareFlash(job->filePath, gfxPath);
-    }
-
-    return rc;
-}
 
 static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
     if (job->filePath == nullptr)
@@ -457,8 +445,12 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
                 return res;
-            std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-            return runFirmwareFlash(device, job);
+            return Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath);
+        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_FW_DATA) {
+            res = validateDeviceId(deviceId);
+            if (res != XPUM_OK)
+                return res;
+            return Core::instance().getFirmwareManager()->runFwDataFlash(deviceId, job->filePath);
         } else {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         }
@@ -475,10 +467,8 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
-        auto res = Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult();
-        result->deviceId = deviceId;
-        result->type = XPUM_DEVICE_FIRMWARE_GSC;
-        result->result = res;
+        Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result);
+        
         return XPUM_OK;
     }
 
@@ -486,16 +476,16 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
     }
 
-    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (device == nullptr) {
+    xpum_result_t res = validateDeviceId(deviceId);
+    if (res != XPUM_OK)
+        return res;
+
+    if (firmwareType == XPUM_DEVICE_FIRMWARE_GSC)
+        Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
+    else if (firmwareType == XPUM_DEVICE_FIRMWARE_FW_DATA)
+        Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result);
+    else
         return XPUM_GENERIC_ERROR;
-    }
-
-    xpum_firmware_flash_result_t res = device->getFirmwareFlashResult(firmwareType);
-
-    result->deviceId = deviceId;
-    result->type = XPUM_DEVICE_FIRMWARE_GSC;
-    result->result = res;
 
     return XPUM_OK;
 }
@@ -526,12 +516,18 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION;
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH;
+        case XPUM_DEVICE_PROPERTY_DEVICE_STEPPING:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING;
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION;
         case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
             return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME;
         case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION;
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER;
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
@@ -550,6 +546,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX_HARDWARE_CONTEXTS;
         case XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY:
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX_COMMAND_QUEUE_PRIORITY;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS;
         case XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES:
             return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES;
         case XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES:
@@ -562,6 +560,10 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_THREADS_PER_EU;
         case XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PHYSICAL_EU_SIMD_WIDTH;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENGINES:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES;
+        case XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENH_ENGINES:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES;
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_NUMBER;
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED:
@@ -1489,6 +1491,18 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
 
+    Property prop;
+    int32_t default_maxLimit = -1;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, prop);
+
+    if (Utility::isATSM1(prop.getValue())) {
+        default_maxLimit = 120 *1000;
+    }
+
+    if (Utility::isATSM3(prop.getValue())) {
+        default_maxLimit = 23 *1000;
+    }
+
     std::vector<Power> powers;
     Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
 
@@ -1506,7 +1520,12 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
             dataArray[i].is_energy_threshold_supported = power.isEnergyThresholdSupported();
             dataArray[i].default_limit = power.getDefaultLimit();
             dataArray[i].min_limit = power.getMinLimit();
-            dataArray[i].max_limit = power.getMaxLimit();
+            if (power.getMaxLimit() == -1) {
+                dataArray[i].max_limit = default_maxLimit;
+            } else {
+                dataArray[i].max_limit = power.getMaxLimit();
+            }
+            
             i++;
         }
     }
@@ -1590,18 +1609,36 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
     }
     return XPUM_GENERIC_ERROR;
 }
-/*
+/**
+ * @brief Reset the device
+ * @details This function is used to reset the device
+ *
+ * @param deviceId          IN: The device Id
+ * @param force             IN: force to reset the device or not
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_UPDATE_FIRMWARE_TASK_RUNNING    if device is updating firmware
+ */
+//xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
+
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
         return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
+    if (device->isUpgradingFw()) {
+        return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
+    if (Core::instance().getFirmwareManager()->isUpgradingFw()) {
+        return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
+
     if (Core::instance().getDeviceManager()->resetDevice(std::to_string(deviceId), force)) {
         return XPUM_OK;
     }
     return XPUM_GENERIC_ERROR;
 }
-*/
+
 xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t tileId, double *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -1666,6 +1703,101 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_p
     }
     return XPUM_OK;
 }
+
+xpum_result_t xpumGetDeviceUtilizationByProcess(xpum_device_id_t deviceId,
+        uint32_t utilInterval, xpum_device_util_by_process_t dataArray[],
+        uint32_t *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    std::shared_ptr<Device> device =
+        Core::instance().getDeviceManager()->getDevice(
+                std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    if (utilInterval == 0 || utilInterval > 1000 * 1000) {
+        return XPUM_INTERVAL_INVALID;
+    }
+    if (dataArray == nullptr || count == nullptr || *count <= 0) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    std::vector<std::vector<device_util_by_proc>> utils;
+    Core::instance().getDeviceManager()->getDeviceUtilByProcess(
+            std::to_string(deviceId), utilInterval, utils);
+    uint32_t i = 0;
+    auto iter = utils.begin();
+    while (iter != utils.end()) {
+        for (auto &util : *iter) {
+            dataArray[i].processId = util.getProcessId();
+            dataArray[i].deviceId = util.getDeviceId();
+            dataArray[i].memSize = util.getMemSize();
+            dataArray[i].sharedMemSize = util.getSharedMemSize();
+            strncpy(dataArray[i].processName, util.getProcessName().c_str(),
+                    util.getProcessName().length() + 1);
+            dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
+            dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
+            dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
+            dataArray[i].mediaEngineUtil = util.getMediaEnigineUtil();
+            dataArray[i].mediaEnhancementUtil = util.getMediaEnhancementUtil();
+            i++;
+            if (i >= *count) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+        }
+        iter++;
+    }
+    *count = i;
+    return XPUM_OK;
+}
+
+xpum_result_t xpumGetAllDeviceUtilizationByProcess(uint32_t utilInterval, 
+        xpum_device_util_by_process_t dataArray[], 
+        uint32_t *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (utilInterval == 0 || utilInterval > 1000 * 1000) {
+        return XPUM_INTERVAL_INVALID;
+    }
+
+    if (dataArray == nullptr || count == nullptr || *count <= 0) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    std::vector<std::vector<device_util_by_proc>> utils;
+    Core::instance().getDeviceManager()->getDeviceUtilByProcess(
+            "", utilInterval, utils);
+    uint32_t i = 0;
+    auto iter = utils.begin();
+    while (iter != utils.end()) {
+        for (auto &util : *iter) {
+            dataArray[i].processId = util.getProcessId();
+            dataArray[i].deviceId = util.getDeviceId();
+            dataArray[i].memSize = util.getMemSize();
+            dataArray[i].sharedMemSize = util.getSharedMemSize();
+            strncpy(dataArray[i].processName, util.getProcessName().c_str(),
+                    util.getProcessName().length() + 1);
+            dataArray[i].renderingEngineUtil = util.getRenderingEngineUtil();
+            dataArray[i].computeEngineUtil = util.getComputeEngineUtil();
+            dataArray[i].copyEngineUtil = util.getCopyEngineUtil();
+            dataArray[i].mediaEngineUtil = util.getMediaEnigineUtil();
+            dataArray[i].mediaEnhancementUtil = util.getMediaEnhancementUtil();
+            i++;
+            if (i >= *count) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+        }
+        iter++;
+    }
+    *count = i;
+    return XPUM_OK;
+}
+
 xpum_result_t xpumGetPerformanceFactor(xpum_device_id_t deviceId, xpum_device_performancefactor_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -1802,14 +1934,126 @@ xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
     }
     return XPUM_GENERIC_ERROR;
 }
-/*
+
+bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur, uint8_t* pen) {
+    const std::string str_igscLibPath{"libigsc.so"};
+    const std::string str_igscDeviceInit{"igsc_device_init_by_device"};
+    const std::string str_igscDeviceClose{"igsc_device_close"};
+    const std::string str_igscDeviceMemEccSet2{"igsc_ecc_config_set"};
+    const std::string str_igscDeviceMemEccGet2{"igsc_ecc_config_get"};
+
+    void *handle = NULL;
+    char *error;
+    struct igsc_device_handle igsc_handle;
+    uint8_t cur_ecc_state = *cur = 0xFF;
+    uint8_t pen_ecc_state = *pen = 0xFF;
+    int ret;
+    bool result = false;
+    bool device_handle_inited = false;
+    memset(&igsc_handle, 0, sizeof(igsc_handle));
+
+    int (*igsc_device_init) (struct igsc_device_handle *handle, const char *device_path);
+    int (*igsc_device_close) (struct igsc_device_handle *handle);
+    int (*igsc_device_mem_ecc_set) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state);
+    int (*igsc_device_mem_ecc_get) (struct igsc_device_handle *handle, uint8_t* cur_state, uint8_t* pen_state);
+
+    handle = dlopen(str_igscLibPath.c_str(), RTLD_LAZY);
+    if (!handle) {
+        XPUM_LOG_WARN("XPUM can't load igsc library.");
+        goto out;
+    }
+
+    dlerror();
+
+    igsc_device_close = (int (*) (struct igsc_device_handle *handle)) dlsym(handle, str_igscDeviceClose.c_str());
+    error = dlerror();
+    if (error || igsc_device_close == NULL) {
+        XPUM_LOG_WARN("XPUM can't load find igsc_device_close.");
+        //goto out;
+    }
+
+    igsc_device_init = (int (*) (struct igsc_device_handle *handle, const char *device_path)) dlsym(handle, str_igscDeviceInit.c_str());
+    error = dlerror();
+    if (error || igsc_device_init == NULL) {
+        XPUM_LOG_WARN("XPUM can't load find igsc_device_init_by_device.");
+        //goto out;
+    }
+
+    igsc_device_mem_ecc_set = (int (*) (struct igsc_device_handle *handle, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccSet2.c_str());
+    error = dlerror();
+    if (error || igsc_device_mem_ecc_set == NULL) {
+        XPUM_LOG_WARN("XPUM can't load find igsc_ecc_config_set.");
+        *cur = 0x02; //can't find the interface, the library is too old.
+        *pen = 0x02; //can't find the interface, the library is too old.
+        goto out;
+    }
+
+    igsc_device_mem_ecc_get = (int (*) (struct igsc_device_handle *handle, uint8_t* cur_state, uint8_t* pen_state)) dlsym(handle, str_igscDeviceMemEccGet2.c_str());
+    error = dlerror();
+    if (error || igsc_device_mem_ecc_get == NULL) {
+        XPUM_LOG_WARN("XPUM can't load find igsc_ecc_config_get.");
+        *cur = 0x02; //can't find the interface, the library is too old.
+        *pen = 0x02; //can't find the interface, the library is too old.
+        goto out;
+    }
+
+    ret = (igsc_device_init)(&igsc_handle, path.c_str());
+    if (ret) {
+        XPUM_LOG_WARN("XPUM call igsc_device_init_by_device failed {}", ret);
+        goto out;
+    }
+    device_handle_inited = true;
+
+    if(getting) {
+        ret = (igsc_device_mem_ecc_get)(&igsc_handle, &cur_ecc_state, &pen_ecc_state);
+        if (ret) {
+            XPUM_LOG_WARN("XPUM call igsc_ecc_config_get failed {}", ret);
+            goto out;
+        }else {
+            *cur = cur_ecc_state;
+            *pen = pen_ecc_state;
+            result = true;
+        }
+    }else {
+        ret = (igsc_device_mem_ecc_set)(&igsc_handle, req, &cur_ecc_state, &pen_ecc_state);
+        if (ret) {
+            XPUM_LOG_WARN("XPUM call igsc_ecc_config_set failed {}", ret);
+            goto out;
+        }else {
+            *cur = cur_ecc_state;
+            *pen = pen_ecc_state;
+            result = true;
+        }
+    }
+
+    out:
+    if (device_handle_inited && igsc_device_close != NULL) {
+        ret = (igsc_device_close)(&igsc_handle);
+        if (ret) {
+            XPUM_LOG_WARN("XPUM call igsc_device_close failed {}", ret);
+            result = false;
+        }
+    }
+    if (handle != NULL) {
+        dlclose(handle);
+        error = dlerror();
+        if (error) {
+            XPUM_LOG_WARN("XPUM can't close igsc library.");
+            return false;
+        }
+    }
+    return result;
+}
+
 xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* configurable,
         xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action) {
     *available = false;
     *configurable = false;
     *current = XPUM_ECC_STATE_UNAVAILABLE;
     *pending = XPUM_ECC_STATE_UNAVAILABLE;
-    *action = XPUM_ECC_ACTION_NONE; 
+    *action = XPUM_ECC_ACTION_NONE;
+    uint8_t cur;
+    uint8_t pen;
 
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
@@ -1820,7 +2064,43 @@ xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* 
     if (res != XPUM_OK) {
         return res;
     }
-    
+
+    std::string meiPath = device->getMeiDevicePath();
+    //XPUM_LOG_INFO("XPUM meiPath {}", meiPath);
+
+    if (callIgscMemoryEcc( meiPath, true, 0, &cur, &pen) == true) {
+        *available = true;
+        *configurable = true;
+        if(cur == 0x00) {
+            *current = XPUM_ECC_STATE_DISABLED;
+        }else if (cur == 0x01) {
+            *current = XPUM_ECC_STATE_ENABLED;
+        } else {
+            *current = XPUM_ECC_STATE_UNAVAILABLE;
+        }
+
+        if(pen == 0x00) {
+            *pending = XPUM_ECC_STATE_DISABLED;
+        }else if (pen == 0x01) {
+            *pending = XPUM_ECC_STATE_ENABLED;
+        } else {
+            *pending = XPUM_ECC_STATE_UNAVAILABLE;
+        }
+        if (cur != pen) {
+           *action = XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT;
+        } else {
+           *action = XPUM_ECC_ACTION_NONE;
+        }
+        return XPUM_OK;
+    } else {
+        if (cur == 0x02 || pen == 0x02) {
+            return XPUM_RESULT_MEMORY_ECC_LIB_NOT_SUPPORT;
+        } else {
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+
+#if 0    
     MemoryEcc* ecc = new MemoryEcc();
     if (Core::instance().getDeviceManager()->getEccState(std::to_string(deviceId), *ecc)) {
         *available = ecc->getAvailable();
@@ -1831,6 +2111,7 @@ xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* 
         return XPUM_OK;
     }
     return XPUM_GENERIC_ERROR;
+#endif
 }
 
 xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newState, bool* available, bool* configurable,
@@ -1839,7 +2120,10 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
     *configurable = false;
     *current = XPUM_ECC_STATE_UNAVAILABLE;
     *pending = XPUM_ECC_STATE_UNAVAILABLE;
-    *action = XPUM_ECC_ACTION_NONE; 
+    *action = XPUM_ECC_ACTION_NONE;
+    uint8_t cur;
+    uint8_t pen;
+    uint8_t req;
 
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
@@ -1850,6 +2134,50 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
     if (res != XPUM_OK) {
         return res;
     }
+
+    std::string meiPath = device->getMeiDevicePath();
+
+    if(newState == XPUM_ECC_STATE_ENABLED) {
+        req = 1;
+    } else if (newState == XPUM_ECC_STATE_DISABLED){
+        req = 0;
+    } else {
+        return XPUM_GENERIC_ERROR;
+    }
+
+    if (callIgscMemoryEcc( meiPath, false, req, &cur, &pen) == true) {
+        *available = true;
+        *configurable = true;
+        if(cur == 0x00) {
+            *current = XPUM_ECC_STATE_DISABLED;
+        }else if (cur == 0x01) {
+            *current = XPUM_ECC_STATE_ENABLED;
+        } else {
+            *current = XPUM_ECC_STATE_UNAVAILABLE;
+        }
+
+        if(pen == 0x00) {
+            *pending = XPUM_ECC_STATE_DISABLED;
+        }else if (pen == 0x01) {
+            *pending = XPUM_ECC_STATE_ENABLED;
+        } else {
+            *pending = XPUM_ECC_STATE_UNAVAILABLE;
+        }
+        if (cur != pen) {
+           *action = XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT;
+        } else {
+           *action = XPUM_ECC_ACTION_NONE;
+        }
+         return XPUM_OK;     
+    } else {
+        if (cur == 0x02 || pen == 0x02) {
+            return XPUM_RESULT_MEMORY_ECC_LIB_NOT_SUPPORT;
+        } else {
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+
+#if 0
     ecc_state_t newSt = (ecc_state_t)(newState);
 
     MemoryEcc* ecc = new MemoryEcc();
@@ -1862,8 +2190,9 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
         return XPUM_OK;
     }
     return XPUM_GENERIC_ERROR;
+#endif
 }
-*/
+
 ///////////////////Policy//////////////////////
 xpum_result_t xpumSetPolicy(xpum_device_id_t deviceId, xpum_policy_t policy) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();

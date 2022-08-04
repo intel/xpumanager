@@ -79,7 +79,7 @@ std::string getScaledValue(uint64_t value, uint32_t scale) {
     if (scale == 1) {
         return std::to_string(value);
     } else {
-        double v = value / scale;
+        double v = value / (double)scale;
         return keepTwoDecimalPrecision(v);
     }
 }
@@ -141,7 +141,7 @@ void DumpRawDataTask::buildColumns() {
                                       if (it != m.end()) {
                                           auto data = it->second;
                                           if (dc.lastTimestamp != data.timestamp) {
-                                              value = getScaledValue(data.value, data.scale);
+                                              value = getScaledValue(data.value, data.scale * config.scale);
                                           }
                                           dc.lastTimestamp = data.timestamp;
                                       }
@@ -157,7 +157,7 @@ void DumpRawDataTask::buildColumns() {
                 for (int engineIdx = 0; engineIdx < ecByType.count; engineIdx++) {
                     std::string header = engineNameMap[config.engineType] + " " + std::to_string(engineIdx) + " (%)";
                     columnList.push_back({header,
-                                          [engineType, engineIdx, p_this]() {
+                                          [engineType, engineIdx, p_this, config]() {
                                               auto& m = p_this->engineUtilRawDataMap;
                                               auto it = m.find(engineType);
                                               std::string value;
@@ -170,7 +170,7 @@ void DumpRawDataTask::buildColumns() {
                                                   return value;
                                               }
                                               auto& data = it2->second;
-                                              return getScaledValue(data.value, data.scale);
+                                              return getScaledValue(data.value, data.scale * config.scale);
                                           }});
                 }
             }
@@ -193,7 +193,7 @@ void DumpRawDataTask::buildColumns() {
                                               return value;
                                           }
                                           auto& data = it->second;
-                                          return getScaledValue(data.value, data.scale);
+                                          return getScaledValue(data.value, data.scale * config.scale);
                                       }});
                 // rx
                 ss.str("");

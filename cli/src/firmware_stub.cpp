@@ -18,15 +18,20 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     request.mutable_type()->set_value(type);
     request.set_path(filePath);
 
-    GeneralEnum response;
+    XpumFirmwareFlashJobResponse response;
     grpc::Status status = stub->runFirmwareFlash(&context, request, &response);
 
     if (!status.ok()) {
-        (*json)["error"] = "Failed to run firmware flash";
+        (*json)["error"] = status.error_message();
         return json;
     }
 
-    xpum_result_t code = (xpum_result_t)response.value();
+    if (response.errormsg().length() > 0) {
+        (*json)["error"] = response.errormsg();
+        return json;
+    }
+
+    xpum_result_t code = (xpum_result_t)response.type().value();
 
     switch (code) {
         case xpum_result_t::XPUM_OK:
@@ -44,20 +49,29 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND:
             (*json)["error"] = "Firmware image not found.";
             return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND:
-            (*json)["error"] = "Please get GfxFwFPT tool from Intel and put it into the folder /usr/local/bin.";
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND:
+            (*json)["error"] = "Igsc tool doesn't exit";
             return json;
         case xpum_result_t::XPUM_RESULT_DEVICE_NOT_FOUND:
             (*json)["error"] = "Device not found.";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL:
-            (*json)["error"] = "Updating GSC firmware on all devices is not supported";
+            if (type == XPUM_DEVICE_FIRMWARE_GSC)
+                (*json)["error"] = "Updating GSC firmware on all devices is not supported";
+            else
+                (*json)["error"] = "Updating GSC_DATA firmware on all devices is not supported";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE:
             (*json)["error"] = "Updating AMC firmware on single device is not supported";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING:
             (*json)["error"] = "Firmware update task already running.";
+            return json;
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE:
+            (*json)["error"] = "The image file is not a right FW image file.";
+            return json;
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE:
+            (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
             return json;
         default:
             (*json)["error"] = "Unknown error.";
@@ -76,8 +90,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, u
     XpumFirmwareFlashTaskResult res;
     auto status = stub->getFirmwareFlashResult(&ct, rq, &res);
 
-    if (!status.ok() || res.errormsg().length() != 0) {
-        (*json)["error"] = "Failed to get firmware reuslt";
+    if (!status.ok()) {
+        (*json)["error"] = status.error_message();
+    }
+
+    if (res.errormsg().length() != 0) {
+        (*json)["error"] = res.errormsg();
         return json;
     }
 

@@ -8,11 +8,11 @@
 
 namespace xpum::daemon {
 
-::grpc::Status XpumCoreServiceImpl::runFirmwareFlash(::grpc::ServerContext* context, const ::XpumFirmwareFlashJob* request, ::GeneralEnum* response) {
+::grpc::Status XpumCoreServiceImpl::runFirmwareFlash(::grpc::ServerContext* context, const ::XpumFirmwareFlashJob* request, ::XpumFirmwareFlashJobResponse* response) {
     xpum_firmware_flash_job job;
     job.type = (xpum_firmware_type_enum)request->type().value();
     job.filePath = request->path().c_str();
-    response->set_value(xpumRunFirmwareFlash(request->id().id(), &job));
+    response->mutable_type()->set_value(xpumRunFirmwareFlash(request->id().id(), &job));
 
     return grpc::Status::OK;
 }

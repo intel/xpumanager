@@ -277,6 +277,11 @@ message XpumFirmwareFlashJob {
     string path = 3;
 }
 
+message XpumFirmwareFlashJobResponse {
+    GeneralEnum type = 1;
+    string errorMsg = 2;
+}
+
 message XpumFirmwareFlashTaskRequest {
     DeviceId id = 1;
     GeneralEnum type = 2;
@@ -344,6 +349,34 @@ message DeviceProcessState{
 message DeviceProcessStateResponse{
     uint32 count = 1;
     repeated DeviceProcessState processlist = 2;
+    string errorMsg = 3;
+}
+
+message DeviceUtilizationByProcess {
+    uint32 deviceId = 1;
+    uint32 processId = 2;
+    double renderingEngineUtil = 3;
+    double computeEngineUtil = 4;
+    double copyEngineUtil = 5;
+    double mediaEngineUtil = 6;
+    double mediaEnhancementUtil = 7;
+    uint64 memSize = 8;
+    uint64 sharedMemSize = 9;
+    string processName = 10;
+}
+
+message DeviceUtilizationByProcessRequest {
+    uint32 deviceId = 1;
+    uint32 utilizationInterval = 2;
+}
+
+message UtilizationInterval {
+    uint32 utilInterval = 1;
+}
+
+message DeviceUtilizationByProcessResponse {
+    uint32 count = 1;
+    repeated DeviceUtilizationByProcess processList = 2;
     string errorMsg = 3;
 }
 
@@ -734,6 +767,7 @@ message GetFabricCountResponse {
     bool isTileLevel = 1;
     int32 tileId = 2;
     repeated FabricCountInfo fabricCountList= 3;
+    string errorMsg = 4;
 }
 
 /* services */
@@ -767,13 +801,15 @@ service XpumCoreService {
     rpc getStatisticsByGroup( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );
     rpc getStatisticsNotForPrometheus( XpumGetStatsRequest ) returns ( XpumGetStatsResponse );
     rpc getStatisticsByGroupNotForPrometheus( XpumGetStatsByGroupRequest ) returns ( XpumGetStatsResponse );
-    rpc runFirmwareFlash( XpumFirmwareFlashJob ) returns ( GeneralEnum );
+    rpc runFirmwareFlash( XpumFirmwareFlashJob ) returns ( XpumFirmwareFlashJobResponse );
     rpc getFirmwareFlashResult( XpumFirmwareFlashTaskRequest ) returns ( XpumFirmwareFlashTaskResult );
     rpc getPolicy( GetPolicyRequest ) returns ( GetPolicyResponse );
     rpc setPolicy( SetPolicyRequest ) returns ( SetPolicyResponse );
     rpc readPolicyNotifyData( google.protobuf.Empty ) returns ( stream ReadPolicyNotifyDataResponse );
     rpc getDeviceConfig( ConfigDeviceDataRequest ) returns ( ConfigDeviceData );
     rpc getDeviceProcessState( DeviceId ) returns ( DeviceProcessStateResponse );
+    rpc getDeviceUtilizationByProcess( DeviceUtilizationByProcessRequest ) returns ( DeviceUtilizationByProcessResponse );
+    rpc getAllDeviceUtilizationByProcess( UtilizationInterval ) returns ( DeviceUtilizationByProcessResponse );
     rpc getPerformanceFactor( DeviceDataRequest ) returns ( DevicePerformanceFactorResponse );
     rpc setPerformanceFactor( PerformanceFactor ) returns ( DevicePerformanceFactorSettingResponse );
     rpc resetDevice( ResetDeviceRequest ) returns ( ResetDeviceResponse );

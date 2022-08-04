@@ -14,6 +14,7 @@
 
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/device_process.h"
+#include "infrastructure/device_util_by_proc.h"
 #include "infrastructure/exception/ilegal_parameter_exception.h"
 #include "infrastructure/handle_lock.h"
 #include "infrastructure/logger.h"
@@ -224,6 +225,12 @@ bool DeviceManager::setDeviceFrequencyRange(const std::string& id,
     return GPUDeviceStub::instance().setFrequencyRange(getDeviceHandle(id), freq);
 }
 
+bool DeviceManager::setDeviceFrequencyRangeForAll(const std::string& id,
+                                            const Frequency& freq) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().setFrequencyRangeForAll(getDeviceHandle(id), freq);
+}
+
 void DeviceManager::getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id, std::vector<double>& clocks) {
     std::unique_lock<std::mutex> lock(this->mutex);
     GPUDeviceStub::instance().getFreqAvailableClocks(getDeviceHandle(id), subdevice_id, clocks);
@@ -232,6 +239,24 @@ void DeviceManager::getFreqAvailableClocks(const std::string& id, uint32_t subde
 void DeviceManager::getDeviceProcessState(const std::string& id, std::vector<device_process>& processes) {
     std::unique_lock<std::mutex> lock(this->mutex);
     GPUDeviceStub::instance().getDeviceProcessState(getDeviceHandle(id), processes);
+}
+
+void DeviceManager::getDeviceUtilByProcess(const std::string& id, 
+    uint32_t utilInterval, 
+    std::vector<std::vector<device_util_by_proc>>& utils) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    std::vector<zes_device_handle_t> devices;
+    std::vector<std::string> device_ids;
+    if (id == "") {
+        for (auto& p_device : this->devices) {
+            devices.push_back(p_device->getDeviceHandle());
+            device_ids.push_back(p_device->getId());
+        }
+    } else {
+        devices.push_back(getDeviceHandle(id));
+        device_ids.push_back(id);
+    }
+    GPUDeviceStub::getDeviceUtilByProc(devices, device_ids, utilInterval, utils);
 }
 
 void DeviceManager::getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf) {
@@ -326,6 +351,71 @@ void DeviceManager::discoverFabricLinks() {
                 }
             }
         }
+    }
+}
+
+bool DeviceManager::tryLockDevices(const std::vector<std::string>& deviceList) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    std::vector<std::shared_ptr<Device>> tryLockDeviceList;
+    for (auto deviceId : deviceList) {
+        std::shared_ptr<Device> pDeviceToFind = nullptr;
+        for (auto& p_device : this->devices) {
+            if (deviceId.compare(p_device->getId()) == 0) {
+                pDeviceToFind = p_device;
+                break;
+            }
+        }
+        if (pDeviceToFind)
+            tryLockDeviceList.push_back(pDeviceToFind);
+        else
+            return false;
+    }
+    std::vector<std::shared_ptr<Device>> lockedDeviceList;
+    for (auto p_device : tryLockDeviceList) {
+        if (p_device->try_lock()) {
+            lockedDeviceList.push_back(p_device);
+        } else {
+            for (auto pDeviceToUnlock : lockedDeviceList) {
+                pDeviceToUnlock->unlock();
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
+bool DeviceManager::tryLockDevices(std::vector<std::shared_ptr<Device>>& deviceList) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    std::vector<std::shared_ptr<Device>> lockedDeviceList;
+    for (auto p_device : deviceList) {
+        if (p_device->try_lock()) {
+            lockedDeviceList.push_back(p_device);
+        } else {
+            for (auto pDeviceToUnlock : lockedDeviceList) {
+                pDeviceToUnlock->unlock();
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
+void DeviceManager::unlockDevices(const std::vector<std::string>& deviceList) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    for (auto deviceId : deviceList) {
+        for (auto& p_device : this->devices) {
+            if (deviceId.compare(p_device->getId()) == 0) {
+                p_device->unlock();
+                break;
+            }
+        }
+    }
+}
+
+void DeviceManager::unlockDevices(std::vector<std::shared_ptr<Device>>& deviceList) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    for (auto& p_device : deviceList) {
+        p_device->unlock();
     }
 }
 

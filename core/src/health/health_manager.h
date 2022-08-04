@@ -39,7 +39,13 @@ class HealthManager : public HealthManagerInterface {
     xpum_result_t getHealth(xpum_device_id_t deviceId, xpum_health_type_t type, xpum_health_data_t *data) override;
 
    private:
-    uint64_t getThrottlePower(std::string deviceName);
+    uint64_t getThrottlePower(std::string pciDeviceId);
+
+    uint64_t getThrottleCoreTemperature(std::string pciDeviceId);
+
+    uint64_t getShutdownCoreTemperature(std::string pciDeviceId);
+
+    uint64_t getShutdownMemoryTemperature(std::string pciDeviceId);
 
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
 
@@ -51,7 +57,13 @@ class HealthManager : public HealthManagerInterface {
 
     std::map<xpum_device_id_t, int> p_health_power_configs;
 
-    std::map<std::string, uint64_t> p_health_device_to_tdps;
+    std::map<uint32_t, uint64_t> p_health_device_to_tdps;
+
+    std::map<uint32_t, uint64_t> p_health_device_to_throttle_core_temperatures;
+
+    std::map<uint32_t, uint64_t> p_health_device_to_shutdown_core_temperatures;
+
+    std::map<uint32_t, uint64_t> p_health_device_to_shutdown_memory_temperatures;
 
     std::mutex mutex;
 };

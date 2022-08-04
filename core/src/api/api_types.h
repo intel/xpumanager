@@ -149,9 +149,12 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT,                       ///< PCI slot of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION,                ///< PCIe generation
     XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH,            ///< PCIe max link width
+    XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING,                ///< The stepping of device
     XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION,                 ///< The driver version
     XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME,                  ///< The firmware name of device
     XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION,               ///< The firmware version of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME,           ///< The firmware name of fwdata of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION,        ///< The firmware version of fwdata of device
     XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes
@@ -161,6 +164,7 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_BUS_WIDTH,               ///< Memory bus width
     XPUM_DEVICE_PROPERTY_INTERNAL_MAX_HARDWARE_CONTEXTS,          ///< Maximum number of logical hardware contexts
     XPUM_DEVICE_PROPERTY_INTERNAL_MAX_COMMAND_QUEUE_PRIORITY,     ///< Maximum priority for command queues. Higher value is higher priority
+    XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS,                  ///< The number of EUs
     XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUBDEVICE,            ///< The number of subdevices
     XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES,                ///< The number of tiles
     XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SLICES,               ///< Maximum number of slices
@@ -168,6 +172,8 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS_PER_SUB_SLICE,    ///< Maximum number of EUs per sub-slice
     XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_THREADS_PER_EU,       ///< Maximum number of threads per EU
     XPUM_DEVICE_PROPERTY_INTERNAL_PHYSICAL_EU_SIMD_WIDTH,         ///< The physical EU simd width
+    XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES,        ///< The number of media engines
+    XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES,    ///< The number of media enhancement engines
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_NUMBER,             ///< Number of fabric ports
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_RX_SPEED,       ///< Maximum speed supported by the receive side of the port (sum of all lanes)
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_TX_SPEED,       ///< Maximum speed supported by the transmit side of the port (sum of all lanes)

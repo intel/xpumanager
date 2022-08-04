@@ -121,23 +121,25 @@ Show the detailed info of one device. The device info includes the model, freque
 | Device ID | Device Information                                                                   |
 +-----------+--------------------------------------------------------------------------------------+
 | 0         | Device Type: GPU                                                                     |
-|           | Device Name: Intel(R) Graphics [0x020a]                                              |
+|           | Device Name: Intel(R) Graphics [0x56c0]                                              |
 |           | Vendor Name: Intel(R) Corporation                                                    |
 |           | UUID: 00000000-0000-0000-0000-020a00008086                                           |
 |           | Serial Number: unknown                                                               |
-|           | Core Clock Rate: 1400 MHz                                                            |
-|           | Stepping: B1                                                                         |
+|           | Core Clock Rate: 2050 MHz                                                            |
+|           | Stepping: C0                                                                         |
 |           |                                                                                      |
 |           | Driver Version: 16929133                                                             |
 |           | Firmware Name: GSC                                                                   |
-|           | Firmware Version: ATS0_1.1                                                           |
+|           | Firmware Version: DG02->1->3041                                                      |
+|           | Firmware Name: GSC_DATA                                                              |
+|           | Firmware Version: 101->0->0                                                          |
 |           |                                                                                      |
 |           | PCI BDF Address: 0000:4d:00.0                                                        |
 |           | PCI Slot: Riser 1, slot 1                                                            |
 |           | PCIe Generation: 4                                                                   |
 |           | PCIe Max Link Width: 16                                                              |
 |           |                                                                                      |
-|           | Memory Physical Size: 32768.00 MiB                                                   |
+|           | Memory Physical Size: 14248.00 MiB                                                   |
 |           | Max Mem Alloc Size: 4095.99 MiB                                                      |
 |           | Number of Memory Channels: 2                                                         |
 |           | Memory Bus Width: 128                                                                |
@@ -145,9 +147,9 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Max Command Queue Priority: 0                                                        |
 |           |                                                                                      |
 |           | Number of EUs: 512                                                                   |
-|           | Number of Tiles: 2                                                                   |
-|           | Number of Slices: 2                                                                  |
-|           | Number of Sub Slices per Slice: 30                                                   |
+|           | Number of Tiles: 1                                                                   |
+|           | Number of Slices: 1                                                                  |
+|           | Number of Sub Slices per Slice: 32                                                   |
 |           | Number of Threads per EU: 8                                                          |
 |           | Physical EU SIMD Width: 8                                                            |
 |           | Number of Media Engines: 2                                                           |
@@ -178,9 +180,8 @@ Usage: xpumcli group [Options]
   xpumcli group -a -g [groupId] -d [deviceIds]
   xpumcli group -r -d [deviceIds] -g [groupId]
   xpumcli group -D -g [groupId]
-  xpumcli -l
-  xpumcli -l -j
-  xpumcli -l -g [groupId]
+  xpumcli group -l
+  xpumcli group -l -g [groupId]
 
 
 Options:
@@ -643,7 +644,7 @@ Options:
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GSC, AMC. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
+  -t,--type                   The firmware name. Valid options: GSC, AMC, GSC_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
   -f,--file                   The firmware image file path on this server.
 ```
 
@@ -681,7 +682,8 @@ Get and change the GPU settings.
 Usage: xpumcli config [Options]
   xpumcli config -d [deviceId]
   xpumcli config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]
-  xpumcli config -d [deviceId] --powerlimit [powerValue,averageWindow]
+  xpumcli config -d [deviceId] --powerlimit [powerValue]
+  xpumcli config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable
   xpumcli config -d [deviceId] -t [tileId] --standby [standbyMode]
   xpumcli config -d [deviceId] -t [tileId] --scheduler [schedulerMode]
   xpumcli config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
@@ -705,10 +707,10 @@ Options:
                                 between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
-
+  --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
 ```
 
-show the GPU settings
+Show the GPU settings
 ```
 ./xpumcli config -d 0
 +-------------+-------------------+----------------------------------------------------------------+
@@ -716,8 +718,10 @@ show the GPU settings
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0                 | Power Limit (w): 300.0                                         |
 |             |                   |   Valid Range: 1 to 500                                        |
-|             |                   | Power Average Window (ms): 1                                   |
-|             |                   |   Valid Range: 1 to 124                                        |
+|             |                   |                                                                |
+|             |                   | Memory ECC:                                                    |
+|             |                   |   Current: enabled                                             |
+|             |                   |   Pending: enabled                                             |
 +-------------+-------------------+----------------------------------------------------------------+
 | GPU         | 0/0               | GPU Min Frequency(MHz): 300.0                                  |
 |             |                   | GPU Max Frequency(MHz): 1300.0                                 |
@@ -777,8 +781,14 @@ Succeed to change the core frequency range on GPU 0 tile 0.
  
 Change the GPU power limit.
 ```
-./xpumcli config -d 0 --powerlimit 299,1000
+./xpumcli config -d 0 --powerlimit 299
 Succeed to set the power limit on GPU 0.
+```
+
+Change the GPU memory ECC mode.
+```
+./xpumcli config -d 0 --memoryecc 0
+Return: Succeed to change the ECC mode to be disabled on GPU 0. Please reset GPU or reboot OS to take effect.
 ```
  
 Change the GPU tile standby mode.
@@ -950,11 +960,3 @@ Device Type: GPU
 +------------------------+-------------------------------------------------------------------------+
 
 ```
-
-
-
-
-
-
-
-  

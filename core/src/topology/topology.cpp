@@ -411,46 +411,58 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
         getBDF(bdfAddress, address);
         bNuma = numaDevice(topology, address, numa_os_idx, cpuAffinity);
         if (bNuma) {
-            XPUM_LOG_DEBUG("NUMA: idx {} addr {}", numa_os_idx, bdfAddress);
+           XPUM_LOG_DEBUG("NUMA: idx {} addr {} affinity {}", numa_os_idx, bdfAddress, cpuAffinity);
         }
+        result = XPUM_OK;
 
         bool bResult = xpum::Core::instance().getDeviceManager()->getFabricPorts(
             info->getId(), portInfo);
         if (!bResult) {
-            continue;
-        }
-
-        result = XPUM_OK;
-
-        for (unsigned long i = 0; i < portInfo.size(); i++) {
-            std::string model(portInfo[i].portProps.model);
-            if (model.find_first_of(xeLinkStr) == std::string::npos)
-                continue;
-
+            XPUM_LOG_DEBUG("getFabricPorts is not existing");
             xpum_fabric_port_pair portPair;
-            portPair.healthy = false;
+            portPair.healthy = true;
             portPair.deviceId = stoi(info->getId());
             portPair.numaIdx = numa_os_idx;
             portPair.cpuAffinity = cpuAffinity;
-            portPair.localPortProp = portInfo[i].portProps;
-            portPair.enabled = portInfo[i].portConf.enabled;
-
+            portPair.localPortProp.onSubdevice = false;
+            portPair.localPortProp.subdeviceId = 0;
+            portPair.localPortProp.model[0]='\0';
+            portPair.enabled = false;
             portPair.remotePortId.fabricId = (uint32_t)-1;
-
-            if (portInfo[i].portConf.enabled) {
-                switch (portInfo[i].portState.status) {
-                    case ZES_FABRIC_PORT_STATUS_HEALTHY:
-                        portPair.healthy = true;
-                        portPair.remotePortId = portInfo[i].portState.remotePortId;
-                        break;
-                    case ZES_FABRIC_PORT_STATUS_DEGRADED:
-                    case ZES_FABRIC_PORT_STATUS_FAILED:
-                    case ZES_FABRIC_PORT_STATUS_DISABLED:
-                    default:
-                        break;
-                }
-            }
+            portPair.fabric_existing = false;
             fabricPorts.push_back(portPair);
+        } else {        
+            for (unsigned long i = 0; i < portInfo.size(); i++) {
+                std::string model(portInfo[i].portProps.model);
+                if (model.find_first_of(xeLinkStr) == std::string::npos)
+                    continue;
+
+                xpum_fabric_port_pair portPair;
+                portPair.fabric_existing = true;
+                portPair.healthy = false;
+                portPair.deviceId = stoi(info->getId());
+                portPair.numaIdx = numa_os_idx;
+                portPair.cpuAffinity = cpuAffinity;
+                portPair.localPortProp = portInfo[i].portProps;
+                portPair.enabled = portInfo[i].portConf.enabled;
+
+                portPair.remotePortId.fabricId = (uint32_t)-1;
+
+                if (portInfo[i].portConf.enabled) {
+                    switch (portInfo[i].portState.status) {
+                        case ZES_FABRIC_PORT_STATUS_HEALTHY:
+                            portPair.healthy = true;
+                            portPair.remotePortId = portInfo[i].portState.remotePortId;
+                            break;
+                        case ZES_FABRIC_PORT_STATUS_DEGRADED:
+                        case ZES_FABRIC_PORT_STATUS_FAILED:
+                        case ZES_FABRIC_PORT_STATUS_DISABLED:
+                        default:
+                            break;
+                    }
+                }
+                fabricPorts.push_back(portPair);
+            }
         }
     }
 

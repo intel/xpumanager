@@ -44,19 +44,19 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "value": "end" },
             { "value": "elapsed_time" },
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_ENERGY].value", "scale": 1000 }
+                { "value": "data_list[metrics_type==XPUM_STATS_ENERGY].value", "scale": 1 }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_UTILIZATION].avg", "fixer": "round" }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].avg" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].avg", "scale": 1 }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].avg" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].avg", "scale": 1 }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].avg" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].avg", "scale": 1 }
             ]}
         ]]
     }, {
@@ -153,10 +153,10 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Read (kB/s) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].avg" },
-                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].min" },
-                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].max" },
-                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].value" }
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].avg", "fixer": "round" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].min", "fixer": "round" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].max", "fixer": "round" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].value", "fixer": "round" }
             ]}
         ]]
     }, {
@@ -165,10 +165,10 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Write (kB/s) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].avg" },
-                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].min" },
-                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].max" },
-                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].value" }
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].avg", "fixer": "round" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].min", "fixer": "round" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].max", "fixer": "round" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].value", "fixer": "round" }
             ]}
         ]]
     }, {
@@ -189,10 +189,10 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Used (MiB) " }
         ], [
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].avg", "scale": 1048576, "fixer": "round" },
-                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].min", "scale": 1048576, "fixer": "round" },
-                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].max", "scale": 1048576, "fixer": "round" },
-                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1048576, "fixer": "round" }
+                { "label": "avg", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].avg", "scale": 1, "fixer": "round" },
+                { "label": "min", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].min", "scale": 1, "fixer": "round" },
+                { "label": "max", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].max", "scale": 1, "fixer": "round" },
+                { "label": "current", "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1, "fixer": "round" }
             ]}
         ]]
     }, {
@@ -280,16 +280,16 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
 
 void ComletStatistics::setupOptions() {
     this->opts = std::unique_ptr<ComletStatisticsOptions>(new ComletStatisticsOptions());
-    addOption("-d,--device", this->opts->deviceId, "The device id to query");
-    addOption("-g,--group", this->opts->groupId, "The group id to query");
+    addOption("-d,--device", this->opts->deviceId, "The device ID to query");
+    addOption("-g,--group", this->opts->groupId, "The group ID to query");
 }
 
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     if (isDeviceOp()) {
-        auto json = this->coreStub->getStatistics(this->opts->deviceId, true);
+        auto json = this->coreStub->getStatistics(this->opts->deviceId, true, true);
         return json;
     } else if (isGroupOp()) {
-        auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId, true);
+        auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId, true, true);
         return json;
     }
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

@@ -1,0 +1,91 @@
+FROM centos:8.4.2105
+
+ARG XPUM_GIT_COMMIT=00000000
+ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.8.1.tar.gz
+
+RUN cd /etc/yum.repos.d/ && \
+    sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* &&\
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+
+RUN dnf update -y && \
+    dnf clean all && \
+    dnf install -y cmake \
+    dnf-plugins-core \
+    curl \
+    gcc \
+    gcc-c++ \
+    git \
+    libtool \
+    libudev-devel \
+    make \
+    openssl-devel \
+    python38 \
+    python38-devel \
+    python38-pip \
+    rpm-build && \
+    dnf config-manager --set-enabled powertools && \
+    dnf install -y  \
+    doxygen \
+    glibc-static \
+    lua-devel && \
+    dnf clean all
+
+COPY builder/build_grpc.sh /
+RUN git clone --depth 1 -b v1.45.0 https://github.com/grpc/grpc && \
+    cd /grpc && \
+    cp /build_grpc.sh . && \
+    git submodule update --init && \
+    cd /grpc/third_party/zlib && \
+    git pull https://github.com/madler/zlib v1.2.12 && \
+    cd /grpc/third_party/protobuf && \
+    git pull https://github.com/protocolbuffers/protobuf.git v3.19.4 && \
+    cd /grpc && \
+    chmod +x ./build_grpc.sh && \
+    ./build_grpc.sh && \
+    rm -fr /grpc
+
+COPY builder/requirements.txt /tmp/requirements.txt
+RUN python3 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
+
+RUN curl -s --location https://github.com/intel/metee/archive/refs/tags/3.1.3.tar.gz | tar -xz && \
+    cd /metee-3.1.3 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j4 && \
+    make install && \
+    rm -fr /metee-3.1.3
+
+RUN curl -s --location https://github.com/intel/igsc/archive/refs/tags/V0.6.0.tar.gz | tar -xz && \
+    cd /igsc-0.6.0 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j4 && \
+    make install && \
+    rm -fr /igsc-0.6.0
+
+RUN curl -s --location ${L0_SRC_URL} | tar -xz && \
+    cd /level-zero-* && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    cmake --build . --config Release && \
+    cmake --build . --config Release --target install && \
+    rm -fr /level-zero-*
+
+COPY .cmake/ /xpum_src/.cmake
+COPY cli/ /xpum_src/cli
+COPY core/ /xpum_src/core
+COPY daemon/ /xpum_src/daemon
+COPY doc/ /xpum_src/doc
+COPY install/ /xpum_src/install
+COPY rest/ /xpum_src/rest
+COPY third_party/ /xpum_src/third_party
+COPY build.sh CMakeLists.txt /xpum_src/
+
+RUN cd /xpum_src && \
+    ./build.sh -DGIT_COMMIT=$XPUM_GIT_COMMIT -DBUILD_DOC=ON && \
+    mkdir /artifacts && \
+    mv build/*.rpm /artifacts && \
+    rm -fr build

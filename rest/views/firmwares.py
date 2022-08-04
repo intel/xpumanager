@@ -16,7 +16,7 @@ class FirmwareFlashJobOnAllDevicesSchema(Schema):
         metadata={"description": "The path of firmware binary file to flash"}
     )
     firmware_name = fields.Str(
-        validate=validate.OneOf(["AMC"]),
+        validate=validate.Equal("AMC"),
         metadata={"description": "Firmware name, options are: AMC"}
     )
 
@@ -27,8 +27,8 @@ class FirmwareFlashJobOnSingleDeviceSchema(Schema):
         metadata={"description": "The path of firmware binary file to flash"}
     )
     firmware_name = fields.Str(
-        validate=validate.OneOf(["GSC"]),
-        metadata={"description": "Firmware name, options are: GSC"}
+        validate=validate.OneOf(["GSC","GSC_DATA"]),
+        metadata={"description": "Firmware name, options are: GSC, GSC_DATA"}
     )
 
 
@@ -66,7 +66,10 @@ def run_firmware_flash_all():
     try:
         FirmwareFlashJobOnAllDevicesSchema().load(req)
     except ValidationError as err:
-        return jsonify(err.messages), 400
+        key = next(iter(err.messages))
+        value = err.messages[key]
+        errStr = key+": "+";".join(value)
+        return jsonify({'error': errStr}), 400
     return runFirmwareFlash(1024)
 
 
@@ -103,7 +106,10 @@ def run_firmware_flash_single(deviceId):
     try:
         FirmwareFlashJobOnSingleDeviceSchema().load(req)
     except ValidationError as err:
-        return jsonify(err.messages), 400
+        key = next(iter(err.messages))
+        value = err.messages[key]
+        errStr = key+": "+";".join(value)
+        return jsonify({'error': errStr}), 400
     return runFirmwareFlash(deviceId)
 
 
@@ -122,11 +128,13 @@ def runFirmwareFlash(deviceId):
     fwType = req.get('firmware_name')
     if fwType == 'GSC' and deviceId == 1024:
         return jsonify({'error': 'Updating GSC firmware on all devices is not supported'}), 400
+    if fwType == 'GSC_DATA' and deviceId == 1024:
+        return jsonify({'error': 'Updating GSC_DATA firmware on all devices is not supported'}), 400
     if fwType == 'AMC' and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'}), 400
 
     code, msg, data = stub.runFirmwareFlash(deviceId, fwType, filePath)
-    if code == stub.XpumResult['XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND'].value:
+    if code == stub.XpumResult['XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND'].value:
         return jsonify({'error': msg}), 500
     elif code != 0:
         return jsonify({'error': msg}), 400
@@ -136,15 +144,15 @@ def runFirmwareFlash(deviceId):
 class FirmwareFlashResultQuerySingleDeviceSchema(Schema):
     firmware_name = fields.Str(
         required=True,
-        validate=validate.OneOf(["GSC"]),
-        metadata={"description": "Firmware name, options are: GSC"}
+        validate=validate.OneOf(["GSC","GSC_DATA"]),
+        metadata={"description": "Firmware name, options are: GSC, GSC_DATA"}
     )
 
 
 class FirmwareFlashResultQueryAllDevicesSchema(Schema):
     firmware_name = fields.Str(
         required=True,
-        validate=validate.OneOf(["AMC"]),
+        validate=validate.Equal("AMC"),
         metadata={"description": "Firmware name, options are: AMC"}
     )
 
@@ -185,7 +193,10 @@ def get_firmware_flash_result_all():
     try:
         FirmwareFlashResultQueryAllDevicesSchema().load(req)
     except ValidationError as err:
-        return jsonify(err.messages), 400
+        key = next(iter(err.messages))
+        value = err.messages[key]
+        errStr = key+": "+";".join(value)
+        return jsonify({'error': errStr}), 400
     return get_firmware_flash_result(1024)
 
 
@@ -224,7 +235,10 @@ def get_firmware_flash_result_single(deviceId):
     try:
         FirmwareFlashResultQuerySingleDeviceSchema().load(req)
     except ValidationError as err:
-        return jsonify(err.messages), 400
+        key = next(iter(err.messages))
+        value = err.messages[key]
+        errStr = key+": "+";".join(value)
+        return jsonify({'error': errStr}), 400
     return get_firmware_flash_result(deviceId)
 
 
@@ -233,6 +247,8 @@ def get_firmware_flash_result(deviceId):
     fwType = req.get('firmware_name')
     if fwType == "GSC" and deviceId == 1024:
         return jsonify({'error': 'Updating GSC firmware on all devices is not supported'})
+    if fwType == "GSC_DATA" and deviceId == 1024:
+        return jsonify({'error': 'Updating GSC_DATA firmware on all devices is not supported'})
     if fwType == "AMC" and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'})
 

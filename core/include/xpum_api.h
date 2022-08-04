@@ -304,7 +304,7 @@ xpum_result_t xpumSetDeviceStandby(xpum_device_id_t deviceId,
  *
  * @param deviceId          IN: The device Id
  * @param tileId            IN: The tile Id. if tileId is -1, return device's powerlimit; otherwise return tile's powerlimit.
- * @param pPowerLimits      IN/OUT: The detailed power limit data.
+ * @param pPowerLimits      IN/OUT: The detailed power limit data. Parameter \'interval\' has been obsoleted.
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
@@ -318,7 +318,7 @@ xpum_result_t xpumGetDevicePowerLimits(xpum_device_id_t deviceId,
  *
  * @param deviceId          IN: The device Id
  * @param tileId            IN: The tile Id
- * @param sustained_limit   IN: The sustained power limit need to be set
+ * @param sustained_limit   IN: The sustained power limit need to be set. Parameter \'interval\' will be ignored.
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
@@ -442,6 +442,45 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
 xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_process_t dataArray[], uint32_t *count);
 
 /**
+ * @brief Get the device utiliztions by processes
+ * @details This function is used to get the device utiliztions by process
+ *
+ * @param deviceId          IN: The device Id
+ * @param utilInterval      IN: The interval in microseond to caculate utilization, range (0, 1000 * 1000]
+ * @param dataArray         IN/OUT: The array to store raw data.
+ * @param count             IN/OUT: The count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_INTERVAL_INVALID    if \a interval is not in (0, 1000 * 1000]
+ */
+
+//The API should not be called becuase the sysfs interface 
+//does not work as expected
+xpum_result_t xpumGetDeviceUtilizationByProcess(xpum_device_id_t deviceId, 
+        uint32_t utilInterval, xpum_device_util_by_process_t dataArray[], 
+        uint32_t *count);
+
+/**
+ * @brief Get the device (all) utiliztions by processes
+ * @details This function is used to get the device utiliztions by process
+ *
+ * @param utilInterval      IN: The interval in microseond to caculate utilization, range (0, 1000 * 1000]
+ * @param dataArray         IN/OUT: The array to store raw data.
+ * @param count             IN/OUT: The count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_INTERVAL_INVALID    if \a interval is not in (0, 1000 * 1000]
+ */
+
+//The API should not be called becuase the sysfs interface 
+//does not work as expected
+xpum_result_t xpumGetAllDeviceUtilizationByProcess(uint32_t utilInterval, 
+        xpum_device_util_by_process_t dataArray[], 
+        uint32_t *count);
+
+/**
  * @brief Get the performance factor of the device
  * @details This function is used to get the performance factor of device
  *
@@ -490,38 +529,38 @@ xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
  */
 xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t fabricPortConfig);
 /**
- * @brief Get the memory Ecc state of the device
- * @details This function is used to get the memory Ecc state of the device
+ * @brief Get the memory ECC state of the device
+ * @details This function is used to get the memory ECC state of the device
  *
  * @param deviceId          IN: The device Id
- * @param available    OUT: memory Ecc is available, or not
- * @param configurable    OUT: memory Ecc is configurable, or not
- * @param current    OUT: the current state of memory Ecc
- * @param pending    OUT: the pending state of memory Ecc
+ * @param available    OUT: memory ECC is available, or not
+ * @param configurable    OUT: memory ECC is configurable, or not
+ * @param current    OUT: the current state of memory ECC
+ * @param pending    OUT: the pending state of memory ECC
  * @param action     OUT: the action need to do to switch to the pending state
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
-/*xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* configurable,
-        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);*/
+xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* configurable,
+        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);
 /**
- * @brief Set the memory Ecc state of the device
- * @details This function is used to set the memory Ecc state of the device
+ * @brief Set the memory ECC state of the device
+ * @details This function is used to set the memory ECC state of the device
  *
  * @param deviceId          IN: The device Id
  * @param newState          IN: new state to set
- * @param available    OUT: memory Ecc is available, or not
- * @param configurable    OUT: memory Ecc is configurable, or not
- * @param current    OUT: the current state of memory Ecc
- * @param pending    OUT: the pending state of memory Ecc
+ * @param available    OUT: memory ECC is available, or not
+ * @param configurable    OUT: memory ECC is configurable, or not
+ * @param current    OUT: the current state of memory ECC
+ * @param pending    OUT: the pending state of memory ECC
  * @param action     OUT: the action need to do to switch to the pending state
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_GENERIC_ERROR       if set failure
  */
-/*xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newState, bool* available, bool* configurable,
-        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);*/
+xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newState, bool* available, bool* configurable,
+        xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);
 
 /** @} */ // Closing for CONFIGURATION_API
 
@@ -559,7 +598,9 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL
  *      - \ref XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE
- *      - \ref XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND
+ *      - \ref XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND
+ *      - \ref XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE
+ *      - \ref XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE
  *      - \ref XPUM_GENERIC_ERROR
  */
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
@@ -665,9 +706,8 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
  * @brief Get statistics data (not including per engine utilization & fabric throughput) by device
  * 
  * @param deviceId      IN: Device id
- * @param dataList     OUT: The arry to store statistics data for device \a deviceId.
- * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats_size of this device. A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
- *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @param dataList     OUT: The arry to store statistics data for device \a deviceId. First pass NULL to query statistics data count. Then pass array with desired length to store statistics data.
+ * @param count     IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList
  * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
  * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
  * @param sessionId     IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.
@@ -728,9 +768,8 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
  * @brief Get statistics data by group
  * 
  * @param groupId       IN: Group id
- * @param dataList     OUT: The arry to store statistics data for devices in group \a groupId.
- * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than the total sum of stats_size of devices in group ( \a groupId ). A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
- *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @param dataList     OUT: The arry to store statistics data for devices in group \a groupId. First pass NULL to query statistics data count. Then pass array with desired length to store statistics data.
+ * @param count     IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList  
  * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
  * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
  * @param sessionId     IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.

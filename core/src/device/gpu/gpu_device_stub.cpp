@@ -16,6 +16,14 @@
 #include <set>
 #include <sstream>
 #include <thread>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <dirent.h>
+#include <climits>
+#include <sys/stat.h>
+#include <string>
 
 #include "api/api_types.h"
 #include "device/frequency.h"
@@ -68,7 +76,7 @@ bool checkCapability(const char* device_name, const std::string& bdf_address, co
         return true;
     } catch (BaseException& e) {
         XPUM_LOG_WARN("Device {}{} has no {} capability.", device_name, bdf_address, capability_name);
-        XPUM_LOG_DEBUG("Capability {} detection returned: {}", capability_name, e.what());
+        XPUM_LOG_WARN("Capability {} detection returned: {}", capability_name, e.what());
     }
     return false;
 }
@@ -117,7 +125,12 @@ void GPUDeviceStub::checkInitDependency() {
     XPUM_LOG_INFO("GPUDeviceStub::checkInitDependency start");
     std::string details;
 
-    std::vector<std::string> checkEnvVaribles = {"ZES_ENABLE_SYSMAN", "ZET_ENABLE_METRICS"};
+    std::vector<std::string> checkEnvVaribles = {"ZES_ENABLE_SYSMAN"};
+    if (std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
+                    [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
+        checkEnvVaribles.push_back("ZET_ENABLE_METRICS");
+    }
+
     bool findEnvVaribles = true;
     for (auto it = checkEnvVaribles.begin(); it != checkEnvVaribles.end(); it++) {
         if (std::getenv((*it).c_str()) == nullptr) {
@@ -232,7 +245,8 @@ static SystemCommandResult execCommand(const std::string& command) {
         } catch (...) {
             pclose(pipe);
         }
-        exitcode = WEXITSTATUS(pclose(pipe));
+        int ret = pclose(pipe);
+        exitcode = WEXITSTATUS(ret);
     }
 
     return SystemCommandResult(result, exitcode);
@@ -413,14 +427,21 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
     if (checkCapability(props.core.name, bdf_address, "Frequency Throttle", toGetFrequencyThrottle, device))
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
-    if (checkCapability(props.core.name, bdf_address, "PCIe read throughput", toGetPCIeReadThroughput, device))
-        capabilities.push_back(DeviceCapability::METRIC_PCIE_READ_THROUGHPUT);
-    if (checkCapability(props.core.name, bdf_address, "PCIe write throughput", toGetPCIeWriteThroughput, device))
-        capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT);
-    if (checkCapability(props.core.name, bdf_address, "PCIe read", toGetPCIeRead, device))
-        capabilities.push_back(DeviceCapability::METRIC_PCIE_READ);
-    if (checkCapability(props.core.name, bdf_address, "PCIe write", toGetPCIeWrite, device))
-        capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE);
+    for (auto metric: Configuration::getEnabledMetrics()) {
+        if (metric == METRIC_PCIE_READ_THROUGHPUT) {
+            if (checkCapability(props.core.name, bdf_address, "PCIe read throughput", toGetPCIeReadThroughput, device))
+                capabilities.push_back(DeviceCapability::METRIC_PCIE_READ_THROUGHPUT);
+        } else if (metric == METRIC_PCIE_WRITE_THROUGHPUT) {
+            if (checkCapability(props.core.name, bdf_address, "PCIe write throughput", toGetPCIeWriteThroughput, device))
+                capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT);
+        } else if (metric == METRIC_PCIE_READ) {
+            if (checkCapability(props.core.name, bdf_address, "PCIe read", toGetPCIeRead, device))
+                capabilities.push_back(DeviceCapability::METRIC_PCIE_READ);
+        } else if (metric == METRIC_PCIE_WRITE) {
+            if (checkCapability(props.core.name, bdf_address, "PCIe write", toGetPCIeWrite, device))
+                capabilities.push_back(DeviceCapability::METRIC_PCIE_WRITE);   
+        }
+    }
     if (checkCapability(props.core.name, bdf_address, "fabric throughput", toGetFabricThroughput, device))
         capabilities.push_back(DeviceCapability::METRIC_FABRIC_THROUGHPUT);
 }
@@ -608,13 +629,29 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUBDEVICE, std::to_string(props.numSubdevices)));
                 uint32_t tileCount = props.numSubdevices == 0 ? 1 : props.numSubdevices;
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, std::to_string(tileCount)));
-
+                uint32_t euCount = tileCount * props.core.numSlices * props.core.numSubslicesPerSlice * props.core.numEUsPerSubslice;
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS, std::to_string(euCount)));
                 zes_pci_properties_t pci_props;
 
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
                 if (res == ZE_RESULT_SUCCESS) {
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, to_string(pci_props.address)));
-
+                    auto tmpAddr = pci_props.address;
+                    p_gpu->setPciAddress({tmpAddr.domain, tmpAddr.bus, tmpAddr.device, tmpAddr.function});
+                    std::string stepping = "unknown";
+                    std::ifstream infile("/sys/bus/pci/devices/" + to_string(pci_props.address) + "/revision");
+                    if (infile.good()) {
+                        std::string rev;
+                        getline(infile, rev);
+                        if (rev.size() > 0) {
+                            int val = std::stoi(rev, nullptr, 16);
+                            if (val >= 0 && val < 8) // A0 ~ A3, B0 ~ B3
+                                stepping = (char)('A' + val / 4) + std::to_string(val % 4);
+                            else if (val >= 8 && val < 18) // C0 ~ C9
+                                stepping = (char)('C') + std::to_string(val - 8);
+                        }                        
+                    }
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                     std::string bdf_regex = to_regex_string(pci_props.address);
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(bdf_regex)));
                 }
@@ -665,17 +702,9 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFirmwares(device, &firmware_count, firmwares.data()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME, std::string("GSC")));
                 std::string fwVersion = "unknown";
-                if (res == ZE_RESULT_SUCCESS) {
-                    for (auto firmware : firmwares) {
-                        zes_firmware_properties_t prop;
-                        XPUM_ZE_HANDLE_LOCK(firmware, res = zesFirmwareGetProperties(firmware, &prop));
-                        if (strcmp(prop.name, "GSC") != 0 || strcmp(prop.name, "unknown") == 0 || strcmp(prop.version, "unknown") == 0) {
-                            continue;
-                        }
-                        fwVersion = std::string(prop.version);
-                    }
-                }
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION, fwVersion));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME, std::string("GSC_DATA")));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION, fwVersion));
 
                 uint32_t fabric_count = 0;
                 XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFabricPorts(device, &fabric_count, nullptr));
@@ -696,6 +725,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 }
 
                 uint32_t engine_grp_count;
+                uint32_t media_engine_count = 0;
+                uint32_t meida_enhancement_engine_count = 0;
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumEngineGroups(device, &engine_grp_count, nullptr));
                 if (res == ZE_RESULT_SUCCESS) {
                     std::vector<zes_engine_handle_t> engines(engine_grp_count);
@@ -709,11 +740,18 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                                 if (props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_COPY_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
                                     p_gpu->addEngine((uint64_t)engine, props.type, props.onSubdevice, props.subdeviceId);
                                 }
+                                if (props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE) {
+                                    media_engine_count += 1;
+                                }
+                                if (props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE) {
+                                    meida_enhancement_engine_count += 1;
+                                }
                             }
                         }
                     }
                 }
-
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES, std::to_string(media_engine_count)));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES, std::to_string(meida_enhancement_engine_count)));
                 addPCIeProperties(device, p_gpu);
 
                 p_devices->push_back(p_gpu);
@@ -923,7 +961,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
             if (res == ZE_RESULT_SUCCESS) {
                 zes_freq_state_t freq_state;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
-                if (res == ZE_RESULT_SUCCESS) {
+                if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0) {
                     props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.actual) : ret->setCurrent(freq_state.actual);
                     data_acquired = true;
                 } else {
@@ -1047,6 +1085,49 @@ void GPUDeviceStub::getTemperature(const zes_device_handle_t& device, Callback_t
     invokeTask(callback, toGetTemperature, device, type);
 }
 
+int GPUDeviceStub::get_register_value_from_sys(const zes_device_handle_t& device, uint64_t offset) {
+    int val = -1;
+    ze_result_t res;
+    zes_pci_properties_t pci_props;
+    pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::string bdf_address;
+        bdf_address = to_string(pci_props.address);
+        std::string resource_file = "/sys/bus/pci/devices/" + bdf_address + "/resource0";
+        int fd;
+        void *map_base, *virt_addr;
+        uint64_t read_result;
+        char *filename;
+        off_t target, target_base;
+        int type_width = 4;
+        int map_size = 4096UL;
+
+        filename = const_cast<char*>(resource_file.c_str());
+        target = offset;
+        if ((fd = open(filename, O_RDONLY | O_SYNC)) == -1) {
+            return -1;
+        }
+        target_base = target & ~(sysconf(_SC_PAGE_SIZE)-1);
+        if (target + type_width - target_base > map_size)
+            map_size = target + type_width - target_base;
+        
+        map_base = mmap(0, map_size, PROT_READ, MAP_SHARED, fd, target_base);
+
+        if (map_base == (void *) -1) {
+            close(fd);
+            return -1;
+        }
+        virt_addr = (uint8_t *)map_base + target - target_base;
+        read_result = *((uint32_t *) virt_addr);
+        val = read_result;
+
+        munmap(map_base, map_size);
+        close(fd);
+    }
+    return val;
+}
+
 std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_device_handle_t& device, zes_temp_sensors_t type) {
     if (device == nullptr) {
         throw BaseException("toGetTemperature error");
@@ -1058,6 +1139,21 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
     ze_result_t res;
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
     if (temp_sensor_count == 0) {
+        zes_device_properties_t props;
+        props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
+        if (type == ZES_TEMP_SENSORS_GPU && res == ZE_RESULT_SUCCESS 
+            && (to_hex_string(props.core.deviceId).find("56c0") != std::string::npos 
+                || to_hex_string(props.core.deviceId).find("56c1") != std::string::npos)) {
+            int val = get_register_value_from_sys(device, 0x145978);
+            if (val > 0) {
+                ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                ret->setCurrent(val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                return ret;
+            } else {
+                throw BaseException("Failed to read register value from sys");        
+            }
+        }
         throw BaseException("No temperature sensor detected");
     }
     std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
@@ -1430,7 +1526,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadThroughput(const 
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, mem_bandwidth.readCounter / 1024) : ret->setRawData(mem_bandwidth.readCounter / 1024);
-                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond() / 1000) : ret->setRawTimestamp(Utility::getCurrentMillisecond() / 1000);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond()) : ret->setRawTimestamp(Utility::getCurrentMillisecond());
+                    ret->setScale(Configuration::MEMORY_IO_THROUGHPUT_DATA_SCALE);
                     data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;
@@ -1482,7 +1579,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWriteThroughput(const
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
                 if (res == ZE_RESULT_SUCCESS) {
                     props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, mem_bandwidth.writeCounter / 1024) : ret->setRawData(mem_bandwidth.writeCounter / 1024);
-                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond() / 1000) : ret->setRawTimestamp(Utility::getCurrentMillisecond() / 1000);
+                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond()) : ret->setRawTimestamp(Utility::getCurrentMillisecond());
+                    ret->setScale(Configuration::MEMORY_IO_THROUGHPUT_DATA_SCALE);
                     data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;
@@ -1651,6 +1749,10 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     uint64_t euActive = totalEuActive / totalGPUElapsedTime;
     uint64_t euStall = totalEuStall / totalGPUElapsedTime;
     uint64_t euIdle = 100 - euActive - euStall;
+    euActive *= Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+    euStall *= Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+    euIdle *= Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+    data->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
     if (type == MeasurementType::METRIC_EU_ACTIVE) {
         if (subdeviceId == UINT32_MAX)
             data->setCurrent(euActive);
@@ -2268,6 +2370,489 @@ void GPUDeviceStub::getDeviceProcessState(const zes_device_handle_t& device, std
     }
 }
 
+/* At the first stage:
+1. C-stlye string, file API are used, but SDL guideline is followed (task T196 was checked)
+2. No diagnositic mechanism for troubleshooting yet
+3. Helper fucntions might be moved to other source file for more orgnized structure
+*/
+
+static bool strToUInt32(uint32_t *val, char *buf) {
+    char *endAddr;
+    errno = 0;
+    int32_t ret  = strtol(buf, &endAddr, 0);
+    if ((errno == ERANGE && (ret  == LONG_MAX || ret  == LONG_MIN))
+            || (errno != 0 && ret == 0) || endAddr == buf || ret < 0) {
+        return false;
+    }
+    *val = (uint32_t)ret;
+    return true;
+}
+
+static bool strToUInt64(uint64_t *val, char *buf) {
+    char *endAddr;
+    errno = 0;
+    int64_t ret  = strtoll(buf, &endAddr, 0);
+    if ((errno == ERANGE && (ret == LLONG_MAX || ret == LLONG_MIN))
+            || (errno != 0 && ret == 0) || endAddr == buf || ret < 0) {
+        return false;
+    }
+    *val = (uint64_t)ret;
+    return true;
+}
+
+#define BUF_SIZE 128
+static bool readStrSysFsFile(char *buf, char *fileName) {
+    int fd = open(fileName, O_RDONLY);
+    if (fd < 0) {
+        return false;
+    }
+    int szRead = read(fd, buf, BUF_SIZE);
+    close(fd);
+    if (szRead < 0 || szRead >= BUF_SIZE) {
+        return false;
+    }
+    buf[szRead] = 0;
+    return true;
+}
+
+//The parameter round must be eithr 0 or 1
+static bool getEngineActiveTime(device_util_by_proc &util, uint32_t round,
+        uint32_t card_idx, char *client) {
+
+    char path[PATH_MAX];
+    char buf[BUF_SIZE];
+
+    //read rendering engine data
+    int len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients/%s/busy/0",
+            card_idx, client);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    if (readStrSysFsFile(buf, path) == false) {
+        return false;
+    }
+    if (strToUInt64(&(util.reData[round]), buf) == false) {
+        return false;
+    }
+
+    //read copy engine data
+    len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients/%s/busy/1",
+            card_idx, client);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    if (readStrSysFsFile(buf, path) == false) {
+        return false;
+    }
+    if (strToUInt64(&(util.cpyData[round]), buf) == false) {
+        return false;
+    }
+
+    //read media engine data
+    len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients/%s/busy/2",
+            card_idx, client);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    if (readStrSysFsFile(buf, path) == false) {
+        return false;
+    }
+    if (strToUInt64(&(util.meData[round]), buf) == false) {
+        return false;
+    }
+
+    //read media enhancement engine data
+    len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients/%s/busy/3",
+            card_idx, client);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    if (readStrSysFsFile(buf, path) == false) {
+        return false;
+    }
+    if (strToUInt64(&(util.meeData[round]), buf) == false) {
+        return false;
+    }
+
+    //read compute engine data
+    len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients/%s/busy/4",
+            card_idx, client);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    if (readStrSysFsFile(buf, path) == false) {
+        return false;
+    }
+    if (strToUInt64(&(util.ceData[round]), buf) == false) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool getProcNameAndMem(device_util_by_proc &util,uint32_t card_idx,
+        char *client) {
+    char path[PATH_MAX];
+    char buf[BUF_SIZE];
+    //Read proc name
+    int len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients/%s/name",
+            card_idx, client);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    if (readStrSysFsFile(buf, path) != true) {
+        return false;
+    }
+    std::string procName(buf);
+    procName.pop_back();
+    util.setProcessName(procName);
+
+    //Read mem size
+    len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients/%s/total_device_memory_buffer_objects/created_bytes",
+            card_idx, client);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    if (readStrSysFsFile(buf, path) != true) {
+        return false;
+    }
+    uint64_t memSize = 0;
+    if (strToUInt64(&memSize, buf) == false) {
+        return false;
+    }
+    util.setMemSize(memSize);
+
+    //Read shared mem size
+    len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients/%s/total_device_memory_buffer_objects/imported_bytes",
+            card_idx, client);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    if (readStrSysFsFile(buf, path) != true) {
+        return false;
+    }
+    uint64_t sharedMemSize = 0;
+    if (strToUInt64(&sharedMemSize, buf) == false) {
+        return false;
+    }
+    util.setSharedMemSize(sharedMemSize);
+    return true;
+}
+
+static bool getProcID(uint32_t &pid, uint32_t card_idx, char *client) {
+    char path[PATH_MAX];
+    char buf[BUF_SIZE];
+    int len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients/%s/pid",
+            card_idx, client);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    if (readStrSysFsFile(buf, path) != true) {
+        return false;
+    }
+    char *p = buf;
+    // the pid file may come with a pair of <>, skip '<' in the case
+    if (p[0] == '<') {
+        p++;
+    }
+    if (strToUInt32(&pid, p) == false) {
+        return false;
+    }
+    return true;
+}
+
+static bool getCardIdx(uint32_t &card_idx, const zes_device_handle_t& device) {
+    ze_result_t res;
+    zes_pci_properties_t pci_props;
+    XPUM_ZE_HANDLE_LOCK(device,
+            res = zesDevicePciGetProperties(device, &pci_props));
+    if (res != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+
+    char path[PATH_MAX];
+    char buf[BUF_SIZE];
+    char uevent[1024];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    int len = 0;
+
+    pdir = opendir("/sys/class/drm");
+    if (pdir == NULL) {
+        return false;
+    }
+
+    bool ret = false;
+    while ((pdirent = readdir(pdir)) != NULL) {
+        if (pdirent->d_name[0] == '.') {
+            continue;
+        }
+        if (strncmp(pdirent->d_name, "card", 4) != 0) {
+            continue;
+        }
+        if (strstr(pdirent->d_name, "-") != NULL) {
+            continue;
+        }
+        len = snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent",
+                pdirent->d_name);
+        if (len <= 0 || len >= PATH_MAX) {
+            break;
+        }
+        int fd = open(path, O_RDONLY);
+        if (fd < 0) {
+            break;
+        }
+        int szRead = read(fd, uevent, 1024);
+        close(fd);
+        if (szRead < 0 || szRead >= 1024) {
+            break;
+        }
+        uevent[szRead] = 0;
+        len = snprintf(buf, BUF_SIZE, "%04d:%02x:%02x.%x",
+                pci_props.address.domain, pci_props.address.bus,
+                pci_props.address.device, pci_props.address.function);
+        if (strstr(uevent, buf) != NULL) {
+            sscanf(pdirent->d_name, "card%d", &card_idx);
+            ret = true;
+            break;
+        }
+    }
+    closedir(pdir);
+    return ret;
+}
+
+
+typedef struct {
+    uint32_t dup_cnt;
+    uint32_t dup_num;
+    device_util_by_proc *putil;
+} dup_proc_t;
+
+static bool mergeDupProc(std::map<uint32_t, dup_proc_t>& dup_proc_map,
+        std::vector<device_util_by_proc>& utils) {
+    //Convert dupilication counter to number of duplicated process (n)
+    //n * (n - 1) = counted number
+    //find n and assign it to dup_cnt
+    uint32_t solved= 0;
+    auto iter1 = dup_proc_map.begin();
+    while (iter1 != dup_proc_map.end()) {
+        for (uint32_t n = 2; n < 1024; n++) {
+            if (n * (n - 1) == iter1->second.dup_cnt) {
+                iter1->second.dup_num = n;
+                solved++;
+                break;
+            }
+        }
+        iter1++;
+    }
+    if (solved != dup_proc_map.size()) {
+        return false;
+    }
+
+    //Remove invalid process from the vector
+    //Merge util data for duplicated pid
+    auto iter = utils.begin();
+    while (iter != utils.end()) {
+        if (iter->elapsed == 0) {
+            iter = utils.erase(iter);
+        } else {
+            if (dup_proc_map.find(iter->getProcessId()) ==
+                    dup_proc_map.end()) {
+                iter++;
+            } else {
+                device_util_by_proc *putil =
+                    dup_proc_map[iter->getProcessId()].putil;
+                iter->merge(putil);
+                if (dup_proc_map[iter->getProcessId()].dup_num > 1) {
+                    putil->setval(&(*iter));
+                    dup_proc_map[iter->getProcessId()].dup_num--;
+                    iter = utils.erase(iter);
+                } else {
+                    iter++;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+//The first round to read utilization (active time) data per device/ card
+static bool readUtil1(std::vector<device_util_by_proc>& vec, 
+		uint32_t& card_idx, const zes_device_handle_t& device, 
+		std::string device_id) {
+    
+    char path[PATH_MAX];
+    int len = 0;
+    DIR* pdir = NULL;
+    struct dirent* pdirent = NULL;
+    
+    if (getCardIdx(card_idx, device) == false) {
+        return false;
+    }
+
+    len = snprintf(path, PATH_MAX,
+                   "/sys/class/drm/card%d/clients", card_idx);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    pdir = opendir(path);
+    if (pdir == NULL) {
+        return false;
+    }
+    while ((pdirent = readdir(pdir))) {
+        if (pdirent->d_name[0] == '.') {
+            continue;
+        }
+        uint32_t pid = 0;
+        if (getProcID(pid, card_idx, pdirent->d_name) == false) {
+            closedir(pdir);
+            return false;
+        }
+        device_util_by_proc util(pid);
+        util.setDeviceId(std::stoi(device_id));
+        strncpy(util.d_name, pdirent->d_name, 32);
+        if (getEngineActiveTime(util, 0, card_idx, pdirent->d_name) == false) {
+            closedir(pdir);
+            return false;
+        }
+        vec.push_back(util);
+    }
+    closedir(pdir);
+    return true;
+}
+
+//The second round to read utilization (active time) data per device/ card
+static bool readUtil2(std::vector<device_util_by_proc>& vec, 
+    uint32_t card_idx, uint64_t elapsed) { 
+
+    char path[PATH_MAX];
+    int len = 0;
+    DIR* pdir = NULL;
+    struct dirent* pdirent = NULL;
+    std::map<uint32_t, dup_proc_t> dup_proc_map;
+
+    len = snprintf(path, PATH_MAX,
+            "/sys/class/drm/card%d/clients", card_idx);
+    if (len <= 0 || len >= PATH_MAX) {
+        return false;
+    }
+    pdir = opendir(path);
+    if (pdir == NULL) {
+        return false;
+    }
+    while ((pdirent = readdir(pdir))) {
+        if (pdirent->d_name[0] == '.') {
+            continue;
+        }
+        uint32_t pid = 0;
+        if (getProcID(pid, card_idx, pdirent->d_name) == false) {
+            closedir(pdir);
+            return false;
+        }
+        device_util_by_proc *putil = NULL;
+        for (auto &util : vec) {
+            if (util.getProcessId() == pid) {
+                if (strncmp(util.d_name,
+                            pdirent->d_name, strnlen(util.d_name, 32)) == 0) {
+                    if (getEngineActiveTime(util, 1, card_idx, pdirent->d_name)
+                            == true) {
+                        putil = &util;
+                    }
+                } else {
+                    if (dup_proc_map.find(pid) == dup_proc_map.end()) {
+                        dup_proc_t proc;
+                        //dup_cnt (duplication counter) would be n * (n - 1)
+                        //n = number of duplicated processes
+                        //Memory would be released after merge
+                        proc.dup_cnt = 1;
+                        proc.putil = new device_util_by_proc(pid);
+                        dup_proc_map.insert(std::make_pair(pid, proc));
+                    } else {
+                        dup_proc_map[pid].dup_cnt++;
+                    }
+                }
+            }
+        }
+        //if pid is not found, it might be created during the nap time, skip it
+        if (putil == NULL) {
+            continue;
+        }
+
+        if (getProcNameAndMem(*putil, card_idx, pdirent->d_name) == false) {
+            closedir(pdir);
+            auto iter = dup_proc_map.begin();
+            while (iter != dup_proc_map.end()) {
+                delete iter->second.putil;
+                iter++;
+            }
+            return false;
+        }
+        putil->elapsed = elapsed;
+    }
+    closedir(pdir);
+
+    bool ret = mergeDupProc(dup_proc_map, vec);
+    //Whatever release the memory, though it could be done in the merge process
+    //but there is risk if the the sysfs does not behave as expected
+    auto iter = dup_proc_map.begin();
+    while (iter != dup_proc_map.end()) {
+        delete iter->second.putil;
+        iter++;
+    }
+
+    return ret;
+}
+
+//Get per process utilization for multple devices
+//For each device/ card, there is a card_idx, device_id, device_handle
+//and a vector of utilizations, the utilizations of all devices are returned
+//by a vector of utilzation vector
+bool GPUDeviceStub::getDeviceUtilByProc(
+    const std::vector<zes_device_handle_t>& devices,
+    const std::vector<std::string>& device_ids,
+    uint32_t utilInterval,
+    std::vector<std::vector<device_util_by_proc>>& utils) {
+
+    std::vector<uint32_t> card_idxes;
+    auto begin = std::chrono::high_resolution_clock::now();
+    auto size0 = devices.size();
+    for (uint64_t i = 0; i < size0; i++) {
+        std::vector<device_util_by_proc> vec;
+        uint32_t card_idx = 0;
+        if (readUtil1(vec, card_idx, devices[i], device_ids[i]) == false) {
+            utils.clear();
+            return false;
+        }
+        utils.push_back(vec);
+        card_idxes.push_back(card_idx);
+    }
+
+    //Nap time
+    std::this_thread::sleep_for(std::chrono::microseconds(utilInterval));
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> dura = (end - begin) * 1000 * 1000 * 1000;
+    uint64_t elapsed = (uint64_t)dura.count();
+    
+    auto size1 = utils.size();
+    for (uint64_t i = 0; i < size1;  i++) {
+        if (readUtil2(utils[i], card_idxes[i], elapsed) == false) {
+            utils.clear();
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 std::string GPUDeviceStub::getProcessName(uint32_t processId) {
     std::string processName = "";
     std::ifstream pinfo;
@@ -2464,8 +3049,8 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
             zes_power_sustained_limit_t sustained;
-            zes_power_burst_limit_t burst;
-            zes_power_peak_limit_t peak;
+            //zes_power_burst_limit_t burst;
+            //zes_power_peak_limit_t peak;
             zes_power_properties_t props;
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
@@ -2473,17 +3058,19 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
                     continue;
                 }
             }
-            XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetLimits(power, &sustained, &burst, &peak));
+            XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetLimits(power, &sustained, nullptr, nullptr));
             if (res == ZE_RESULT_SUCCESS) {
                 sustained_limit.enabled = sustained.enabled;
                 sustained_limit.power = sustained.power;
+                sustained_limit.interval = 0;
+/*                
                 sustained_limit.interval = sustained.interval;
-
                 burst_limit.enabled = burst.enabled;
                 burst_limit.power = burst.power;
 
                 peak_limit.power_AC = peak.powerAC;
                 peak_limit.power_DC = peak.powerDC;
+*/
             }
         }
     }
@@ -2634,6 +3221,37 @@ void GPUDeviceStub::getFreqAvailableClocks(const zes_device_handle_t& device, ui
     }
 }
 
+bool GPUDeviceStub::setFrequencyRangeForAll(const zes_device_handle_t& device, const Frequency& freq) {
+    if (device == nullptr) {
+        return false;
+    }
+    uint32_t freq_count = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
+    std::vector<zes_freq_handle_t> freq_handles(freq_count);
+    if (res == ZE_RESULT_SUCCESS) {
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
+        for (auto& ph_freq : freq_handles) {
+            zes_freq_properties_t prop = {};
+            prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+            XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetProperties(ph_freq, &prop));
+            if (res == ZE_RESULT_SUCCESS) {
+                if (prop.type != freq.getType()) {
+                    continue;
+                }
+                zes_freq_range_t range;
+                range.min = freq.getMin();
+                range.max = freq.getMax();
+                XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencySetRange(ph_freq, &range));
+                /*if (res != ZE_RESULT_SUCCESS) {
+                    return false;
+                }*/
+            }
+        }
+        return true;
+    }
+    return false;
+}
 bool GPUDeviceStub::setFrequencyRange(const zes_device_handle_t& device, const Frequency& freq) {
     if (device == nullptr) {
         return false;
@@ -2892,40 +3510,55 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             thermal_threshold = core_thermal_threshold;
         else
             thermal_threshold = memory_thermal_threshold;
+        double temp_val = 0;
         description = "The temperature health cannot be determined.";
         uint32_t temp_sensor_count = 0;
         ze_result_t res;
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, nullptr));
-        std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
-        if (res == ZE_RESULT_SUCCESS) {
-            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
-            for (auto& temp : temp_sensors) {
-                zes_temp_properties_t props;
-                XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetProperties(temp, &props));
-                if (res != ZE_RESULT_SUCCESS) {
-                    continue;
+        if (temp_sensor_count == 0 && type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL) {
+            zes_device_properties_t props;
+            props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceGetProperties(device, &props));
+            if (res == ZE_RESULT_SUCCESS && (to_hex_string(props.core.deviceId).find("56c0") != std::string::npos 
+                    || to_hex_string(props.core.deviceId).find("56c1") != std::string::npos)) {
+                int val = get_register_value_from_sys(device, 0x145978);
+                if (val > 0) {
+                    temp_val = val;
                 }
-                if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL && props.type != ZES_TEMP_SENSORS_GPU) {
-                    continue;
-                }
-                if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL && props.type != ZES_TEMP_SENSORS_MEMORY) {
-                    continue;
-                }
-                double temp_val = 0;
-                XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
-                if (res == ZE_RESULT_SUCCESS) {
-                    if (temp_val < thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
-                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
-                        description = "All temperature sensors are healthy.";
+            }
+        } else if (temp_sensor_count > 0) {
+            std::vector<zes_temp_handle_t> temp_sensors(temp_sensor_count);
+            if (res == ZE_RESULT_SUCCESS) {
+                XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumTemperatureSensors(device, &temp_sensor_count, temp_sensors.data()));
+                for (auto& temp : temp_sensors) {
+                    zes_temp_properties_t props;
+                    XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetProperties(temp, &props));
+                    if (res != ZE_RESULT_SUCCESS) {
+                        continue;
                     }
-                    if (temp_val >= thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
-                        status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
-                        std::stringstream temp_buffer;
-                        temp_buffer << std::fixed << std::setprecision(2) << temp_val;
-                        description = "Find an unhealthy temperature sensor. Its temperature is " + temp_buffer.str() + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(thermal_threshold) + ".";
+                    if (type == xpum_health_type_t::XPUM_HEALTH_CORE_THERMAL && props.type != ZES_TEMP_SENSORS_GPU) {
+                        continue;
+                    }
+                    if (type == xpum_health_type_t::XPUM_HEALTH_MEMORY_THERMAL && props.type != ZES_TEMP_SENSORS_MEMORY) {
+                        continue;
+                    }
+                    double val = 0;
+                    XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &val));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        temp_val = val;
                     }
                 }
             }
+        }
+        if (temp_val > 0 && temp_val < thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_OK) {
+            status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
+            description = "All temperature sensors are healthy.";
+        }
+        if (temp_val >= thermal_threshold && status < xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING) {
+            status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
+            std::stringstream temp_buffer;
+            temp_buffer << std::fixed << std::setprecision(2) << temp_val;
+            description = "Find an unhealthy temperature sensor. Its temperature is " + temp_buffer.str() + " that reaches or exceeds the " + (global_default_limit ? "global defalut limit " : "threshold ") + std::to_string(thermal_threshold) + ".";
         }
     } else if (type == xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT) {
         description = "All port statuses cannot be determined.";

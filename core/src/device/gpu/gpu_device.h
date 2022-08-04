@@ -56,6 +56,7 @@ class GPUDevice : public Device {
     virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept override;
 
     virtual bool isUpgradingFw(void) noexcept override;
+    virtual bool isUpgradingFwResultReady(void) noexcept override;
 
    private:
     void dumpFirmwareFlashLog() noexcept;

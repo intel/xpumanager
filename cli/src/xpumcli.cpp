@@ -31,12 +31,13 @@
 #include "comlet_statistics.h"
 #include "comlet_topology.h"
 #include "comlet_version.h"
+#include "comlet_top.h"
 #include "core_stub.h"
 #include "logger.h"
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
 
-bool permissionCheck() {
+bool privilegeCheck() {
     uid_t uid = getuid();
     if (uid == 0) {
         return true;
@@ -44,6 +45,7 @@ bool permissionCheck() {
     struct passwd* pw = getpwuid(uid);
     if (pw == NULL) {
         perror("getpwuid error");
+        return false;
     }
     int ngroups = 0;
     getgrouplist(pw->pw_name, pw->pw_gid, NULL, &ngroups);
@@ -53,31 +55,20 @@ bool permissionCheck() {
     gid_t groups[ngroups];
     getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
     std::string xpum_grp("xpum");
-    bool has_permission = false;
+    bool has_privilege = false;
     for (int i = 0; i < ngroups; i++) {
         struct group* gr = getgrgid(groups[i]);
         if (gr == NULL) {
             perror("getgrgid error");
+            return false;
         }
         std::string grp_name(gr->gr_name);
         if (grp_name == xpum_grp) {
-            has_permission = true;
+            has_privilege = true;
         }
     }
-    return has_permission;
-}
 
-bool serviceStatusCheck() {
-    FILE* f = popen("service xpum status", "r");
-    char c_line[1024];
-    while (fgets(c_line, 1024, f) != NULL) {
-        std::string line(c_line);
-        if (line.find("active (running)") != std::string::npos) {
-            return true;
-        }
-    }
-    pclose(f);
-    return false;
+    return has_privilege;
 }
 
 bool levelZeroLoaderCheck() {
@@ -86,7 +77,7 @@ bool levelZeroLoaderCheck() {
     while (fgets(c_line, 1024, f) != NULL) {
         std::string line(c_line);
         if (line.find("libze_loader.so") != std::string::npos) {
-            if (line.find("not found")) {
+            if (line.find("not found") != std::string::npos) {
                 return false;
             }
             return true;
@@ -100,14 +91,11 @@ int main(int argc, char** argv) {
     xpum::cli::init_logger();
     // XPUM_LOG_AUDIT("XPUM CLI (ver.%s) Started", "1.0.0.0");
 
-    if (!permissionCheck()) {
-        std::cout << "Error: User Permission Error\r\n";
-        return 0;
-    }
+    bool priv = privilegeCheck();
 
     CLI::App app{xpum::cli::getResourceString("CLI_APP_DESC")};
 
-    xpum::cli::CLIWrapper wrapper(app);
+    xpum::cli::CLIWrapper wrapper(app, priv);
     if (!wrapper.getCoreStub()->isChannelReady()) {
         std::cout << "Error: XPUM Service Status Error. ";
         if (!levelZeroLoaderCheck()) {
@@ -127,6 +115,9 @@ int main(int argc, char** argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletFirmware))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletConfig))
         //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletReset))
+        //Temporarily hide the top command becuase the sysfs interface 
+        //does not work as expected
+        //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTop))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet));

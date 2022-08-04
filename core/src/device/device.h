@@ -25,6 +25,8 @@
 
 namespace xpum {
 
+class FwDataMgmt;
+
 /*
   Device class defines various interfaces for communication with devices.
 */
@@ -45,6 +47,19 @@ typedef struct FabricThroughputInfo_t {
     uint32_t remote_attach_id;
     FabricThroughputType type;
 } FabricThroughputInfo;
+
+
+struct pci_address_t {
+    uint32_t domain;    ///< BDF domain
+    uint32_t bus;       ///< BDF bus
+    uint32_t device;    ///< BDF device
+    uint32_t function;  ///< BDF function
+
+    bool operator==(const pci_address_t& addr) {
+        return domain == addr.domain &&
+               bus == addr.bus && device == addr.device && function == addr.function;
+    }
+};
 
 class Device {
    public:
@@ -129,6 +144,8 @@ class Device {
 
     virtual bool isUpgradingFw(void) noexcept;
 
+    virtual bool isUpgradingFwResultReady(void) noexcept = 0;
+
     static std::function<void(Callback_t)> getDeviceMethod(DeviceCapability& capability, Device* p_device);
 
     void addEngine(uint64_t engine, zes_engine_group_t type, bool on_subdevice, uint32_t subdevice_id);
@@ -152,6 +169,43 @@ class Device {
     uint32_t getFabricThroughputInfoCount();
 
     std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<FabricThroughputType>>>> getFabricThroughputIDS();
+
+    void setPciAddress(pci_address_t address) {
+        bdfAddr = address;
+    }
+
+    pci_address_t getPciAddress() {
+        return bdfAddr;
+    }
+
+    void setMeiDevicePath(std::string path) {
+        mei_device_path = path;
+    }
+
+    std::string getMeiDevicePath() {
+        return mei_device_path;
+    }
+
+    void setFwDataMgmt(std::shared_ptr<FwDataMgmt> pFwDataMgmt) {
+        this->pFwDataMgmt = pFwDataMgmt;
+    }
+
+    std::shared_ptr<FwDataMgmt> getFwDataMgmt() {
+        return pFwDataMgmt;
+    }
+
+    bool try_lock() {
+        if (_operation_lock.test_and_set()) {
+            return false;
+        }
+        return true;
+    }
+
+    void unlock() {
+        _operation_lock.clear();
+    }
+
+    int getDeviceModel();
 
    public:
     virtual ~Device() {}
@@ -180,6 +234,15 @@ class Device {
     std::map<uint32_t, std::map<uint32_t, std::map<uint32_t, std::vector<FabricThroughputType>>>> fabric_throughput_ids;
 
     std::map<uint64_t, FabricThroughputInfo> fabric_throughput_info;
+
+    pci_address_t bdfAddr;
+
+    std::string mei_device_path;
+
+    std::shared_ptr<FwDataMgmt> pFwDataMgmt;
+
+   private:
+    std::atomic_flag _operation_lock = ATOMIC_FLAG_INIT;
 };
 
 } // end namespace xpum

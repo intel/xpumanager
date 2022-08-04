@@ -68,6 +68,9 @@ class DeviceManager : public DeviceManagerInterface,
     bool setDeviceFrequencyRange(const std::string& id,
                                  const Frequency& freq);
 
+    bool setDeviceFrequencyRangeForAll(const std::string& id,
+                                 const Frequency& freq);
+
     bool setDeviceStandby(const std::string& id,
                           const Standby& standby);
 
@@ -83,6 +86,9 @@ class DeviceManager : public DeviceManagerInterface,
     bool resetDevice(const std::string& id, bool force);
 
     void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes);
+
+    void getDeviceUtilByProcess(const std::string& id, uint32_t utilInterval,
+            std::vector<std::vector<device_util_by_proc>>& utils);
 
     void getPerformanceFactor(const std::string& id, std::vector<PerformanceFactor>& pf);
 
@@ -100,6 +106,14 @@ class DeviceManager : public DeviceManagerInterface,
     void discoverFabricLinks();
 
     std::string getDeviceIDByFabricID(uint64_t fabric_id);
+
+    bool tryLockDevices(const std::vector<std::string>& deviceList);
+
+    bool tryLockDevices(std::vector<std::shared_ptr<Device>>& deviceList);
+
+    void unlockDevices(const std::vector<std::string>& deviceList);
+
+    void unlockDevices(std::vector<std::shared_ptr<Device>>& deviceList);
 
    private:
     DeviceManager() = default;

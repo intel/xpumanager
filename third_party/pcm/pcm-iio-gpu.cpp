@@ -939,9 +939,11 @@ int pcm_iio_gpu_init()
 
     if (!mapping->pciTreeDiscover(iios, m->getNumSockets())) {
         std::cout << "Error! Failed to discover iio stack." << std::endl;
+        delete mapping;
         return -1;
     }
     cerr.clear();
+    delete mapping;
     return 0;
 }
 

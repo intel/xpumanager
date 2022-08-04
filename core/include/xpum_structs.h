@@ -115,8 +115,10 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
     XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
-    XPUM_UPDATE_FIRMWARE_GFXFWFPT_NOT_FOUND, /// "/usr/local/bin/GfxFwFPT" not found
+    XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND, /// "/usr/bin/igsc" not found
     XPUM_UPDATE_FIRMWARE_TASK_RUNNING,       /// Firmware update task is already running
+    XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE,       /// The image file is not a valid FW image file
+    XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE,       /// The image file is not compatible with device
     XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT,
     XPUM_METRIC_NOT_SUPPORTED, ///< Unsupported metric
     XPUM_METRIC_NOT_ENABLED,   ///< Unenabled metric
@@ -127,6 +129,8 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_AGENT_SET_INVALID_VALUE,  /// Agent set value is invalid
     XPUM_LEVEL_ZERO_INITIALIZATION_ERROR, ///< Level Zero initialization error.
     XPUM_UNSUPPORTED_SESSIONID,           ///< Unsupported session id
+    XPUM_RESULT_MEMORY_ECC_LIB_NOT_SUPPORT,
+    XPUM_INTERVAL_INVALID,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -177,9 +181,12 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_PCI_SLOT,                       ///< PCI slot of device
     XPUM_DEVICE_PROPERTY_PCIE_GENERATION,                ///< PCIe generation
     XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH,            ///< PCIe max link width
+    XPUM_DEVICE_PROPERTY_DEVICE_STEPPING,                ///< The stepping of device
     XPUM_DEVICE_PROPERTY_DRIVER_VERSION,                 ///< The driver version
     XPUM_DEVICE_PROPERTY_FIRMWARE_NAME,                  ///< The firmware name of device
     XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION,               ///< The firmware version of device
+    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME,           ///< The firmware name of FW-DATA of device
+    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION,        ///< The firmware version of FW-DATA of device
     XPUM_DEVICE_PROPERTY_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes
@@ -189,12 +196,15 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_MEMORY_BUS_WIDTH,               ///< Memory bus width
     XPUM_DEVICE_PROPERTY_MAX_HARDWARE_CONTEXTS,          ///< Maximum number of logical hardware contexts
     XPUM_DEVICE_PROPERTY_MAX_COMMAND_QUEUE_PRIORITY,     ///< Maximum priority for command queues. Higher value is higher priority
+    XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS,                  ///< The number of EUs
     XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES,                ///< The number of tiles
     XPUM_DEVICE_PROPERTY_NUMBER_OF_SLICES,               ///< Maximum number of slices
     XPUM_DEVICE_PROPERTY_NUMBER_OF_SUB_SLICES_PER_SLICE, ///< Maximum number of sub-slices per slice
     XPUM_DEVICE_PROPERTY_NUMBER_OF_EUS_PER_SUB_SLICE,    ///< Maximum number of EUs per sub-slice
     XPUM_DEVICE_PROPERTY_NUMBER_OF_THREADS_PER_EU,       ///< Maximum number of threads per EU
     XPUM_DEVICE_PROPERTY_PHYSICAL_EU_SIMD_WIDTH,         ///< The physical EU simd width
+    XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENGINES,        ///< The number of media engines
+    XPUM_DEVICE_PROPERTY_NUMBER_OF_MEDIA_ENH_ENGINES,    ///< The number of media enhancement engines
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER,             ///< Number of fabric ports
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED,          ///< Maximum speed supported by the port (sum of all lanes)
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER,       ///< The number of lanes of the port
@@ -308,7 +318,8 @@ typedef enum xpum_device_config_type_enum {
  */
 typedef enum xpum_firmware_type_enum {
     XPUM_DEVICE_FIRMWARE_GSC = 0, ///< GSC firmware
-    XPUM_DEVICE_FIRMWARE_AMC = 1, ///< GSC firmware
+    XPUM_DEVICE_FIRMWARE_AMC = 1, ///< AMC firmware
+    XPUM_DEVICE_FIRMWARE_FW_DATA = 2, ///< GSC FW DATA
 } xpum_firmware_type_t;
 
 /**
@@ -717,6 +728,19 @@ typedef struct xpum_device_process_t {
     char processName[XPUM_MAX_STR_LENGTH];
 } xpum_device_process_t;
 
+typedef struct {
+    uint32_t deviceId;
+    uint32_t processId;
+    double renderingEngineUtil;
+    double computeEngineUtil;
+    double copyEngineUtil;
+    double mediaEngineUtil;
+    double mediaEnhancementUtil;
+    uint64_t memSize;
+    uint64_t sharedMemSize;
+    char processName[XPUM_MAX_STR_LENGTH];
+} xpum_device_util_by_process_t;
+
 typedef struct xpum_device_performancefactor_t {
     bool on_subdevice;
     uint32_t subdevice_id;
@@ -766,7 +790,7 @@ typedef struct xpum_scheduler_exclusive_t {
     uint32_t subdevice_Id;
 } xpum_scheduler_exclusive_t;
 
-#define XPUM_MAX_CPU_LIST_LEN 32
+#define XPUM_MAX_CPU_LIST_LEN 128
 #define XPUM_MAX_CPU_S_LEN 128
 #define XPUM_MAX_PATH_LEN 256
 #define XPUM_MAX_XELINK_PORT 8

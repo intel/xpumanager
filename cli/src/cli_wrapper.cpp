@@ -18,7 +18,7 @@
 
 namespace xpum::cli {
 
-CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
+CLIWrapper::CLIWrapper(CLI::App &cliApp, bool privilege) : cliApp(cliApp) {
     this->opts = std::unique_ptr<CLIWrapperOptions>(new CLIWrapperOptions());
 
     cliApp.formatter(std::make_shared<HelpFormatter>());
@@ -28,7 +28,7 @@ CLIWrapper::CLIWrapper(CLI::App &cliApp) : cliApp(cliApp) {
 
     cliApp.fallthrough(true);
 
-    this->coreStub = std::make_shared<CoreStub>();
+    this->coreStub = std::make_shared<CoreStub>(privilege);
 }
 
 CLIWrapper &CLIWrapper::addComlet(const std::shared_ptr<ComletBase> &comlet) {

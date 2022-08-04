@@ -18,6 +18,8 @@ struct FlashFirmwareOptions {
     std::string firmwareType;
     std::string firmwarePath;
 
+    bool assumeyes;
+
     /*
         FlashFirmwareOptions( unsigned int id, const std::string& type, const std::string& path )
             : deviceId( id ), firmwarePath( path ) {
@@ -45,5 +47,16 @@ class ComletFirmware : public ComletBase {
 
    private:
     std::unique_ptr<FlashFirmwareOptions> opts;
+    std::vector<char> imgBuffer;
+
+    std::string getCurrentFwVersion(nlohmann::json json);
+    std::string getImageFwVersion();
+    bool checkIgscExist();
+    bool checkImageValid();
+    bool validateFwDataImage();
+    std::string getFwDataImageFwVersion();
+    nlohmann::json getDeviceProperties(int deviceId);
+
+    void readImageContent(const char* filePath);
 };
 } // namespace xpum::cli

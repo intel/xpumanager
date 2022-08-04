@@ -20,8 +20,8 @@ struct ComletPolicyOptions {
     bool listalltypes = false;
     bool create = false;
     bool remove = false;
-    int deviceId = -1;
-    int groupId = -1;
+    int32_t deviceId = -1;
+    uint32_t groupId = 0;
     std::string policyType = "";
     std::string policyConditionType = "";
     std::string policyActionType = "";

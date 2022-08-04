@@ -134,12 +134,13 @@ void setXelinkTransfer(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelin
 }
 
 void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_topo_info& info,
-                     zes_fabric_port_id_t& localPort, zes_fabric_port_id_t& remotePort) {
+                     zes_fabric_port_id_t& localPort, zes_fabric_port_id_t& remotePort, bool x_fabric_existing, bool y_fabric_existing) {
     bool bFound = false;
     xpum_xelink_topo_info* currentInfo = nullptr;
 
     for (size_t i = 0; i < topoInfos.size(); i++) {
         if (topoInfos[i] == info) {
+            //XPUM_LOG_INFO("changeOrAddInfo == No. {} DeviceId {}",i, info.localDevice.deviceId);
             currentInfo = &topoInfos[i];
             bFound = true;
             break;
@@ -147,9 +148,17 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
     }
 
     if (info.localDevice == info.remoteDevice) {
+        //XPUM_LOG_INFO("info.localDevice == info.remoteDevice");
         info.linkType = XPUM_LINK_SELF;
-    } else if (localPort.fabricId == remotePort.fabricId) {
+    } else if ((localPort.fabricId == remotePort.fabricId) && x_fabric_existing && y_fabric_existing) {
+        //XPUM_LOG_INFO("localPort.fabricId == remotePort.fabricId");
         info.linkType = XPUM_LINK_MDF;
+    } else if ((info.localDevice.numaIdx == info.remoteDevice.numaIdx) && !x_fabric_existing && !y_fabric_existing){
+        //XPUM_LOG_INFO("localPort.numaIdx == remotePort.numaIdx");
+        info.linkType = XPUM_LINK_NODE;
+    } else if ((info.localDevice.numaIdx != info.remoteDevice.numaIdx) && !x_fabric_existing && !y_fabric_existing){
+        //XPUM_LOG_INFO("localPort.numaIdx != remotePort.numaIdx");
+        info.linkType = XPUM_LINK_SYS;
     }
 
     if (!bFound) {
@@ -161,8 +170,10 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
             } else {
                 info.linkType = XPUM_LINK_SYS;
             }
+            //XPUM_LOG_INFO("!bFound info.linkType == XPUM_LINK_UNKNOWN");
         } else if (info.linkType == XPUM_LINK_XE) {
             setXelinkTransfer(topoInfos, info);
+            //XPUM_LOG_INFO("!bFound info.linkType == XPUM_LINK_XE");
             //info.linkPorts[localPort.portNumber-1] = min(localPort.);
         }
         topoInfos.push_back(info);
@@ -173,7 +184,9 @@ void changeOrAddInfo(std::vector<xpum_xelink_topo_info>& topoInfos, xpum_xelink_
                 setXelinkTransfer(topoInfos, info);
             }
             currentInfo->linkPorts[localPort.portNumber - 1] = info.linkPorts[localPort.portNumber - 1];
+            //XPUM_LOG_INFO("bFound info.linkType == XPUM_LINK_XE");
         }
+        //XPUM_LOG_INFO("bFound last");
     }
 }
 
@@ -207,15 +220,19 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int* co
             topoInfo.localDevice.subdeviceId = fabricPorts[x].localPortProp.subdeviceId;
             len = fabricPorts[x].cpuAffinity.copy(topoInfo.localDevice.cpuAffinity, XPUM_MAX_CPU_LIST_LEN);
             topoInfo.localDevice.cpuAffinity[len] = '\0';
+            //XPUM_LOG_INFO("cpu affinity {}", topoInfo.localDevice.cpuAffinity);
+
+            //XPUM_LOG_INFO("local deviceId {}, numaIdx {}, subdeviceId {},  ", topoInfo.localDevice.deviceId,topoInfo.localDevice.numaIdx,topoInfo.localDevice.subdeviceId);
 
             topoInfo.remoteDevice.deviceId = fabricPorts[y].deviceId;
             topoInfo.remoteDevice.numaIdx = fabricPorts[y].numaIdx;
             topoInfo.remoteDevice.onSubdevice = fabricPorts[y].localPortProp.onSubdevice;
             topoInfo.remoteDevice.subdeviceId = fabricPorts[y].localPortProp.subdeviceId;
+            //XPUM_LOG_INFO("remote deviceId {}, numaIdx {}, subdeviceId {},  ", topoInfo.remoteDevice.deviceId,topoInfo.remoteDevice.numaIdx,topoInfo.remoteDevice.subdeviceId);
 
             topoInfo.linkType = XPUM_LINK_UNKNOWN;
 
-            if (fabricPorts[x].enabled && fabricPorts[x].healthy) {
+            if (fabricPorts[x].enabled && fabricPorts[x].healthy && fabricPorts[x].fabric_existing) {
                 if (fabricPorts[x].remotePortId == fabricPorts[y].localPortProp.portId) {
                     topoInfo.linkType = XPUM_LINK_XE;
                     //XPUM_LOG_DEBUG("XELINK {}.{}-PORT:{}.{}.{} to {}.{}-PORT:{}.{}.{}",
@@ -233,7 +250,8 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int* co
                 }
             }
 
-            changeOrAddInfo(topoInfos, topoInfo, fabricPorts[x].localPortProp.portId, fabricPorts[y].localPortProp.portId);
+            changeOrAddInfo(topoInfos, topoInfo, fabricPorts[x].localPortProp.portId, fabricPorts[y].localPortProp.portId, 
+            fabricPorts[x].fabric_existing, fabricPorts[y].fabric_existing);
         }
     }
 

@@ -77,6 +77,10 @@ std::shared_ptr<std::map<int, std::map<int, int>>> CoreStub::getEngineCount(int 
 
     std::map<int, std::map<int, int>> m;
 
+    if (!status.ok()) {
+        return std::make_shared<std::map<int, std::map<int, int>>>(m);
+    }
+
     for (auto &tileInfo : response.enginecountlist()) {
         std::map<int, int> mm;
         for (auto &countInfo : tileInfo.datalist()) {
@@ -96,17 +100,27 @@ std::shared_ptr<nlohmann::json> CoreStub::getFabricCount(int deviceId) {
     GetFabricCountResponse response;
     request.set_deviceid(deviceId);
     grpc::Status status = stub->getFabricCount(&context, request, &response);
-
     nlohmann::json json;
-    for (auto &tileInfo : response.fabriccountlist()) {
-        std::string tileId = tileInfo.istilelevel() ? std::to_string(tileInfo.tileid()) : "device";
-        nlohmann::json obj;
-        for (auto &countInfo : tileInfo.datalist()) {
-            obj["tile_id"] = countInfo.tileid();
-            obj["remote_device_id"] = countInfo.remotedeviceid();
-            obj["remote_tile_id"] = countInfo.remotetileid();
+
+    if (!status.ok()) {
+        json["error"] = status.error_message();
+        return std::make_shared<nlohmann::json>(json);
+    }
+
+    if (response.errormsg().length() == 0) {
+        for (auto &tileInfo : response.fabriccountlist()) {
+            std::string tileId = tileInfo.istilelevel() ? std::to_string(tileInfo.tileid()) : "device";
+            nlohmann::json obj;
+            for (auto &countInfo : tileInfo.datalist()) {
+                obj["tile_id"] = countInfo.tileid();
+                obj["remote_device_id"] = countInfo.remotedeviceid();
+                obj["remote_tile_id"] = countInfo.remotetileid();
+            }
+            json[tileId].push_back(obj);
         }
-        json[tileId].push_back(obj);
+    }
+    else {
+        json["error"] = response.errormsg();
     }
     return std::make_shared<nlohmann::json>(json);
 }
@@ -260,7 +274,18 @@ std::shared_ptr<nlohmann::json> CoreStub::getFabricStatistics(int deviceId) {
     return std::make_shared<nlohmann::json>(json);
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enableFilter) {
+static int32_t getCliScale(xpum_stats_type_t metricsType) {
+    switch (metricsType) {
+        case XPUM_STATS_ENERGY:
+            return 1000;
+        case XPUM_STATS_MEMORY_USED:
+            return 1048576;
+        default:
+            return 1;
+    }
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enableFilter, bool enableScale) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -315,7 +340,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
             auto tmp = nlohmann::json();
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
-            int32_t scale = stats_data.scale();
+            int32_t cliScale = getCliScale(metricsType);
+            int32_t scale = enableScale ? stats_data.scale() * cliScale : stats_data.scale();
             if (scale == 1) {
                 tmp["value"] = stats_data.value();
                 if (!stats_data.iscounter()) {
@@ -362,7 +388,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId, bool enableFilter) {
+std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId, bool enableFilter, bool enableScale) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -406,7 +432,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
             auto tmp = nlohmann::json();
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
-            int32_t scale = stats_data.scale();
+            int32_t cliScale = getCliScale(metricsType);
+            int32_t scale = enableScale ? stats_data.scale() * cliScale : stats_data.scale();
             if (scale == 1) {
                 tmp["value"] = stats_data.value();
                 if (!stats_data.iscounter()) {

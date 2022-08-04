@@ -22,7 +22,7 @@ namespace xpum::cli {
 
 class CoreStub {
    public:
-    CoreStub();
+    CoreStub(bool priv);
 
     bool isChannelReady();
 
@@ -62,8 +62,8 @@ class CoreStub {
     std::string healthTypeEnumToString(HealthType type);
     nlohmann::json appendHealthThreshold(int deviceId, nlohmann::json, HealthType type, uint64_t throttleValue, uint64_t shutdownValue);
 
-    std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter = false);
-    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter = false);
+    std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter = false, bool enableScale = false);
+    std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter = false, bool enableScale = false);
     std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId);
     std::shared_ptr<std::map<int, std::map<int, int>>> getEngineCount(int deviceId);
     std::shared_ptr<nlohmann::json> getFabricStatistics(int deviceId);
@@ -74,6 +74,8 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> setDeviceStandby(int deviceId, int tileId, XpumStandbyMode mode);
     std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq);
     std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId);
+    std::unique_ptr<nlohmann::json> getDeviceUtilizationByProcess(int deviceId, int utilizationInterval);
+    std::unique_ptr<nlohmann::json> getAllDeviceUtilizationByProcess(int utilizationInterval);
     std::unique_ptr<nlohmann::json> getPerformanceFactor(int deviceId, int tileId);
     std::unique_ptr<nlohmann::json> setPerformanceFactor(int deviceId, int tileId, xpum_engine_type_flags_t engine, double factor);
     std::unique_ptr<nlohmann::json> setFabricPortEnabled(int deviceId, int tileId, uint32_t port, uint32_t enabled);
@@ -90,9 +92,9 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> getAllPolicyConditionType();
     std::unique_ptr<nlohmann::json> getAllPolicyActionType();
     std::unique_ptr<nlohmann::json> getAllPolicy();
-    std::unique_ptr<nlohmann::json> getPolicyById(bool isDevice, int id);
-    std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie, int id);
-    std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, int id, XpumPolicyData& policy);
+    std::unique_ptr<nlohmann::json> getPolicyById(bool isDevice, uint32_t id);
+    std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie, uint32_t id);
+    std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, uint32_t id, XpumPolicyData& policy);
     bool isCliSupportedPolicyType(XpumPolicyType type);
 
     std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath);
