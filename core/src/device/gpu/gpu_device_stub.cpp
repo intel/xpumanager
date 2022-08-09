@@ -387,7 +387,7 @@ static std::string getDriverVersion() {
     std::string version;
     std::string release;
     std::string name = "intel-i915-dkms";
-    std::string rpm_cmd = "rpm -qa | grep " + name;
+    std::string rpm_cmd = "rpm -qa | grep " + name + " 2>/dev/null";
     SystemCommandResult rpm_res = execCommand(rpm_cmd);
     if (rpm_res.exitStatus() == 0) {
         std::string strData = rpm_res.output();
@@ -401,7 +401,7 @@ static std::string getDriverVersion() {
         release = strData.substr(pos1,pos2-pos1);
         version = version + "-" + release;
     } else {
-        std::string deb_cmd = "dpkg -l | grep " + name;
+        std::string deb_cmd = "dpkg -l | grep " + name + " 2>/dev/null";
         SystemCommandResult deb_res = execCommand(deb_cmd);
         if (deb_res.exitStatus() == 0) {
             std::string strData = deb_res.output();
