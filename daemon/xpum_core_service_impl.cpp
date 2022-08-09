@@ -709,6 +709,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             case XPUM_RESULT_DEVICE_NOT_FOUND:
                 response->set_errormsg("device not found");
                 break;
+            case XPUM_RESULT_HEALTH_INVALID_THRESHOLD:
+                response->set_errormsg("invalid threshold");
+                break;
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
                 break;
@@ -731,6 +734,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
             case XPUM_RESULT_DEVICE_NOT_FOUND:
                 response->set_errormsg("device not found");
+                break;
+            case XPUM_RESULT_HEALTH_INVALID_THRESHOLD:
+                response->set_errormsg("invalid threshold");
                 break;
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
