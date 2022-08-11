@@ -692,7 +692,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                         getline(infile, rev);
                         if (rev.size() > 0) {
                             int val = std::stoi(rev, nullptr, 16);
-                            if (props.core.deviceId == 0x0bd5 || props.core.deviceId == 0x0bd6) {
+                            if ((props.core.deviceId/0x10 == 0x0bd) || props.core.deviceId == 0x0be5) {
                                 std::map<int, std::string> pvc_steppings = {{0x00, "A0"}, {0x01, "A0p"}, {0x03, "A0"},
                                                                             {0x1E, "B0"}, {0x26, "B1"}, {0x2E, "B3"}, {0x2F, "B4"}};
                                 if (pvc_steppings.count(val) > 0) {
