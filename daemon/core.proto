@@ -327,6 +327,7 @@ message XpumFirmwareFlashTaskResult {
     string desc = 4;
     string version = 5;
     string errorMsg = 6;
+    int32 percentage = 7;
 }
 enum XpumPolicyConditionType {  
     POLICY_CONDITION_TYPE_GREATER=0;

@@ -17,6 +17,23 @@
 
 namespace xpum::cli {
 
+static void printProgress(int percentage, std::ostream &out) {
+    int barWidth = 60;
+
+    out << "[";
+    int pos = barWidth * (percentage / 100.0);
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos)
+            std::cout << "=";
+        else if (i == pos)
+            std::cout << ">";
+        else
+            std::cout << " ";
+    }
+    out << "] " << percentage << " %\r";
+    out.flush();
+}
+
 static const std::string igscPath{"igsc"};
 
 ComletFirmware::ComletFirmware() : ComletBase("updatefw", "Update GPU firmware") {
@@ -312,7 +329,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         std::string amcWarnMsg = coreStub->getRedfishAmcWarnMsg();
         if (amcWarnMsg.length()) {
             std::cout << coreStub->getRedfishAmcWarnMsg() << std::endl;
-            std::cout << "Do you want to continue? (y/n)" << std::endl;
+            std::cout << "Do you want to continue? (y/n) ";
             if (!opts->assumeyes) {
                 std::string confirm;
                 std::cin >> confirm;
@@ -320,16 +337,20 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                     out << "update aborted" << std::endl;
                     return;
                 }
+            } else {
+                out << std::endl;
             }
         }
         std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model." << std::endl;
-        std::cout << "Please confirm to proceed (y/n)" << std::endl;
+        std::cout << "Please confirm to proceed (y/n) ";
         if (!opts->assumeyes) {
             std::string confirm;
             std::cin >> confirm;
             if (confirm != "Y" && confirm != "y") {
                 out << "update aborted" << std::endl;
                 return;
+            } else {
+                out << std::endl;
             }
         }
     } else { // GSC and FW-DATA caution
@@ -359,7 +380,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                     auto deviceIdList = groupJson["device_id_list"];
                     for (auto deviceIdInGroup : deviceIdList) {
                         if (deviceIdInGroup.get<int>() == opts->deviceId) {
-                            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) " << std::endl;
+                            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) ";
                             if (!opts->assumeyes) {
                                 std::string confirm;
                                 std::cin >> confirm;
@@ -367,6 +388,8 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                                     out << "update aborted" << std::endl;
                                     return;
                                 }
+                            } else {
+                                out << std::endl;
                             }
                             for (auto tmpId : deviceIdList) {
                                 deviceIdsToFlashFirmware.push_back(tmpId.get<int>());
@@ -396,7 +419,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         } else {
             out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
         }
-        out << "Do you want to continue? (y/n) " << std::endl;
+        out << "Do you want to continue? (y/n) ";
         if (!opts->assumeyes) {
             std::string confirm;
             std::cin >> confirm;
@@ -404,6 +427,8 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 out << "update aborted" << std::endl;
                 return;
             }
+        } else {
+            out << std::endl;
         }
     }
 
@@ -419,9 +444,10 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     out << "Firmware Name: " << opts->firmwareType << std::endl;
     out << "Image path: " << opts->firmwarePath << std::endl;
 
+    printProgress(0, out);
     while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        out << "." << std::flush;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        // out << "." << std::flush;
 
         json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
         if (json->contains("error")) {
@@ -438,6 +464,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         std::string flashStatus = (*json)["result"].get<std::string>();
 
         if (flashStatus.compare("OK") == 0) {
+            printProgress(100, out);
             out << std::endl;
             out << "Update firmware successfully." << std::endl;
             return;
@@ -447,6 +474,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             return;
         } else {
             // do nothing
+            printProgress((*json)["percentage"], out);
         }
     }
 

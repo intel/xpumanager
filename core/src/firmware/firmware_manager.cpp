@@ -273,7 +273,7 @@ static bool isGscFwImage(std::vector<char>& buffer) {
     return type == IGSC_IMAGE_TYPE_GFX_FW;
 }
 
-static bool isFwImageAndDeviceCompatible(std::string meiPath, std::vector<char>& buffer) {
+static bool atsmHwConfigCompatibleCheck(std::string meiPath, std::vector<char>& buffer) {
     struct igsc_hw_config img_hw_config, dev_hw_config;
     int ret;
     // image hw config
@@ -380,12 +380,12 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
     }
 
     // validate the image is compatible with the device
-    if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
-        if (!isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer)) {
+    if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
+        if (!atsmHwConfigCompatibleCheck(pDevice->getMeiDevicePath(), buffer)) {
             return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
         }
     } else {
-        if (!isFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer)) {
+        if (!isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer)) {
             return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
         }
     }
@@ -409,7 +409,7 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
     std::vector<std::shared_ptr<Device>> toUnlock;
     for (auto pd : deviceList) {
         if (!stop) {
-            res = pd->runFirmwareFlash(filePath, igscPath);
+            res = pd->runFirmwareFlash(buffer);
             if (res != XPUM_OK) {
                 stop = true;
                 toUnlock.push_back(pd);
@@ -436,12 +436,19 @@ void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_
     // result->result = res;
     auto deviceList = getSiblingDevices(device);
 
+    int totalPercent = 0;
+    bool ongoing = false;
     for (auto pd : deviceList) {
+        totalPercent += pd->gscFwFlashPercent.load();
         // if sibling device is upgrading, and dont get the result until all device is ready
         if (pd->isUpgradingFw() && !pd->isUpgradingFwResultReady()) {
             result->result = XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
-            return;
+            ongoing = true;
         }
+    }
+    result->percentage = totalPercent / deviceList.size();
+    if (ongoing) {
+        return;
     }
 
     result->result = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
@@ -549,13 +556,20 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
     result->type = XPUM_DEVICE_FIRMWARE_FW_DATA;
     auto deviceList = getSiblingDevices(pDevice);
 
+    bool ongoing = false;
+    int totalPercent = 0;
     for (auto pd : deviceList) {
         // if sibling device is upgrading, and dont get the result until all device is ready
         auto fwDataMgmt = pd->getFwDataMgmt();
+        totalPercent += fwDataMgmt->percent.load();
         if (fwDataMgmt->isUpgradingFw() && !fwDataMgmt->isReady()) {
             result->result = XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
-            return;
+            ongoing = true;
         }
+    }
+    result->percentage = totalPercent / deviceList.size();
+    if (ongoing) {
+        return;
     }
 
     result->result = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;

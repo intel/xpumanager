@@ -1130,7 +1130,8 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
                             std::string password,
                             bool& finished,
                             bool& success,
-                            std::string& errMsg);
+                            std::string& errMsg,
+                            int& percent);
 
 void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
     std::lock_guard<std::mutex> lck(mtx);
@@ -1197,6 +1198,8 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         XPUM_LOG_INFO("{}", targetUri);
     }
 
+    percent.store(0);
+
     task = std::async(std::launch::async, [this, targetUriList, pushUri, triggerUri, param] {
         FlashAmcFirmwareParam parameters = param;
 
@@ -1259,13 +1262,15 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
                 bool success;
                 bool finished;
                 // std::string errMsg;
+                int percent;
                 auto querySuccessfully = getOneTaskUpdateResult(hostInterface,
                                                                 taskUri,
                                                                 param.username,
                                                                 param.password,
                                                                 finished,
                                                                 success,
-                                                                flashFwErrMsg);
+                                                                flashFwErrMsg,
+                                                                percent);
                 if (!querySuccessfully) {
                     // fail to query result
                     XPUM_LOG_ERROR("Fail to query task uri: {}", taskUri);
@@ -1282,6 +1287,7 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
                         break;
                     }
                 }
+                this->percent.store(percent);
                 // task ongoing, wait 2 sec
                 XPUM_LOG_INFO("Task {} on going", taskUri);
                 std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -1314,7 +1320,8 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
                             std::string password,
                             bool& finished,
                             bool& success,
-                            std::string& errMsg) {
+                            std::string& errMsg,
+                            int& percent) {
     std::stringstream url;
     url << "https://";
     url << interface.ipv4_service_addr;
@@ -1368,6 +1375,7 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
         // success if percentage is 100
         if (taskJson.contains("PercentComplete") && taskJson["PercentComplete"].is_number()) {
             int percentage = taskJson["PercentComplete"];
+            percent = percentage;
             success = percentage == 100;
         }
         if (!success) {
@@ -1411,6 +1419,7 @@ void RedfishAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam
     result.deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
     result.type = XPUM_DEVICE_FIRMWARE_AMC;
     result.result = res;
+    result.percentage = percent.load();
 }
 
 void RedfishAmcManager::getAMCSensorReading(GetAmcSensorReadingParam& param){

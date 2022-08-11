@@ -17,7 +17,14 @@ extern int cmd_firmware(const char* file, unsigned int versions[4]);
 
 extern int cmd_get_amc_firmware_versions(int buf[][4], int *count);
 
+extern void setPercentCallbackAndContext(percent_callback_func_t callback, void *pAmcManager);
+
 extern std::vector<xpum_sensor_reading_t> read_sensor();
+
+static void percent_callback(uint32_t percent, void* pAmcManager) {
+    IpmiAmcManager* p = (IpmiAmcManager*)pAmcManager;
+    p->percent.store(percent);
+}
 
 bool IpmiAmcManager::preInit(){
     XPUM_LOG_INFO("IpmiAmcManager preInit");
@@ -91,9 +98,12 @@ void IpmiAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         param.callback();
         return;
     }
+    percent.store(0);
     task = std::async(std::launch::async, [param, this] {
 
         fwUpdated = true;
+
+        setPercentCallbackAndContext(percent_callback, this);
 
         int rc = cmd_firmware(param.file.c_str(), nullptr);
 
@@ -129,6 +139,7 @@ void IpmiAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& p
     result.deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
     result.type = XPUM_DEVICE_FIRMWARE_AMC;
     result.result = res;
+    result.percentage = percent.load();
     param.errCode = XPUM_OK;
 }
 

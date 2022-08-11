@@ -73,12 +73,22 @@ UINT32 gFwReqSize;
 #include "pci.h"
 #include "tool.h"
 #include "ipmi_mock.h"
+#include "amc/ipmi_amc_manager.h"
 
 #include <vector>
 #include <string>
 #include <sstream>
 
 namespace xpum {
+
+static void* amcManager;
+
+static percent_callback_func_t percentCallback;
+
+void setPercentCallbackAndContext(percent_callback_func_t callback, void *pAmcManager) {
+    percentCallback = callback;
+    amcManager = pAmcManager;
+}
 
 #define LINE_LENGTH 4096
 
@@ -390,6 +400,11 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
             offset += req.data_len;
         }
 
+        if (percentCallback && amcManager) {
+            int percent = (100 * offset) / data_size;
+            percentCallback(percent, amcManager);
+        }
+
         //log_progress_next();
     }
 
@@ -481,6 +496,9 @@ static int fw_update(nrv_card *card, const uint8_t *data, size_t data_size, fw_g
         XPUM_LOG_ERROR("{} firmware update initialization failed",
                        FW_UPDATE_TYPE_STR(fw_update_type));
         return NRV_FIRMWARE_UPDATE_ERROR;
+    }
+    if (percentCallback && amcManager) {
+        percentCallback(0, amcManager);
     }
 
     XPUM_LOG_INFO("Updating {} on card {}", FW_UPDATE_TYPE_STR(fw_update_type), card->id);

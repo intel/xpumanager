@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <atomic>
 #include "../include/xpum_structs.h"
 
 namespace xpum {
@@ -50,6 +51,7 @@ struct GetAmcSensorReadingParam{
 
 class AmcManager {
    public:
+    std::atomic<int> percent;
     virtual bool preInit() = 0;
     virtual bool init(InitParam& param) = 0;
     virtual std::string getProtocol() = 0;

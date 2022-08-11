@@ -104,6 +104,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId,
     }
 
     int result = res.result().value();
+    int percent = res.percentage();
+
+    (*json)["percentage"] = percent;
 
     switch (result) {
         case 0:

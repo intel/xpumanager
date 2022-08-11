@@ -356,6 +356,7 @@ typedef struct xpum_firmware_flash_task_result_t {
     xpum_firmware_flash_result_t result;   ///< Which state the firmware flash job is in
     char description[XPUM_MAX_STR_LENGTH]; ///< The description of this result
     char version[XPUM_MAX_STR_LENGTH];     ///< Current firmware version
+    int percentage;
 } xpum_firmware_flash_task_result_t;
 
 /**************************************************************************/

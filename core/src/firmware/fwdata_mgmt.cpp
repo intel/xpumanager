@@ -20,6 +20,8 @@ namespace xpum {
 
 using namespace std::chrono_literals;
 
+static std::string print_fwdata_version(const struct igsc_fwdata_version *fwdata_version);
+
 static bool validateImageFormat(std::vector<char>& buffer){
     uint8_t type;
     int ret;
@@ -62,8 +64,15 @@ static bool isFwDataImageAndDeviceCompatible(std::vector<char>& buffer, std::str
     return ret == IGSC_SUCCESS;
 }
 
-xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
+static void progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
+    uint32_t percent = (done * 100) / total;
 
+    // store percent 
+    FwDataMgmt* p = (FwDataMgmt*) ctx;
+    p->percent.store(percent);
+}
+
+xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
     std::lock_guard<std::mutex> lck(mtx);
     if (taskFwData.valid()) {
         // task already running
@@ -71,7 +80,7 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
     } else {
         auto buffer = readImageContent(filePath.c_str());
 
-        if(!validateImageFormat(buffer)){
+        if (!validateImageFormat(buffer)) {
             return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
         }
 
@@ -79,36 +88,58 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
             return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
         }
 
-        std::string command = igscPath + " fw-data update -a -d " + devicePath + " -i " + filePath +" 2>&1";
+        // init fw-data update progress
+        percent.store(0);
 
-        taskFwData = std::async(std::launch::async, [&, command, this] {
-            // XPUM_LOG_INFO("Start update GSC fw, total {} commands", commands.size());
-            bool ok = true;
+        taskFwData = std::async(std::launch::async, [this, buffer, filePath] {
+            XPUM_LOG_INFO("Start update GSC FW-DATA on device {}", devicePath);
 
-            XPUM_LOG_INFO("Execute command: {}", command);
+            struct igsc_device_handle handle;
+            int ret;
 
-            SystemCommandResult sc_res = execCommand(command);
+            struct igsc_fwdata_image* oimg = NULL;
+            struct igsc_fwdata_version dev_version;
+            igsc_progress_func_t progress_func = progress_percentage_func;
 
-            std::string output = sc_res.output();
+            memset(&handle, 0, sizeof(handle));
 
-            if (sc_res.exitStatus() != 0 || output.find("Error") != output.npos) {
-                XPUM_LOG_ERROR("Error occurs: {}", output);
-                ok = false;
-            } else {
-                XPUM_LOG_INFO("Command success");
+            ret = igsc_device_init_by_device(&handle, devicePath.c_str());
+            if (ret != IGSC_SUCCESS) {
+                XPUM_LOG_ERROR("Cannot initialize device: {}", devicePath);
+                igsc_device_close(&handle);
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
 
-            // refresh fw-data version
-            getFwDataVersion();
-
-            xpum_firmware_flash_result_t rc;
-            if (ok) {
-                rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
-            } else {
-                rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            ret = igsc_image_fwdata_init(&oimg, (const uint8_t*)buffer.data(), buffer.size());
+            if (ret == IGSC_ERROR_BAD_IMAGE) {
+                XPUM_LOG_ERROR("Invalid image format: {}", filePath);
+                igsc_image_fwdata_release(oimg);
+                igsc_device_close(&handle);
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
+
+            ret = igsc_device_fwdata_image_update(&handle, oimg, progress_func, this);
+
+            if (ret) {
+                XPUM_LOG_ERROR("GSC FW-DATA update failed on device {}", devicePath);
+                igsc_image_fwdata_release(oimg);
+                igsc_device_close(&handle);
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            ret = igsc_device_fwdata_version(&handle, &dev_version);
+            if (ret != IGSC_SUCCESS) {
+                XPUM_LOG_ERROR("Failed to get firmware version after update from device {}", devicePath);
+            } else {
+                std::string version = print_fwdata_version(&dev_version);
+                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION, version));
+                XPUM_LOG_INFO("GSC FW-DATA on device {} is successfully flashed to {}", devicePath, version);
+            }
+
+            igsc_image_fwdata_release(oimg);
+            igsc_device_close(&handle);
             pDevice->unlock();
-            return rc;
+            return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
         });
 
         return xpum_result_t::XPUM_OK;
