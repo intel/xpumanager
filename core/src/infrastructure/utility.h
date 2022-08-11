@@ -54,6 +54,8 @@ class Utility {
 
     static bool isATSPlatform(std::string device_name);
 
+    static bool isPVCPlatform(std::string device_name);
+
     static bool isATSM1(std::string device_name);
 
     static bool isATSM3(std::string device_name);

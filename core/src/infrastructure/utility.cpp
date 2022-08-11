@@ -579,6 +579,17 @@ bool Utility::isATSPlatform(std::string device_name) {
     || device_name == "Intel(R) Graphics [0x56c1]"
     || device_name == "Intel(R) Graphics [0x0207]";
 }
+bool Utility::isPVCPlatform(std::string device_name) {
+    return device_name == "Intel(R) Graphics [0x0BD0]"
+    || device_name == "Intel(R) Graphics [0x0BD5]"
+    || device_name == "Intel(R) Graphics [0x0BD6]"
+    || device_name == "Intel(R) Graphics [0x0BD7]"
+    || device_name == "Intel(R) Graphics [0x0BD8]"
+    || device_name == "Intel(R) Graphics [0x0BD9]"
+    || device_name == "Intel(R) Graphics [0x0BDA]"
+    || device_name == "Intel(R) Graphics [0x0BDB]"
+    || device_name == "Intel(R) Graphics [0x0BE5]";
+}
 
 bool Utility::isATSM1(std::string device_name) {
     return device_name == "Intel(R) Graphics [0x56c0]";

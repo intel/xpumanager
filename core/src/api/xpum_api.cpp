@@ -1542,6 +1542,43 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
+int32_t defaultMaxPowerLimit(std::string device_name) {
+   if (device_name == "Intel(R) Graphics [0x56c0]"){
+    return 120 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x56c1]"){
+    return 23 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0BD0]"){
+    return 600 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0BD5]"){
+    return 600 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0BD6]"){
+    return 600 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0BD7]"){
+    return 450 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0BD8]"){
+    return 450 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0BD9]"){
+    return 300 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0BDA]"){
+    return 300 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0BDB]"){
+    return 300 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0BE5]"){
+    return 600 *1000;
+   }
+   return -1;
+}
+
 xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -1557,13 +1594,7 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
     int32_t default_maxLimit = -1;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, prop);
 
-    if (Utility::isATSM1(prop.getValue())) {
-        default_maxLimit = 120 *1000;
-    }
-
-    if (Utility::isATSM3(prop.getValue())) {
-        default_maxLimit = 23 *1000;
-    }
+    default_maxLimit = defaultMaxPowerLimit(prop.getValue());
 
     std::vector<Power> powers;
     Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
