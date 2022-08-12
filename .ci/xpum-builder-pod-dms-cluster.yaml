@@ -1,0 +1,175 @@
+#
+# Copyright (C) 2021-2022 Intel Corporation
+# SPDX-License-Identifier: MIT
+# @file xpum-builder-pod.yaml
+#
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    worker: xpum-builder
+  namespace: dms-cluster
+spec:
+  tolerations:
+  - key: jenkins-job-only
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/master
+    effect: NoSchedule
+  containers:
+    - args:
+      - "99d"
+      command:
+        - "sleep"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-sles:lz-1.8.1"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-sles"
+      resources:
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+      securityContext:
+        privileged: false
+      tty: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+      workingDir: "/home/jenkins/agent"
+    - args:
+        - "99d"
+      command:
+        - "sleep"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-ubuntu:lz-1.8.1"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-ubuntu"
+      resources:
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+      securityContext:
+        privileged: false
+      tty: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+      workingDir: "/home/jenkins/agent"
+    - args:
+        - "99d"
+      command:
+        - "sleep"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos7:lz-1.8.1"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-centos7"
+      resources:
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+      tty: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+      workingDir: "/home/jenkins/agent"
+    - args:
+        - "99d"
+      command:
+        - "sleep"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos8:lz-1.8.1"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-centos8"
+      resources:
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+      tty: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+      workingDir: "/home/jenkins/agent"
+    - name: "kaniko"
+      image: "gcr.io/kaniko-project/executor:debug"
+      imagePullPolicy: Always
+      command:
+      - /busybox/cat
+      tty: true
+      resources:
+        limits: 
+          memory: "2Gi"
+          cpu: "2"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+      securityContext:
+        privileged: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      workingDir: "/home/jenkins/agent"
+    - env:
+        - name: "JENKINS_AGENT_WORKDIR"
+          value: "/home/jenkins/agent"
+      image: "jenkins/inbound-agent:4.11-1"
+      name: "jnlp"
+      resources:
+        limits: 
+          memory: "2Gi"
+          cpu: "2"
+        requests:
+          memory: "1Gi"
+          cpu: "1"
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+  hostNetwork: false
+  nodeSelector:
+    kubernetes.io/os: "linux"
+  restartPolicy: "Never"
+  volumes:
+    - name: sign-secret
+      secret:
+        secretName: sign-secret
+        items:
+          - key: password
+            path: password.sys_dcm
+    - emptyDir:
+        medium: ""
+      name: "workspace-volume"
+    - name: docker-config
+      projected:
+        sources:
+        - secret:
+            name: regcre-ccr-registry-caas-intel-com
+            items:
+              - key: .dockerconfigjson
+                path: config.json
