@@ -9,7 +9,7 @@ kind: Pod
 metadata:
   labels:
     worker: xpum-builder
-  namespace: dms-cluster
+  namespace: jenkins
 spec:
   tolerations:
   - key: jenkins-job-only
