@@ -28,15 +28,9 @@ spec:
         limits: {}
         requests: {}
       securityContext:
-        privileged: true
+        privileged: false
       tty: false
       volumeMounts:
-        - mountPath: "/var/run/docker.sock"
-          name: "volume-0"
-          readOnly: false
-        - mountPath: "/xpum-docker"
-          name: "volume-1"
-          readOnly: false
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
@@ -55,15 +49,9 @@ spec:
         limits: {}
         requests: {}
       securityContext:
-        privileged: true
+        privileged: false
       tty: false
       volumeMounts:
-        - mountPath: "/var/run/docker.sock"
-          name: "volume-0"
-          readOnly: false
-        - mountPath: "/xpum-docker"
-          name: "volume-1"
-          readOnly: false
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
@@ -83,12 +71,6 @@ spec:
         requests: {}
       tty: false
       volumeMounts:
-        - mountPath: "/var/run/docker.sock"
-          name: "volume-0"
-          readOnly: false
-        - mountPath: "/xpum-docker"
-          name: "volume-1"
-          readOnly: false
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
@@ -108,12 +90,6 @@ spec:
         requests: {}
       tty: false
       volumeMounts:
-        - mountPath: "/var/run/docker.sock"
-          name: "volume-0"
-          readOnly: false
-        - mountPath: "/xpum-docker"
-          name: "volume-1"
-          readOnly: false
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
@@ -121,32 +97,21 @@ spec:
           mountPath: "/root"
           readOnly: true
       workingDir: "/home/jenkins/agent"
-    - args:
-        - "99d"
+    - name: "kaniko"
+      image: "gcr.io/kaniko-project/executor:debug"
+      imagePullPolicy: Always
       command:
-        - "sleep"
-      image: "docker:20.10"
-      imagePullPolicy: "IfNotPresent"
-      name: "docker"
+      - /busybox/cat
+      tty: true
       resources:
-        limits: {}
-        requests: {}
+        limits: 
+          memory: "2Gi"
+          cpu: "2"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
       securityContext:
-        privileged: true
-      tty: false
-      volumeMounts:
-        - mountPath: "/var/run/docker.sock"
-          name: "volume-0"
-          readOnly: false
-        - name: docker-config
-          mountPath: /root/.docker/
-        - mountPath: "/xpum-docker"
-          name: "volume-1"
-          readOnly: false
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
-          readOnly: false
-      workingDir: "/home/jenkins/agent"
+        privileged: false
     - env:
         - name: "JENKINS_TUNNEL"
           value: ":32757"
@@ -154,7 +119,7 @@ spec:
           value: "/home/jenkins/agent"
         - name: "JENKINS_URL"
           value: "http://10.239.43.86:30346/"
-      image: "jenkins/inbound-agent:4.3-4"
+      image: "jenkins/inbound-agent:4.11-1"
       name: "jnlp"
       resources:
         limits: {}
@@ -162,12 +127,6 @@ spec:
           memory: "256Mi"
           cpu: "100m"
       volumeMounts:
-        - mountPath: "/var/run/docker.sock"
-          name: "volume-0"
-          readOnly: false
-        - mountPath: "/xpum-docker"
-          name: "volume-1"
-          readOnly: false
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
@@ -177,24 +136,12 @@ spec:
     jenkins-workder: "true"
   restartPolicy: "Never"
   volumes:
-    - hostPath:
-        path: "/var/run/docker.sock"
-      name: "volume-0"
-    - hostPath:
-        path: "/home/ywang82/xpum-docker"
-      name: "volume-1"
     - name: sign-secret
       secret:
         secretName: sign-secret
         items:
           - key: password
             path: password.sys_dcm
-    - name: docker-config
-      secret:
-        secretName: docker-config-secret
-        items:
-          - key: .dockerconfigjson
-            path: config.json
     - emptyDir:
         medium: ""
       name: "workspace-volume"
