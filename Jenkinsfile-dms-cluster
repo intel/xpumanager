@@ -30,7 +30,7 @@ pipeline {
       PUBLISH_DOCKER_REGISTRY = "${params.PUBLISH_DOCKER_REGISTRY}"
       BUILD_DESC = """<table><tr><td>Timestamp:</td><td>${env.BUILD_TIMESTAMP}</td></tr>
 <tr><td>Git Commit:</td><td>${env.GIT_COMMIT_SHORT}</td></tr>
-<tr><td>Docker Img:</td><td>${env.PUBLISH_DOCKER_REGISTRY}/intel-xpumanager:${env.DOCKER_IMG_TAG}</td></tr>
+<tr><td>Docker Img:</td><td>${env.PUBLISH_DOCKER_REGISTRY}/dms-xpum:${env.DOCKER_IMG_TAG}</td></tr>
 </table>"""
     }
     stages {
@@ -121,7 +121,7 @@ pipeline {
                   --dockerfile `pwd`/deployment/docker/Dockerfile.ubuntu \
                   --context `pwd`/deployment/docker \
                   --skip-tls-verify \
-                  --destination=$PUBLISH_DOCKER_REGISTRY/intel-xpumanager:$DOCKER_IMG_TAG'''
+                  --destination=$PUBLISH_DOCKER_REGISTRY/dms-xpum:$DOCKER_IMG_TAG'''
               }
             }
           }
