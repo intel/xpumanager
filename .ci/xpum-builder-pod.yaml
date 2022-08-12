@@ -21,8 +21,8 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "sh1sdev002.sh.intel.com/xpum-builder-sles:lz-1.8.1"
-      imagePullPolicy: "IfNotPresent"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-sles:lz-1.8.1"
+      imagePullPolicy: "Always"
       name: "xpum-builder-sles"
       resources:
         limits: {}
@@ -48,8 +48,8 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "sh1sdev002.sh.intel.com/xpum-builder-ubuntu:lz-1.8.1"
-      imagePullPolicy: "IfNotPresent"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-ubuntu:lz-1.8.1"
+      imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu"
       resources:
         limits: {}
@@ -75,9 +75,34 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "sh1sdev002.sh.intel.com/xpum-builder-centos7:lz-1.8.1"
-      imagePullPolicy: "IfNotPresent"
-      name: "xpum-builder-centos"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos7:lz-1.8.1"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-centos7"
+      resources:
+        limits: {}
+        requests: {}
+      tty: false
+      volumeMounts:
+        - mountPath: "/var/run/docker.sock"
+          name: "volume-0"
+          readOnly: false
+        - mountPath: "/xpum-docker"
+          name: "volume-1"
+          readOnly: false
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+      workingDir: "/home/jenkins/agent"
+    - args:
+        - "99d"
+      command:
+        - "sleep"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos8:lz-1.8.1"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-centos8"
       resources:
         limits: {}
         requests: {}

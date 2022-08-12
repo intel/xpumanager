@@ -100,13 +100,10 @@ set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
 if(CPACK_GENERATOR MATCHES "RPM")
-  set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_REAL_VERSION}-${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}.${os_name}.x86_64")
   configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" COPYONLY)
   configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template.in"
                  "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template" COPYONLY)
 
-  file(WRITE "${CMAKE_BINARY_DIR}/package_file_name"
-       "${CPACK_PACKAGE_FILE_NAME}.rpm")
   set(CPACK_RPM_SPEC_MORE_DEFINE
       "%global __os_install_post %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')"
   )
@@ -121,6 +118,8 @@ if(CPACK_GENERATOR MATCHES "RPM")
   set(CPACK_RPM_PACKAGE_RELEASE_DIST OFF)
   set(CPACK_RPM_COMPONENT_INSTALL ON)
   set(CPACK_RPM_PACKAGE_NAME "${PROJECT_NAME}")
+  set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_REAL_VERSION}-${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}.${os_name}${os_version}.${CPACK_RPM_PACKAGE_ARCHITECTURE}.rpm")
+  file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}")
   list(
     APPEND
     CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
@@ -140,13 +139,9 @@ if(CPACK_GENERATOR MATCHES "RPM")
 endif()
 
 if(CPACK_GENERATOR MATCHES "DEB")
-  set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}_${PROJECT_REAL_VERSION}_${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}_amd64")
   configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" @ONLY)
   configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template.in"
                  "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template" @ONLY)
-
-  file(WRITE "${CMAKE_BINARY_DIR}/package_file_name"
-       "${CPACK_PACKAGE_FILE_NAME}.deb")
 
   set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
   set(CPACK_DEBIAN_PACKAGE_RELEASE "${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}")
@@ -155,10 +150,11 @@ if(CPACK_GENERATOR MATCHES "DEB")
   set(CPACK_DEBIAN_PACKAGE_DEPENDS "level-zero (>= 1.7.9.1), intel-gsc (>=0.7.1)")
   set(CPACK_DEB_COMPONENT_INSTALL ON)
   set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
-
   set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
       "${CMAKE_CURRENT_LIST_DIR}/install/script/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/prerm;"
   )
+  set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}_${PROJECT_REAL_VERSION}_${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}+${os_name}${os_version}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}.deb")
+  file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}")
 endif()
 
 install(DIRECTORY core/include/ DESTINATION ${CPACK_XPUM_INCLUDE_INSTALL_DIR})
