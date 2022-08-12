@@ -112,6 +112,13 @@ spec:
           cpu: "1"
       securityContext:
         privileged: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      workingDir: "/home/jenkins/agent"
     - env:
         - name: "JENKINS_TUNNEL"
           value: ":32757"
@@ -145,3 +152,11 @@ spec:
     - emptyDir:
         medium: ""
       name: "workspace-volume"
+    - name: docker-config
+      projected:
+        sources:
+        - secret:
+            name: regcre-ccr-registry-caas-intel-com
+            items:
+              - key: .dockerconfigjson
+                path: config.json
