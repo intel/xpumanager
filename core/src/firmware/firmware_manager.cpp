@@ -133,7 +133,7 @@ void FirmwareManager::detectGscFw() {
         auto address = pDevice->getPciAddress();
         for (auto fw : fwList) {
             if (fw.bdfAddr == address) {
-                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION, fw.fwVersion));
+                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, fw.fwVersion));
                 pDevice->setMeiDevicePath(fw.devicePath);
             }
         }
@@ -432,7 +432,7 @@ void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_
     // res = device->getFirmwareFlashResult(XPUM_DEVICE_FIRMWARE_GSC);
 
     result->deviceId = deviceId;
-    result->type = XPUM_DEVICE_FIRMWARE_GSC;
+    result->type = XPUM_DEVICE_FIRMWARE_GFX;
     // result->result = res;
     auto deviceList = getSiblingDevices(device);
 
@@ -454,7 +454,7 @@ void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_
     result->result = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
 
     for (auto pd : deviceList) {
-        res = pd->getFirmwareFlashResult(XPUM_DEVICE_FIRMWARE_GSC);
+        res = pd->getFirmwareFlashResult(XPUM_DEVICE_FIRMWARE_GFX);
         if (res != xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK) {
             result->result = res;
         }
@@ -553,7 +553,7 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
     std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
 
     result->deviceId = deviceId;
-    result->type = XPUM_DEVICE_FIRMWARE_FW_DATA;
+    result->type = XPUM_DEVICE_FIRMWARE_GFX_DATA;
     auto deviceList = getSiblingDevices(pDevice);
 
     bool ongoing = false;

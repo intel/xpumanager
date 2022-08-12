@@ -59,14 +59,14 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "DEVICE_STEPPING";
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
             return "DRIVER_VERSION";
-        case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
-            return "FIRMWARE_NAME";
-        case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
-            return "FIRMWARE_VERSION";
-        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME:
-            return "FW_DATA_FIRMWARE_NAME";
-        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION:
-            return "FW_DATA_FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_NAME:
+            return "GFX_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_VERSION:
+            return "GFX_FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_NAME:
+            return "GFX_DATA_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_VERSION:
+            return "GFX_DATA_FIRMWARE_VERSION";
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return "SERIAL_NUMBER";
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
@@ -439,8 +439,8 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         xpum_result_t rc;
 
-        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
-            rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
+        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
+            rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
             return rc;
         }
 
@@ -470,12 +470,12 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
         rc = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath, credential);
         return rc;
     } else {
-        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
                 return res;
             return Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath);
-        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_FW_DATA) {
+        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_DATA) {
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
                 return res;
@@ -496,7 +496,7 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
 
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
-            return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
+            return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
         AmcCredential credential;
         return Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result, credential);
     }
@@ -509,9 +509,9 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     if (res != XPUM_OK)
         return res;
 
-    if (firmwareType == XPUM_DEVICE_FIRMWARE_GSC)
+    if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX)
         Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
-    else if (firmwareType == XPUM_DEVICE_FIRMWARE_FW_DATA)
+    else if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX_DATA)
         Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result);
     else
         return XPUM_GENERIC_ERROR;
@@ -565,14 +565,14 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING;
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION;
-        case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME;
-        case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION;
-        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME;
-        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION;
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER;
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
@@ -662,7 +662,7 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 auto &prop = prop_map[propNameInternal];
                 std::string value = prop.getValue();
 
-                if (propName == XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION) {
+                if (propName == XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_VERSION) {
                     value.erase(remove_if(value.begin(), value.end(), invalidChar), value.end());
                 }
                 auto &copy = pXpumProperties->properties[propertyLen++];

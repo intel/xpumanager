@@ -31,8 +31,8 @@ class FirmwareFlashJobOnSingleDeviceSchema(Schema):
         metadata={"description": "The path of firmware binary file to flash"}
     )
     firmware_name = fields.Str(
-        validate=validate.OneOf(["GSC","GSC_DATA"]),
-        metadata={"description": "Firmware name, options are: GSC, GSC_DATA"}
+        validate=validate.OneOf(["GFX","GFX_DATA"]),
+        metadata={"description": "Firmware name, options are: GFX, GFX_DATA"}
     )
 
 
@@ -130,10 +130,10 @@ def runFirmwareFlash(deviceId, username="", password=""):
         filePath = filePath[pos:]    # trunc the file path
 
     fwType = req.get('firmware_name')
-    if fwType == 'GSC' and deviceId == 1024:
-        return jsonify({'error': 'Updating GSC firmware on all devices is not supported'}), 400
-    if fwType == 'GSC_DATA' and deviceId == 1024:
-        return jsonify({'error': 'Updating GSC_DATA firmware on all devices is not supported'}), 400
+    if fwType == 'GFX' and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX firmware on all devices is not supported'}), 400
+    if fwType == 'GFX_DATA' and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX_DATA firmware on all devices is not supported'}), 400
     if fwType == 'AMC' and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'}), 400
 
@@ -148,8 +148,8 @@ def runFirmwareFlash(deviceId, username="", password=""):
 class FirmwareFlashResultQuerySingleDeviceSchema(Schema):
     firmware_name = fields.Str(
         required=True,
-        validate=validate.OneOf(["GSC","GSC_DATA"]),
-        metadata={"description": "Firmware name, options are: GSC, GSC_DATA"}
+        validate=validate.OneOf(["GFX","GFX_DATA"]),
+        metadata={"description": "Firmware name, options are: GFX, GFX_DATA"}
     )
 
 
@@ -248,10 +248,10 @@ def get_firmware_flash_result_single(deviceId):
 def get_firmware_flash_result(deviceId, username="", password=""):
     req = request.get_json()
     fwType = req.get('firmware_name')
-    if fwType == "GSC" and deviceId == 1024:
-        return jsonify({'error': 'Updating GSC firmware on all devices is not supported'})
-    if fwType == "GSC_DATA" and deviceId == 1024:
-        return jsonify({'error': 'Updating GSC_DATA firmware on all devices is not supported'})
+    if fwType == "GFX" and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX firmware on all devices is not supported'})
+    if fwType == "GFX_DATA" and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX_DATA firmware on all devices is not supported'})
     if fwType == "AMC" and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'})
 

@@ -12,7 +12,7 @@ from .xpum_enums import XpumResult
 def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password=""):
     job = core_pb2.XpumFirmwareFlashJob()
     job.id.id = deviceId
-    if firmwareType == 'GSC':
+    if firmwareType == 'GFX':
         job.type.value = 0
     elif firmwareType == 'AMC':
         job.type.value = 1
@@ -34,11 +34,11 @@ def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password="")
         return err_code.value, "Illegal firmware image filename. Image filename should not contain following characters: {}()><&*'|=?;[]$-#~!\"%:+,`", None
     elif err_code.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE'].value:
         return err_code.value, "Updating AMC firmware on single device is not supported", None
-    elif err_code.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL'].value:
-        if firmwareType == 'GSC':
-            return err_code.value, "Updating GSC firmware on all devices is not supported", None
+    elif err_code.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL'].value:
+        if firmwareType == 'GFX':
+            return err_code.value, "Updating GFX firmware on all devices is not supported", None
         else:
-            return err_code.value, "Updating GSC_DATA firmware on all devices is not supported", None
+            return err_code.value, "Updating GFX_DATA firmware on all devices is not supported", None
     elif err_code.value == XpumResult['XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE'].value:
         return err_code.value, "Device models are inconsistent, failed to upgrade all.", None
     elif err_code.value == XpumResult['XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND'].value:
@@ -63,7 +63,7 @@ def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password="")
 def getFirmwareFlashResult(deviceId, firmwareType, username="", password=""):
     request = core_pb2.XpumFirmwareFlashTaskRequest()
     request.id.id = deviceId
-    if firmwareType == 'GSC':
+    if firmwareType == 'GFX':
         request.type.value = 0
     elif firmwareType == 'AMC':
         request.type.value = 1

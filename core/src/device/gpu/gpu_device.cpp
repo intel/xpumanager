@@ -234,6 +234,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(std::vector<char> img) noexcept {
             std::string meiPath = getMeiDevicePath();
 
             if(meiPath.empty()){
+                unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
 
@@ -255,6 +256,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(std::vector<char> img) noexcept {
             {
                 XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}", meiPath, ret);
                 (void)igsc_device_close(&handle);
+                unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
 
@@ -265,6 +267,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(std::vector<char> img) noexcept {
             if (ret){
                 XPUM_LOG_ERROR("Update process failed, error code: {}", ret);
                 (void)igsc_device_close(&handle);
+                unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
 
@@ -275,7 +278,7 @@ xpum_result_t GPUDevice::runFirmwareFlash(std::vector<char> img) noexcept {
                 XPUM_LOG_ERROR("Cannot retrieve firmware version from device: {}", meiPath);
             } else{
                 std::string version = print_fw_version(&device_fw_version);
-                addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION, version));
+                addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, version));
 
                 XPUM_LOG_INFO("Device {} GSC fw flashed successfully to {}", meiPath, version);
             }
@@ -302,7 +305,7 @@ void GPUDevice::dumpFirmwareFlashLog() noexcept {
 
 xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_type_t type) noexcept {
     std::future<xpum_firmware_flash_result_t>* task;
-    if (type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+    if (type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
         task = &taskGSC;
     }
     else {

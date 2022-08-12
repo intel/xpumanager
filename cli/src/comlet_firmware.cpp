@@ -66,11 +66,11 @@ void ComletFirmware::setupOptions() {
         return std::string();
     });
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GSC, AMC, GSC_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).");
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, AMC, GFX_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).");
     // fwTypeOpt->required();
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
-        if (str.compare("GSC") == 0 || str.compare("AMC") == 0 || str.compare("GSC_DATA") == 0) {
+        if (str.compare("GFX") == 0 || str.compare("AMC") == 0 || str.compare("GFX_DATA") == 0) {
             return std::string();
         } else {
             return errStr;
@@ -107,14 +107,14 @@ void ComletFirmware::setupOptions() {
 
 nlohmann::json ComletFirmware::validateArguments() {
     nlohmann::json result;
-    // GSC
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GSC") == 0) {
-        result["error"] = "Updating GSC firmware on all devices is not supported";
+    // GFX
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX") == 0) {
+        result["error"] = "Updating GFX firmware on all devices is not supported";
         return result;
     }
 
-    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GSC_DATA") == 0) {
-        result["error"] = "Updating GSC_DATA firmware on all devices is not supported";
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX_DATA") == 0) {
+        result["error"] = "Updating GFX_DATA firmware on all devices is not supported";
         return result;
     }
 
@@ -143,12 +143,12 @@ static void printJson(std::shared_ptr<nlohmann::json> json, std::ostream &out, b
 }
 
 static int getIntFirmwareType(std::string firmwareType) {
-    if (firmwareType.compare("GSC") == 0)
-        return XPUM_DEVICE_FIRMWARE_GSC;
+    if (firmwareType.compare("GFX") == 0)
+        return XPUM_DEVICE_FIRMWARE_GFX;
     if (firmwareType.compare("AMC") == 0)
         return XPUM_DEVICE_FIRMWARE_AMC;
-    if(firmwareType.compare("GSC_DATA") == 0)
-        return XPUM_DEVICE_FIRMWARE_FW_DATA;
+    if(firmwareType.compare("GFX_DATA") == 0)
+        return XPUM_DEVICE_FIRMWARE_GFX_DATA;
     return -1;
 }
 
@@ -207,16 +207,16 @@ nlohmann::json ComletFirmware::getDeviceProperties(int deviceId) {
 std::string ComletFirmware::getCurrentFwVersion(nlohmann::json json) {
     std::string res = "unknown";
     int type = getIntFirmwareType(opts->firmwareType);
-    if (type == XPUM_DEVICE_FIRMWARE_GSC) {
-        if (!json.contains("firmware_version")) {
+    if (type == XPUM_DEVICE_FIRMWARE_GFX) {
+        if (!json.contains("gfx_firmware_version")) {
             return res;
         }
-        return json["firmware_version"];
+        return json["gfx_firmware_version"];
     } else {
-        if (!json.contains("fw_data_firmware_version")) {
+        if (!json.contains("gfx_data_firmware_version")) {
             return res;
         }
-        return json["fw_data_firmware_version"];
+        return json["gfx_data_firmware_version"];
     }
 }
 
@@ -325,7 +325,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     readImageContent(opts->firmwarePath.c_str());
     // warn user
     int type = getIntFirmwareType(opts->firmwareType);
-    if (type == 1) { // AMC caution
+    if (type == XPUM_DEVICE_FIRMWARE_AMC) { // AMC caution
         std::string amcWarnMsg = coreStub->getRedfishAmcWarnMsg();
         if (amcWarnMsg.length()) {
             std::cout << coreStub->getRedfishAmcWarnMsg() << std::endl;
@@ -353,20 +353,20 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 out << std::endl;
             }
         }
-    } else { // GSC and FW-DATA caution
+    } else { // GFX and GFX_DATA caution
         // check igsc
-        if (!checkIgscExist()) {
-            out << "Error: Igsc tool doesn't exit." << std::endl;
-            exit(1);
-        }
-        if (type == XPUM_DEVICE_FIRMWARE_GSC) {
+        // if (!checkIgscExist()) {
+        //     out << "Error: Igsc tool doesn't exit." << std::endl;
+        //     exit(1);
+        // }
+        if (type == XPUM_DEVICE_FIRMWARE_GFX) {
             if (!checkImageValid()) {
-                out << "Error: The image file is not a right SOC FW image file." << std::endl;
+                out << "Error: The image file is not a right GFX firmware image file." << std::endl;
                 exit(1);
             }
         } else {
             if (!validateFwDataImage()) {
-                out << "Error: The image file is not a right FW-DATA image file." << std::endl;
+                out << "Error: The image file is not a right GFX_DATA firmware image file." << std::endl;
                 exit(1);
             }
         }
@@ -414,7 +414,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             }
             out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(json) << std::endl;
         }
-        if (type == XPUM_DEVICE_FIRMWARE_GSC) {
+        if (type == XPUM_DEVICE_FIRMWARE_GFX) {
             out << "Image FW version: " << getImageFwVersion() << std::endl;
         } else {
             out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
@@ -473,8 +473,9 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             out << "Update firmware failed" << std::endl;
             return;
         } else {
-            // do nothing
-            printProgress((*json)["percentage"], out);
+            // print progress bar
+            if (json->contains("percentage"))
+                printProgress((*json)["percentage"], out);
         }
     }
 

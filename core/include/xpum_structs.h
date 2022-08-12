@@ -114,7 +114,7 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
-    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL,
     XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
     XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND, /// "/usr/bin/igsc" not found
     XPUM_UPDATE_FIRMWARE_TASK_RUNNING,       /// Firmware update task is already running
@@ -186,10 +186,10 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH,            ///< PCIe max link width
     XPUM_DEVICE_PROPERTY_DEVICE_STEPPING,                ///< The stepping of device
     XPUM_DEVICE_PROPERTY_DRIVER_VERSION,                 ///< The driver version
-    XPUM_DEVICE_PROPERTY_FIRMWARE_NAME,                  ///< The firmware name of device
-    XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION,               ///< The firmware version of device
-    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME,           ///< The firmware name of FW-DATA of device
-    XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION,        ///< The firmware version of FW-DATA of device
+    XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_NAME,              ///< The GFX firmware name of device
+    XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_VERSION,           ///< The GFX firmware version of device
+    XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_NAME,         ///< The GFX Data firmware name of device
+    XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_VERSION,      ///< The GFX Data firmware version of device
     XPUM_DEVICE_PROPERTY_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes
@@ -321,9 +321,9 @@ typedef enum xpum_device_config_type_enum {
  * 
  */
 typedef enum xpum_firmware_type_enum {
-    XPUM_DEVICE_FIRMWARE_GSC = 0, ///< GSC firmware
+    XPUM_DEVICE_FIRMWARE_GFX = 0, ///< GFX firmware
     XPUM_DEVICE_FIRMWARE_AMC = 1, ///< AMC firmware
-    XPUM_DEVICE_FIRMWARE_FW_DATA = 2, ///< GSC FW DATA
+    XPUM_DEVICE_FIRMWARE_GFX_DATA = 2, ///< GFX FW DATA
 } xpum_firmware_type_t;
 
 /**

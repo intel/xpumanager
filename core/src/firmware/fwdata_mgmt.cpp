@@ -107,6 +107,7 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
             if (ret != IGSC_SUCCESS) {
                 XPUM_LOG_ERROR("Cannot initialize device: {}", devicePath);
                 igsc_device_close(&handle);
+                pDevice->unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
 
@@ -115,6 +116,7 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
                 XPUM_LOG_ERROR("Invalid image format: {}", filePath);
                 igsc_image_fwdata_release(oimg);
                 igsc_device_close(&handle);
+                pDevice->unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
 
@@ -124,6 +126,7 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
                 XPUM_LOG_ERROR("GSC FW-DATA update failed on device {}", devicePath);
                 igsc_image_fwdata_release(oimg);
                 igsc_device_close(&handle);
+                pDevice->unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
 
@@ -132,7 +135,7 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
                 XPUM_LOG_ERROR("Failed to get firmware version after update from device {}", devicePath);
             } else {
                 std::string version = print_fwdata_version(&dev_version);
-                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION, version));
+                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION, version));
                 XPUM_LOG_INFO("GSC FW-DATA on device {} is successfully flashed to {}", devicePath, version);
             }
 
@@ -197,7 +200,7 @@ std::string fwdata_device_version(const char *device_path)
 
 void FwDataMgmt::getFwDataVersion() {
     auto version = fwdata_device_version(devicePath.c_str());
-    pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION, version));
+    pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION, version));
 }
 
 xpum_firmware_flash_result_t FwDataMgmt::getFlashFwDataResult(){

@@ -1287,7 +1287,7 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
                         break;
                     }
                 }
-                this->percent.store(percent);
+                this->percent.fetch_add(percent / targetUriList.size());
                 // task ongoing, wait 2 sec
                 XPUM_LOG_INFO("Task {} on going", taskUri);
                 std::this_thread::sleep_for(std::chrono::seconds(2));

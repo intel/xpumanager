@@ -112,7 +112,7 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  xpumcli policy -r -g [groupId] --type [policyTypeValue]\n";
     } else if (app->get_name().compare("updatefw") == 0) {
         return "\nUsage: xpumcli updatefw [Options]\n"
-               "  xpumcli updatefw -d [deviceId] -t GSC -f [imageFilePath]\n"
+               "  xpumcli updatefw -d [deviceId] -t GFX -f [imageFilePath]\n"
                "  xpumcli updatefw -t AMC -f [imageFilePath]\n";
     } else if (app->get_name().compare("config") == 0) {
         return "\nUsage: xpumcli config [Options]\n"

@@ -57,11 +57,11 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
         case xpum_result_t::XPUM_RESULT_DEVICE_NOT_FOUND:
             (*json)["error"] = "Device not found.";
             return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL:
-            if (type == XPUM_DEVICE_FIRMWARE_GSC)
-                (*json)["error"] = "Updating GSC firmware on all devices is not supported";
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL:
+            if (type == XPUM_DEVICE_FIRMWARE_GFX)
+                (*json)["error"] = "Updating GFX firmware on all devices is not supported";
             else
-                (*json)["error"] = "Updating GSC_DATA firmware on all devices is not supported";
+                (*json)["error"] = "Updating GFX_DATA firmware on all devices is not supported";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE:
             (*json)["error"] = "Updating AMC firmware on single device is not supported";
