@@ -1100,7 +1100,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
 
     std::vector<float> memory_uses = {0.1}; // {0.1, 0.5, 0.9, 1}
     std::vector<uint64_t> allocate_sizes = {one_MB, one_GB};
-    std::vector<std::string> memory_types = {"HOST", "DEVICE", "SHARED"};
+    std::vector<std::string> memory_types = {"DEVICE", "SHARED"};
 
     bool pass_test = true;
     for (auto &memory_use : memory_uses)
@@ -1131,15 +1131,10 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
 
                 std::size_t one_case_allocation_count = one_case_requested_allocation_size / (number_of_kernel_args_ * sizeof(uint8_t));
                 std::uint64_t number_of_dispatch = max_allocation_size / one_case_requested_allocation_size;
-                // Turn down number_of_dispatch and allocate_size to support unstable PVC and DUAL-ATSM3
-                if (device_names.find(ze_device) != device_names.end() 
-                    && (device_names[ze_device].find("0x0bd5") != std::string::npos
-                        || device_names[ze_device].find("0x56c1") != std::string::npos)) {
-                    if (allocate_size == one_GB) {
-                        continue;
-                    }
-                    number_of_dispatch = std::min((int)number_of_dispatch, 100);
+                if (allocate_size == one_GB) {
+                    continue;
                 }
+                number_of_dispatch = std::min((int)number_of_dispatch, 100);
                 std::vector<uint8_t *> input_allocations;
                 std::vector<uint8_t *> output_allocations;
                 std::vector<std::vector<uint8_t>> data_out_vector;
