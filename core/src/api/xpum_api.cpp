@@ -1549,31 +1549,31 @@ int32_t defaultMaxPowerLimit(std::string device_name) {
    if (device_name == "Intel(R) Graphics [0x56c1]"){
     return 23 *1000;
    }
-   if (device_name == "Intel(R) Graphics [0x0BD0]"){
+   if (device_name == "Intel(R) Graphics [0x0bd0]"){
     return 600 *1000;
    }
-   if (device_name == "Intel(R) Graphics [0x0BD5]"){
+   if (device_name == "Intel(R) Graphics [0x0bd5]"){
     return 600 *1000;
    }
-   if (device_name == "Intel(R) Graphics [0x0BD6]"){
+   if (device_name == "Intel(R) Graphics [0x0bd6]"){
     return 600 *1000;
    }
-   if (device_name == "Intel(R) Graphics [0x0BD7]"){
+   if (device_name == "Intel(R) Graphics [0x0bd7]"){
     return 450 *1000;
    }
-   if (device_name == "Intel(R) Graphics [0x0BD8]"){
+   if (device_name == "Intel(R) Graphics [0x0bd8]"){
     return 450 *1000;
    }
-   if (device_name == "Intel(R) Graphics [0x0BD9]"){
+   if (device_name == "Intel(R) Graphics [0x0bd9]"){
     return 300 *1000;
    }
-   if (device_name == "Intel(R) Graphics [0x0BDA]"){
+   if (device_name == "Intel(R) Graphics [0x0bda]"){
     return 300 *1000;
    }
-   if (device_name == "Intel(R) Graphics [0x0BDB]"){
+   if (device_name == "Intel(R) Graphics [0x0bdb]"){
     return 300 *1000;
    }
-   if (device_name == "Intel(R) Graphics [0x0BE5]"){
+   if (device_name == "Intel(R) Graphics [0x0be5]"){
     return 600 *1000;
    }
    return -1;
