@@ -129,9 +129,9 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Stepping: C0                                                                         |
 |           |                                                                                      |
 |           | Driver Version: 16929133                                                             |
-|           | Firmware Name: GSC                                                                   |
+|           | Firmware Name: GFX                                                                   |
 |           | Firmware Version: DG02->1->3041                                                      |
-|           | Firmware Name: GSC_DATA                                                              |
+|           | Firmware Name: GFX_DATA                                                              |
 |           | Firmware Version: 101->0->0                                                          |
 |           |                                                                                      |
 |           | PCI BDF Address: 0000:4d:00.0                                                        |
@@ -636,7 +636,7 @@ Help info of updating GPU firmware
 Update GPU firmware.
 
 Usage: xpumcli updatefw [Options]
-  xpumcli updatefw -d [deviceId] -t GSC -f [imageFilePath]
+  xpumcli updatefw -d [deviceId] -t GFX -f [imageFilePath]
   xpumcli updatefw -t AMC -f [imageFilePath]
 
 Options:
@@ -644,16 +644,19 @@ Options:
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GSC, AMC, GSC_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
+  -t,--type                   The firmware name. Valid options: GFX, GFX_DATA, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).
   -f,--file                   The firmware image file path on this server.
+  -u,--username               Username used to authenticate for host redfish access
+  -p,--password               Password used to authenticate for host redfish access
+  -y,--assumeyes              Assume that the answer to any question which would be asked is yes
 ```
 
-Update GPU GSC firmware
+Update GPU GFX firmware
 ```
-./xpumcli updatefw -d 0 -t GSC -f /home/test/tools/ATS_M3.bin
+./xpumcli updatefw -d 0 -t GFX -f /home/test/tools/ATS_M3.bin
 This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n) y
 Start to update firmware:
-Firmware name: GSC
+Firmware name: GFX
 Image path: /home/test/tools/ATS_M3.bin
 Update firmware successfully. Please reboot OS to take effect. 
 ```
