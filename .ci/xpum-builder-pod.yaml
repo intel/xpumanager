@@ -21,7 +21,7 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-sles:lz-1.8.1"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-sles:lz-1.8.1-20220816"
       imagePullPolicy: "Always"
       name: "xpum-builder-sles"
       resources:
@@ -42,7 +42,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-ubuntu:lz-1.8.1"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-ubuntu:lz-1.8.1-20220816"
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu"
       resources:
@@ -63,7 +63,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos7:lz-1.8.1"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos7:lz-1.8.1-20220816"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos7"
       resources:
@@ -82,7 +82,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos8:lz-1.8.1"
+      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos8:lz-1.8.1-20220816"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos8"
       resources:
