@@ -74,6 +74,9 @@ spec:
       image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos7:lz-1.8.1"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos7"
+      env:
+        - name: ACLOCAL_PATH
+          value: /usr/share/aclocal
       resources:
         limits: 
           memory: "6Gi"
