@@ -200,7 +200,6 @@ xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& 
 xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCredential credential) {
     flashFwErrMsg.clear();
     if (!initAmcManager()) {
-        // flashFwErrMsg = "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.";
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
     }
 
@@ -231,7 +230,6 @@ xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCred
 
 xpum_result_t FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t* result, AmcCredential credential) {
     if (!initAmcManager()) {
-        flashFwErrMsg = "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.";
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
     }
     GetAmcFirmwareFlashResultParam param;

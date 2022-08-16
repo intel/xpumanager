@@ -62,6 +62,8 @@ def run_firmware_flash_all():
             200:
                 description: OK
                 schema: RunFirmwareFlashJobResultSchema
+            400:
+                description: Bad Request
             500:
                 description: Error
 
@@ -103,6 +105,8 @@ def run_firmware_flash_single(deviceId):
             200:
                 description: OK
                 schema: RunFirmwareFlashJobResultSchema
+            400:
+                description: Bad Request
             500:
                 description: Error
     """
