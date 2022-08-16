@@ -72,19 +72,3 @@ RUN wget -qc --no-check-certificate $IGSC_URL -O - | tar -xz && \
 
 RUN ln -sf $(which python3.9) /usr/bin/python && \
     ln -sf $(which python3.9) /usr/bin/python3
-
-# COPY .cmake/ /xpum_src/.cmake
-# COPY cli/ /xpum_src/cli
-# COPY core/ /xpum_src/core
-# COPY daemon/ /xpum_src/daemon
-# COPY doc/ /xpum_src/doc
-# COPY install/ /xpum_src/install
-# COPY rest/ /xpum_src/rest
-# COPY third_party/ /xpum_src/third_party
-# COPY build.sh CMakeLists.txt /xpum_src/
-
-# RUN cd /xpum_src && \
-#     ./build.sh -DGIT_COMMIT=$XPUM_GIT_COMMIT -DBUILD_DOC=ON && \
-#     mkdir /artifacts && \
-#     mv build/*.rpm /artifacts && \
-#     rm -fr build
