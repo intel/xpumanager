@@ -48,7 +48,7 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
                 p_health_core_thermal_configs.erase(deviceId);
                 break;
             case xpum_health_config_type_t::XPUM_HEALTH_MEMORY_THERMAL_LIMIT:
-                p_health_core_thermal_configs.erase(deviceId);
+                p_health_memory_thermal_configs.erase(deviceId);
                 break;
             case xpum_health_config_type_t::XPUM_HEALTH_POWER_LIMIT:
                 p_health_power_configs.erase(deviceId);
