@@ -738,6 +738,13 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
                         }
                         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
                         updateMessage(component.message, desc);
+                    } else if (result.find("ERROR") != std::string::npos) { 
+                        XPUM_LOG_ERROR("detailed error message:\n {}", result);
+                        std::string desc = "Fail to check Media transcode performance.";
+                        if (result.find("MFX_ERR_DEVICE_FAILED") != std::string::npos)
+                            desc += " Hardware device unexpected errors.";
+                        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+                        updateMessage(component.message, desc);
                     } else {
                         media_codec_perf_datas[p_task_info->deviceId] = getMediaCodecMetricsData(p_task_info->deviceId, 
                                                         device_path, h265_1080p_file_exist, h265_4k_file_exist);
