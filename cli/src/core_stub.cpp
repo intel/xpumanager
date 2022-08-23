@@ -129,7 +129,7 @@ std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName) {
     grpc::Status status = stub->groupCreate(&context, name, &response);
     if (status.ok()) {
         if( response.errormsg().length() == 0 ) {
-            XPUM_LOG_AUDIT("Succeed to create group %d,%s", response.id(), groupName);
+            XPUM_LOG_AUDIT("Succeed to create group %d,%s", response.id(), groupName.c_str());
             (*json)["group_id"] = response.id();
             (*json)["group_name"] = response.groupname();
             (*json)["device_count"] = response.count();
@@ -141,12 +141,12 @@ std::unique_ptr<nlohmann::json> CoreStub::groupCreate(std::string groupName) {
 
             (*json)["device_id_list"] = deviceIdList;
         } else {
-            XPUM_LOG_AUDIT("Fail to create group %s", groupName);
+            XPUM_LOG_AUDIT("Fail to create group %s", groupName.c_str());
             (*json)["error"] = response.errormsg();
         }
 
     } else {
-        XPUM_LOG_AUDIT("Fail to create group %s", groupName);
+        XPUM_LOG_AUDIT("Fail to create group %s", groupName.c_str());
         (*json)["error"] = status.error_message();
     }
     return json;
@@ -1452,11 +1452,11 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceSchedulerMode(int deviceId, i
             XPUM_LOG_AUDIT("Succeed to set scheduler mode %d,%d,%d", mode, val1, val2);
         } else {
             (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode, response.errormsg());
+            XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode, response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode, status.error_message());
+        XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode, status.error_message().c_str());
     }
     return json;
 }
@@ -1478,11 +1478,11 @@ std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int 
             XPUM_LOG_AUDIT("Succeed to set power limit %d,%d", power, interval);
         } else {
             (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set power limit %s", response.errormsg());
+            XPUM_LOG_AUDIT("Fail to set power limit %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set power limit %s", status.error_message());
+        XPUM_LOG_AUDIT("Fail to set power limit %s", status.error_message().c_str());
     }
     return json;
 }
@@ -1510,11 +1510,11 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceStandby(int deviceId, int til
             XPUM_LOG_AUDIT("Succeed to set standby mode %d", mode);
         } else {
             (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set standby mode %s", response.errormsg());
+            XPUM_LOG_AUDIT("Fail to set standby mode %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set standby mode %s", status.error_message());
+        XPUM_LOG_AUDIT("Fail to set standby mode %s", status.error_message().c_str());
     }
     return json;
 }
@@ -1542,11 +1542,11 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceFrequencyRange(int deviceId, 
             XPUM_LOG_AUDIT("Succeed to set frequency range %d,%d", minFreq, maxFreq);
         } else {
             (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set frequency range %s", response.errormsg());
+            XPUM_LOG_AUDIT("Fail to set frequency range %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set frequency range %s", status.error_message());
+        XPUM_LOG_AUDIT("Fail to set frequency range %s", status.error_message().c_str());
     }
     return json;
 }
@@ -1567,11 +1567,11 @@ std::unique_ptr<nlohmann::json> CoreStub::resetDevice(int deviceId, bool force) 
             XPUM_LOG_AUDIT("Succeed to reset device with force == %d", force);
         } else {
             (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to reset device with force == %d, errorMessage: %s", force, response.errormsg());
+            XPUM_LOG_AUDIT("Fail to reset device with force == %d, errorMessage: %s", force, response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to reset device with force == %d, %s", force, status.error_message());
+        XPUM_LOG_AUDIT("Fail to reset device with force == %d, %s", force, status.error_message().c_str());
     }
     return json;
 }
@@ -1627,11 +1627,11 @@ std::unique_ptr<nlohmann::json> CoreStub::setPerformanceFactor(int deviceId, int
             XPUM_LOG_AUDIT("Succeed to set performance factor %d,%f", engine, factor);
         } else {
             (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set performance factor %s", response.errormsg());
+            XPUM_LOG_AUDIT("Fail to set performance factor %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set performance factor %s", status.error_message());
+        XPUM_LOG_AUDIT("Fail to set performance factor %s", status.error_message().c_str());
     }
     return json;
 }
@@ -1660,11 +1660,11 @@ std::unique_ptr<nlohmann::json> CoreStub::setFabricPortEnabled(int deviceId, int
             XPUM_LOG_AUDIT("Succeed to set fabric port Enabled %d,%d", port, enabled);
         } else {
             (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set fabric port Enabled %s", response.errormsg());
+            XPUM_LOG_AUDIT("Fail to set fabric port Enabled %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set performance factor Enabled %s", status.error_message());
+        XPUM_LOG_AUDIT("Fail to set performance factor Enabled %s", status.error_message().c_str());
     }
     return json;
 }
@@ -1693,11 +1693,11 @@ std::unique_ptr<nlohmann::json> CoreStub::setFabricPortBeaconing(int deviceId, i
             XPUM_LOG_AUDIT("Succeed to set fabric port Beaconing %d,%d", port, beaconing);
         } else {
             (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s", response.errormsg());
+            XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s", status.error_message());
+        XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s", status.error_message().c_str());
     }
     return json;
 }
@@ -1729,9 +1729,9 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
         if (response.errormsg().length() == 0) {
             (*json)["status"] = "OK";
             XPUM_LOG_AUDIT("Succeed to set memory ECC state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
-                           (*json)["memory_ecc_available"], (*json)["memory_ecc_configurable"],
-                           (*json)["memory_ecc_current_state"], (*json)["memory_ecc_pending_state"],
-                           (*json)["memory_ecc_pending_action"]);
+                           (*json)["memory_ecc_available"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_configurable"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                           (*json)["memory_ecc_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_pending_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                           (*json)["memory_ecc_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
         } else {
             if (response.errormsg().compare("Error")== 0) {
                 (*json)["error"] = response.errormsg() +
@@ -1744,13 +1744,13 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
                 (*json)["error"] = response.errormsg();
             }
             XPUM_LOG_AUDIT("Failed to set memory ECC state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
-                           (*json)["memory_ecc_available"], (*json)["memory_ecc_configurable"],
-                           (*json)["memory_ecc_current_state"], (*json)["memory_ecc_pending_state"],
-                           (*json)["memory_ecc_pending_action"]);
+                           (*json)["memory_ecc_available"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_configurable"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                           (*json)["memory_ecc_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_pending_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                           (*json)["memory_ecc_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set memory ECC state: %s", status.error_message());
+        XPUM_LOG_AUDIT("Fail to set memory ECC state: %s", status.error_message().c_str());
     }
     return json;
 }
