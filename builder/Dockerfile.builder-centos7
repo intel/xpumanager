@@ -15,6 +15,7 @@ RUN yum install -y https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-re
     yum install -y epel-release && \
     yum update -y && \
     yum install -y centos-release-scl \
+        ccache \
         curl \
         doxygen \
         git \
@@ -23,7 +24,8 @@ RUN yum install -y https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-re
         lua-devel \
         make \
         openssl-devel \
-        rpm-build && \
+        rpm-build \
+        which && \
     yum install -y devtoolset-9-gcc* \
         rh-python38 \
         rh-python38-python-devel \
@@ -104,7 +106,8 @@ RUN curl -s --location ${L0_SRC_URL} | tar -xz && \
     cmake --build . --config Release --target install && \
     rm -fr /level-zero-*
 
-RUN ln -sf $(which python3.8) /usr/bin/python && \
+RUN echo $(which python3.8) && \
+    ln -sf $(which python3.8) /usr/bin/python && \
     ln -sf $(which python3.8) /usr/bin/python3
 
 ENV ACLOCAL_PATH=/usr/share/aclocal

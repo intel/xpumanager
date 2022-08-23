@@ -30,7 +30,9 @@ RUN dnf update -y && \
     python38-pip \
     rpm-build && \
     dnf config-manager --set-enabled powertools && \
+    dnf -y install epel-release && \
     dnf install -y  \
+    ccache \
     doxygen \
     glibc-static \
     lua-devel && \
