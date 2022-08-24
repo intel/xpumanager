@@ -4,7 +4,6 @@ __pycache__
 **/build-*/
 *.so
 *.a
-DGMCore
 core/src/infrastructure/xpum_config.h
 cli/src/config.h
 daemon/config.h
@@ -32,3 +31,4 @@ third_party/hwloc/install/*
 *.log
 daemon/xpum.service.template
 rest/xpum_rest.service.template
+.ccache/
