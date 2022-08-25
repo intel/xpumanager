@@ -141,7 +141,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
 
                 try {
                     val1 = std::stoi(paralist.at(1));
-                } catch (std::invalid_argument const& e) {
+                } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: timeout";
                     return json;
                 }
@@ -161,7 +161,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 try {
                     val1 = std::stoi(paralist.at(1));
                     val2 = std::stoi(paralist.at(2));
-                } catch (std::invalid_argument const& e) {
+                } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: timeslice";
                     return json;
                 }
@@ -192,7 +192,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 int val1;
                 try {
                     val1 = std::stoi(paralist.at(0));
-                } catch (std::invalid_argument const& e) {
+                } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: powerlimit";
                     return json;
                 }
@@ -244,7 +244,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 try {
                     val1 = std::stoi(paralist.at(0));
                     val2 = std::stoi(paralist.at(1));
-                } catch (std::invalid_argument const& e) {
+                } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: frequency range";
                     return json;
                 }
@@ -305,7 +305,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             try {
                 port = std::stoi(paralist.at(0));
                 enabled = std::stoi(paralist.at(1));
-            } catch (std::invalid_argument const& e) {
+            } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: xeLink port";
                     return json;
             }
@@ -331,7 +331,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             try {
                 port = std::stoi(paralist.at(0));
                 beaconing = std::stoi(paralist.at(1));
-            } catch (std::invalid_argument const& e) {
+            } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: xeLink beaconing";
                     return json;
             }
@@ -351,7 +351,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             int eccVal;
             try {
                 eccVal = std::stoi(this->opts->setecc);
-            } catch (std::invalid_argument const &e) {
+            } catch (std::exception &e) {
                 (*json)["return"]="invalid parameter value";
                 return json;     
             }
