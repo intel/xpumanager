@@ -5,8 +5,23 @@
  */
 
 #include "core_stub.h"
+#include "logger.h"
+#include "xpum_structs.h"
 
 namespace xpum::cli {
+
+static std::string getFirmwareName(unsigned int firmwareType) {
+    switch(firmwareType){
+        case XPUM_DEVICE_FIRMWARE_GFX:
+            return "GFX";
+        case XPUM_DEVICE_FIRMWARE_AMC:
+            return "AMC";
+        case XPUM_DEVICE_FIRMWARE_GFX_DATA:
+            return "GFX_DATA";
+        default:
+            return "UNKOWN";
+    }
+}
 
 std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password) {
     assert(this->stub != nullptr);
@@ -19,6 +34,9 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     request.set_path(filePath);
     request.set_username(username);
     request.set_password(password);
+
+    std::string fwName = getFirmwareName(type);
+    XPUM_LOG_AUDIT("Try to update %s FW on device %d with image %s", fwName.c_str(), deviceId, filePath.c_str());
 
     XpumFirmwareFlashJobResponse response;
     grpc::Status status = stub->runFirmwareFlash(&context, request, &response);
