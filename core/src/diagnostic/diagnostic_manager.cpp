@@ -630,6 +630,58 @@ void DiagnosticManager::doDeviceDiagnosticHardwareSysman(const zes_device_handle
     component.finished = true;
 }
 
+static std::string getDevicePath(const zes_pci_properties_t& pci_props) {
+    char path[PATH_MAX];
+    char buf[128];
+    char uevent[1024];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    int len = 0;
+    std::string ret = "";
+
+    pdir = opendir("/sys/class/drm");
+    if (pdir == NULL) {
+        return ret;
+    }
+
+    while ((pdirent = readdir(pdir)) != NULL) {
+        if (pdirent->d_name[0] == '.') {
+            continue;
+        }
+        if (strncmp(pdirent->d_name, "render", 6) != 0) {
+            continue;
+        }
+        if (strstr(pdirent->d_name, "-") != NULL) {
+            continue;
+        }
+        len = snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent",
+                pdirent->d_name);
+        if (len <= 0 || len >= PATH_MAX) {
+            break;
+        }
+        int fd = open(path, O_RDONLY);
+        if (fd < 0) {
+            break;
+        }
+        int szRead = read(fd, uevent, 1024);
+        close(fd);
+        if (szRead < 0 || szRead >= 1024) {
+            break;
+        }
+        uevent[szRead] = 0;
+        len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
+                pci_props.address.domain, pci_props.address.bus,
+                pci_props.address.device, pci_props.address.function);
+        if (strstr(uevent, buf) != NULL) {
+            ret = "/dev/dri/";
+            ret += pdirent->d_name;
+            break;
+        }
+    }
+    closedir(pdir);
+    return ret;
+}
+
 void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &device, std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                                     std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas) {
     xpum_diag_component_info_t &component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC];
@@ -643,127 +695,93 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zesDevicePciGetProperties()");
     }
-    uint32_t pcie_bus = pci_props.address.bus;
-    uint32_t pcie_device = pci_props.address.device;
-    uint32_t filename_pcie_bus = 0, filename_pcie_device = 0;
-    std::string device_path;
-
-    DIR *dir;
-    struct dirent *ent;
-    std::string dir_name = "/dev/dri/by-path";
-    dir = opendir(dir_name.c_str());
-    if (nullptr != dir) {
-        ent = readdir(dir);
-        while (nullptr != ent) {
-            std::string entry_name = ent->d_name;
-            if (entry_name.find("render") != std::string::npos) {
-                std::stringstream ss;
-                ss << dir_name << "/" << entry_name;
-                std::string file_name = ss.str();
-                device_path = file_name;
-                int pos = file_name.find_first_of(":");
-                file_name = file_name.substr(pos + 1);
-                pos = file_name.find_first_of(":");
-                filename_pcie_bus = static_cast<u_int32_t>(std::stoul(file_name.substr(0, pos), nullptr, 16));
-                file_name = file_name.substr(pos + 1);
-                pos = file_name.find_first_of(".");
-                filename_pcie_device = static_cast<u_int32_t>(std::stoul(file_name.substr(0, pos), nullptr, 16));
-                if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
-                    break;
-                }
-            }
-            ent = readdir(dir);
+    std::string device_path = getDevicePath(pci_props);
+    XPUM_LOG_DEBUG("device path for media codec : {}", device_path);
+    if (device_path.size() > 0) {
+        std::string current_file = XPUM_DAEMON_INSTALL_PATH;
+        if (current_file.empty()) {
+            char exe_path[XPUM_MAX_PATH_LEN];
+            ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+            exe_path[len] = '\0';
+            current_file = exe_path;
         }
-        closedir(dir);
-        if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
-            std::string current_file = XPUM_DAEMON_INSTALL_PATH;
-            if (current_file.empty()) {
-                char exe_path[XPUM_MAX_PATH_LEN];
-                ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
-                exe_path[len] = '\0';
-                current_file = exe_path;
-            }
-            bool sample_multi_transcode_tool_exist = true;
-            std::ifstream file_transcode(DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode");
-            if (!file_transcode.good()) {
-                sample_multi_transcode_tool_exist = false;
-            }
+        bool sample_multi_transcode_tool_exist = true;
+        std::ifstream file_transcode(DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode");
+        if (!file_transcode.good()) {
+            sample_multi_transcode_tool_exist = false;
+        }
 
-            std::string mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/mediadata/";
+        std::string mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/mediadata/";
 
-            bool h265_1080p_file_exist = true;
-            std::ifstream file_h265_1080p(mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE);
-            if (!file_h265_1080p.good()) {
-                h265_1080p_file_exist = false;
-            }
+        bool h265_1080p_file_exist = true;
+        std::ifstream file_h265_1080p(mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE);
+        if (!file_h265_1080p.good()) {
+            h265_1080p_file_exist = false;
+        }
 
-            bool h265_4k_file_exist = true;
-            std::ifstream file_h265_4k(mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE);
-            if (!file_h265_4k.good()) {
-                h265_4k_file_exist = false;
-            }
+        bool h265_4k_file_exist = true;
+        std::ifstream file_h265_4k(mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE);
+        if (!file_h265_4k.good()) {
+            h265_4k_file_exist = false;
+        }
 
-            if (sample_multi_transcode_tool_exist) {
-                if (!h265_1080p_file_exist && !h265_4k_file_exist) {
-                    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-                    updateMessage(component.message, std::string("No Media test file."));
-                } else {
-                    std::string test_command;
-                    std::string result;
-                    int fps = 0;
-                    if (h265_1080p_file_exist) {
-                        test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
-                                                " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE + " -o::h265 /tmp/" + MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
-                        XPUM_LOG_INFO("Transcoding capability check command: {}", test_command);
-                        result += getCommandResult(test_command, fps);
-                    }
-                    if (h265_4k_file_exist) {
-                        test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
-                                            " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE + " -o::h265 /tmp/test_stream_4K.265 2>&1";
-                        XPUM_LOG_INFO("Transcoding capability check command: {}", test_command);
-                        result += getCommandResult(test_command, fps);
-                    }
-                    if (result.find("ERR_UNSUPPORTED") != std::string::npos) {
-                        XPUM_LOG_ERROR("detailed error message:\n {}", result);
-                        std::string desc = "Fail to check Media transcode performance.";
-                        test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_decode h265 -device " + device_path +
-                                            " -hw -i " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
-                        XPUM_LOG_INFO("Decoding capability check command: {}", test_command);
-                        result = getCommandResult(test_command, fps);
-                        if (result.find("Decoding finished") != std::string::npos)
-                            desc += " Encoding is unsupported.";
-                        else {
-                            XPUM_LOG_ERROR("detail error message:\n {}", result);
-                            desc += " Transcoding is unsupported.";
-                        }
-                        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-                        updateMessage(component.message, desc);
-                    } else if (result.find("ERROR") != std::string::npos) { 
-                        XPUM_LOG_ERROR("detailed error message:\n {}", result);
-                        std::string desc = "Fail to check Media transcode performance.";
-                        if (result.find("MFX_ERR_DEVICE_FAILED") != std::string::npos)
-                            desc += " Hardware device unexpected errors.";
-                        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-                        updateMessage(component.message, desc);
-                    } else {
-                        media_codec_perf_datas[p_task_info->deviceId] = getMediaCodecMetricsData(p_task_info->deviceId, 
-                                                        device_path, h265_1080p_file_exist, h265_4k_file_exist);
-                        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-                        updateMessage(component.message, std::string("Pass to check Media transcode performance."));
-                    }
-                }       
-            } else {
+        if (sample_multi_transcode_tool_exist) {
+            if (!h265_1080p_file_exist && !h265_4k_file_exist) {
                 component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-                updateMessage(component.message, std::string("No sample_multi_transcode tool."));
-            }
-
+                updateMessage(component.message, std::string("No Media test file."));
+            } else {
+                std::string test_command;
+                std::string result;
+                int fps = 0;
+                if (h265_1080p_file_exist) {
+                    test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
+                                            " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE + " -o::h265 /tmp/" + MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
+                    XPUM_LOG_INFO("Transcoding capability check command: {}", test_command);
+                    result += getCommandResult(test_command, fps);
+                }
+                if (h265_4k_file_exist) {
+                    test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
+                                        " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE + " -o::h265 /tmp/test_stream_4K.265 2>&1";
+                    XPUM_LOG_INFO("Transcoding capability check command: {}", test_command);
+                    result += getCommandResult(test_command, fps);
+                }
+                if (result.find("ERR_UNSUPPORTED") != std::string::npos) {
+                    XPUM_LOG_ERROR("detailed error message:\n {}", result);
+                    std::string desc = "Fail to check Media transcode performance.";
+                    test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_decode h265 -device " + device_path +
+                                        " -hw -i " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
+                    XPUM_LOG_INFO("Decoding capability check command: {}", test_command);
+                    result = getCommandResult(test_command, fps);
+                    if (result.find("Decoding finished") != std::string::npos)
+                        desc += " Encoding is unsupported.";
+                    else {
+                        XPUM_LOG_ERROR("detail error message:\n {}", result);
+                        desc += " Transcoding is unsupported.";
+                    }
+                    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+                    updateMessage(component.message, desc);
+                } else if (result.find("ERROR") != std::string::npos) { 
+                    XPUM_LOG_ERROR("detailed error message:\n {}", result);
+                    std::string desc = "Fail to check Media transcode performance.";
+                    if (result.find("MFX_ERR_DEVICE_FAILED") != std::string::npos)
+                        desc += " Hardware device unexpected errors.";
+                    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+                    updateMessage(component.message, desc);
+                } else {
+                    media_codec_perf_datas[p_task_info->deviceId] = getMediaCodecMetricsData(p_task_info->deviceId, 
+                                                    device_path, h265_1080p_file_exist, h265_4k_file_exist);
+                    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+                    updateMessage(component.message, std::string("Pass to check Media transcode performance."));
+                }
+            }   
         } else {
             component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-            updateMessage(component.message, std::string("Can't find the graphics device."));
+            updateMessage(component.message, std::string("No sample_multi_transcode tool."));
         }
+
     } else {
         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(component.message, std::string("Fail to check Media codec."));
+        updateMessage(component.message, std::string("Can't find the graphics device."));
     }
     component.finished = true;
 }
