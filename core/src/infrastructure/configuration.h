@@ -6,11 +6,18 @@
 
 #pragma once
 #include <set>
+#include <vector>
 #include <string>
 
 #include "measurement_type.h"
 
 namespace xpum {
+
+struct PerfMetric_t {
+    std::string name;
+    std::string group;
+    std::string type;
+};
 
 class Configuration {
    public:
@@ -34,16 +41,23 @@ class Configuration {
    public:
     static void init() {
         initEnabledMetrics();
+        initPerfMetrics();
     }
 
     static void initEnabledMetrics();
+    static void initPerfMetrics();
 
     static std::set<MeasurementType>& getEnabledMetrics() {
         return enabled_metrics;
     }
+    
+    static std::vector<PerfMetric_t>& getPerfMetrics() {
+        return perf_metrics;
+    }
 
    private:
     static std::set<MeasurementType> enabled_metrics;
+    static std::vector<PerfMetric_t> perf_metrics;
 };
 
 } // end namespace xpum

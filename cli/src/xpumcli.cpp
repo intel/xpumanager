@@ -32,6 +32,7 @@
 #include "comlet_topology.h"
 #include "comlet_version.h"
 #include "comlet_top.h"
+#include "comlet_topdown.h"
 #include "comlet_sensor.h"
 #include "core_stub.h"
 #include "logger.h"
@@ -115,6 +116,7 @@ int main(int argc, char** argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletPolicy))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletFirmware))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletConfig))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTopdown))
         //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletReset))
         //Temporarily hide the top command becuase the sysfs interface 
         //does not work as expected

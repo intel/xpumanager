@@ -1,7 +1,7 @@
 [Unit]
 Description=XPUM daemon
 
-After=syslog.target
+After=multi-user.target
 
 [Service]
 Type=simple

@@ -6,8 +6,13 @@
 
 #include "configuration.h"
 
+#include <fstream>
+#include <iostream>
 #include <cstdlib>
 #include <sstream>
+#include <regex>
+#include <unistd.h>
+#include <limits.h>
 
 #include "infrastructure/logger.h"
 #include "infrastructure/utility.h"
@@ -32,6 +37,7 @@ uint32_t Configuration::MAX_STATISTICS_SESSION_NUM = 2;
 uint32_t Configuration::MEMORY_IO_THROUGHPUT_DATA_SCALE = 1000;
 
 std::set<MeasurementType> Configuration::enabled_metrics;
+std::vector<PerfMetric_t> Configuration::perf_metrics;
 
 void Configuration::initEnabledMetrics() {
     char* xpum_metrics_env;
@@ -77,6 +83,54 @@ void Configuration::initEnabledMetrics() {
             }
         }
     }
+}
+
+void Configuration::initPerfMetrics() {
+    perf_metrics.clear();
+
+    char exePath[PATH_MAX];
+    ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+    exePath[len] = '\0';
+    std::string current_file = exePath;
+
+    std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../config/";
+    std::string file_name = config_folder + std::string("perf_metrics.conf");
+    std::ifstream conf_file(file_name);
+    
+    if (!conf_file.is_open()) { 
+        XPUM_LOG_ERROR("couldn't open config file : {}", file_name);
+        return ;
+    }
+
+    std::string line;
+    auto regex = std::regex("\\s");
+
+    while (getline(conf_file, line)) {
+        if (line.empty()) {
+            continue;
+        }
+        line.erase(0, line.find_first_not_of(" "));
+        line.erase(line.find_last_not_of(" ") + 1);
+        if (line[0] == '#' || line.empty()) {
+            continue;
+        }
+        
+        std::vector<std::string> columns(std::sregex_token_iterator(
+                                     line.begin(), line.end(), regex, -1),
+                                     std::sregex_token_iterator());
+        if (columns.size() < 3) {
+            XPUM_LOG_ERROR("Invalid configuratuon: {}", line);
+            continue;
+        }
+
+        PerfMetric_t perfMetric;
+        perfMetric.name = columns[0];
+        perfMetric.group = columns[1];
+        perfMetric.type = columns[2];
+        perf_metrics.emplace_back(perfMetric);
+    }
+
+    conf_file.close();
 }
 
 } // end namespace xpum

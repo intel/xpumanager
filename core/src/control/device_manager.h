@@ -36,7 +36,7 @@ class DeviceManager : public DeviceManagerInterface,
     void getDeviceList(DeviceCapability cap,
                        std::vector<std::shared_ptr<Device>>& devices) override;
 
-    MeasurementData getRealtimeMeasurementData(MeasurementType type,
+    std::shared_ptr<MeasurementData> getRealtimeMeasurementData(MeasurementType type,
                                                std::string& device_id) override;
 
     void getDeviceSchedulers(const std::string& id, std::vector<Scheduler>& schedulers) override;

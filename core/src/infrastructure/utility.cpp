@@ -198,6 +198,8 @@ DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& m
             return DeviceCapability::METRIC_PCIE_WRITE;
         case MeasurementType::METRIC_FABRIC_THROUGHPUT:
             return DeviceCapability::METRIC_FABRIC_THROUGHPUT;
+        case MeasurementType::METRIC_PERF:
+            return DeviceCapability::METRIC_PERF;
         default:
             return DeviceCapability::DEVICE_CAPABILITY_MAX;
     }

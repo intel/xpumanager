@@ -459,6 +459,25 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
 xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_process_t dataArray[], uint32_t *count);
 
 /**
+ * @brief Get the GPU function component occupancy ratio of the device
+ * @details This function is used to get the gpu function component occupancy ratio of the device
+ *
+ * @param deviceId          IN: The device Id\
+ * @param tileId            IN: The tile Id\
+ * @param samplingInterval  IN: The sampling interval
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of tile, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
+                                                   xpum_device_tile_id_t tileId,
+                                                   xpum_sampling_interval_t samplingInterval,
+                                                   xpum_device_components_ratio_t dataArray[],
+                                                   uint32_t *count);
+
+/**
  * @brief Get the device utiliztions by processes
  * @details This function is used to get the device utiliztions by process
  *

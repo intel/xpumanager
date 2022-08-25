@@ -8,6 +8,8 @@
 
 #include <condition_variable>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 #include <mutex>
 #include <thread>
 
@@ -1437,6 +1439,132 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
         }
     }
     response->set_count(count);
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getDeviceComponentOccupancyRatio(::grpc::ServerContext* context, const ::DeviceComponentOccupancyRatioRequest* request, ::DeviceComponentOccupancyRatioResponse* response) {
+    xpum_result_t res;
+    xpum_device_id_t deviceId = request->deviceid();
+    uint32_t tileId = request->tileid();
+    std::vector<uint32_t> tileList;
+    xpum_sampling_interval_t samplingInterval = request->samplinginterval();
+    bool isTileData = request->istiledata();
+    int tileCount = -1;
+
+    if (isTileData) {
+        res = validateDeviceIdAndTileId(deviceId, tileId);
+    } else {
+        res = validateDeviceId(deviceId);
+    }
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("device Id or tile Id is invalid");
+                break;
+        }
+        return grpc::Status::OK;
+    }
+
+    uint32_t tileTotalCount = 0;
+    res = xpumGetDeviceComponentOccupancyRatio(deviceId, tileId, samplingInterval, nullptr, &tileTotalCount);
+
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("Device not found");
+                break;
+            case XPUM_METRIC_NOT_SUPPORTED:
+                response->set_errormsg("Metrics Not Supported");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
+        return grpc::Status::OK;
+    }
+
+    if (isTileData) {
+        if (tileId >= tileTotalCount) {
+            tileCount = 0;
+        } else {
+            tileList.push_back(tileId);
+            tileCount = 1;
+        }
+    } else {
+        for (uint32_t i = 0; i < tileTotalCount; i++) {
+            tileList.push_back(i);
+        }
+        tileCount = tileTotalCount;
+    }
+
+    if (tileCount > 0) {
+        xpum_device_components_ratio_t dataArray[tileCount];
+        auto doubleToFormatStr = [] (double val) {
+            std::ostringstream oss;
+            int fixed = 2;
+            oss << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setiosflags(std::ios::right) << std::setprecision(fixed) << val;
+            return oss.str();
+        };
+        res = xpumGetDeviceComponentOccupancyRatio(deviceId, tileId, samplingInterval, dataArray, &tileTotalCount);
+        if (res != XPUM_OK) {
+            switch (res) {
+                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                    response->set_errormsg("Level Zero Initialization Error");
+                    break;
+                case XPUM_RESULT_DEVICE_NOT_FOUND:
+                    response->set_errormsg("Device not found");
+                    break;
+                case XPUM_METRIC_NOT_SUPPORTED:
+                    response->set_errormsg("Metrics are not supported in this device");
+                    break;
+                default:
+                    response->set_errormsg("Error");
+                    break;
+            }
+            return grpc::Status::OK;
+        } else {
+            for (uint32_t i = 0; i < tileTotalCount; i++) {
+
+                /* tileId specified */
+                if (isTileData && tileId != tileList.at(i)) continue;
+
+                DeviceComponentOccupancyRatio* componentsOccupancy = response->add_componentoccupancylist();
+                componentsOccupancy->set_notinuse(doubleToFormatStr(dataArray[i].ratios[0].value));
+                componentsOccupancy->set_workload(doubleToFormatStr(dataArray[i].ratios[1].value));
+                componentsOccupancy->set_engine(doubleToFormatStr(dataArray[i].ratios[2].value));
+                componentsOccupancy->set_inuse(doubleToFormatStr(dataArray[i].ratios[3].value));
+                componentsOccupancy->set_active(doubleToFormatStr(dataArray[i].ratios[4].value));
+                componentsOccupancy->set_aluactive(doubleToFormatStr(dataArray[i].ratios[5].value));
+                componentsOccupancy->set_xmxactive(doubleToFormatStr(dataArray[i].ratios[6].value));
+                componentsOccupancy->set_xmxonly(doubleToFormatStr(dataArray[i].ratios[7].value));
+                componentsOccupancy->set_xmxfpuactive(doubleToFormatStr(dataArray[i].ratios[8].value));
+                componentsOccupancy->set_fpuwithoutxmx(doubleToFormatStr(dataArray[i].ratios[9].value));
+                componentsOccupancy->set_fpuonly(doubleToFormatStr(dataArray[i].ratios[10].value));
+                componentsOccupancy->set_emfpuactive(doubleToFormatStr(dataArray[i].ratios[11].value));
+                componentsOccupancy->set_emintonly(doubleToFormatStr(dataArray[i].ratios[12].value));
+                componentsOccupancy->set_other(doubleToFormatStr(dataArray[i].ratios[13].value));
+                componentsOccupancy->set_stall(doubleToFormatStr(dataArray[i].ratios[14].value));
+                componentsOccupancy->set_nonoccupancy(doubleToFormatStr(dataArray[i].ratios[15].value));
+                componentsOccupancy->set_stallalu(doubleToFormatStr(dataArray[i].ratios[16].value));
+                componentsOccupancy->set_stallbarrier(doubleToFormatStr(dataArray[i].ratios[17].value));
+                componentsOccupancy->set_stalldep(doubleToFormatStr(dataArray[i].ratios[18].value));
+                componentsOccupancy->set_stallother(doubleToFormatStr(dataArray[i].ratios[19].value));
+                componentsOccupancy->set_stallinstfetch(doubleToFormatStr(dataArray[i].ratios[20].value));
+                componentsOccupancy->set_tileid(std::to_string(deviceId) + "/" + std::to_string(tileList.at(i)));
+
+                /* targeted tile founded */
+                if (isTileData && tileId == tileList.at(i)) break;
+            }
+        }
+    }
+    response->set_tilecount(tileCount);
+
     return grpc::Status::OK;
 }
 

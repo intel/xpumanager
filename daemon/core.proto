@@ -386,6 +386,44 @@ message DeviceProcessStateResponse{
     string errorMsg = 3;
 }
 
+message DeviceComponentOccupancyRatioRequest {
+    uint32 deviceId = 1;
+    uint32 tileId = 2;
+    uint32 samplingInterval = 3;
+    bool isTileData = 4;
+}
+
+message DeviceComponentOccupancyRatio {
+    string notInUse = 1;
+    string workload = 2;
+    string engine = 3;
+    string inUse = 4;
+    string active = 5;
+    string aluActive = 6;
+    string xmxActive = 7;
+    string xmxOnly = 8;
+    string xmxFpuActive = 9;
+    string fpuWithoutXMX = 10;
+    string fpuOnly = 11;
+    string emFpuActive = 12;
+    string emIntOnly = 13;
+    string other = 14;
+    string stall = 15;
+    string nonOccupancy = 16;
+    string stallALU = 17;
+    string stallBarrier = 18;
+    string stallDep = 19;
+    string stallOther = 20;
+    string stallInstFetch = 21;
+    string tileId = 22;
+}
+
+message DeviceComponentOccupancyRatioResponse {
+    uint32 tileCount = 1;
+    repeated DeviceComponentOccupancyRatio componentOccupancyList = 2;
+    string errorMsg = 3;
+}
+
 message DeviceUtilizationByProcess {
     uint32 deviceId = 1;
     uint32 processId = 2;
@@ -863,6 +901,7 @@ service XpumCoreService {
     rpc readPolicyNotifyData( google.protobuf.Empty ) returns ( stream ReadPolicyNotifyDataResponse );
     rpc getDeviceConfig( ConfigDeviceDataRequest ) returns ( ConfigDeviceData );
     rpc getDeviceProcessState( DeviceId ) returns ( DeviceProcessStateResponse );
+    rpc getDeviceComponentOccupancyRatio( DeviceComponentOccupancyRatioRequest ) returns ( DeviceComponentOccupancyRatioResponse );
     rpc getDeviceUtilizationByProcess( DeviceUtilizationByProcessRequest ) returns ( DeviceUtilizationByProcessResponse );
     rpc getAllDeviceUtilizationByProcess( UtilizationInterval ) returns ( DeviceUtilizationByProcessResponse );
     rpc getPerformanceFactor( DeviceDataRequest ) returns ( DevicePerformanceFactorResponse );

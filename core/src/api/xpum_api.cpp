@@ -7,6 +7,7 @@
 #include "xpum_api.h"
 
 #include <algorithm>
+#include <string>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -14,6 +15,7 @@
 #include <sstream>
 #include <vector>
 #include <dlfcn.h>
+#include <math.h>
 
 #include "api_types.h"
 #include "core/core.h"
@@ -26,6 +28,7 @@
 #include "infrastructure/device_property.h"
 #include "infrastructure/exception/level_zero_initialization_exception.h"
 #include "infrastructure/version.h"
+#include "infrastructure/perf_measurement_data.h"
 #include "internal_api.h"
 #include "ext-include/igsc_lib.h"
 
@@ -1794,6 +1797,258 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_p
             i++;
         }
     }
+    return XPUM_OK;
+}
+
+xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId, 
+                                                   xpum_device_tile_id_t tileId,
+                                                   xpum_sampling_interval_t samplingInterval,
+                                                   xpum_device_components_ratio_t *dataArray, 
+                                                   uint32_t *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
+    if (tileId == -1) {
+        res = validateDeviceId(deviceId);
+    } else {
+        res = validateDeviceIdAndTileId(deviceId, tileId);
+    }
+    
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    Property prop;
+    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
+    uint32_t tileCount = prop.getValueInt();
+
+    if (*count > 0 && *count < tileCount && dataArray != nullptr) {
+        return XPUM_BUFFER_TOO_SMALL;
+    } else {
+        *count = tileCount;
+    }
+
+    if (dataArray == nullptr) {
+        return XPUM_OK;
+    }
+
+    std::string device_id = std::to_string(deviceId);
+    if (samplingInterval != -1 && samplingInterval > 0) {
+        Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD = samplingInterval * 1000000;
+    }
+
+    auto p_data = Core::instance().getDeviceManager()->getRealtimeMeasurementData(METRIC_PERF, device_id);
+    std::shared_ptr<PerfMeasurementData> p_measurement_data = std::static_pointer_cast<PerfMeasurementData>(p_data);
+
+    uint32_t engineUtilRawDataSize = 0;
+    Core::instance().getDataLogic()->getEngineUtilizations(deviceId, nullptr, &engineUtilRawDataSize);
+    std::vector<xpum_device_engine_metric_t> engineUtilRawDataList(engineUtilRawDataSize);
+    Core::instance().getDataLogic()->getEngineUtilizations(deviceId, engineUtilRawDataList.data(), &engineUtilRawDataSize);
+
+    /* calculate engine utilization of current device */
+    std::float_t engineCompute = 0;
+    std::float_t engineRender = 0;
+    std::int16_t countRenderEngine = 0;
+    std::int16_t countComputeEngine = 0;
+    std::float_t engineUsage = 0;
+    std::int16_t scale = 100;
+
+    for (auto engineUtilRawData : engineUtilRawDataList) {
+        if (engineUtilRawData.type == XPUM_ENGINE_TYPE_COMPUTE && engineUtilRawData.value > 0) {
+            countComputeEngine++;
+            engineCompute += engineUtilRawData.value;
+            scale = engineUtilRawData.scale;
+        } else if (engineUtilRawData.type == XPUM_ENGINE_TYPE_RENDER) {
+            countRenderEngine++;
+            engineRender += engineUtilRawData.value;
+            scale = engineUtilRawData.scale;
+        }
+    }
+    engineUsage = std::max(engineCompute / countComputeEngine, engineRender / countRenderEngine);
+    engineUsage /= scale;
+
+    auto p_perf_datas = p_measurement_data->getDatas();
+    if (p_perf_datas->size() <= 0) {
+        return XPUM_METRIC_NOT_SUPPORTED;
+    }
+
+    /*  calculate the component occupancy ratio of each tile in current device */
+    for (size_t i = 0; i < p_perf_datas->size(); i++) {
+        std::float_t active = 0;
+        std::float_t stall = 0;
+        std::float_t inUse = 0;
+        
+        std::float_t occupancy = 0;
+        std::float_t stallALU = 0;
+        std::float_t stallSFU = 0;
+        std::float_t stallSB = 0;
+        std::float_t stallSEND = 0;
+        std::float_t stallDep = 0;
+        std::float_t stallOther = 0;
+        std::float_t stallBarrier = 0;
+        std::float_t stallInstFetch = 0;
+        std::float_t fpuActive = 0;
+        std::float_t emActive = 0;
+        std::float_t xmxActive = 0;
+        std::float_t xmxOnly = 0;
+        std::float_t fpuWithoutXMX = 0;
+        std::float_t fpuOnly = 0;
+        std::float_t emIntOnly = 0;
+        std::float_t emFpuActive = 0;
+        std::float_t xmxFpuActive = 0;
+        std::float_t aluActive = 0;
+        std::float_t other = 0;
+        std::float_t stallTotal = 0;
+        std::float_t notInUse = 0;
+        std::float_t hypoInUse = 0;
+        std::float_t engine = 0;
+        std::float_t workload = 0;
+        std::float_t hypoActive = 0;
+        std::float_t nonOccupancy = 0;
+        std::float_t remaining = 0;
+        std::float_t tlpRatio = 1;
+
+        for (auto group_data : (*p_perf_datas)[i]->data) {
+            for (auto metric_data : group_data.data) {
+                if (std::strcmp(metric_data.name.c_str(), "XveActive") == 0) {
+                    active = metric_data.average;
+                } 
+                if (std::strcmp(metric_data.name.c_str(), "XveStall") == 0) {
+                    stall = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "EmActive") == 0) {
+                    emActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "XmxActive") == 0) {
+                    xmxActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "FpuActive") == 0) {
+                    fpuActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "XveFpuEmActive") == 0) {
+                    emFpuActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "XveFpuXmxActive") == 0) {
+                    xmxFpuActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "XveThreadOccupancy") == 0) {
+                    occupancy = metric_data.average;
+                }
+                if (metric_data.name.find("ALUWR") != std::string::npos) {
+                    stallALU += metric_data.average;
+                }
+                if (metric_data.name.find("BARRIER") != std::string::npos) {
+                    stallBarrier += metric_data.average;
+                }
+                if (metric_data.name.find("SHARED_FUNCTION") != std::string::npos) {
+                    stallSFU += metric_data.average;
+                }
+                if (metric_data.name.find("SBID") != std::string::npos) {
+                    stallSB += metric_data.average;
+                }
+                if (metric_data.name.find("SENDWR") != std::string::npos) {
+                    stallSEND += metric_data.average;
+                }
+                if (metric_data.name.find("OTHER") != std::string::npos) {
+                    stallOther += metric_data.average;
+                }
+                if (metric_data.name.find("INSTFETCH") != std::string::npos) {
+                    stallInstFetch += metric_data.average;
+                }
+            }
+        }
+
+        inUse = active + stall;
+        notInUse = 100 - inUse;
+        hypoInUse = inUse * 100 / engineUsage;
+        if (hypoInUse > 100) {
+            hypoInUse = 100;
+        }
+
+        engine = hypoInUse - inUse;
+        if (engine < 0 || isnan(engine)) {
+            engine = 0;
+        } 
+        workload = notInUse - engine;
+        if (workload < 0) {
+            workload = 0;
+        }
+
+        if (inUse != 0) {
+            hypoActive = active / (occupancy / (inUse * tlpRatio));
+            nonOccupancy = hypoActive - active;
+            if (nonOccupancy < 0) {
+                nonOccupancy = 0;
+            }
+            remaining = stall - nonOccupancy;
+            if (remaining < 0) {
+                remaining = 0;
+            }
+
+            stallDep = stallSB;
+            if (stallDep < stallSFU) {
+                stallDep = stallSFU;
+            }
+            stallTotal = stallALU + stallBarrier + stallDep + stallOther + stallInstFetch;
+
+            remaining /= stallTotal;
+            stallALU *= remaining;
+            stallBarrier *= remaining;
+            stallDep *= remaining;
+            stallOther *= remaining;
+            stallInstFetch *= remaining;
+                
+            aluActive = emActive + fpuActive - emFpuActive + xmxActive - xmxFpuActive;
+            xmxOnly = xmxActive - xmxFpuActive;
+            fpuWithoutXMX = fpuActive - xmxFpuActive;
+            fpuOnly = fpuActive - xmxFpuActive - emFpuActive;
+            emIntOnly = emActive - emFpuActive;
+            other = active - aluActive;
+        }
+
+        std::vector<std::pair<std::string, std::double_t>> components_ratios;
+        components_ratios.push_back(std::pair<std::string, std::double_t>("notInUse", notInUse));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("workload", workload));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("engine", engine));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("inUse", inUse));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("active", active));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("aluActive", aluActive));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("xmxActive", xmxActive));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("xmxOnly", xmxOnly));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("xmxFpuActive", xmxFpuActive));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("fpuWithoutXMX", fpuWithoutXMX));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("fpuOnly", fpuOnly));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("emFpuActive", emFpuActive));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("emIntOnly", emIntOnly));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("other", other));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stall", stall));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("nonOccupancy", nonOccupancy));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallALU", stallALU));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallBarrier", stallBarrier));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallDep", stallDep));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallOther", stallOther));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallInstFetch", stallInstFetch));
+
+        dataArray[i].componentNum = components_ratios.size();
+        int idx = 0;
+        for (auto it = components_ratios.begin(); it != components_ratios.end(); it++) {
+            std::strcpy(dataArray[i].ratios[idx].occupancyName, (*it).first.c_str());
+            dataArray[i].ratios[idx].value = (*it).second;
+            idx++;
+        }
+    }
+
     return XPUM_OK;
 }
 

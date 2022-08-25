@@ -60,6 +60,11 @@ extern "C" {
 #define XPUM_DEVICE_ID_ALL_DEVICES 1024
 
 /**
+ * The max number of monitored function component occupancy situation in GPU
+ */
+#define XPUM_MAX_COMPONENT_OCCUPANCY_NUM 21
+
+/**
  * Device id
  */
 typedef int32_t xpum_device_id_t;
@@ -83,6 +88,11 @@ typedef int32_t xpum_dump_task_id_t;
  * Tile id
  */
 typedef int32_t xpum_device_tile_id_t;
+
+/**
+ * sampling interval
+ */
+typedef int32_t xpum_sampling_interval_t;
 
 /**
  * API call results
@@ -114,6 +124,7 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL,
     XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
     XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND, /// "/usr/bin/igsc" not found
@@ -749,6 +760,25 @@ typedef struct xpum_device_process_t {
     xpum_engine_type_flags_t engine;
     char processName[XPUM_MAX_STR_LENGTH];
 } xpum_device_process_t;
+
+/**
+ * @brief Struct to store one component occupancy
+ * 
+ */
+typedef struct xpum_device_component_ratio_t {
+    char occupancyName[XPUM_MAX_STR_LENGTH];    //  Device component name
+    double value;                               //  Occupancy ratio
+} xpum_device_component_ratio_t;
+
+/**
+ * @brief Struct to store all component occupancy ratio
+ * 
+ */
+typedef struct xpum_device_components_ratio_t {
+    xpum_device_id_t deviceId;  ///< Device id
+    xpum_device_component_ratio_t ratios[XPUM_MAX_COMPONENT_OCCUPANCY_NUM];
+    int componentNum;   ///< The number of component to monitor
+} xpum_device_components_ratio_t;
 
 typedef struct {
     uint32_t deviceId;

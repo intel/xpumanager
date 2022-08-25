@@ -1782,6 +1782,66 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProcessState(int deviceId) {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> CoreStub::getDeviceComponentOccupancyRatio(int deviceId, int tileId, int samplingInterval) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceComponentOccupancyRatioRequest request;
+    DeviceComponentOccupancyRatioResponse response;
+
+    request.set_deviceid(deviceId);
+    request.set_samplinginterval(samplingInterval);
+    if (tileId == -1) {
+        request.set_istiledata(false);
+        request.set_tileid(0);
+    } else {
+        request.set_istiledata(true);
+        request.set_tileid(tileId);
+    }
+    
+    grpc::Status status = stub->getDeviceComponentOccupancyRatio(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            std::vector<nlohmann::json> tileJsonList;
+            for (uint i{0}; i < response.tilecount(); ++i) {
+                auto tileJson = nlohmann::json();
+                tileJson["not_in_use"] = response.componentoccupancylist(i).notinuse();
+                tileJson["workload"] = response.componentoccupancylist(i).workload();
+                tileJson["engine"] = response.componentoccupancylist(i).engine();
+                tileJson["in_use"] = response.componentoccupancylist(i).inuse();
+                tileJson["active"] = response.componentoccupancylist(i).active();
+                tileJson["alu_active"] = response.componentoccupancylist(i).aluactive();
+                tileJson["xmx_active"] = response.componentoccupancylist(i).xmxactive();
+                tileJson["xmx_only"] = response.componentoccupancylist(i).xmxonly();
+                tileJson["xmx_fpu_active"] = response.componentoccupancylist(i).xmxfpuactive();
+                tileJson["fpu_without_xmx"] = response.componentoccupancylist(i).fpuwithoutxmx();
+                tileJson["fpu_only"] = response.componentoccupancylist(i).fpuonly();
+                tileJson["em_fpu_active"] = response.componentoccupancylist(i).emfpuactive();
+                tileJson["em_int_only"] = response.componentoccupancylist(i).emintonly();
+                tileJson["other"] = response.componentoccupancylist(i).other();
+                tileJson["stall"] = response.componentoccupancylist(i).stall();
+                tileJson["non_occupancy"] = response.componentoccupancylist(i).nonoccupancy();
+                tileJson["stall_alu"] = response.componentoccupancylist(i).stallalu();
+                tileJson["stall_barrier"] = response.componentoccupancylist(i).stallbarrier();
+                tileJson["stall_dep"] = response.componentoccupancylist(i).stalldep();
+                tileJson["stall_other"] = response.componentoccupancylist(i).stallother();
+                tileJson["stall_inst_fetch"] = response.componentoccupancylist(i).stallinstfetch();
+                tileJson["tile_id"] = response.componentoccupancylist(i).tileid();
+
+                tileJsonList.push_back(tileJson);
+            }
+            (*json)["device_id"] = std::to_string(deviceId);
+            (*json)["tile_json_list"] = tileJsonList;
+        } else {
+            (*json)["error"] = response.errormsg();
+        }
+        
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+    return json;
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceUtilizationByProcess(
         int deviceId, int utilizationInterval) {
     assert(this->stub != nullptr);

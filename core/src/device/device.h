@@ -125,6 +125,8 @@ class Device {
 
     virtual void getFabricThroughput(Callback_t callback) noexcept = 0;
 
+    virtual void getPerfMetrics(Callback_t callback) noexcept = 0;
+
     void addCapability(DeviceCapability& capability);
 
     void removeCapability(DeviceCapability& capability);

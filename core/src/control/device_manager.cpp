@@ -91,7 +91,7 @@ void DeviceManager::getDeviceList(
     }
 }
 
-MeasurementData DeviceManager::getRealtimeMeasurementData(
+std::shared_ptr<MeasurementData> DeviceManager::getRealtimeMeasurementData(
     MeasurementType type, std::string& device_id) {
     std::shared_ptr<Device> p_device = getDevice(device_id);
     if (p_device == nullptr) {
@@ -146,9 +146,10 @@ MeasurementData DeviceManager::getRealtimeMeasurementData(
             else
                 mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
         }
-        return *mData;
+        return mData;
     }
-    return *p_data;
+
+    return p_data;
 }
 
 std::shared_ptr<Device> DeviceManager::getDevice(const std::string& id) {

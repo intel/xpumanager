@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <regex>
 #include <stdio.h>
 #include <dirent.h>
 #include <climits>
@@ -40,7 +41,12 @@
 #include "infrastructure/logger.h"
 #include "infrastructure/measurement_data.h"
 
+#define MAX_SUB_DEVICE 256
+
 namespace xpum {
+
+std::map<ze_device_handle_t, std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>> GPUDeviceStub::device_perf_groups;
+const char* GPU_TIME_NAME = "GpuTime";
 
 namespace {
 
@@ -100,12 +106,18 @@ GPUDeviceStub& GPUDeviceStub::instance() {
 }
 
 PCIeManager GPUDeviceStub::pcie_manager;
+bool GPUDeviceStub::daemonless = false;
+
+void GPUDeviceStub::setDaemonless(bool daemonless) {
+    GPUDeviceStub::daemonless = daemonless;
+}
+
 void GPUDeviceStub::init() {
     initialized = true;
     putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
     putenv(const_cast<char*>("ZE_ENABLE_PCI_ID_DEVICE_ORDER=1"));
     if (std::getenv("ZET_ENABLE_METRICS") == NULL && std::any_of(Configuration::getEnabledMetrics().begin(), Configuration::getEnabledMetrics().end(),
-                                                                 [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL; })) {
+                                                                 [](const MeasurementType type) { return type == METRIC_EU_ACTIVE || type == METRIC_EU_IDLE || type == METRIC_EU_STALL || type == METRIC_PERF; })) {
         putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
     }
 
@@ -4100,6 +4112,352 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
         return ret;
     } else {
         throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
+    }
+}
+
+void GPUDeviceStub::getPerfMetrics(ze_device_handle_t& device, ze_driver_handle_t& driver, 
+                                   Callback_t callback) noexcept {
+    invokeTask(callback, toGetPerfMetrics, device, driver);
+}
+
+std::shared_ptr<PerfMeasurementData> GPUDeviceStub::toGetPerfMetrics(ze_device_handle_t& device, 
+                                                                     ze_driver_handle_t& driver) {  
+    uint32_t sub_device_count = MAX_SUB_DEVICE;
+    ze_device_handle_t sub_device_handles[MAX_SUB_DEVICE];
+    
+    ze_result_t res = zeDeviceGetSubDevices(device, &sub_device_count, sub_device_handles);
+    if (res != ZE_RESULT_SUCCESS) {
+        throw BaseException("toGetPerfMetrics");
+    }
+
+    std::vector<ze_device_handle_t> target_devices;
+    if (sub_device_count == 0) {
+        target_devices.push_back(device);
+    }
+    for (uint32_t i = 0; i < sub_device_count; ++i) {
+        target_devices.push_back(sub_device_handles[i]);
+    }
+
+    std::unique_lock<std::mutex> lock(GPUDeviceStub::metric_streamer_mutex);    
+
+    std::map<ze_device_handle_t, std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>> to_active_groups;
+    std::map<ze_device_handle_t, std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>> remaining_groups;
+    std::map<ze_device_handle_t, std::shared_ptr<PerfMetricDeviceData_t>> device_datas;
+    std::map<ze_device_handle_t, ze_context_handle_t> device_contexts;
+    
+    for (auto device : target_devices) {
+        auto p_groups = getDevicePerfMetricGroups(device, driver);
+        if (p_groups->size() > 0) {
+            auto p_metric_groups = std::make_shared<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>();
+            for (auto it = p_groups->begin(); it != p_groups->end(); it++) {
+                p_metric_groups->push_back(*it);
+            }
+            remaining_groups[device] = p_metric_groups;
+        }
+    }
+
+    while (true) {
+        if (remaining_groups.size() == 0) {
+            break;
+        }
+
+        for (auto it = remaining_groups.begin(); it != remaining_groups.end();) {
+            std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>> p_device_groups;
+            if (to_active_groups.find(it->first) == to_active_groups.end()) {
+                p_device_groups = std::make_shared<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>();
+                to_active_groups[it->first] = p_device_groups;
+            } else {
+                p_device_groups = to_active_groups.at(it->first);
+            }
+
+            for (auto it_group = it->second->begin(); it_group != it->second->end(); ) {
+                if (p_device_groups->find((*it_group)->domain) == p_device_groups->end()) {
+                    p_device_groups->insert(std::pair<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>((*it_group)->domain, *it_group));
+                    it_group = it->second->erase(it_group);
+                } else {
+                    it_group++;
+                }
+            }
+
+            if (it->second->size() == 0) {
+                it = remaining_groups.erase(it);
+            } else {
+                it++;
+            }
+        }
+
+        for (auto it = to_active_groups.begin(); it != to_active_groups.end(); it++) {
+            openDevicePerfMetricStream(device, driver, it->second, device_contexts);
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(
+            Configuration::EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD));        
+                
+        for (auto it = to_active_groups.begin(); it != to_active_groups.end(); it++) {
+            std::shared_ptr<PerfMetricDeviceData_t> p_existing_device_data;
+            if (device_datas.find(it->first) != device_datas.end()) {
+                p_existing_device_data = device_datas[it->first];
+            } else {
+                p_existing_device_data = std::make_shared<PerfMetricDeviceData_t>();
+                device_datas[it->first] = p_existing_device_data;
+            }
+
+            readPerfMetricsData(it->second, p_existing_device_data);
+
+            for (auto it_group = it->second->begin(); it_group != it->second->end(); it_group++) {
+                zetMetricStreamerClose(it_group->second->streamer);
+            }
+
+            zetContextActivateMetricGroups(device_contexts[it->first], it->first, 0, nullptr);
+        }
+
+        to_active_groups.clear();
+    }
+    
+    std::shared_ptr<PerfMeasurementData> p_measurement_data = std::make_shared<PerfMeasurementData>();
+    for (auto device : target_devices) {
+        if (device_datas.find(device) != device_datas.end()) {
+            p_measurement_data->addData(device_datas.at(device));
+        }
+    }
+
+    return p_measurement_data;
+}
+
+std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>> GPUDeviceStub::getDevicePerfMetricGroups(
+    ze_device_handle_t& device, ze_driver_handle_t& driver) {
+    if (device_perf_groups.find(device) == device_perf_groups.end()) {
+        uint32_t metric_group_count = 0;
+        ze_result_t res = zetMetricGroupGet(device, &metric_group_count, nullptr);
+        if (res != ZE_RESULT_SUCCESS)  {
+            throw BaseException("getDevicePerfMetricGroups");
+        }
+
+        std::vector<zet_metric_group_handle_t> metric_groups(metric_group_count);
+        res = zetMetricGroupGet(device, &metric_group_count, metric_groups.data());
+        if (res != ZE_RESULT_SUCCESS)  {
+            throw BaseException("getDevicePerfMetricGroups");
+        }
+
+        std::map<std::string, std::shared_ptr<DeviceMetricGroups_t>> target_metric_groups;
+        for (auto& conf : Configuration::getPerfMetrics()) {
+            std::regex regex = std::regex(conf.group);
+            std::regex name_regex = std::regex(conf.name);
+            for (uint32_t i = 0; i < metric_group_count; i++) {
+                zet_metric_group_properties_t metric_group_prop;
+                res = zetMetricGroupGetProperties(metric_groups[i], &metric_group_prop);
+                if (res != ZE_RESULT_SUCCESS) {
+                    throw BaseException("getDevicePerfMetricGroups");
+                }
+
+                if (std::regex_match(metric_group_prop.name, regex)) {
+                    std::shared_ptr<DeviceMetricGroups_t> p_metric_group;
+                    if (target_metric_groups.find(metric_group_prop.name) != target_metric_groups.end()) {
+                        p_metric_group = target_metric_groups.at(metric_group_prop.name);
+                    } else {
+                        p_metric_group = std::make_shared<DeviceMetricGroups_t>();
+                        p_metric_group->group_name = metric_group_prop.name;
+                        p_metric_group->domain = metric_group_prop.domain;
+                        p_metric_group->metric_count = metric_group_prop.metricCount;
+                        p_metric_group->metric_group = metric_groups[i];
+                        target_metric_groups[metric_group_prop.name] = p_metric_group;
+                    }
+
+                    uint32_t metric_count = p_metric_group->metric_count;
+                    std::vector<zet_metric_handle_t> metrics(metric_count);
+                    res = zetMetricGet(p_metric_group->metric_group, &metric_count, metrics.data());
+                    if (res != ZE_RESULT_SUCCESS) {
+                        throw BaseException("zetMetricGet");
+                    }
+                    for (uint32_t j = 0; j < metric_count; ++j) {
+                        zet_metric_properties_t metric_prop;
+                        res = zetMetricGetProperties(metrics[j], &metric_prop);
+                        if (res != ZE_RESULT_SUCCESS) {
+                            throw BaseException("zetMetricGetProperties");
+                        }
+
+                        bool is_gpu_time = std::strcmp(metric_prop.name, GPU_TIME_NAME) == 0;
+                        if (((std::regex_match(metric_prop.name, name_regex) && conf.type == "time") || is_gpu_time) && 
+                            (p_metric_group->target_metrics.find(metric_prop.name) == p_metric_group->target_metrics.end())) {
+                            auto p_metric_data = std::make_shared<PerfMetricData_t>();
+                            p_metric_data->name = metric_prop.name;
+                            p_metric_data->type = is_gpu_time ? "" : conf.type;
+                            p_metric_data->index = j;
+                            p_metric_data->current = 0;
+                            p_metric_data->average = 0;
+                            p_metric_group->target_metrics[metric_prop.name] = p_metric_data;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (target_metric_groups.size() == 0) {
+            XPUM_LOG_WARN("Device has metric group {} but no matched performance metrics", 
+                           metric_group_count);
+            throw BaseException("getDevicePerfMetricGroups");
+        }
+
+        auto p_device_groups = std::make_shared<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>();
+        for (auto it = target_metric_groups.begin(); it !=  target_metric_groups.end(); it++) {
+            if (it->second->target_metrics.size() == 0) {
+                continue;
+            } else if (it->second->target_metrics.size() == 1 && 
+                it->second->target_metrics.find(GPU_TIME_NAME) != it->second->target_metrics.end()) {
+                continue;
+            }
+            p_device_groups->push_back(it->second);
+        }
+
+        XPUM_LOG_WARN("Total metric group count: {}, matched metric group count: {}", metric_group_count, p_device_groups->size());
+
+        GPUDeviceStub::device_perf_groups[device] = p_device_groups;
+        return p_device_groups;
+    } else {
+        return GPUDeviceStub::device_perf_groups.at(device);
+    }
+}
+
+
+void GPUDeviceStub::openDevicePerfMetricStream(ze_device_handle_t& device,
+                                              ze_driver_handle_t& driver, 
+                                              std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>& p_target_groups,
+                                              std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts) {
+    
+    ze_context_handle_t ze_context;
+    if (device_contexts.find(device) != device_contexts.end()) {
+        ze_context = device_contexts.at(device);
+    } else {
+        ze_context_desc_t context_desc = {
+                ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                nullptr, 
+                0
+        };     
+        auto res = zeContextCreate(driver, &context_desc, &ze_context);
+        if (res != ZE_RESULT_SUCCESS)  {
+            throw BaseException("openDevicePerfMetricStream");
+        }
+        device_contexts[device] = ze_context;
+    }
+
+    std::vector<zet_metric_group_handle_t> to_active_groups;
+    for (auto it = p_target_groups->begin(); it != p_target_groups->end(); it++) {
+        to_active_groups.push_back(it->second->metric_group);
+    }
+
+    auto res = zetContextActivateMetricGroups(ze_context, device, 
+                                            to_active_groups.size(), 
+                                            to_active_groups.data());
+    if (res != ZE_RESULT_SUCCESS)  {
+        XPUM_LOG_WARN("Failed to zetContextActivateMetricGroups {} with {}", 
+                      to_active_groups.size(), res);        
+        throw BaseException("openDevicePerfMetricStream");
+    }
+
+    zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
+    streamer_desc.samplingPeriod = Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
+    for (auto it = p_target_groups->begin(); it != p_target_groups->end(); it++) {
+        res = zetMetricStreamerOpen(ze_context, device, it->second->metric_group, &streamer_desc, 
+                                    nullptr, &it->second->streamer);
+        if (res != ZE_RESULT_SUCCESS)  {
+            XPUM_LOG_WARN("Failed to zetMetricStreamerOpen {} with {}", 
+                          to_active_groups.size(), res);            
+            throw BaseException("openDevicePerfMetricStream");
+        }
+    }
+}
+
+void GPUDeviceStub::readPerfMetricsData(std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>& p_groups,
+                                        std::shared_ptr<PerfMetricDeviceData_t> &p_metric_device_data) {
+    for (auto it = p_groups->begin(); it != p_groups->end(); it++) {
+        size_t raw_size = 0;
+        ze_result_t res = zetMetricStreamerReadData(it->second->streamer, UINT32_MAX, &raw_size, nullptr);
+        if (res != ZE_RESULT_SUCCESS) {
+            throw BaseException("getPerfMetricsData");
+        }
+
+        std::vector<uint8_t> raw_data(raw_size);
+        res = zetMetricStreamerReadData(it->second->streamer, UINT32_MAX, &raw_size, raw_data.data());
+        if (res != ZE_RESULT_SUCCESS) {
+            throw BaseException("getPerfMetricsData");
+        }
+
+        uint32_t value_count = 0;
+        zet_metric_group_calculation_type_t calc_type = ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES;
+        res = zetMetricGroupCalculateMetricValues(it->second->metric_group, calc_type, raw_size, 
+                                                  raw_data.data(), &value_count, nullptr);
+        if (res != ZE_RESULT_SUCCESS) {
+            throw BaseException("getPerfMetricsData");
+        }
+
+        std::vector<zet_typed_value_t> values(value_count);
+        res = zetMetricGroupCalculateMetricValues(it->second->metric_group, calc_type, raw_size, 
+                                                  raw_data.data(), &value_count, values.data());
+        if (res != ZE_RESULT_SUCCESS) {
+            throw BaseException("getPerfMetricsData");
+        }        
+        
+        uint32_t report_count = value_count / it->second->metric_count;
+        uint64_t total_elapsed_time = 0;
+        PerfMetricGroupData_t metric_group_data;
+
+        for (uint32_t report = 0; report < report_count; ++report) {
+            uint64_t current_elapsed_time = 0;
+            for (uint32_t metric = 0; metric < it->second->metric_count; metric++) {
+                zet_typed_value_t data = values[report * it->second->metric_count + metric];
+                for (auto it_metric = it->second->target_metrics.begin(); 
+                     it_metric != it->second->target_metrics.end(); it_metric++) {
+                     if (it_metric->second->index == metric) {
+                        bool found = false;
+                        for (auto& m : metric_group_data.data) {
+                            if (m.name == it_metric->second->name) {
+                                if (m.name == GPU_TIME_NAME) {
+                                    current_elapsed_time = data.value.ui64;
+                                    m.current = data.value.ui64;
+                                } else {
+                                    m.current = data.value.fp32;
+                                }
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found) {
+                            PerfMetricData_t perf_metric_data;
+                            perf_metric_data.name = it_metric->second->name; 
+                            perf_metric_data.average = 0;
+                            perf_metric_data.total = 0;
+                            perf_metric_data.type = it_metric->second->type;
+
+                            if (it_metric->second->name == GPU_TIME_NAME) {
+                                perf_metric_data.current = data.value.ui64;
+                                current_elapsed_time = data.value.ui64;
+                            } else {
+                                perf_metric_data.current = data.value.fp32;
+                            }
+
+                            metric_group_data.data.emplace_back(perf_metric_data);
+                        }
+                        break;
+                     }
+                }            
+            }
+
+            for (auto& m : metric_group_data.data) {
+                m.total += m.type == "time" ? current_elapsed_time * m.current : m.current;
+            }
+
+            total_elapsed_time += current_elapsed_time;
+        }
+
+        for (auto& m : metric_group_data.data) {
+            if (total_elapsed_time != 0) {
+                m.average = m.total / (double)total_elapsed_time;
+            }
+        }
+
+        metric_group_data.name = it->second->group_name;
+        p_metric_device_data->data.emplace_back(metric_group_data);
     }
 }
 

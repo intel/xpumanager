@@ -77,6 +77,7 @@ class CoreStub {
     std::unique_ptr<nlohmann::json> setDeviceStandby(int deviceId, int tileId, XpumStandbyMode mode);
     std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq);
     std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId);
+    std::unique_ptr<nlohmann::json> getDeviceComponentOccupancyRatio(int deviceId, int tileId, int samplingInterval);
     std::unique_ptr<nlohmann::json> getDeviceUtilizationByProcess(int deviceId, int utilizationInterval);
     std::unique_ptr<nlohmann::json> getAllDeviceUtilizationByProcess(int utilizationInterval);
     std::unique_ptr<nlohmann::json> getPerformanceFactor(int deviceId, int tileId);

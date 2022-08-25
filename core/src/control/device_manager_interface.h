@@ -39,7 +39,7 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual void getDeviceList(DeviceCapability cap,
                                std::vector<std::shared_ptr<Device>>& devices) = 0;
 
-    virtual MeasurementData getRealtimeMeasurementData(
+    virtual std::shared_ptr<MeasurementData> getRealtimeMeasurementData(
         MeasurementType type, std::string& device_id) = 0;
 
     virtual void getDeviceSchedulers(const std::string& id,
