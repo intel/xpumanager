@@ -1937,6 +1937,7 @@ xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
 
 bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur, uint8_t* pen) {
     const std::string str_igscLibPath{"libigsc.so"};
+    const std::string str_igscLibPath0{"libigsc.so.0"}; //temporary workaround for missing symoblic link libigsc.so -> libigsc.so.0
     const std::string str_igscDeviceInit{"igsc_device_init_by_device"};
     const std::string str_igscDeviceClose{"igsc_device_close"};
     const std::string str_igscDeviceMemEccSet2{"igsc_ecc_config_set"};
@@ -1959,8 +1960,11 @@ bool callIgscMemoryEcc(std::string path, bool getting, uint8_t req, uint8_t* cur
 
     handle = dlopen(str_igscLibPath.c_str(), RTLD_LAZY);
     if (!handle) {
-        XPUM_LOG_WARN("XPUM can't load igsc library.");
-        goto out;
+        handle = dlopen(str_igscLibPath0.c_str(), RTLD_LAZY);
+        if (!handle) {
+            XPUM_LOG_WARN("XPUM can't load igsc library.");
+            goto out;
+        }
     }
 
     dlerror();

@@ -1355,7 +1355,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
                 if (res == ZE_RESULT_SUCCESS) {
                     for (auto &power : power_handles) {
-                        zes_power_properties_t props;
+                        zes_power_properties_t props = {};
                         props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
                         XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
                         if (res != ZE_RESULT_SUCCESS) {

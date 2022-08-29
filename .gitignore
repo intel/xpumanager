@@ -5,7 +5,6 @@ __pycache__
 *.so
 *.a
 !libamcfw.a
-DGMCore
 core/src/infrastructure/xpum_config.h
 cli/src/config.h
 daemon/config.h
@@ -31,3 +30,4 @@ rest/key.pem
 rest/cert.pem
 third_party/hwloc/install/*
 *.log
+.ccache/

@@ -842,7 +842,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetPower(const zes_device_hand
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
-            zes_power_properties_t props;
+            zes_power_properties_t props = {};
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_power_energy_counter_t snap;
@@ -909,7 +909,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_han
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
-            zes_power_properties_t props;
+            zes_power_properties_t props = {};
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 zes_power_energy_counter_t counter;
@@ -2970,7 +2970,7 @@ void GPUDeviceStub::getPowerProps(const zes_device_handle_t& device, std::vector
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
-            zes_power_properties_t props;
+            zes_power_properties_t props = {};
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 powers.push_back(*(new Power(props.onSubdevice,
@@ -3006,7 +3006,7 @@ void GPUDeviceStub::getAllPowerLimits(const zes_device_handle_t& device,
             Power_burst_limit_t* burstLimit;
             Power_peak_limit_t* peakLimit;
             zes_power_peak_limit_t peak;
-            zes_power_properties_t props;
+            zes_power_properties_t props = {};
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 tileIds.push_back(props.subdeviceId);
@@ -3051,7 +3051,7 @@ void GPUDeviceStub::getPowerLimits(const zes_device_handle_t& device,
             zes_power_sustained_limit_t sustained;
             //zes_power_burst_limit_t burst;
             //zes_power_peak_limit_t peak;
-            zes_power_properties_t props;
+            zes_power_properties_t props = {};
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 if (props.onSubdevice == true) {
@@ -3088,7 +3088,7 @@ bool GPUDeviceStub::setPowerSustainedLimits(const zes_device_handle_t& device, i
     XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
     if (res == ZE_RESULT_SUCCESS) {
         for (auto& power : power_handles) {
-            zes_power_properties_t props;
+            zes_power_properties_t props = {};
             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
             if (res == ZE_RESULT_SUCCESS) {
                 if (props.subdeviceId == (uint32_t)tileId || (tileId == -1 && props.onSubdevice == false)) {
@@ -3467,7 +3467,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             auto current_device_value = 0;
             auto current_sub_device_value_sum = 0;
             for (auto& power : power_handles) {
-                zes_power_properties_t props;
+                zes_power_properties_t props = {};
                 props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
                 if (res != ZE_RESULT_SUCCESS) {
