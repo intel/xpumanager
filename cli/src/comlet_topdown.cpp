@@ -40,7 +40,7 @@ static CharTableConfig ComletConfigTopdownDevice(R"({
                 { "label": "      FPU w/o XMX (%)                ", "value": "fpu_without_xmx"  },
                 { "label": "        FPU Only (%)                 ", "value": "fpu_only"  },
                 { "label": "        Also w/ EM/INT (%)           ", "value": "em_fpu_active"  },
-                { "label": "      EM/INT Active (%)              ", "value": "em_int_only"  },
+                { "label": "      EM/INT Only (%)                ", "value": "em_int_only"  },
                 { "label": "    Other Instructions (%)           ", "value": "other"  },
                 { "label": "  EU Stall (%)                       ", "value": "stall"  },
                 { "label": "    Low occupancy (%)                ", "value": "non_occupancy"  },
