@@ -12,32 +12,17 @@ using namespace nlohmann;
 namespace xpum::cli {
 
 static CharTableConfig ComletSensorTableConfig(R"({
-    "columns": [
-        {
-            "title": "Sensor Name"
-        },
-        {
-            "title": "Value"
-        },
-        {
-            "title": "Low"
-        },
-        {
-            "title": "High"
-        },
-        {
-            "title": "Unit"
-        }
-    ],
+    "columns": [{
+        "title": "AMC ID"
+    }, {
+        "title": "Sensors"
+    }],
     "rows": [
         {
-            "instance": "sensor_reading[]",
+            "instance": "amc_sensor_reading_list[]",
             "cells": [
-                "sensor_name",
-                "value",
-                "sensor_low",
-                "sensor_high",
-                "sensor_unit"
+                "amc_index",
+                "value"
             ]
         }
     ]
@@ -59,16 +44,35 @@ void ComletSensor::getTableResult(std::ostream &out) {
         int amc_index = obj["amc_index"];
         m[amc_index].push_back(obj);
     }
+    json amc_sensor_reading_list;
     for (auto it = m.begin(); it != m.end(); it++) {
         int amc_index = it->first;
         auto sensor_reading = it->second;
+        std::string amc_sensor_values;
         json obj;
-        obj["amc_index"] = amc_index;
-        obj["sensor_reading"] = sensor_reading;
-
-        out << "AMC " << amc_index << std::endl;
-        CharTable table(ComletSensorTableConfig, obj);
-        table.show(out);
+        obj["amc_index"] = "AMC " + std::to_string(amc_index);
+        for(auto reading:sensor_reading){
+            std::stringstream ss;
+            ss << std::endl;
+            ss << reading["sensor_name"].get<std::string>();
+            ss << " (";
+            ss << reading["sensor_unit"].get<std::string>();
+            ss << "): ";
+            double value = reading["value"];
+            if (value == (int)value) {
+                ss << (int)value;
+            } else {
+                ss << reading["value"];
+            }
+            amc_sensor_values+=ss.str();
+        }
+        
+        obj["value"] = amc_sensor_values;
+        amc_sensor_reading_list.push_back(obj);
     }
+    json json4table;
+    json4table["amc_sensor_reading_list"] = amc_sensor_reading_list;
+    CharTable table(ComletSensorTableConfig, json4table);
+    table.show(out);
 }
 }
