@@ -94,7 +94,6 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)winxpum\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -131,12 +130,8 @@
     <ClInclude Include="core_stub.h" />
     <ClInclude Include="help_formatter.h" />
     <ClInclude Include="pretty_table.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="xpum_structs.h" />
     <ClInclude Include="ze_log.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="winxpum.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

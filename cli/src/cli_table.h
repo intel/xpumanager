@@ -472,7 +472,7 @@ class CharTableRowBase {
     inline virtual ~CharTableRowBase() {
     }
 
-    virtual inline const int numberOfCells() const = 0;
+    virtual const int numberOfCells() const = 0;
 
     virtual const int columnSpaceLeft(const int colWidth, const int colIndex = -1) const = 0;
 

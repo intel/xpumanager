@@ -32,11 +32,13 @@ class ComletBase {
     }
 
     virtual void getJsonResult(std::ostream &out, bool raw = false) {
+        auto pJson = this->run();
+        setExitCodeByJson(*pJson);
         if (raw) {
-            out << this->run()->dump() << std::endl;
+            out << pJson->dump() << std::endl;
             return;
         } else {
-            out << this->run()->dump(4) << std::endl;
+            out << pJson->dump(4) << std::endl;
             return;
         }
     }
@@ -73,10 +75,24 @@ class ComletBase {
 
     std::shared_ptr<CoreStub> coreStub;
 
+    std::string getCommand() {
+        return command;
+    }
+
+    int setExitCodeByJson(nlohmann::json json) {
+        if (!json.contains("errno")) {
+            return 0;
+        }
+        exit_code = json["errno"];
+        return exit_code;
+    }
+
+    int exit_code = 0;
    private:
     const std::string command;
     const std::string description;
     CLI::App *subCLIApp;
+
 
    public:
     bool printHelpWhenNoArgs = 0;

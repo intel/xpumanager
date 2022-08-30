@@ -411,7 +411,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
         getBDF(bdfAddress, address);
         bNuma = numaDevice(topology, address, numa_os_idx, cpuAffinity);
         if (bNuma) {
-           XPUM_LOG_DEBUG("NUMA: idx {} addr {} affinity {}", numa_os_idx, bdfAddress, cpuAffinity);
+            XPUM_LOG_DEBUG("NUMA: idx {} addr {} affinity {}", numa_os_idx, bdfAddress, cpuAffinity);
         }
         result = XPUM_OK;
 
@@ -431,7 +431,7 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
             portPair.remotePortId.fabricId = (uint32_t)-1;
             portPair.fabric_existing = false;
             fabricPorts.push_back(portPair);
-        } else {        
+        } else {
             for (unsigned long i = 0; i < portInfo.size(); i++) {
                 std::string model(portInfo[i].portProps.model);
                 if (model.find_first_of(xeLinkStr) == std::string::npos)

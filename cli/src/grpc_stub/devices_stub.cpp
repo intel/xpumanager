@@ -8,11 +8,11 @@
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
-#include "core_stub.h"
+#include "grpc_core_stub.h"
 
 namespace xpum::cli {
 
-std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceList() {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -44,13 +44,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
     return json;
 }
 
-static std::string scale(std::string value, int scale) {
-    int64_t ivalue = std::stol(value);
-    double fvalue = ivalue / (double)scale;
-    return std::to_string(fvalue);
-}
-
-std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -74,27 +68,23 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     for (int i{0}; i < response.properties_size(); ++i) {
         auto &p = response.properties(i);
         std::string name = p.name();
-        if (name.compare("MEMORY_PHYSICAL_SIZE_BYTE") == 0) {
-            name = "memory_physical_size";
-            (*json)[name] = scale(p.value(), 1048576);
-        } else if (name.compare("MAX_MEM_ALLOC_SIZE_BYTE") == 0) {
-            name = "max_mem_alloc_size";
-            (*json)[name] = scale(p.value(), 1048576);
-        } else if (name.compare("MAX_FABRIC_PORT_SPEED") == 0) {
-            name = "max_fabric_port_speed";
-            (*json)[name] = scale(p.value(), 1048576);
-        } else {
-            std::transform(name.begin(), name.end(), name.begin(),
-                           [](unsigned char c) { return std::tolower(c); });
-            (*json)[name] = p.value();
-        }
+        std::transform(name.begin(), name.end(), name.begin(),
+                       [](unsigned char c) { return std::tolower(c); });
+        (*json)[name] = p.value();
     }
     (*json)["device_id"] = deviceId;
 
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions() {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(const char *bdf) {
+    assert(this->stub != nullptr);
+
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getAMCFirmwareVersions() {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

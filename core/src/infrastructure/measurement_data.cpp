@@ -12,26 +12,12 @@ void MeasurementData::setSubdeviceDataCurrent(uint32_t subdevice_id, uint64_t da
     (*p_subdevice_datas)[subdevice_id].current = data;
 }
 
-void MeasurementData::clearSubdeviceDataCurrent(uint32_t subdevice_id) {
-    auto iter = p_subdevice_datas->find(subdevice_id);
-    if (iter != p_subdevice_datas->end()) {
-        p_subdevice_datas->erase(iter);
-    }
-}
-
 void MeasurementData::setSubdeviceDataRawTimestamp(uint32_t subdevice_id, uint64_t data) {
-    (*p_subdevice_rawdatas)[subdevice_id].raw_timestamp = data;
+    (*p_subdevice_datas)[subdevice_id].raw_timestamp = data;
 }
 
 void MeasurementData::setSubdeviceRawData(uint32_t subdevice_id, uint64_t data) {
-    (*p_subdevice_rawdatas)[subdevice_id].raw_data = data;
-}
-
-void MeasurementData::clearSubdeviceRawdata(uint32_t subdevice_id) {
-    auto iter = p_subdevice_rawdatas->find(subdevice_id);
-    if (iter != p_subdevice_rawdatas->end()) {
-        p_subdevice_rawdatas->erase(iter);
-    }
+    (*p_subdevice_datas)[subdevice_id].raw_data = data;
 }
 
 void MeasurementData::setSubdeviceDataMin(uint32_t subdevice_id, uint64_t data) {
@@ -79,25 +65,21 @@ uint64_t MeasurementData::getSubdeviceDataAvg(uint32_t subdevice_id) {
 }
 
 uint64_t MeasurementData::getSubdeviceDataRawTimestamp(uint32_t subdevice_id) {
-    if (p_subdevice_rawdatas->find(subdevice_id) != p_subdevice_rawdatas->end()) {
-        return (*p_subdevice_rawdatas)[subdevice_id].raw_timestamp;
+    if (p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end()) {
+        return (*p_subdevice_datas)[subdevice_id].raw_timestamp;
     }
     return std::numeric_limits<uint64_t>::max();
 }
 
 uint64_t MeasurementData::getSubdeviceRawData(uint32_t subdevice_id) {
-    if (p_subdevice_rawdatas->find(subdevice_id) != p_subdevice_rawdatas->end()) {
-        return (*p_subdevice_rawdatas)[subdevice_id].raw_data;
+    if (p_subdevice_datas->find(subdevice_id) != p_subdevice_datas->end()) {
+        return (*p_subdevice_datas)[subdevice_id].raw_data;
     }
     return std::numeric_limits<uint64_t>::max();
 }
 
 const std::shared_ptr<std::map<uint32_t, SubdeviceData>> MeasurementData::getSubdeviceDatas() {
     return p_subdevice_datas;
-}
-
-const std::shared_ptr<std::map<uint32_t, SubdeviceRawData>> MeasurementData::getSubdeviceRawDatas() {
-    return p_subdevice_rawdatas;
 }
 
 uint32_t MeasurementData::getSubdeviceDataSize() {

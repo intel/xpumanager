@@ -56,8 +56,8 @@ class PowerLimitSchema(Schema):
     #    metadata={"description": "The tile id"})
     power_limit = fields.Integer(
         metadata={"description": "The power limit value"})
-    #power_average_window = fields.Integer(
-    #    metadata={"description": "The interval window"})
+    power_average_window = fields.Integer(
+        metadata={"description": "The interval window"})
 
 
 class FrequencySchema(Schema):
@@ -93,10 +93,10 @@ class TileConfigSchema(Schema):
         metadata={"description": "The power limit value"})
     power_vaild_range = fields.String(
         metadata={"description": "power's scope"})
-    #power_average_window = fields.Integer(
-    #    metadata={"description": "The interval window"})
-    #power_average_window_vaild_range = fields.String(
-    #    metadata={"description": "power's inteval scope"})
+    power_average_window = fields.Integer(
+        metadata={"description": "The interval window"})
+    power_average_window_vaild_range = fields.String(
+        metadata={"description": "power's inteval scope"})
     min_frequency = fields.Integer(metadata={"description": "min frequency"})
     max_frequency = fields.Integer(metadata={"description": "max frequency"})
     gpu_frequency_valid_options = fields.String(
@@ -198,16 +198,18 @@ def set_powerlimit(deviceId):
     if not request.is_json:
         return jsonify("json string is missing"), 500
     req = request.get_json()
-    if ("power_limit" not in req) :
+    if ("power_limit" not in req) or ("power_average_window" not in req):
         return jsonify("json string is invalid"), 500
     power = req["power_limit"]
+    interval = req["power_average_window"]
+    #tileId = req["tile_id"]
     if type(power) != int:
         return jsonify("Invalid Parameter power_limit"), 500
-    if power <= 0:
-        return jsonify("Invalid Parameter power_limit"), 500
+    if type(interval) != int:
+        return jsonify("Invalid Parameter power_average_window"), 500
     power = power * 1000
 
-    if power < 0 :
+    if power < 0 or interval < 0:
         return jsonify("invalid power_limit or power_average_window value"), 500
 
     # if type(tileId) != int:
@@ -217,7 +219,7 @@ def set_powerlimit(deviceId):
     #    return jsonify("invalid Parameter tileId"), 500
 
     #code, message, data = stub.setPowerLimit(deviceId, tileId, power, interval)
-    code, message, data = stub.setPowerLimit(deviceId, -1, power, 0)
+    code, message, data = stub.setPowerLimit(deviceId, -1, power, interval)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

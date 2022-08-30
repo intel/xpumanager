@@ -5,5 +5,4 @@ XPU Manager Documentation
     build/README
     installation
     CLI_user_guide
-    restful
     build/rst/index

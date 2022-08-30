@@ -28,7 +28,9 @@ static CharTableConfig ComletDeviceConfiguration(R"({
             { "rowTitle": "GPU" },
             "device_id", [
                 { "label": "Power Limit (w) ", "value": "power_limit" },
-                { "label": "  Valid Range", "value": "power_vaild_range" }
+                { "label": "  Valid Range", "value": "power_vaild_range" },
+                { "label": "Power Average Window (ms) ", "value": "power_average_window" },
+                { "label": "  Valid Range", "value": "power_average_window_vaild_range" }
             ]
         ]
     }]
@@ -162,22 +164,9 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         }
         else if (/*this->opts->tileId >= 0 &&*/ !this->opts->powerlimit.empty()) {
             std::vector<std::string> paralist = split(this->opts->powerlimit, ",");
-            if (paralist.size() >= 1 && !paralist.at(0).empty()) {
-                int val1;
-                try {
-                    val1 = std::stoi(paralist.at(0));
-                } catch (std::invalid_argument const& e) {
-                    (*json)["return"] = "invalid parameter: powerlimit";
-                    return json;
-                } catch (std::out_of_range const& e) {
-                    (*json)["return"] = "invalid parameter: powerlimit";
-                    return json;
-                }
-                if (paralist.size() == 2 && paralist.at(1).empty()) {
-                    (*json)["return"] = "invalid parameter: please check help information";
-                    return json;
-                }
-                int val2 = 0; //std::stoi(paralist.at(1));
+            if (paralist.size() == 2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
+                int val1 = std::stoi(paralist.at(0));
+                int val2 = std::stoi(paralist.at(1));
                 this->opts->tileId = -1;
                 json = this->coreStub->setDevicePowerlimit(this->opts->deviceId, this->opts->tileId, val1, val2);
                 if ((*json)["status"] == "OK") {
@@ -199,22 +188,8 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         else if (this->opts->tileId >= 0 && !this->opts->frequencyrange.empty()) {
             std::vector<std::string> paralist = split(this->opts->frequencyrange, ",");
             if (paralist.size() == 2 && !paralist.at(0).empty() && !paralist.at(1).empty()) {
-                int val1;
-                int val2;
-                try {
-                    val1 = std::stoi(paralist.at(0));
-                    val2 = std::stoi(paralist.at(1));
-                } catch (std::invalid_argument const& e) {
-                    (*json)["return"] = "invalid parameter: frequencyrange";
-                    return json;
-                } catch (std::out_of_range const& e) {
-                    (*json)["return"] = "invalid parameter: frequencyrange";
-                    return json;
-                }
-                if (val1 > val2) {
-                    (*json)["return"] = "invalid parameter: frequencyrange";
-                    return json;
-                }
+                int val1 = std::stoi(paralist.at(0));
+                int val2 = std::stoi(paralist.at(1));
                 json = this->coreStub->setDeviceFrequencyRange(this->opts->deviceId, this->opts->tileId, val1, val2);
                 if ((*json)["status"] == "OK") {
                     (*json)["return"] = "Succeed to change the core frequency range on GPU " + std::to_string(this->opts->deviceId) +

@@ -13,6 +13,8 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -37,7 +39,11 @@ static CharTableConfig ComletConfigTopologyDevice(R"({
 
 void ComletTopology::setupOptions() {
     this->opts = std::unique_ptr<ComletTopologyOptions>(new ComletTopologyOptions());
-    auto d = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
+#ifndef DAEMONLESS
+    auto d = addOption("-d,--device", this->opts->deviceId, "The device ID to query ");
+#else
+    auto d = addOption("-d,--device", this->opts->device, "The device ID or PCI BDF address to query");
+#endif
     auto e = addOption("-f,--file", this->opts->xmlFile,
                        "Generate the system topology with the GPU info to a XML file.");
     auto m = addFlag("-m,--matrix", this->opts->xeLink,
@@ -59,8 +65,18 @@ void ComletTopology::setupOptions() {
 std::unique_ptr<nlohmann::json> ComletTopology::run() {
     auto result = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     if (isDeviceOperation()) {
+        if (this->opts->device != "") {
+            if (isNumber(this->opts->device)) {
+                this->opts->deviceId = std::stoi(this->opts->device);
+            } else {
+                auto json = this->coreStub->getDeivceIdByBDF(
+                    this->opts->device.c_str(), &this->opts->deviceId);
+                if (json->contains("error")) {
+                    return json;
+                }
+            }
+        }
         auto json = this->coreStub->getTopology(this->opts->deviceId);
-
         return json;
     } else if (!this->opts->xmlFile.empty()) {
         std::ofstream xmlfile;
@@ -72,16 +88,19 @@ std::unique_ptr<nlohmann::json> ComletTopology::run() {
                 std::cout << "Export topology to " << opts->xmlFile << " sucessfully." << std::endl;
             } else {
                 std::cout << "Fail to get topology xml buffer." << std::endl;
+                exit_code = XPUM_CLI_ERROR_EMPTY_XML;
             }
             xmlfile.close();
         } else {
             std::cout << "Error opening file: " << opts->xmlFile << std::endl;
+            exit_code = XPUM_CLI_ERROR_OPEN_FILE;
         }
     } else if (this->opts->xeLink) {
         auto json = this->coreStub->getXelinkTopology();
         return json;
     } else {
         (*result)["error"] = "Wrong argument or unknow operation, run with --help for more information.";
+        exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
     }
     return result;
 }
@@ -177,6 +196,7 @@ void ComletTopology::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        setExitCodeByJson(*res);
         return;
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();

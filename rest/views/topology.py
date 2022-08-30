@@ -16,8 +16,8 @@ class TopologyInfoSchema(Schema):
     affinity_localcpus = fields.String(metadata={"description": "local cpus"})
     switch_count = fields.Int(
         metadata={"description": "Device parent switch count"})
-    switch_list = fields.List(fields.String(
-        metadata={"description": "list of switch device path"}))
+    switch_list = fields.String(
+        metadata={"description": "list of switch device path"})
 
 
 def get_topology(deviceId):

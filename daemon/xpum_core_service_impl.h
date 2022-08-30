@@ -100,8 +100,6 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
     virtual ::grpc::Status setDeviceFrequencyRange(::grpc::ServerContext* context, const ::ConfigDeviceFrequencyRangeRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status setDeviceStandbyMode(::grpc::ServerContext* context, const ::ConfigDeviceStandbyRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status getDeviceProcessState(::grpc::ServerContext* context, const ::DeviceId* request, ::DeviceProcessStateResponse* response) override;
-    virtual ::grpc::Status getDeviceUtilizationByProcess(::grpc::ServerContext* context, const ::DeviceUtilizationByProcessRequest* request, ::DeviceUtilizationByProcessResponse* response) override;
-    virtual ::grpc::Status getAllDeviceUtilizationByProcess(::grpc::ServerContext* context, const ::UtilizationInterval* request, ::DeviceUtilizationByProcessResponse* response) override;
     virtual ::grpc::Status resetDevice(::grpc::ServerContext* context, const ::ResetDeviceRequest* request, ::ResetDeviceResponse* response) override;
     virtual ::grpc::Status getPerformanceFactor(::grpc::ServerContext* context, const ::DeviceDataRequest* request, ::DevicePerformanceFactorResponse* response) override;
     virtual ::grpc::Status setPerformanceFactor(::grpc::ServerContext* context, const ::PerformanceFactor* request, ::DevicePerformanceFactorSettingResponse* response) override;

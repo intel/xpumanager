@@ -161,8 +161,7 @@ def get_device_properties(deviceId):
 
 
 class AMCFwVersionSchema(Schema):
-    amc_fw_version = fields.List(
-        fields.Str(metadata={"description": "AMC versions"}))
+    amc_fw_version = fields.Str(many=True,metadata={"description": "AMC versions"})
     error = fields.Str(metadata={"description": "Error message"})
 
 

@@ -10,6 +10,8 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -85,7 +87,30 @@ static CharTableConfig ComletTileConfiguration(R"({
 */
 void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
-    addOption("-d,--device", this->opts->deviceId, "The device ID");
+#ifndef DAEMONLESS
+     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "device id");
+#else
+     auto deviceIdOpt = addOption("-d,--device", this->opts->device, "The device ID or PCI BDF address to query");
+#endif
+
+    deviceIdOpt->check([this](const std::string &str) {
+#ifndef DAEMONLESS
+        std::string errStr = "Device id should be integer larger than or equal to 0";
+        if (!isValidDeviceId(str)) {
+            return errStr;
+        }
+        return std::string();
+#else
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+#endif
+    });
+
     addOption("-t,--tile", this->opts->tileId, "The tile ID");
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
@@ -119,6 +144,17 @@ std::vector<std::string> ComletConfig::split(std::string str, std::string delimi
 }
 
 std::unique_ptr<nlohmann::json> ComletConfig::run() {
+    if (this->opts->device != "") {
+        if (isNumber(this->opts->device)) {
+            this->opts->deviceId = std::stoi(this->opts->device);
+        } else {
+            auto json = this->coreStub->getDeivceIdByBDF(
+                this->opts->device.c_str(), &this->opts->deviceId);
+            if (json->contains("error")) {
+                return json;
+            }
+        }
+    }
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     (*json)["return"] = "error";
     if (isQuery()) {
@@ -370,20 +406,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 std::string current = (*json)["memory_ecc_current_state"];
                 std::string pending = (*json)["memory_ecc_pending_state"];
                 std::string pendingAction = (*json)["memory_ecc_pending_action"];
-                (*json)["return"] = "Successfully " + (enabled?std::string("enable"): std::string("disable")) + " ECC memory on GPU " + std::to_string(this->opts->deviceId)+". Please reset the GPU or reboot the OS for the change to take effect.";
-
-               /* (*json)["return"] = "Succeed to set memory Ecc state: available: " + available +
-                " configurable: " + configurable +
-                " current: " + current +
-                " pending: " + pending + 
-                " action: " +  pendingAction;
-                if (available.compare("true") == 0 && configurable.compare("true") == 0) {
-                    (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU "
-                + std::to_string(this->opts->deviceId) + ". Please reset GPU or reboot OS to take effect.";
-                } else {
-                    (*json)["return"] = "Failed to change the ECC mode. The current ECC mode is " + current + ", the pending ECC mode is " + pending +
-                    " and the pending action is "+ pendingAction; " on GPU "+ std::to_string(this->opts->deviceId);
-                }*/
+                (*json)["return"] = "Successfully " + (enabled ? std::string("enable") : std::string("disable")) + " ECC memory on GPU " + std::to_string(this->opts->deviceId)+". Please reset the GPU or reboot the OS for the change to take effect.";
             }
             return json;  
         }
@@ -436,9 +459,14 @@ void ComletConfig::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("return")) {
         out << "Return: " << (*res)["return"].get<std::string>() << std::endl;
+        if ((res->contains("status") == false) || 
+            ((*res)["status"] != "OK" && (*res)["status"] != "CANCEL")) {
+            exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
+        }
         return;
     } else if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        setExitCodeByJson(*res);
         return;
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();

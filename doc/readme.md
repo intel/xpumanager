@@ -14,7 +14,7 @@ pip install --no-cache-dir -r requirements.txt
 
 # Provisioning doc
 
-XPU Manager doc will be generated into folder build/html in html format
+XPU-SMI doc will be generated into folder build/html in html format
 
 To provision the doc, you can simply run
 

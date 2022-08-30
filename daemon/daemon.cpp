@@ -71,7 +71,7 @@ void print_help(const char* app_name) {
     printf("  Options:\n");
     printf("   -h, --help                       print this help\n");
     printf("   -p, --pid_file=filename          PID file used by daemonized app\n");
-    printf("   -s, --socket_folder=foldername   folder for socket files used by daemonized app\n");
+    printf("   -s, --socket_file=filename       socket file used by daemonized app\n");
     printf("   -d, --dump_folder=foldername     dump folder used by daemonized app\n");
     printf("       --log_level=LEVEL            log level (trace, debug, info, warn, error)\n");
     printf("   -l, --log_file=filename          logfile to write\n");
@@ -285,7 +285,7 @@ bool to_log_level(const char* level, std::string& log_level) {
 void parse_opts(int argc, char* argv[]) {
     int lopt;
     static struct option long_options[] = {
-        {"socket_folder", required_argument, 0, 's'},
+        {"socket_dir", required_argument, 0, 's'},
         {"help", no_argument, 0, 'h'},
         {"pid_file", required_argument, 0, 'p'},
         {"dump_folder", required_argument, 0, 'd'},

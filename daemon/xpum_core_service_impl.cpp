@@ -1098,7 +1098,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].subdevice_Id == (uint32_t)tileId || tileId == -1) {
-            if (val1 < 1 || (uint32_t(powerRangeArray[i].default_limit) > 0  && val1 > uint32_t(powerRangeArray[i].default_limit))) {
+            if (val1 < 1 || val1 > uint32_t(powerRangeArray[i].default_limit) || val2 > 124 || val2 < 1) {
                 response->set_errormsg("Invalid power limit value");
                 return grpc::Status::OK;
             }
@@ -1215,10 +1215,6 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         }
     }
     return grpc::Status::OK;
-}
-
-xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
-    return XPUM_GENERIC_ERROR;
 }
 
 ::grpc::Status XpumCoreServiceImpl::resetDevice(::grpc::ServerContext* context, const ::ResetDeviceRequest* request, ::ResetDeviceResponse* response) {
@@ -1375,84 +1371,6 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
     response->set_count(count);
     return grpc::Status::OK;
 }
-
-::grpc::Status XpumCoreServiceImpl::getDeviceUtilizationByProcess(::grpc::ServerContext* context, const ::DeviceUtilizationByProcessRequest* request, ::DeviceUtilizationByProcessResponse* response) {
-    xpum_result_t res;
-    xpum_device_id_t deviceId = request->deviceid();
-    uint32_t count = 1024;
-    xpum_device_util_by_process_t dataArray[count];
-
-    res = xpumGetDeviceUtilizationByProcess(deviceId,
-            request->utilizationinterval(), dataArray, &count);
-    if (res != XPUM_OK) {
-        switch (res) {
-            case XPUM_BUFFER_TOO_SMALL:
-                response->set_errormsg("Buffer is too small");
-                break;
-            case XPUM_INTERVAL_INVALID:
-                response->set_errormsg("Interval must be (0, 1000*1000]");
-                break;
-            default:
-                response->set_errormsg("Error");
-        }
-    } else {
-        for (uint32_t i = 0; i < count; i++) {
-            DeviceUtilizationByProcess *proc = response->add_processlist();
-            proc->set_processid(dataArray[i].processId);
-            proc->set_processname(dataArray[i].processName);
-            proc->set_deviceid(dataArray[i].deviceId);
-            proc->set_memsize(dataArray[i].memSize);
-            proc->set_sharedmemsize(dataArray[i].sharedMemSize);
-            proc->set_renderingengineutil(dataArray[i].renderingEngineUtil);
-            proc->set_computeengineutil(dataArray[i].computeEngineUtil);
-            proc->set_copyengineutil(dataArray[i].copyEngineUtil);
-            proc->set_mediaengineutil(dataArray[i].mediaEngineUtil);
-            proc->set_mediaenhancementutil(
-                    dataArray[i].mediaEnhancementUtil);
-        }
-    }
-    response->set_count(count);
-    return grpc::Status::OK;
-}
-
-::grpc::Status XpumCoreServiceImpl::getAllDeviceUtilizationByProcess(::grpc::ServerContext* context, const ::UtilizationInterval* request, ::DeviceUtilizationByProcessResponse* response) {
-    xpum_result_t res;
-    uint32_t count = 1024 * 4;
-    xpum_device_util_by_process_t dataArray[count];
-
-    res = xpumGetAllDeviceUtilizationByProcess(request->utilinterval(), 
-        dataArray, &count);
-    if (res != XPUM_OK) {
-        switch (res) {
-            case XPUM_BUFFER_TOO_SMALL:
-                response->set_errormsg("Buffer is too small");
-                break;
-            case XPUM_INTERVAL_INVALID:
-                response->set_errormsg("Interval must be (0, 1000*1000]");
-                break;
-            default:
-                response->set_errormsg("Error");
-        }
-    } else {
-        for (uint32_t i = 0; i < count; i++) {
-            DeviceUtilizationByProcess *proc = response->add_processlist();
-            proc->set_processid(dataArray[i].processId);
-            proc->set_processname(dataArray[i].processName);
-            proc->set_deviceid(dataArray[i].deviceId);
-            proc->set_memsize(dataArray[i].memSize);
-            proc->set_sharedmemsize(dataArray[i].sharedMemSize);
-            proc->set_renderingengineutil(dataArray[i].renderingEngineUtil);
-            proc->set_computeengineutil(dataArray[i].computeEngineUtil);
-            proc->set_copyengineutil(dataArray[i].copyEngineUtil);
-            proc->set_mediaengineutil(dataArray[i].mediaEngineUtil);
-            proc->set_mediaenhancementutil(
-                    dataArray[i].mediaEnhancementUtil);
-        }
-    }
-    response->set_count(count);
-    return grpc::Status::OK; 
-}
-
 std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
     if (engine == 1) {
         return "other";
@@ -1625,14 +1543,14 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
     }
     int32_t power = powerLimits.sustained_limit.power / 1000;
     int32_t interval = powerLimits.sustained_limit.interval;
-
+    /*
     bool available;
     bool configurable;
     xpum_ecc_state_t current, pending;
     xpum_ecc_action_t action;
 
     res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
-    /*if (res != XPUM_OK) {
+    if (res != XPUM_OK) {
         response->set_errormsg("Error");
         return grpc::Status::OK;
     }*/
@@ -1737,7 +1655,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
 
     for (uint32_t i = 0; i < powerRangeCount; i++) {
         if (powerRangeArray[i].on_subdevice == false) {
-            std::string scope = "1 to " + std::to_string(powerRangeArray[i].max_limit / 1000);
+            std::string scope = "1 to " + std::to_string(powerRangeArray[i].default_limit / 1000);
             response->set_powerscope(scope);
             break;
         }
@@ -1831,11 +1749,11 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
         tileData->set_portbeaconingon(beaconing_on_str);
         tileData->set_portbeaconingoff(beaconing_off_str);
 
-        tileData->set_memoryeccavailable(available);
+        /*tileData->set_memoryeccavailable(available);
         tileData->set_memoryeccconfigurable(configurable);
         tileData->set_memoryeccstate(eccStateToString(current));
         tileData->set_memoryeccpendingstate(eccStateToString(pending));
-        tileData->set_memoryeccpendingaction(eccActionToString(action));
+        tileData->set_memoryeccpendingaction(eccActionToString(action));*/
 
         /*
         for (uint32_t i = 0; i < powerRangeCount; i++) {
@@ -1892,7 +1810,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
 
 std::string XpumCoreServiceImpl::eccStateToString(xpum_ecc_state_t state) {
     if (state == XPUM_ECC_STATE_UNAVAILABLE) {
-        return "";//"unavailable";
+        return "unavailable";
     }
     if (state == XPUM_ECC_STATE_ENABLED) {
         return "enabled";
@@ -1900,7 +1818,7 @@ std::string XpumCoreServiceImpl::eccStateToString(xpum_ecc_state_t state) {
     if (state == XPUM_ECC_STATE_DISABLED) {
         return "disabled";
     }
-    return "";//"unavailable";
+    return "unavailable";
 }
 
 std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
@@ -1918,9 +1836,9 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     }
     return "none";
 }
-
+//
 ::grpc::Status XpumCoreServiceImpl::setDeviceMemoryEccState(::grpc::ServerContext* context, const ::ConfigDeviceMemoryEccStateRequest* request, ::ConfigDeviceMemoryEccStateResultData* response) {
-    xpum_result_t res;
+    /* xpum_result_t res;
     xpum_device_id_t deviceId = request->deviceid();
     bool available;
     bool configurable;
@@ -1933,7 +1851,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
         newState = XPUM_ECC_STATE_DISABLED;
     }
 
-    res = xpumSetEccState(deviceId, newState, &available, &configurable, &current, &pending, &action);
+    //res = xpumSetEccState(deviceId, newState, &available, &configurable, &current, &pending, &action);
     response->set_available(available);
     response->set_configurable(configurable);
     response->set_currentstate(eccStateToString(current));
@@ -1942,12 +1860,11 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     if (res != XPUM_OK) {
         if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
             response->set_errormsg("device Id or tile Id is invalid");
-        } else if (res == XPUM_RESULT_MEMORY_ECC_LIB_NOT_SUPPORT){
-            response->set_errormsg("Failed to "+ (request->enabled()? std::string("enable"):std::string("disable")) +" ECC memory on GPU " + std::to_string(deviceId)+ ". This feature requires the igsc-0.8.3 library or newer. Please check the installation instructions on how to install or update to the latest igsc version.");
         } else {
             response->set_errormsg("Error");
         }
     }
+   */
     return grpc::Status::OK;
 }
 
@@ -1983,15 +1900,15 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
                                                       ::XpumXelinkTopoInfoArray* response) {
     XPUM_LOG_TRACE("call getXelinkTopology");
     xpum_xelink_topo_info* topoInfo;
-    int count{256};
+    int count{16};
     xpum_xelink_topo_info xelink_topo[count];
     topoInfo = xelink_topo;
     xpum_result_t res = xpumGetXelinkTopology(xelink_topo, &count);
-    /*if (res == XPUM_BUFFER_TOO_SMALL) {
+    if (res == XPUM_BUFFER_TOO_SMALL) {
         xpum_xelink_topo_info xelink_topo[count];
         topoInfo = xelink_topo;
         res = xpumGetXelinkTopology(xelink_topo, &count);
-    }*/
+    }
 
     if (res == XPUM_OK) {
         for (int i{0}; i < count; ++i) {

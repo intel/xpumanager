@@ -27,8 +27,10 @@ class MonitorManager : public MonitorManagerInterface {
 
     void resetMetricTasksFrequency();
 
+    bool initOneTimeMetricMonitorTasks(MeasurementType type);
+
    private:
-    void createMonitorTasks();
+    void createMonitorTasks(MeasurementType target_type);
 
    private:
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
@@ -40,6 +42,7 @@ class MonitorManager : public MonitorManagerInterface {
     std::vector<std::shared_ptr<MonitorTask>> tasks;
 
     std::mutex mutex;
+
 };
 
 } // end namespace xpum

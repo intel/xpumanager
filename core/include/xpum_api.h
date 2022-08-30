@@ -28,6 +28,48 @@ extern "C" {
 /**
  * @brief This method is used to initialize XPUM within this process.
  * 
+ * @details Below environment variables will impact the XPUM initialization:
+ * - XPUM_DISABLE_PERIODIC_METRIC_MONITOR: value options are {0,1}, default is 0. Whether disable periodic metric monitor or not. 0 means metric-pulling tasks will periodically run and collect GPU telemetries once core library is initialized. 1 means metric-pulling tasks will only run and collect GPU telemetries when calling stats related APIs.
+ * - XPUM_METRICS: enabled metric indexes, value options are listed below, default value: "0,4-31,36-37". Enables metrics which are separated by comma, use hyphen to indicate a range (e.g., 0,4-7,27-29). It will take effect during core initialization.
+ *      - 0       GPU_UTILIZATION
+ *      - 1       EU_ACTIVE
+ *      - 2       EU_STALL
+ *      - 3       EU_IDLE
+ *      - 4       POWER
+ *      - 5       ENERGY
+ *      - 6       GPU_FREQUENCY
+ *      - 7       GPU_CORE_TEMPERATURE
+ *      - 8       MEMORY_USED
+ *      - 9       MEMORY_UTILIZATION
+ *      - 10      MEMORY_BANDWIDTH
+ *      - 11      MEMORY_READ
+ *      - 12      MEMORY_WRITE
+ *      - 13      MEMORY_READ_THROUGHPUT
+ *      - 14      MEMORY_WRITE_THROUGHPUT
+ *      - 15      ENGINE_GROUP_COMPUTE_ALL_UTILIZATION
+ *      - 16      ENGINE_GROUP_MEDIA_ALL_UTILIZATION
+ *      - 17      ENGINE_GROUP_COPY_ALL_UTILIZATION
+ *      - 18      ENGINE_GROUP_RENDER_ALL_UTILIZATION
+ *      - 19      ENGINE_GROUP_3D_ALL_UTILIZATION
+ *      - 20      RAS_ERROR_CAT_RESET
+ *      - 21      RAS_ERROR_CAT_PROGRAMMING_ERRORS
+ *      - 22      RAS_ERROR_CAT_DRIVER_ERRORS
+ *      - 23      RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE
+ *      - 24      RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE
+ *      - 25      RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE
+ *      - 26      RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE
+ *      - 27      RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE
+ *      - 28      RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE
+ *      - 29      GPU_REQUEST_FREQUENCY
+ *      - 30      MEMORY_TEMPERATURE
+ *      - 31      FREQUENCY_THROTTLE
+ *      - 32      PCIE_READ_THROUGHPUT
+ *      - 33      PCIE_WRITE_THROUGHPUT
+ *      - 34      PCIE_READ
+ *      - 35      PCIE_WRITE
+ *      - 36      ENGINE_UTILIZATION
+ *      - 37      FABRIC_THROUGHPUT
+ *                              
  * @return \ref xpum_result_t 
  */
 xpum_result_t xpumInit(void);
@@ -92,7 +134,16 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
  */
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties);
 
+/**
+ * @brief Get device id corresponding to the \a PCI BDF address.
+ * 
+ * @param bdf                   IN: The PCI BDF address string
+ * @param deviceId              OUT: Device id
+ * @return \ref xpum_result_t 
+ */
+xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *deviceId);
 
+/// @cond
 /**
  * @brief Get all AMC firmware versions
  * 
@@ -102,9 +153,11 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
  * @return xpum_result_t 
  */
 xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count);
+/// @endcond
 
 /** @} */ // Closing for DEVICE_API
 
+/// @cond
 /**************************************************************************/
 /** @defgroup GROUP_MANAGEMENT_API Group management
  * These APIs are for group management
@@ -169,7 +222,9 @@ xpum_result_t xpumGroupGetInfo(xpum_group_id_t groupId, xpum_group_info_t *pGrou
 xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count);
 
 /** @} */ // Closing for GROUP_MANAGEMENT_API
+/// @endcond
 
+/// @cond
 /**************************************************************************/
 /** @defgroup HEALTH_API Device health
  * These APIs are for health
@@ -265,6 +320,7 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
                                    int *count);
 
 /** @} */ // Closing for HEALTH_API
+/// @endcond
 
 /**************************************************************************/
 /** @defgroup CONFIGURATION_API Device configurations
@@ -442,43 +498,16 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
 xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_process_t dataArray[], uint32_t *count);
 
 /**
- * @brief Get the device utiliztions by processes
- * @details This function is used to get the device utiliztions by process
+ * @brief Reset the device
+ * @details This function is used to reset the device
  *
  * @param deviceId          IN: The device Id
- * @param utilInterval      IN: The interval in microseond to caculate utilization, range (0, 1000 * 1000]
- * @param dataArray         IN/OUT: The array to store raw data.
- * @param count             IN/OUT: The count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @param force             IN: force to reset the device or not
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- *      - \ref XPUM_INTERVAL_INVALID    if \a interval is not in (0, 1000 * 1000]
+ *      - \ref XPUM_UPDATE_FIRMWARE_TASK_RUNNING    if device is updating firmware
  */
-
-//The API should not be called becuase the sysfs interface 
-//does not work as expected
-xpum_result_t xpumGetDeviceUtilizationByProcess(xpum_device_id_t deviceId, 
-        uint32_t utilInterval, xpum_device_util_by_process_t dataArray[], 
-        uint32_t *count);
-
-/**
- * @brief Get the device (all) utiliztions by processes
- * @details This function is used to get the device utiliztions by process
- *
- * @param utilInterval      IN: The interval in microseond to caculate utilization, range (0, 1000 * 1000]
- * @param dataArray         IN/OUT: The array to store raw data.
- * @param count             IN/OUT: The count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
- *      - \ref XPUM_INTERVAL_INVALID    if \a interval is not in (0, 1000 * 1000]
- */
-
-//The API should not be called becuase the sysfs interface 
-//does not work as expected
-xpum_result_t xpumGetAllDeviceUtilizationByProcess(uint32_t utilInterval, 
-        xpum_device_util_by_process_t dataArray[], 
-        uint32_t *count);
+xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
 
 /**
  * @brief Get the performance factor of the device
@@ -529,14 +558,14 @@ xpum_result_t xpumGetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
  */
 xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_port_config_t fabricPortConfig);
 /**
- * @brief Get the memory ECC state of the device
- * @details This function is used to get the memory ECC state of the device
+ * @brief Get the memory Ecc state of the device
+ * @details This function is used to get the memory Ecc state of the device
  *
  * @param deviceId          IN: The device Id
- * @param available    OUT: memory ECC is available, or not
- * @param configurable    OUT: memory ECC is configurable, or not
- * @param current    OUT: the current state of memory ECC
- * @param pending    OUT: the pending state of memory ECC
+ * @param available    OUT: memory Ecc is available, or not
+ * @param configurable    OUT: memory Ecc is configurable, or not
+ * @param current    OUT: the current state of memory Ecc
+ * @param pending    OUT: the pending state of memory Ecc
  * @param action     OUT: the action need to do to switch to the pending state
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
@@ -545,15 +574,15 @@ xpum_result_t xpumSetFabricPortConfig(xpum_device_id_t deviceId, xpum_fabric_por
 xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* configurable,
         xpum_ecc_state_t* current, xpum_ecc_state_t* pending, xpum_ecc_action_t* action);
 /**
- * @brief Set the memory ECC state of the device
- * @details This function is used to set the memory ECC state of the device
+ * @brief Set the memory Ecc state of the device
+ * @details This function is used to set the memory Ecc state of the device
  *
  * @param deviceId          IN: The device Id
  * @param newState          IN: new state to set
- * @param available    OUT: memory ECC is available, or not
- * @param configurable    OUT: memory ECC is configurable, or not
- * @param current    OUT: the current state of memory ECC
- * @param pending    OUT: the pending state of memory ECC
+ * @param available    OUT: memory Ecc is available, or not
+ * @param configurable    OUT: memory Ecc is configurable, or not
+ * @param current    OUT: the current state of memory Ecc
+ * @param pending    OUT: the pending state of memory Ecc
  * @param action     OUT: the action need to do to switch to the pending state
  * @return xpum_result_t
  *      - \ref XPUM_OK                  if query successfully
@@ -596,7 +625,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
  *      - \ref XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE
- *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL
+ *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL
  *      - \ref XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE
  *      - \ref XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND
  *      - \ref XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE
@@ -626,6 +655,7 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
  */
 xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level);
 
+/// @cond
 /**
  * @brief Run diagnostics on a group of devices
  * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResultByGroup
@@ -635,6 +665,7 @@ xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t le
  * @return xpum_result_t 
  */
 xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level);
+/// @endcond
 
 /**
  * @brief Get diagnostics result
@@ -647,6 +678,7 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
  */
 xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result);
 
+/// @cond
 /**
  * @brief Get diagnostics result by group
  * 
@@ -663,9 +695,11 @@ xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task
 xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
                                               xpum_diag_task_info_t resultList[],
                                               int *count);
+/// @endcond
 
 /** @} */ // Closing for DIAGNOSTICS_API
 
+/// @cond
 /**************************************************************************/
 /** @defgroup AGENT_SETTING_API Agent settings
  * These APIs are for agent setting
@@ -694,6 +728,7 @@ xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value);
 xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
 
 /** @} */ // Closing for AGENT_SETTING_API
+/// @endcond
 
 /**************************************************************************/
 /** @defgroup STATISTICS_API Device statistics
@@ -764,6 +799,7 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
                                            uint64_t *end,
                                            uint64_t sessionId);
 
+/// @cond
 /**
  * @brief Get statistics data by group
  * 
@@ -783,9 +819,11 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   uint64_t *begin,
                                   uint64_t *end,
                                   uint64_t sessionId);
+/// @endcond                                  
 
 /** @} */ // Closing for STATISTICS_API
 
+/// @cond
 /**************************************************************************/
 /** @defgroup DUMP_RAW_DATA_API Dump metrics raw data
  * These APIs are for collecting metrics raw data
@@ -837,6 +875,7 @@ xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_
 xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int *count);
 
 /** @} */ // Closing for DUMP_RAW_DATA_API
+/// @endcond
 
 /**************************************************************************/
 /** @defgroup TOPOLOGY_API Topologies
@@ -882,6 +921,7 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
 
 /** @} */ // Closing for TOPOLOGY_API
 
+/// @cond
 /**************************************************************************/
 /** @defgroup POLICY_API Policy management
  * These APIs are for policy management
@@ -930,6 +970,7 @@ xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[
 xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int *count);
 
 /** @} */ // Closing for POLICY_API
+/// @endcond
 
 #if defined(__cplusplus)
 } // extern "C"

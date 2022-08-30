@@ -4,11 +4,11 @@
  *  @file firmware_stub.cpp
  */
 
-#include "core_stub.h"
+#include "grpc_core_stub.h"
 
 namespace xpum::cli {
 
-std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -22,7 +22,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     grpc::Status status = stub->runFirmwareFlash(&context, request, &response);
 
     if (!status.ok()) {
-        (*json)["error"] = status.error_message();
+        (*json)["error"] = "Failed to run firmware flash";
         return json;
     }
 
@@ -38,7 +38,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
             (*json)["result"] = "OK";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC:
-            (*json)["error"] = "Can't find the AMC device. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).";
+            (*json)["error"] = "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE:
             (*json)["error"] = "Device models are inconsistent, failed to upgrade all.";
@@ -55,11 +55,8 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
         case xpum_result_t::XPUM_RESULT_DEVICE_NOT_FOUND:
             (*json)["error"] = "Device not found.";
             return json;
-        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL:
-            if (type == XPUM_DEVICE_FIRMWARE_GSC)
-                (*json)["error"] = "Updating GSC firmware on all devices is not supported";
-            else
-                (*json)["error"] = "Updating GSC_DATA firmware on all devices is not supported";
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL:
+            (*json)["error"] = "Updating GSC firmware on all devices is not supported";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE:
             (*json)["error"] = "Updating AMC firmware on single device is not supported";
@@ -79,7 +76,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     }
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, unsigned int type) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getFirmwareFlashResult(int deviceId, unsigned int type) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext ct;
@@ -90,12 +87,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, u
     XpumFirmwareFlashTaskResult res;
     auto status = stub->getFirmwareFlashResult(&ct, rq, &res);
 
-    if (!status.ok()) {
-        (*json)["error"] = status.error_message();
-    }
-
-    if (res.errormsg().length() != 0) {
-        (*json)["error"] = res.errormsg();
+    if (!status.ok() || res.errormsg().length() != 0) {
+        (*json)["error"] = "Failed to get firmware reuslt";
         return json;
     }
 

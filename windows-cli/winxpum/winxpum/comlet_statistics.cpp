@@ -208,24 +208,6 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "label": "current", "value": "device_level[metrics_type==XPUM_STATS_PCIE_WRITE_THROUGHPUT].value" }
         ]}
     ]]
-}, {
-    "instance": "",
-    "cells": [[
-        { "rowTitle": "Compute Engine Util (%) " }
-    ], [
-        { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-            { "value": "data_list[metrics_type==XPUM_STATS_COMPUTE_UTILIZATION].value", "fixer": "round" }
-        ]}
-    ]]
-}, {
-    "instance": "",
-    "cells": [[
-        { "rowTitle": "Media Engine Util (%) " }
-    ], [
-        { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-            { "value": "data_list[metrics_type==XPUM_STATS_MEDIA_UTILIZATION].value", "fixer": "round" }
-        ]}
-    ]]
 }]
 })"_json);
 

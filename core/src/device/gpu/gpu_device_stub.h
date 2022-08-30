@@ -22,7 +22,6 @@
 #include "health/health_data_type.h"
 #include "infrastructure/const.h"
 #include "infrastructure/device_process.h"
-#include "infrastructure/device_util_by_proc.h"
 #include "infrastructure/engine_measurement_data.h"
 #include "infrastructure/fabric_measurement_data.h"
 #include "infrastructure/measurement_data.h"
@@ -42,7 +41,7 @@ class GPUDeviceStub {
     static GPUDeviceStub& instance();
 
     static PCIeManager pcie_manager;
-
+    
    public:
     void discoverDevices(Callback_t callback);
 
@@ -130,9 +129,6 @@ class GPUDeviceStub {
     static void getFrequencyRanges(const zes_device_handle_t& device,
                                    std::vector<Frequency>& frequencies);
 
-    static bool setFrequencyRangeForAll(const zes_device_handle_t& device,
-                                  const Frequency& freq);
-
     static bool setFrequencyRange(const zes_device_handle_t& device,
                                   const Frequency& freq);
 
@@ -154,11 +150,6 @@ class GPUDeviceStub {
     static bool resetDevice(const zes_device_handle_t& device, ze_bool_t force);
 
     void getDeviceProcessState(const zes_device_handle_t& device, std::vector<device_process>& processes);
-
-    static bool getDeviceUtilByProc(
-        const std::vector<zes_device_handle_t>& devices, 
-        const std::vector<std::string>& device_ids, uint32_t utilInterval,
-        std::vector<std::vector<device_util_by_proc>>& utils);
 
     static void getFreqAvailableClocks(const zes_device_handle_t& device, uint32_t subdevice_id, std::vector<double>& clocks);
 

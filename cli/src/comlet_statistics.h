@@ -15,15 +15,22 @@
 namespace xpum::cli {
 
 struct ComletStatisticsOptions {
-    int deviceId = -1;
+    std::string deviceId = "-1";
+    bool showEuMetrics = false;
     uint32_t groupId = 0;
 };
 
 class ComletStatistics : public ComletBase {
    public:
+#ifndef DAEMONLESS
     ComletStatistics() : ComletBase("stats", "List the GPU aggregated statistics since last execution of this command or XPU Manager daemon is started.") {
         printHelpWhenNoArgs = true;
     }
+#else
+    ComletStatistics() : ComletBase("stats", "List the GPU statistics.") {
+        printHelpWhenNoArgs = true;
+    }
+#endif
     virtual ~ComletStatistics() {}
 
     virtual void setupOptions() override;
@@ -32,16 +39,18 @@ class ComletStatistics : public ComletBase {
     virtual void getTableResult(std::ostream &out) override;
 
     inline const bool isDeviceOp() const {
-        return opts->deviceId >= 0;
+        return opts->deviceId != "-1";
     }
 
     inline const bool isGroupOp() const {
         return opts->groupId != 0;
     }
 
-    inline const int getDeviceId() const {
+    inline const std::string getDeviceId() const {
         return opts->deviceId;
     }
+
+    bool hasEUMetrics();
 
    private:
     std::unique_ptr<ComletStatisticsOptions> opts;

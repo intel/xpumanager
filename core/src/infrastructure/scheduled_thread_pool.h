@@ -94,6 +94,8 @@ class SchedulingQueue {
      */
     std::shared_ptr<ScheduledThreadPoolTask> dequeue();
 
+    int getTaskSize() { return q.size(); }
+
     void close();
 
    private:
@@ -115,6 +117,8 @@ class ScheduledThreadPool {
         p_taskqueue->enqueue(p_task);
         return p_task;
     }
+
+    void wait();
 
     void close();
 

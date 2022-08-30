@@ -26,8 +26,6 @@ class FwDataMgmt {
 
     bool isUpgradingFw();
 
-    bool isReady();
-
    private:
     std::string devicePath;
 

@@ -8,6 +8,7 @@
 
 #include <dirent.h>
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include <atomic>

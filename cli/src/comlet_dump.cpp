@@ -13,20 +13,66 @@
 #include "core_stub.h"
 #include "pretty_table.h"
 #include "xpum_structs.h"
+#include "utility.h"
+#include "exit_code.h"
 
 using xpum::dump::engineNameMap;
 
 namespace xpum::cli {
 
+/*
 static bool isNumber(const std::string &str) {
     return str.find_first_not_of("0123456789") == std::string::npos;
+}
+*/
+
+bool ComletDump::dumpPCIeMetrics() {
+    for (auto id : this->opts->metricsIdList) {
+        if (id == xpum_dump_type_t::XPUM_DUMP_PCIE_READ_THROUGHPUT 
+            || id == xpum_dump_type_t::XPUM_DUMP_PCIE_WRITE_THROUGHPUT) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ComletDump::dumpEUMetrics() {
+    for (auto id : this->opts->metricsIdList) {
+        if (id == xpum_dump_type_t::XPUM_DUMP_EU_ACTIVE
+            || id == xpum_dump_type_t::XPUM_DUMP_EU_STALL || id == xpum_dump_type_t::XPUM_DUMP_EU_IDLE) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
+#ifndef DAEMONLESS
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
     auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
+#else
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address to query");
+    addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
+#endif
 
+    deviceIdOpt->check([this](const std::string &str) {
+#ifndef DAEMONLESS
+    std::string errStr = "Device id should be integer larger than or equal to 0";
+    if (!isValidDeviceId(str)) {
+        return errStr;
+    }
+    return std::string();
+#else
+    std::string errStr = "Device id should be a non-negative integer or a BDF string";
+    if (isValidDeviceId(str)) {
+        return std::string();        
+    } else if (isBDF(str)) {
+        return std::string();
+    }
+    return errStr;
+#endif
+    });
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
     metricsListOpt->delimiter(',');
     metricsListOpt->check(CLI::Range(0, (int)dumpTypeOptions.size() - 1));
@@ -50,6 +96,7 @@ void ComletDump::setupOptions() {
     auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.\n");
     dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
 
+#ifndef DAEMONLESS
     auto dumpRawDataFlag = addFlag("--rawdata", this->opts->rawData, "Dump the required raw statistics to a file in background.");
     auto startDumpFlag = addFlag("--start", this->opts->startDumpTask, "Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.");
     auto stopDumpOpt = addOption("--stop", this->opts->dumpTaskId, "Stop one active dump task.");
@@ -75,6 +122,7 @@ void ComletDump::setupOptions() {
     listDumpFlag->excludes(metricsListOpt);
     listDumpFlag->excludes(timeIntervalOpt);
     listDumpFlag->excludes(dumpTimesOpt);
+#endif
 }
 
 std::unique_ptr<nlohmann::json> ComletDump::run() {
@@ -84,12 +132,13 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
     if (std::adjacent_find(this->opts->metricsIdList.begin(), this->opts->metricsIdList.end()) != this->opts->metricsIdList.end()) {
         json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
         (*json)["error"] = "Duplicated metrics type";
+        (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return json;
     }
 
     if (this->opts->rawData) {
-        if (this->opts->startDumpTask && this->opts->deviceId != -1) {
-            int deviceId = this->opts->deviceId;
+        if (this->opts->startDumpTask && this->opts->deviceId != "-1") {
+            int deviceId = std::stoi(this->opts->deviceId);
             int tileId = this->opts->deviceTileId;
             std::vector<xpum_dump_type_t> dumpTypeList;
             for (auto i : this->opts->metricsIdList) {
@@ -106,7 +155,11 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
             (*json)["error"] = "Unknow operation";
         }
     } else {
-        json = this->coreStub->getStatistics(this->opts->deviceId);
+        if (isNumber(this->opts->deviceId)) {
+            json = this->coreStub->getStatistics(std::stoi(this->opts->deviceId));
+        } else {
+            json = this->coreStub->getStatistics(this->opts->deviceId.c_str());
+        }
     }
     return json;
 }
@@ -196,22 +249,30 @@ std::string getJsonValue(nlohmann::json obj, int scale) {
 
 void ComletDump::printByLine(std::ostream &out) {
     // out << std::left << std::setw(25) << std::setfill(' ') << "Timestamp, ";
-    int deviceId = this->opts->deviceId;
+    std::string deviceId = this->opts->deviceId;
     int tileId = this->opts->deviceTileId;
 
-    if (deviceId == -1) {
+    if (deviceId == "-1") {
         out << "Device id should be provided" << std::endl;
+        exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return;
     }
     if (this->opts->metricsIdList.size() == 0) {
         out << "Metics types should be provided" << std::endl;
+        exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return;
     }
 
     // check deviceId and tileId is valid
-    auto res = this->coreStub->getDeviceProperties(this->opts->deviceId);
+    auto res = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (isNumber(this->opts->deviceId)) {
+        res = this->coreStub->getDeviceProperties(std::stoi(this->opts->deviceId));
+    } else {
+        res = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str());
+    }
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        setExitCodeByJson(*res);
         return;
     }
     if (this->opts->deviceTileId != -1) {
@@ -220,19 +281,27 @@ void ComletDump::printByLine(std::ostream &out) {
         number_of_tiles >> num_tiles;
         if (this->opts->deviceTileId >= num_tiles) {
             out << "Error: Tile not found" << std::endl;
+            setExitCodeByJson(*res);
             return;
         }
     }
 
     // try run
     res = run();
+    auto pEngineCountMap = std::make_shared<std::map<int, std::map<int, int>>>();
+    auto pFabricCountJson = std::shared_ptr<nlohmann::json>();
 
-    auto pEngineCountMap = this->coreStub->getEngineCount(deviceId);
-
-    auto pFabricCountJson = this->coreStub->getFabricCount(deviceId);
+    if (isNumber(this->opts->deviceId)) {
+        pEngineCountMap = this->coreStub->getEngineCount(std::stoi(this->opts->deviceId));
+        pFabricCountJson = this->coreStub->getFabricCount(std::stoi(this->opts->deviceId));
+    } else {
+        pEngineCountMap = this->coreStub->getEngineCount(this->opts->deviceId.c_str());
+        pFabricCountJson = this->coreStub->getFabricCount(this->opts->deviceId.c_str());
+    }
 
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        setExitCodeByJson(*res);
         return;
     }
 
@@ -248,7 +317,7 @@ void ComletDump::printByLine(std::ostream &out) {
     // device id column
     columnSchemaList.push_back({"DeviceId",
                                 [deviceId]() {
-                                    return std::to_string(deviceId);
+                                    return deviceId;
                                 }});
 
     // tile id
@@ -296,7 +365,11 @@ void ComletDump::printByLine(std::ostream &out) {
                                 auto engineUtilByType = (*engineUtilJson)[config.key];
                                 for (auto u : engineUtilByType) {
                                     if (u["engine_id"].get<int>() == engineIdx) {
+#ifndef DAEMONLESS
                                         return getJsonValue(u["avg"], config.scale);
+#else
+                                        return getJsonValue(u["value"], config.scale);
+#endif
                                     }
                                 }
                             }
@@ -322,7 +395,11 @@ void ComletDump::printByLine(std::ostream &out) {
                                                     if (fabricThroughputJson != nullptr) {
                                                         for (auto tp : (*fabricThroughputJson)) {
                                                             if (key.compare(tp["name"].get<std::string>())==0) {
+#ifndef DAEMONLESS
                                                                 return getJsonValue(tp["avg"], config.scale);
+#else
+                                                                return getJsonValue(tp["value"], config.scale);
+#endif
                                                             }
                                                         }
                                                     }
@@ -340,7 +417,11 @@ void ComletDump::printByLine(std::ostream &out) {
                                                     if (fabricThroughputJson != nullptr) {
                                                         for (auto tp : (*fabricThroughputJson)) {
                                                             if (!key.compare(tp["name"].get<std::string>())) {
+#ifndef DAEMONLESS
                                                                 return getJsonValue(tp["avg"], config.scale);
+#else
+                                                                return getJsonValue(tp["value"], config.scale);
+#endif
                                                             }
                                                         }
                                                     }
@@ -371,6 +452,7 @@ void ComletDump::printByLine(std::ostream &out) {
 
         if (res->contains("error")) {
             out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+            setExitCodeByJson(*res);
             return;
         }
 

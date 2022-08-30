@@ -67,22 +67,6 @@ CoreStub::CoreStub() {
     for (uint32_t device = 0; device < deviceCount; ++device) {
         ze_device_handles.push_back(devices[device]);
         zes_device_handles.push_back((zes_device_handle_t)devices[device]);
-
-        ze_device_properties_t ze_device_properties;
-        ze_device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-        status = zeDeviceGetProperties(devices[device], &ze_device_properties);
-        if (status != ZE_RESULT_SUCCESS) {
-            std::cout << "zeDeviceGetProperties Failed with return code: " << to_string(status) << std::endl;
-            exit(-1);
-        }
-        uint32_t deviceId = ze_device_properties.deviceId;
-        if (deviceId == 0x56c1) {
-            power_limit = 23;
-        } else if (deviceId == 0x56c0) {
-            power_limit = 120;
-        } else if (deviceId == 0x4905) {
-            power_limit = 25;
-        }
     }
 
     std::ifstream conf_file("xpum.conf");
@@ -366,7 +350,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
         return json;
     }
     (*json)["power_limit"] = power_datas[0];
-    (*json)["power_vaild_range"] = "1 to " + std::to_string(power_limit);
+    (*json)["power_vaild_range"] = "1 to " + std::to_string(power_datas[0]);
+    (*json)["power_average_window"] = power_datas[1];
+    (*json)["power_average_window_vaild_range"] = "1 to " + std::to_string(power_datas[1]);
     return json;
 }
 
@@ -438,7 +424,9 @@ std::vector<int> CoreStub::handlePowerByLevel0(zes_device_handle_t device, bool 
                 status = zesPowerGetProperties(power, &props);
                 if (status == ZE_RESULT_SUCCESS) {
                     zes_power_sustained_limit_t sustained;
-                    status = zesPowerGetLimits(power, &sustained, nullptr, nullptr);
+                    zes_power_burst_limit_t burst;
+                    zes_power_peak_limit_t peak;
+                    status = zesPowerGetLimits(power, &sustained, &burst, &peak);
                     if (status == ZE_RESULT_SUCCESS) {
                         res.push_back(sustained.power/1000);
                         res.push_back(sustained.interval);
@@ -450,7 +438,7 @@ std::vector<int> CoreStub::handlePowerByLevel0(zes_device_handle_t device, bool 
                 }
 
                 if (set) {
-                    if (limit < 1) {
+                    if (limit < 1 || limit/1000 > res[0] || interval < 1 || interval > res[1]) {
                         res.push_back(-1);
                         return res;
                     }
@@ -597,8 +585,6 @@ struct MetricsTypeEntry {
 };
 
 static MetricsTypeEntry metricsTypeArray[]{
-    {XPUM_STATS_COMPUTE_UTILIZATION, "XPUM_STATS_COMPUTE_UTILIZATION"},
-    {XPUM_STATS_MEDIA_UTILIZATION, "XPUM_STATS_MEDIA_UTILIZATION"},
     {XPUM_STATS_GPU_UTILIZATION, "XPUM_STATS_GPU_UTILIZATION"},
     {XPUM_STATS_EU_ACTIVE, "XPUM_STATS_EU_ACTIVE"},
     {XPUM_STATS_EU_STALL, "XPUM_STATS_EU_STALL"},
@@ -843,57 +829,6 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
         }
     }
 
-    if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION || metricsType == XPUM_STATS_MEDIA_UTILIZATION || metricsType == XPUM_STATS_GPU_UTILIZATION) {
-        static uint64_t compute_engine = 0;
-        static uint64_t media_engine = 0;
-
-        if (metricsType == XPUM_STATS_GPU_UTILIZATION) {
-            data.max = data.min = data.avg = data.value = std::max(compute_engine, media_engine);
-            return data;
-        }
-
-        uint32_t engine_count = 0;
-        ze_result_t res;
-        res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr);
-        if (res == ZE_RESULT_SUCCESS) {
-            std::vector<zes_engine_handle_t> engines(engine_count);
-            res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data());
-            if (res == ZE_RESULT_SUCCESS) {
-                for (auto& engine : engines) {
-                    zes_engine_properties_t props;
-                    props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
-                    res = zesEngineGetProperties(engine, &props);
-                    if (res != ZE_RESULT_SUCCESS)
-                        continue;
-
-                    if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION && props.type != ZES_ENGINE_GROUP_COMPUTE_ALL)
-                        continue;
-
-                    if (metricsType == XPUM_STATS_MEDIA_UTILIZATION && props.type != ZES_ENGINE_GROUP_MEDIA_ALL)
-                        continue;
-
-                    zes_engine_stats_t snap1;
-                    res = zesEngineGetActivity(engine, &snap1);
-                    if (res == ZE_RESULT_SUCCESS) {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(engine_sampling_interval));
-                        zes_engine_stats_t snap2;
-                        res = zesEngineGetActivity(engine, &snap2);
-                        double val = 0.0;
-                        if (res == ZE_RESULT_SUCCESS) {
-                            val = (snap2.activeTime - snap1.activeTime) * measurement_data_scale * 100.0 / (snap2.timestamp - snap1.timestamp);
-                            if (val > measurement_data_scale * 100.0)
-                                val = measurement_data_scale * 100.0;
-                            if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION) {
-                                data.max = data.min = data.avg = data.value = compute_engine = (uint64_t)val;
-                            } else {
-                                data.max = data.min = data.avg = data.value = media_engine = (uint64_t)val;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
     return data;
 }
 
@@ -942,16 +877,13 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
         for (auto item : metricsTypeArray) {
             if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE
                 || item.key == XPUM_STATS_MEMORY_TEMPERATURE || item.key == XPUM_STATS_GPU_FREQUENCY
-                || item.key == XPUM_STATS_MEMORY_BANDWIDTH || item.key == XPUM_STATS_MEMORY_USED 
-                || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
-                || item.key == XPUM_STATS_GPU_UTILIZATION
+                || item.key == XPUM_STATS_MEMORY_BANDWIDTH || item.key == XPUM_STATS_MEMORY_USED
                 // || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT
-            ) {
+                 ) {
                 xpum_device_stats_data_t data = getMetricsByLevel0(sub_device_handles[i], item.key);
                 auto tmp = nlohmann::json();
-                if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE 
-                    || item.key == XPUM_STATS_MEMORY_TEMPERATURE || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
-                    || item.key == XPUM_STATS_GPU_UTILIZATION) {
+                if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE
+                    || item.key == XPUM_STATS_MEMORY_TEMPERATURE) {
                     tmp["avg"] = data.avg * 1.0 / measurement_data_scale;
                     tmp["min"] = data.min * 1.0 / measurement_data_scale;
                     tmp["max"] = data.max * 1.0 / measurement_data_scale;
@@ -968,10 +900,6 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
                     continue;
                 if (data.value == 0 && (item.key == XPUM_STATS_GPU_CORE_TEMPERATURE
                     || item.key == XPUM_STATS_MEMORY_TEMPERATURE))
-                    continue;
-                if (item.key == XPUM_STATS_GPU_CORE_TEMPERATURE && tmp["value"] > 130)
-                    continue;
-                if (item.key == XPUM_STATS_MEMORY_TEMPERATURE && tmp["value"] > 100)
                     continue;
                 dataList.push_back(tmp);
                 if (sub_device_handles.size() == 1)

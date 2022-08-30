@@ -46,7 +46,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'build/REST_README.md', 'restful.rst', 'readme.md', 'build/BUILDING.md']
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -64,3 +64,7 @@ html_static_path = ['_static']
 
 master_doc = 'index'
 html_show_sourcelink = False
+
+html_copy_source = False
+
+suppress_warnings = ['app','ref','toc','autosectionlabel','download','epub','i18n','image','misc']

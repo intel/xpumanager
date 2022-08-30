@@ -64,8 +64,6 @@ private:
         {XPUM_STATS_MEMORY_USED, "XPUM_STATS_MEMORY_USED", "GPU Memory Used (MiB)", "", 1024 * 1024},
         {XPUM_STATS_PCIE_READ_THROUGHPUT, "XPUM_STATS_PCIE_READ_THROUGHPUT", "PCIe Read (kB/s)", "per GPU"},
         {XPUM_STATS_PCIE_WRITE_THROUGHPUT, "XPUM_STATS_PCIE_WRITE_THROUGHPUT", "PCIe Write (kB/s)", "per GPU"},
-        {XPUM_STATS_COMPUTE_UTILIZATION, "XPUM_STATS_COMPUTE_UTILIZATION", "Compute Engine (%)", "per tile"},
-        {XPUM_STATS_MEDIA_UTILIZATION, "XPUM_STATS_MEDIA_UTILIZATION", "Media Engine (%)", "per tile"},
     };
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";

@@ -20,7 +20,7 @@ using xpum::dump::dumpTypeOptions;
 namespace xpum::cli {
 
 struct ComletDumpOptions {
-    int deviceId = -1;
+    std::string deviceId = "-1";
     int deviceTileId = -1;
     std::vector<int> metricsIdList;
     uint32_t timeInterval = 1;
@@ -66,5 +66,9 @@ class ComletDump : public ComletBase {
     void printByLine(std::ostream &out);
 
     void dumpRawDataToFile(std::ostream &out);
+
+    bool dumpPCIeMetrics();
+
+    bool dumpEUMetrics();
 };
 } // end namespace xpum::cli

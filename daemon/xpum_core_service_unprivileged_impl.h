@@ -1,9 +1,3 @@
-/* 
- *  Copyright (C) 2021-2022 Intel Corporation
- *  SPDX-License-Identifier: MIT
- *  @file xpum_core_service_unprivileged_impl.h
- */
-
 #pragma once
 
 #include "xpum_core_service_impl.h"
@@ -44,6 +38,12 @@ public:
     virtual ::grpc::Status setHealthConfigByGroup(::grpc::ServerContext* context, const ::HealthConfigByGroupRequest* request, ::HealthConfigByGroupInfo* response) override {
         return PD;
     }
+    virtual ::grpc::Status getStatisticsNotForPrometheus(::grpc::ServerContext* context, const ::XpumGetStatsRequest* request, ::XpumGetStatsResponse* response) {
+        return PD;
+    }
+    virtual ::grpc::Status getStatisticsByGroupNotForPrometheus(::grpc::ServerContext* context, const ::XpumGetStatsByGroupRequest* request, ::XpumGetStatsResponse* response) {
+        return PD;
+    }
     virtual ::grpc::Status runFirmwareFlash(::grpc::ServerContext* context, const ::XpumFirmwareFlashJob* request, ::XpumFirmwareFlashJobResponse* response) override {
         return PD;
     }
@@ -51,6 +51,9 @@ public:
         return PD;
     }
     virtual ::grpc::Status setPolicy(::grpc::ServerContext* context, const ::SetPolicyRequest* request, ::SetPolicyResponse* response) override {
+        return PD;
+    }
+    virtual ::grpc::Status handleErrorForGetPolicy(xpum_result_t res, ::GetPolicyResponse* response) {
         return PD;
     }
     virtual ::grpc::Status setDeviceSchedulerMode(::grpc::ServerContext* context, const ::ConfigDeviceSchdeulerModeRequest* request, ::ConfigDeviceResultData* response) override {

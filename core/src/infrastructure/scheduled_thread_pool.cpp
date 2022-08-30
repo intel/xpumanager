@@ -65,6 +65,12 @@ void ScheduledThreadPool::init(uint32_t& size) {
     }
 }
 
+void ScheduledThreadPool::wait() {
+    while (this->p_taskqueue->getTaskSize() > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
 void ScheduledThreadPool::close() {
     if (this->stop.load(std::memory_order_acquire)) return;
 

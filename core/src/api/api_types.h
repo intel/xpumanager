@@ -151,10 +151,10 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH,            ///< PCIe max link width
     XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING,                ///< The stepping of device
     XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION,                 ///< The driver version
-    XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME,                  ///< The firmware name of device
-    XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION,               ///< The firmware version of device
-    XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME,           ///< The firmware name of fwdata of device
-    XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION,        ///< The firmware version of fwdata of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_NAME,              ///< The GFX firmware name of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION,           ///< The GFX firmware version of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_NAME,         ///< The GFX data firmware name of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION,      ///< The GFX data firmware version of device
     XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes

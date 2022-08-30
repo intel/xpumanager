@@ -10,7 +10,7 @@ namespace xpum {
 
 MemoryDataHandler::MemoryDataHandler(MeasurementType type,
                                      std::shared_ptr<Persistency> &p_persistency)
-    : CounterDataHandler(type, p_persistency) {
+    : StatisticsDataHandler(type, p_persistency) {
 }
 
 MemoryDataHandler::~MemoryDataHandler() {

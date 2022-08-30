@@ -9,7 +9,7 @@
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
-#include "core_stub.h"
+#include "grpc_core_stub.h"
 #include "logger.h"
 
 namespace xpum::cli {
@@ -78,7 +78,7 @@ static std::unique_ptr<nlohmann::json> getAgentConfigJsonOBject(const google::pr
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::setAgentConfig(std::string jsonName, void* pValue) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::setAgentConfig(std::string jsonName, void* pValue) {
     assert(this->stub != nullptr);
 
     grpc::ClientContext context;
@@ -115,7 +115,6 @@ std::unique_ptr<nlohmann::json> CoreStub::setAgentConfig(std::string jsonName, v
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
-        return json;
     }
 
     if (response.errormsg().length() != 0) {
@@ -133,7 +132,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setAgentConfig(std::string jsonName, v
     return getAgentConfigJsonOBject(response.entrylist().configentries());
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getAgentConfig() {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getAgentConfig() {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -145,7 +144,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getAgentConfig() {
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
-        return json;
     }
 
     if (response.errormsg().length() != 0) {

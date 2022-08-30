@@ -7,6 +7,7 @@
 #pragma once
 #include <set>
 #include <string>
+#include <cstdlib>
 
 #include "measurement_type.h"
 

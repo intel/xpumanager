@@ -11,7 +11,7 @@ namespace xpum::cli {
 
 namespace {
 std::unordered_map<std::string, std::string> string_table = {
-    {"CLI_APP_DESC", "Intel XPU Manager Command Line Interface -- v1.0\nIntel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.\nIntel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.\n\nSupported devcies:\n- Intel Data Center GPU"}};
+    {"CLI_APP_DESC", "Intel XPU System Management Interface -- v1.0\nIntel XPU System Management Interface provides the Intel datacenter GPU model. It can also be used to update the firmware.\nIntel XPU System Management Interface is based on Intel oneAPI Level Zero. Before using Intel XPU System Management Interface, the GPU driver and Intel oneAPI Level Zero should be installed rightly.\n\nSupported devcies:\n - Intel Data Center GPU"}};
 
 } // namespace
 

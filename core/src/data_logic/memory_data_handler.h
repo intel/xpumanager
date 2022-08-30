@@ -4,11 +4,11 @@
  *  @file memory_data_handler.h
  */
 
-#include "counter_data_handler.h"
+#include "statistics_data_handler.h"
 
 namespace xpum {
 
-class MemoryDataHandler : public CounterDataHandler {
+class MemoryDataHandler : public StatisticsDataHandler {
    public:
     MemoryDataHandler(MeasurementType type, std::shared_ptr<Persistency> &p_persistency);
 

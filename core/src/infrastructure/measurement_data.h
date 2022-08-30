@@ -23,16 +23,10 @@ struct SubdeviceData {
     uint64_t min;
     uint64_t max;
     uint64_t current;
-    SubdeviceData() {
-        avg = min = max = current = std::numeric_limits<uint64_t>::max();
-    }
-};
-
-struct SubdeviceRawData {
     uint64_t raw_data;
     uint64_t raw_timestamp;
-    SubdeviceRawData() {
-        raw_data = std::numeric_limits<uint64_t>::max();
+    SubdeviceData() {
+        avg = min = max = current = raw_data = std::numeric_limits<uint64_t>::max();
         raw_timestamp = 0;
     }
 };
@@ -57,11 +51,9 @@ class MeasurementData {
                         raw_data(std::numeric_limits<uint64_t>::max()),
                         scale(1),
                         bHasDataOnDevice(false),
-                        bHasRawDataOnDevice(false),
                         raw_timestamp(0),
                         timestamp(0) {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
-        p_subdevice_rawdatas = std::make_shared<std::map<uint32_t, SubdeviceRawData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
     }
 
@@ -72,11 +64,9 @@ class MeasurementData {
                                       raw_data(std::numeric_limits<uint64_t>::max()),
                                       scale(1),
                                       bHasDataOnDevice(true),
-                                      bHasRawDataOnDevice(false),
                                       raw_timestamp(0),
                                       timestamp(0) {
         p_subdevice_datas = std::make_shared<std::map<uint32_t, SubdeviceData>>();
-        p_subdevice_rawdatas = std::make_shared<std::map<uint32_t, SubdeviceRawData>>();
         p_extended_datas = std::make_shared<std::map<uint64_t, ExtendedMeasurementData>>();
     }
 
@@ -91,9 +81,7 @@ class MeasurementData {
         start_time = other.start_time;
         latest_time = other.latest_time;
         bHasDataOnDevice = other.bHasDataOnDevice;
-        bHasRawDataOnDevice = other.bHasRawDataOnDevice;
         p_subdevice_datas = other.p_subdevice_datas;
-        p_subdevice_rawdatas = other.p_subdevice_rawdatas;
         p_extended_datas = other.p_extended_datas;
         raw_timestamp = other.raw_timestamp;
         timestamp = other.timestamp;
@@ -144,8 +132,6 @@ class MeasurementData {
 
     void setSubdeviceDataCurrent(uint32_t subdevice_id, uint64_t data);
 
-    void clearSubdeviceDataCurrent(uint32_t subdevice_id);
-
     void setSubdeviceDataMin(uint32_t subdevice_id, uint64_t data);
 
     void setSubdeviceDataMax(uint32_t subdevice_id, uint64_t data);
@@ -158,21 +144,15 @@ class MeasurementData {
 
     const std::shared_ptr<std::map<uint32_t, SubdeviceData>> getSubdeviceDatas();
 
-    const std::shared_ptr<std::map<uint32_t, SubdeviceRawData>> getSubdeviceRawDatas();
-
     uint32_t getSubdeviceDataSize();
 
     bool hasSubdeviceData(uint32_t subdevice_id);
 
     bool hasSubdeviceData() { return p_subdevice_datas->size() > 0; }
 
-    bool hasSubdeviceRawData() { return p_subdevice_rawdatas->size() > 0; }
-
     uint32_t subdeviceNum() { return p_subdevice_datas->size(); }
 
     bool hasDataOnDevice() { return bHasDataOnDevice; }
-
-    bool hasRawDataOnDevice() { return bHasRawDataOnDevice; }
 
     uint64_t getRawTimestamp() { return raw_timestamp; }
 
@@ -181,13 +161,11 @@ class MeasurementData {
     uint64_t getRawdata() { return raw_data; }
 
     void setRawData(uint64_t val) {
-        bHasRawDataOnDevice = true;
+        bHasDataOnDevice = true;
         this->raw_data = val;
     }
 
     void setSubdeviceRawData(uint32_t subdevice_id, uint64_t data);
-
-    void clearSubdeviceRawdata(uint32_t subdevice_id);
 
     uint64_t getSubdeviceRawData(uint32_t subdevice_id);
 
@@ -250,11 +228,7 @@ class MeasurementData {
 
     bool bHasDataOnDevice;
 
-    bool bHasRawDataOnDevice;
-
     std::shared_ptr<std::map<uint32_t, SubdeviceData>> p_subdevice_datas;
-
-    std::shared_ptr<std::map<uint32_t, SubdeviceRawData>> p_subdevice_rawdatas;
 
     uint64_t raw_timestamp;
 

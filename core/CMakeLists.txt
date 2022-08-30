@@ -38,8 +38,6 @@ if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
 
-option(XPUM_FIRMWARE_MOCK "Build amcfw with mock function" OFF)
-
 include(CheckIncludeFile)
 check_include_file(pciaccess.h HAVE_PCIACCESS_H)
 
@@ -74,18 +72,10 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data
                      DUMP_RAW_DATA_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/firmware FIRMWARE_SRC)
 
-add_library(xpum SHARED)
-
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/src/ipmi)
   message(STATUS "amcfw lib src found")
   aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/ipmi IPMI_SRC)
   add_library(amcfw STATIC ${IPMI_SRC} ${INFRAS_SRC} ${EXCEPTION_SRC})
-  if(XPUM_FIRMWARE_MOCK)
-    message(STATUS "build amcfw with XPUM_FIRMWARE_MOCK")
-    target_compile_definitions(amcfw PRIVATE XPUM_FIRMWARE_MOCK)
-    target_compile_definitions(xpum PRIVATE XPUM_FIRMWARE_MOCK)
-    target_compile_definitions(xpum PRIVATE XPUM_FIRMWARE_MOCK_IGSC_PATH="${CMAKE_CURRENT_LIST_DIR}/test/mock_igsc")
-  endif()
 
   target_include_directories(
     amcfw
@@ -104,6 +94,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   add_executable(test_xpum_api ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
 endif()
 
+add_library(xpum SHARED)
 
 target_include_directories(
   xpum

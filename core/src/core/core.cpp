@@ -29,7 +29,6 @@ Core::Core()
       p_policy_manager(nullptr),
       p_dump_raw_data_manager(nullptr),
       initialized(false) {
-    Logger::init();
     XPUM_LOG_TRACE("core()");
 }
 
@@ -82,11 +81,10 @@ std::shared_ptr<FirmwareManager> Core::getFirmwareManager() {
 void Core::init() {
     std::unique_lock<std::mutex> lock(mutex);
     if (initialized) {
-        return;
+    return;
     }
 
     XPUM_LOG_INFO("xpumd core starts to initialize");
-
     XPUM_LOG_INFO("initialize configuration");
     Configuration::init();
 
@@ -133,7 +131,7 @@ void Core::init() {
 void Core::close() {
     std::unique_lock<std::mutex> lock(mutex);
     if (!initialized) {
-        return;
+    return;
     }
 
     p_firmware_manager = nullptr;
@@ -141,34 +139,34 @@ void Core::close() {
     p_dump_raw_data_manager = nullptr;
 
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_policy_manager),
-          "Failed to close policy manager");
+      "Failed to close policy manager");
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_diagnostic_manager),
-          "Failed to close diagnostic manager");
+      "Failed to close diagnostic manager");
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_group_manager),
-          "Failed to close group manager");
+      "Failed to close group manager");
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_health_manager),
-          "Failed to close health manager");
+      "Failed to close health manager");
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_monitor_manager),
-          "Failed to close monitor manager");
+      "Failed to close monitor manager");
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_device_manager),
-          "Failed to close device manager");
+      "Failed to close device manager");
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_data_logic),
-          "Failed to close data logic");
+      "Failed to close data logic");
     GPUDeviceStub::pcie_manager.close();
 }
 
 void Core::close(const std::shared_ptr<InitCloseInterface>& p_init_close_interface,
-                 const std::string& p_msgPrix) {
+         const std::string& p_msgPrix) {
     if (p_init_close_interface == nullptr) {
-        return;
+    return;
     }
 
     try {
-        p_init_close_interface->close();
+    p_init_close_interface->close();
     } catch (std::exception& e) {
-        XPUM_LOG_WARN("{}: {}", p_msgPrix, e.what());
+    XPUM_LOG_WARN("{}: {}", p_msgPrix, e.what());
     } catch (...) {
-        XPUM_LOG_WARN("{}: unexpected exception", p_msgPrix);
+    XPUM_LOG_WARN("{}: unexpected exception", p_msgPrix);
     }
 }
 
@@ -199,7 +197,7 @@ void Core::setUserPermissionAllowed(bool val) {
 
 xpum_result_t Core::apiAccessPreCheck() {
     if (!this->ze_initialized) {
-        return XPUM_LEVEL_ZERO_INITIALIZATION_ERROR;
+    return XPUM_LEVEL_ZERO_INITIALIZATION_ERROR;
     }
     return XPUM_OK;
 }

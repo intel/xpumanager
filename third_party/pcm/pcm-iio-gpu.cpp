@@ -188,6 +188,8 @@ vector<struct data> prepare_data(const vector<uint64_t> &values, const vector<st
     return v;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"  
 vector<string> query_data(vector<struct iio_stacks_on_socket>& iios, vector<struct counter>& ctrs)
 {
     vector<string> iio_datas;
@@ -238,7 +240,6 @@ vector<string> query_data(vector<struct iio_stacks_on_socket>& iios, vector<stru
                     h_data.push_back(raw_data);
                 }
                 data = prepare_data(h_data, headers);
-                            
                 char bdf_buf[10];
                 snprintf(bdf_buf, sizeof(bdf_buf), "%02x:%02x.%1d", target_pci_device.bdf.busno, target_pci_device.bdf.devno, target_pci_device.bdf.funcno);
                 ostringstream os;
@@ -265,7 +266,7 @@ vector<string> query_data(vector<struct iio_stacks_on_socket>& iios, vector<stru
     cacheSocketStack = true;
     return iio_datas;
 }
-
+#pragma GCC diagnostic pop
 
 class IPlatformMapping {
 private:
@@ -939,11 +940,9 @@ int pcm_iio_gpu_init()
 
     if (!mapping->pciTreeDiscover(iios, m->getNumSockets())) {
         std::cout << "Error! Failed to discover iio stack." << std::endl;
-        delete mapping;
         return -1;
     }
     cerr.clear();
-    delete mapping;
     return 0;
 }
 

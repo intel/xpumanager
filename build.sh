@@ -26,8 +26,8 @@ else
     mkdir build
 fi
 cd build
-cmake ..  $@ 
-make -j4
+cmake .. -DDAEMONLESS=True $@
+make -j
 
 echo "---------Create installation package-----------"
 cpack   

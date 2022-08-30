@@ -574,11 +574,9 @@ xpum_fabric_throughput_type_t Utility::toXPUMFabricThroughputType(FabricThroughp
 }
 
 bool Utility::isATSPlatform(std::string device_name) {
-    return device_name == "Intel(R) Graphics [0x020a]" 
-    || device_name == "Intel(R) Graphics [0x56c0]" 
-    || device_name == "Intel(R) Graphics [0x56c1]"
-    || device_name == "Intel(R) Graphics [0x0207]";
+    return device_name == "Intel(R) Graphics [0x020a]" || device_name == "Intel(R) Graphics [0x56c0]" || device_name == "Intel(R) Graphics [0x56c1]";
 }
+
 bool Utility::isATSM1(std::string device_name) {
     return device_name == "Intel(R) Graphics [0x56c0]";
 }

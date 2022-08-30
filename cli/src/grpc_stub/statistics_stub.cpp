@@ -10,65 +10,17 @@
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
-#include "core_stub.h"
+#include "grpc_core_stub.h"
 #include "xpum_structs.h"
 
 namespace xpum::cli {
 
-struct MetricsTypeEntry {
-    xpum_stats_type_t key;
-    std::string keyStr;
-};
-
-static MetricsTypeEntry metricsTypeArray[]{
-    {XPUM_STATS_GPU_UTILIZATION, "XPUM_STATS_GPU_UTILIZATION"},
-    {XPUM_STATS_EU_ACTIVE, "XPUM_STATS_EU_ACTIVE"},
-    {XPUM_STATS_EU_STALL, "XPUM_STATS_EU_STALL"},
-    {XPUM_STATS_EU_IDLE, "XPUM_STATS_EU_IDLE"},
-    {XPUM_STATS_POWER, "XPUM_STATS_POWER"},
-    {XPUM_STATS_ENERGY, "XPUM_STATS_ENERGY"},
-    {XPUM_STATS_GPU_FREQUENCY, "XPUM_STATS_GPU_FREQUENCY"},
-    {XPUM_STATS_GPU_CORE_TEMPERATURE, "XPUM_STATS_GPU_CORE_TEMPERATURE"},
-    {XPUM_STATS_MEMORY_USED, "XPUM_STATS_MEMORY_USED"},
-    {XPUM_STATS_MEMORY_UTILIZATION, "XPUM_STATS_MEMORY_UTILIZATION"},
-    {XPUM_STATS_MEMORY_BANDWIDTH, "XPUM_STATS_MEMORY_BANDWIDTH"},
-    {XPUM_STATS_MEMORY_READ, "XPUM_STATS_MEMORY_READ"},
-    {XPUM_STATS_MEMORY_WRITE, "XPUM_STATS_MEMORY_WRITE"},
-    {XPUM_STATS_MEMORY_READ_THROUGHPUT, "XPUM_STATS_MEMORY_READ_THROUGHPUT"},
-    {XPUM_STATS_MEMORY_WRITE_THROUGHPUT, "XPUM_STATS_MEMORY_WRITE_THROUGHPUT"},
-    {XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION"},
-    {XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION"},
-    {XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION"},
-    {XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION"},
-    {XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION, "XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION"},
-    {XPUM_STATS_RAS_ERROR_CAT_RESET, "XPUM_STATS_RAS_ERROR_CAT_RESET"},
-    {XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS, "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS"},
-    {XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS, "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS"},
-    {XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE"},
-    {XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE"},
-    {XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE"},
-    {XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE"},
-    {XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE"},
-    {XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE"},
-    {XPUM_STATS_GPU_REQUEST_FREQUENCY, "XPUM_STATS_GPU_REQUEST_FREQUENCY"},
-    {XPUM_STATS_MEMORY_TEMPERATURE, "XPUM_STATS_MEMORY_TEMPERATURE"},
-    {XPUM_STATS_FREQUENCY_THROTTLE, "XPUM_STATS_FREQUENCY_THROTTLE"},
-    {XPUM_STATS_PCIE_READ_THROUGHPUT, "XPUM_STATS_PCIE_READ_THROUGHPUT"},
-    {XPUM_STATS_PCIE_WRITE_THROUGHPUT, "XPUM_STATS_PCIE_WRITE_THROUGHPUT"},
-    {XPUM_STATS_PCIE_READ, "XPUM_STATS_PCIE_READ"},
-    {XPUM_STATS_PCIE_WRITE, "XPUM_STATS_PCIE_WRITE"},
-    {XPUM_STATS_ENGINE_UTILIZATION, "XPUM_STATS_ENGINE_UTILIZATION"}};
-
-std::string CoreStub::metricsTypeToString(xpum_stats_type_t metricsType) {
-    for (auto item : metricsTypeArray) {
-        if (item.key == metricsType) {
-            return item.keyStr;
-        }
-    }
-    return std::to_string(metricsType);
+std::shared_ptr<std::map<int, std::map<int, int>>> GrpcCoreStub::getEngineCount(const char *bdf) {
+    std::map<int, std::map<int, int>> m;
+    return std::make_shared<std::map<int, std::map<int, int>>>(m);
 }
 
-std::shared_ptr<std::map<int, std::map<int, int>>> CoreStub::getEngineCount(int deviceId) {
+std::shared_ptr<std::map<int, std::map<int, int>>> GrpcCoreStub::getEngineCount(int deviceId) {
     grpc::ClientContext context;
     GetEngineCountRequest request;
     GetEngineCountResponse response;
@@ -76,10 +28,6 @@ std::shared_ptr<std::map<int, std::map<int, int>>> CoreStub::getEngineCount(int 
     grpc::Status status = stub->getEngineCount(&context, request, &response);
 
     std::map<int, std::map<int, int>> m;
-
-    if (!status.ok()) {
-        return std::make_shared<std::map<int, std::map<int, int>>>(m);
-    }
 
     for (auto &tileInfo : response.enginecountlist()) {
         std::map<int, int> mm;
@@ -94,19 +42,20 @@ std::shared_ptr<std::map<int, std::map<int, int>>> CoreStub::getEngineCount(int 
     return std::make_shared<std::map<int, std::map<int, int>>>(m);
 }
 
-std::shared_ptr<nlohmann::json> CoreStub::getFabricCount(int deviceId) {
+std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricCount(const char *bdf) {
+    nlohmann::json json;
+    return std::make_shared<nlohmann::json>(json);
+}
+
+std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricCount(int deviceId) {
     grpc::ClientContext context;
     GetFabricCountRequest request;
     GetFabricCountResponse response;
     request.set_deviceid(deviceId);
     grpc::Status status = stub->getFabricCount(&context, request, &response);
+
+
     nlohmann::json json;
-
-    if (!status.ok()) {
-        json["error"] = status.error_message();
-        return std::make_shared<nlohmann::json>(json);
-    }
-
     if (response.errormsg().length() == 0) {
         for (auto &tileInfo : response.fabriccountlist()) {
             std::string tileId = tileInfo.istilelevel() ? std::to_string(tileInfo.tileid()) : "device";
@@ -125,7 +74,7 @@ std::shared_ptr<nlohmann::json> CoreStub::getFabricCount(int deviceId) {
     return std::make_shared<nlohmann::json>(json);
 }
 
-std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
+std::shared_ptr<nlohmann::json> GrpcCoreStub::getEngineStatistics(int deviceId) {
     grpc::ClientContext engineContext;
     XpumGetEngineStatsRequest engineRequest;
     XpumGetEngineStatsResponse engineResponse;
@@ -221,7 +170,7 @@ std::shared_ptr<nlohmann::json> CoreStub::getEngineStatistics(int deviceId) {
     return std::make_shared<nlohmann::json>(json);
 }
 
-std::shared_ptr<nlohmann::json> CoreStub::getFabricStatistics(int deviceId) {
+std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricStatistics(int deviceId) {
     nlohmann::json json;
 
     grpc::ClientContext context;
@@ -274,18 +223,12 @@ std::shared_ptr<nlohmann::json> CoreStub::getFabricStatistics(int deviceId) {
     return std::make_shared<nlohmann::json>(json);
 }
 
-static int32_t getCliScale(xpum_stats_type_t metricsType) {
-    switch (metricsType) {
-        case XPUM_STATS_ENERGY:
-            return 1000;
-        case XPUM_STATS_MEMORY_USED:
-            return 1048576;
-        default:
-            return 1;
-    }
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getStatistics(const char *bdf, bool enableFilter) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enableFilter, bool enableScale) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getStatistics(int deviceId, bool enableFilter) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -340,8 +283,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
             auto tmp = nlohmann::json();
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
-            int32_t cliScale = getCliScale(metricsType);
-            int32_t scale = enableScale ? stats_data.scale() * cliScale : stats_data.scale();
+            int32_t scale = stats_data.scale();
             if (scale == 1) {
                 tmp["value"] = stats_data.value();
                 if (!stats_data.iscounter()) {
@@ -388,7 +330,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatistics(int deviceId, bool enabl
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId, bool enableFilter, bool enableScale) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getStatisticsByGroup(uint32_t groupId, bool enableFilter) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -432,8 +374,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getStatisticsByGroup(uint32_t groupId,
             auto tmp = nlohmann::json();
             xpum_stats_type_t metricsType = (xpum_stats_type_t)stats_data.metricstype().value();
             tmp["metrics_type"] = metricsTypeToString(metricsType);
-            int32_t cliScale = getCliScale(metricsType);
-            int32_t scale = enableScale ? stats_data.scale() * cliScale : stats_data.scale();
+            int32_t scale = stats_data.scale();
             if (scale == 1) {
                 tmp["value"] = stats_data.value();
                 if (!stats_data.iscounter()) {

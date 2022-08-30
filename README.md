@@ -1,47 +1,36 @@
-# Intel XPU Manager
-Intel XPU Manager is a free and open-source solution for monitoring and managing Intel data center GPUs.
+# Intel XPU System Management Interface
+Intel XPU System Management Interface is an in-band node-level tool that provides local GPU management. It is easily integrated into the cluster management solutions and cluster scheduler. GPU users may use it to manage Intel GPUs, locally. 
+It supports local command line interface and local library call interface. 
 
-It is designed to simplify administration, maximize reliability and uptime, and improve utilization.
+## Intel XPU System Management Interface feature
+* Provide GPU basic information, including GPU model, frequency, GPU memory capacity, firmware version
+* Provide lots of GPU telemetries, including GPU utilization, performance metrics, GPU memory bandwidth, temperature
+* Provide GPU health status, memory health, temperature health
+* GPU diagnotics through different levels of GPU test suites
+* GPU firmware update
+* Get/change GPU settings, including power limit, GPU frequency, standby mode and scheduler mode
+* Support K8s and can export GPU telemetries to Prometheus
 
-Intel XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely.
+## Suppored Devices
+* Intel Data Center GPU
 
-3rd party open-source and commercial workload and cluster managers, job schedulers, and monitoring solutions can also integrate the Intel XPU Manager to support Intel data center GPUs.
-
-## Intel XPU Manager features
-* Administration:
-	* GPU discovery and information - name, model, serial, stepping, location, frequency, memory capacity, firmware version
-	* GPU topology and grouping
-	* GPU Firmware updating
-* Monitoring:
-	* GPU health – memory, power, temperature, fabric port, etc.
-	* GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory bandwidth, errors
-* Diagnostics:
-	* 3 levels of GPU diagnostic tests
-* Configuration:
-	* GPU Settings - GPU power limits, frequency range, standby mode, scheduler mode, ECC On/Off, performance factor, fabric port status, fabric port beaconing
-	* GPU policies - Throttle GPU when the temperature set threshold is reached. 
-* Supported Frameworks:
-	* Prometheus exporter, Docker container support, Icinga plugin
-
-## Supported Devices
-* Intel Data Center GPUs
-
-## Supported OSes
-* Ubuntu 20.04.3
-* RHEL 8.5
-* CentOS 7.4
-* CentOS 8 Stream
-* SLES 15 SP3
-* Windows Server 2022 (limited features including: GPU device info, GPU telemetry and GPU settings)
+## Supported OS
+* Ubuntu 20.0.4
+* CentOS Stream 8
   
-## Intel XPU Manager Architecture
-![Intel XPU Manager Architecture](doc/img/architecture.PNG)
+
+
+## Intel XPU System Management Interface Command Line Interface
+* Show GPU basic information
+![Show GPU basic information](doc/img/cli_gpu_info.PNG)
   
-## GPU telemetry exported from Intel XPU Manager to Grafana
-![GPU telemetry exported from Intel XPU Manager to Grafana](doc/img/Grafana.PNG)
-for a Docker container image that can be used as a Prometheus exporter in a K8s environment.
+
+* Change GPU settings
+![Show GPU settings](doc/img/cli_settings.PNG)
   
-## Intel XPU Manager Documentation
-* Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) for how to install/uninstall Intel XPU Manager.
-* Refer to the [XPU Manager CLI User Guide](doc/CLI_user_guide.md) to start using Intel XPU Manager.
-* Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.
+  
+## Intel XPU System Management Interface Installation
+Please follow [XPU System Management Interface Installation Guide](doc/Install_guide.md) to install/uninstall Intel XPU System Management Interface. 
+
+### Start to use Intel XPU System Management Interface
+By default, Intel XPU System Management Interface is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to [XPU System Management Interface CLI User Guide](doc/CLI_user_guide.md) for how to use the command line tool. 

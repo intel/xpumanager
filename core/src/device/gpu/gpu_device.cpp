@@ -200,16 +200,52 @@ void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
                                                    });
 }
 
+static std::vector<std::string> getSiblingDeviceMeiPath(GPUDevice* device) {
+    xpum::Core& core = xpum::Core::instance();
+    auto groupManager = core.getGroupManager();
+    std::vector<std::string> result;
+
+    int count = 0;
+    groupManager->getAllGroupIds(nullptr, &count);
+    std::vector<xpum_group_id_t> groupIds(count);
+    groupManager->getAllGroupIds(groupIds.data(), &count);
+
+    xpum_device_id_t deviceId = std::stoi(device->getId());
+    for (int i = 0; i < count; i++) {
+        auto groupId = groupIds[i];
+        if (groupId & BUILD_IN_GROUP_MASK) {
+            xpum_group_info_t groupInfo;
+            groupManager->getGroupInfo(groupId, &groupInfo);
+
+            for (int j = 0; j < groupInfo.count; j++) {
+                // device in build in group
+                if (groupInfo.deviceList[j] == deviceId) {
+                    auto deviceManager = core.getDeviceManager();
+                    for (int k = 0; k < groupInfo.count; k++) {
+                        auto siblingId = groupInfo.deviceList[k];
+                        std::string siblingIdStr = std::to_string(siblingId);
+                        auto pSiblingDevice = deviceManager->getDevice(siblingIdStr);
+                        auto meiPath = pSiblingDevice->getMeiDevicePath();
+                        result.push_back(meiPath);
+                    }
+                    return result;
+                }
+            }
+        }
+    }
+    auto meiPath = device->getMeiDevicePath();
+    result.push_back(meiPath);
+    return result;
+}
 
 xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
-    // auto meiPathList = getSiblingDeviceMeiPath(this);
-    std::vector<std::string> meiPathList{getMeiDevicePath()};
+    auto meiPathList = getSiblingDeviceMeiPath(this);
 
     std::vector<std::string> commands;
 
-    for (auto& meiPath : meiPathList) {
+    for (auto meiPath : meiPathList) {
         XPUM_LOG_INFO("prepare update GSC on {}", meiPath);
-        std::string command = toolPath + " fw update -a -d " + meiPath + " -i " + filePath +" 2>&1";
+        std::string command = toolPath + " fw update -a -d " + meiPath + " -i " + filePath + " 2>&1";
         commands.push_back(command);
     }
     if (commands.size() == 0) {
@@ -245,11 +281,12 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
                         }
                         if (line.find("error") != line.npos || line.find("fail") != line.npos) {
                             ok = false;
+                            XPUM_LOG_ERROR("Error found during update GSC fw");
                         }
                     } else {
                         bool commandResult = pclose(commandExec) == 0;
-                        XPUM_LOG_INFO("Command success: {}", commandResult);
                         ok = ok && commandResult;
+                        XPUM_LOG_INFO("Command success: {}", ok);
                         commandExec = nullptr;
                         break;
                     }
@@ -267,7 +304,6 @@ xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::strin
             } else {
                 rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
-            unlock();
             return rc;
         });
 
@@ -288,7 +324,7 @@ void GPUDevice::dumpFirmwareFlashLog() noexcept {
 
 xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_type_t type) noexcept {
     std::future<xpum_firmware_flash_result_t>* task;
-    if (type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+    if (type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
         task = &taskGSC;
     }
     else {
@@ -310,14 +346,6 @@ xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_typ
 
 bool GPUDevice::isUpgradingFw(void) noexcept {
     return taskGSC.valid();
-}
-
-bool GPUDevice::isUpgradingFwResultReady(void) noexcept {
-    if (!taskGSC.valid()) {
-        return true;
-    }
-    auto status = taskGSC.wait_for(0ms);
-    return status == std::future_status::ready;
 }
 
 void GPUDevice::getPCIeReadThroughput(Callback_t callback) noexcept {
