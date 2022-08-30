@@ -65,7 +65,7 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "FPU Idle:                Loss of throughput (estimated) without floating-point or int64 instructions being processed (lower is better)\n"
                "Em Int Idle:             Loss of throughput (estimated) without extended math or integer instructions being processed (lower is better)\n"
                "Xmx Idle:                Loss of throughput (estimated) without Xe Matrix Extension (systolic array) instructions being processed (lower is better)\n"
-               "Other Instructions:	     Loss of throughput (estimated) without ALU instructions being processed (lower is better)\n"
+               "Other Instructions:      Loss of throughput (estimated) without ALU instructions being processed (lower is better)\n"
                "EU Stall:                Loss of throughput (observed) when EUs are not actively processing instructions from any EU threads (lower is better)\n"
                "Low Occupancy:           Loss of throughput (estimated) when there are not enough EU threads on EUs to hide stalls from long-latency instructions, degrading EU active percentage (lower is better)\n"
                "ALU Dep.:                Loss of throughput (estimated) when some EU threads stall due to the dependency from ALU operations, degrading EU active percentage (lower is better)\n"

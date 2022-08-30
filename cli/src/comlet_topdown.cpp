@@ -57,7 +57,7 @@ static CharTableConfig ComletConfigTopdownDevice(R"({
     }]
 })"_json);
 
-ComletTopdown::ComletTopdown() : ComletBase("topdown", "Execute top-down analysis of the occupancy ratio of every GPU function component.") {
+ComletTopdown::ComletTopdown() : ComletBase("topdown", "Expected feature.") {
 }
 
 void ComletTopdown::setupOptions() {
