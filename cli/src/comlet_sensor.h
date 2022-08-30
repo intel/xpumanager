@@ -13,7 +13,7 @@ namespace xpum::cli {
 
 class ComletSensor : public ComletBase {
    public:
-    ComletSensor() : ComletBase("amcsensor", "List the AMC real-time sensor readings.") {
+    ComletSensor() : ComletBase("sensor", "Show the sensor reading of all installed AMCs.") {
         // printHelpWhenNoArgs = true;
     }
     virtual ~ComletSensor() {}

@@ -125,4 +125,27 @@ xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
                                     xpum_device_metrics_t dataList[],
                                     int *count);
 
+/** @} */ // Closing for METRICS_API
+
+/**************************************************************************/
+/** @defgroup SENSOR_READING_API Sensor reading
+ * These APIs are for sensor reading
+ * @{
+ */
+/**************************************************************************/
+
+/**
+ * @brief Get device sensor reading
+ * 
+ * @param data          OUT: The buffer to store sensor reading data
+ * @param count      IN/OUT: When \a data is NULL, \a count will be filled with the array size needed, and return.
+ *                           When \a data is not NULL, \a count denotes the length of \a data, \a count should be equal to or larger than needed size. When return, the \a count will store real size of array returned by \a data.
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetSensorReading(xpum_sensor_reading_t data[], int *count);
+
+/** @} */ // Closing for SENSOR_READING_API
+
 } // namespace xpum

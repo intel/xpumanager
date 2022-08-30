@@ -1013,11 +1013,11 @@ typedef struct xpum_dump_raw_data_task_t {
 } xpum_dump_raw_data_task_t;
 
 typedef struct {
-    int amcIndex;                         ///< Device index
-    double value;                         ///< Sensor reading value
-    double sensorLow;                      ///< Sensor low bound
-    double sensorHigh;                    ///< Sensor high bound
+    int amcIndex;                      ///< Device index
+    int value;                            ///< Sensor reading value
     char sensorName[XPUM_MAX_STR_LENGTH]; ///< Sensor name
+    char sensorLow[XPUM_MAX_STR_LENGTH];  ///< Sensor low bound
+    char sensorHigh[XPUM_MAX_STR_LENGTH]; ///< Sensor high bound
     char sensorUnit[XPUM_MAX_STR_LENGTH]; ///< Sensor reading unit
 } xpum_sensor_reading_t;
 

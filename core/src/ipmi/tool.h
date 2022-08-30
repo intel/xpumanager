@@ -37,7 +37,6 @@
 #pragma once
 #include <assert.h>
 #include <stdbool.h>
-#include <vector>
 
 #include "bsmc_interface.h"
 #include "hal.h"
@@ -45,7 +44,6 @@
 #include "infrastructure/logger.h"
 #endif
 #include "ipmi_interface.h"
-#include "sdr.h"
 
 namespace xpum {
 #define NERVANA_MAX_NEIGHBOURS 16
@@ -86,7 +84,6 @@ typedef struct {
     icl_info_t icl_info;
     bool sensor_filtered[SENSOR_COUNT];
     bool sensors_initialized;
-    std::vector<ipmi_buf> sdr_list;
 } nrv_card;
 
 typedef struct {
