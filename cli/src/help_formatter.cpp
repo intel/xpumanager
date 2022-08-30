@@ -153,6 +153,10 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                " xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]\n"
                " xpumcli config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable\n";
                //" xpumcli config -d [deviceId] --reset\n";
+    } else if (app->get_name().compare("amcsensor") == 0) {
+        return "\nUsage: xpumcli amcsensor [Options]\n"
+               " xpumcli amcsensor\n"
+               " xpumcli amcsensor -j\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }
