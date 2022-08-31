@@ -16,6 +16,16 @@ spec:
     effect: NoSchedule
   - key: node-role.kubernetes.io/master
     effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: node-locale
+            operator: In
+            values:
+            - zz1
   containers:
     - args:
       - "99d"
