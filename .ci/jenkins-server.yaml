@@ -40,7 +40,8 @@ spec:
         node-role.kubernetes.io/master: ""
       containers:
       - name: jenkins
-        image: jenkins/jenkins:lts-jdk11
+        image: jenkins/jenkins:lts-jdk17
+        imagePullPolicy: Always
         securityContext:
           allowPrivilegeEscalation: false
           runAsUser: 0
