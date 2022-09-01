@@ -68,5 +68,9 @@ class ComletDump : public ComletBase {
     void printByLine(std::ostream &out);
 
     void dumpRawDataToFile(std::ostream &out);
+
+    bool dumpPCIeMetrics();
+
+    bool dumpEUMetrics();
 };
 } // end namespace xpum::cli

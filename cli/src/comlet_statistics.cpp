@@ -277,6 +277,9 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
         ]]
     }]
 })"_json);
+bool ComletStatistics::hasEUMetrics() {
+    return this->opts->showEuMetrics;
+}
 
 void ComletStatistics::setupOptions() {
     this->opts = std::unique_ptr<ComletStatisticsOptions>(new ComletStatisticsOptions());

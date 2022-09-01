@@ -8,11 +8,11 @@
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
-#include "core_stub.h"
+#include "grpc_core_stub.h"
 
 namespace xpum::cli {
 
-std::unique_ptr<nlohmann::json> CoreStub::getDeviceList() {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceList() {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -51,7 +51,7 @@ static std::string scale(std::string value, int scale) {
     return std::to_string(fvalue);
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -95,7 +95,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions(std::string username, std::string password) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(const char *bdf) {
+    return std::unique_ptr<nlohmann::json>(new nlohmann::json());
+}
+
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getAMCFirmwareVersions(std::string username, std::string password) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

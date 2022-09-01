@@ -241,6 +241,7 @@ std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId) 
 
 xpum_result_t xpumInit() {
     try {
+        Logger::init();
         XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());
         XPUM_LOG_INFO("Build:\t\t{}", Version::getVersionGit());
         XPUM_LOG_INFO("Level Zero:\t{}", Version::getZeLibVersion());
@@ -680,6 +681,29 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
     }
 
     return XPUM_RESULT_DEVICE_NOT_FOUND;
+}
+
+xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *deviceId) {
+    if (bdf == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
+    auto device = Core::instance().getDeviceManager()->getDevicebyBDF(std::string(bdf));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    *deviceId = stoi(device->getId());
+    return XPUM_OK;    
 }
 
 xpum_result_t xpumGroupCreate(const char *groupName, xpum_group_id_t *pGroupId) {

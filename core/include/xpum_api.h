@@ -28,6 +28,48 @@ extern "C" {
 /**
  * @brief This method is used to initialize XPUM within this process.
  * 
+ * @details Below environment variables will impact the XPUM initialization:
+ * - XPUM_DISABLE_PERIODIC_METRIC_MONITOR: value options are {0,1}, default is 0. Whether disable periodic metric monitor or not. 0 means metric-pulling tasks will periodically run and collect GPU telemetries once core library is initialized. 1 means metric-pulling tasks will only run and collect GPU telemetries when calling stats related APIs.
+ * - XPUM_METRICS: enabled metric indexes, value options are listed below, default value: "0,4-31,36-37". Enables metrics which are separated by comma, use hyphen to indicate a range (e.g., 0,4-7,27-29). It will take effect during core initialization.
+ *      - 0       GPU_UTILIZATION
+ *      - 1       EU_ACTIVE
+ *      - 2       EU_STALL
+ *      - 3       EU_IDLE
+ *      - 4       POWER
+ *      - 5       ENERGY
+ *      - 6       GPU_FREQUENCY
+ *      - 7       GPU_CORE_TEMPERATURE
+ *      - 8       MEMORY_USED
+ *      - 9       MEMORY_UTILIZATION
+ *      - 10      MEMORY_BANDWIDTH
+ *      - 11      MEMORY_READ
+ *      - 12      MEMORY_WRITE
+ *      - 13      MEMORY_READ_THROUGHPUT
+ *      - 14      MEMORY_WRITE_THROUGHPUT
+ *      - 15      ENGINE_GROUP_COMPUTE_ALL_UTILIZATION
+ *      - 16      ENGINE_GROUP_MEDIA_ALL_UTILIZATION
+ *      - 17      ENGINE_GROUP_COPY_ALL_UTILIZATION
+ *      - 18      ENGINE_GROUP_RENDER_ALL_UTILIZATION
+ *      - 19      ENGINE_GROUP_3D_ALL_UTILIZATION
+ *      - 20      RAS_ERROR_CAT_RESET
+ *      - 21      RAS_ERROR_CAT_PROGRAMMING_ERRORS
+ *      - 22      RAS_ERROR_CAT_DRIVER_ERRORS
+ *      - 23      RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE
+ *      - 24      RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE
+ *      - 25      RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE
+ *      - 26      RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE
+ *      - 27      RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE
+ *      - 28      RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE
+ *      - 29      GPU_REQUEST_FREQUENCY
+ *      - 30      MEMORY_TEMPERATURE
+ *      - 31      FREQUENCY_THROTTLE
+ *      - 32      PCIE_READ_THROUGHPUT
+ *      - 33      PCIE_WRITE_THROUGHPUT
+ *      - 34      PCIE_READ
+ *      - 35      PCIE_WRITE
+ *      - 36      ENGINE_UTILIZATION
+ *      - 37      FABRIC_THROUGHPUT
+ *                              
  * @return \ref xpum_result_t 
  */
 xpum_result_t xpumInit(void);
@@ -92,6 +134,14 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
  */
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties);
 
+/**
+ * @brief Get device id corresponding to the \a PCI BDF address.
+ * 
+ * @param bdf                   IN: The PCI BDF address string
+ * @param deviceId              OUT: Device id
+ * @return \ref xpum_result_t 
+ */
+xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *deviceId);
 
 /**
  * @brief Get all AMC firmware versions

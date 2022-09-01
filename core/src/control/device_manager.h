@@ -103,6 +103,8 @@ class DeviceManager : public DeviceManagerInterface,
 
     std::shared_ptr<Device> getDevice(const std::string& id);
 
+    std::shared_ptr<Device> getDevicebyBDF(const std::string& bdf);
+
     void discoverFabricLinks();
 
     std::string getDeviceIDByFabricID(uint64_t fabric_id);

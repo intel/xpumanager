@@ -163,6 +163,22 @@ std::shared_ptr<Device> DeviceManager::getDevice(const std::string& id) {
     return nullptr;
 }
 
+std::shared_ptr<Device> DeviceManager::getDevicebyBDF(const std::string& bdf) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    for (auto& p_device : this->devices) {
+        std::vector<Property> properties;
+        p_device->getProperties(properties);
+        for (Property &prop : properties) {
+            if (prop.getName() == XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS
+                && prop.getValue() == bdf) {
+                return p_device;
+            }
+        }
+    }
+
+    return nullptr;
+ }
+
 void DeviceManager::getDeviceSchedulers(const std::string& id, std::vector<Scheduler>& schedulers) {
     std::unique_lock<std::mutex> lock(this->mutex);
     zes_device_handle_t device = getDeviceHandle(id);

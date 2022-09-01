@@ -4,7 +4,7 @@
  *  @file firmware_stub.cpp
  */
 
-#include "core_stub.h"
+#include "grpc_core_stub.h"
 #include "logger.h"
 #include "xpum_structs.h"
 
@@ -23,7 +23,7 @@ static std::string getFirmwareName(unsigned int firmwareType) {
     }
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -99,7 +99,7 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     }
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId,
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getFirmwareFlashResult(int deviceId,
                                                                  unsigned int type) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -140,7 +140,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId,
     return json;
 }
 
-std::string CoreStub::getRedfishAmcWarnMsg(){
+std::string GrpcCoreStub::getRedfishAmcWarnMsg(){
     assert(this->stub != nullptr);
     grpc::ClientContext ct;
     GetRedfishAmcWarnMsgResponse response;
@@ -148,7 +148,7 @@ std::string CoreStub::getRedfishAmcWarnMsg(){
     return response.warnmsg();
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::getSensorReading() {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getSensorReading() {
     assert(this->stub != nullptr);
     nlohmann::json json;
     grpc::ClientContext ct;

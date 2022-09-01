@@ -36,6 +36,7 @@
 #include "comlet_sensor.h"
 #include "core_stub.h"
 #include "logger.h"
+#include "exit_code.h"
 
 #define MAKE_COMLET_PTR(comlet_type) (std::static_pointer_cast<xpum::cli::ComletBase>(std::make_shared<comlet_type>()))
 
@@ -97,7 +98,12 @@ int main(int argc, char** argv) {
 
     CLI::App app{xpum::cli::getResourceString("CLI_APP_DESC")};
 
+#ifdef DAEMONLESS
+    app.name("xpu-smi");
+#endif
+
     xpum::cli::CLIWrapper wrapper(app, priv);
+#ifndef DAEMONLESS
     if (!wrapper.getCoreStub()->isChannelReady()) {
         std::cout << "Error: XPUM Service Status Error. ";
         if (!levelZeroLoaderCheck()) {
@@ -106,14 +112,19 @@ int main(int argc, char** argv) {
         std::cout << std::endl;
         return 0;
     }
+#endif
 
     wrapper
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiscovery))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTopology))
+#ifndef DAEMONLESS
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletGroup))
+#endif
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDiagnostic))
+#ifndef DAEMONLESS
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletHealth))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletPolicy))
+#endif
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletFirmware))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletConfig))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTopdown))
@@ -123,17 +134,24 @@ int main(int argc, char** argv) {
         //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTop))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
-        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet));
-        // .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletSensor));
+#ifndef DAEMONLESS
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet))
+#endif
+        ;
     app.require_subcommand(0, 1);
 
     if (argc == 1) {
         std::cout << app.help();
+        return XPUM_CLI_SUCCESS;
     } else {
-        CLI11_PARSE(app, argc, argv);
+        // CLI11_PARSE(app, argc, argv);
+        try {
+            app.parse(argc, argv);
+        } catch (const CLI::ParseError& e) {
+            auto err = app.exit(e);
+            return err != 0 ? XPUM_CLI_ERROR_BAD_ARGUMENT : 0;
+        }
     }
 
-    wrapper.printResult(std::cout);
-
-    return 0;
+    return wrapper.printResult(std::cout);
 }

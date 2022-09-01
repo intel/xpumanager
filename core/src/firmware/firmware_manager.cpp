@@ -150,12 +150,19 @@ void FirmwareManager::initFwDataMgmt(){
 }
 
 void FirmwareManager::init() {
+    char* env = std::getenv("_XPUM_INIT_SKIP");
+    std::string xpum_init_skip_module_list{env != NULL ? env : ""};
+    if (xpum_init_skip_module_list.find("FIRMWARE") != xpum_init_skip_module_list.npos) {
+        return;
+    }
     // get gsc fw versions
     detectGscFw();
     // init fw-data management
     initFwDataMgmt();
-    // init amc manager
-    preInitAmcManager();
+    if (xpum_init_skip_module_list.find("AMC") == xpum_init_skip_module_list.npos) {
+        // init amc manager
+        preInitAmcManager();
+    }
 };
 
 void FirmwareManager::preInitAmcManager() {

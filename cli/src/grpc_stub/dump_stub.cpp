@@ -9,13 +9,13 @@
 
 #include "core.grpc.pb.h"
 #include "core.pb.h"
-#include "core_stub.h"
+#include "grpc_core_stub.h"
 #include "logger.h"
 #include "xpum_structs.h"
 
 namespace xpum::cli {
 
-std::unique_ptr<nlohmann::json> CoreStub::startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> dumpTypeList) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> dumpTypeList) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -57,7 +57,7 @@ std::unique_ptr<nlohmann::json> CoreStub::startDumpRawDataTask(uint32_t deviceId
 
     return json;
 }
-std::unique_ptr<nlohmann::json> CoreStub::stopDumpRawDataTask(int taskId) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::stopDumpRawDataTask(int taskId) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -92,7 +92,7 @@ std::unique_ptr<nlohmann::json> CoreStub::stopDumpRawDataTask(int taskId) {
 
     return json;
 }
-std::unique_ptr<nlohmann::json> CoreStub::listDumpRawDataTasks() {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::listDumpRawDataTasks() {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

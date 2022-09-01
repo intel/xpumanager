@@ -22,6 +22,26 @@ static bool isNumber(const std::string &str) {
     return str.find_first_not_of("0123456789") == std::string::npos;
 }
 
+bool ComletDump::dumpPCIeMetrics() {
+    for (auto id : this->opts->metricsIdList) {
+        if (id == xpum_dump_type_t::XPUM_DUMP_PCIE_READ_THROUGHPUT 
+            || id == xpum_dump_type_t::XPUM_DUMP_PCIE_WRITE_THROUGHPUT) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ComletDump::dumpEUMetrics() {
+    for (auto id : this->opts->metricsIdList) {
+        if (id == xpum_dump_type_t::XPUM_DUMP_EU_ACTIVE
+            || id == xpum_dump_type_t::XPUM_DUMP_EU_STALL || id == xpum_dump_type_t::XPUM_DUMP_EU_IDLE) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device IDs to query");
