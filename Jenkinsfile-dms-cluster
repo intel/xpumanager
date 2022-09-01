@@ -43,7 +43,7 @@ pipeline {
                 mkdir ../ws_ubuntu && \
                 cp -rp . ../ws_ubuntu && \
                 cd ../ws_ubuntu && \
-                export CCACHE_DIR=$PWD/.ccache && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
                 mkdir $MAIN_WORKSPACE/build-deb && \
                 ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
@@ -63,7 +63,7 @@ pipeline {
                 mkdir ../ws_centos7 && \
                 cp -rp . ../ws_centos7 && \
                 cd ../ws_centos7 && \
-                export CCACHE_DIR=$PWD/.ccache && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
                 ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 mkdir $MAIN_WORKSPACE/build-centos7 && \
@@ -79,7 +79,7 @@ pipeline {
                 mkdir ../ws_centos8 && \
                 cp -rp . ../ws_centos8 && \
                 cd ../ws_centos8 && \
-                export CCACHE_DIR=$PWD/.ccache && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
                 mkdir $MAIN_WORKSPACE/build-centos8 && \
                 ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
@@ -99,7 +99,7 @@ pipeline {
                 mkdir ../ws_sles && \
                 cp -rp . ../ws_sles && \
                 cd ../ws_sles && \
-                export CCACHE_DIR=$PWD/.ccache && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
                 ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 mkdir $MAIN_WORKSPACE/build-sles && \
