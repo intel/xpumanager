@@ -43,9 +43,15 @@ pipeline {
                 mkdir ../ws_ubuntu && \
                 cp -rp . ../ws_ubuntu && \
                 cd ../ws_ubuntu && \
-                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                export CCACHE_DIR=$PWD/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
                 mkdir $MAIN_WORKSPACE/build-deb && \
-                cp ./build/xpum*.deb $MAIN_WORKSPACE/build-deb'''
+                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpum*.deb $MAIN_WORKSPACE/build-deb && \
+                rm -fr build && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.deb $MAIN_WORKSPACE/build-deb
+                '''
               }
             }
           }
@@ -57,6 +63,8 @@ pipeline {
                 mkdir ../ws_centos7 && \
                 cp -rp . ../ws_centos7 && \
                 cd ../ws_centos7 && \
+                export CCACHE_DIR=$PWD/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
                 ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 mkdir $MAIN_WORKSPACE/build-centos7 && \
                 cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos7'''
@@ -71,9 +79,15 @@ pipeline {
                 mkdir ../ws_centos8 && \
                 cp -rp . ../ws_centos8 && \
                 cd ../ws_centos8 && \
-                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                export CCACHE_DIR=$PWD/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
                 mkdir $MAIN_WORKSPACE/build-centos8 && \
-                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos8'''
+                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos8 && \
+                rm -fr build && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.rpm $MAIN_WORKSPACE/build-centos8
+                '''
               }
             }
           }
@@ -85,6 +99,8 @@ pipeline {
                 mkdir ../ws_sles && \
                 cp -rp . ../ws_sles && \
                 cd ../ws_sles && \
+                export CCACHE_DIR=$PWD/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
                 ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 mkdir $MAIN_WORKSPACE/build-sles && \
                 cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-sles'''
