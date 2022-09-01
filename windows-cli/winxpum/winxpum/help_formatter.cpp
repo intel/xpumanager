@@ -56,8 +56,8 @@ std::string HelpFormatter::make_usage(const CLI::App* app, std::string name) con
             " xpumcli config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]\n";
     } else if (app->get_name().compare("updatefw") == 0) {
         return "\nUsage: xpumcli updatefw [Options]\n"
-               "  xpumcli updatefw -d [deviceId] -t GSC -f [imageFilePath]\n"
-               "  xpumcli updatefw -d [deviceId] -t GSC_DATA -f [imageFilePath]\n";
+               "  xpumcli updatefw -d [deviceId] -t GFX -f [imageFilePath]\n"
+               "  xpumcli updatefw -d [deviceId] -t GFX_DATA -f [imageFilePath]\n";
     }
     else {
         return CLI::Formatter::make_usage(app, name);
