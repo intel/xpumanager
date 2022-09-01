@@ -35,8 +35,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-sles"
       resources:
-        limits: {}
-        requests: {}
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
       securityContext:
         privileged: false
       tty: false
@@ -47,6 +51,9 @@ spec:
         - name: sign-secret
           mountPath: "/root"
           readOnly: true
+        - mountPath: "/home/jenkins/jenkins-shared-pvc"
+          name: "jenkins-shared-pvc"
+          readOnly: false
       workingDir: "/home/jenkins/agent"
     - args:
         - "99d"
@@ -56,8 +63,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu"
       resources:
-        limits: {}
-        requests: {}
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
       securityContext:
         privileged: false
       tty: false
@@ -68,6 +79,9 @@ spec:
         - name: sign-secret
           mountPath: "/root"
           readOnly: true
+        - mountPath: "/home/jenkins/jenkins-shared-pvc"
+          name: "jenkins-shared-pvc"
+          readOnly: false
       workingDir: "/home/jenkins/agent"
     - args:
         - "99d"
@@ -77,8 +91,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-centos7"
       resources:
-        limits: {}
-        requests: {}
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
       tty: false
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
@@ -87,6 +105,9 @@ spec:
         - name: sign-secret
           mountPath: "/root"
           readOnly: true
+        - mountPath: "/home/jenkins/jenkins-shared-pvc"
+          name: "jenkins-shared-pvc"
+          readOnly: false
       workingDir: "/home/jenkins/agent"
     - args:
         - "99d"
@@ -96,8 +117,12 @@ spec:
       imagePullPolicy: "Always"
       name: "xpum-builder-centos8"
       resources:
-        limits: {}
-        requests: {}
+        limits: 
+          memory: "6Gi"
+          cpu: "4"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
       tty: false
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
@@ -106,6 +131,9 @@ spec:
         - name: sign-secret
           mountPath: "/root"
           readOnly: true
+        - mountPath: "/home/jenkins/jenkins-shared-pvc"
+          name: "jenkins-shared-pvc"
+          readOnly: false
       workingDir: "/home/jenkins/agent"
     - name: "kaniko"
       image: "gcr.io/kaniko-project/executor:debug"
@@ -139,10 +167,12 @@ spec:
       image: "jenkins/inbound-agent:4.11-1"
       name: "jnlp"
       resources:
-        limits: {}
+        limits: 
+          memory: "2Gi"
+          cpu: "2"
         requests:
-          memory: "256Mi"
-          cpu: "100m"
+          memory: "1Gi"
+          cpu: "1"
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
@@ -170,3 +200,6 @@ spec:
             items:
               - key: .dockerconfigjson
                 path: config.json
+    - name: jenkins-shared-pvc
+      persistentVolumeClaim:
+        claimName: dms-cluster-jenkins-share
