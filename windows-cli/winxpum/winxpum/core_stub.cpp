@@ -234,10 +234,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     (*deviceJson)["device_stepping"] = "unknown";
     (*deviceJson)["driver_version"] = driver_version;
     (*deviceJson)["pci_bdf_address"] = getBdfAddress(zes_device);
-    (*deviceJson)["firmware_name"] = "GSC";
-    (*deviceJson)["firmware_version"] = igsc_instance.getDeviceGSCVersion((*deviceJson)["pci_bdf_address"]);
-    (*deviceJson)["fw_data_firmware_name"] = "GSC_DATA";
-    (*deviceJson)["fw_data_firmware_version"] = igsc_instance.getDeviceGSCDataVersion((*deviceJson)["pci_bdf_address"]);
+    (*deviceJson)["gfx_firmware_name"] = "GFX";
+    (*deviceJson)["gfx_firmware_version"] = igsc_instance.getDeviceGSCVersion((*deviceJson)["pci_bdf_address"]);
+    (*deviceJson)["gfx_data_firmware_name"] = "GFX_DATA";
+    (*deviceJson)["gfx_data_firmware_version"] = igsc_instance.getDeviceGSCDataVersion((*deviceJson)["pci_bdf_address"]);
     zes_pci_properties_t pci_props;
     pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
     res = zesDevicePciGetProperties(zes_device, &pci_props);
@@ -466,6 +466,7 @@ std::vector<int> CoreStub::handlePowerByLevel0(zes_device_handle_t device, bool 
             for (auto& power : power_handles) {
                 zes_power_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+                props.pNext = nullptr;
                 status = zesPowerGetProperties(power, &props);
                 if (status == ZE_RESULT_SUCCESS) {
                     zes_power_sustained_limit_t sustained;
@@ -559,6 +560,7 @@ std::vector<std::string> CoreStub::handleFreqByLevel0(zes_device_handle_t device
             for (auto& freq : freq_handles) {
                 zes_freq_properties_t prop;
                 prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+                prop.pNext = nullptr;
                 status = zesFrequencyGetProperties(freq, &prop);
                 if (status == ZE_RESULT_SUCCESS) {
                     if (prop.type != ZES_FREQ_DOMAIN_GPU) {
@@ -1063,19 +1065,19 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     std::string image_file = filePath;
     for (auto id : deviceList) {
         std::string bdf = getBdfAddress(zes_device_handles[id]);
-        if (type == XPUM_DEVICE_FIRMWARE_GSC && !igsc_instance.isFwImageAndDeviceCompatible(bdf, image_file)) {
+        if (type == XPUM_DEVICE_FIRMWARE_GFX && !igsc_instance.isFwImageAndDeviceCompatible(bdf, image_file)) {
             (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
             return json;        
         }
         std::string error_message;
-        if (type == XPUM_DEVICE_FIRMWARE_FW_DATA && !igsc_instance.isFwDataImageAndDeviceCompatible(bdf, image_file, error_message)) {
+        if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA && !igsc_instance.isFwDataImageAndDeviceCompatible(bdf, image_file, error_message)) {
             (*json)["error"] = error_message;
             return json;  
         }
 
         flash_results.push_back(std::async(std::launch::async, [bdf, image_file, type, this] {
             int res = 0;
-            if (type == XPUM_DEVICE_FIRMWARE_GSC)
+            if (type == XPUM_DEVICE_FIRMWARE_GFX)
                 res = igsc_instance.runFlashGSC(bdf, image_file);
             else
                 res = igsc_instance.runFlashGSCData(bdf, image_file);
