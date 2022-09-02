@@ -2,8 +2,7 @@ XPU Manager Documentation
 =========================
 
 .. toctree::
-    README
-    installation
-    CLI_user_guide
-    restful
+    SMI_README
+    smi_install_guide
+    smi_user_guide
     rst/index

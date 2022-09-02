@@ -143,6 +143,7 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
  */
 xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *deviceId);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Get all AMC firmware versions
  * 
@@ -157,7 +158,6 @@ xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *deviceId);
  */
 xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count, const char *username, const char *password);
 
-
 /**
  * @brief Get error message when fail to get amc firmware versions
  * 
@@ -169,9 +169,11 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char* buffer, int *count);
+/// @endcond
 
 /** @} */ // Closing for DEVICE_API
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup GROUP_MANAGEMENT_API Group management
  * These APIs are for group management
@@ -236,7 +238,9 @@ xpum_result_t xpumGroupGetInfo(xpum_group_id_t groupId, xpum_group_info_t *pGrou
 xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count);
 
 /** @} */ // Closing for GROUP_MANAGEMENT_API
+/// @endcond
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup HEALTH_API Device health
  * These APIs are for health
@@ -332,6 +336,7 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
                                    int *count);
 
 /** @} */ // Closing for HEALTH_API
+/// @endcond
 
 /**************************************************************************/
 /** @defgroup CONFIGURATION_API Device configurations
@@ -726,6 +731,7 @@ xpum_result_t xpumGetFirmwareFlashErrorMsg(char* buffer, int *count);
  */
 xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Run diagnostics on a group of devices
  * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResultByGroup
@@ -735,6 +741,7 @@ xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t le
  * @return xpum_result_t 
  */
 xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level);
+/// @endcond
 
 /**
  * @brief Get diagnostics result
@@ -747,6 +754,7 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
  */
 xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Get diagnostics result by group
  * 
@@ -763,6 +771,7 @@ xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task
 xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
                                               xpum_diag_task_info_t resultList[],
                                               int *count);
+/// @endcond
 
 /**
  * @brief Get diagnostics media codec result
@@ -779,6 +788,7 @@ xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t deviceId,
                                                 int *count);
 /** @} */ // Closing for DIAGNOSTICS_API
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup AGENT_SETTING_API Agent settings
  * These APIs are for agent setting
@@ -807,6 +817,7 @@ xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value);
 xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
 
 /** @} */ // Closing for AGENT_SETTING_API
+/// @endcond
 
 /**************************************************************************/
 /** @defgroup STATISTICS_API Device statistics
@@ -877,6 +888,7 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
                                            uint64_t *end,
                                            uint64_t sessionId);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Get statistics data by group
  * 
@@ -896,9 +908,11 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   uint64_t *begin,
                                   uint64_t *end,
                                   uint64_t sessionId);
+/// @endcond                                  
 
 /** @} */ // Closing for STATISTICS_API
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup DUMP_RAW_DATA_API Dump metrics raw data
  * These APIs are for collecting metrics raw data
@@ -950,6 +964,7 @@ xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_
 xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int *count);
 
 /** @} */ // Closing for DUMP_RAW_DATA_API
+/// @endcond
 
 /**************************************************************************/
 /** @defgroup TOPOLOGY_API Topologies
@@ -995,6 +1010,7 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
 
 /** @} */ // Closing for TOPOLOGY_API
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup POLICY_API Policy management
  * These APIs are for policy management
@@ -1043,6 +1059,7 @@ xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[
 xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int *count);
 
 /** @} */ // Closing for POLICY_API
+/// @endcond
 
 #if defined(__cplusplus)
 } // extern "C"
