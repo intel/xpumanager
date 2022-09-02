@@ -783,6 +783,14 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
         return XPUM_UNSUPPORTED_SESSIONID;
     }
 
+    char* env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        if (!Core::instance().getMonitorManager()->initOneTimeMetricMonitorTasks(MeasurementType::METRIC_MAX)) {
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+
     return Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 
@@ -807,6 +815,14 @@ xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
 
     if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
         return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
+    char* env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        if (!Core::instance().getMonitorManager()->initOneTimeMetricMonitorTasks(MeasurementType::METRIC_ENGINE_UTILIZATION)) {
+            return XPUM_GENERIC_ERROR;
+        }
     }
 
     return Core::instance().getDataLogic()->getEngineStatistics(deviceId, dataList, count, begin, end, sessionId);
@@ -859,6 +875,33 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
         return XPUM_UNSUPPORTED_SESSIONID;
     }
 
+    auto metric_types = Configuration::getEnabledMetrics();
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        *count = 0;
+        return XPUM_METRIC_NOT_ENABLED;
+    }
+    std::vector<xpum::DeviceCapability> capabilities;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
+    for (auto metric = metric_types.begin(); metric != metric_types.end();) {
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric)); })) {
+            metric = metric_types.erase(metric);
+        } else {
+            metric++;
+        }
+    }
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        *count = 0;
+        return XPUM_METRIC_NOT_SUPPORTED;
+    }
+
+    char* env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        if (!Core::instance().getMonitorManager()->initOneTimeMetricMonitorTasks(MeasurementType::METRIC_FABRIC_THROUGHPUT)) {
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+    
     return Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 

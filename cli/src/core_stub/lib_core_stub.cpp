@@ -315,6 +315,99 @@ std::unique_ptr<nlohmann::json> LibCoreStub::groupRemoveDevice(int groupId, int 
 }
 
 
+static std::string diagnosticResultEnumToString(xpum_diag_task_result_t result) {
+    std::string ret;
+    switch (result) {
+        case xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN:
+            ret = "Unknown";
+            break;
+        case xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS:
+            ret = "Pass";
+            break;
+        case xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL:
+            ret = "Fail";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+static std::string diagnosticTypeEnumToString(xpum_diag_task_type_t type, bool rawComponentTypeStr) {
+    std::string ret;
+    switch (type) {
+        case xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_ENV_VARIABLES" : "Software Env Variables");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_LIBRARY:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_LIBRARY" : "Software Library");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_PERMISSION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_PERMISSION" : "Software Permission");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_EXCLUSIVE" : "Software Exclusive");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_HARDWARE_SYSMAN:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_HARDWARE_SYSMAN" : "Hardware Sysman");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_INTEGRATION_PCIE:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_INTEGRATION_PCIE" : "Integration PCIe");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_MEDIA_CODEC" : "Media Codec");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTATION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_COMPUTATION" : "Performance Computation");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_POWER:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_POWER" : "Performance Power");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION" : "Performance Memory Allocation");
+            break;
+        case xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH" : "Performance Memory Bandwidth");
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+static std::string diagnosticsMediaCodecResolutionEnumToString(xpum_media_resolution_t resolution) {
+    std::string ret;
+    switch (resolution) {
+        case xpum_media_resolution_t::XPUM_MEDIA_RESOLUTION_1080P:
+            ret = "1080p";
+            break;
+        case xpum_media_resolution_t::XPUM_MEDIA_RESOLUTION_4K:
+            ret = "4K";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+static std::string diagnosticsMediaCodecFormatEnumToString(xpum_media_format_t format) {
+    std::string ret;
+    switch (format) {
+        case xpum_media_format_t::XPUM_MEDIA_FORMAT_H265:
+            ret = "H.265";
+            break;
+        case xpum_media_format_t::XPUM_MEDIA_FORMAT_H264:
+            ret = "H.264";
+            break;
+        case xpum_media_format_t::XPUM_MEDIA_FORMAT_AV1:
+            ret = "AV1";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
 std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnostics(const char *bdf, int level, bool rawComponentTypeStr) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_device_id_t deviceId;
@@ -409,200 +502,147 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(const char *bd
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, bool rawComponentTypeStr) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    DeviceId request;
-    request.set_id(deviceId);
-    DiagnosticsTaskInfo response;
-    grpc::Status status = stub->getDiagnosticsResult(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["device_id"] = response.deviceid();
-            (*json)["level"] = response.level();
-            (*json)["component_count"] = response.count();
-            (*json)["finished"] = response.finished();
-            (*json)["result"] = diagnosticResultEnumToString(response.result());
-            (*json)["message"] = response.message();
-            (*json)["start_time"] = isotimestamp(response.starttime());
-            if (response.finished()) {
-                (*json)["end_time"] = isotimestamp(response.endtime());
+    xpum_diag_task_info_t task_info;
+    xpum_result_t res = xpumGetDiagnosticsResult(deviceId, &task_info);
+    if (res == XPUM_OK) {
+        (*json)["device_id"] = task_info.deviceId;
+        (*json)["level"] = task_info.level;
+        (*json)["finished"] = task_info.finished;
+        (*json)["message"] = task_info.message;
+        (*json)["component_count"] = task_info.count;
+        (*json)["start_time"] = isotimestamp(task_info.startTime);
+        if (task_info.finished) {
+            (*json)["end_time"] = isotimestamp(task_info.endTime);
+        }
+        (*json)["result"] = diagnosticResultEnumToString(task_info.result);
+        if ((*json)["result"] != "Pass") {
+            (*json)["errno"] = XPUM_CLI_ERROR_DIAGNOSTIC_TASK_FAILED;
+        }
+        std::vector<nlohmann::json> componentJsonList;
+        for (int i = 0; i < task_info.count; ++i) {
+            // disable XPUM_DIAG_HARDWARE_SYSMAN
+            if (task_info.componentList[i].type == XPUM_DIAG_HARDWARE_SYSMAN) {
+                (*json)["component_count"] = task_info.count - 1;
+                continue;
             }
-            std::vector<nlohmann::json> componentJsonList;
-            for (int i = 0; i < response.componentinfo_size(); ++i) {
-                auto componentJson = nlohmann::json();
-                componentJson["component_type"] = diagnosticTypeEnumToString(response.componentinfo(i).type(), rawComponentTypeStr);
-                componentJson["finished"] = response.componentinfo(i).finished();
-                componentJson["message"] = response.componentinfo(i).message();
-                componentJson["result"] = diagnosticResultEnumToString(response.componentinfo(i).result());
-                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE && response.componentinfo(i).result() == DIAG_RESULT_FAIL) {
-                    auto process_list_json = getDeviceProcessState(response.deviceid());
-                    if (process_list_json->contains("device_process_list")) {
+            auto componentJson = nlohmann::json();
+            componentJson["component_type"] = diagnosticTypeEnumToString(task_info.componentList[i].type, rawComponentTypeStr);
+            componentJson["finished"] = task_info.componentList[i].finished;
+            componentJson["message"] = task_info.componentList[i].message;
+            componentJson["result"] = diagnosticResultEnumToString(task_info.componentList[i].result);
+            if (task_info.componentList[i].type == XPUM_DIAG_SOFTWARE_EXCLUSIVE 
+                    && task_info.componentList[i].result == XPUM_DIAG_RESULT_FAIL) {
+                uint32_t count = 0;
+                res = xpumGetDeviceProcessState(task_info.deviceId, nullptr, &count);
+                if (res == XPUM_OK && count > 0) {
+                    xpum_device_process_t dataArray[count];
+                    res = xpumGetDeviceProcessState(task_info.deviceId, dataArray, &count);
+                    if (res == XPUM_OK) {
                         std::vector<nlohmann::json> processList;
-                        for (auto process : (*process_list_json)["device_process_list"]) {
-                            if (process["process_name"] != "")
-                                processList.push_back(process);
+                        for (uint i{0}; i < count; ++i) {
+                            auto proc = nlohmann::json();
+                            proc["process_id"] = dataArray[i].processId;
+                            proc["process_name"] = dataArray[i].processName;
+                            if (proc["process_name"] != "")
+                                processList.push_back(proc);
                         }
                         componentJson["process_list"] = processList;
                     }
+                } else {
+                    switch (res) {
+                        case XPUM_RESULT_DEVICE_NOT_FOUND:
+                            (*json)["error"] = "device not found";
+                            (*json)["errno"] = errorNumTranslate(res);
+                            break;
+                        case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                            (*json)["error"] = "Level Zero Initialization Error";
+                            (*json)["errno"] = errorNumTranslate(res);
+                            break;
+                        default:
+                            (*json)["error"] = "Error";
+                            (*json)["errno"] = errorNumTranslate(res);
+                            break;
+                    }                    
                 }
-                if (response.componentinfo(i).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 
-                    && response.componentinfo(i).result() == DIAG_RESULT_PASS) {
-                    componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(response.deviceid(), rawComponentTypeStr))["media_codec_list"];
-                }                
-                componentJsonList.push_back(componentJson);
             }
-            (*json)["component_list"] = componentJsonList;
-        } else {
-            (*json)["error"] = response.errormsg();
+            if (task_info.componentList[i].type == XPUM_DIAG_MEDIA_CODEC 
+                && task_info.componentList[i].result == XPUM_DIAG_RESULT_PASS) {
+                componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(task_info.deviceId, rawComponentTypeStr))["media_codec_list"];
+            }
+            componentJsonList.push_back(componentJson);
         }
+        (*json)["component_list"] = componentJsonList;
     } else {
-        (*json)["error"] = status.error_message();
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            default:
+                (*json)["error"] = "Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+        }
     }
     return json;
 }
 
 std::shared_ptr<nlohmann::json> LibCoreStub::getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr) {
     auto json = std::shared_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    DeviceId request;
-    request.set_id(deviceId);
-    DiagnosticsMediaCodecInfoArray response;
-    grpc::Status status = stub->getDiagnosticsMediaCodecResult(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            std::vector<nlohmann::json> mediaPerfJsonList;
-            for (int i = 0; i < response.datalist_size(); ++i) {
-                auto perfJson = nlohmann::json();
-                std::string resolution = diagnosticsMediaCodecResolutionEnumToString(response.datalist(i).resolution());
-                std::string format = diagnosticsMediaCodecFormatEnumToString(response.datalist(i).format());
-                if (rawFpsStr) {
-                    perfJson[resolution + " " + format] = response.datalist(i).fps();
-                } else {
-                    perfJson["fps"] = " " + resolution + " " + format + " : " + response.datalist(i).fps();
-                }
-                
-                mediaPerfJsonList.push_back(perfJson); 
+ int count = 6; // Resolution: 1080p, 4K; Format: H264, H265, AV1
+    xpum_diag_media_codec_metrics_t resultList[6];
+    xpum_result_t res = xpumGetDiagnosticsMediaCodecResult(deviceId, resultList, &count);
+    if (res == XPUM_OK) {
+        std::vector<nlohmann::json> mediaPerfJsonList;
+        for (int i = 0; i < count; ++i) {
+            auto perfJson = nlohmann::json();
+            std::string resolution = diagnosticsMediaCodecResolutionEnumToString(resultList[i].resolution);
+            std::string format = diagnosticsMediaCodecFormatEnumToString(resultList[i].format);
+            if (rawFpsStr) {
+                perfJson[resolution + " " + format] = resultList[i].fps;
+            } else {
+                perfJson["fps"] = " " + resolution + " " + format + " : " + resultList[i].fps;
             }
-            (*json)["media_codec_list"] = mediaPerfJsonList;
-        } else {
-            (*json)["error"] = response.errormsg();
+
+            mediaPerfJsonList.push_back(perfJson); 
         }
+        (*json)["media_codec_list"] = mediaPerfJsonList;
     } else {
-        (*json)["error"] = status.error_message();
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND:
+                (*json)["error"] = "task not found";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            default:
+                (*json)["error"] = "Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+        }
     }
+
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    RunDiagnosticsByGroupRequest request;
-    request.set_groupid(groupId);
-    request.set_level(level);
-    DiagnosticsGroupTaskInfo response;
-    grpc::Status status = stub->runDiagnosticsByGroup(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            json = getDiagnosticsResultByGroup(groupId, rawComponentTypeStr);
-            if ((*json).contains("error")) {
-                return json;
-            }
-
-            auto startTime = std::chrono::duration_cast<std::chrono::seconds>(
-                                 std::chrono::system_clock::now().time_since_epoch())
-                                 .count();
-            while ((*json)["finished"] == false) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
-                json = getDiagnosticsResultByGroup(groupId, rawComponentTypeStr);
-                if ((*json).contains("error")) {
-                    return json;
-                }
-
-                auto endTime = std::chrono::duration_cast<std::chrono::seconds>(
-                                   std::chrono::system_clock::now().time_since_epoch())
-                                   .count();
-                if (endTime - startTime >= 30 * 60) {
-                    auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-                    (*errorJson)["error"] = "time out for unknown reasons";
-                    return errorJson;
-                }
-            }
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on group %d", level, groupId);
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on group %d", level, groupId);
-    }
-    XPUM_LOG_AUDIT("Succeed to run level-%d diagnostics on group %d", level, groupId);
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    GroupId request;
-    request.set_id(groupId);
-    DiagnosticsGroupTaskInfo response;
-    grpc::Status status = stub->getDiagnosticsResultByGroup(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            bool finished = true;
-            (*json)["group_id"] = response.groupid();
-            (*json)["device_count"] = response.count();
-            std::vector<nlohmann::json> deviceInfoJsonList;
-            for (int i = 0; i < response.taskinfo_size(); i++) {
-                auto deviceInfoJson = nlohmann::json();
-                deviceInfoJson["device_id"] = response.taskinfo(i).deviceid();
-                deviceInfoJson["level"] = response.taskinfo(i).level();
-                deviceInfoJson["component_count"] = response.taskinfo(i).count();
-                deviceInfoJson["finished"] = response.taskinfo(i).finished();
-                finished = finished & response.taskinfo(i).finished();
-                deviceInfoJson["result"] = diagnosticResultEnumToString(response.taskinfo(i).result());
-                deviceInfoJson["message"] = response.taskinfo(i).message();
-                deviceInfoJson["start_time"] = isotimestamp(response.taskinfo(i).starttime());
-                if (response.taskinfo(i).finished()) {
-                    deviceInfoJson["end_time"] = isotimestamp(response.taskinfo(i).endtime());
-                }
-                std::vector<nlohmann::json> componentJsonList;
-                for (int j = 0; j < response.taskinfo(i).componentinfo_size(); j++) {
-                    auto componentJson = nlohmann::json();
-                    componentJson["component_type"] = diagnosticTypeEnumToString(response.taskinfo(i).componentinfo(j).type(), rawComponentTypeStr);
-                    componentJson["finished"] = response.taskinfo(i).componentinfo(j).finished();
-                    componentJson["message"] = response.taskinfo(i).componentinfo(j).message();
-                    componentJson["result"] = diagnosticResultEnumToString(response.taskinfo(i).componentinfo(j).result());
-                    if (response.taskinfo(i).componentinfo(j).type() == DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_FAIL) {
-                        auto process_list_json = getDeviceProcessState(response.taskinfo(i).deviceid());
-                        if (process_list_json->contains("device_process_list")) {
-                            std::vector<nlohmann::json> processList;
-                            for (auto process : (*process_list_json)["device_process_list"]) {
-                                if (process["process_name"] != "")
-                                    processList.push_back(process);
-                            }
-                            componentJson["process_list"] = processList;
-                        }
-                    }
-                    if (response.taskinfo(i).componentinfo(j).type() == DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC 
-                        && response.taskinfo(i).componentinfo(j).result() == DIAG_RESULT_PASS) {
-                        componentJson["media_codec_list"] = (*getDiagnosticsMediaCodecResult(response.taskinfo(i).deviceid(), rawComponentTypeStr))["media_codec_list"];
-                    } 
-                    componentJsonList.push_back(componentJson);
-                }
-                deviceInfoJson["component_list"] = componentJsonList;
-                deviceInfoJsonList.push_back(deviceInfoJson);
-            }
-            (*json)["finished"] = finished;
-            (*json)["device_list"] = deviceInfoJsonList;
-        } else {
-            (*json)["error"] = response.errormsg();
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-    }
     return json;
 }
 

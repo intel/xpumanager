@@ -106,11 +106,6 @@ GPUDeviceStub& GPUDeviceStub::instance() {
 }
 
 PCIeManager GPUDeviceStub::pcie_manager;
-bool GPUDeviceStub::daemonless = false;
-
-void GPUDeviceStub::setDaemonless(bool daemonless) {
-    GPUDeviceStub::daemonless = daemonless;
-}
 
 void GPUDeviceStub::init() {
     initialized = true;
@@ -1766,8 +1761,11 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         hMetricStreamer = GPUDeviceStub::target_metric_streamers.at(device);
     } else {
         ze_context_handle_t hContext;
-        ze_context_desc_t context_desc;
-        context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+        ze_context_desc_t context_desc = {
+                ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                nullptr, 
+                0
+        };
         XPUM_ZE_HANDLE_LOCK(driver, res = zeContextCreate(driver, &context_desc, &hContext));
         if (res != ZE_RESULT_SUCCESS) {
             throw BaseException("toGetEuActiveStallIdleCore - zeContextCreate");

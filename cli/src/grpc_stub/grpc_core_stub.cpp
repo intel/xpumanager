@@ -317,6 +317,98 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::groupRemoveDevice(int groupId, int
     return json;
 }
 
+static std::string diagnosticResultEnumToString(DiagnosticsTaskResult result) {
+    std::string ret;
+    switch (result) {
+        case DIAG_RESULT_UNKNOWN:
+            ret = "Unknown";
+            break;
+        case DIAG_RESULT_PASS:
+            ret = "Pass";
+            break;
+        case DIAG_RESULT_FAIL:
+            ret = "Fail";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+static std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type, bool rawComponentTypeStr) {
+    std::string ret;
+    switch (type) {
+        case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_ENV_VARIABLES:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_ENV_VARIABLES" : "Software Env Variables");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_LIBRARY:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_LIBRARY" : "Software Library");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_PERMISSION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_PERMISSION" : "Software Permission");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_SOFTWARE_EXCLUSIVE:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_SOFTWARE_EXCLUSIVE" : "Software Exclusive");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_HARDWARE_SYSMAN:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_HARDWARE_SYSMAN" : "Hardware Sysman");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_INTEGRATION_PCIE:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_INTEGRATION_PCIE" : "Integration PCIe");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_MEDIA_CODEC:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_MEDIA_CODEC" : "Media Codec");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_COMPUTATION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_COMPUTATION" : "Performance Computation");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_POWER:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_POWER" : "Performance Power");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY_ALLOCATION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION" : "Performance Memory Allocation");
+            break;
+        case DiagnosticsComponentInfo_Type_DIAG_PERFORMANCE_MEMORY_BANDWIDTH:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH" : "Performance Memory Bandwidth");
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+static std::string diagnosticsMediaCodecResolutionEnumToString(DiagnosticsMediaCodecResolution resolution) {
+    std::string ret;
+    switch (resolution) {
+        case DIAG_MEDIA_1080p:
+            ret = "1080p";
+            break;
+        case DIAG_MEDIA_4K:
+            ret = "4K";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+static std::string diagnosticsMediaCodecFormatEnumToString(DiagnosticsMediaCodecFormat format) {
+    std::string ret;
+    switch (format) {
+        case DIAG_MEDIA_H265:
+            ret = "H.265";
+            break;
+        case DIAG_MEDIA_H264:
+            ret = "H.264";
+            break;
+        case DIAG_MEDIA_AV1:
+            ret = "AV1";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnostics(int deviceId, int level, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);

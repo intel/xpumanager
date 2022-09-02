@@ -51,10 +51,19 @@ MonitorTask::~MonitorTask() {
 void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
     long long now = Utility::getCurrentMillisecond();
     long delay = freq - now % freq;
+    int interval = freq;
+
+    char* env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        delay = 0;
+        interval = 0;
+    }
+
     std::weak_ptr<MonitorTask> this_weak_ptr = shared_from_this();
 
     std::lock_guard<std::mutex> lock(this->mutex);
-    p_scheduled_task = threadPool->scheduleAtFixedRate(delay, freq, [this_weak_ptr]() {
+    p_scheduled_task = threadPool->scheduleAtFixedRate(delay, interval, [this_weak_ptr]() {
         auto p_this = this_weak_ptr.lock();
         if (p_this == nullptr) {
             XPUM_LOG_WARN("this_weak_ptr is nullptr for monitor data");

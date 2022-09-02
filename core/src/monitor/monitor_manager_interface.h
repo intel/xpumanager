@@ -17,6 +17,7 @@ class MonitorManagerInterface : public InitCloseInterface {
    public:
     virtual ~MonitorManagerInterface(){};
     virtual void resetMetricTasksFrequency() = 0;
+    virtual bool initOneTimeMetricMonitorTasks(MeasurementType type) = 0;
 };
 
 } // end namespace xpum

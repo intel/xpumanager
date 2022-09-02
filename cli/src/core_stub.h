@@ -52,10 +52,6 @@ class CoreStub {
     virtual std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr)=0;
     virtual std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr)=0;
-    std::string diagnosticResultEnumToString(DiagnosticsTaskResult result);
-    std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type, bool rawComponentTypeStr);
-    std::string diagnosticsMediaCodecResolutionEnumToString(DiagnosticsMediaCodecResolution resolution);
-    std::string diagnosticsMediaCodecFormatEnumToString(DiagnosticsMediaCodecFormat format);
 
     virtual std::unique_ptr<nlohmann::json> getAllHealth()=0;
     virtual std::unique_ptr<nlohmann::json> getHealth(int deviceId, int componentType)=0;

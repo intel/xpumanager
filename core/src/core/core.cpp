@@ -29,7 +29,6 @@ Core::Core()
       p_policy_manager(nullptr),
       p_dump_raw_data_manager(nullptr),
       initialized(false) {
-    Logger::init();
     XPUM_LOG_TRACE("core()");
 }
 

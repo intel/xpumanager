@@ -51,8 +51,6 @@ class GPUDeviceStub {
    public:
     static GPUDeviceStub& instance();
 
-    static void setDaemonless(bool daemonless);
-
     static PCIeManager pcie_manager;
 
    public:
