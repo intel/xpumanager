@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
+#include <grpc++/channel.h>
 
 #include "core.grpc.pb.h"
 #include "xpum_structs.h"

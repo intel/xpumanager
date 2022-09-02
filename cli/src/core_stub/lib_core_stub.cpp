@@ -1821,63 +1821,80 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getAllDeviceUtilizationByProcess(
     return json;
 }
 std::string LibCoreStub::getTopoXMLBuffer() {
-    assert(this->stub != nullptr);
+    int size = 0;
     std::string result;
-    grpc::ClientContext context;
-    TopoXMLResponse response;
-    grpc::Status status = stub->getTopoXMLBuffer(&context, google::protobuf::Empty(), &response);
-
-    if (status.ok()) {
-        result = response.xmlstring();
+    xpum_result_t res = xpumExportTopology2XML(nullptr, &size);
+    if (res == XPUM_OK) {
+        std::shared_ptr<char> newBuffer(static_cast<char*>(malloc(size)), free);
+        res = xpumExportTopology2XML(newBuffer.get(), &size);
+        if (res == XPUM_OK) {
+            result = newBuffer.get();
+        }
     }
     return result;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getXelinkTopology() {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-
-    grpc::ClientContext context;
-    XpumXelinkTopoInfoArray response;
-    grpc::Status status = stub->getXelinkTopology(&context, google::protobuf::Empty(), &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            std::vector<nlohmann::json> topoJsonList;
-            for (int i{0}; i < response.topoinfo_size(); ++i) {
-                auto componentJson = nlohmann::json();
-
-                componentJson["local_device_id"] = response.topoinfo(i).localdevice().deviceid();
-                componentJson["local_on_subdevice"] = response.topoinfo(i).localdevice().onsubdevice();
-                componentJson["local_subdevice_id"] = response.topoinfo(i).localdevice().subdeviceid();
-                componentJson["local_numa_index"] = response.topoinfo(i).localdevice().numaindex();
-                componentJson["local_cpu_affinity"] = response.topoinfo(i).localdevice().cpuaffinity();
-
-                componentJson["remote_device_id"] = response.topoinfo(i).remotedevice().deviceid();
-                componentJson["remote_subdevice_id"] = response.topoinfo(i).remotedevice().subdeviceid();
-
-                componentJson["link_type"] = response.topoinfo(i).linktype();
-
-                int nCount = response.topoinfo(i).linkportlist_size();
-                if (nCount > 0) {
-                    std::vector<uint32_t> portList;
-
-                    for (int n{0}; n < nCount; n++) {
-                        uint32_t value = response.topoinfo(i).linkportlist(n);
-                        portList.push_back(value);
-                    }
-                    componentJson["port_list"] = portList;
+    xpum_xelink_topo_info* topoInfo;
+    int count{16};
+    xpum_xelink_topo_info xelink_topo[count];
+    topoInfo = xelink_topo;
+    xpum_result_t res = xpumGetXelinkTopology(xelink_topo, &count);
+    if (res == XPUM_BUFFER_TOO_SMALL) {
+        xpum_xelink_topo_info xelink_topo[count];
+        topoInfo = xelink_topo;
+        res = xpumGetXelinkTopology(xelink_topo, &count);
+    }
+    if (res == XPUM_OK) {
+        std::vector<nlohmann::json> topoJsonList;
+        for (int i{0}; i < count; ++i) {
+            auto componentJson = nlohmann::json();
+            componentJson["local_device_id"] = topoInfo[i].localDevice.deviceId;
+            componentJson["local_on_subdevice"] = topoInfo[i].localDevice.onSubdevice;
+            componentJson["local_subdevice_id"] = topoInfo[i].localDevice.subdeviceId;
+            componentJson["local_numa_index"] = topoInfo[i].localDevice.numaIdx;
+            componentJson["local_cpu_affinity"] = topoInfo[i].localDevice.cpuAffinity;
+            componentJson["remote_device_id"] = topoInfo[i].remoteDevice.deviceId;
+            componentJson["remote_subdevice_id"] = topoInfo[i].remoteDevice.subdeviceId;
+            std::string linkType;
+            if (topoInfo[i].linkType == XPUM_LINK_SELF) {
+                linkType = "S";
+            } else if (topoInfo[i].linkType == XPUM_LINK_MDF) {
+                linkType = "MDF";
+            } else if (topoInfo[i].linkType == XPUM_LINK_XE) {
+                linkType = "XL";
+                std::vector<uint32_t> portList;
+                for (int n = 0; n < XPUM_MAX_XELINK_PORT; n++) {
+                    uint32_t value = topoInfo[i].linkPorts[n];
+                    portList.push_back(value);
                 }
-
-                topoJsonList.push_back(componentJson);
+                componentJson["port_list"] = portList;
+            } else if (topoInfo[i].linkType == XPUM_LINK_SYS) {
+                linkType = "SYS";
+            } else if (topoInfo[i].linkType == XPUM_LINK_NODE) {
+                linkType = "NODE";
+            } else if (topoInfo[i].linkType == XPUM_LINK_XE_TRANSMIT) {
+                linkType = "XL*";
+            } else {
+                linkType = "Unknown";
             }
-
-            (*json)["topo_list"] = topoJsonList;
-
-        } else {
-            (*json)["error"] = response.errormsg();
+            componentJson["link_type"] = linkType;
+            topoJsonList.push_back(componentJson);
         }
-    } else {
-        (*json)["error"] = status.error_message();
+        (*json)["topo_list"] = topoJsonList;
+    }
+
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
     }
 
     return json;
