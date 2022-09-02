@@ -25,7 +25,9 @@ RUN zypper install -y -t pattern devel_basis && \
     python39-devel \
     python39-pip \
     rpm-build \
-    wget && \
+    wget \
+    doxygen \
+    lua-devel && \
     zypper clean -a
 
 COPY builder/build_grpc.sh /
@@ -72,4 +74,5 @@ RUN wget -qc --no-check-certificate $IGSC_URL -O - | tar -xz && \
     make install
 
 RUN ln -sf $(which python3.9) /usr/bin/python && \
-    ln -sf $(which python3.9) /usr/bin/python3
+    ln -sf $(which python3.9) /usr/bin/python3 && \
+    ln -sf /usr/lib64/liblua.so.5.3 /usr/lib64/liblua-5.3.so
