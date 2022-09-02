@@ -62,9 +62,9 @@ ComletTopdown::ComletTopdown() : ComletBase("topdown", "Expected feature.") {
 
 void ComletTopdown::setupOptions() {
     this->opts = std::unique_ptr<ComletTopdownOptions>(new ComletTopdownOptions());
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "Device ID to query.");
-    auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
-    auto samplingIntervalOpt = addOption("-s,--samplingInterval", this->opts->samplingInterval, "Set the time interval (in milliseconds) by which XPU Manager daemon monitors gpu component utilization statistics.");
+    addOption("-d,--device", this->opts->deviceId, "Device ID to query.");
+    addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
+    addOption("-s,--samplingInterval", this->opts->samplingInterval, "Set the time interval (in milliseconds) by which XPU Manager daemon monitors gpu component utilization statistics.");
 }
 
 std::unique_ptr<nlohmann::json> ComletTopdown::run() {
