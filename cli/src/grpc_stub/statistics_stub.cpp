@@ -467,6 +467,8 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getStatistics(const char *bdf, boo
     return std::unique_ptr<nlohmann::json>(new nlohmann::json());
 }
 std::shared_ptr<std::map<int, std::map<int, int>>> GrpcCoreStub::getEngineCount(const char *bdf) {
+    std::map<int, std::map<int, int>> m;
+    return std::make_shared<std::map<int, std::map<int, int>>>(m);
 }
 std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricCount(const char *bdf) {
     return std::unique_ptr<nlohmann::json>(new nlohmann::json());

@@ -20,7 +20,7 @@ using xpum::dump::dumpTypeOptions;
 namespace xpum::cli {
 
 struct ComletDumpOptions {
-    std::vector<int> deviceIds;
+    std::vector<std::string> deviceIds = {"-1"};
     int deviceTileId = -1;
     std::vector<int> metricsIdList;
     uint32_t timeInterval = 1;
@@ -40,8 +40,8 @@ class ComletDump : public ComletBase {
     std::shared_ptr<nlohmann::json> statsJson;
     std::shared_ptr<nlohmann::json> engineUtilJson;
     std::shared_ptr<nlohmann::json> fabricThroughputJson;
-    std::map<int, std::unique_ptr<nlohmann::json>> deviceJsons;
-    int curDeviceId;
+    std::map<std::string, std::unique_ptr<nlohmann::json>> deviceJsons;
+    std::string curDeviceId;
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
 
