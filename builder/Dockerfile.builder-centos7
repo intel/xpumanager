@@ -11,8 +11,7 @@ ARG ZLIB_VERSION=v1.2.12
 ARG GRPC_VERSION=v1.45.0
 ARG PROTOBUF_VERSION=v3.19.4
 
-RUN yum install -y https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm && \
-    yum install -y epel-release && \
+RUN yum install -y epel-release https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm https://repo.ius.io/ius-release-el7.rpm && \
     yum update -y && \
     yum install -y centos-release-scl \
         ccache \
@@ -21,7 +20,7 @@ RUN yum install -y https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-re
         git \
         glibc-static \
         libtool \
-        lua-devel \
+        lua53u-devel \
         make \
         openssl-devel \
         rpm-build \
