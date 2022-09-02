@@ -21,7 +21,7 @@ string(REGEX REPLACE "NAME=\"(.*)\"" "\\1" distro "${distro}")
 
 set(DOXYREST_FOLDER ${CMAKE_CURRENT_LIST_DIR}/doxyrest)
 
-if(${distro} MATCHES "CentOS")
+if((${distro} MATCHES "CentOS") OR (${distro} MATCHES "openSUSE"))
   set(DOXYREST_PATH ${DOXYREST_FOLDER}/bin/doxyrest-rh)
 else()
   set(DOXYREST_PATH ${DOXYREST_FOLDER}/bin/doxyrest)
