@@ -3,7 +3,8 @@
 
 ## Requirements
 oneAPI Level Zero
-openssl11-libs
+Intel(R) Graphics System Controller Firmware Update Library
+openssl11-libs (for CentOS 7)
 
 ## DEB install
 sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
