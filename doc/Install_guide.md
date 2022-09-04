@@ -24,7 +24,7 @@ By default, Intel XPU Manager is installed the folder, /opt/xpum. The command li
 sudo rpm -e xpumanager
 
 ## How to enable or disable some daemon monitor metrics
-By default, Intel XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrices or disable some metrices. 
+By default, Intel XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics. 
   
 1. edit file "/lib/systemd/system/xpum.service" or "/etc/systemd/system/xpum.service" in some system.
    add "-m metric-indexes" to ExecStart. 
@@ -65,7 +65,7 @@ Metric types:
 26. Display Errors Uncorrectable, per tile (Not supported so far)
 27. Memory Errors Correctable, per tile
 28. Memory Errors Uncorrectable, per tile
-29. GPU Requsted Frequency, per tile
+29. GPU Requested Frequency, per tile
 30. GPU Memory Temperature, per tile
 31. GPU Frequency Throttle Ratio, per tile (Not supported so far)
 32. GPU PCIe Read Throughput (kB/s), per GPU (Disabled by default)
