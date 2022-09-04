@@ -37,7 +37,6 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
   
 ## GPU telemetry exported from Intel XPU Manager to Grafana
 ![GPU telemetry exported from Intel XPU Manager to Grafana](doc/img/Grafana.PNG)
-for a Docker container image that can be used as a Prometheus exporter in a K8s environment.
   
 ## Intel XPU Manager Documentation
 * Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) for how to install/uninstall Intel XPU Manager.

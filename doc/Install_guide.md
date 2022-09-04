@@ -15,11 +15,11 @@ sudo dpkg -r xpumanager
 ## RPM install
 sudo rpm -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 
+## Start to use Intel XPU Manager
+By default, Intel XPU Manager is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
+
 ## RPM relocation install
 rpm -i --prefix=/opt/abc xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
-
-## Start to user Intel XPU Manager
-By default, Intel XPU Manager is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
 
 ## RPM uninstall
 sudo rpm -e xpumanager
