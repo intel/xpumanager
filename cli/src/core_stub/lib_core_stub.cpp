@@ -1195,85 +1195,333 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getPolicy(bool isDevcie, uint32_t i
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int tileId) {
-    assert(this->stub != nullptr);
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    ConfigDeviceDataRequest request;
-    request.set_deviceid(deviceId);
-    if (tileId == -1) {
-        request.set_istiledata(false);
-        request.set_tileid(0);
-    } else {
-        request.set_istiledata(true);
-        request.set_tileid(tileId);
+std::string eccStateToString(xpum_ecc_state_t state) {
+    if (state == XPUM_ECC_STATE_UNAVAILABLE) {
+        return "";
     }
-    ConfigDeviceData response;
-    grpc::Status status = stub->getDeviceConfig(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["device_id"] = deviceId;
-            (*json)["power_limit"] = response.powerlimit();
-            (*json)["power_vaild_range"] = response.powerscope();
-            //(*json)["power_average_window"] = response.interval();
-            //(*json)["power_average_window_vaild_range"] = response.intervalscope();
+    if (state == XPUM_ECC_STATE_ENABLED) {
+        return "enabled";
+    }
+    if (state == XPUM_ECC_STATE_DISABLED) {
+        return "disabled";
+    }
+    return "";
+}
 
-            std::vector<nlohmann::json> tileJsonList;
-            for (uint i{0}; i < response.tilecount(); ++i) {
-                auto tileJson = nlohmann::json();
-                tileJson["tile_id"] = response.tileconfigdata(i).tileid();
-                tileJson["min_frequency"] = response.tileconfigdata(i).minfreq();
-                tileJson["max_frequency"] = response.tileconfigdata(i).maxfreq();
-                tileJson["standby_mode"] = standbyModeEnumToString(response.tileconfigdata(i).standby());
-                tileJson["scheduler_mode"] = schedulerModeEnumToString(response.tileconfigdata(i).scheduler());
-                tileJson["gpu_frequency_valid_options"] = response.tileconfigdata(i).freqoption();
-                tileJson["standby_mode_valid_options"] = response.tileconfigdata(i).standbyoption();
-                if (int(response.tileconfigdata(i).mediaperformancefactor()) != -1) {
-                    tileJson["media_performance_factor"] = int(response.tileconfigdata(i).mediaperformancefactor());
-                }
-                if (int(response.tileconfigdata(i).computeperformancefactor()) != -1) {
-                    tileJson["compute_performance_factor"] = int(response.tileconfigdata(i).computeperformancefactor());
-                }
-                tileJson["compute_engine"] = "compute";
-                tileJson["media_engine"] = "media";
-                tileJson["port_up"] = response.tileconfigdata(i).portenabled();
-                tileJson["port_down"] = response.tileconfigdata(i).portdisabled();
-                tileJson["beaconing_on"] = response.tileconfigdata(i).portbeaconingon();
-                tileJson["beaconing_off"] = response.tileconfigdata(i).portbeaconingoff();
-                if (response.tileconfigdata(i).schedulertimeout() > 0) {
-                    tileJson["scheduler_watchdog_timeout"] = response.tileconfigdata(i).schedulertimeout();
-                }
-                if (response.tileconfigdata(i).schedulertimesliceinterval() > 0) {
-                    tileJson["scheduler_timeslice_interval"] = response.tileconfigdata(i).schedulertimesliceinterval();
-                    tileJson["scheduler_timeslice_yield_timeout"] = response.tileconfigdata(i).schedulertimesliceyieldtimeout();
-                }
-/*
-                if (response.tileconfigdata(i).memoryeccavailable() == true) {
-                    tileJson["memory_ecc_available"] = "true";
-                } else {
-                    tileJson["memory_ecc_available"] = "false";
-                }
-                
-                if (response.tileconfigdata(i).memoryeccconfigurable() == true) {
-                    tileJson["memory_ecc_configurable"] = "true";
-                } else {
-                    tileJson["memory_ecc_configurable"] = "false";
-                }
-                tileJson["memory_ecc_current_state"] = response.tileconfigdata(i).memoryeccstate();
-                tileJson["memory_ecc_pending_state"] = response.tileconfigdata(i).memoryeccpendingstate();
-                tileJson["memory_ecc_pending_action"] = response.tileconfigdata(i).memoryeccpendingaction();
-*/
-                (*json)["memory_ecc_current_state"] = response.tileconfigdata(i).memoryeccstate();
-                (*json)["memory_ecc_pending_state"] = response.tileconfigdata(i).memoryeccpendingstate();
-                tileJsonList.push_back(tileJson);
-            }
-            (*json)["tile_config_data"] = tileJsonList;
+std::string eccActionToString(xpum_ecc_action_t action) {
+    if (action == XPUM_ECC_ACTION_NONE) {
+        return "none";
+    }
+    if (action == XPUM_ECC_ACTION_WARM_CARD_RESET) {
+        return "warm card reset";
+    }
+    if (action == XPUM_ECC_ACTION_COLD_CARD_RESET) {
+        return "cold card reset";
+    }
+    if (action == XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT) {
+        return "cold system reboot";
+    }
+    return "none";
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int tileId) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res;
+    xpum_device_properties_t properties;
+    std::vector<uint32_t> tileList;
+    uint32_t subdevice_Id = tileId;
+    int tileCount = -1;
+    uint32_t tileTotalCount = 0;
+
+    if (tileId != -1) {
+        res = validateDeviceIdAndTileId(deviceId, subdevice_Id);
+    } else {
+        res = validateDeviceId(deviceId);
+    }
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "device Id or tile Id is invalid";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+
+    res = xpumGetDeviceProperties(deviceId, &properties);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    
+    for (int i = 0; i < properties.propertyLen; i++) {
+        auto& prop = properties.properties[i];
+        if (prop.name != XPUM_DEVICE_PROPERTY_NUMBER_OF_TILES) {
+            continue;
+        }
+        tileTotalCount = atoi(prop.value);
+        break;
+    }
+
+    if (tileId != -1) {
+        if (subdevice_Id >= tileTotalCount) {
+            tileCount = 0;
         } else {
-            (*json)["error"] = response.errormsg();
+            tileList.push_back(subdevice_Id);
+            tileCount = 1;
         }
     } else {
-        (*json)["error"] = status.error_message();
+        for (uint32_t i = 0; i < tileTotalCount; i++) {
+            tileList.push_back(i);
+            tileCount = tileTotalCount;
+        }
     }
+
+    xpum_power_limits_t powerLimits;
+    res = xpumGetDevicePowerLimits(deviceId, 0, &powerLimits);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+
+    int32_t power = powerLimits.sustained_limit.power / 1000;
+    bool available;
+    bool configurable;
+    xpum_ecc_state_t current, pending;
+    xpum_ecc_action_t action;
+
+    res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
+
+    xpum_frequency_range_t freqArray[32];
+    xpum_standby_data_t standbyArray[32];
+    xpum_scheduler_data_t schedulerArray[32];
+    xpum_power_prop_data_t powerRangeArray[32];
+    xpum_device_performancefactor_t performanceFactorArray[32];
+    xpum_fabric_port_config_t portConfig[32];
+    double availableClocksArray[255];
+
+    uint32_t freqCount = 32;
+    uint32_t standbyCount = 32;
+    uint32_t schedulerCount = 32;
+    uint32_t powerRangeCount = 32;
+    uint32_t performanceFactorCount = 32;
+    uint32_t portConfigCount = 32;
+    uint32_t clockCount = 255;
+
+    res = xpumGetDeviceFrequencyRanges(deviceId, freqArray, &freqCount);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    res = xpumGetDeviceStandbys(deviceId, standbyArray, &standbyCount);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    res = xpumGetDeviceSchedulers(deviceId, schedulerArray, &schedulerCount);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    res = xpumGetPerformanceFactor(deviceId, performanceFactorArray, &performanceFactorCount);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    res = xpumGetFabricPortConfig(deviceId, portConfig, &portConfigCount);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+
+    (*json)["device_id"] = deviceId;
+    (*json)["power_limit"] = power;
+
+    for (uint32_t i = 0; i < powerRangeCount; i++) {
+        if (powerRangeArray[i].on_subdevice == false) {
+            std::string scope = "1 to " + std::to_string(powerRangeArray[i].max_limit / 1000);
+            (*json)["power_vaild_range"] = scope;
+            break;
+        }
+    }
+
+    std::vector<nlohmann::json> tileJsonList;
+    for (int j{0}; j < tileCount; ++j) {
+        uint32_t tileId = tileList.at(j);
+        std::string clockString = "";
+
+        auto tileJson = nlohmann::json();
+        tileJson["tile_id"] = std::to_string(deviceId) + "/" + std::to_string(tileId);
+        for (uint32_t i = 0; i < freqCount; i++) {
+            if (freqArray[i].type == XPUM_GPU_FREQUENCY && freqArray[i].subdevice_Id == tileId) {
+                tileJson["min_frequency"] = int(freqArray[i].min);
+                tileJson["max_frequency"] = int(freqArray[i].max);
+                break;
+            }
+        }
+        for (uint32_t i = 0; i < standbyCount; i++) {
+            if (standbyArray[i].type == XPUM_GLOBAL && standbyArray[i].subdevice_Id == tileId) {
+                if (standbyArray[i].mode == XPUM_DEFAULT) {
+                    tileJson["standby_mode"] = standbyModeEnumToString(STANDBY_DEFAULT);
+                } else {
+                    tileJson["standby_mode"] = standbyModeEnumToString(STANDBY_NEVER);
+                }
+                break;
+            }
+        }
+        for (uint32_t i = 0; i < schedulerCount; i++) {
+            if (schedulerArray[i].subdevice_Id == tileId) {
+                if (schedulerArray[i].mode == XPUM_TIMEOUT) {
+                    tileJson["scheduler_mode"] = schedulerModeEnumToString(SCHEDULER_TIMEOUT);
+                    tileJson["scheduler_watchdog_timeout"] = schedulerArray[i].val1;
+                } else if (schedulerArray[i].mode == XPUM_TIMESLICE) {
+                    tileJson["scheduler_mode"] = schedulerModeEnumToString(SCHEDULER_TIMESLICE);
+                    tileJson["scheduler_timeslice_interval"] = schedulerArray[i].val1;
+                    tileJson["scheduler_timeslice_yield_timeout"] = schedulerArray[i].val2;
+                } else if (schedulerArray[i].mode == XPUM_EXCLUSIVE) {
+                    tileJson["scheduler_mode"] = schedulerModeEnumToString(SCHEDULER_EXCLUSIVE);
+                }
+                break;
+            }
+        }
+        xpumGetFreqAvailableClocks(deviceId, tileId, availableClocksArray, &clockCount);
+        for (uint32_t i = 0; i < clockCount; i++) {
+            clockString += std::to_string(std::lround(availableClocksArray[i]));
+            if (i < clockCount - 1) {
+                clockString += ", ";
+            }
+        }
+        tileJson["gpu_frequency_valid_options"] = clockString;
+        tileJson["standby_mode_valid_options"] = "default, never";
+        for (uint32_t i = 0; i < performanceFactorCount; i++) {
+            if (performanceFactorArray[i].subdevice_id == tileId) {
+                if (performanceFactorArray[i].engine == XPUM_COMPUTE) {
+                    tileJson["compute_performance_factor"] = int(performanceFactorArray[i].factor);
+                }
+                if (performanceFactorArray[i].engine == XPUM_MEDIA) {
+                    tileJson["media_performance_factor"] = int(performanceFactorArray[i].factor);
+                }
+            }
+        }
+        tileJson["compute_engine"] = "compute";
+        tileJson["media_engine"] = "media";
+
+        std::string enabled_str = "";
+        std::string disabled_str = "";
+        std::string beaconing_on_str = "";
+        std::string beaconing_off_str = "";
+        for (uint32_t i = 0; i < portConfigCount; i++) {
+            if (portConfig[i].subdeviceId == tileId) {
+                std::string id_str = std::to_string(portConfig[i].portNumber);
+                if (portConfig[i].enabled == true) {
+                    if (enabled_str.empty()) {
+                        enabled_str = id_str;
+                    } else {
+                        enabled_str += ", " + id_str;
+                    }
+                } else {
+                    if (disabled_str.empty()) {
+                        disabled_str = id_str;
+                    } else {
+                        disabled_str += ", " + id_str;
+                    }
+                }
+                if (portConfig[i].beaconing == true) {
+                    if (beaconing_on_str.empty()) {
+                        beaconing_on_str = id_str;
+                    } else {
+                        beaconing_on_str += ", " + id_str;
+                    }
+                } else {
+                    if (beaconing_off_str.empty()) {
+                        beaconing_off_str = id_str;
+                    } else {
+                        beaconing_off_str += ", " + id_str;
+                    }
+                }
+            }
+        }
+        tileJson["port_up"] = enabled_str;
+        tileJson["port_down"] = disabled_str;
+        tileJson["beaconing_on"] = beaconing_on_str;
+        tileJson["beaconing_off"] = beaconing_off_str;
+        (*json)["memory_ecc_current_state"] = eccStateToString(current);
+        (*json)["memory_ecc_pending_state"] = eccStateToString(pending);
+        tileJsonList.push_back(tileJson);
+    }
+    (*json)["tile_config_data"] = tileJsonList;
     return json;
 }
 
