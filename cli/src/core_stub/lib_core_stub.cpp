@@ -1526,151 +1526,256 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int t
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    ConfigDeviceSchdeulerModeRequest request;
-    request.set_deviceid(deviceId);
-    if (tileId == -1) {
-        request.set_istiledata(false);
-        request.set_tileid(0);
-    } else {
-        request.set_istiledata(true);
-        request.set_tileid(tileId);
-    }
-    request.set_scheduler(mode);
-    request.set_val1(val1);
-    request.set_val2(val2);
+    xpum_result_t res = XPUM_GENERIC_ERROR;
 
-    ConfigDeviceResultData response;
-    grpc::Status status = stub->setDeviceSchedulerMode(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set scheduler mode %d,%d,%d", mode, val1, val2);
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode, response.errormsg().c_str());
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode, status.error_message().c_str());
+    if (tileId == -1) {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = XPUM_CLI_ERROR_TILE_NOT_FOUND;
+        goto LOG_ERR;
     }
+
+    if (mode == SCHEDULER_TIMEOUT) {
+        xpum_scheduler_timeout_t sch_timeout;
+        sch_timeout.subdevice_Id = tileId;
+        sch_timeout.watchdog_timeout = val1;
+        if (val1 < 5000 || val1 > 100000000) {
+            (*json)["error"] = "Invalid scheduler timeout value";
+            (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
+            goto LOG_ERR;
+        }
+        res = xpumSetDeviceSchedulerTimeoutMode(deviceId, sch_timeout);
+    } else if (mode == SCHEDULER_TIMESLICE) {
+        xpum_scheduler_timeslice_t sch_timeslice;
+        sch_timeslice.subdevice_Id = tileId;
+        sch_timeslice.interval = val1;
+        sch_timeslice.yield_timeout = val2;
+        if (val1 < 5000 || val1 > 100000000 || val2 < 5000 || val2 > 100000000) {
+            (*json)["error"] = "Invalid scheduler timeslice value";
+            (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
+            goto LOG_ERR;
+        }
+        res = xpumSetDeviceSchedulerTimesliceMode(deviceId, sch_timeslice);
+    } else if (mode == SCHEDULER_EXCLUSIVE) {
+        xpum_scheduler_exclusive_t sch_exclusive;
+        sch_exclusive.subdevice_Id = tileId;
+        res = xpumSetDeviceSchedulerExclusiveMode(deviceId, sch_exclusive);
+    } else {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
+    }
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device Id or tile Id is invalid";
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        goto LOG_ERR;
+    } else {
+        (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to set scheduler mode %d,%d,%d", mode, val1, val2);
+        return json;
+    }
+LOG_ERR:
+    XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode,
+                   (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
-std::unique_ptr<nlohmann::json> LibCoreStub::setDevicePowerlimit(int deviceId, int tileId, int power, int interval) {
-    assert(this->stub != nullptr);
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    ConfigDevicePowerLimitRequest request;
-    request.set_deviceid(deviceId);
-    request.set_tileid(tileId);
-    request.set_powerlimit(power * 1000);
-    request.set_intervalwindow(interval);
 
-    ConfigDeviceResultData response;
-    grpc::Status status = stub->setDevicePowerLimit(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set power limit %d,%d", power, interval);
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set power limit %s", response.errormsg().c_str());
+std::unique_ptr<nlohmann::json> LibCoreStub::setDevicePowerlimit(int deviceId, int tileId, int power, int interval) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res;
+    xpum_power_sustained_limit_t sustained_limit;
+    xpum_power_prop_data_t powerRangeArray[32];
+    uint32_t powerRangeCount = 32;
+    uint32_t pwr_mW = power * 1000;
+
+    res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                (*json)["error"] = "device Id or tile Id is invalid";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
         }
-    } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set power limit %s", status.error_message().c_str());
+        (*json)["errno"] = errorNumTranslate(res);
+        goto LOG_ERR;
     }
+
+    for (uint32_t i = 0; i < powerRangeCount; i++) {
+        if (powerRangeArray[i].subdevice_Id == (uint32_t)tileId || tileId == -1) {
+            if (pwr_mW < 1 || (uint32_t(powerRangeArray[i].default_limit) > 0  && pwr_mW > uint32_t(powerRangeArray[i].default_limit))) {
+                (*json)["error"] = "Invalid power limit value";
+                (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
+                goto LOG_ERR;
+            }
+        }
+    }
+    sustained_limit.enabled = true;
+    sustained_limit.power = pwr_mW;
+    sustained_limit.interval = interval;
+    
+    res = xpumSetDevicePowerSustainedLimits(deviceId, tileId, sustained_limit);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                (*json)["error"] = "device Id or tile Id is invalid";
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    } else {
+        (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to set power limit %d,%d", power, interval);
+        return json;
+    }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Fail to set power limit %s", (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceStandby(int deviceId, int tileId, XpumStandbyMode mode) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    ConfigDeviceStandbyRequest request;
-    request.set_deviceid(deviceId);
+    xpum_result_t res;
     if (tileId == -1) {
-        request.set_istiledata(false);
-        request.set_tileid(0);
-    } else {
-        request.set_istiledata(true);
-        request.set_tileid(tileId);
+        (*json)["error"] = "Error";
+        (*json)["errno"] = XPUM_CLI_ERROR_TILE_NOT_FOUND;
+        goto LOG_ERR;
     }
-    request.set_standby(mode);
+    xpum_standby_data_t standby;
+    standby.on_subdevice = true;
+    standby.subdevice_Id = tileId;
+    standby.type = XPUM_GLOBAL;
 
-    ConfigDeviceResultData response;
-    grpc::Status status = stub->setDeviceStandbyMode(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set standby mode %d", mode);
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set standby mode %s", response.errormsg().c_str());
-        }
+    if (mode == STANDBY_DEFAULT) {
+        standby.mode = XPUM_DEFAULT;
+    } else if (mode == STANDBY_NEVER) {
+        standby.mode = XPUM_NEVER;
     } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set standby mode %s", status.error_message().c_str());
+        (*json)["error"] = "Error";
+        (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
+        goto LOG_ERR;
     }
+    res = xpumSetDeviceStandby(deviceId, standby);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                (*json)["error"] = "device Id or tile Id is invalid";
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    } else {
+        (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to set standby mode %d", mode);
+        return json;
+    }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Fail to set standby mode %s", (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
-std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq) {
-    assert(this->stub != nullptr);
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    ConfigDeviceFrequencyRangeRequest request;
-    request.set_deviceid(deviceId);
-    if (tileId == -1) {
-        request.set_istiledata(false);
-        request.set_tileid(0);
-    } else {
-        request.set_istiledata(true);
-        request.set_tileid(tileId);
-    }
-    request.set_minfreq(minFreq);
-    request.set_maxfreq(maxFreq);
 
-    ConfigDeviceResultData response;
-    grpc::Status status = stub->setDeviceFrequencyRange(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set frequency range %d,%d", minFreq, maxFreq);
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set frequency range %s", response.errormsg().c_str());
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set frequency range %s", status.error_message().c_str());
+std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res;
+    if (tileId == -1) {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = XPUM_CLI_ERROR_TILE_NOT_FOUND;
+        goto LOG_ERR;
     }
+ 
+    xpum_frequency_range_t freq_range;
+    freq_range.subdevice_Id = tileId;
+    freq_range.type = XPUM_GPU_FREQUENCY;
+    freq_range.min = minFreq;
+    freq_range.max = maxFreq;
+
+    res = xpumSetDeviceFrequencyRange(deviceId, freq_range);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                (*json)["error"] = "device Id or tile Id is invalid";
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    } else {
+        (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to set frequency range %d,%d", minFreq, maxFreq);
+        return json;
+    }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Fail to set frequency range %s", (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
+}
+
+xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
+    return XPUM_GENERIC_ERROR;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::resetDevice(int deviceId, bool force) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    ResetDeviceRequest request;
-    ResetDeviceResponse response;
-
-    request.set_deviceid(deviceId);
-    request.set_force(force);
-    grpc::Status status = stub->resetDevice(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to reset device with force == %d", force);
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to reset device with force == %d, errorMessage: %s", force, response.errormsg().c_str());
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to reset device with force == %d, %s", force, status.error_message().c_str());
+    xpum_result_t res;
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        (*json)["error"] = "device Id or tile Id is invalid";
+        (*json)["errno"] = errorNumTranslate(res);
+        goto LOG_ERR;
     }
+
+    res = xpumResetDevice(deviceId, force);
+    if (res != XPUM_OK) {
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
+            (*json)["error"] = "device Id or tile Id is invalid";
+        } else if (res == XPUM_UPDATE_FIRMWARE_TASK_RUNNING){
+            (*json)["error"] = "device is updating firmware";
+        } else {
+            (*json)["error"] = "Error";
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    } else {
+        (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to reset device with force == %d", force);
+        return json;
+    }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Fail to reset device with force == %d, %s", force, (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
 
@@ -1702,180 +1807,232 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getPerformanceFactor(int deviceId, 
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::setPerformanceFactor(int deviceId, int tileId, xpum_engine_type_flags_t engine, double factor) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    PerformanceFactor request;
-    request.set_deviceid(deviceId);
+    xpum_result_t res;
     if (tileId == -1) {
-        request.set_istiledata(false);
-        request.set_tileid(0);
-    } else {
-        request.set_istiledata(true);
-        request.set_tileid(tileId);
+        (*json)["error"] = "Error";
+        (*json)["errno"] = XPUM_CLI_ERROR_TILE_NOT_FOUND;
+        goto LOG_ERR;
     }
-    request.set_engineset(engine);
-    request.set_factor(factor);
 
-    DevicePerformanceFactorSettingResponse response;
-    grpc::Status status = stub->setPerformanceFactor(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set performance factor %d,%f", engine, factor);
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set performance factor %s", response.errormsg().c_str());
+    xpum_device_performancefactor_t pf;
+    pf.on_subdevice = true;
+    pf.subdevice_id = tileId;
+    pf.engine = engine;
+    pf.factor = factor;
+
+    res = xpumSetPerformanceFactor(deviceId, pf);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                (*json)["error"] = "device Id or tile Id is invalid";
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
         }
+        (*json)["errno"] = errorNumTranslate(res);
     } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set performance factor %s", status.error_message().c_str());
+        (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to set performance factor %d,%f", engine, factor);
+        return json;
     }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Fail to set performance factor %s", (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::setFabricPortEnabled(int deviceId, int tileId, uint32_t port, uint32_t enabled) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    ConfigDeviceFabricPortEnabledRequest request;
-    request.set_deviceid(deviceId);
+    xpum_result_t res;
     if (tileId == -1) {
-        request.set_istiledata(false);
-        request.set_tileid(0);
-    } else {
-        request.set_istiledata(true);
-        request.set_tileid(tileId);
+        (*json)["error"] = "Error";
+        (*json)["errno"] = XPUM_CLI_ERROR_TILE_NOT_FOUND;
+        goto LOG_ERR;
     }
-    request.set_portnumber(port);
-    request.set_enabled(enabled);
+    xpum_fabric_port_config_t portConfig;
+    portConfig.onSubdevice = true;
+    portConfig.subdeviceId = tileId;
+    portConfig.portNumber = uint8_t(port);
+    portConfig.setting_enabled = true;
+    portConfig.setting_beaconing = false;
+    portConfig.enabled = enabled;
 
-    ConfigDeviceResultData response;
-    grpc::Status status = stub->setDeviceFabricPortEnabled(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set fabric port Enabled %d,%d", port, enabled);
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set fabric port Enabled %s", response.errormsg().c_str());
+    res = xpumSetFabricPortConfig(deviceId, portConfig);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                (*json)["error"] = "device Id or tile Id is invalid";
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
         }
+        (*json)["errno"] = errorNumTranslate(res);
     } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set performance factor Enabled %s", status.error_message().c_str());
+        (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to set fabric port Enabled %d,%d", port, enabled);
+        return json;
     }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Fail to set fabric port Enabled %s", (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::setFabricPortBeaconing(int deviceId, int tileId, uint32_t port, uint32_t beaconing) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    ConfigDeviceFabricPortBeconingRequest request;
-    request.set_deviceid(deviceId);
+    xpum_result_t res;
     if (tileId == -1) {
-        request.set_istiledata(false);
-        request.set_tileid(0);
-    } else {
-        request.set_istiledata(true);
-        request.set_tileid(tileId);
+        (*json)["error"] = "Error";
+        (*json)["errno"] = XPUM_CLI_ERROR_TILE_NOT_FOUND;
+        goto LOG_ERR;
     }
-    request.set_portnumber(port);
-    request.set_beaconing(beaconing);
 
-    ConfigDeviceResultData response;
-    grpc::Status status = stub->setDeviceFabricPortBeaconing(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set fabric port Beaconing %d,%d", port, beaconing);
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s", response.errormsg().c_str());
+    xpum_fabric_port_config_t portConfig;
+    portConfig.onSubdevice = true;
+    portConfig.subdeviceId = tileId;
+    portConfig.portNumber = uint8_t(port);
+    portConfig.setting_enabled = false;
+    portConfig.setting_beaconing = true;
+    portConfig.beaconing = beaconing;
+
+    res = xpumSetFabricPortConfig(deviceId, portConfig);
+    if (res != XPUM_OK) { 
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+            case XPUM_RESULT_TILE_NOT_FOUND:
+                (*json)["error"] = "device Id or tile Id is invalid";
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
         }
+        (*json)["errno"] = errorNumTranslate(res);
     } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s", status.error_message().c_str());
+        (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to set fabric port Beaconing %d,%d", port, beaconing);
+        return json;
     }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s", (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::setMemoryEccState(int deviceId, bool enabled) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    ConfigDeviceMemoryEccStateRequest request;
-    request.set_deviceid(deviceId);
-    request.set_enabled(enabled);
-    ConfigDeviceMemoryEccStateResultData response;
-    grpc::Status status = stub->setDeviceMemoryEccState(&context, request, &response);
-    if (response.available() == true) {
+    xpum_result_t res;
+    bool available;
+    bool configurable;
+    xpum_ecc_state_t current, pending;
+    xpum_ecc_action_t action;
+    xpum_ecc_state_t newState;
+    
+    if (enabled == true) {
+        newState = XPUM_ECC_STATE_ENABLED;
+    } else {
+        newState = XPUM_ECC_STATE_DISABLED;
+    }
+
+    res = xpumSetEccState(deviceId, newState, &available, &configurable, &current, &pending, &action);
+    if (available == true) {
         (*json)["memory_ecc_available"] = "true";
     } else {
         (*json)["memory_ecc_available"] = "false";
     }
-    if (response.configurable() == true) {
+    if (configurable == true) {
         (*json)["memory_ecc_configurable"] = "true";
     } else {
         (*json)["memory_ecc_configurable"] = "false";
     }
-    (*json)["memory_ecc_current_state"] = response.currentstate();
-    (*json)["memory_ecc_pending_state"] = response.pendingstate();
-    (*json)["memory_ecc_pending_action"] = response.pendingaction();
+    (*json)["memory_ecc_current_state"] = eccStateToString(current);
+    (*json)["memory_ecc_pending_state"] = eccStateToString(pending);
+    (*json)["memory_ecc_pending_action"] = eccActionToString(action);
 
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-            XPUM_LOG_AUDIT("Succeed to set memory ECC state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
-                           (*json)["memory_ecc_available"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_configurable"].get_ptr<nlohmann::json::string_t*>()->c_str(),
-                           (*json)["memory_ecc_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_pending_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
-                           (*json)["memory_ecc_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
+    if (res != XPUM_OK) {
+        if (res == XPUM_RESULT_DEVICE_NOT_FOUND || res == XPUM_RESULT_TILE_NOT_FOUND) {
+            (*json)["error"] = "device Id or tile Id is invalid";
+        } else if (res == XPUM_RESULT_MEMORY_ECC_LIB_NOT_SUPPORT){
+            (*json)["error"] = "Failed to " + (enabled ? std::string("enable") : std::string("disable")) +" ECC memory on GPU " + std::to_string(deviceId)+ ". This feature requires the igsc-0.8.3 library or newer. Please check the installation instructions on how to install or update to the latest igsc version.";
         } else {
-            if (response.errormsg().compare("Error")== 0) {
-                (*json)["error"] = response.errormsg() +
-                " Failed to set memory Ecc state: available: " + std::string((*json)["memory_ecc_available"]) +
+            (*json)["error"] = "Error Failed to set memory Ecc state: available: " + std::string((*json)["memory_ecc_available"]) +
                 ", configurable: " + std::string((*json)["memory_ecc_configurable"]) +
                 ", current: " + std::string((*json)["memory_ecc_current_state"]) +
                 ", pending: " + std::string((*json)["memory_ecc_pending_state"]) +
                 ", action: " + std::string((*json)["memory_ecc_pending_action"]);
-            } else {
-                (*json)["error"] = response.errormsg();
-            }
-            XPUM_LOG_AUDIT("Failed to set memory ECC state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
-                           (*json)["memory_ecc_available"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_configurable"].get_ptr<nlohmann::json::string_t*>()->c_str(),
-                           (*json)["memory_ecc_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_pending_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
-                           (*json)["memory_ecc_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
         }
+        (*json)["errno"] = errorNumTranslate(res);
+        goto LOG_ERR;
     } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Fail to set memory ECC state: %s", status.error_message().c_str());
+       (*json)["status"] = "OK";
+        XPUM_LOG_AUDIT("Succeed to set memory ECC state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
+                        (*json)["memory_ecc_available"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_configurable"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                        (*json)["memory_ecc_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_pending_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                        (*json)["memory_ecc_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
+        return json;
     }
+
+LOG_ERR:
+    XPUM_LOG_AUDIT("Failed to set memory ECC state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
+                    (*json)["memory_ecc_available"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_configurable"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                    (*json)["memory_ecc_current_state"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_pending_state"].get_ptr<nlohmann::json::string_t*>()->c_str(),
+                    (*json)["memory_ecc_pending_action"].get_ptr<nlohmann::json::string_t*>()->c_str());
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProcessState(int deviceId) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    DeviceId request;
-    DeviceProcessStateResponse response;
+    xpum_result_t res;
+    uint32_t count;
 
-    request.set_id(deviceId);
-    grpc::Status status = stub->getDeviceProcessState(&context, request, &response);
-    if (status.ok()) {
-        std::vector<nlohmann::json> deviceProcessList;
-        for (uint i{0}; i < response.count(); ++i) {
-            auto proc = nlohmann::json();
-            proc["process_id"] = response.processlist(i).processid();
-            //proc["mem_size"] = response.processlist(i).memsize();
-            //proc["share_mem_size"] = response.processlist(i).sharedsize();
-            //proc["engine"] = response.processlist(i).engine();
-            proc["process_name"] = response.processlist(i).processname();
-            deviceProcessList.push_back(proc);
+    res = xpumGetDeviceProcessState(deviceId, nullptr, &count);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
         }
-        (*json)["device_process_list"] = deviceProcessList;
-    } else {
-        (*json)["error"] = status.error_message();
+        (*json)["errno"] = errorNumTranslate(res);
+    }
+    if (count > 0) {
+        xpum_device_process_t dataArray[count];
+        res = xpumGetDeviceProcessState(deviceId, dataArray, &count);
+        if (res != XPUM_OK) {
+            switch (res) {
+                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                    (*json)["error"] = "Level Zero Initialization Error";
+                    break;
+                default:
+                    (*json)["error"] = "Error";
+                    break;
+            }
+            (*json)["errno"] = errorNumTranslate(res);
+        } else {
+            std::vector<nlohmann::json> deviceProcessList;
+            for (uint32_t i = 0; i < count; i++) {
+                auto proc = nlohmann::json();
+                proc["process_id"] = dataArray[i].processId;
+                proc["process_name"] = dataArray[i].processName;
+                deviceProcessList.push_back(proc);
+            }
+            (*json)["device_process_list"] = deviceProcessList;
+        }
     }
     return json;
 }
