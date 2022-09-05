@@ -58,23 +58,15 @@ static CharTableConfig ComletConfigDiagnosticDevice(R"({
 
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
-#ifndef DAEMONLESS
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID");
-    addOption("-g,--group", this->opts->groupId, "The group ID");
-#else
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
+#ifndef DAEMONLESS
+    addOption("-g,--group", this->opts->groupId, "The group ID");
 #endif
-
     deviceIdOpt->check([this](const std::string &str) {
 #ifndef DAEMONLESS
     if (isGroupOperation())
         return std::string();
-    std::string errStr = "Device id should be integer larger than or equal to 0";
-    if (!isValidDeviceId(str)) {
-        return errStr;
-    }
-    return std::string();
-#else
+#endif
     std::string errStr = "Device id should be a non-negative integer or a BDF string";
     if (isValidDeviceId(str)) {
         return std::string();        
@@ -82,7 +74,6 @@ void ComletDiagnostic::setupOptions() {
         return std::string();
     }
     return errStr;
-#endif
     });
     addOption("-l,--level", this->opts->level,
               "The diagnostic levels to run. The valid options include\n\
@@ -107,13 +98,17 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
     if (this->opts->level >= 1 && this->opts->level <= 3) {
         if (this->opts->deviceId != "-1") {
+            int targetId = -1;
             if (isNumber(this->opts->deviceId)) {
-                json = this->coreStub->runDiagnostics(std::stoi(this->opts->deviceId), this->opts->level, this->opts->rawComponentTypeStr);
-                return json;
+                targetId = std::stoi(this->opts->deviceId);
             } else {
-                json = this->coreStub->runDiagnostics(this->opts->deviceId.c_str(), this->opts->level, this->opts->rawComponentTypeStr);
-                return json;
+                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+                if (convertResult->contains("error")) {
+                    return convertResult;
+                }
             }
+            json = this->coreStub->runDiagnostics(targetId, this->opts->level, this->opts->rawComponentTypeStr);
+            return json;
         } 
 #ifndef DAEMONLESS
         else if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {

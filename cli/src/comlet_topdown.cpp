@@ -15,7 +15,7 @@
 #include "cli_table.h"
 #include "core_stub.h"
 #include "utility.h"
-// #include "exit_code.h"
+#include "exit_code.h"
 
 using namespace std;
 
@@ -62,7 +62,16 @@ ComletTopdown::ComletTopdown() : ComletBase("topdown", "Expected feature.") {
 
 void ComletTopdown::setupOptions() {
     this->opts = std::unique_ptr<ComletTopdownOptions>(new ComletTopdownOptions());
-    addOption("-d,--device", this->opts->deviceId, "Device ID to query.");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
+    deviceIdOpt->check([](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+    });
     addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
     addOption("-s,--samplingInterval", this->opts->samplingInterval, "Set the time interval (in milliseconds) by which XPU Manager daemon monitors gpu component utilization statistics.");
 }
@@ -71,7 +80,16 @@ std::unique_ptr<nlohmann::json> ComletTopdown::run() {
     auto result = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
     if (isDeviceOperation()) {
-        auto json = this->coreStub->getDeviceComponentOccupancyRatio(this->opts->deviceId, this->opts->deviceTileId, this->opts->samplingInterval);
+        int targetId = -1;
+        if (isNumber(this->opts->deviceId)) {
+            targetId = std::stoi(this->opts->deviceId);
+        } else {
+            auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+            if (convertResult->contains("error")) {
+                return convertResult;
+            }
+        }
+        auto json = this->coreStub->getDeviceComponentOccupancyRatio(targetId, this->opts->deviceTileId, this->opts->samplingInterval);
         return json;
     } else {
         (*result)["error"] = "Wrong argument or unknow operation, run with --help for more information.";

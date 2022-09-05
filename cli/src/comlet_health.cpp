@@ -10,6 +10,8 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -131,7 +133,16 @@ static CharTableConfig ComletConfigHealthFabricPort(R"({
 void ComletHealth::setupOptions() {
     this->opts = std::unique_ptr<ComletHealthOptions>(new ComletHealthOptions());
     addFlag("-l,--list", this->opts->listAll, "Display health info for all devices");
-    addOption("-d,--device", this->opts->deviceId, "The device ID");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
+    deviceIdOpt->check([](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+    });
     addOption("-g,--group", this->opts->groupId, "The group ID");
     addOption("-c,--component", this->opts->componentType,
               "Component types\n\
@@ -150,11 +161,6 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         return json;
     }
 
-    if (this->opts->deviceId != INT_MIN && this->opts->deviceId < 0) {
-        (*json)["error"] = "device not found";
-        return json;
-    }
-
     if (this->opts->groupId == 0) {
         (*json)["error"] = "group not found";
         return json;
@@ -170,27 +176,37 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         return json;
     }
 
-    if (this->opts->deviceId >= 0) {
+    int targetId = -1;
+    if (isNumber(this->opts->deviceId)) {
+        targetId = std::stoi(this->opts->deviceId);
+    } else {
+        auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+        if (convertResult->contains("error")) {
+            return convertResult;
+        }
+    }
+
+    if (targetId >= 0) {
         if (this->opts->threshold >= -1) {
             if (this->opts->componentType == 1) {
-                json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_CORE_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfig(targetId, HEALTH_CORE_THERMAL_LIMIT, this->opts->threshold);
             } else if (this->opts->componentType == 2) {
-                json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_MEMORY_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfig(targetId, HEALTH_MEMORY_THERMAL_LIMIT, this->opts->threshold);
             } else if (this->opts->componentType == 3) {
-                json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_POWER_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfig(targetId, HEALTH_POWER_LIMIT, this->opts->threshold);
             } else {
                 (*json)["error"] = "threshold setting unsupported";
             }
             if ((*json).contains("error")) {
                 return json;
             }
-            json = this->coreStub->getHealth(this->opts->deviceId, this->opts->componentType);
+            json = this->coreStub->getHealth(targetId, this->opts->componentType);
             return json;
         } else {
             if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
-                json = this->coreStub->getHealth(this->opts->deviceId, this->opts->componentType);
+                json = this->coreStub->getHealth(targetId, this->opts->componentType);
             else
-                json = this->coreStub->getHealth(this->opts->deviceId, -1);
+                json = this->coreStub->getHealth(targetId, -1);
             return json;
         }
     }
@@ -274,7 +290,8 @@ void ComletHealth::getTableResult(std::ostream &out) {
         showHealthMultiDevicesAllComps(out, json);
         return;
     }
-    if (this->opts->deviceId >= 0) {
+
+    if (this->opts->deviceId != "-1") {
         if (ct >= 1 && ct <= 5) {
             switch (ct) {
                 case 1:

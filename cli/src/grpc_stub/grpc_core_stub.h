@@ -50,8 +50,6 @@ class GrpcCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr);
-    std::unique_ptr<nlohmann::json> runDiagnostics(const char *bdf, int level, bool rawComponentTypeStr);
-    std::unique_ptr<nlohmann::json> getDiagnosticsResult(const char *bdf, bool rawComponentTypeStr);
     std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr);
     std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr);
@@ -67,11 +65,9 @@ class GrpcCoreStub : public CoreStub {
     nlohmann::json appendHealthThreshold(int deviceId, nlohmann::json, HealthType type, uint64_t throttleValue, uint64_t shutdownValue);
 
     std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter = false, bool enableScale = false);
-    std::unique_ptr<nlohmann::json> getStatistics(const char *bdf, bool enableFilter = false);
     std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter = false, bool enableScale = false);
     std::shared_ptr<nlohmann::json> getEngineStatistics(int deviceId);
     std::shared_ptr<std::map<int, std::map<int, int>>> getEngineCount(int deviceId);
-    std::shared_ptr<std::map<int, std::map<int, int>>> getEngineCount(const char *bdf);
     std::shared_ptr<nlohmann::json> getFabricStatistics(int deviceId);
     //config related interface
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
@@ -115,7 +111,6 @@ class GrpcCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> getXelinkTopology();
 
     std::shared_ptr<nlohmann::json> getFabricCount(int deviceId);
-    std::shared_ptr<nlohmann::json> getFabricCount(const char *bdf);
 
     std::unique_ptr<nlohmann::json> getSensorReading();
 

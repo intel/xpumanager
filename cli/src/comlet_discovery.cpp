@@ -11,6 +11,8 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -91,26 +93,17 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
 ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover the GPU devices installed on this machine and provide the device info.") {
 }
 
-static bool isNumber(const std::string &str) {
-    return str.find_first_not_of("0123456789") == std::string::npos;
-}
-
 void ComletDiscovery::setupOptions() {
     this->opts = std::unique_ptr<ComletDiscoveryOptions>(new ComletDiscoveryOptions());
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "Device ID to query. It will show more detailed info.");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "Device ID or PCI BDF address to query. It will show more detailed info.");
     deviceIdOpt->check([](const std::string &str) {
-        std::string errStr = "Device id should be integer larger than or equal to 0";
-        if (!isNumber(str))
-            return errStr;
-        int value;
-        try {
-            value = std::stoi(str);
-        } catch (const std::out_of_range &oor) {
-            return errStr;
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
         }
-        if (value < 0)
-            return errStr;
-        return std::string();
+        return errStr;
     });
     auto listamcversionsOpt = addFlag("--listamcversions", this->opts->listamcversions, "Show all AMC firmware versions.");
     deviceIdOpt->excludes(listamcversionsOpt);
@@ -127,9 +120,14 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
         return json;
     }
 
-    if (this->opts->deviceId != -1) {
-        auto json = this->coreStub->getDeviceProperties(this->opts->deviceId);
-        return json;
+    if (this->opts->deviceId != "-1") {
+        if (isNumber(this->opts->deviceId)) {
+            auto json = this->coreStub->getDeviceProperties(std::stoi(this->opts->deviceId));
+            return json;
+        } else {
+            auto json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str());
+            return json;
+        }
     }
 
     auto json = this->coreStub->getDeviceList();
@@ -185,7 +183,7 @@ void ComletDiscovery::getTableResult(std::ostream &out) {
 
     if (this->opts->listamcversions) {
         showAmcFwVersion(out, json);
-    } else if (this->opts->deviceId != -1) {
+    } else if (this->opts->deviceId != "-1") {
         showDetailedInfo(out, json);
     } else {
         showBasicInfo(out, json);

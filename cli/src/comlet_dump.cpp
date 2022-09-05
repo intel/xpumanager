@@ -64,25 +64,14 @@ void ComletDump::setupOptions() {
 #endif
 
     deviceIdOpt->check([this](const std::string &str) {
-#ifndef DAEMONLESS
-    std::string errStr = "Device id should be integer larger than or equal to 0";
-    std::vector<std::string> deviceIds = split(str, ',');
-    for (auto id : deviceIds) {
-        if (!isValidDeviceId(id)) {
-            return errStr;
-        }   
-    }
-    return std::string();
-#else
-    std::string errStr = "Device id should be a non-negative integer or a BDF string";
-    std::vector<std::string> deviceIds = split(str, ',');
-    for (auto id : deviceIds) {
-        if (!isValidDeviceId(id) && !isBDF(id)) {
-            return errStr;
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        std::vector<std::string> deviceIds = split(str, ',');
+        for (auto id : deviceIds) {
+            if (!isValidDeviceId(id) && !isBDF(id)) {
+                return errStr;
+            }
         }
-    }
-     return std::string();
-#endif
+        return std::string();
     });
     deviceIdOpt->delimiter(',');
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
@@ -173,11 +162,16 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
     } else {
         json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
         for (auto deviceId : this->opts->deviceIds) {
+            int targetId = -1;
             if (isNumber(deviceId)) {
-                deviceJsons[deviceId] = this->coreStub->getStatistics(std::stoi(deviceId));
+                targetId = std::stoi(deviceId);
             } else {
-                deviceJsons[deviceId] = this->coreStub->getStatistics(deviceId.c_str());
+                auto convertResult = this->coreStub->getDeivceIdByBDF(deviceId.c_str(), &targetId);
+                if (convertResult->contains("error")) {
+                    return convertResult;
+                }
             }
+            deviceJsons[deviceId] = this->coreStub->getStatistics(targetId);
         }
     }
     return json;
@@ -330,17 +324,17 @@ void ComletDump::printByLine(std::ostream &out) {
             bool sameDeviceModel = true;
             std::string deviceName;
             for (auto deviceIdStr : this->opts->deviceIds) {
-                int deviceId = -1;
-                if (!isNumber(deviceIdStr)) {
-                    auto convertRes = this->coreStub->getDeivceIdByBDF(deviceIdStr.c_str(), &deviceId);
-                    if (convertRes->contains("error")) {
-                        out << "Error: " << (*convertRes)["error"].get<std::string>() << std::endl;
+                int targetId = -1;
+                if (isNumber(deviceIdStr)) {
+                    targetId = std::stoi(deviceIdStr);
+                } else {
+                    auto convertResult = this->coreStub->getDeivceIdByBDF(deviceIdStr.c_str(), &targetId);
+                    if (convertResult->contains("error")) {
+                        out << "Error: " << (*convertResult)["error"].get<std::string>() << std::endl;
                         return;
                     }
                 }
-                else
-                    deviceId = std::stoi(deviceIdStr);
-                auto res = this->coreStub->getDeviceProperties(deviceId);
+                auto res = this->coreStub->getDeviceProperties(targetId);
                 if (deviceName.empty()) {
                     deviceName = (*res)["device_name"].get<std::string>();
                 } else {
@@ -363,13 +357,19 @@ void ComletDump::printByLine(std::ostream &out) {
     auto pEngineCountMap = std::make_shared<std::map<int, std::map<int, int>>>();
     auto pFabricCountJson = std::shared_ptr<nlohmann::json>();
 
+    int targetId = -1;
     if (isNumber(deviceId)) {
-        pEngineCountMap = this->coreStub->getEngineCount(std::stoi(deviceId));
-        pFabricCountJson = this->coreStub->getFabricCount(std::stoi(deviceId));
+        targetId = std::stoi(deviceId);
     } else {
-        pEngineCountMap = this->coreStub->getEngineCount(deviceId.c_str());
-        pFabricCountJson = this->coreStub->getFabricCount(deviceId.c_str());
+        auto convertResult = this->coreStub->getDeivceIdByBDF(deviceId.c_str(), &targetId);
+        if (convertResult->contains("error")) {
+            out << "Error: " << (*convertResult)["error"].get<std::string>() << std::endl;
+            return;
+        }
     }
+    
+    pEngineCountMap = this->coreStub->getEngineCount(targetId);
+    pFabricCountJson = this->coreStub->getFabricCount(targetId);
 
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;

@@ -109,6 +109,26 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
     return grpc::Status::OK;
 }
 
+grpc::Status XpumCoreServiceImpl::getDeviceIdByBDF(grpc::ServerContext* context, const DeviceBDF* request, DeviceId* response) {
+    xpum_device_id_t device_id;
+    xpum_result_t res = xpumGetDeviceIdByBDF(request->bdf().c_str(), &device_id);
+    if (res == XPUM_OK) {
+        response->set_id(device_id);
+    } else {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("Device not found");
+                break;
+            default:
+                response->set_errormsg("Error");
+        }
+    }
+    return grpc::Status::OK;
+}
+
 static std::string getGetAmcFwErrMsg() {
     // get error message
     int count = 0;

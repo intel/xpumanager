@@ -42,6 +42,8 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
 
     virtual grpc::Status getDeviceProperties(grpc::ServerContext* context, const DeviceId* request, XpumDeviceProperties* response) override;
 
+    virtual grpc::Status getDeviceIdByBDF(grpc::ServerContext* context, const DeviceBDF* request, DeviceId* response) override;
+
     virtual grpc::Status getTopology(grpc::ServerContext* context, const DeviceId* request,
                                      XpumTopologyInfo* response) override;
 

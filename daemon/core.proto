@@ -9,6 +9,11 @@ message GeneralEnum {
 
 message DeviceId {
     uint32 id = 1;
+    string errorMsg = 2;
+}
+
+message DeviceBDF {
+    string bdf = 1;
 }
 
 /* Specific Message */
@@ -866,6 +871,7 @@ service XpumCoreService {
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
     rpc getDeviceList( google.protobuf.Empty ) returns ( XpumDeviceBasicInfoArray );
     rpc getDeviceProperties( DeviceId ) returns ( XpumDeviceProperties );
+    rpc getDeviceIdByBDF( DeviceBDF ) returns ( DeviceId );
     rpc getAMCFirmwareVersions( GetAMCFirmwareVersionsRequest ) returns ( GetAMCFirmwareVersionsResponse );
     rpc getRedfishAmcWarnMsg( google.protobuf.Empty ) returns ( GetRedfishAmcWarnMsgResponse );
     rpc getTopology(  DeviceId ) returns ( XpumTopologyInfo );

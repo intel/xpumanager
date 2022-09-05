@@ -86,7 +86,25 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getVersion() {
 }
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeivceIdByBDF(const char* bdf, int *deviceId){
-    return std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceBDF request;    
+    DeviceId response;
+    request.set_bdf(bdf);
+    grpc::Status status = stub->getDeviceIdByBDF(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            (*json)["deviceId"] = response.id();
+            *deviceId = response.id();
+        } else {
+            (*json)["error"] = response.errormsg();
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+    }
+
+    return json;
 }
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getTopology(int deviceId) {
@@ -1822,13 +1840,6 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getXelinkTopology() {
     }
 
     return json;
-}
-
-std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnostics(const char *bdf, int level, bool rawComponentTypeStr){
-    return std::unique_ptr<nlohmann::json>(new nlohmann::json());
-}
-std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResult(const char *bdf, bool rawComponentTypeStr){
-    return std::unique_ptr<nlohmann::json>(new nlohmann::json());
 }
 
 } // end namespace xpum::cli

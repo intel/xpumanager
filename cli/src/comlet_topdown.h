@@ -15,7 +15,7 @@
 namespace xpum::cli {
 
 struct ComletTopdownOptions {
-    int deviceId = -1;
+    std::string deviceId = "-1";
     int deviceTileId = -1;
     int samplingInterval = -1;
 };
@@ -31,7 +31,7 @@ class ComletTopdown : public ComletBase {
     virtual void getTableResult(std::ostream &out) override;
 
     inline const bool isDeviceOperation() const {
-        return opts->deviceId >= 0;
+        return opts->deviceId != "-1";
     }
 
    private:

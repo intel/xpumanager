@@ -20,7 +20,7 @@ struct ComletPolicyOptions {
     bool listalltypes = false;
     bool create = false;
     bool remove = false;
-    int32_t deviceId = -1;
+    std::string deviceId = "-1";
     uint32_t groupId = 0;
     std::string policyType = "";
     std::string policyConditionType = "";
@@ -54,7 +54,7 @@ class ComletPolicy : public ComletBase {
     inline const bool isListAll() const {
         return opts->listAll;
     }
-    inline const int getDeviceId() const {
+    inline const std::string getDeviceId() const {
         return opts->deviceId;
     }
     inline const int getGroupId() const {

@@ -96,7 +96,26 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId) 
 }
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(const char *bdf) {
-    return std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    DeviceBDF request;    
+    DeviceId response;
+    request.set_bdf(bdf);
+    int deviceId = -1;
+    grpc::Status status = stub->getDeviceIdByBDF(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() == 0) {
+            deviceId = response.id();
+        } else {
+            (*json)["error"] = response.errormsg();
+            return json;
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        return json;
+    }
+    return getDeviceProperties(deviceId);
 }
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getAMCFirmwareVersions(std::string username, std::string password) {

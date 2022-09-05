@@ -532,13 +532,6 @@ void ComletStatistics::setupOptions() {
 #endif
 
     deviceIdOpt->check([this](const std::string &str) {
-#ifndef DAEMONLESS
-    std::string errStr = "Device id should be integer larger than or equal to 0";
-    if (!isValidDeviceId(str)) {
-        return errStr;
-    }
-    return std::string();
-#else
     std::string errStr = "Device id should be a non-negative integer or a BDF string";
     if (isValidDeviceId(str)) {
         return std::string();        
@@ -546,19 +539,22 @@ void ComletStatistics::setupOptions() {
         return std::string();
     }
     return errStr;
-#endif
     });
 }
 
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     if (isDeviceOp()) {
+        int targetId = -1;
         if (isNumber(this->opts->deviceId)) {
-            auto json = this->coreStub->getStatistics(std::stoi(this->opts->deviceId), true);
-            return json;
+            targetId = std::stoi(this->opts->deviceId);
         } else {
-            auto json = this->coreStub->getStatistics(this->opts->deviceId.c_str(), true);
-            return json;
+            auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+            if (convertResult->contains("error")) {
+                return convertResult;
+            }
         }
+        auto json = this->coreStub->getStatistics(targetId, true);
+        return json;
     } else if (isGroupOp()) {
         auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId, true, true);
         return json;

@@ -15,7 +15,7 @@
 namespace xpum::cli {
 
 struct ComletDiscoveryOptions {
-    int deviceId = -1;
+    std::string deviceId = "-1";
     int a = 0;
     bool listamcversions = false;
     std::string username = "";
@@ -33,7 +33,7 @@ class ComletDiscovery : public ComletBase {
     virtual void getTableResult(std::ostream &out) override;
 
     inline bool isDeviceList() {
-        return opts->deviceId < 0;
+        return opts->deviceId == "-1";
     }
 
    private:

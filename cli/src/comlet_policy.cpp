@@ -10,6 +10,8 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -76,7 +78,16 @@ static CharTableConfig ComletConfigListDevice(R"({
 
 void ComletPolicy::setupOptions() {
     this->opts = std::unique_ptr<ComletPolicyOptions>(new ComletPolicyOptions());
-    addOption("-d,--device", this->opts->deviceId, "The device ID.");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
+    deviceIdOpt->check([](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+    });
     addOption("-g,--group", this->opts->groupId, "The group ID.\n");
 
     addFlag("-l,--list", this->opts->listAll, "List all policies.");
@@ -118,9 +129,18 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         //std::cout << "--GangDebug----listAll---1---" << std::endl;
         bool isDevcie;
         uint32_t id;
-        if (this->opts->deviceId != -1) {
+        if (this->opts->deviceId != "-1") {
             isDevcie = true;
-            id = this->opts->deviceId;
+            int targetId = -1;
+            if (isNumber(this->opts->deviceId)) {
+                targetId = std::stoi(this->opts->deviceId);
+            } else {
+                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+                if (convertResult->contains("error")) {
+                    return convertResult;
+                }
+            }
+            id = targetId;
             json = this->coreStub->getPolicyById(isDevcie, id);
         } else if (this->opts->groupId != 0) {
             isDevcie = false;
@@ -136,7 +156,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         return json;
     }
     if (this->opts->create) {
-        if (this->opts->deviceId == -1 && this->opts->groupId == 0) {
+        if (this->opts->deviceId == "-1" && this->opts->groupId == 0) {
             // (*json)["error"] = "Too many operation flags";
             // return json;
             (*json)["is_success"] = false;
@@ -146,7 +166,16 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
 
         //
         bool isDevcie = true;
-        uint32_t id = this->opts->deviceId;
+        int targetId = -1;
+        if (isNumber(this->opts->deviceId)) {
+            targetId = std::stoi(this->opts->deviceId);
+        } else {
+            auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+            if (convertResult->contains("error")) {
+                return convertResult;
+            }
+        }
+        uint32_t id = targetId;
 
         //std::cout << "--GangDebug--id=" << id << std::endl;
         if (this->opts->groupId != 0) {
@@ -248,7 +277,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         return json;
     }
     if (this->opts->remove) {
-        if (this->opts->deviceId == -1 && this->opts->groupId == 0) {
+        if (this->opts->deviceId == "-1" && this->opts->groupId == 0) {
             // (*json)["error"] = "Too many operation flags";
             // return json;
             (*json)["is_success"] = false;
@@ -258,7 +287,16 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
 
         //
         bool isDevcie = true;
-        uint32_t id = this->opts->deviceId;
+        int targetId = -1;
+        if (isNumber(this->opts->deviceId)) {
+            targetId = std::stoi(this->opts->deviceId);
+        } else {
+            auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+            if (convertResult->contains("error")) {
+                return convertResult;
+            }
+        }
+        uint32_t id = targetId;
         if (this->opts->groupId != 0) {
             isDevcie = false;
             id = this->opts->groupId;
@@ -417,7 +455,7 @@ void ComletPolicy::getTableResult(std::ostream &out) {
     *json = *res;
 
     if (this->opts->listAll) {
-        if (this->opts->deviceId >= 0) {
+        if (this->opts->deviceId != "-1") {
             showListDevice(out, json);
         } else if (this->opts->groupId > 0) {
             showListDevice(out, json);

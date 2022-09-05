@@ -408,26 +408,6 @@ static std::string diagnosticsMediaCodecFormatEnumToString(xpum_media_format_t f
     return ret;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnostics(const char *bdf, int level, bool rawComponentTypeStr) {
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    xpum_device_id_t deviceId;
-    xpum_result_t res = xpumGetDeviceIdByBDF(bdf, &deviceId);
-    if (res != XPUM_OK) {
-        switch (res) {
-            case XPUM_RESULT_DEVICE_NOT_FOUND:
-                (*json)["error"] = "device not found";
-                (*json)["errno"] = errorNumTranslate(res);
-                break;
-            default:
-                (*json)["error"] = "Error";
-                (*json)["errno"] = errorNumTranslate(res);
-                break;
-        }
-        return json;
-    }
-    return runDiagnostics(deviceId, level, rawComponentTypeStr);
-}
-
 std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnostics(int deviceId, int level, bool rawComponentTypeStr) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_result_t res = xpumRunDiagnostics(deviceId, static_cast<xpum_diag_level_t>(level));
@@ -479,26 +459,6 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnostics(int deviceId, int le
         }
     }
     return json;
-}
-
-std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(const char *bdf, bool rawComponentTypeStr) {
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    xpum_device_id_t deviceId;
-    xpum_result_t res = xpumGetDeviceIdByBDF(bdf, &deviceId);
-    if (res != XPUM_OK) {
-        switch (res) {
-            case XPUM_RESULT_DEVICE_NOT_FOUND:
-                (*json)["error"] = "device not found";
-                (*json)["errno"] = errorNumTranslate(res);
-                break;
-            default:
-                (*json)["error"] = "Error";
-                (*json)["errno"] = errorNumTranslate(res);
-                break;
-        }
-        return json;
-    }
-    return getDiagnosticsResult(deviceId, rawComponentTypeStr);
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, bool rawComponentTypeStr) {

@@ -16,7 +16,7 @@ namespace xpum::cli {
 
 struct ComletHealthOptions {
     bool listAll = false;
-    int deviceId = INT_MIN;
+    std::string deviceId = "-1";
     uint32_t groupId = UINT_MAX;
     int componentType = INT_MIN;
     int threshold = INT_MIN;
@@ -35,7 +35,7 @@ class ComletHealth : public ComletBase {
     virtual void getTableResult(std::ostream &out) override;
 
     inline const bool isSingleDeviceOperation() const {
-        return opts->deviceId >= 0;
+        return opts->deviceId != "-1";
     }
 
     inline const bool isGroupOperation() const {

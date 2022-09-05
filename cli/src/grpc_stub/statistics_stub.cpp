@@ -463,15 +463,4 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getStatisticsByGroup(uint32_t grou
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::getStatistics(const char *bdf, bool enableFilter) {
-    return std::unique_ptr<nlohmann::json>(new nlohmann::json());
-}
-std::shared_ptr<std::map<int, std::map<int, int>>> GrpcCoreStub::getEngineCount(const char *bdf) {
-    std::map<int, std::map<int, int>> m;
-    return std::make_shared<std::map<int, std::map<int, int>>>(m);
-}
-std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricCount(const char *bdf) {
-    return std::unique_ptr<nlohmann::json>(new nlohmann::json());
-}
-
 } // end namespace xpum::cli

@@ -62,16 +62,6 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     return std::find(allowList.begin(), allowList.end(), metricsType) != allowList.end();
 }
 
-std::shared_ptr<std::map<int, std::map<int, int>>> LibCoreStub::getEngineCount(const char *bdf) {
-    std::map<int, std::map<int, int>> m;
-    xpum_device_id_t deviceId;
-    xpum_result_t res = xpumGetDeviceIdByBDF(bdf, &deviceId);
-    if (res != XPUM_OK) {
-        return std::make_shared<std::map<int, std::map<int, int>>>(m);
-    }
-    return getEngineCount(deviceId);
-}
-
 std::shared_ptr<std::map<int, std::map<int, int>>> LibCoreStub::getEngineCount(int deviceId) {
     std::map<int, std::map<int, int>> m;
     xpum_device_id_t xpum_device_id = deviceId;
@@ -88,26 +78,6 @@ std::shared_ptr<std::map<int, std::map<int, int>>> LibCoreStub::getEngineCount(i
     }
 
     return std::make_shared<std::map<int, std::map<int, int>>>(m);
-}
-
-std::shared_ptr<nlohmann::json> LibCoreStub::getFabricCount(const char *bdf) {
-    auto json = std::shared_ptr<nlohmann::json>(new nlohmann::json());
-    xpum_device_id_t deviceId;
-    xpum_result_t res = xpumGetDeviceIdByBDF(bdf, &deviceId);
-    if (res != XPUM_OK) {
-        switch (res) {
-            case XPUM_RESULT_DEVICE_NOT_FOUND:
-                (*json)["error"] = "device not found";
-                (*json)["errno"] = errorNumTranslate(res);
-                break;
-            default:
-                (*json)["error"] = "Error";
-                (*json)["errno"] = errorNumTranslate(res);
-                break;
-        }
-        return json;
-    }
-    return getFabricCount(deviceId);
 }
 
 std::shared_ptr<nlohmann::json> LibCoreStub::getFabricCount(int deviceId) {
@@ -160,14 +130,8 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getEngineStatistics(int deviceId) {
         int32_t scale = engineInfo.scale;
         if (scale == 1) {
             obj["value"] = engineInfo.value;
-            // obj["min"] = engineInfo.min;
-            // obj["max"] = engineInfo.max;
-            // obj["avg"] = engineInfo.avg;
         } else {
             obj["value"] = (double)engineInfo.value / scale;
-            // obj["min"] = (double)engineInfo.min / scale;
-            // obj["max"] = (double)engineInfo.max / scale;
-            // obj["avg"] = (double)engineInfo.avg / scale;
         }
         obj["engine_id"] = engineInfo.index;
         std::string tileId = engineInfo.isTileData ? std::to_string(engineInfo.tileId) : "device";
@@ -283,14 +247,8 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getFabricStatistics(int deviceId) {
         int32_t scale = fabricInfo.scale;
         if (scale == 1) {
             obj["value"] = fabricInfo.value;
-            // obj["min"] = fabricInfo.min;
-            // obj["max"] = fabricInfo.max;
-            // obj["avg"] = fabricInfo.avg;
         } else {
             obj["value"] = (double)fabricInfo.value / scale;
-            // obj["min"] = (double)fabricInfo.min / scale;
-            // obj["max"] = (double)fabricInfo.max / scale;
-            // obj["avg"] = (double)fabricInfo.avg / scale;
         }
         obj["name"] = ss.str();
         obj["tile_id"] = fabricInfo.tile_id;
@@ -298,26 +256,6 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getFabricStatistics(int deviceId) {
     }
 
     return std::make_shared<nlohmann::json>(json);
-}
-
-std::unique_ptr<nlohmann::json> LibCoreStub::getStatistics(const char *bdf,  bool enableFilter) {
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    xpum_device_id_t deviceId;
-    xpum_result_t res = xpumGetDeviceIdByBDF(bdf, &deviceId);
-    if (res != XPUM_OK) {
-        switch (res) {
-            case XPUM_RESULT_DEVICE_NOT_FOUND:
-                (*json)["error"] = "device not found";
-                (*json)["errno"] = errorNumTranslate(res);
-                break;
-            default:
-                (*json)["error"] = "Error";
-                (*json)["errno"] = errorNumTranslate(res);
-                break;
-        }
-        return json;
-    }
-    return getStatistics(deviceId, enableFilter);
 }
 
 static int32_t getCliScale(xpum_stats_type_t metricsType) {
@@ -369,10 +307,6 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getStatistics(int deviceId, bool en
         json->update(*fabricStatsJson);
         // return std::make_unique<nlohmann::json>(*fabricStatsJson);
     }
-
-    // (*json)["begin"] = isotimestamp(begin);
-    // (*json)["end"] = isotimestamp(end);
-    //(*json)["elapsed_time"] = (end - begin) / 1000;
 
     std::vector<nlohmann::json> deviceLevelStatsDataList;
     std::vector<nlohmann::json> tileLevelStatsDataList;
@@ -429,10 +363,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getStatistics(int deviceId, bool en
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getStatisticsByGroup(uint32_t groupId, bool enableFilter, bool enableScale) {
-
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-
-
     return json;
 }
 } // end namespace xpum::cli
