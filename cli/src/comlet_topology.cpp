@@ -14,6 +14,7 @@
 #include "cli_table.h"
 #include "core_stub.h"
 #include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -83,16 +84,19 @@ std::unique_ptr<nlohmann::json> ComletTopology::run() {
                 std::cout << "Export topology to " << opts->xmlFile << " sucessfully." << std::endl;
             } else {
                 std::cout << "Fail to get topology xml buffer." << std::endl;
+                exit_code = XPUM_CLI_ERROR_EMPTY_XML;
             }
             xmlfile.close();
         } else {
             std::cout << "Error opening file: " << opts->xmlFile << std::endl;
+            exit_code = XPUM_CLI_ERROR_OPEN_FILE;
         }
     } else if (this->opts->xeLink) {
         auto json = this->coreStub->getXelinkTopology();
         return json;
     } else {
         (*result)["error"] = "Wrong argument or unknow operation, run with --help for more information.";
+        exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
     }
     return result;
 }
@@ -188,6 +192,7 @@ void ComletTopology::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        setExitCodeByJson(*res);
         return;
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();

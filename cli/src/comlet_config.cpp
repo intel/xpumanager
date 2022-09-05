@@ -11,6 +11,7 @@
 #include "cli_table.h"
 #include "core_stub.h"
 #include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -457,9 +458,14 @@ void ComletConfig::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("return")) {
         out << "Return: " << (*res)["return"].get<std::string>() << std::endl;
+        if ((res->contains("status") == false) || 
+            ((*res)["status"] != "OK" && (*res)["status"] != "CANCEL")) {
+            exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
+        }
         return;
     } else if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        setExitCodeByJson(*res);
         return;
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();

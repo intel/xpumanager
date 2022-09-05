@@ -26,7 +26,7 @@ xpum_result_t xpumGetTopology(xpum_device_id_t deviceId, xpum_topology_t* topolo
 
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
-        return XPUM_GENERIC_ERROR;
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
     }
     std::vector<Property>::iterator it;
     std::string bdfAddress;
