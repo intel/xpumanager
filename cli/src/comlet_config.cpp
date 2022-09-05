@@ -10,6 +10,7 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
 
 namespace xpum::cli {
 
@@ -85,7 +86,16 @@ static CharTableConfig ComletTileConfiguration(R"({
 */
 void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
-    addOption("-d,--device", this->opts->deviceId, "The device ID");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->device, "The device ID or PCI BDF address to query");
+    deviceIdOpt->check([this](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+    });
     addOption("-t,--tile", this->opts->tileId, "The tile ID");
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
@@ -119,6 +129,17 @@ std::vector<std::string> ComletConfig::split(std::string str, std::string delimi
 }
 
 std::unique_ptr<nlohmann::json> ComletConfig::run() {
+    if (this->opts->device != "") {
+        if (isNumber(this->opts->device)) {
+            this->opts->deviceId = std::stoi(this->opts->device);
+        } else {
+            auto json = this->coreStub->getDeivceIdByBDF(
+                this->opts->device.c_str(), &this->opts->deviceId);
+            if (json->contains("error")) {
+                return json;
+            }
+        }
+    }
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     (*json)["return"] = "error";
     if (isQuery()) {

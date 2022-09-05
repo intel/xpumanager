@@ -13,6 +13,7 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
 
 namespace xpum::cli {
 
@@ -37,7 +38,7 @@ static CharTableConfig ComletConfigTopologyDevice(R"({
 
 void ComletTopology::setupOptions() {
     this->opts = std::unique_ptr<ComletTopologyOptions>(new ComletTopologyOptions());
-    auto d = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
+    auto d = addOption("-d,--device", this->opts->device, "The device ID or PCI BDF address to query");
     auto e = addOption("-f,--file", this->opts->xmlFile,
                        "Generate the system topology with the GPU info to a XML file.");
     auto m = addFlag("-m,--matrix", this->opts->xeLink,
@@ -59,8 +60,18 @@ void ComletTopology::setupOptions() {
 std::unique_ptr<nlohmann::json> ComletTopology::run() {
     auto result = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     if (isDeviceOperation()) {
+        if (this->opts->device != "") {
+            if (isNumber(this->opts->device)) {
+                this->opts->deviceId = std::stoi(this->opts->device);
+            } else {
+                auto json = this->coreStub->getDeivceIdByBDF(
+                    this->opts->device.c_str(), &this->opts->deviceId);
+                if (json->contains("error")) {
+                    return json;
+                }
+            }
+        }
         auto json = this->coreStub->getTopology(this->opts->deviceId);
-
         return json;
     } else if (!this->opts->xmlFile.empty()) {
         std::ofstream xmlfile;

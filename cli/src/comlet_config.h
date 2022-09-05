@@ -15,6 +15,7 @@ namespace xpum::cli {
 
 struct ComletConfigOptions {
     int deviceId = -1;
+    std::string device = "";
     int32_t tileId = -1;
     std::string scheduler;
     std::string performancefactor;
