@@ -48,6 +48,8 @@ grpc::Status XpumCoreServiceImpl::getVersion(grpc::ServerContext* context, const
         response->set_errormsg("Error");
     }
 
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -80,6 +82,8 @@ grpc::Status XpumCoreServiceImpl::getDeviceList(grpc::ServerContext* context, co
         }
     }
 
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -106,6 +110,7 @@ grpc::Status XpumCoreServiceImpl::getDeviceProperties(grpc::ServerContext* conte
                 response->set_errormsg("Error");
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -126,6 +131,7 @@ grpc::Status XpumCoreServiceImpl::getDeviceIdByBDF(grpc::ServerContext* context,
                 response->set_errormsg("Error");
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -143,6 +149,7 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
                                                          ::GetAMCFirmwareVersionsResponse* response) {
     int count;
     auto res = xpumGetAMCFirmwareVersions(nullptr, &count, request->username().c_str(), request->password().c_str());
+    response->set_errorno(res);
     if (res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
         response->set_errormsg("Level Zero Initialization Error");
         return grpc::Status::OK;
@@ -157,6 +164,7 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
     }
     std::vector<xpum_amc_fw_version_t> versions(count);
     res = xpumGetAMCFirmwareVersions(versions.data(), &count, request->username().c_str(), request->password().c_str());
+    response->set_errorno(res);
     if (res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
         response->set_errormsg("Level Zero Initialization Error");
         return grpc::Status::OK;
@@ -209,6 +217,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+    response->set_errorno(res);
 
     return grpc::Status::OK;
 }
@@ -239,6 +248,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+    response->set_errorno(res);
 
     return grpc::Status::OK;
 }
@@ -265,6 +275,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             response->set_errormsg("Error");
             break;
     }
+    response->set_errorno(res);
 
     return grpc::Status::OK;
 }
@@ -308,6 +319,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+    response->set_errorno(res);
 
     return grpc::Status::OK;
 }
@@ -349,6 +361,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+    response->set_errorno(res);
 
     return grpc::Status::OK;
 }
@@ -381,6 +394,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+
+    response->set_errorno(res);
 
     return grpc::Status::OK;
 }
@@ -420,6 +435,8 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         }
     }
 
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -442,6 +459,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 ::grpc::Status XpumCoreServiceImpl::runDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunDiagnosticsByGroupRequest* request,
@@ -466,6 +486,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -510,6 +533,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -542,6 +568,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+    
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -595,6 +624,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+    
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -622,6 +654,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+    
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -659,6 +694,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+    
+    response->set_errorno(res);
+    
     return grpc::Status::OK;
 }
 
@@ -683,6 +721,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+        
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -719,6 +760,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+        
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -742,6 +786,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+        
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -768,6 +815,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                 break;
         }
     }
+        
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -801,6 +851,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             deviceStatsData->set_value(data.value);
         }
     }
+        
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -835,6 +888,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             deviceStatsData->set_value(data.value);
         }
     }
+        
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -853,6 +909,9 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             response->set_errormsg("Error: unknow");
             break;
     }
+        
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -863,12 +922,15 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         xpum_device_id_t id = request->id();
         int count;
         xpum_result_t res = xpumGetPolicy(id, nullptr, &count);
+            
         if (res != XPUM_OK) {
             this->handleErrorForGetPolicy(res, response);
+            response->set_errorno(res);
             return grpc::Status::OK;
         }
         if (count <= 0) {
             response->set_errormsg("There is no data");
+            response->set_errorno(XPUM_GENERIC_ERROR);
             return grpc::Status::OK;
         }
 
@@ -877,6 +939,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         res = xpumGetPolicy(id, dataList, &count);
         if (res != XPUM_OK || count < 0) {
             this->handleErrorForGetPolicy(res, response);
+            response->set_errorno(res);
             return grpc::Status::OK;
         }
 
@@ -899,12 +962,15 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         xpum_group_id_t id = request->id();
         int count;
         xpum_result_t res = xpumGetPolicyByGroup(id, nullptr, &count);
+            
         if (res != XPUM_OK) {
             this->handleErrorForGetPolicy(res, response);
+            response->set_errorno(res);
             return grpc::Status::OK;
         }
         if (count <= 0) {
             response->set_errormsg("There is no data");
+            response->set_errorno(XPUM_GENERIC_ERROR);
             return grpc::Status::OK;
         }
 
@@ -913,6 +979,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
         res = xpumGetPolicyByGroup(id, dataList, &count);
         if (res != XPUM_OK || count < 0) {
             this->handleErrorForGetPolicy(res, response);
+            response->set_errorno(res);
             return grpc::Status::OK;
         }
 
@@ -932,6 +999,7 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
             output->set_notifycallbackurl(input.notifyCallBackUrl);
         }
     }
+    response->set_errorno(XPUM_OK);
     return grpc::Status::OK;
 }
 
@@ -1066,6 +1134,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         res = xpumSetPolicyByGroup(id, policy);
     }
     //std::cout << "-----xpum_cor_service_impl--1----xpumSetPolicy res = " << res  << std::endl;
+    response->set_errorno(res);
     if (res != XPUM_OK) {
         response->set_isok(false);
         if (res == XPUM_RESULT_DEVICE_NOT_FOUND) {
@@ -1098,6 +1167,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     xpum_result_t res = XPUM_GENERIC_ERROR;
     if (!request->istiledata()) {
         response->set_errormsg("Error");
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     xpum_device_id_t deviceId = request->deviceid();
@@ -1117,6 +1187,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         sch_timeout.watchdog_timeout = val1;
         if (val1 < 5000 || val1 > 100000000) {
             response->set_errormsg("Invalid scheduler timeout value");
+            response->set_errorno(res);
             return grpc::Status::OK;
         }
         res = xpumSetDeviceSchedulerTimeoutMode(deviceId, sch_timeout);
@@ -1127,6 +1198,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         sch_timeslice.yield_timeout = val2;
         if (val1 < 5000 || val1 > 100000000 || val2 < 5000 || val2 > 100000000) {
             response->set_errormsg("Invalid scheduler timeslice value");
+            response->set_errorno(res);
             return grpc::Status::OK;
         }
         res = xpumSetDeviceSchedulerTimesliceMode(deviceId, sch_timeslice);
@@ -1151,6 +1223,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 break;
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1179,6 +1252,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
 
@@ -1186,6 +1260,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         if (powerRangeArray[i].subdevice_Id == (uint32_t)tileId || tileId == -1) {
             if (val1 < 1 || (uint32_t(powerRangeArray[i].default_limit) > 0  && val1 > uint32_t(powerRangeArray[i].default_limit))) {
                 response->set_errormsg("Invalid power limit value");
+                response->set_errorno(XPUM_GENERIC_ERROR);
                 return grpc::Status::OK;
             }
         }
@@ -1214,6 +1289,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 break;
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1222,6 +1298,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     xpum_result_t res;
     if (!request->istiledata()) {
         response->set_errormsg("Error");
+        response->set_errorno(XPUM_GENERIC_ERROR);
         return grpc::Status::OK;
     }
     xpum_device_id_t deviceId = request->deviceid();
@@ -1253,6 +1330,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 break;
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1261,6 +1339,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     xpum_result_t res;
     if (!request->istiledata()) {
         response->set_errormsg("Error");
+        response->set_errorno(XPUM_GENERIC_ERROR);
         return grpc::Status::OK;
     }
     xpum_device_id_t deviceId = request->deviceid();
@@ -1283,6 +1362,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         standby.mode = XPUM_NEVER;
     } else {
         response->set_errormsg("Error");
+        response->set_errorno(XPUM_GENERIC_ERROR);
         return grpc::Status::OK;
     }
     res = xpumSetDeviceStandby(deviceId, standby);
@@ -1300,6 +1380,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 break;
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1314,6 +1395,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
     res = validateDeviceId(deviceId);
     if (res != XPUM_OK) {
         response->set_errormsg("device Id or tile Id is invalid");
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     //test code
@@ -1335,6 +1417,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
     // res = XPUM_OK;
     response->set_deviceid(deviceId);
     response->set_retcode(res);
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1342,6 +1425,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
     xpum_result_t res;
     if (!request->istiledata()) {
         response->set_errormsg("Error");
+        response->set_errorno(XPUM_GENERIC_ERROR);
         return grpc::Status::OK;
     }
     xpum_device_id_t deviceId = request->deviceid();
@@ -1351,6 +1435,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
     res = xpumGetPerformanceFactor(deviceId, nullptr, &count);
     if (res != XPUM_OK) {
         response->set_errormsg("Error");
+        response->set_errorno(XPUM_GENERIC_ERROR);
         return grpc::Status::OK;
     }
     if (count > 0) {
@@ -1365,6 +1450,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
                     response->set_errormsg("Error");
                     break;
             }
+            response->set_errorno(res);
             return grpc::Status::OK;
         } else {
             for (uint32_t i = 0; i < count; i++) {
@@ -1380,6 +1466,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
         }
     }
     response->set_count(count);
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1387,6 +1474,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
     xpum_result_t res;
     if (!request->istiledata()) {
         response->set_errormsg("Error");
+        response->set_errorno(XPUM_GENERIC_ERROR);
         return grpc::Status::OK;
     }
     xpum_device_id_t deviceId = request->deviceid();
@@ -1413,6 +1501,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
                 break;
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1432,6 +1521,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     if (count > 0) {
@@ -1446,6 +1536,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
                     response->set_errormsg("Error");
                     break;
             }
+            response->set_errorno(res);
             return grpc::Status::OK;
         } else {
             for (uint32_t i = 0; i < count; i++) {
@@ -1459,6 +1550,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
         }
     }
     response->set_count(count);
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1485,6 +1577,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
                 response->set_errormsg("device Id or tile Id is invalid");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
 
@@ -1506,6 +1599,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
 
@@ -1547,6 +1641,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
                     response->set_errormsg("Error");
                     break;
             }
+            response->set_errorno(res);
             return grpc::Status::OK;
         } else {
             for (uint32_t i = 0; i < tileTotalCount; i++) {
@@ -1584,6 +1679,8 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
         }
     }
     response->set_tilecount(tileCount);
+
+    response->set_errorno(res);
 
     return grpc::Status::OK;
 }
@@ -1624,6 +1721,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
         }
     }
     response->set_count(count);
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1662,6 +1760,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
         }
     }
     response->set_count(count);
+    response->set_errorno(res);
     return grpc::Status::OK; 
 }
 
@@ -1690,6 +1789,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
     xpum_result_t res;
     if (!request->istiledata()) {
         response->set_errormsg("Error");
+        response->set_errorno(XPUM_GENERIC_ERROR);
         return grpc::Status::OK;
     }
     xpum_device_id_t deviceId = request->deviceid();
@@ -1720,6 +1820,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 break;
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1727,6 +1828,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
     xpum_result_t res;
     if (!request->istiledata()) {
         response->set_errormsg("Error");
+        response->set_errorno(XPUM_GENERIC_ERROR);
         return grpc::Status::OK;
     }
     xpum_device_id_t deviceId = request->deviceid();
@@ -1757,6 +1859,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 break;
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -1784,6 +1887,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 response->set_errormsg("device Id or tile Id is invalid");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     res = xpumGetDeviceProperties(deviceId, &properties);
@@ -1796,6 +1900,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
 
@@ -1833,6 +1938,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     int32_t power = powerLimits.sustained_limit.power / 1000;
@@ -1879,6 +1985,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     res = xpumGetDeviceStandbys(deviceId, standbyArray, &standbyCount);
@@ -1891,6 +1998,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     res = xpumGetDeviceSchedulers(deviceId, schedulerArray, &schedulerCount);
@@ -1903,6 +2011,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     res = xpumGetDevicePowerProps(deviceId, powerRangeArray, &powerRangeCount);
@@ -1915,6 +2024,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
 
@@ -1928,6 +2038,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
 
@@ -1941,6 +2052,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
 
@@ -2099,6 +2211,7 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
             }
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -2160,6 +2273,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             response->set_errormsg("Error");
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -2188,6 +2302,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
         }
     }
 
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -2251,6 +2366,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
                 break;
         }
     }
+
+    response->set_errorno(res);
 
     return grpc::Status::OK;
 }

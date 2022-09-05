@@ -93,7 +93,7 @@ std::unique_ptr<nlohmann::json> ComletTopdown::run() {
         return json;
     } else {
         (*result)["error"] = "Wrong argument or unknow operation, run with --help for more information.";
-        // exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
+        exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
     }
 
     return result;
@@ -109,7 +109,7 @@ void ComletTopdown::getTableResult(std::ostream &out) {
 
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
-        // setExitCodeByJson(*res);
+        setExitCodeByJson(*res);
         return;
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();

@@ -279,6 +279,7 @@ static void showHealthMultiDeviceComp(std::ostream &out, std::shared_ptr<nlohman
 void ComletHealth::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
+        setExitCodeByJson(*res);
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         return;
     }

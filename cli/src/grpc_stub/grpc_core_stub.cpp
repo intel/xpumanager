@@ -22,6 +22,7 @@
 #include "logger.h"
 #include "xpum_structs.h"
 #include "grpc_core_stub.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -99,9 +100,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeivceIdByBDF(const char* bdf, 
             *deviceId = response.id();
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
 
     return json;
@@ -134,9 +137,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getTopology(int deviceId) {
 
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
 
     return json;
@@ -166,11 +171,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::groupCreate(std::string groupName)
         } else {
             XPUM_LOG_AUDIT("Fail to create group %s", groupName.c_str());
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
 
     } else {
         XPUM_LOG_AUDIT("Fail to create group %s", groupName.c_str());
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -190,9 +197,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::groupDelete(int groupId) {
         } else {
             XPUM_LOG_AUDIT("Fail to delete group %d", groupId);
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to delete group %d", groupId);
     }
     return json;
@@ -227,9 +236,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::groupListAll() {
             (*json)["group_list"] = groupJsonList;
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -257,9 +268,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::groupList(int groupId) {
 
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -291,11 +304,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::groupAddDevice(int groupId, int de
             XPUM_LOG_AUDIT("Fail to add device(%d) to group %d", deviceId, groupId);
             (*json)["device_id"] = deviceId;
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         XPUM_LOG_AUDIT("Fail to add device(%d) to group %d", deviceId, groupId);
         (*json)["device_id"] = deviceId;
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -326,11 +341,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::groupRemoveDevice(int groupId, int
             XPUM_LOG_AUDIT("Fail to remove device(%d) from group %d", deviceId, groupId);
             (*json)["device_id"] = deviceId;
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         XPUM_LOG_AUDIT("Fail to remove device(%d) from group %d", deviceId, groupId);
         (*json)["device_id"] = deviceId;
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -465,10 +482,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnostics(int deviceId, int l
             }
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on device %d", level, deviceId);
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on device %d", level, deviceId);
     }
     XPUM_LOG_AUDIT("Succeed to run level-%d diagnostics on device %d", level, deviceId);
@@ -522,9 +541,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResult(int deviceId,
             (*json)["component_list"] = componentJsonList;
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -554,9 +575,11 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsMediaCodecResult(int
             (*json)["media_codec_list"] = mediaPerfJsonList;
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -598,10 +621,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnosticsByGroup(uint32_t gro
             }
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on group %d", level, groupId);
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on group %d", level, groupId);
     }
     XPUM_LOG_AUDIT("Succeed to run level-%d diagnostics on group %d", level, groupId);
@@ -666,9 +691,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsResultByGroup(uint32
             (*json)["device_list"] = deviceInfoJsonList;
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -708,9 +735,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllHealth() {
             (*json)["device_list"] = healthJsonList;
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -735,6 +764,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getHealth(int deviceId, int compon
         if (componentJson.contains("error")) {
             auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
             (*errorJson)["error"] = componentJson["error"];
+            (*errorJson)["errno"] = componentJson["errno"];
             return errorJson;
         }
         std::string currentHealthType = healthTypeEnumToString(type);
@@ -771,9 +801,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getHealth(int deviceId, HealthType
                                             response.throttlethreshold(), response.shutdownthreshold());
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -794,10 +826,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setHealthConfig(int deviceId, Heal
             (*json)["status"] = "OK";
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Failed to set health threshold on device %d type %s threshold %d", deviceId, healthTypeStr.c_str(), threshold);
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Failed to set health threshold on device %d type %s threshold %d", deviceId, healthTypeStr.c_str(), threshold);
     }
     XPUM_LOG_AUDIT("Succeed to set health threshold on device %d type %s threshold %d", deviceId, healthTypeStr.c_str(), threshold);
@@ -824,6 +858,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getHealthByGroup(uint32_t groupId,
         if (deviceHealthTypeJsons.contains("error")) {
             auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
             (*errorJson)["error"] = deviceHealthTypeJsons["error"];
+            (*errorJson)["errno"] = deviceHealthTypeJsons["errno"];
             return errorJson;
         }
         std::string currentHealthType = healthTypeEnumToString(type);
@@ -880,9 +915,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getHealthByGroup(uint32_t groupId,
             }
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     (*json)[healthTypeEnumToString(type)] = componentJsonList;
     return json;
@@ -904,10 +941,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setHealthConfigByGroup(uint32_t gr
             (*json)["status"] = "OK";
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Failed to set health threshold on group %d type %s threshold %d", groupId, healthTypeStr.c_str(), threshold);
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Failed to set health threshold on group %d type %s threshold %d", groupId, healthTypeStr.c_str(), threshold);
     }
     XPUM_LOG_AUDIT("Succeed to set health threshold on group %d type %s threshold %d", groupId, healthTypeStr.c_str(), threshold);
@@ -946,7 +985,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllPolicy() {
             (*json)["all_policy_list"] = dataList;
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -1102,14 +1145,17 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setPolicy(bool isDevcie, uint32_t 
             (*json)["is_success"] = false;
             if (isRemove) {
                 (*json)["error"] = "Failed to remove the " + policyType + " policy. Error message: " + response.errormsg();
+                (*json)["errno"] = errorNumTranslate(response.errorno());
                 XPUM_LOG_AUDIT("Failed to remove the %s policy. Error message: %s", policyType.c_str(), response.errormsg().c_str());
             } else {
                 (*json)["error"] = "Failed to set the " + policyType + " policy. Error message: " + response.errormsg();
+                (*json)["errno"] = errorNumTranslate(response.errorno());
                 XPUM_LOG_AUDIT("Failed to set the %s policy. Error message: %s", policyType.c_str(), response.errormsg().c_str());
             }
         }
     } else {
         (*json)["is_success"] = false;
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         if (isRemove) {
             (*json)["error"] = "Failed to remove the " + policyType + " policy. Error message: " + status.error_message();
             XPUM_LOG_AUDIT("Failed to remove the %s policy. Error message: %s", policyType.c_str(), status.error_message().c_str());
@@ -1169,11 +1215,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getPolicy(bool isDevcie, uint32_t 
         } else {
             (*json)["is_success"] = false;
             (*json)["error"] = "Failed to list policies. Error message: " + response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             return json;
         }
     }else{
         (*json)["is_success"] = false;
         (*json)["error"] = "Failed to list policies. Error message: " + status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         return json;
     }
     if (isDevcie) {
@@ -1269,9 +1317,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceConfig(int deviceId, int 
             (*json)["tile_config_data"] = tileJsonList;
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -1301,10 +1351,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceSchedulerMode(int deviceI
             XPUM_LOG_AUDIT("Succeed to set scheduler mode %d,%d,%d", mode, val1, val2);
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode, response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to set scheduler mode %d,%s", mode, status.error_message().c_str());
     }
     return json;
@@ -1327,10 +1379,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDevicePowerlimit(int deviceId, 
             XPUM_LOG_AUDIT("Succeed to set power limit %d,%d", power, interval);
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Fail to set power limit %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to set power limit %s", status.error_message().c_str());
     }
     return json;
@@ -1359,10 +1413,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceStandby(int deviceId, int
             XPUM_LOG_AUDIT("Succeed to set standby mode %d", mode);
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Fail to set standby mode %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to set standby mode %s", status.error_message().c_str());
     }
     return json;
@@ -1391,10 +1447,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceFrequencyRange(int device
             XPUM_LOG_AUDIT("Succeed to set frequency range %d,%d", minFreq, maxFreq);
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Fail to set frequency range %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to set frequency range %s", status.error_message().c_str());
     }
     return json;
@@ -1416,10 +1474,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::resetDevice(int deviceId, bool for
             XPUM_LOG_AUDIT("Succeed to reset device with force == %d", force);
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Fail to reset device with force == %d, errorMessage: %s", force, response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to reset device with force == %d, %s", force, status.error_message().c_str());
     }
     return json;
@@ -1448,6 +1508,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getPerformanceFactor(int deviceId,
         (*json)["performance_factor_list"] = pfList;
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -1476,10 +1537,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setPerformanceFactor(int deviceId,
             XPUM_LOG_AUDIT("Succeed to set performance factor %d,%f", engine, factor);
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Fail to set performance factor %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to set performance factor %s", status.error_message().c_str());
     }
     return json;
@@ -1509,10 +1572,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setFabricPortEnabled(int deviceId,
             XPUM_LOG_AUDIT("Succeed to set fabric port Enabled %d,%d", port, enabled);
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Fail to set fabric port Enabled %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to set performance factor Enabled %s", status.error_message().c_str());
     }
     return json;
@@ -1542,10 +1607,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setFabricPortBeaconing(int deviceI
             XPUM_LOG_AUDIT("Succeed to set fabric port Beaconing %d,%d", port, beaconing);
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s", response.errormsg().c_str());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to set fabric port Beaconing %s", status.error_message().c_str());
     }
     return json;
@@ -1589,8 +1656,10 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setMemoryEccState(int deviceId, bo
                 ", current: " + std::string((*json)["memory_ecc_current_state"]) +
                 ", pending: " + std::string((*json)["memory_ecc_pending_state"]) +
                 ", action: " + std::string((*json)["memory_ecc_pending_action"]);
+                (*json)["errno"] = errorNumTranslate(response.errorno());
             } else {
                 (*json)["error"] = response.errormsg();
+                (*json)["errno"] = errorNumTranslate(response.errorno());
             }
             XPUM_LOG_AUDIT("Failed to set memory ECC state: available: %s, configurable: %s, current: %s, pending: %s, action: %s",
                            (*json)["memory_ecc_available"].get_ptr<nlohmann::json::string_t*>()->c_str(), (*json)["memory_ecc_configurable"].get_ptr<nlohmann::json::string_t*>()->c_str(),
@@ -1599,6 +1668,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setMemoryEccState(int deviceId, bo
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Fail to set memory ECC state: %s", status.error_message().c_str());
     }
     return json;
@@ -1627,6 +1697,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProcessState(int deviceId
         (*json)["device_process_list"] = deviceProcessList;
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -1683,10 +1754,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceComponentOccupancyRatio(i
             (*json)["tile_json_list"] = tileJsonList;
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
         
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -1706,6 +1779,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceUtilizationByProcess(
     if (status.ok()) {
         if (response.errormsg().length() > 0) {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             return json;
         }
         std::vector<nlohmann::json> utilByProcessList;
@@ -1732,6 +1806,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceUtilizationByProcess(
         (*json)["device_util_by_proc_list"] = utilByProcessList;
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -1750,6 +1825,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllDeviceUtilizationByProcess(
     if (status.ok()) {
         if (response.errormsg().length() > 0) {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
             return json;
         }
         std::vector<nlohmann::json> utilByProcessList;
@@ -1776,6 +1852,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllDeviceUtilizationByProcess(
         (*json)["device_util_by_proc_list"] = utilByProcessList;
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
     return json;
 }
@@ -1834,9 +1911,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getXelinkTopology() {
 
         } else {
             (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
         }
     } else {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
 
     return json;

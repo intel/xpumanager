@@ -14,6 +14,8 @@
 
 #include "core_stub.h"
 #include "xpum_structs.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -43,31 +45,24 @@ ComletFirmware::ComletFirmware() : ComletBase("updatefw", "Update GPU firmware")
 ComletFirmware::~ComletFirmware() {
 }
 
-static bool isNumber(const std::string &str) {
-    return str.find_first_not_of("0123456789") == std::string::npos;
-}
-
 void ComletFirmware::setupOptions() {
     opts = std::unique_ptr<FlashFirmwareOptions>(new FlashFirmwareOptions());
 
-    auto deviceIdOpt = addOption("-d, --device", opts->deviceId, "The device ID");
+    auto deviceIdOpt = addOption("-d, --device", opts->deviceIdStr, "The device ID or PCI BDF address");
     deviceIdOpt->check([](const std::string &str) {
-        std::string errStr = "Device id should be integer larger than or equal to 0";
-        if (!isNumber(str))
-            return errStr;
-        int value;
-        try {
-            value = std::stoi(str);
-        } catch (const std::out_of_range &oor) {
-            return errStr;
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
         }
-        if (value < 0)
-            return errStr;
-        return std::string();
+        return errStr;
     });
 
     auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, AMC, GFX_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).");
     // fwTypeOpt->required();
+    
+#ifndef DAEMONLESS
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
         if (str.compare("GFX") == 0 || str.compare("AMC") == 0 || str.compare("GFX_DATA") == 0) {
@@ -76,6 +71,18 @@ void ComletFirmware::setupOptions() {
             return errStr;
         }
     });
+#else
+    fwTypeOpt->check([](const std::string &str) {
+        std::string errStr = "Invalid firmware type";
+        if (str.compare("GFX") == 0 || str.compare("GFX_DATA") == 0) {
+            return std::string();
+        } else {
+            return errStr;
+        }
+    });
+
+
+#endif
 
     auto fwPathOpt = addOption("-f, --file", opts->firmwarePath, "The firmware image file path on this server");
     // fwPathOpt->required();
@@ -107,20 +114,41 @@ void ComletFirmware::setupOptions() {
 
 nlohmann::json ComletFirmware::validateArguments() {
     nlohmann::json result;
+
+    if (opts->deviceIdStr.empty()) {
+        // do nothing
+    } else if (isBDF(opts->deviceIdStr)) {
+        auto json = coreStub->getDeviceIdByBDF(opts->deviceIdStr.c_str());
+        if (json->contains("error")) {
+            result["error"] = (*json)["error"].get<std::string>();
+            return result;
+        } else if (json->contains("device_id")) {
+            opts->deviceId = (*json)["device_id"].get<int>();
+        } else {
+            result["error"] = "Fail to translate bdf address to device id";
+            result["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+            return result;
+        }
+    } else {
+        opts->deviceId = std::stoi(opts->deviceIdStr);
+    }
     // GFX
     if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX") == 0) {
         result["error"] = "Updating GFX firmware on all devices is not supported";
+        result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
         return result;
     }
 
     if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX_DATA") == 0) {
         result["error"] = "Updating GFX_DATA firmware on all devices is not supported";
+        result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
         return result;
     }
 
     // AMC
     if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("AMC") == 0) {
         result["error"] = "Updating AMC firmware on single device is not supported";
+         result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         return result;
     }
     return result;
@@ -156,6 +184,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     auto validateResultJson = validateArguments();
     if (validateResultJson.contains("error")) {
         printJson(std::make_shared<nlohmann::json>(validateResultJson), out, raw);
+        setExitCodeByJson(validateResultJson);
         return;
     }
 
@@ -164,6 +193,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     std::shared_ptr<nlohmann::json> json = std::move(uniqueJson);
     if (json->contains("error")) {
         printJson(json, out, raw);
+        setExitCodeByJson(*json);
         return;
     }
     while (true) {
@@ -172,12 +202,14 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
         json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
         if (json->contains("error")) {
             printJson(json, out, raw);
+            setExitCodeByJson(*json);
             return;
         }
         if (!json->contains("result")) {
             nlohmann::json tmp;
             tmp["error"] = "Failed to get firmware reuslt";
             printJson(std::make_shared<nlohmann::json>(tmp), out, raw);
+            exit_code = XPUM_CLI_ERROR_GENERIC_ERROR;
             return;
         }
 
@@ -191,6 +223,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
         } else if (flashStatus.compare("FAILED") == 0) {
             nlohmann::json tmp;
             tmp["result"] = "FAILED";
+            tmp["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_FAIL;
             printJson(std::make_shared<nlohmann::json>(tmp), out, raw);
             return;
         } else {
@@ -318,6 +351,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     auto validateResultJson = validateArguments();
     if (validateResultJson.contains("error")) {
         out << "Error: " << validateResultJson["error"].get<std::string>() << std::endl;
+        setExitCodeByJson(validateResultJson);
         return;
     }
 
@@ -362,12 +396,14 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         if (type == XPUM_DEVICE_FIRMWARE_GFX) {
             if (!checkImageValid()) {
                 out << "Error: The image file is not a right GFX firmware image file." << std::endl;
-                exit(1);
+                exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+                return;
             }
         } else {
             if (!validateFwDataImage()) {
                 out << "Error: The image file is not a right GFX_DATA firmware image file." << std::endl;
-                exit(1);
+                exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+                return;
             }
         }
         // for ats-m3
@@ -410,7 +446,8 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             auto json = getDeviceProperties(deviceId);
             if (json.contains("error")) {
                 out << "Error: " << json["error"].get<std::string>() << std::endl;
-                exit(1);
+                setExitCodeByJson(json);
+                return;
             }
             out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(json) << std::endl;
         }
@@ -438,6 +475,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     auto status = (*json)["error"];
     if (!status.is_null()) {
         out << "Error: " << status.get<std::string>() << std::endl;
+        setExitCodeByJson(*json);
         return;
     }
     out << "Start to update firmware" << std::endl;
@@ -453,11 +491,13 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         if (json->contains("error")) {
             out << std::endl;
             out << "Error: " << (*json)["error"] << std::endl;
+            setExitCodeByJson(*json);
             return;
         }
         if (!json->contains("result")) {
             out << std::endl;
             out << "Error: Failed to get firmware reuslt" << std::endl;
+            exit_code = XPUM_CLI_ERROR_GENERIC_ERROR;
             return;
         }
 
@@ -471,6 +511,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         } else if (flashStatus.compare("FAILED") == 0) {
             out << std::endl;
             out << "Update firmware failed" << std::endl;
+            exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_FAIL;
             return;
         } else {
             // print progress bar
@@ -480,6 +521,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     }
 
     out << "unknown error" << std::endl;
+    exit_code = XPUM_CLI_ERROR_GENERIC_ERROR;
 }
 
 void ComletFirmware::readImageContent(const char *filePath) {

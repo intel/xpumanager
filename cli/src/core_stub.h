@@ -27,6 +27,8 @@ class CoreStub {
 
     virtual std::unique_ptr<nlohmann::json> getVersion()=0;
 
+    virtual std::unique_ptr<nlohmann::json> getDeviceIdByBDF(const char *bdf)=0;
+
     virtual std::unique_ptr<nlohmann::json> getDeviceList()=0;
 
     virtual std::unique_ptr<nlohmann::json> getDeviceProperties(int deviceId)=0;

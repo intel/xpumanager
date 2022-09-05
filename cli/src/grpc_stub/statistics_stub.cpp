@@ -12,6 +12,7 @@
 #include "core.pb.h"
 #include "grpc_core_stub.h"
 #include "xpum_structs.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -90,7 +91,7 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getEngineStatistics(int deviceId) 
     }
 
     if (engineResponse.errormsg().length() != 0) {
-        if (engineResponse.status() == XPUM_METRIC_NOT_SUPPORTED || engineResponse.status() == XPUM_METRIC_NOT_ENABLED)
+        if (engineResponse.errorno() == XPUM_METRIC_NOT_SUPPORTED || engineResponse.errorno() == XPUM_METRIC_NOT_ENABLED)
             return std::make_shared<nlohmann::json>();
         json["error"] = engineResponse.errormsg();
         return std::make_shared<nlohmann::json>(json);
@@ -183,7 +184,7 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricStatistics(int deviceId) 
         return std::make_shared<nlohmann::json>(json);
     }
     if (response.errormsg().length() != 0) {
-        if (response.status() == XPUM_METRIC_NOT_SUPPORTED || response.status() == XPUM_METRIC_NOT_ENABLED)
+        if (response.errorno() == XPUM_METRIC_NOT_SUPPORTED || response.errorno() == XPUM_METRIC_NOT_ENABLED)
             return std::make_shared<nlohmann::json>();
         json["error"] = response.errormsg();
         return std::make_shared<nlohmann::json>(json);
@@ -248,11 +249,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getStatistics(int deviceId, bool e
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         return json;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        (*json)["errno"] = errorNumTranslate(response.errorno());
         return json;
     }
 
@@ -351,10 +354,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getStatisticsByGroup(uint32_t grou
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        (*json)["errno"] = errorNumTranslate(response.errorno());
         return json;
     }
 

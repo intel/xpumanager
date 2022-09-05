@@ -10,6 +10,7 @@ message GeneralEnum {
 message DeviceId {
     uint32 id = 1;
     string errorMsg = 2;
+    int32 errorNo=3;
 }
 
 message DeviceBDF {
@@ -24,6 +25,7 @@ message XpumVersionInfoArray {
     }
     repeated XpumVersionInfo versions = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message XpumDeviceBasicInfoArray {
@@ -39,6 +41,7 @@ message XpumDeviceBasicInfoArray {
     }
     repeated XpumDeviceBasicInfo info = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message XpumDeviceProperties {
@@ -48,6 +51,7 @@ message XpumDeviceProperties {
     }
     repeated XpumDeviceProperty properties = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message GetAMCFirmwareVersionsRequest {
@@ -59,6 +63,7 @@ message GetAMCFirmwareVersionsResponse {
     repeated string versions = 1;
     string errorMsg = 2;
     int32 status = 3;
+    int32 errorNo = 4;
 }
 
 message XpumTopologyInfo {
@@ -74,6 +79,7 @@ message XpumTopologyInfo {
     }        
     repeated XpumSwitchInfo switchInfo = 4;
     string errorMsg = 5;    
+    int32 errorNo = 6;
 }
 
 message GroupId {
@@ -90,12 +96,14 @@ message GroupInfo {
     uint32 count = 3;    
     repeated DeviceId deviceList = 4;
     string errorMsg = 5;
+    int32 errorNo = 6;
 }
 
 message GroupArray{
     uint32 count = 1;
     repeated GroupInfo groupList = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message GroupAddRemoveDevice{
@@ -151,6 +159,7 @@ message DiagnosticsTaskInfo{
     uint64 startTime = 8;
     uint64 endTime = 9;
     string errorMsg = 10;
+    int32 errorNo = 11;
 }
 
 enum DiagnosticsMediaCodecResolution {
@@ -174,6 +183,7 @@ message DiagnosticsMediaCodecInfo{
 message DiagnosticsMediaCodecInfoArray{
     repeated DiagnosticsMediaCodecInfo dataList = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message DiagnosticsGroupTaskInfo{
@@ -181,6 +191,7 @@ message DiagnosticsGroupTaskInfo{
     repeated DiagnosticsTaskInfo taskInfo = 2;
     uint32 count = 3;
     string errorMsg = 4;
+    int32 errorNo = 5;
 }
 
 enum HealthType{
@@ -222,6 +233,7 @@ message HealthData{
     uint64 throttleThreshold = 5;
     uint64 shutdownThreshold = 6;
     string errorMsg = 7;
+    int32 errorNo = 8;
 }
 
 
@@ -231,6 +243,7 @@ message HealthDataByGroup{
     repeated HealthData healthData = 3;
     uint32 count = 4;
     string errorMsg = 5;
+    int32 errorNo = 6;
 }
 
 message HealthConfigRequest{
@@ -250,6 +263,7 @@ message HealthConfigInfo{
     HealthConfigType configType = 2;
     int32 threshold = 3;
     string errorMsg = 4;
+    int32 errorNo = 5;
 }
 
 message HealthConfigByGroupInfo{
@@ -259,6 +273,7 @@ message HealthConfigByGroupInfo{
     repeated int32 threshold = 4;
     uint32 count = 5;
     string errorMsg = 6;
+    int32 errorNo = 7;
 }
 
 message DeviceStatsData{
@@ -283,6 +298,7 @@ message DeviceStatsInfo{
 message DeviceStatsInfoArray {
     repeated DeviceStatsInfo dataList = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message XpumGetStatsRequest {
@@ -302,7 +318,7 @@ message XpumGetStatsResponse {
     uint64 begin=2;
     uint64 end=3;
     string errorMsg = 4;
-    int32 status = 5;
+    int32 errorNo = 5;
 }
 
 message XpumFirmwareFlashJob {
@@ -316,6 +332,7 @@ message XpumFirmwareFlashJob {
 message XpumFirmwareFlashJobResponse {
     GeneralEnum type = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message XpumFirmwareFlashTaskRequest {
@@ -333,6 +350,7 @@ message XpumFirmwareFlashTaskResult {
     string version = 5;
     string errorMsg = 6;
     int32 percentage = 7;
+    int32 errorNo = 8;
 }
 enum XpumPolicyConditionType {  
     POLICY_CONDITION_TYPE_GREATER=0;
@@ -374,6 +392,7 @@ message ResetDeviceResponse{
     uint32 deviceId = 1;
     uint32 retCode = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message DeviceProcessState{
@@ -389,6 +408,7 @@ message DeviceProcessStateResponse{
     uint32 count = 1;
     repeated DeviceProcessState processlist = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message DeviceComponentOccupancyRatioRequest {
@@ -427,6 +447,7 @@ message DeviceComponentOccupancyRatioResponse {
     uint32 tileCount = 1;
     repeated DeviceComponentOccupancyRatio componentOccupancyList = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message DeviceUtilizationByProcess {
@@ -455,6 +476,7 @@ message DeviceUtilizationByProcessResponse {
     uint32 count = 1;
     repeated DeviceUtilizationByProcess processList = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message PerformanceFactor{
@@ -469,6 +491,7 @@ message DevicePerformanceFactorResponse{
     uint32 count = 1;
     repeated PerformanceFactor pf = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message DeviceDataRequest{
@@ -518,6 +541,7 @@ message ConfigDeviceData{
     string intervalScope = 6; 
     repeated ConfigTileData tileConfigData = 7;
     string errorMsg = 8;
+    int32 errorNo = 9;
 }
 message ConfigDeviceSchdeulerModeRequest{
     uint32 deviceId = 1;
@@ -581,6 +605,7 @@ message ConfigDeviceMemoryEccStateResultData {
     string currentState = 6;
     string pendingState = 7;
     string pendingAction = 8;
+    int32 errorNo = 9;
 }
 
 message ConfigDeviceResultData {
@@ -589,6 +614,7 @@ message ConfigDeviceResultData {
     uint32 tileId = 3;
     uint32 retCode = 4;
     string errorMsg = 5;
+    int32 errorNo = 6;
 }
 
 message DevicePerformanceFactorSettingResponse {
@@ -597,6 +623,7 @@ message DevicePerformanceFactorSettingResponse {
     uint32 tileId = 3;
     uint32 retCode = 4;
     string errorMsg = 5;
+    int32 errorNo = 6;
 }
 
 enum XpumPolicyType {  
@@ -622,6 +649,7 @@ message XpumPolicyData {
 message GetPolicyResponse {
     repeated XpumPolicyData policyList = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 message GetPolicyRequest{
     uint32 id = 1;
@@ -637,6 +665,7 @@ message SetPolicyRequest{
 message SetPolicyResponse{
     bool isOk = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message ReadPolicyNotifyDataResponse{
@@ -668,7 +697,7 @@ message StartDumpRawDataTaskRequest{
 
 message StartDumpRawDataTaskResponse{
     DumpRawDataTaskInfo taskInfo = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
 }
 
@@ -678,13 +707,13 @@ message StopDumpRawDataTaskRequest{
 
 message StopDumpRawDataTaskReponse{
     DumpRawDataTaskInfo taskInfo = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
 }
 
 message ListDumpRawDataTaskResponse{
     repeated DumpRawDataTaskInfo taskList = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
 }
 
@@ -716,21 +745,22 @@ message AgentConfigEntryList{
 
 message SetAgentConfigResponse{
     AgentConfigEntryList entryList = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
     repeated AgentConfigError errorList = 4;
 }
 
 message GetAgentConfigResponse{
     AgentConfigEntryList entryList = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
 }
 
 message TopoXMLResponse {
     uint32 length = 1;
     string xmlString = 2;
-    string errorMsg = 5;
+    string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message XpumGetEngineStatsRequest {
@@ -756,7 +786,7 @@ message XpumGetEngineStatsResponse {
     uint64 begin = 2;
     uint64 end = 3;
     string errorMsg = 4;
-    int32 status = 5;
+    int32 errorNo = 5;
 }
 
 message GetEngineCountRequest {
@@ -775,7 +805,7 @@ message EngineCountInfo {
 }
 
 message GetEngineCountResponse {
-    int32 status = 1;
+    int32 errorNo = 1;
     string errorMsg = 2;
     repeated EngineCountInfo engineCountList = 3;
 }
@@ -796,6 +826,7 @@ message XpumXelinkTopoInfoArray{
     }
     repeated XelinkTopoInfo topoInfo=1;
     string errorMsg = 4;
+    int32 errorNo = 5;
 }
 
 message GetFabricStatsRequest {
@@ -821,7 +852,7 @@ message GetFabricStatsResponse {
     uint64 begin = 2;
     uint64 end = 3;
     string errorMsg = 4;
-    int32 status = 5;
+    int32 errorNo = 5;
 }
 
 message GetFabricCountRequest {
@@ -845,10 +876,12 @@ message GetFabricCountResponse {
     int32 tileId = 2;
     repeated FabricCountInfo fabricCountList= 3;
     string errorMsg = 4;
+    int32 errorNo = 5;
 }
 
 message GetRedfishAmcWarnMsgResponse {
     string warnMsg = 1;
+    int32 errorNo = 2;
 }
 
 message SensorReadingSchema{
@@ -862,7 +895,7 @@ message SensorReadingSchema{
 
 message GetSensorReadingResponse {
     repeated SensorReadingSchema dataList=1;
-    int32 errCode=2;
+    int32 errorNo=2;
     string errorMsg =3; 
 }
 

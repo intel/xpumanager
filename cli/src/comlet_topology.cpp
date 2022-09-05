@@ -191,6 +191,7 @@ void ComletTopology::showXelinkTopology(std::shared_ptr<nlohmann::json> json) {
 void ComletTopology::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
+        setExitCodeByJson(*res);
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         setExitCodeByJson(*res);
         return;

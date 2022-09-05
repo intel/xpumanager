@@ -29,8 +29,9 @@ static std::string getFlashFwErrMsg() {
                              &job,
                              request->username().c_str(),
                              request->password().c_str());
-    response->mutable_type()->set_value(result);
+    // response->mutable_type()->set_value(result);
     response->set_errormsg(getFlashFwErrMsg());
+    response->set_errorno(result);
     return grpc::Status::OK;
 }
 
@@ -71,6 +72,7 @@ static std::string getFlashFwErrMsg() {
             }
         }
     }
+    response->set_errorno(res);
 
     return grpc::Status::OK;
 }
@@ -80,6 +82,7 @@ grpc::Status XpumCoreServiceImpl::getRedfishAmcWarnMsg(::grpc::ServerContext* co
                                                        ::GetRedfishAmcWarnMsgResponse* response) {
     auto msg = getRedfishAmcWarn();
     response->set_warnmsg(msg);
+    response->set_errorno(XPUM_OK);
     return grpc::Status::OK;
 }
 
@@ -97,7 +100,7 @@ grpc::Status XpumCoreServiceImpl::getRedfishAmcWarnMsg(::grpc::ServerContext* co
                 response->set_errormsg("Fail to get sensor reading count.");
                 break;
         }
-        response->set_errcode(res);
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     xpum_sensor_reading_t dataList[count];
@@ -122,7 +125,7 @@ grpc::Status XpumCoreServiceImpl::getRedfishAmcWarnMsg(::grpc::ServerContext* co
                 break;
         }
     }
-    response->set_errcode(res);
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 } // namespace xpum::daemon

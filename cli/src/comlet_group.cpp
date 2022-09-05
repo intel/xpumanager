@@ -319,6 +319,7 @@ static void showRemoveDeviceFromGroupResult(std::ostream &out, std::shared_ptr<n
 void ComletGroup::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
+        setExitCodeByJson(*res);
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         return;
     }

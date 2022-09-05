@@ -15,6 +15,7 @@
 namespace xpum::cli {
 struct FlashFirmwareOptions {
     int deviceId;
+    std::string deviceIdStr;
     std::string firmwareType;
     std::string firmwarePath;
 

@@ -125,6 +125,8 @@ void static fillAgentConfigReponse(::AgentConfigEntryList* response, xpum_result
     // fill response config entries
     fillAgentConfigReponse(response->mutable_entrylist(), res);
 
+    response->set_errorno(res);
+
     return grpc::Status::OK;
 }
 
@@ -141,6 +143,7 @@ void static fillAgentConfigReponse(::AgentConfigEntryList* response, xpum_result
             response->set_errormsg("Error");
             break;
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 } // namespace xpum::daemon

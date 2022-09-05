@@ -7,6 +7,7 @@
 #include "grpc_core_stub.h"
 #include "logger.h"
 #include "xpum_structs.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -43,15 +44,20 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, uns
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         return json;
     }
 
     if (response.errormsg().length() > 0) {
         (*json)["error"] = response.errormsg();
+        (*json)["errno"] = errorNumTranslate(response.errorno());
         return json;
     }
 
-    xpum_result_t code = (xpum_result_t)response.type().value();
+    // xpum_result_t code = (xpum_result_t)response.type().value();
+    xpum_result_t code = (xpum_result_t)response.errorno();
+
+    (*json)["errno"] = errorNumTranslate(response.errorno());
 
     switch (code) {
         case xpum_result_t::XPUM_OK:
@@ -113,11 +119,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getFirmwareFlashResult(int deviceI
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         return json;
     }
 
     if (res.errormsg().length() != 0) {
         (*json)["error"] = res.errormsg();
+        (*json)["errno"] = errorNumTranslate(res.errorno());
         return json;
     }
 
@@ -156,11 +164,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getSensorReading() {
     auto status = this->stub->getSensorReading(&ct, google::protobuf::Empty(), &response);
     if (!status.ok()) {
         json["error"] = status.error_message();
+        json["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         return std::make_unique<nlohmann::json>(json);
     }
 
     if (response.errormsg().length() != 0) {
         json["error"] = response.errormsg();
+        json["errno"] = errorNumTranslate(response.errorno());
         return std::make_unique<nlohmann::json>(json);
     }
     json["sensor_reading"] = nlohmann::json::array();

@@ -12,6 +12,7 @@
 #include "grpc_core_stub.h"
 #include "logger.h"
 #include "xpum_structs.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -34,12 +35,14 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::startDumpRawDataTask(uint32_t devi
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Failed to start dump raw data task on device %d tile %d", deviceId, tileId);
         return json;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        (*json)["errno"] = errorNumTranslate(response.errorno());
         XPUM_LOG_AUDIT("Failed to start dump raw data task on device %d tile %d", deviceId, tileId);
         return json;
     }
@@ -71,12 +74,14 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::stopDumpRawDataTask(int taskId) {
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         XPUM_LOG_AUDIT("Failed to stop dump raw data task %d", taskId);
         return json;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        (*json)["errno"] = errorNumTranslate(response.errorno());
         XPUM_LOG_AUDIT("Failed to stop dump raw data task %d", taskId);
         return json;
     }
@@ -102,10 +107,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::listDumpRawDataTasks() {
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        (*json)["errno"] = errorNumTranslate(response.errorno());
         return json;
     }
 

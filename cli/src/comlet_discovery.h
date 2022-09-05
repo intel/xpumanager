@@ -18,6 +18,7 @@ struct ComletDiscoveryOptions {
     std::string deviceId = "-1";
     int a = 0;
     bool listamcversions = false;
+    std::vector<int> propIdList;
     std::string username = "";
     std::string password = "";
 };

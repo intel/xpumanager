@@ -63,8 +63,8 @@ int CLIWrapper::printResult(std::ostream &out) {
 #ifdef DAEMONLESS
         putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
         this->coreStub = std::make_shared<LibCoreStub>();
-        comlet.coreStub = this->coreStub;
 #endif
+        comlet.coreStub = this->coreStub;
         comlet.getTableResult(out);
         return comlet.exit_code;
     }

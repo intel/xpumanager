@@ -266,10 +266,12 @@ void ComletDump::printByLine(std::ostream &out) {
 
     if (this->opts->deviceIds.size() == 0) {
         out << "Device id should be provided" << std::endl;
+        exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return;
     }
     if (this->opts->metricsIdList.size() == 0) {
         out << "Metics types should be provided" << std::endl;
+        exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return;
     }
     std::string deviceId = this->opts->deviceIds[0];

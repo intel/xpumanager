@@ -11,6 +11,7 @@
 #include "core.pb.h"
 #include "grpc_core_stub.h"
 #include "logger.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -115,11 +116,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setAgentConfig(std::string jsonNam
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         return json;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        (*json)["errno"] = errorNumTranslate(response.errorno());
         return json;
     }
 
@@ -127,6 +130,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setAgentConfig(std::string jsonNam
         auto error = response.errorlist()[0];
         auto pConfigType = getAgentConfigTypeFromKeyStr(error.key());
         (*json)["error"] = pConfigType->jsonFieldName + ":" + error.errormsg();
+        (*json)["errno"] = errorNumTranslate(response.errorno());
         return json;
     }
 
@@ -145,11 +149,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getAgentConfig() {
 
     if (!status.ok()) {
         (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         return json;
     }
 
     if (response.errormsg().length() != 0) {
         (*json)["error"] = response.errormsg();
+        (*json)["errno"] = errorNumTranslate(response.errorno());
         return json;
     }
 
