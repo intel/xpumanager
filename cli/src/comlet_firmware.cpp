@@ -118,16 +118,12 @@ nlohmann::json ComletFirmware::validateArguments() {
     if (opts->deviceIdStr.empty()) {
         // do nothing
     } else if (isBDF(opts->deviceIdStr)) {
-        auto json = coreStub->getDeviceIdByBDF(opts->deviceIdStr.c_str());
+        int deviceId;
+        auto json = coreStub->getDeivceIdByBDF(opts->deviceIdStr.c_str(), &deviceId);
         if (json->contains("error")) {
-            result["error"] = (*json)["error"].get<std::string>();
-            return result;
-        } else if (json->contains("device_id")) {
-            opts->deviceId = (*json)["device_id"].get<int>();
-        } else {
-            result["error"] = "Fail to translate bdf address to device id";
-            result["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
-            return result;
+            return *json;
+        } else{
+            opts->deviceId = deviceId;
         }
     } else {
         opts->deviceId = std::stoi(opts->deviceIdStr);

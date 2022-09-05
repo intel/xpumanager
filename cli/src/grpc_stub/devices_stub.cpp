@@ -99,33 +99,6 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId) 
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceIdByBDF(const char *bdf) {
-    assert(this->stub != nullptr);
-
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    DeviceBDF request;
-    DeviceId response;
-
-    request.set_bdf(std::string(bdf));
-    grpc::Status status = stub->getDeviceIdByBDF(&context, request, &response);
-
-    if (!status.ok()) {
-        (*json)["error"] = status.error_message();
-        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
-        return json;
-    }
-
-    if (response.errormsg().length() != 0) {
-        (*json)["error"] = response.errormsg();
-        (*json)["errno"] = errorNumTranslate(response.errorno());
-        return json;
-    }
-
-    (*json)["device_id"] = response.id();
-    return json;
-}
-
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(const char *bdf) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());

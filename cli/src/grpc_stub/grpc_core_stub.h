@@ -29,8 +29,6 @@ class GrpcCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> getVersion();
 
-    std::unique_ptr<nlohmann::json> getDeviceIdByBDF(const char *bdf);
-
     std::unique_ptr<nlohmann::json> getDeviceList();
 
     std::unique_ptr<nlohmann::json> getDeviceProperties(int deviceId);
