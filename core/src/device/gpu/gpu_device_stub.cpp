@@ -1723,7 +1723,7 @@ void GPUDeviceStub::getEuActiveStallIdle(const ze_device_handle_t& device, const
 
 std::mutex GPUDeviceStub::metric_streamer_mutex;
 std::map<ze_device_handle_t, zet_metric_group_handle_t> GPUDeviceStub::target_metric_groups;
-std::map<ze_device_handle_t, zet_metric_streamer_handle_t> GPUDeviceStub::target_metric_streamers;
+std::map<ze_device_handle_t, ze_context_handle_t> GPUDeviceStub::target_metric_contexts;
 void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device, uint32_t subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data) {
     ze_result_t res;
     std::unique_lock<std::mutex> lock(GPUDeviceStub::metric_streamer_mutex);
@@ -1756,11 +1756,10 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     if (hMetricGroup == nullptr) {
         throw BaseException("toGetEuActiveStallIdleCore");
     }
-    zet_metric_streamer_handle_t hMetricStreamer = nullptr;
-    if (GPUDeviceStub::target_metric_streamers.find(device) != GPUDeviceStub::target_metric_streamers.end()) {
-        hMetricStreamer = GPUDeviceStub::target_metric_streamers.at(device);
+    ze_context_handle_t hContext = nullptr;
+    if (GPUDeviceStub::target_metric_contexts.find(device) != GPUDeviceStub::target_metric_contexts.end()) {
+        hContext = GPUDeviceStub::target_metric_contexts.at(device);
     } else {
-        ze_context_handle_t hContext;
         ze_context_desc_t context_desc = {
                 ZE_STRUCTURE_TYPE_CONTEXT_DESC,
                 nullptr, 
@@ -1770,20 +1769,21 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         if (res != ZE_RESULT_SUCCESS) {
             throw BaseException("toGetEuActiveStallIdleCore - zeContextCreate");
         }
-        zet_metric_streamer_desc_t metricStreamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
-        XPUM_ZE_HANDLE_LOCK(device, res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup));
-        if (res != ZE_RESULT_SUCCESS) {
-            throw BaseException("toGetEuActiveStallIdleCore - zetContextActivateMetricGroups");
-        }
-
-        metricStreamerDesc.samplingPeriod = Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
-        XPUM_ZE_HANDLE_LOCK(device, res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &metricStreamerDesc, nullptr, &hMetricStreamer));
-        if (res != ZE_RESULT_SUCCESS) {
-            throw BaseException("toGetEuActiveStallIdleCore - zetMetricStreamerOpen");
-        }
-        GPUDeviceStub::target_metric_streamers[device] = hMetricStreamer;
+        GPUDeviceStub::target_metric_contexts[device] = hContext;
     }
 
+    zet_metric_streamer_handle_t hMetricStreamer = nullptr;
+    zet_metric_streamer_desc_t metricStreamerDesc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
+    XPUM_ZE_HANDLE_LOCK(device, res = zetContextActivateMetricGroups(hContext, device, 1, &hMetricGroup));
+    if (res != ZE_RESULT_SUCCESS) {
+        throw BaseException("toGetEuActiveStallIdleCore - zetContextActivateMetricGroups");
+    }
+
+    metricStreamerDesc.samplingPeriod = Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
+    XPUM_ZE_HANDLE_LOCK(device, res = zetMetricStreamerOpen(hContext, device, hMetricGroup, &metricStreamerDesc, nullptr, &hMetricStreamer));
+    if (res != ZE_RESULT_SUCCESS) {
+        throw BaseException("toGetEuActiveStallIdleCore - zetMetricStreamerOpen");
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::EU_ACTIVE_STALL_IDLE_MONITOR_INTERNAL_PERIOD));
     size_t rawSize = 0;
     res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, nullptr);
@@ -1794,6 +1794,15 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, rawData.data());
     if (res != ZE_RESULT_SUCCESS) {
         throw BaseException("toGetEuActiveStallIdleCore");
+    }
+
+    res = zetMetricStreamerClose(hMetricStreamer);
+    if (res != ZE_RESULT_SUCCESS) {
+        throw BaseException("zetMetricStreamerClose");
+    }
+    res = zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+    if (res != ZE_RESULT_SUCCESS) {
+        throw BaseException("zetContextActivateMetricGroups");
     }
     uint32_t numMetricValues = 0;
     zet_metric_group_calculation_type_t calculationType = ZET_METRIC_GROUP_CALCULATION_TYPE_METRIC_VALUES;

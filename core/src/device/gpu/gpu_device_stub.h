@@ -296,7 +296,7 @@ class GPUDeviceStub {
 
     static std::map<ze_device_handle_t, zet_metric_group_handle_t> target_metric_groups;
 
-    static std::map<ze_device_handle_t, zet_metric_streamer_handle_t> target_metric_streamers;
+    static std::map<ze_device_handle_t, ze_context_handle_t> target_metric_contexts;
 
     static std::map<ze_device_handle_t, std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>> device_perf_groups;
 };

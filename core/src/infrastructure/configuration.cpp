@@ -35,6 +35,7 @@ bool Configuration::INITIALIZE_PCIE_MANAGER = false;
 uint32_t Configuration::DEFAULT_MEASUREMENT_DATA_SCALE = 100;
 uint32_t Configuration::MAX_STATISTICS_SESSION_NUM = 2;
 uint32_t Configuration::MEMORY_IO_THROUGHPUT_DATA_SCALE = 1000;
+bool Configuration::INITIALIZE_PERF_METRIC = false;
 
 std::set<MeasurementType> Configuration::enabled_metrics;
 std::vector<PerfMetric_t> Configuration::perf_metrics;
@@ -56,10 +57,21 @@ void Configuration::initEnabledMetrics() {
                 int end_type_id = std::stoi(substr.substr(pos_s + 1));
                 while (start_type_id <= end_type_id) {
                     xpum_stats_type_t type = (xpum_stats_type_t)start_type_id;
-                    if ((int)type >= 0 && (int)type < MeasurementType::METRIC_MAX) {
-                        enabled_metrics.emplace(Utility::measurementTypeFromXpumStatsType(type));
-                        if ((int)type == MeasurementType::METRIC_PCIE_READ_THROUGHPUT || (int)type == MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT || (int)type == MeasurementType::METRIC_PCIE_READ || (int)type == MeasurementType::METRIC_PCIE_WRITE) {
+                    auto m_type = Utility::measurementTypeFromXpumStatsType(type);
+                    if ((int)m_type >= 0 && (int)m_type < MeasurementType::METRIC_MAX) {
+                        enabled_metrics.emplace(m_type);
+                        if (!INITIALIZE_PCIE_MANAGER && 
+                            (m_type == MeasurementType::METRIC_PCIE_READ_THROUGHPUT 
+                            || m_type == MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT 
+                            || m_type == MeasurementType::METRIC_PCIE_READ 
+                            || m_type == MeasurementType::METRIC_PCIE_WRITE)) {
                             INITIALIZE_PCIE_MANAGER = true;
+                        }
+                        if (!INITIALIZE_PERF_METRIC && 
+                            (m_type == MeasurementType::METRIC_EU_ACTIVE
+                            || m_type == MeasurementType::METRIC_EU_STALL
+                            || m_type == MeasurementType::METRIC_EU_IDLE)) {
+                            INITIALIZE_PERF_METRIC = true;
                         }
                     } else {
                         break;
@@ -68,17 +80,35 @@ void Configuration::initEnabledMetrics() {
                 }
             } else {
                 xpum_stats_type_t type = (xpum_stats_type_t)std::stoi(substr);
-                if ((int)type >= 0 && (int)type < MeasurementType::METRIC_MAX) {
-                    enabled_metrics.emplace(Utility::measurementTypeFromXpumStatsType(type));
-                    if ((int)type == MeasurementType::METRIC_PCIE_READ_THROUGHPUT || (int)type == MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT || (int)type == MeasurementType::METRIC_PCIE_READ || (int)type == MeasurementType::METRIC_PCIE_WRITE) {
+                auto m_type = Utility::measurementTypeFromXpumStatsType(type);
+                if ((int)m_type >= 0 && (int)m_type < MeasurementType::METRIC_MAX) {
+                    enabled_metrics.emplace(m_type);
+                    if (!INITIALIZE_PCIE_MANAGER && 
+                        (m_type == MeasurementType::METRIC_PCIE_READ_THROUGHPUT 
+                        || m_type == MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT 
+                        || m_type == MeasurementType::METRIC_PCIE_READ 
+                        || m_type == MeasurementType::METRIC_PCIE_WRITE)) {
                         INITIALIZE_PCIE_MANAGER = true;
+                    }
+                    if (!INITIALIZE_PERF_METRIC && 
+                        (m_type == MeasurementType::METRIC_EU_ACTIVE
+                        || m_type == MeasurementType::METRIC_EU_STALL
+                        || m_type == MeasurementType::METRIC_EU_IDLE)) {
+                        INITIALIZE_PERF_METRIC = true;
                     }
                 }
             }
         }
     } else {
         for (int metric = 0; metric < (int)MeasurementType::METRIC_MAX; metric++) {
-            if (metric != (int)MeasurementType::METRIC_EU_ACTIVE && metric != (int)MeasurementType::METRIC_EU_IDLE && metric != (int)MeasurementType::METRIC_EU_STALL && metric != (int)MeasurementType::METRIC_PCIE_READ_THROUGHPUT && metric != (int)MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT && metric != (int)MeasurementType::METRIC_PCIE_READ && metric != (int)MeasurementType::METRIC_PCIE_WRITE) {
+            if (metric != (int)MeasurementType::METRIC_EU_ACTIVE 
+                && metric != (int)MeasurementType::METRIC_EU_IDLE 
+                && metric != (int)MeasurementType::METRIC_EU_STALL 
+                && metric != (int)MeasurementType::METRIC_PCIE_READ_THROUGHPUT 
+                && metric != (int)MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT 
+                && metric != (int)MeasurementType::METRIC_PCIE_READ 
+                && metric != (int)MeasurementType::METRIC_PCIE_WRITE
+                && metric != (int)MeasurementType::METRIC_PERF) {
                 enabled_metrics.emplace((MeasurementType)metric);
             }
         }
@@ -119,7 +149,7 @@ void Configuration::initPerfMetrics() {
                                      line.begin(), line.end(), regex, -1),
                                      std::sregex_token_iterator());
         if (columns.size() < 3) {
-            XPUM_LOG_ERROR("Invalid configuratuon: {}", line);
+            XPUM_LOG_ERROR("Invalid configuration: {}", line);
             continue;
         }
 
