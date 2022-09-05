@@ -36,6 +36,9 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "Elapsed Time (Second) " },
             { "rowTitle": "Energy Consumed (J) " },
             { "rowTitle": "GPU Utilization (%) " },
+            { "rowTitle": "Compute Engines Utils (%) " },
+            { "rowTitle": "Media Engines Utils (%) " },
+            { "rowTitle": "Copy Engines Utils (%) " },
             { "rowTitle": "EU Array Active (%) " },
             { "rowTitle": "EU Array Stall (%) " },
             { "rowTitle": "EU Array Idle (%) " }
@@ -48,6 +51,15 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_UTILIZATION].avg", "fixer": "round" }
+            ]},
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION].avg", "fixer": "round" }
+            ]},
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION].avg", "fixer": "round" }
+            ]},
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION].avg", "fixer": "round" }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].avg", "scale": 1 }
