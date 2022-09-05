@@ -4302,7 +4302,6 @@ std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>> GPUDeviceStu
         if (target_metric_groups.size() == 0) {
             XPUM_LOG_WARN("Device has metric group {} but no matched performance metrics", 
                            metric_group_count);
-            throw BaseException("getDevicePerfMetricGroups");
         }
 
         auto p_device_groups = std::make_shared<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>();

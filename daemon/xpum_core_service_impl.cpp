@@ -1500,7 +1500,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
                 response->set_errormsg("Device not found");
                 break;
             case XPUM_METRIC_NOT_SUPPORTED:
-                response->set_errormsg("Metrics Not Supported");
+                response->set_errormsg("Metrics are not supported, you need to activate these metrics when starting xpumd.");
                 break;
             default:
                 response->set_errormsg("Error");
@@ -1541,7 +1541,7 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
                     response->set_errormsg("Device not found");
                     break;
                 case XPUM_METRIC_NOT_SUPPORTED:
-                    response->set_errormsg("Metrics are not supported in this device");
+                    response->set_errormsg("Metrics are not supported, you need to activate these metrics when starting xpumd.");
                     break;
                 default:
                     response->set_errormsg("Error");
