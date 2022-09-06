@@ -55,11 +55,10 @@ bool ComletDump::dumpEUMetrics() {
 
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device IDs or PCI BDF addresses to query");
 #ifndef DAEMONLESS
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device IDs to query");
     auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
 #else
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device ID or PCI BDF address to query");
     addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
 #endif
 

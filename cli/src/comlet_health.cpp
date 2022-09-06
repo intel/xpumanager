@@ -163,16 +163,19 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
 
     if (this->opts->groupId == 0) {
         (*json)["error"] = "group not found";
+        (*json)["errno"] = XPUM_CLI_ERROR_GROUP_NOT_FOUND;
         return json;
     }
 
     if (this->opts->componentType != INT_MIN && (this->opts->componentType < 1 || this->opts->componentType > 5)) {
         (*json)["error"] = "invalid component";
+        (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_TYPE;
         return json;
     }
 
     if ((this->opts->threshold != INT_MIN && this->opts->threshold < -1) || (this->opts->threshold == 0)) {
         (*json)["error"] = "invalid threshold";
+        (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_THRESHOLD;
         return json;
     }
 
@@ -196,6 +199,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
                 json = this->coreStub->setHealthConfig(targetId, HEALTH_POWER_LIMIT, this->opts->threshold);
             } else {
                 (*json)["error"] = "threshold setting unsupported";
+                (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_CONIG_TYPE;
             }
             if ((*json).contains("error")) {
                 return json;
@@ -221,6 +225,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
                 json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_POWER_LIMIT, this->opts->threshold);
             } else {
                 (*json)["error"] = "threshold setting unsupported";
+                (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_CONIG_TYPE;
             }
             if ((*json).contains("error")) {
                 return json;
@@ -236,6 +241,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         }
     }
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
+    (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
     return json;
 }
 
