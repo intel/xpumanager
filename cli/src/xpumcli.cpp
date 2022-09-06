@@ -127,7 +127,9 @@ int main(int argc, char** argv) {
 #endif
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletFirmware))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletConfig))
+#ifndef DAEMONLESS
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletTopdown))
+#endif
         //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletReset))
         //Temporarily hide the top command becuase the sysfs interface 
         //does not work as expected

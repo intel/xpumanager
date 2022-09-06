@@ -106,8 +106,10 @@ void ComletFirmware::setupOptions() {
 
     opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
 
+#ifndef DAEMONLESS
     addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
+#endif
 
     addFlag("-y, --assumeyes", opts->assumeyes, "Assume that the answer to any question which would be asked is yes");
 }
