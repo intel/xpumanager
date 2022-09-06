@@ -272,9 +272,9 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 " current: " + current +
                 " pending: " + pending + 
                 " action: " +  pendingAction;*/
-                (*json)["return"] = "Succeed to change the ECC mode to be " + pending + " on GPU " + std::to_string(this->opts->deviceId) + ". Please reset GPU or reboot OS to take effect.";
+                (*json)["return"] = "Successfully " + (enabled ? std::string("enable") : std::string("disable")) + " ECC memory on GPU " + std::to_string(this->opts->deviceId) + ". Please reset the GPU or reboot the OS for the change to take effect.";
             } else {
-                (*json)["return"] = "Failed to change the ECC mode.";
+                (*json)["return"] = "Failed to " + (enabled ? std::string("enable") : std::string("disable")) + " ECC memory on GPU " + std::to_string(this->opts->deviceId) + ".";
             }
             return json;
         }

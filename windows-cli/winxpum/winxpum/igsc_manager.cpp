@@ -11,6 +11,10 @@
 #include <sstream>
 
 #include "igsc_lib.h"
+#include <excpt.h>
+
+static const std::string igscMissingErrorInfo{"This feature requires the igsc library. Please make sure it was installed correctly."};
+static const std::string igscEccMissingErrorInfo{"This feature requires the igsc-0.8.4 library or newer. Please make sure it was installed correctly."};
 
 struct img {
     uint32_t size;
@@ -339,46 +343,50 @@ static std::string print_fwdata_version(const struct igsc_fwdata_version* fwdata
 }
 
 int IGSC_Manager::init() {
-    int ret;
-    struct igsc_device_iterator* iter;
-    struct igsc_device_info info;
-    struct igsc_device_handle handle;
-    unsigned int ndevices = 0;
+    __try {
+        int ret;
+        struct igsc_device_iterator* iter;
+        struct igsc_device_info info;
+        struct igsc_device_handle handle;
+        unsigned int ndevices = 0;
 
-    memset(&handle, 0, sizeof(handle));
-    ret = igsc_device_iterator_create(&iter);
-    if (ret != IGSC_SUCCESS) {
-        std::cout << "IGSC init failed" << std::endl;
-        return -1;
-    }
-    info.name[0] = '\0';
-    while ((ret = igsc_device_iterator_next(iter, &info)) == IGSC_SUCCESS) {
-        ret = igsc_device_init_by_device_info(&handle, &info);
+        memset(&handle, 0, sizeof(handle));
+        ret = igsc_device_iterator_create(&iter);
         if (ret != IGSC_SUCCESS) {
+            return -1;
+        }
+        info.name[0] = '\0';
+        while ((ret = igsc_device_iterator_next(iter, &info)) == IGSC_SUCCESS) {
+            ret = igsc_device_init_by_device_info(&handle, &info);
+            if (ret != IGSC_SUCCESS) {
+                /* make sure we have a printable name */
+                info.name[0] = '\0';
+                continue;
+            }
+            /*
+            printf("Device [%d] '%s': %04hx:%04hx %04hx:%04hx %04hu:%02x:%02x.%02x\n",
+                   ndevices,
+                   info.name,
+                   info.vendor_id, info.device_id,
+                   info.subsys_vendor_id, info.subsys_device_id,
+                   info.domain, info.bus, info.dev, info.func);
+            */
+            char bdf_array[20] = {};
+            sprintf_s(bdf_array, "%04hu:%02x:%02x.%01x", info.domain, info.bus, info.dev, info.func);
+            std::string bdf = std::string(bdf_array);
+            bdf_to_devicepath[bdf] = std::string(info.name);
+            ndevices++;
             /* make sure we have a printable name */
             info.name[0] = '\0';
-            continue;
+            (void)igsc_device_close(&handle);
         }
-        /*
-        printf("Device [%d] '%s': %04hx:%04hx %04hx:%04hx %04hu:%02x:%02x.%02x\n",
-               ndevices,
-               info.name,
-               info.vendor_id, info.device_id,
-               info.subsys_vendor_id, info.subsys_device_id,
-               info.domain, info.bus, info.dev, info.func);
-        */
-        char bdf_array[20] = {};
-        sprintf_s(bdf_array, "%04hu:%02x:%02x.%01x", info.domain, info.bus, info.dev, info.func);
-        std::string bdf = std::string(bdf_array);
-        bdf_to_devicepath[bdf] = std::string(info.name);
-        ndevices++;
-        /* make sure we have a printable name */
-        info.name[0] = '\0';
-        (void)igsc_device_close(&handle);
+        igsc_device_iterator_destroy(iter);
+        initialized = true;
+        return 0;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        std::cout << igscMissingErrorInfo << std::endl;
+        exit(-1);
     }
-    igsc_device_iterator_destroy(iter);
-    initialized = true;
-    return 0;
 }
 
 std::string IGSC_Manager::getDeviceGSCVersion(std::string bdf) {
@@ -536,49 +544,59 @@ int IGSC_Manager::runFlashGSCData(std::string bdf, std::string image_file) {
 }
 
 bool IGSC_Manager::setDeviceEccState(std::string bdf, uint8_t req_state, uint8_t* cur_state, uint8_t* pen_state) {
-    if (!initialized) {
-        if (init() < 0) {
+    __try {
+        if (!initialized) {
+            if (init() < 0) {
+                return false;
+            }
+        }
+        *cur_state = (*cur_state) & 0xFF;
+        *pen_state = (*pen_state) & 0xFF;
+
+        struct igsc_device_handle handle;
+        int ret;
+        std::string device_path_str = bdf_to_devicepath[bdf];
+        memset(&handle, 0, sizeof(handle));
+        ret = igsc_device_init_by_device(&handle, device_path_str.c_str());
+        if (ret != IGSC_SUCCESS) {
+            igsc_device_close(&handle);
             return false;
         }
-    }
-    *cur_state = (*cur_state) & 0xFF;
-    *pen_state = (*pen_state) & 0xFF;
 
-    struct igsc_device_handle handle;
-    int ret;
-    std::string device_path_str = bdf_to_devicepath[bdf];
-    memset(&handle, 0, sizeof(handle));
-    ret = igsc_device_init_by_device(&handle, device_path_str.c_str());
-    if (ret != IGSC_SUCCESS) {
-        igsc_device_close(&handle);
-        return false;
+        ret = igsc_ecc_config_set(&handle, (uint8_t)req_state, cur_state, pen_state);
+        return ret == IGSC_SUCCESS;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        std::cout << igscEccMissingErrorInfo << std::endl;
+        exit(-1);
     }
-
-    ret = igsc_ecc_config_set(&handle, (uint8_t)req_state, cur_state, pen_state);
-    return ret == IGSC_SUCCESS;
 }
 
 bool IGSC_Manager::getDeviceEccState(std::string bdf, uint8_t* cur_state, uint8_t* pen_state) {
-    if (!initialized) {
-        if (init() < 0) {
+    __try {
+        if (!initialized) {
+            if (init() < 0) {
+                return false;
+            }
+        }
+
+        *cur_state = (*cur_state) & 0xFF;
+        *pen_state = (*pen_state) & 0xFF;
+
+        struct igsc_device_handle handle;
+        int ret;
+        std::string device_path_str = bdf_to_devicepath[bdf];
+
+        memset(&handle, 0, sizeof(handle));
+        ret = igsc_device_init_by_device(&handle, device_path_str.c_str());
+        if (ret != IGSC_SUCCESS) {
+            igsc_device_close(&handle);
             return false;
         }
+
+        ret = igsc_ecc_config_get(&handle, cur_state, pen_state);
+        return ret == IGSC_SUCCESS;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        std::cout << igscEccMissingErrorInfo << std::endl;
+        exit(-1);      
     }
-
-    *cur_state = (*cur_state) & 0xFF;
-    *pen_state = (*pen_state) & 0xFF;
-
-    struct igsc_device_handle handle;
-    int ret;
-    std::string device_path_str = bdf_to_devicepath[bdf];
-
-    memset(&handle, 0, sizeof(handle));
-    ret = igsc_device_init_by_device(&handle, device_path_str.c_str());
-    if (ret != IGSC_SUCCESS) {
-        igsc_device_close(&handle);
-        return false;
-    }
-
-    ret = igsc_ecc_config_get(&handle, cur_state, pen_state);
-    return ret == IGSC_SUCCESS;
 }

@@ -16,9 +16,11 @@
 
 #include "core_stub.h"
 #include "xpum_structs.h"
+#include <excpt.h>
 
 
 static const std::string igscPath{"igsc"};
+static const std::string igscMissingErrorInfo{"This feature requires the igsc library. Please make sure it was installed correctly."};
 
 ComletFirmware::ComletFirmware() : ComletBase("updatefw", "Update GPU firmware.") {
     this->printHelpWhenNoArgs = true;
@@ -210,17 +212,22 @@ static std::string print_fw_version(const struct igsc_fw_version *fw_version) {
 }
 
 std::string ComletFirmware::getImageFwVersion() {
-    std::string version = "unknown";
-    auto &buffer = imgBuffer;
-    if (buffer.size() == 0) return version;
+    __try {
+        std::string version = "unknown";
+        auto &buffer = imgBuffer;
+        if (buffer.size() == 0) return version;
 
-    struct igsc_fw_version fw_version;
-    int ret;
-    ret = igsc_image_fw_version((const uint8_t *)buffer.data(), buffer.size(), &fw_version);
-    if (ret == IGSC_SUCCESS) {
-        version = print_fw_version(&fw_version);
+        struct igsc_fw_version fw_version;
+        int ret;
+        ret = igsc_image_fw_version((const uint8_t *)buffer.data(), buffer.size(), &fw_version);
+        if (ret == IGSC_SUCCESS) {
+            version = print_fw_version(&fw_version);
+        }
+        return version;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        std::cout << igscMissingErrorInfo << std::endl;
+        exit(-1);
     }
-    return version;
 }
 
 static std::string print_fwdata_version(const struct igsc_fwdata_version *fwdata_version) {
@@ -234,49 +241,64 @@ static std::string print_fwdata_version(const struct igsc_fwdata_version *fwdata
 }
 
 std::string ComletFirmware::getFwDataImageFwVersion() {
-    std::string version = "unknown";
-    auto &buffer = imgBuffer;
-    if (buffer.size() == 0) return version;
+    __try {
+        std::string version = "unknown";
+        auto &buffer = imgBuffer;
+        if (buffer.size() == 0) return version;
 
-    struct igsc_fwdata_image *oimg = NULL;
-    struct igsc_fwdata_version fwdata_version;
-    int ret;
+        struct igsc_fwdata_image *oimg = NULL;
+        struct igsc_fwdata_version fwdata_version;
+        int ret;
 
-    ret = igsc_image_fwdata_init(&oimg, (const uint8_t *)buffer.data(), buffer.size());
-    if (ret != IGSC_SUCCESS) {
-        igsc_image_fwdata_release(oimg);
+        ret = igsc_image_fwdata_init(&oimg, (const uint8_t *)buffer.data(), buffer.size());
+        if (ret != IGSC_SUCCESS) {
+            igsc_image_fwdata_release(oimg);
+            return version;
+        }
+
+        ret = igsc_image_fwdata_version(oimg, &fwdata_version);
+        if (ret == IGSC_SUCCESS) {
+            version = print_fwdata_version(&fwdata_version);
+        }
         return version;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        std::cout << igscMissingErrorInfo << std::endl;
+        exit(-1);
     }
-
-    ret = igsc_image_fwdata_version(oimg, &fwdata_version);
-    if (ret == IGSC_SUCCESS) {
-        version = print_fwdata_version(&fwdata_version);
-    }
-    return version;
 }
 
 bool ComletFirmware::checkImageValid() {
-    auto &buffer = imgBuffer;
-    if (buffer.size() == 0) return false;
-    uint8_t type;
-    int ret;
-    ret = igsc_image_get_type((const uint8_t *)buffer.data(), buffer.size(), &type);
-    if (ret != IGSC_SUCCESS) {
-        return false;
+    __try {
+        auto &buffer = imgBuffer;
+        if (buffer.size() == 0) return false;
+        uint8_t type;
+        int ret;
+        ret = igsc_image_get_type((const uint8_t *)buffer.data(), buffer.size(), &type);
+        if (ret != IGSC_SUCCESS) {
+            return false;
+        }
+        return type == IGSC_IMAGE_TYPE_GFX_FW;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        std::cout << igscMissingErrorInfo << std::endl;
+        exit(-1);
     }
-    return type == IGSC_IMAGE_TYPE_GFX_FW;
 }
 
 bool ComletFirmware::validateFwDataImage() {
-    auto &buffer = imgBuffer;
-    if (buffer.size() == 0) return false;
-    uint8_t type;
-    int ret;
-    ret = igsc_image_get_type((const uint8_t *)buffer.data(), buffer.size(), &type);
-    if (ret != IGSC_SUCCESS) {
-        return false;
+    __try {    
+        auto &buffer = imgBuffer;
+        if (buffer.size() == 0) return false;
+        uint8_t type;
+        int ret;
+        ret = igsc_image_get_type((const uint8_t *)buffer.data(), buffer.size(), &type);
+        if (ret != IGSC_SUCCESS) {
+            return false;
+        }
+        return type == IGSC_IMAGE_TYPE_FW_DATA;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        std::cout << igscMissingErrorInfo << std::endl;
+        exit(-1);
     }
-    return type == IGSC_IMAGE_TYPE_FW_DATA;
 }
 
 void ComletFirmware::getTableResult(std::ostream &out) {
