@@ -87,6 +87,7 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
 #ifndef DAEMONLESS
     if (this->opts->groupId == 0) {
         (*json)["error"] = "group not found";
+        (*json)["errno"] = XPUM_CLI_ERROR_GROUP_NOT_FOUND;
         return json;
     }
 #endif
