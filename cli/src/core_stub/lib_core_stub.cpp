@@ -1780,28 +1780,52 @@ LOG_ERR:
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getPerformanceFactor(int deviceId, int tileId) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    DeviceDataRequest request;
-    DevicePerformanceFactorResponse response;
-    request.set_deviceid(deviceId);
-    request.set_istiledata(true);
-    request.set_tileid(tileId);
+    xpum_result_t res;
+    if (tileId == -1) {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = XPUM_CLI_ERROR_TILE_NOT_FOUND;
+        XPUM_LOG_AUDIT("Fail to get performance factor, %s", 
+            (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
+        return json;
+    }
+    uint32_t count = 0;
+    res = xpumGetPerformanceFactor(deviceId, nullptr, &count);
+    if (res != XPUM_OK) {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = errorNumTranslate(res);
+        XPUM_LOG_AUDIT("Fail to get performance factor, %s", 
+            (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
+        return json;
+    }
 
-    grpc::Status status = stub->getPerformanceFactor(&context, request, &response);
-    if (status.ok()) {
-        std::vector<nlohmann::json> pfList;
-        for (uint i{0}; i < response.count(); ++i) {
-            auto pr = nlohmann::json();
-            pr["tile_id"] = response.pf(i).tileid();
-            pr["engine"] = response.pf(i).engineset();
-            pr["factor"] = response.pf(i).factor();
-            pfList.push_back(pr);
+    xpum_device_performancefactor_t dataArray[count];
+    res = xpumGetPerformanceFactor(deviceId, dataArray, &count);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
         }
-        (*json)["performance_factor_list"] = pfList;
+        (*json)["errno"] = errorNumTranslate(res);
+        XPUM_LOG_AUDIT("Fail to get performance factor, %s", 
+            (*json)["error"].get_ptr<nlohmann::json::string_t*>()->c_str());
     } else {
-        (*json)["error"] = status.error_message();
+        std::vector<nlohmann::json> pfList;
+        for (uint32_t i = 0; i < count; i++) {
+            if (dataArray[i].subdevice_id == (unsigned int)tileId) {
+                auto pr = nlohmann::json();
+                pr["tile_id"] = dataArray[i].subdevice_id;
+                pr["engine"] = dataArray[i].engine;
+                pr["factor"] = dataArray[i].factor;
+                pfList.push_back(pr);
+            }
+        }
+        (*json)["status"] = "OK";
+        (*json)["performance_factor_list"] = pfList;
     }
     return json;
 }
