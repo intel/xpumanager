@@ -381,16 +381,12 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             if (confirm != "Y" && confirm != "y") {
                 out << "update aborted" << std::endl;
                 return;
-            } else {
-                out << std::endl;
             }
+        } else {
+            out << std::endl;
         }
     } else { // GFX and GFX_DATA caution
         // check igsc
-        // if (!checkIgscExist()) {
-        //     out << "Error: Igsc tool doesn't exit." << std::endl;
-        //     exit(1);
-        // }
         if (type == XPUM_DEVICE_FIRMWARE_GFX) {
             if (!checkImageValid()) {
                 out << "Error: The image file is not a right GFX firmware image file." << std::endl;

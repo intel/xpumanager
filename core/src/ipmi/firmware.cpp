@@ -85,6 +85,9 @@ static void* amcManager;
 
 static percent_callback_func_t percentCallback;
 
+static int fw_update_device_count;
+static int fw_update_device_index;
+
 void setPercentCallbackAndContext(percent_callback_func_t callback, void *pAmcManager) {
     percentCallback = callback;
     amcManager = pAmcManager;
@@ -401,7 +404,7 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
         }
 
         if (percentCallback && amcManager) {
-            int percent = (100 * offset) / data_size;
+            int percent = (fw_update_device_index * 100 + (offset * 100) / data_size) / fw_update_device_count;
             percentCallback(percent, amcManager);
         }
 
@@ -497,9 +500,6 @@ static int fw_update(nrv_card *card, const uint8_t *data, size_t data_size, fw_g
                        FW_UPDATE_TYPE_STR(fw_update_type));
         return NRV_FIRMWARE_UPDATE_ERROR;
     }
-    if (percentCallback && amcManager) {
-        percentCallback(0, amcManager);
-    }
 
     XPUM_LOG_INFO("Updating {} on card {}", FW_UPDATE_TYPE_STR(fw_update_type), card->id);
 
@@ -587,6 +587,11 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
     pci_address_t pci_address[MAX_CARD_NO];
     int pci_address_count = 0;
     bool reset_failed = false;
+    fw_update_device_index = 0;
+    fw_update_device_count = cards.count;
+    if (percentCallback && amcManager) {
+        percentCallback(0, amcManager);
+    }
 
 #if __linux__
     if (discover_pci_address_list(&cards, pci_address, &pci_address_count)) {
@@ -608,6 +613,8 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
     for (int i = 0; i < cards.count; i++) {
         //if ( cards.count > 0 ) { //only one card now
         nrv_card *card = &cards.card[i];
+
+        fw_update_device_index = i;
 
         err = get_fw_version(&card->ipmi_address, &prev_ver[i]);
         if (err)
