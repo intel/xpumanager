@@ -296,8 +296,70 @@ void GroupManager::createBuildInGroup() {
     }
 }
 
+void GroupManager::copySlotNameForBuildinGroups() {
+    if (p_devicemanager == nullptr) {
+        return;
+    }
+    GroupMap::iterator iterator;
+    xpum_device_id_t deviceList[XPUM_MAX_NUM_DEVICES];
+    for (iterator = groupMap.begin(); iterator != groupMap.end(); iterator++) {
+        std::shared_ptr<GroupUnit> group = iterator->second;
+        if (group == nullptr) {
+            continue;
+        }
+        if ((group->getId() & BUILD_IN_GROUP_MASK) != BUILD_IN_GROUP_MASK) {
+            continue;
+        }
+        group->getDeviceList(deviceList);
+        std::vector<std::string> targets;
+        std::string slotName;
+        for (unsigned int i = 0; i < group->getDeviceCount(); i++) {
+            std::string deviceId = std::to_string(deviceList[i]);
+            auto device = p_devicemanager->getDevice(deviceId);
+            if (device == nullptr) {
+                continue;
+            }
+            Property prop;
+            if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT,
+                                    prop) == false) {
+                continue;
+            }
+            if (prop.getValue().empty() == true) {
+                targets.push_back(deviceId);
+            } else {
+                slotName = prop.getValue();
+            }
+        }
+        if (slotName.empty() == true) {
+            continue;
+        }
+        for (std::string deviceId : targets) {
+            auto device = p_devicemanager->getDevice(deviceId);
+            if (device == nullptr) {
+                continue;
+            }
+            Property prop(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, slotName);
+            device->removeProperty(prop.getName());
+            device->addProperty(prop);
+        }
+        targets.clear();
+    }
+    return;
+}
+
 void GroupManager::init() {
     createBuildInGroup();
+    /* 
+    Add a temporary workaround for SMC servers because they return
+    GPU BDF as bus address of a slot. 
+    For BDFs of GPU which are not showed in dmidecode (smibios), the workaround
+    copies the slot name property from device in same buildin group (card).
+    For Intel servers, the behavior need to be changed to follow
+    smbios spec 3.3 (bus address of a slot sould be an endpoint
+    instead of a bridge/ switch) once Intel smbios implementaion
+    is updated.  
+    */
+    copySlotNameForBuildinGroups();
 }
 
 void GroupManager::close() {

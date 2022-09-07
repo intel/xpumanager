@@ -285,6 +285,8 @@ class GPUDeviceStub {
                                            std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>& p_target_groups,
                                            std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts); 
 
+    static std::string getPciSlot(zes_pci_address_t address);
+
    private:
     bool initialized;
 

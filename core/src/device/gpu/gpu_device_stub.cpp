@@ -368,18 +368,32 @@ static std::vector<DMISystemSlot> getSystemSlotBlocks(const std::string& ssInfos
     return res;
 }
 
-static std::string getPciSlot(const std::string& bdf_regex) {
+std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     std::string res;
+    std::string bdf_regex = to_regex_string(address);
+    std::string bdf = to_string(address);
     std::string cmd_find_device_link = "find /sys/devices -name \"*" + bdf_regex + "\"";
     SystemCommandResult sc_res = execCommand(cmd_find_device_link);
     SystemCommandResult ss_res = execCommand("dmidecode -t 9 2>/dev/null");
 
     if (sc_res.exitStatus() == 0 && ss_res.exitStatus() == 0) {
-        std::deque<std::string> parentBridges = getParentPciBridges(sc_res.output());
+        /* 
+            Add a temporary workaround for SMC servers because they return
+            GPU BDF as bus address of a slot. Here the BDF of a GPU would be 
+            added to match a slot. For a GPU which is not showed in
+            dmidecode (smibios), the slot name would be updated when
+            buildin groups were created.
+            For Intel servers, the behavior need to be changed to follow
+            smbios spec 3.3 (bus address of a slot sould be an endpoint
+            instead of a bridge/ switch) once Intel smbios implementaion
+            is updated.  
+        */
+        std::deque<std::string> allBdf = getParentPciBridges(sc_res.output());
+        allBdf.push_front(bdf);
         std::vector<DMISystemSlot> systemSlots = getSystemSlotBlocks(ss_res.output());
-        for (auto& pBridge : parentBridges) {
+        for (auto& pBdf : allBdf) {
             for (auto& sysSlot : systemSlots) {
-                if (sysSlot.inUse() && sysSlot.busAddress() == pBridge) {
+                if (sysSlot.inUse() && sysSlot.busAddress() == pBdf) {
                     res = sysSlot.name();
                     break;
                 }
@@ -714,8 +728,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                         }                        
                     }
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
-                    std::string bdf_regex = to_regex_string(pci_props.address);
-                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(bdf_regex)));
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(pci_props.address)));
                 }
 
                 uint64_t physical_size = 0;
