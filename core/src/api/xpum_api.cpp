@@ -407,7 +407,7 @@ xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char *buffer, int *count) {
 
 static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
     if (job->filePath == nullptr)
-        return XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME;
+        return XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND;
 
     std::ifstream fwFile(job->filePath);
     if (!fwFile.is_open()) {
@@ -417,15 +417,6 @@ static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
     }
 
     fwFile.close();
-
-    std::string invalidChars = "{}()><&*'|=?;[]$-#~!\"%:+,`";
-
-    std::string filePath(job->filePath);
-
-    auto itr = std::find_if(filePath.begin(), filePath.end(),
-                            [invalidChars](unsigned char ch) { return invalidChars.find(ch) != invalidChars.npos; });
-    if (itr != filePath.end())
-        return XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME;
 
     return XPUM_OK;
 }

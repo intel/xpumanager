@@ -44,9 +44,6 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsi
             case xpum_result_t::XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE:
                 (*json)["error"] = "Device models are inconsistent, failed to upgrade all.";
                 break;
-            case xpum_result_t::XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME:
-                (*json)["error"] = "Illegal firmware image filename. Image filename should not contain following characters: {}()><&*'|=?;[]$-#~!\"%:+,`";
-                break;
             case xpum_result_t::XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND:
                 (*json)["error"] = "Firmware image not found.";
                 break;

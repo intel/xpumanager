@@ -120,7 +120,6 @@ typedef enum xpum_result_enum {
     XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST,         ///< Dump raw data task not exists
     XPUM_DUMP_RAW_DATA_ILLEGAL_DUMP_FILE_PATH, ///< Dump file path provide is illegal
     XPUM_RESULT_UNKNOWN_AGENT_CONFIG_KEY,      ///< The the key for agent setting is unknown
-    XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME,     ///< File name can not contain following characters: {}()><&*'|=?;[]$-#~!"%:+,`
     XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,

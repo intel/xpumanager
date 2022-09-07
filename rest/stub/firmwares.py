@@ -30,8 +30,6 @@ def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password="")
     #     return 1, "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.", None
     elif err_code.value == XpumResult['XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND'].value:
         return err_code.value, "Firmware image not found.", None
-    elif err_code.value == XpumResult['XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME'].value:
-        return err_code.value, "Illegal firmware image filename. Image filename should not contain following characters: {}()><&*'|=?;[]$-#~!\"%:+,`", None
     elif err_code.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE'].value:
         return err_code.value, "Updating AMC firmware on single device is not supported", None
     elif err_code.value == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL'].value:
