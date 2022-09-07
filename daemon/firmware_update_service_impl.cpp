@@ -111,8 +111,8 @@ grpc::Status XpumCoreServiceImpl::getRedfishAmcWarnMsg(::grpc::ServerContext* co
             data->set_deviceidx(dataList[i].amcIndex);
             data->set_value(dataList[i].value);
             data->set_sensorname(std::string(dataList[i].sensorName));
-            data->set_sensorlow(std::string(dataList[i].sensorLow));
-            data->set_sensorhigh(std::string(dataList[i].sensorHigh));
+            data->set_sensorlow(dataList[i].sensorLow);
+            data->set_sensorhigh(dataList[i].sensorHigh);
             data->set_sensorunit(std::string(dataList[i].sensorUnit));
         }
     } else {

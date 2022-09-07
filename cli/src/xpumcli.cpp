@@ -138,6 +138,7 @@ int main(int argc, char** argv) {
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
 #ifndef DAEMONLESS
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletAgentSet))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletSensor))
 #endif
         ;
     app.require_subcommand(0, 1);

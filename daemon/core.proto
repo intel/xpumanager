@@ -886,10 +886,10 @@ message GetRedfishAmcWarnMsgResponse {
 
 message SensorReadingSchema{
     int32 deviceIdx=1;
-    int32 value=2;
+    double value=2;
     string sensorName=3;
-    string sensorHigh=4;
-    string sensorLow=5;
+    double sensorHigh=4;
+    double sensorLow=5;
     string sensorUnit=6;
 }
 

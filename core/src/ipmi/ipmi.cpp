@@ -46,6 +46,7 @@
 #include "pci.h"
 #include "scr.h"
 #include "tool.h"
+#include "sensor_reading.h"
 
 #if !(__linux__) && (_MSC_VER < 1910)
 #include <efi.h>
@@ -215,7 +216,8 @@ static int init_card_list() {
             err = card_detect(&card);
             if (err)
                 continue;
-
+            // get sdr list
+            get_sdr_list(card);
             g_list.card[g_list.count] = card;
             g_list.card[g_list.count].id = g_list.count;
 

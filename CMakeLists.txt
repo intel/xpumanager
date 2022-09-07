@@ -64,7 +64,7 @@ add_definitions(-DLOADER_VERSION_PATCH=${PROJECT_VERSION_PATCH})
 
 message(STATUS "CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
 
-if(EXISTS third_party/googletest)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/third_party/googletest)
   add_subdirectory(third_party/googletest)
 endif()
 add_subdirectory(third_party/spdlog)

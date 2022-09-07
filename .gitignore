@@ -23,6 +23,8 @@ daemon/core.pb.h
 daemon/xpum.service
 daemon/resources/
 daemon/config/
+cli/resources/
+cli/config/
 rest/xpum_rest.service
 core/test/config/
 rest/key.pem
