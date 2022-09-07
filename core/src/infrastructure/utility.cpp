@@ -38,10 +38,10 @@ std::string Utility::getUTCTimeString(uint64_t t) {
     tm* tm_p = gmtime(&seconds);
     if (!tm_p) return "";
     char buf[50];
-    strftime(buf, sizeof(buf), "%FT%T", tm_p);
+    strftime(buf, sizeof(buf), "%T", tm_p);
     char milli_buf[10];
     sprintf(milli_buf, "%03d", milli_seconds);
-    return std::string(buf) + "." + std::string(milli_buf) + "Z";
+    return std::string(buf) + "." + std::string(milli_buf);
 }
 
 std::string Utility::getTimeString(long long milliseconds) {

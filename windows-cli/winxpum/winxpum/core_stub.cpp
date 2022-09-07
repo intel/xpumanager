@@ -613,15 +613,21 @@ long long  CoreStub::getCurrentMillisecond() {
         .count();
 }
 
-std::string CoreStub::isotimestamp(uint64_t t) {
+std::string CoreStub::isotimestamp(uint64_t t, bool withoutDate) {
     time_t seconds = t / 1000;
     int milli_seconds = t % 1000;
     tm* tm_p = gmtime(&seconds);
     char buf[50];
-    strftime(buf, sizeof(buf), "%FT%T", tm_p);
     char milli_buf[10];
     sprintf_s(milli_buf, "%03d", milli_seconds);
-    return std::string(buf) + "." + std::string(milli_buf) + "Z";
+    if (withoutDate) {
+        strftime(buf, sizeof(buf), "%T", tm_p);
+        return std::string(buf) + "." + std::string(milli_buf);
+    }
+    else {
+        strftime(buf, sizeof(buf), "%FT%T", tm_p);
+        return std::string(buf) + "." + std::string(milli_buf) + "Z";
+    }
 }
 
 struct MetricsTypeEntry {

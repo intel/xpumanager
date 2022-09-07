@@ -270,7 +270,7 @@ void ComletDump::printByLine(std::ostream& out) {
         else {
             next_dump_time += this->opts->timeInterval * 1000;
         }
-        out << CoreStub::isotimestamp(next_dump_time) << ", ";
+        out << CoreStub::isotimestamp(next_dump_time, true) << ", ";
         out << deviceId << ", ";
         if (tileId != -1) {
             out << tileId << ", ";

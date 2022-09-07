@@ -384,7 +384,7 @@ void ComletDump::printByLine(std::ostream &out) {
     // timestamp column
     columnSchemaList.push_back({"Timestamp",
                                 []() {
-                                    return CoreStub::isotimestamp(time(nullptr) * 1000);
+                                    return CoreStub::isotimestamp(time(nullptr) * 1000, true);
                                 }});
 
     // device id column

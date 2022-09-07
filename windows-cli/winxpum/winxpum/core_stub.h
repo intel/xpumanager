@@ -52,7 +52,7 @@ public:
 
     std::vector<int> getSiblingDevices(int deviceId);
 
-    static std::string isotimestamp(uint64_t t);
+    static std::string isotimestamp(uint64_t t, bool withoutDate = false);
 
 private:
 
