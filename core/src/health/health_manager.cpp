@@ -150,7 +150,8 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
     } else if (type == xpum_health_type_t::XPUM_HEALTH_POWER) {
         data->throttleThreshold = getThrottlePower(pciDeviceId);
     } else {
-        if (type != xpum_health_type_t::XPUM_HEALTH_MEMORY && type != xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT)
+        if (type != xpum_health_type_t::XPUM_HEALTH_MEMORY && type != xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT
+            && type != xpum_health_type_t::XPUM_HEALTH_FREQUENCY)
             return XPUM_RESULT_HEALTH_INVALID_TYPE;
     }
 

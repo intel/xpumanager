@@ -160,6 +160,8 @@ class GPUDeviceStub {
     static bool setSchedulerExclusiveMode(const zes_device_handle_t& device,
                                           const SchedulerExclusiveMode& mode);
 
+    static bool getFrequencyState(const zes_device_handle_t& device, std::string& freq_throttle_message);
+
     static void getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t* data,
                                 int core_thermal_threshold, int memory_thermal_threshold, int power_threshold, bool global_default_limit);
 
@@ -251,6 +253,8 @@ class GPUDeviceStub {
     static std::string to_hex_string(uint32_t val);
 
     static std::string get_health_state_string(zes_mem_health_t val);
+
+    static std::string get_freq_throttle_string(zes_freq_throttle_reason_flags_t flags);
 
     static std::string to_string(zes_pci_address_t address);
 

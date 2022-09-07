@@ -200,6 +200,7 @@ enum HealthType{
     HEALTH_POWER = 2;
     HEALTH_MEMORY = 3;
     HEALTH_FABRIC_PORT = 4;
+    HEALTH_FREQUENCY = 5;
 }
 
 enum HealthConfigType{

@@ -906,6 +906,25 @@ std::string GPUDeviceStub::get_health_state_string(zes_mem_health_t val) {
     }
 }
 
+std::string GPUDeviceStub::get_freq_throttle_string(zes_freq_throttle_reason_flags_t flags) {
+    if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP) == ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP)
+        return std::string("frequency throttled due to average power excursion.");
+    if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP) == ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP)
+        return std::string("frequency throttled due to burst power excursion.");
+    if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT) == ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT)
+        return std::string("frequency throttled due to current excursion.");
+    if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT) == ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT)
+        return std::string("frequency throttled due to thermal excursion.");
+    if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT) == ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT)
+        return std::string("frequency throttled due to power supply assertion.");
+    if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE) == ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE)
+        return std::string("frequency throttled due to software supplied frequency range.");
+    if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE) == ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE)
+        return std::string("frequency throttled due to a sub block that has a lower frequency.");
+    
+    return std::string("frequency throttled reason cannot be determined.");
+}
+
 std::string GPUDeviceStub::to_string(ze_device_uuid_t val) {
     std::ostringstream os;
     std::reverse_iterator<uint8_t*> begin(val.id + sizeof(val.id) / sizeof(val.id[0]));
@@ -3547,6 +3566,43 @@ bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device,
     return ret;
 }
 
+bool GPUDeviceStub::getFrequencyState(const zes_device_handle_t& device, std::string& freq_throttle_message) {
+    bool ret = false;
+    if (device == nullptr) {
+        return ret;
+    }
+
+    uint32_t freq_count = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
+    std::vector<zes_freq_handle_t> freq_handles(freq_count);
+    if (res == ZE_RESULT_SUCCESS) {
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
+        for (auto& ph_freq : freq_handles) {
+            zes_freq_properties_t props;
+            props.pNext = nullptr;
+            XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetProperties(ph_freq, &props));
+            if (res == ZE_RESULT_SUCCESS) {
+                zes_freq_state_t freq_state;
+                XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
+                if (res == ZE_RESULT_SUCCESS) {
+                    if (props.onSubdevice) {
+                        if (freq_throttle_message.size() > 0)
+                            freq_throttle_message += " ";
+                        freq_throttle_message += "Tile " + std::to_string(props.subdeviceId) + " " + get_freq_throttle_string(freq_state.throttleReasons);
+                        ret = true;
+                    } else {
+                        freq_throttle_message = "Device " + get_freq_throttle_string(freq_state.throttleReasons);
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
 void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t* data,
                                     int core_thermal_threshold, int memory_thermal_threshold, int power_threshold, bool global_default_limit) {
     if (device == nullptr) {
@@ -3763,6 +3819,19 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             }
         } else {
             description = "The device has no Xe Link capability.";
+        }
+    } else if (type == xpum_health_type_t::XPUM_HEALTH_FREQUENCY) {
+        description = "The device frequency state cannot be determined.";
+        std::string freq_throttle_message;
+        bool get_state = getFrequencyState(device, freq_throttle_message);
+        if (get_state) {
+            if (!freq_throttle_message.empty()) {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_WARNING;
+                description = freq_throttle_message;
+            } else {
+                status = xpum_health_status_t::XPUM_HEALTH_STATUS_OK;
+                description = "The device frequency not throttled";
+            }
         }
     }
 

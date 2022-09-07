@@ -281,6 +281,7 @@ typedef enum xpum_health_type_enum {
     XPUM_HEALTH_POWER,
     XPUM_HEALTH_MEMORY,
     XPUM_HEALTH_FABRIC_PORT,
+    XPUM_HEALTH_FREQUENCY
 } xpum_health_type_t;
 
 typedef enum xpum_health_status_enum {

@@ -130,6 +130,24 @@ static CharTableConfig ComletConfigHealthFabricPort(R"({
     }]
 })"_json);
 
+static CharTableConfig ComletConfigHealthFrequency(R"({
+    "showTitleRow": false,
+    "columns": [{
+        "title": "none",
+        "size": 26
+    }, {
+        "title": "none"
+    }],
+    "rows": [{
+        "instance": "frequency",
+        "cells": [
+            { "rowTitle": "6. GPU Frequency" }, [
+            { "label": "Status", "value": "status" },
+            { "label": "Description", "value": "description" }
+        ]]
+    }]
+})"_json);
+
 void ComletHealth::setupOptions() {
     this->opts = std::unique_ptr<ComletHealthOptions>(new ComletHealthOptions());
     addFlag("-l,--list", this->opts->listAll, "Display health info for all devices");
@@ -150,7 +168,8 @@ void ComletHealth::setupOptions() {
       2. GPU Memory Temperature\n\
       3. GPU Power\n\
       4. GPU Memory\n\
-      5. Xe Link Port");
+      5. Xe Link Port\n\
+      6. GPU Frequency");
     addOption("--threshold", this->opts->threshold, "Set custom threshold for device component");
 }
 
@@ -167,7 +186,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         return json;
     }
 
-    if (this->opts->componentType != INT_MIN && (this->opts->componentType < 1 || this->opts->componentType > 5)) {
+    if (this->opts->componentType != INT_MIN && (this->opts->componentType < 1 || this->opts->componentType > 6)) {
         (*json)["error"] = "invalid component";
         (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_TYPE;
         return json;
@@ -257,6 +276,7 @@ static void showHealthAllComps(std::ostream &out, std::shared_ptr<nlohmann::json
     showHealth(out, json, ComletConfigHealthPower);
     showHealth(out, json, ComletConfigHealthMemory);
     showHealth(out, json, ComletConfigHealthFabricPort);
+    showHealth(out, json, ComletConfigHealthFrequency);
 }
 
 static void showHealthComp(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig &healthConfig, const bool cont = false) {
@@ -299,7 +319,7 @@ void ComletHealth::getTableResult(std::ostream &out) {
     }
 
     if (this->opts->deviceId != "-1") {
-        if (ct >= 1 && ct <= 5) {
+        if (ct >= 1 && ct <= 6) {
             switch (ct) {
                 case 1:
                     showHealthComp(out, json, ComletConfigHealthCoreTemp);
@@ -316,6 +336,9 @@ void ComletHealth::getTableResult(std::ostream &out) {
                 case 5:
                     showHealthComp(out, json, ComletConfigHealthFabricPort);
                     break;
+                case 6:
+                    showHealthComp(out, json, ComletConfigHealthFrequency);
+                    break;
             }
         } else {
             showHealthAllComps(out, json);
@@ -323,7 +346,7 @@ void ComletHealth::getTableResult(std::ostream &out) {
         return;
     }
     if (this->opts->groupId > 0) {
-        if (ct >= 1 && ct <= 5) {
+        if (ct >= 1 && ct <= 6) {
             switch (ct) {
                 case 1:
                     showHealthMultiDeviceComp(out, json, ComletConfigHealthCoreTemp);
@@ -339,6 +362,9 @@ void ComletHealth::getTableResult(std::ostream &out) {
                     break;
                 case 5:
                     showHealthMultiDeviceComp(out, json, ComletConfigHealthFabricPort);
+                    break;
+                case 6:
+                    showHealthMultiDeviceComp(out, json, ComletConfigHealthFrequency);
                     break;
             }
         } else {

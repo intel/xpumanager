@@ -134,6 +134,9 @@ std::string CoreStub::healthTypeEnumToString(HealthType type) {
         case HEALTH_FABRIC_PORT:
             ret = "xe_link_port";
             break;
+        case HEALTH_FREQUENCY:
+            ret = "frequency";
+            break;
         default:
             break;
     }
