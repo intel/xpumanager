@@ -148,9 +148,9 @@ if(CPACK_GENERATOR MATCHES "RPM")
         "${CMAKE_CURRENT_LIST_DIR}/install/script/prerm")
   else()
     set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/po.sh")
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/smi/postinst")
     set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/pr.sh")
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/smi/prerm")
   endif()
 endif()
 
@@ -174,7 +174,7 @@ if(CPACK_GENERATOR MATCHES "DEB")
     )
   else()
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/pr.sh;"
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/smi/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/smi/prerm;"
     )
   endif()
 

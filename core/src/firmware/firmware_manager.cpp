@@ -259,14 +259,6 @@ std::string FirmwareManager::getAmcWarnMsg() {
     return getRedfishAmcWarn();
 }
 
-static bool detectGfxTool() {
-    std::string cmd = igscPath + " -V 2>&1";
-    SystemCommandResult sc_res = execCommand(cmd);
-    if (sc_res.exitStatus() != 0)
-        return false;
-    return true;
-}
-
 static bool isGscFwImage(std::vector<char>& buffer) {
     uint8_t type;
     int ret;
@@ -364,12 +356,6 @@ std::vector<char> readImageContent(const char* filePath) {
 }
 
 xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath) {
-    // check tool if tool exists
-    if (!detectGfxTool()) {
-        XPUM_LOG_INFO("flash tool not exists");
-        return XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND;
-    }
-
     // read image file
     auto buffer = readImageContent(filePath);
 
@@ -507,12 +493,6 @@ static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<De
 }
 
 xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const char* filePath) {
-    // check tool if tool exists
-    if (!detectGfxTool()) {
-        XPUM_LOG_INFO("flash tool not exists");
-        return XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND;
-    }
-    
     std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (pDevice == nullptr) {
         return XPUM_GENERIC_ERROR;
