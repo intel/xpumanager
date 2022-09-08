@@ -569,7 +569,7 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
 
 xpum_result_t FirmwareManager::getAMCSensorReading(xpum_sensor_reading_t data[], int* count) {
     if (!initAmcManager()) {
-        return xpum_result_t::XPUM_GENERIC_ERROR;
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
     }
     GetAmcSensorReadingParam param;
     p_amc_manager->getAMCSensorReading(param);

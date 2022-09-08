@@ -2676,7 +2676,7 @@ xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int
     return Core::instance().getDumpRawDataManager()->listDumpRawDataTasks(taskList, count);
 }
 
-xpum_result_t xpumGetSensorReading(xpum_sensor_reading_t data[], int *count) {
+xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count) {
     return Core::instance().getFirmwareManager()->getAMCSensorReading(data, count);
 }
 

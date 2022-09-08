@@ -140,7 +140,7 @@ def getEngineStatistics(device_id, session_id=0):
     resp = stub.getEngineStatistics(core_pb2.XpumGetEngineStatsRequest(
         deviceId=device_id, sessionId=session_id))
     if len(resp.errorMsg) != 0:
-        return resp.status, resp.errorMsg, None
+        return resp.errorNo, resp.errorMsg, None
     data = dict()
     data["device_id"] = device_id
     beginTimestamp = datetime.datetime.fromtimestamp(
@@ -205,7 +205,7 @@ def getFabricStatistics(device_id, session_id=0, get_accumulated=False):
         deviceId=device_id, sessionId=session_id
     ))
     if len(resp.errorMsg) != 0:
-        return resp.status, resp.errorMsg, None
+        return resp.errorNo, resp.errorMsg, None
     data = dict()
     data["device_id"] = device_id
     beginTimestamp = datetime.datetime.fromtimestamp(
@@ -262,7 +262,7 @@ def getStatisticsNotForPrometheus(device_id, session_id=0, get_accumulated=False
     resp = stub.getStatisticsNotForPrometheus(
         core_pb2.XpumGetStatsRequest(deviceId=device_id, sessionId=session_id, enableFilter=True))
     if len(resp.errorMsg) != 0:
-        return resp.status, resp.errorMsg, None
+        return resp.errorNo, resp.errorMsg, None
     data = dict()
     data["device_id"] = device_id
 
@@ -319,7 +319,7 @@ def getStatisticsByGroupNotForPrometheus(group_id, session_id=0, get_accumulated
     resp = stub.getStatisticsByGroupNotForPrometheus(
         core_pb2.XpumGetStatsByGroupRequest(groupId=group_id, sessionId=session_id, enableFilter=True))
     if len(resp.errorMsg) != 0:
-        return 1, resp.errorMsg, None
+        return resp.errorNo, resp.errorMsg, None
 
     deviceMap = dict()
 

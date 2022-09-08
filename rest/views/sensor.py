@@ -9,10 +9,10 @@ import stub
 from marshmallow import Schema, fields, validate, ValidationError
 
 class SensorReadingDataSchema(Schema):
-    amc_index = fields.Str(metadata={"description": "AMC index"})
+    amc_index = fields.Number(metadata={"description": "AMC index"})
     value = fields.Number(metadata={"description": "Sensor reading value"})
-    sensor_high = fields.Str(metadata={"description": "High bound of sensor reading"})
-    sensor_low = fields.Str(metadata={"description": "Low bound of sensor reading"})
+    sensor_high = fields.Number(metadata={"description": "High bound of sensor reading"})
+    sensor_low = fields.Number(metadata={"description": "Low bound of sensor reading"})
     sensor_name = fields.Str(metadata={"description": "Sensor name"})
     sensor_unit = fields.Str(metadata={"description": "Sensor unit"})
 
@@ -21,7 +21,7 @@ class SensorReadingSchema(Schema):
                                    "description": "Sensor reading datas"})
 
 
-def getSensorReading():
+def getAMCSensorReading():
     """
     Get sensor reading
     ---
@@ -38,9 +38,8 @@ def getSensorReading():
             500:
                 description: Error
     """
-    code, message, data = stub.getSensorReading()
+    code, message, data = stub.getAMCSensorReading()
     if code != 0:
-        error = dict(message="Error code: {}, error message: {}".format(
-            stub.XpumResult(code).name, message))
+        error = dict(message="{}".format(message))
         return jsonify(error), 500
     return jsonify(data)

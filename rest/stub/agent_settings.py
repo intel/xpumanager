@@ -46,7 +46,7 @@ def setAgentConfig(configList):
 def getAllAgentConfig():
     resp = stub.getAgentConfig(empty_pb2.Empty())
     if len(resp.errorMsg) != 0:
-        return resp.status, resp.errorMsg, None
+        return resp.errorNo, resp.errorMsg, None
     configEntries = []
     for entry in resp.entryList.configEntries:
         vt = entry.value.WhichOneof("value")

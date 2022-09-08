@@ -1061,6 +1061,7 @@ xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t result
 /** @} */ // Closing for POLICY_API
 /// @endcond
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup SENSOR_READING_API Sensor reading
  * These APIs are for sensor reading
@@ -1077,10 +1078,12 @@ xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t result
  * @return xpum_result_t 
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC    if no AMC can be found
  */
-xpum_result_t xpumGetSensorReading(xpum_sensor_reading_t data[], int *count);
+xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count);
 
 /** @} */ // Closing for SENSOR_READING_API
+/// @endcond
 
 #if defined(__cplusplus)
 } // extern "C"

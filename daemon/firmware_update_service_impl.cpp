@@ -84,11 +84,17 @@ grpc::Status XpumCoreServiceImpl::getRedfishAmcWarnMsg(::grpc::ServerContext* co
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getSensorReading(::grpc::ServerContext* context,
+::grpc::Status XpumCoreServiceImpl::getAMCSensorReading(::grpc::ServerContext* context,
                                 const ::google::protobuf::Empty* request,
-                                ::GetSensorReadingResponse* response) {
+                                ::GetAMCSensorReadingResponse* response) {
     int count;
-    auto res = xpumGetSensorReading(nullptr, &count);
+    auto res = xpumGetAMCSensorReading(nullptr, &count);
+    auto errMsg = getFlashFwErrMsg();
+    if (errMsg.length()) {
+        response->set_errorno(res);
+        response->set_errormsg(errMsg);
+        return grpc::Status::OK; 
+    }
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
@@ -102,7 +108,13 @@ grpc::Status XpumCoreServiceImpl::getRedfishAmcWarnMsg(::grpc::ServerContext* co
         return grpc::Status::OK;
     }
     xpum_sensor_reading_t dataList[count];
-    res = xpumGetSensorReading(dataList, &count);
+    res = xpumGetAMCSensorReading(dataList, &count);
+    errMsg = getFlashFwErrMsg();
+    if (errMsg.length()) {
+        response->set_errormsg(errMsg);
+        response->set_errorno(res);
+        return grpc::Status::OK; 
+    }
     if (res == XPUM_OK) {
         for (int i = 0; i < count; i++) {
             auto data = response->add_datalist();

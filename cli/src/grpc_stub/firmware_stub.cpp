@@ -157,8 +157,8 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getSensorReading() {
     assert(this->stub != nullptr);
     nlohmann::json json;
     grpc::ClientContext ct;
-    GetSensorReadingResponse response;
-    auto status = this->stub->getSensorReading(&ct, google::protobuf::Empty(), &response);
+    GetAMCSensorReadingResponse response;
+    auto status = this->stub->getAMCSensorReading(&ct, google::protobuf::Empty(), &response);
     if (!status.ok()) {
         json["error"] = status.error_message();
         json["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;

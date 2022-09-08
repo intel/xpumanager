@@ -894,7 +894,7 @@ message SensorReadingSchema{
     string sensorUnit=6;
 }
 
-message GetSensorReadingResponse {
+message GetAMCSensorReadingResponse {
     repeated SensorReadingSchema dataList=1;
     int32 errorNo=2;
     string errorMsg =3; 
@@ -963,5 +963,5 @@ service XpumCoreService {
     rpc getXelinkTopology( google.protobuf.Empty ) returns ( XpumXelinkTopoInfoArray );
     rpc getFabricStatistics( GetFabricStatsRequest ) returns ( GetFabricStatsResponse );
     rpc getFabricCount( GetFabricCountRequest ) returns ( GetFabricCountResponse );
-    rpc getSensorReading( google.protobuf.Empty ) returns ( GetSensorReadingResponse );
+    rpc getAMCSensorReading( google.protobuf.Empty ) returns ( GetAMCSensorReadingResponse );
 }

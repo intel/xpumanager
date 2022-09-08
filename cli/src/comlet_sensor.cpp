@@ -36,7 +36,7 @@ void ComletSensor::getTableResult(std::ostream &out) {
     auto p_json = run();
     json sensorJson = (*p_json);
     if (sensorJson["sensor_reading"].size() == 0) {
-        out << "No sensor found" << std::endl;
+        out << "No AMC sensor found" << std::endl;
         return;
     }
     std::map<int, json> m;

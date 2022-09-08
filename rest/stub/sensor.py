@@ -8,10 +8,10 @@ from google.protobuf import empty_pb2
 from .grpc_stub import stub
 
 
-def getSensorReading():
-    resp = stub.getSensorReading(empty_pb2.Empty())
+def getAMCSensorReading():
+    resp = stub.getAMCSensorReading(empty_pb2.Empty())
     if len(resp.errorMsg) != 0:
-        return resp.errCode, resp.errorMsg, None
+        return resp.errorNo, resp.errorMsg, None
     data = dict()
     data_list = []
     for sensor in resp.dataList:
