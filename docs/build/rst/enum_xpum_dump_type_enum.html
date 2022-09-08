@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>enum xpum_dump_type_enum &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/target-highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="enum xpum_ecc_action_t" href="enum_xpum_ecc_action_t.html" />
+    <link rel="prev" title="enum xpum_diag_task_type_enum" href="enum_xpum_diag_task_type_enum.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../smi_index.html">XPU-SMI Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../README.html">Intel XPU System Management Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../CLI_user_guide.html">Intel XPU System Management Interface User Guide</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DIAGNOSTICS_API.html">Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_diag_level_enum.html">enum xpum_diag_level_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_diag_task_result_enum.html">enum xpum_diag_task_result_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_diag_task_type_enum.html">enum xpum_diag_task_type_enum</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">enum xpum_dump_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_ecc_action_t.html">enum xpum_ecc_action_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_ecc_state_t.html">enum xpum_ecc_state_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_engine_type_enum.html">enum xpum_engine_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_engine_type_flags_t.html">enum xpum_engine_type_flags_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_fabric_throughput_type_enum.html">enum xpum_fabric_throughput_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_firmware_flash_result_enum.html">enum xpum_firmware_flash_result_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_firmware_type_enum.html">enum xpum_firmware_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_frequency_type_t.html">enum xpum_frequency_type_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_health_config_type_enum.html">enum xpum_health_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_health_status_enum.html">enum xpum_health_status_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_health_type_enum.html">enum xpum_health_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_link_type_enum.html">enum xpum_link_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_action_type_enum.html">enum xpum_policy_action_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_conditon_type_enum.html">enum xpum_policy_conditon_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_type_enum.html">enum xpum_policy_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_ras_type_enum.html">enum xpum_ras_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_result_enum.html">enum xpum_result_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_scheduler_mode_t.html">enum xpum_scheduler_mode_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_standby_mode_t.html">enum xpum_standby_mode_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_standby_type_t.html">enum xpum_standby_type_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_stats_type_enum.html">enum xpum_stats_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_version_enum.html">enum xpum_version_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_parent_switch.html">struct parent_switch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_amc_fw_version_t.html">struct xpum_amc_fw_version_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_basic_info.html">struct xpum_device_basic_info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_engine_metric_t.html">struct xpum_device_engine_metric_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_engine_stats_t.html">struct xpum_device_engine_stats_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_fabric_throughput_metric_t.html">struct xpum_device_fabric_throughput_metric_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_fabric_throughput_stats_t.html">struct xpum_device_fabric_throughput_stats_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_metric_data_t.html">struct xpum_device_metric_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_metrics_t.html">struct xpum_device_metrics_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_performancefactor_t.html">struct xpum_device_performancefactor_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_process_t.html">struct xpum_device_process_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_properties_t.html">struct xpum_device_properties_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_property_t.html">struct xpum_device_property_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_data_t.html">struct xpum_device_stats_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_t.html">struct xpum_device_stats_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_component_info_t.html">struct xpum_diag_component_info_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_task_info_t.html">struct xpum_diag_task_info_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html">struct xpum_dump_raw_data_task_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_fabric_port_config_t.html">struct xpum_fabric_port_config_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_firmware_flash_job.html">struct xpum_firmware_flash_job</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_firmware_flash_task_result_t.html">struct xpum_firmware_flash_task_result_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_frequency_range_t.html">struct xpum_frequency_range_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_group_info_t.html">struct xpum_group_info_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_health_data_t.html">struct xpum_health_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_metrics_raw_data_t.html">struct xpum_metrics_raw_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_action_t.html">struct xpum_policy_action_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_condition_t.html">struct xpum_policy_condition_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_notify_callback_para_t.html">struct xpum_policy_notify_callback_para_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_t.html">struct xpum_policy_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_burst_limit_t.html">struct xpum_power_burst_limit_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_limits_t.html">struct xpum_power_limits_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_peak_limit_t.html">struct xpum_power_peak_limit_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_prop_data_t.html">struct xpum_power_prop_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_sustained_limit_t.html">struct xpum_power_sustained_limit_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_data_t.html">struct xpum_scheduler_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_exclusive_t.html">struct xpum_scheduler_exclusive_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_timeout_t.html">struct xpum_scheduler_timeout_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_timeslice_t.html">struct xpum_scheduler_timeslice_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_standby_data_t.html">struct xpum_standby_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_topology_t.html">struct xpum_topology_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_version_info.html">struct xpum_version_info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_xelink_topo_info.html">struct xpum_xelink_topo_info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_xelink_unit.html">struct xpum_xelink_unit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="global.html#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="global.html#detailed-documentation">Detailed Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
+          <li><a href="index.html">Core Library API</a> &raquo;</li>
+          <li><a href="global.html">Global Namespace</a> &raquo;</li>
+      <li>enum xpum_dump_type_enum</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="enum-xpum-dump-type-enum">
+<span id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704e"></span><span id="index-0"></span><h1>enum xpum_dump_type_enum<a class="headerlink" href="#enum-xpum-dump-type-enum" title="Permalink to this heading"></a></h1>
+<pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
+
+<span class="k">enum</span> <span class="n">xpum_dump_type_enum</span>
+<span class="p">{</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea5f1648bd3e41ce3b18bef216ba5c4795"><span></span><span class="n">XPUM_DUMP_GPU_UTILIZATION</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea2eeca4756066202a79d8b01b0cfcff54"><span></span><span class="n">XPUM_DUMP_POWER</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704eaaf0dec54ca3ff6b40114ee95f3c6dbb5"><span></span><span class="n">XPUM_DUMP_GPU_FREQUENCY</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704eafe7f30d2df1bfcbc68ea9dad55adeb43"><span></span><span class="n">XPUM_DUMP_GPU_CORE_TEMPERATURE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea5f091eb72b1d8a0dc9b737d75253b878"><span></span><span class="n">XPUM_DUMP_MEMORY_TEMPERATURE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704eaa646ce42aec726f1d18cac19f98b385c"><span></span><span class="n">XPUM_DUMP_MEMORY_UTILIZATION</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea92870f14c51285f09c1f1b885f3ff1bf"><span></span><span class="n">XPUM_DUMP_MEMORY_READ_THROUGHPUT</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704eaa3122560c418fd67c875e672f2e8bfb5"><span></span><span class="n">XPUM_DUMP_MEMORY_WRITE_THROUGHPUT</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea4116632a075861ba68068156f4cf766b"><span></span><span class="n">XPUM_DUMP_ENERGY</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea18a852fc6629efd220910a5c9bd6c5ef"><span></span><span class="n">XPUM_DUMP_EU_ACTIVE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea6744b5224af3123f74cff87c1dec9334"><span></span><span class="n">XPUM_DUMP_EU_STALL</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea0a23c8e2937523479f74a8a9ebef3f05"><span></span><span class="n">XPUM_DUMP_EU_IDLE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea8d9db90bc97bd637623ed97b3da3da60"><span></span><span class="n">XPUM_DUMP_RAS_ERROR_CAT_RESET</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea0926fcefc490cf7c54b1112318f2b0c6"><span></span><span class="n">XPUM_DUMP_RAS_ERROR_CAT_PROGRAMMING_ERRORS</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea69094fbe7f48be6dee7b77af383e6da0"><span></span><span class="n">XPUM_DUMP_RAS_ERROR_CAT_DRIVER_ERRORS</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea4754ba253c5809124f64b83c7448b0ba"><span></span><span class="n">XPUM_DUMP_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea06494f56f77bfb9c248c4f4cd4601bff"><span></span><span class="n">XPUM_DUMP_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704eaf08711ba567cdde1b3437c0ebf4d6f12"><span></span><span class="n">XPUM_DUMP_MEMORY_BANDWIDTH</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea86f5ee792689cc928e0366c059663e47"><span></span><span class="n">XPUM_DUMP_MEMORY_USED</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea3c872045ae0b1fab2ed28dedbeec7519"><span></span><span class="n">XPUM_DUMP_PCIE_READ_THROUGHPUT</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea8b47ee8b55bdd49d832e4fb8b8443157"><span></span><span class="n">XPUM_DUMP_PCIE_WRITE_THROUGHPUT</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704eae5b194a875f4417c887c9a25314767df"><span></span><span class="n">XPUM_DUMP_COMPUTE_XE_LINK_THROUGHPUT</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea9adf58a945ac37794edbb0ea5d274251"><span></span><span class="n">XPUM_DUMP_COMPUTE_ENGINE_UTILIZATION</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704eae5e2ebf85fb00cc92de5ae8f41540ab3"><span></span><span class="n">XPUM_DUMP_RENDER_ENGINE_UTILIZATION</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ead700efd6649d55aeb062de145ebb798f"><span></span><span class="n">XPUM_DUMP_DECODE_ENGINE_UTILIZATION</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea67b4620664cf7eab67c4d25af994cb69"><span></span><span class="n">XPUM_DUMP_ENCODE_ENGINE_UTILIZATION</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea81317bb6859972c7bc68dd3b2b34e590"><span></span><span class="n">XPUM_DUMP_COPY_ENGINE_UTILIZATION</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea49ea3824057ae7789dda15d574627bcb"><span></span><span class="n">XPUM_DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704eaf0c8120293756e4676ed986458ece946"><span></span><span class="n">XPUM_DUMP_3D_ENGINE_UTILIZATION</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea2c6bc877695e8c39d61d78ca44948630"><span></span><span class="n">XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704eae4ade1242af9b04d7e52b77719c1bc1f"><span></span><span class="n">XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704ea8c0a0189dd150f7e81d26922d57bc591"><span></span><span class="n">XPUM_DUMP_MAX</span></span><span></span><span class="p">,</span>
+<span class="p">};</span></pre>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="enum_xpum_diag_task_type_enum.html" class="btn btn-neutral float-left" title="enum xpum_diag_task_type_enum" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="enum_xpum_ecc_action_t.html" class="btn btn-neutral float-right" title="enum xpum_ecc_action_t" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
