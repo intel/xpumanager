@@ -405,7 +405,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].value" }
             ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1048576, "fixer": "round" }
+                { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1, "fixer": "round" }
             ]}, { "value": "fabric_throughput"}
         ]]
     }]
@@ -522,7 +522,7 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
             ]}, { "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].value" }
             ]}, { "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1048576, "fixer": "round" }
+                { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1, "fixer": "round" }
             ]}, { "value": "fabric_throughput"}
         ]]
     }]
@@ -565,7 +565,7 @@ std::unique_ptr<nlohmann::json> ComletStatistics::run() {
                 return convertResult;
             }
         }
-        auto json = this->coreStub->getStatistics(targetId, true);
+        auto json = this->coreStub->getStatistics(targetId, true, true);
         return json;
     } else if (isGroupOp()) {
         auto json = this->coreStub->getStatisticsByGroup(this->opts->groupId, true, true);
