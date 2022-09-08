@@ -148,19 +148,19 @@ std::string CoreStub::healthTypeEnumToString(HealthType type) {
     return ret;
 }
 
-std::string CoreStub::schedulerModeEnumToString(XpumSchedulerMode mode) {
+std::string CoreStub::schedulerModeToString(int mode) {
     std::string ret = "null"; //"SCHEDULER_MODE_NULL";
     switch (mode) {
-        case SCHEDULER_TIMEOUT:
+        case 0:
             ret = "timeout"; //"SCHEDULER_MODE_TIMEOUT";
             break;
-        case SCHEDULER_TIMESLICE:
+        case 1:
             ret = "timeslice"; //"SCHEDULER_MODE_TIMESLICE";
             break;
-        case SCHEDULER_EXCLUSIVE:
+        case 2:
             ret = "exclusive"; //"SCHEDULER_MODE_EXCLUSIVE";
             break;
-        case SCHEDULER_DEBUG:
+        case 3:
             ret = "debug"; //"SCHEDULER_MODE_DEBUG";
             break;
         default:
@@ -168,13 +168,13 @@ std::string CoreStub::schedulerModeEnumToString(XpumSchedulerMode mode) {
     }
     return ret;
 }
-std::string CoreStub::standbyModeEnumToString(XpumStandbyMode mode) {
+std::string CoreStub::standbyModeToString(int mode) {
     std::string ret = "null"; //"STANDBY_MODE_NULL";
     switch (mode) {
-        case STANDBY_DEFAULT:
+        case 0:
             ret = "default"; //"STANDBY_MODE_DEFAULT";
             break;
-        case STANDBY_NEVER:
+        case 1:
             ret = "never"; //"STANDBY_MODE_NEVER";
             break;
         default:

@@ -70,9 +70,9 @@ class CoreStub {
     virtual std::shared_ptr<nlohmann::json> getFabricStatistics(int deviceId)=0;
     //config related interface
     virtual std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId)=0;
-    virtual std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2)=0;
+    virtual std::unique_ptr<nlohmann::json> setDeviceSchedulerMode(int deviceId, int tileId, int mode, int val1, int val2)=0;
     virtual std::unique_ptr<nlohmann::json> setDevicePowerlimit(int deviceId, int tileId, int power, int interval)=0;
-    virtual std::unique_ptr<nlohmann::json> setDeviceStandby(int deviceId, int tileId, XpumStandbyMode mode)=0;
+    virtual std::unique_ptr<nlohmann::json> setDeviceStandby(int deviceId, int tileId, int mode)=0;
     virtual std::unique_ptr<nlohmann::json> setDeviceFrequencyRange(int deviceId, int tileId, int minFreq, int maxFreq)=0;
     virtual std::unique_ptr<nlohmann::json> getDeviceProcessState(int deviceId)=0;
     virtual std::unique_ptr<nlohmann::json> getDeviceComponentOccupancyRatio(int deviceId, int tileId, int samplingInterval)=0;
@@ -84,8 +84,8 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> setFabricPortBeaconing(int deviceId, int tileId, uint32_t port, uint32_t beaconing)=0;
     virtual std::unique_ptr<nlohmann::json> setMemoryEccState(int deviceId, bool enabled)=0;
     virtual std::unique_ptr<nlohmann::json> resetDevice(int deviceId, bool force)=0;
-    std::string schedulerModeEnumToString(XpumSchedulerMode mode);
-    std::string standbyModeEnumToString(XpumStandbyMode mode);
+    std::string schedulerModeToString(int mode);
+    std::string standbyModeToString(int mode);
 
     std::string policyTypeEnumToString(XpumPolicyType type);
     std::string policyConditionTypeEnumToString(XpumPolicyConditionType type);

@@ -1271,8 +1271,8 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceConfig(int deviceId, int 
                 tileJson["tile_id"] = response.tileconfigdata(i).tileid();
                 tileJson["min_frequency"] = response.tileconfigdata(i).minfreq();
                 tileJson["max_frequency"] = response.tileconfigdata(i).maxfreq();
-                tileJson["standby_mode"] = standbyModeEnumToString(response.tileconfigdata(i).standby());
-                tileJson["scheduler_mode"] = schedulerModeEnumToString(response.tileconfigdata(i).scheduler());
+                tileJson["standby_mode"] = standbyModeToString(response.tileconfigdata(i).standby());
+                tileJson["scheduler_mode"] = schedulerModeToString(response.tileconfigdata(i).scheduler());
                 tileJson["gpu_frequency_valid_options"] = response.tileconfigdata(i).freqoption();
                 tileJson["standby_mode_valid_options"] = response.tileconfigdata(i).standbyoption();
                 if (int(response.tileconfigdata(i).mediaperformancefactor()) != -1) {
@@ -1326,9 +1326,10 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceConfig(int deviceId, int 
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceSchedulerMode(int deviceId, int tileId, int mode, int val1, int val2) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    XpumSchedulerMode gmode = static_cast<XpumSchedulerMode>(mode);
     grpc::ClientContext context;
     ConfigDeviceSchdeulerModeRequest request;
     request.set_deviceid(deviceId);
@@ -1339,7 +1340,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceSchedulerMode(int deviceI
         request.set_istiledata(true);
         request.set_tileid(tileId);
     }
-    request.set_scheduler(mode);
+    request.set_scheduler(gmode);
     request.set_val1(val1);
     request.set_val2(val2);
 
@@ -1390,9 +1391,10 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDevicePowerlimit(int deviceId, 
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceStandby(int deviceId, int tileId, XpumStandbyMode mode) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceStandby(int deviceId, int tileId, int mode) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    XpumStandbyMode gmode = static_cast<XpumStandbyMode>(mode);
     grpc::ClientContext context;
     ConfigDeviceStandbyRequest request;
     request.set_deviceid(deviceId);
@@ -1403,7 +1405,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceStandby(int deviceId, int
         request.set_istiledata(true);
         request.set_tileid(tileId);
     }
-    request.set_standby(mode);
+    request.set_standby(gmode);
 
     ConfigDeviceResultData response;
     grpc::Status status = stub->setDeviceStandbyMode(&context, request, &response);

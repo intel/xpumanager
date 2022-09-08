@@ -1433,25 +1433,18 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int t
         }
         for (uint32_t i = 0; i < standbyCount; i++) {
             if (standbyArray[i].type == XPUM_GLOBAL && standbyArray[i].subdevice_Id == tileId) {
-                if (standbyArray[i].mode == XPUM_DEFAULT) {
-                    tileJson["standby_mode"] = standbyModeEnumToString(STANDBY_DEFAULT);
-                } else {
-                    tileJson["standby_mode"] = standbyModeEnumToString(STANDBY_NEVER);
-                }
+                tileJson["standby_mode"] = standbyModeToString(standbyArray[i].mode);
                 break;
             }
         }
         for (uint32_t i = 0; i < schedulerCount; i++) {
             if (schedulerArray[i].subdevice_Id == tileId) {
+                tileJson["scheduler_mode"] = schedulerModeToString(schedulerArray[i].mode);
                 if (schedulerArray[i].mode == XPUM_TIMEOUT) {
-                    tileJson["scheduler_mode"] = schedulerModeEnumToString(SCHEDULER_TIMEOUT);
                     tileJson["scheduler_watchdog_timeout"] = schedulerArray[i].val1;
                 } else if (schedulerArray[i].mode == XPUM_TIMESLICE) {
-                    tileJson["scheduler_mode"] = schedulerModeEnumToString(SCHEDULER_TIMESLICE);
                     tileJson["scheduler_timeslice_interval"] = schedulerArray[i].val1;
                     tileJson["scheduler_timeslice_yield_timeout"] = schedulerArray[i].val2;
-                } else if (schedulerArray[i].mode == XPUM_EXCLUSIVE) {
-                    tileJson["scheduler_mode"] = schedulerModeEnumToString(SCHEDULER_EXCLUSIVE);
                 }
                 break;
             }
@@ -1525,7 +1518,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceConfig(int deviceId, int t
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId, int tileId, XpumSchedulerMode mode, int val1, int val2) {
+std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId, int tileId, int mode, int val1, int val2) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_result_t res = XPUM_GENERIC_ERROR;
 
@@ -1535,7 +1528,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId
         goto LOG_ERR;
     }
 
-    if (mode == SCHEDULER_TIMEOUT) {
+    if (mode == 0) {
         xpum_scheduler_timeout_t sch_timeout;
         sch_timeout.subdevice_Id = tileId;
         sch_timeout.watchdog_timeout = val1;
@@ -1545,7 +1538,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId
             goto LOG_ERR;
         }
         res = xpumSetDeviceSchedulerTimeoutMode(deviceId, sch_timeout);
-    } else if (mode == SCHEDULER_TIMESLICE) {
+    } else if (mode == 1) {
         xpum_scheduler_timeslice_t sch_timeslice;
         sch_timeslice.subdevice_Id = tileId;
         sch_timeslice.interval = val1;
@@ -1556,7 +1549,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId
             goto LOG_ERR;
         }
         res = xpumSetDeviceSchedulerTimesliceMode(deviceId, sch_timeslice);
-    } else if (mode == SCHEDULER_EXCLUSIVE) {
+    } else if (mode == 2) {
         xpum_scheduler_exclusive_t sch_exclusive;
         sch_exclusive.subdevice_Id = tileId;
         res = xpumSetDeviceSchedulerExclusiveMode(deviceId, sch_exclusive);
@@ -1655,7 +1648,7 @@ LOG_ERR:
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceStandby(int deviceId, int tileId, XpumStandbyMode mode) {
+std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceStandby(int deviceId, int tileId, int mode) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_result_t res;
     if (tileId == -1) {
@@ -1668,15 +1661,16 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceStandby(int deviceId, int 
     standby.subdevice_Id = tileId;
     standby.type = XPUM_GLOBAL;
 
-    if (mode == STANDBY_DEFAULT) {
+    if (mode == XPUM_DEFAULT) {
         standby.mode = XPUM_DEFAULT;
-    } else if (mode == STANDBY_NEVER) {
+    } else if (mode == XPUM_NEVER) {
         standby.mode = XPUM_NEVER;
     } else {
         (*json)["error"] = "Error";
         (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
         goto LOG_ERR;
     }
+
     res = xpumSetDeviceStandby(deviceId, standby);
     if (res != XPUM_OK) {
         switch (res) {
