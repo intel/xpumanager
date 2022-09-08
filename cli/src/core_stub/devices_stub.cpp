@@ -51,6 +51,12 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceList() {
     return json;
 }
 
+static std::string scale(std::string value, int scale) {
+    int64_t ivalue = std::stol(value);
+    double fvalue = ivalue / (double)scale;
+    return std::to_string(fvalue);
+}
+
 std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(int deviceId) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_device_properties_t data;
@@ -59,9 +65,20 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(int deviceId) {
         for (int i = 0; i < data.propertyLen; i++) {
             auto& p = data.properties[i];
             std::string name = getXpumDevicePropertyNameString(p.name);
-            std::transform(name.begin(), name.end(), name.begin(),
-                           [](unsigned char c) { return std::tolower(c); });            
-            (*json)[name] = p.value;
+            if (name.compare("MEMORY_PHYSICAL_SIZE_BYTE") == 0) {
+                name = "memory_physical_size";
+                (*json)[name] = scale(p.value, 1048576);
+            } else if (name.compare("MAX_MEM_ALLOC_SIZE_BYTE") == 0) {
+                name = "max_mem_alloc_size";
+                (*json)[name] = scale(p.value, 1048576);
+            } else if (name.compare("MAX_FABRIC_PORT_SPEED") == 0) {
+                name = "max_fabric_port_speed";
+                (*json)[name] = scale(p.value, 1048576);
+            } else {
+                std::transform(name.begin(), name.end(), name.begin(),
+                               [](unsigned char c) { return std::tolower(c); });
+                (*json)[name] = p.value;
+            }
         }
     } else {
         switch (res) {
