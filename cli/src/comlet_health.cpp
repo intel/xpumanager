@@ -199,12 +199,14 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
     }
 
     int targetId = -1;
-    if (isNumber(this->opts->deviceId)) {
-        targetId = std::stoi(this->opts->deviceId);
-    } else {
-        auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
-        if (convertResult->contains("error")) {
-            return convertResult;
+    if (this->opts->deviceId != "-1") {
+        if (isNumber(this->opts->deviceId)) {
+            targetId = std::stoi(this->opts->deviceId);
+        } else {
+            auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+            if (convertResult->contains("error")) {
+                return convertResult;
+            }
         }
     }
 
@@ -226,7 +228,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
             json = this->coreStub->getHealth(targetId, this->opts->componentType);
             return json;
         } else {
-            if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
+            if (this->opts->componentType >= 1 && this->opts->componentType <= 6)
                 json = this->coreStub->getHealth(targetId, this->opts->componentType);
             else
                 json = this->coreStub->getHealth(targetId, -1);
@@ -252,7 +254,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
             json = this->coreStub->getHealthByGroup(this->opts->groupId, this->opts->componentType);
             return json;
         } else {
-            if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
+            if (this->opts->componentType >= 1 && this->opts->componentType <= 6)
                 json = this->coreStub->getHealthByGroup(this->opts->groupId, this->opts->componentType);
             else
                 json = this->coreStub->getHealthByGroup(this->opts->groupId, -1);
