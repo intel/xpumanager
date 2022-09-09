@@ -914,6 +914,7 @@ typedef enum xpum_policy_type_enum {
     // XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
     // XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     XPUM_POLICY_TYPE_GPU_MISSING,
+    XPUM_POLICY_TYPE_GPU_THROTTLE,
     XPUM_POLICY_TYPE_MAX
 } xpum_policy_type_t;
 
@@ -950,6 +951,7 @@ typedef struct xpum_policy_notify_callback_para_t {
     bool isTileData;
     int32_t tileId;
     char notifyCallBackUrl[XPUM_MAX_STR_LENGTH];
+    char description[XPUM_MAX_STR_LENGTH];
 } xpum_policy_notify_callback_para_t;
 
 typedef void (*xpum_notify_callback_ptr_t)(xpum_policy_notify_callback_para_t *); //return value for policy condtion trigger and action

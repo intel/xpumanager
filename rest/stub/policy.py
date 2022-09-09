@@ -25,6 +25,7 @@ XpumPolicyTypeToString = {
     # core_pb2.POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE : "XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE",
     # core_pb2.POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE : "XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE",
     core_pb2.POLICY_TYPE_GPU_MISSING: "XPUM_POLICY_TYPE_GPU_MISSING",
+    core_pb2.POLICY_TYPE_GPU_THROTTLE: "XPUM_POLICY_TYPE_GPU_THROTTLE",
     core_pb2.POLICY_TYPE_MAX: "XPUM_POLICY_TYPE_MAX",
 }
 
@@ -52,6 +53,7 @@ XpumPolicyTypeFromString = {
     # "XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE": core_pb2.POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE,
     # "XPUM_POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE": core_pb2.POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     "XPUM_POLICY_TYPE_GPU_MISSING": core_pb2.POLICY_TYPE_GPU_MISSING,
+    "XPUM_POLICY_TYPE_GPU_THROTTLE": core_pb2.POLICY_TYPE_GPU_THROTTLE,
     "XPUM_POLICY_TYPE_MAX": core_pb2.POLICY_TYPE_MAX,
 }
 
@@ -212,9 +214,12 @@ def readPolicyNotifyData():
             data['action'] = action
             ####
             data['timestamp'] = one.timestamp
-            data['curValue'] = one.curValue
-            data['isTileData'] = one.isTileData
-            data['tileId'] = one.tileId
+            if data['type'] != 'XPUM_POLICY_TYPE_GPU_THROTTLE':
+                data['curValue'] = one.curValue
+                data['isTileData'] = one.isTileData
+                data['tileId'] = one.tileId
+            else:
+                data['description'] = one.description
             ####
             json_str = json.dumps(data)
             url = notify_callback_url+"?data="+urllib.parse.quote(json_str)

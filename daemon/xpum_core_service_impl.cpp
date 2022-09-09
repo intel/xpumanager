@@ -1051,6 +1051,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     output->set_istiledata(p_para->isTileData);
     output->set_tileid(p_para->tileId);
     output->set_notifycallbackurl(p_para->notifyCallBackUrl);
+    output->set_description(p_para->description);
 
     // lock
     std::unique_lock<std::mutex> lock(mutexForCallBackDataList);

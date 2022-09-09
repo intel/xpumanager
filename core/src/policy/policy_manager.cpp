@@ -236,6 +236,26 @@ bool PolicyManager::isPolicyMeetCondition(std::shared_ptr<xpum_policy_data> p_po
         return false;
     }
 
+    //XPUM_POLICY_TYPE_GPU_THROTTLE
+    if (p_policy->type == XPUM_POLICY_TYPE_GPU_THROTTLE) {
+        std::string freq_throttle_message;
+        bool get_state = GPUDeviceStub::instance().getFrequencyState(this->p_device_manager->getDevice(std::to_string(p_policy->deviceId))->getDeviceHandle(), freq_throttle_message);
+        if (get_state) {
+            p_policy->curValue = freq_throttle_message.size() > 0 ? 1 : 0;
+            p_policy->curTimestamp = Utility::getCurrentMillisecond();
+            p_policy->isTileData = false;
+            p_policy->tileId = 0;
+            strcpy(p_policy->description, freq_throttle_message.c_str());
+            if (p_policy->curValue == 1) {
+                //Only care occur
+                XPUM_LOG_INFO("PolicyManager::isPolicyMeetCondition(): XPUM_POLICY_TYPE_GPU_THROTTLE return true");
+                return true;
+            }
+        }
+        XPUM_LOG_INFO("PolicyManager::isPolicyMeetCondition(): XPUM_POLICY_TYPE_GPU_THROTTLE return false");
+        return false;
+    }
+
     //std::shared_ptr<std::vector<xpum_device_metrics_t>> pMetricCur = std::make_shared<std::vector<xpum_device_metrics_t>>(count);
     auto pMetricCur = p_policy->pMetricCur;
     for (auto itVector = pMetricCur->begin(); itVector != pMetricCur->end(); itVector++) {
@@ -376,7 +396,7 @@ void PolicyManager::triggerNotification(std::shared_ptr<xpum_policy_data> p_poli
     para.timestamp = Utility::getCurrentMillisecond();
     para.type = p_policy->type;
     strcpy(para.notifyCallBackUrl, p_policy->notifyCallBackUrl);
-
+    strcpy(para.description, p_policy->description);
     /////
     xpum_policy_triggered_for_trace(&para);
 

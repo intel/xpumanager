@@ -637,7 +637,8 @@ enum XpumPolicyType {
     POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE=6;
     POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE=7;
     POLICY_TYPE_GPU_MISSING=8;
-    POLICY_TYPE_MAX=9;
+    POLICY_TYPE_GPU_THROTTLE=9;
+    POLICY_TYPE_MAX=10;
 }
 message XpumPolicyData {
     XpumPolicyType type = 1;
@@ -679,6 +680,7 @@ message ReadPolicyNotifyDataResponse{
     uint64 curValue = 7;    
     bool isTileData = 8;
     int32 tileId = 9;
+    string description = 10;
 }
 
 message DumpRawDataTaskInfo{
