@@ -167,12 +167,14 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         //
         bool isDevcie = true;
         int targetId = -1;
-        if (isNumber(this->opts->deviceId)) {
-            targetId = std::stoi(this->opts->deviceId);
-        } else {
-            auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
-            if (convertResult->contains("error")) {
-                return convertResult;
+        if (this->opts->deviceId != "-1") {
+            if (isNumber(this->opts->deviceId)) {
+                targetId = std::stoi(this->opts->deviceId);
+            } else {
+                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+                if (convertResult->contains("error")) {
+                    return convertResult;
+                }
             }
         }
         uint32_t id = targetId;
@@ -288,12 +290,14 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         //
         bool isDevcie = true;
         int targetId = -1;
-        if (isNumber(this->opts->deviceId)) {
-            targetId = std::stoi(this->opts->deviceId);
-        } else {
-            auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
-            if (convertResult->contains("error")) {
-                return convertResult;
+        if (this->opts->deviceId != "-1") {
+            if (isNumber(this->opts->deviceId)) {
+                targetId = std::stoi(this->opts->deviceId);
+            } else {
+                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+                if (convertResult->contains("error")) {
+                    return convertResult;
+                }
             }
         }
         uint32_t id = targetId;
