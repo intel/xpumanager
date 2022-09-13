@@ -580,6 +580,15 @@ xpum_result_t PolicyManager::checkPolicyValidation(xpum_policy_t policy) {
         }
     }
 
+    if (policy.type == XPUM_POLICY_TYPE_GPU_THROTTLE) {
+        if (!(policy.condition.type == XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR)) {
+            return XPUM_RESULT_POLICY_TYPE_CONDITION_NOT_SUPPORT;
+        }
+        if (!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL)) {
+            return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
+        }
+    }
+
     if (policy.type == XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET) {
         if (!(policy.action.type == XPUM_POLICY_ACTION_TYPE_NULL)) {
             return XPUM_RESULT_POLICY_TYPE_ACTION_NOT_SUPPORT;
