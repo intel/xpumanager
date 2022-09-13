@@ -141,7 +141,7 @@ void Configuration::initPerfMetrics() {
         }
         line.erase(0, line.find_first_not_of(" "));
         line.erase(line.find_last_not_of(" ") + 1);
-        if (line[0] == '#' || line.empty()) {
+        if (line[0] == '#' || line[0] == '\r' || line[0] == '\n' || line.empty()) {
             continue;
         }
         
