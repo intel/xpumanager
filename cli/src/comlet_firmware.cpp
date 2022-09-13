@@ -59,10 +59,10 @@ void ComletFirmware::setupOptions() {
         return errStr;
     });
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, AMC, GFX_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).");
-    // fwTypeOpt->required();
-    
 #ifndef DAEMONLESS
+
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, AMC, GFX_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).");
+
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
         if (str.compare("GFX") == 0 || str.compare("AMC") == 0 || str.compare("GFX_DATA") == 0) {
@@ -72,6 +72,9 @@ void ComletFirmware::setupOptions() {
         }
     });
 #else
+
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA.");
+
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
         if (str.compare("GFX") == 0 || str.compare("GFX_DATA") == 0) {
