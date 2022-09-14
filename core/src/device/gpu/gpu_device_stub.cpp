@@ -3586,6 +3586,10 @@ bool GPUDeviceStub::getFrequencyState(const zes_device_handle_t& device, std::st
                 zes_freq_state_t freq_state;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
                 if (res == ZE_RESULT_SUCCESS) {
+                    if (freq_state.throttleReasons == 0) {   
+                        ret = true;
+                        continue;
+                    }
                     if (props.onSubdevice) {
                         if (freq_throttle_message.size() > 0)
                             freq_throttle_message += " ";
