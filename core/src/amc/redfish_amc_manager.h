@@ -47,6 +47,8 @@ class RedfishAmcManager : public AmcManager {
 
     virtual void getAMCSensorReading(GetAmcSensorReadingParam& param) override;
 
+    virtual void getAMCSlotSerialNumbers(GetAmcSlotSerialNumbersParam& param) override;
+
    private:
     bool initialized = false;
 

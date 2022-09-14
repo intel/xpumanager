@@ -16,6 +16,7 @@
 #include <vector>
 #include <dlfcn.h>
 #include <math.h>
+#include <regex>
 
 #include "api_types.h"
 #include "core/core.h"
@@ -402,6 +403,84 @@ xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char *buffer, int *count) {
     }
     std::strcpy(buffer, errMsg.c_str());
     buffer[errMsg.length() + 1] = '\0';
+    return XPUM_OK;
+}
+
+xpum_result_t xpumGetSerialNumber(xpum_device_id_t deviceId,
+                                  const char *username,
+                                  const char *password,
+                                  char serialNumber[XPUM_MAX_STR_LENGTH]) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK)
+        return res;
+
+    std::vector<SlotSerialNumber> serialNumberList;
+    Core::instance().getFirmwareManager()->getAMCSlotSerialNumbers({username, password}, serialNumberList);
+
+    auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+
+    std::vector<Property> properties;
+    pDevice->getProperties(properties);
+
+    std::string pciSlot;
+
+    for (size_t i = 0; i < properties.size(); i++) {
+        auto &prop = properties[i];
+        xpum_device_internal_property_name_t name = prop.getName();
+        if (name == XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT) {
+            pciSlot = prop.getValue();
+            break;
+        }
+    }
+
+    int systemSlotId = -1;
+    if (pciSlot.find("RSC-D2-668G4") != pciSlot.npos) {
+        std::regex pattern("RSC-D2-668G4\\sSLOT(\\d+)\\s");
+        std::smatch sm;
+        if (std::regex_search(pciSlot, sm, pattern)) {
+            int riserSlotId = std::stoi(sm[1].str());
+            systemSlotId = riserSlotId;
+        }
+    } else if (pciSlot.find("RSC-D2R-668G4") != pciSlot.npos) {
+        std::regex pattern("RSC-D2R-668G4\\sSLOT(\\d+)\\s");
+        std::smatch sm;
+        if (std::regex_search(pciSlot, sm, pattern)) {
+            int riserSlotId = std::stoi(sm[1].str());
+            switch (riserSlotId) {
+                case 1:
+                    systemSlotId = 4;
+                    break;
+                case 2:
+                    systemSlotId = 5;
+                    break;
+                case 3:
+                    systemSlotId = 6;
+                    break;
+                default:
+                    systemSlotId = -1;
+            }
+        }
+    }
+
+    for (auto slotSN : serialNumberList) {
+        if (slotSN.slotId == systemSlotId) {
+            std::size_t length = slotSN.serialNumber.copy(serialNumber, slotSN.serialNumber.length());
+            serialNumber[length] = '\0';
+            return XPUM_OK;
+        }
+    }
+    std::string unknownSN = "unknown";
+    std::size_t length = unknownSN.copy(serialNumber, unknownSN.length());
+    serialNumber[length] = '\0';
     return XPUM_OK;
 }
 

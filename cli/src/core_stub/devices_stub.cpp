@@ -57,7 +57,7 @@ static std::string scale(std::string value, int scale) {
     return std::to_string(fvalue);
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(int deviceId) {
+std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(int deviceId, std::string username, std::string password) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_device_properties_t data;
     auto res = xpumGetDeviceProperties(deviceId, &data);    
@@ -100,11 +100,11 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(int deviceId) {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(const char *bdf) {
+std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(const char *bdf, std::string username, std::string password) {
     xpum_device_id_t deviceId = -1;
     // No need to check return value as "-1" covers the failure case
     xpumGetDeviceIdByBDF(bdf, &deviceId);
-    return getDeviceProperties(deviceId);
+    return getDeviceProperties(deviceId, username, password);
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getAMCFirmwareVersions(std::string username, std::string password) {
@@ -138,7 +138,5 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getAMCFirmwareVersions(std::string 
     }
     return json;
 }
-
-
 
 } // end namespace xpum::cli

@@ -31,7 +31,7 @@ def getDeviceList():
     return 0, "OK", data
 
 
-def getDeviceProperties(deviceId):
+def getDeviceProperties(deviceId, username="", password=""):
     resp = stub.getDeviceProperties(core_pb2.DeviceId(id=deviceId))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
@@ -40,6 +40,10 @@ def getDeviceProperties(deviceId):
         data[prop.name.lower()] = prop.value
     # device_id
     data["device_id"] = deviceId
+    # serial number
+    resp = stub.getDeviceSerialNumber(core_pb2.GetDeviceSerialNumberRequest(
+        deviceId=deviceId, username=username, password=password))
+    data["serial_number"] = resp.serialNumber
     # links
     data["health"] = {
         "@odata.id": "/rest/v1/devices/{}/health".format(deviceId)}

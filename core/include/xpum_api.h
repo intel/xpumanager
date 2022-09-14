@@ -150,8 +150,8 @@ xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *deviceId);
  * @param versionList   IN/OUT: The array to store AMC firmware version
  * @param count         IN/OUT: When \a versionList is NULL, \a count will be filled with the number of AMC firmware versions, and return.
  *                              When \a versionList is not NULL, \a count denotes the length of \a versionList, \a count should be equal to or larger than the number of AMC firmware versions, when return, the \a count will store real number of AMC firmware versions returned by \a versionList
- * @param username      IN: Username used for authentication
- * @param password      IN: Password used for authentication
+ * @param username      IN: Username used for redfish host authentication
+ * @param password      IN: Password used for redfish host authentication
  * @return xpum_result_t 
  *      - \ref XPUM_OK                  if query successfully
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
@@ -169,6 +169,19 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
  *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
 xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char* buffer, int *count);
+
+/**
+ * @brief Get device serial number from AMC
+ * 
+ * @param deviceId       IN: Device id
+ * @param username       IN: Username used for redfish host authentication      
+ * @param password       IN: Password used for redfish host authentication 
+ * @param serialNumber  OUT: Device serial number
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK
+ *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
+ */
+xpum_result_t xpumGetSerialNumber(xpum_device_id_t deviceId, const char *username, const char *password, char serialNumber[XPUM_MAX_STR_LENGTH]);
 /// @endcond
 
 /** @} */ // Closing for DEVICE_API

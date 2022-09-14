@@ -1425,4 +1425,139 @@ void RedfishAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam
 void RedfishAmcManager::getAMCSensorReading(GetAmcSensorReadingParam& param){
     param.errCode = XPUM_OK;
 }
+
+xpum_result_t getGPUPCIeSlots(RedfishHostInterface interface,
+                              std::string username,
+                              std::string password,
+                              std::vector<std::string>& gpuOdataIdList,
+                              std::string& errMsg) {
+    // get gpu list
+    std::string path = "/redfish/v1/Chassis/1/PCIeDevices";
+    std::stringstream url;
+    url << "https://";
+    url << interface.ipv4_service_addr;
+    if (interface.ipv4_service_port.length() > 0)
+        url << ":" << interface.ipv4_service_port;
+    url << path;
+
+    CURL* curl;
+    CURLcode res = CURL_LAST;
+    std::string buffer;
+    curl = libcurl.curl_easy_init();
+    if (curl) {
+        libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
+
+        curlBasicConfig(curl, buffer, username, password);
+
+        res = libcurl.curl_easy_perform(curl);
+    }
+    libcurl.curl_easy_cleanup(curl);
+    if (res != CURLE_OK){
+        switch (res) {
+            case CURLE_OPERATION_TIMEDOUT:
+                errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                errMsg = "Fail to request " + url.str();
+        }
+        return XPUM_GENERIC_ERROR;
+    }
+    json fwInventoryJson;
+    try {
+        fwInventoryJson = json::parse(buffer);
+    } catch (...) {
+        // parse error
+        errMsg = "Fail to parse PCIe device collection json";
+        return XPUM_GENERIC_ERROR;
+    }
+
+    if (fwInventoryJson.contains("Members")) {
+        for (auto inv : fwInventoryJson["Members"]) {
+            if (inv.contains("@odata.id")) {
+                std::string link = inv["@odata.id"].get<std::string>();
+                if (link.find("/GPU") != link.npos) {
+                    gpuOdataIdList.push_back(link);
+                }
+            }
+        }
+        return XPUM_OK;
+    }
+    // if contains error
+    parseErrorMsg(fwInventoryJson, errMsg);
+    return XPUM_GENERIC_ERROR;
+}
+
+xpum_result_t getSlotIdAndSerialNumber(RedfishHostInterface interface,
+                                  std::string username,
+                                  std::string password,
+                                  std::string path,
+                                  std::string& errMsg,
+                                  SlotSerialNumber& data) {
+    std::stringstream url;
+    url << "https://";
+    url << interface.ipv4_service_addr;
+    if (interface.ipv4_service_port.length() > 0)
+        url << ":" << interface.ipv4_service_port;
+    url << path;
+
+    CURL* curl;
+    CURLcode res = CURL_LAST;
+    std::string buffer;
+    curl = libcurl.curl_easy_init();
+    if (curl) {
+        libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
+        libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
+
+        curlBasicConfig(curl, buffer, username, password);
+
+        res = libcurl.curl_easy_perform(curl);
+    }
+    libcurl.curl_easy_cleanup(curl);
+    if (res != CURLE_OK){
+        switch (res) {
+            case CURLE_OPERATION_TIMEDOUT:
+                errMsg = "Request to " + url.str() + " timeout";
+                break;
+            default:
+                errMsg = "Fail to request " + url.str();
+        }
+        return XPUM_GENERIC_ERROR;
+    }
+    json fwInventoryJson;
+    try {
+        fwInventoryJson = json::parse(buffer);
+    } catch (...) {
+        // parse error
+        errMsg = "Fail to parse PCIe device json";
+        return XPUM_GENERIC_ERROR;
+    }
+
+    if (fwInventoryJson.contains("SerialNumber") &&
+        fwInventoryJson.contains("Oem") &&
+        fwInventoryJson["Oem"].contains("Supermicro") &&
+        fwInventoryJson["Oem"]["Supermicro"].contains("GPUSlot")) {
+        data.serialNumber = fwInventoryJson["SerialNumber"].get<std::string>();
+        data.slotId = fwInventoryJson["Oem"]["Supermicro"]["GPUSlot"].get<int>();
+        return XPUM_OK;
+    }
+    // if contains error
+    parseErrorMsg(fwInventoryJson, errMsg);
+    return XPUM_GENERIC_ERROR;
+}
+
+void RedfishAmcManager::getAMCSlotSerialNumbers(GetAmcSlotSerialNumbersParam& param) {
+    std::vector<std::string> gpuOdataIdList;
+    auto res = getGPUPCIeSlots(hostInterface, param.username, param.password, gpuOdataIdList, param.errMsg);
+    if (res)
+        return;
+    for (auto link : gpuOdataIdList) {
+        std::string errMsg;
+        SlotSerialNumber data;
+        if (getSlotIdAndSerialNumber(hostInterface, param.username, param.password, link, errMsg, data) == XPUM_OK) {
+            param.serialNumberList.push_back(data);
+        }
+    }
+}
+
 } // namespace xpum

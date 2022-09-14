@@ -149,4 +149,7 @@ void IpmiAmcManager::getAMCSensorReading(GetAmcSensorReadingParam& param){
     param.errCode = XPUM_OK;
 }
 
+void IpmiAmcManager::getAMCSlotSerialNumbers(GetAmcSlotSerialNumbersParam& param) {
+}
+
 } // namespace xpum

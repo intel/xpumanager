@@ -902,6 +902,16 @@ message GetAMCSensorReadingResponse {
     string errorMsg =3; 
 }
 
+message GetDeviceSerialNumberRequest {
+    int32 deviceId = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message GetDeviceSerialNumberResponse {
+    string serialNumber = 1;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -966,4 +976,5 @@ service XpumCoreService {
     rpc getFabricStatistics( GetFabricStatsRequest ) returns ( GetFabricStatsResponse );
     rpc getFabricCount( GetFabricCountRequest ) returns ( GetFabricCountResponse );
     rpc getAMCSensorReading( google.protobuf.Empty ) returns ( GetAMCSensorReadingResponse );
+    rpc getDeviceSerialNumber( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );
 }

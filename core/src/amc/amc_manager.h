@@ -49,6 +49,18 @@ struct GetAmcSensorReadingParam{
     std::string errMsg;
 };
 
+struct SlotSerialNumber{
+    int slotId;
+    std::string serialNumber;
+};
+
+struct GetAmcSlotSerialNumbersParam{
+    std::string username;
+    std::string password;
+    std::string errMsg;
+    std::vector<SlotSerialNumber> serialNumberList;
+};
+
 class AmcManager {
    public:
     std::atomic<int> percent;
@@ -59,5 +71,6 @@ class AmcManager {
     virtual void getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& param) = 0;
     virtual void getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& param) = 0;
     virtual void getAMCSensorReading(GetAmcSensorReadingParam& param) = 0;
+    virtual void getAMCSlotSerialNumbers(GetAmcSlotSerialNumbersParam& param) = 0;
 };
 } // namespace xpum

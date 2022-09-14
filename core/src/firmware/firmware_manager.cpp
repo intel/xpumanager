@@ -589,4 +589,16 @@ xpum_result_t FirmwareManager::getAMCSensorReading(xpum_sensor_reading_t data[],
     }
     return XPUM_OK;
 }
+
+xpum_result_t FirmwareManager::getAMCSlotSerialNumbers(AmcCredential credential, std::vector<SlotSerialNumber>& serialNumberList){
+    if (!initAmcManager()) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
+    }
+    GetAmcSlotSerialNumbersParam param;
+    param.username = credential.username;
+    param.password = credential.password;
+    p_amc_manager->getAMCSlotSerialNumbers(param);
+    serialNumberList = param.serialNumberList;
+    return XPUM_OK;
+}
 } // namespace xpum

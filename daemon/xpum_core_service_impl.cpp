@@ -183,6 +183,19 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::getDeviceSerialNumber(::grpc::ServerContext* context,
+                                                          const ::GetDeviceSerialNumberRequest* request,
+                                                          ::GetDeviceSerialNumberResponse* response) {
+    int deviceId = request->deviceid();
+    std::string username = request->username();
+    std::string password = request->password();
+    // get serial number
+    char serialNumber[XPUM_MAX_STR_LENGTH];
+    xpumGetSerialNumber(deviceId, username.c_str(), password.c_str(), serialNumber);
+    response->set_serialnumber(std::string(serialNumber));
+    return grpc::Status::OK;
+}
+
 grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, const DeviceId* request,
                                               XpumTopologyInfo* response) {
     XPUM_LOG_TRACE("call get topology");

@@ -53,7 +53,7 @@ static std::string scale(std::string value, int scale) {
     return std::to_string(fvalue);
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId, std::string username, std::string password) {
     assert(this->stub != nullptr);
 
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
@@ -96,10 +96,20 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId) 
     }
     (*json)["device_id"] = deviceId;
 
+    grpc::ClientContext sn_context;
+    GetDeviceSerialNumberRequest sn_req;
+    GetDeviceSerialNumberResponse sn_res;
+    sn_req.set_deviceid(deviceId);
+    sn_req.set_username(username);
+    sn_req.set_password(password);
+    status = stub->getDeviceSerialNumber(&sn_context, sn_req, &sn_res);
+    if (status.ok()) {
+        (*json)["serial_number"] = sn_res.serialnumber();
+    }
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(const char *bdf) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(const char *bdf, std::string username, std::string password) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -121,7 +131,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(const char *bd
         (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
         return json;
     }
-    return getDeviceProperties(deviceId);
+    return getDeviceProperties(deviceId, username, password);
 }
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getAMCFirmwareVersions(std::string username, std::string password) {

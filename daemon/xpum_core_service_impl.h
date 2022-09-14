@@ -138,6 +138,8 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
 
     virtual ::grpc::Status getAMCSensorReading(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAMCSensorReadingResponse* response) override;
 
+    virtual ::grpc::Status getDeviceSerialNumber(::grpc::ServerContext* context, const ::GetDeviceSerialNumberRequest* request, ::GetDeviceSerialNumberResponse* response) override;
+
    private:
     std::atomic_bool stop;
     std::mutex dumpRawDataFilenameMtx;

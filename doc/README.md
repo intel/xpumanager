@@ -2,7 +2,7 @@
 
 Before start build doc, you have to setup environment and denpendencies first.
 
-First you need to install python3-venv, and liblua (for ubuntu you need install liblua5.2-dev; but for CentOS/RHEL/SUSE, you need install liblua5.3)
+First you need to install python3-venv, doxygen and liblua (for ubuntu you need install liblua5.2-dev; but for CentOS/RHEL/SUSE, you need install liblua5.3)
 
 Then, you can run below commands to setup:
 

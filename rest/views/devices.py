@@ -135,6 +135,11 @@ def get_device_properties(deviceId):
                 in: path
                 description: Device id
                 type: integer
+            - 
+                name: Get device properties request schema
+                in: body
+                description: Credential used for redfish auth
+                schema: RequestAMCFwVersionSchema
         produces: 
             - application/json
         responses:
@@ -149,7 +154,19 @@ def get_device_properties(deviceId):
                 description: Error
     """
     try:
-        code, message, data = stub.getDeviceProperties(int(deviceId))
+        if request.data:
+            req = request.get_json()
+            try:
+                RequestAMCFwVersionSchema().load(req)
+            except ValidationError as err:
+                key = next(iter(err.messages))
+                value = err.messages[key]
+                errStr = key+": "+";".join(value)
+                return jsonify({'error': errStr}), 400
+            code, message, data = stub.getDeviceProperties(
+                int(deviceId), req.get("username", ""), req.get("password", ""))
+        else:
+            code, message, data = stub.getDeviceProperties(int(deviceId))
         if code == 0:
             return jsonify(data)
         error = dict(Status=code, Message=message)
@@ -189,7 +206,7 @@ def get_amc_fw_versions():
                 name: Get AMC firmware version request schema
                 in: body
                 description: Credential used for redfish auth
-                schema: FirmwareFlashJobOnAllDevicesSchema
+                schema: RequestAMCFwVersionSchema
         produces: 
             - application/json
         responses:

@@ -217,10 +217,8 @@ void ComletDiscovery::setupOptions() {
     auto listamcversionsOpt = addFlag("--listamcversions", this->opts->listamcversions, "Show all AMC firmware versions.");
     deviceIdOpt->excludes(listamcversionsOpt);
 
-    auto usernameOpt = addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
-    auto passwordOpt = addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
-    usernameOpt->needs(listamcversionsOpt);
-    passwordOpt->needs(listamcversionsOpt);
+    addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
+    addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
 #endif
 }
 
@@ -232,10 +230,10 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
 
     if (this->opts->deviceId.compare("-1") != 0) {
         if (isNumber(this->opts->deviceId)) {
-            auto json = this->coreStub->getDeviceProperties(std::stoi(this->opts->deviceId));
+            auto json = this->coreStub->getDeviceProperties(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
             return json;
         } else {
-            auto json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str());
+            auto json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str(), this->opts->username, this->opts->password);
             return json;
         }
     }
@@ -246,7 +244,7 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
         auto deviceList = (*deviceListJson)["device_list"];
         nlohmann::json deviceJsonList;
         for (auto& device : deviceList) {
-            auto deviceDetailedJson = this->coreStub->getDeviceProperties(device["device_id"]);
+            auto deviceDetailedJson = this->coreStub->getDeviceProperties(device["device_id"], this->opts->username, this->opts->password);
             auto deviceJson = nlohmann::json::parse(deviceDetailedJson->dump());
             deviceJsonList.push_back(deviceJson);
         }

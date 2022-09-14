@@ -31,9 +31,9 @@ class LibCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> getDeviceList();
 
-    std::unique_ptr<nlohmann::json> getDeviceProperties(int deviceId);
+    std::unique_ptr<nlohmann::json> getDeviceProperties(int deviceId, std::string username="", std::string password="");
 
-    std::unique_ptr<nlohmann::json> getDeviceProperties(const char *bdf);
+    std::unique_ptr<nlohmann::json> getDeviceProperties(const char *bdf, std::string username="", std::string password="");
 
     std::unique_ptr<nlohmann::json> getAMCFirmwareVersions(std::string username, std::string password);
 
