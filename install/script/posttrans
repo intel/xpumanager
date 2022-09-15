@@ -1,0 +1,3 @@
+if [ ! -f /usr/bin/xpu-smi ]; then
+    ln -sf /opt/xpum/bin/xpu-smi /usr/bin/xpu-smi
+fi

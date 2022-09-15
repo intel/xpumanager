@@ -12,7 +12,7 @@ Show the XPU System Management Interface help info.
 ```
 xpu-smi 
 Intel XPU System Management Interface -- v1.0 
-Intel XPU System Management Interface provides the Intel datacenter GPU model. It can also be used to update the firmware.  
+Intel XPU System Management Interface provides the Intel data center GPU model. It can also be used to update the firmware.  
 Intel XPU System Management Interface is based on Intel oneAPI Level Zero. Before using Intel XPU System Management Interface, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
  
 Supported devices: 
@@ -205,7 +205,7 @@ optional arguments:
   -m,--matrix                 Print the CPU/GPU topology matrix. 
                                 S: Self
                                 XL[laneCount]: Two tiles on the different cards are directly connected by Xe Link.  Xe Link lane count is also provided.
-                                XL*: Two tiles on the differen cards are connected by Xe Link + MDF. They are not directly connected by Xe Link. 
+                                XL*: Two tiles on the different cards are connected by Xe Link + MDF. They are not directly connected by Xe Link. 
                                 SYS: Connected with PCIe between NUMA nodes
                                 NODE: Connected with PCIe within a NUMA node
                                 MDF: Connected with Multi-Die Fabric Interface
@@ -359,7 +359,7 @@ Options:
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); 
                                 "timeslice",interval (us),yieldtimeout (us); "exclusive". The valid range of all time values (us) is from 5000 to 100,000,000.
   --performancefactor         Set the tile-level performance factor. Valid options: "compute/media";factorValue. The factor value should be 
-                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
+                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bounded and the performance of the memory controller needs to be increased. 
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable

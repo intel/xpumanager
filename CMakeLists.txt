@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.18.0)
 
 if(NOT DEFINED WORK_PATH)
   set(WORK_PATH ${CMAKE_CURRENT_BINARY_DIR})
@@ -67,8 +67,8 @@ add_subdirectory(third_party/pcm)
 
 add_subdirectory(core)
 add_subdirectory(cli)
-add_subdirectory(daemon)
 if(NOT DAEMONLESS)
+  add_subdirectory(daemon)
   add_subdirectory(rest)
 endif()
 if(BUILD_DOC)
@@ -148,6 +148,8 @@ if(CPACK_GENERATOR MATCHES "RPM")
       "${CMAKE_CURRENT_LIST_DIR}/install/script/postinst")
     set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
       "${CMAKE_CURRENT_LIST_DIR}/install/script/prerm")
+    set(CPACK_RPM_POST_TRANS_SCRIPT_FILE
+      "${CMAKE_CURRENT_LIST_DIR}/install/script/posttrans")
   endif()
 endif()
 
