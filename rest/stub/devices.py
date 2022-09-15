@@ -41,9 +41,10 @@ def getDeviceProperties(deviceId, username="", password=""):
     # device_id
     data["device_id"] = deviceId
     # serial number
-    resp = stub.getDeviceSerialNumber(core_pb2.GetDeviceSerialNumberRequest(
+    resp = stub.getDeviceSerialNumberAndAmcFwVersion(core_pb2.GetDeviceSerialNumberRequest(
         deviceId=deviceId, username=username, password=password))
     data["serial_number"] = resp.serialNumber
+    data["amc_fw_version"] = resp.amcFwVersion
     # links
     data["health"] = {
         "@odata.id": "/rest/v1/devices/{}/health".format(deviceId)}

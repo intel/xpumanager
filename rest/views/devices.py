@@ -117,6 +117,8 @@ class DevicePropertiesSchema(Schema):
         metadata={"description": "The number of media engines"})
     number_of_media_enh_engines = fields.Str(
         metadata={"description": "The number of media enhancement engines"})
+    amc_fw_version = fields.Str(
+        metadata={"description": "The firmware version of AMC"})
     health = fields.Nested(DevicePropertiesLinkSchema)
     topology = fields.Nested(DevicePropertiesLinkSchema)
 

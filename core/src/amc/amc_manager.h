@@ -49,16 +49,17 @@ struct GetAmcSensorReadingParam{
     std::string errMsg;
 };
 
-struct SlotSerialNumber{
+struct SlotSerialNumberAndFwVersion{
     int slotId;
     std::string serialNumber;
+    std::string firmwareVersion;
 };
 
 struct GetAmcSlotSerialNumbersParam{
     std::string username;
     std::string password;
     std::string errMsg;
-    std::vector<SlotSerialNumber> serialNumberList;
+    std::vector<SlotSerialNumberAndFwVersion> serialNumberList;
 };
 
 class AmcManager {

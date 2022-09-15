@@ -590,7 +590,7 @@ xpum_result_t FirmwareManager::getAMCSensorReading(xpum_sensor_reading_t data[],
     return XPUM_OK;
 }
 
-xpum_result_t FirmwareManager::getAMCSlotSerialNumbers(AmcCredential credential, std::vector<SlotSerialNumber>& serialNumberList){
+xpum_result_t FirmwareManager::getAMCSlotSerialNumbers(AmcCredential credential, std::vector<SlotSerialNumberAndFwVersion>& serialNumberList){
     if (!initAmcManager()) {
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
     }

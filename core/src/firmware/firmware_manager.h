@@ -63,7 +63,7 @@ class FirmwareManager {
         return flashFwErrMsg;
     }
 
-    xpum_result_t getAMCSlotSerialNumbers(AmcCredential credential, std::vector<SlotSerialNumber>& serialNumberList);
+    xpum_result_t getAMCSlotSerialNumbers(AmcCredential credential, std::vector<SlotSerialNumberAndFwVersion>& serialNumberList);
 };
 
 std::vector<char> readImageContent(const char* filePath);

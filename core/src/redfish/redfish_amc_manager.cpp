@@ -881,14 +881,18 @@ bool imageVerifyResult(RedfishHostInterface interface,
         return false;
     }
 
-    // if end time, return ture
-    if (!taskJson.contains("EndTime")) {
+    // if not contain TaskState, it is illegal return value
+    if (!taskJson.contains("TaskState")) {
+        parseErrorMsg(taskJson, flashAmcParam.errMsg);
+        return false;
+    }
+    if (taskJson["TaskState"].get<std::string>().compare("Running") == 0) {
         finished = false;
     } else {
         finished = true;
         success = false;
         // success if TaskState is Completed
-        if (taskJson.contains("TaskState") && taskJson["TaskState"].get<std::string>().compare("Completed")==0) {
+        if (taskJson["TaskState"].get<std::string>().compare("Completed") == 0) {
             success = true;
         }
         if (!success) {
@@ -932,7 +936,6 @@ bool imageVerifyResult(RedfishHostInterface interface,
       ],
       "Oem": {}
     }
-
     {
       "@odata.type": "#Task.v1_4_3.Task",
       "@odata.id": "/redfish/v1/TaskService/Tasks/18",
@@ -959,6 +962,27 @@ bool imageVerifyResult(RedfishHostInterface interface,
         }
       ],
       "Oem": {}
+    }
+
+    {
+        "@odata.etag": "b2b25495e33560826e3248a77224002a",
+        "@odata.id": "/redfish/v1/TaskService/Tasks/2",
+        "@odata.type": "#Task.v1_4_4.Task",
+        "EndTime": "0000-00-00T00:00:00+00:00",
+        "HidePayload": true,
+        "Id": "2",
+        "Name": "GPU Update",
+        "Oem": {
+            "Supermicro": {
+                "@odata.type": "#SmcTaskExtensions.v1_0_0.Task",
+                "UploadedFWVersion": ""
+            }
+        },
+        "PercentComplete": 0,
+        "StartTime": "2022-09-14T06:48:24+00:00",
+        "TaskMonitor": "/redfish/v1/TaskMonitor/MaiRrV41mtzxlYvKWrO72tK0LK0e1zL",
+        "TaskState": "Running",
+        "TaskStatus": "OK"
     }
     */
 }
@@ -1367,16 +1391,23 @@ bool getOneTaskUpdateResult(RedfishHostInterface interface,
         return false;
     }
 
-    // if end time, return ture
-    if (!taskJson.contains("EndTime")) {
+    // if not contain TaskState, it is illegal return value
+    if (!taskJson.contains("TaskState")) {
+        parseErrorMsg(taskJson, errMsg);
+        return false;
+    }
+
+    // get progress percentage
+    if (taskJson.contains("PercentComplete") && taskJson["PercentComplete"].is_number()) {
+        int percentage = taskJson["PercentComplete"];
+        percent = percentage;
+    }
+    if (taskJson["TaskState"].get<std::string>().compare("Running") == 0) {
         finished = false;
     } else {
         finished = true;
-        // success if percentage is 100
-        if (taskJson.contains("PercentComplete") && taskJson["PercentComplete"].is_number()) {
-            int percentage = taskJson["PercentComplete"];
-            percent = percentage;
-            success = percentage == 100;
+        if (taskJson["TaskState"].get<std::string>().compare("Completed") == 0) {
+            success = true;
         }
         if (!success) {
             // parse fail error message
@@ -1493,7 +1524,7 @@ xpum_result_t getSlotIdAndSerialNumber(RedfishHostInterface interface,
                                   std::string password,
                                   std::string path,
                                   std::string& errMsg,
-                                  SlotSerialNumber& data) {
+                                  SlotSerialNumberAndFwVersion& data) {
     std::stringstream url;
     url << "https://";
     url << interface.ipv4_service_addr;
@@ -1534,10 +1565,12 @@ xpum_result_t getSlotIdAndSerialNumber(RedfishHostInterface interface,
     }
 
     if (fwInventoryJson.contains("SerialNumber") &&
+        fwInventoryJson.contains("FirmwareVersion") &&
         fwInventoryJson.contains("Oem") &&
         fwInventoryJson["Oem"].contains("Supermicro") &&
         fwInventoryJson["Oem"]["Supermicro"].contains("GPUSlot")) {
         data.serialNumber = fwInventoryJson["SerialNumber"].get<std::string>();
+        data.firmwareVersion = fwInventoryJson["FirmwareVersion"].get<std::string>();
         data.slotId = fwInventoryJson["Oem"]["Supermicro"]["GPUSlot"].get<int>();
         return XPUM_OK;
     }
@@ -1553,7 +1586,7 @@ void RedfishAmcManager::getAMCSlotSerialNumbers(GetAmcSlotSerialNumbersParam& pa
         return;
     for (auto link : gpuOdataIdList) {
         std::string errMsg;
-        SlotSerialNumber data;
+        SlotSerialNumberAndFwVersion data;
         if (getSlotIdAndSerialNumber(hostInterface, param.username, param.password, link, errMsg, data) == XPUM_OK) {
             param.serialNumberList.push_back(data);
         }

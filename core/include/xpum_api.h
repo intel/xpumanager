@@ -181,7 +181,7 @@ xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char* buffer, int *count);
  *      - \ref XPUM_OK
  *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
  */
-xpum_result_t xpumGetSerialNumber(xpum_device_id_t deviceId, const char *username, const char *password, char serialNumber[XPUM_MAX_STR_LENGTH]);
+xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId, const char *username, const char *password, char serialNumber[XPUM_MAX_STR_LENGTH], char amcFwVersion[XPUM_MAX_STR_LENGTH]);
 /// @endcond
 
 /** @} */ // Closing for DEVICE_API

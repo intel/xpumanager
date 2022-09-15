@@ -102,9 +102,10 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId, 
     sn_req.set_deviceid(deviceId);
     sn_req.set_username(username);
     sn_req.set_password(password);
-    status = stub->getDeviceSerialNumber(&sn_context, sn_req, &sn_res);
+    status = stub->getDeviceSerialNumberAndAmcFwVersion(&sn_context, sn_req, &sn_res);
     if (status.ok()) {
         (*json)["serial_number"] = sn_res.serialnumber();
+        (*json)["amc_fw_version"] = sn_res.amcfwversion();
     }
     return json;
 }

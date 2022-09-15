@@ -910,6 +910,7 @@ message GetDeviceSerialNumberRequest {
 
 message GetDeviceSerialNumberResponse {
     string serialNumber = 1;
+    string amcFwVersion = 2;
 }
 
 /* services */
@@ -976,5 +977,5 @@ service XpumCoreService {
     rpc getFabricStatistics( GetFabricStatsRequest ) returns ( GetFabricStatsResponse );
     rpc getFabricCount( GetFabricCountRequest ) returns ( GetFabricCountResponse );
     rpc getAMCSensorReading( google.protobuf.Empty ) returns ( GetAMCSensorReadingResponse );
-    rpc getDeviceSerialNumber( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );
+    rpc getDeviceSerialNumberAndAmcFwVersion( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );
 }

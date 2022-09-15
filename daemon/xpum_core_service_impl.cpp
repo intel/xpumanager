@@ -183,7 +183,7 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::getDeviceSerialNumber(::grpc::ServerContext* context,
+::grpc::Status XpumCoreServiceImpl::getDeviceSerialNumberAndAmcFwVersion(::grpc::ServerContext* context,
                                                           const ::GetDeviceSerialNumberRequest* request,
                                                           ::GetDeviceSerialNumberResponse* response) {
     int deviceId = request->deviceid();
@@ -191,8 +191,10 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
     std::string password = request->password();
     // get serial number
     char serialNumber[XPUM_MAX_STR_LENGTH];
-    xpumGetSerialNumber(deviceId, username.c_str(), password.c_str(), serialNumber);
+    char amcFwVersion[XPUM_MAX_STR_LENGTH];
+    xpumGetSerialNumberAndAmcFwVersion(deviceId, username.c_str(), password.c_str(), serialNumber, amcFwVersion);
     response->set_serialnumber(std::string(serialNumber));
+    response->set_amcfwversion(std::string(amcFwVersion));
     return grpc::Status::OK;
 }
 

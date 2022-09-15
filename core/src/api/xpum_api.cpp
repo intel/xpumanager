@@ -406,10 +406,11 @@ xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char *buffer, int *count) {
     return XPUM_OK;
 }
 
-xpum_result_t xpumGetSerialNumber(xpum_device_id_t deviceId,
+xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
                                   const char *username,
                                   const char *password,
-                                  char serialNumber[XPUM_MAX_STR_LENGTH]) {
+                                  char serialNumber[XPUM_MAX_STR_LENGTH],
+                                  char amcFwVersion[XPUM_MAX_STR_LENGTH]) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -423,7 +424,7 @@ xpum_result_t xpumGetSerialNumber(xpum_device_id_t deviceId,
     if (res != XPUM_OK)
         return res;
 
-    std::vector<SlotSerialNumber> serialNumberList;
+    std::vector<SlotSerialNumberAndFwVersion> serialNumberList;
     Core::instance().getFirmwareManager()->getAMCSlotSerialNumbers({username, password}, serialNumberList);
 
     auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
@@ -475,12 +476,16 @@ xpum_result_t xpumGetSerialNumber(xpum_device_id_t deviceId,
         if (slotSN.slotId == systemSlotId) {
             std::size_t length = slotSN.serialNumber.copy(serialNumber, slotSN.serialNumber.length());
             serialNumber[length] = '\0';
+            length = slotSN.firmwareVersion.copy(amcFwVersion, slotSN.firmwareVersion.length());
+            amcFwVersion[length] = '\0';
             return XPUM_OK;
         }
     }
     std::string unknownSN = "unknown";
     std::size_t length = unknownSN.copy(serialNumber, unknownSN.length());
     serialNumber[length] = '\0';
+    length = unknownSN.copy(amcFwVersion, unknownSN.length());
+    amcFwVersion[length] = '\0';
     return XPUM_OK;
 }
 
