@@ -71,8 +71,11 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "GFX Firmware Name", "value": "gfx_firmware_name" },
                 { "label": "GFX Firmware Version", "value": "gfx_firmware_version", "dumpId": 9 },
                 { "label": "GFX Data Firmware Name", "value": "gfx_data_firmware_name" },
-                { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },
-                { "rowTitle": " " },
+                { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },)"
+#ifndef DAEMONLESS
+                R"({ "label": "AMC Firmware Version", "value": "amc_fw_version"},)"
+#endif
+                R"({ "rowTitle": " " },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address", "dumpId": 11 },
                 { "label": "PCI Slot", "value": "pci_slot", "dumpId": 12 },
                 { "label": "PCIe Generation", "value": "pcie_generation", "dumpId": 13 },
