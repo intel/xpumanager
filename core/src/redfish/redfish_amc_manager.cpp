@@ -1226,7 +1226,7 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
 
     task = std::async(std::launch::async, [this, targetUriList, pushUri, triggerUri, param] {
         FlashAmcFirmwareParam parameters = param;
-
+        int gpuIndex = 0;
         for (auto targetLink : targetUriList) {
             // upload image
             std::string verifyTaskLink;
@@ -1311,11 +1311,12 @@ void RedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
                         break;
                     }
                 }
-                this->percent.fetch_add(percent / targetUriList.size());
+                this->percent.store((percent + gpuIndex * 100) / targetUriList.size());
                 // task ongoing, wait 2 sec
                 XPUM_LOG_INFO("Task {} on going", taskUri);
                 std::this_thread::sleep_for(std::chrono::seconds(2));
             }
+            gpuIndex++;
         }
 
         param.callback();
