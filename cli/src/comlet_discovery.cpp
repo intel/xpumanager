@@ -73,7 +73,8 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "GFX Data Firmware Name", "value": "gfx_data_firmware_name" },
                 { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },)"
 #ifndef DAEMONLESS
-                R"({ "label": "AMC Firmware Version", "value": "amc_fw_version"},)"
+                R"({ "label": "AMC Firmware Name", "value": "amc_firmware_name"},)"
+                R"({ "label": "AMC Firmware Version", "value": "amc_firmware_version"},)"
 #endif
                 R"({ "rowTitle": " " },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address", "dumpId": 11 },
@@ -357,7 +358,7 @@ static void showAmcFwVersion(std::ostream &out, std::shared_ptr<nlohmann::json> 
 }
 
 void ComletDiscovery::getTableResult(std::ostream &out) {
-    if (this->opts->listamcversions) {
+    if (this->opts->listamcversions || this->opts->deviceId.compare("-1") != 0) {
         // show warning message
         std::string amcWarnMsg = coreStub->getRedfishAmcWarnMsg();
         if (amcWarnMsg.length()) {

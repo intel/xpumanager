@@ -200,6 +200,8 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_VERSION,           ///< The GFX firmware version of device
     XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_NAME,         ///< The GFX Data firmware name of device
     XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_VERSION,      ///< The GFX Data firmware version of device
+    XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME,              ///< The AMC firmware name of device
+    XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION,           ///< The AMC firmware version of device
     XPUM_DEVICE_PROPERTY_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes

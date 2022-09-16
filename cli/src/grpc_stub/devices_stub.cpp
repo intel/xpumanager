@@ -106,7 +106,8 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId, 
     if (status.ok()) {
         if (!sn_res.serialnumber().empty())
             (*json)["serial_number"] = sn_res.serialnumber();
-        (*json)["amc_fw_version"] = sn_res.amcfwversion();
+        if (!sn_res.amcfwversion().empty())
+            (*json)["amc_firmware_version"] = sn_res.amcfwversion();
     }
     return json;
 }
