@@ -424,9 +424,6 @@ xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
     if (res != XPUM_OK)
         return res;
 
-    std::vector<SlotSerialNumberAndFwVersion> serialNumberList;
-    Core::instance().getFirmwareManager()->getAMCSlotSerialNumbers({username, password}, serialNumberList);
-
     auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
 
     std::vector<Property> properties;
@@ -443,31 +440,50 @@ xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
         }
     }
 
+    auto systemInfo = Core::instance().getDeviceManager()->getSystemInfo();
+
+    std::vector<SlotSerialNumberAndFwVersion> serialNumberList;
+    Core::instance().getFirmwareManager()->getAMCSlotSerialNumbers({username, password}, serialNumberList);
+
     int systemSlotId = -1;
-    if (pciSlot.find("RSC-D2-668G4") != pciSlot.npos) {
-        std::regex pattern("RSC-D2-668G4\\sSLOT(\\d+)\\s");
-        std::smatch sm;
-        if (std::regex_search(pciSlot, sm, pattern)) {
-            int riserSlotId = std::stoi(sm[1].str());
-            systemSlotId = riserSlotId;
-        }
-    } else if (pciSlot.find("RSC-D2R-668G4") != pciSlot.npos) {
-        std::regex pattern("RSC-D2R-668G4\\sSLOT(\\d+)\\s");
-        std::smatch sm;
-        if (std::regex_search(pciSlot, sm, pattern)) {
-            int riserSlotId = std::stoi(sm[1].str());
-            switch (riserSlotId) {
-                case 1:
-                    systemSlotId = 4;
-                    break;
-                case 2:
-                    systemSlotId = 5;
-                    break;
-                case 3:
-                    systemSlotId = 6;
-                    break;
-                default:
-                    systemSlotId = -1;
+
+    if (systemInfo.manufacturer.compare("Supermicro") == 0) {
+        if (systemInfo.productName.compare("SYS-420GP-TNR") == 0) {
+            // SMC 4U
+            std::regex pattern("SLOT(\\d+)\\s");
+            std::smatch sm;
+            if (std::regex_search(pciSlot, sm, pattern)) {
+                int riserSlotId = std::stoi(sm[1].str());
+                systemSlotId = riserSlotId;
+            }
+        } else if (systemInfo.productName.compare("SYS-620C-TN12R") == 0) {
+            // SMC 2U
+            if (pciSlot.find("RSC-D2-668G4") != pciSlot.npos) {
+                std::regex pattern("RSC-D2-668G4\\sSLOT(\\d+)\\s");
+                std::smatch sm;
+                if (std::regex_search(pciSlot, sm, pattern)) {
+                    int riserSlotId = std::stoi(sm[1].str());
+                    systemSlotId = riserSlotId;
+                }
+            } else if (pciSlot.find("RSC-D2R-668G4") != pciSlot.npos) {
+                std::regex pattern("RSC-D2R-668G4\\sSLOT(\\d+)\\s");
+                std::smatch sm;
+                if (std::regex_search(pciSlot, sm, pattern)) {
+                    int riserSlotId = std::stoi(sm[1].str());
+                    switch (riserSlotId) {
+                        case 1:
+                            systemSlotId = 4;
+                            break;
+                        case 2:
+                            systemSlotId = 5;
+                            break;
+                        case 3:
+                            systemSlotId = 6;
+                            break;
+                        default:
+                            systemSlotId = -1;
+                    }
+                }
             }
         }
     }
@@ -481,11 +497,8 @@ xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
             return XPUM_OK;
         }
     }
-    std::string unknownSN = "unknown";
-    std::size_t length = unknownSN.copy(serialNumber, unknownSN.length());
-    serialNumber[length] = '\0';
-    length = unknownSN.copy(amcFwVersion, unknownSN.length());
-    amcFwVersion[length] = '\0';
+    serialNumber[0] = '\0';
+    amcFwVersion[0] = '\0';
     return XPUM_OK;
 }
 

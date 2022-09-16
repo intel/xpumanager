@@ -11,6 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <regex>
 
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/device_process.h"
@@ -20,6 +21,7 @@
 #include "infrastructure/logger.h"
 #include "infrastructure/utility.h"
 #include "level_zero/zes_api.h"
+#include "firmware/system_cmd.h"
 
 namespace xpum {
 
@@ -33,7 +35,28 @@ DeviceManager::~DeviceManager() {
     XPUM_LOG_TRACE("~DeviceManager()");
 }
 
+void DeviceManager::initSystemInfo(){
+    auto res = execCommand("dmidecode -t 1 2>/dev/null");
+    if(res.exitStatus())
+        return;
+    auto output = res.output();
+    std::regex manufacturerPattern("Manufacturer\\: (.*)");
+    std::regex productNamePattern("Product Name\\: (.*)");
+    std::smatch sm;
+    if (std::regex_search(output, sm, manufacturerPattern)) {
+        systemInfo.manufacturer = sm[1].str();
+    }
+    if (std::regex_search(output, sm, productNamePattern)) {
+        systemInfo.productName = sm[1].str();
+    }
+}
+
+SystemInfo DeviceManager::getSystemInfo(){
+    return systemInfo;
+}
+
 void DeviceManager::init() {
+    initSystemInfo();
     std::unique_lock<std::mutex> lock(this->mutex);
     std::condition_variable cv;
     std::atomic<bool> ready(false);

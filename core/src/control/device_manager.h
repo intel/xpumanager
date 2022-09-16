@@ -117,6 +117,8 @@ class DeviceManager : public DeviceManagerInterface,
 
     void unlockDevices(std::vector<std::shared_ptr<Device>>& deviceList);
 
+    SystemInfo getSystemInfo();
+
    private:
     DeviceManager() = default;
 
@@ -126,6 +128,8 @@ class DeviceManager : public DeviceManagerInterface,
 
     zes_device_handle_t getDeviceHandle(const std::string& Id);
 
+    void initSystemInfo();
+
    private:
     std::shared_ptr<DataLogicInterface> p_data_logic;
 
@@ -134,6 +138,8 @@ class DeviceManager : public DeviceManagerInterface,
     std::map<uint32_t, std::string> fabric_ids;
 
     std::mutex mutex;
+
+    SystemInfo systemInfo;
 };
 
 } // end namespace xpum
