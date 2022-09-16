@@ -43,7 +43,8 @@ def getDeviceProperties(deviceId, username="", password=""):
     # serial number
     resp = stub.getDeviceSerialNumberAndAmcFwVersion(core_pb2.GetDeviceSerialNumberRequest(
         deviceId=deviceId, username=username, password=password))
-    data["serial_number"] = resp.serialNumber
+    if resp.serialNumber:
+        data["serial_number"] = resp.serialNumber
     data["amc_fw_version"] = resp.amcFwVersion
     # links
     data["health"] = {
