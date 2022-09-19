@@ -173,7 +173,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                     return json;
                 }
 
-                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMEOUT,
+                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, 0,
                                                               val1, 0);
             } else if (command.compare("timeslice") == 0) {
                 if (paralist.size() != 3 || paralist.at(1).empty() || paralist.at(2).empty()) {
@@ -241,14 +241,14 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;
         } else if (this->opts->tileId >= 0 && !this->opts->standby.empty()) {
-            XpumStandbyMode mode;
+            int mode;
             std::for_each(this->opts->standby.begin(), this->opts->standby.end(), [](char &c) {
                 c = ::tolower(c);
             });
             if (this->opts->standby.compare("never") == 0) {
-                mode = STANDBY_NEVER;
+                mode = 1;
             } else if (this->opts->standby.compare("default") == 0) {
-                mode = STANDBY_DEFAULT;
+                mode = 0;
             } else {
                 (*json)["return"] = "invalid parameter: standby mode";
                 return json;
