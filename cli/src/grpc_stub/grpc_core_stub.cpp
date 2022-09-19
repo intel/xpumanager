@@ -1017,6 +1017,90 @@ int GrpcCoreStub::getHealthConfig(int deviceId, HealthConfigType cfgtype) {
     return threshold;
 }
 
+std::string GrpcCoreStub::policyTypeEnumToString(XpumPolicyType type) {
+    //std::string ret = "POLICY_TYPE_MAX";
+    std::string ret = "Error: cli unsupport this type";
+    switch (type) {
+        case POLICY_TYPE_GPU_TEMPERATURE:
+            ret = "1. GPU Core Temperature";
+            break;
+        case POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+            ret = "2. Programming Errors";
+            break;
+        case POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS:
+            ret = "3. Driver Errors";
+            break;
+        case POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+            ret = "4. Cache Errors Correctable";
+            break;
+        case POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+            ret = "5. Cache Errors Uncorrectable";
+            break;
+        // case POLICY_TYPE_GPU_MEMORY_TEMPERATURE:
+        //     ret = "POLICY_TYPE_GPU_MEMORY_TEMPERATURE";
+        //     break;
+        // case POLICY_TYPE_GPU_POWER:
+        //     ret = "POLICY_TYPE_GPU_POWER";
+        //     break;
+        // case POLICY_TYPE_RAS_ERROR_CAT_RESET:
+        //     ret = "POLICY_TYPE_RAS_ERROR_CAT_RESET";
+        //     break;
+        // case POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE:
+        //     ret = "POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE";
+        //     break;
+        // case POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE:
+        //     ret = "POLICY_TYPE_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE";
+        //     break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+std::string GrpcCoreStub::policyConditionTypeEnumToString(XpumPolicyConditionType type) {
+    //std::string ret = "POLICY_CONDITION_TYPE_GREATER";
+    std::string ret = "1. More than";
+    switch (type) {
+        case POLICY_CONDITION_TYPE_GREATER:
+            ret = "1. More than";
+            break;
+        case POLICY_CONDITION_TYPE_LESS:
+            ret = "3. Less than";
+            break;
+        case POLICY_CONDITION_TYPE_WHEN_INCREASE:
+            ret = "2. When occur";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+std::string GrpcCoreStub::policyActionTypeEnumToString(XpumPolicyActionType type) {
+    std::string ret = "4. No action";
+    switch (type) {
+        case POLICY_ACTION_TYPE_NULL:
+            ret = "3. Notify";
+            break;
+        case POLICY_ACTION_TYPE_THROTTLE_DEVICE:
+            ret = "1. Throttle GPU Core Frequency";
+            break;
+        // case POLICY_ACTION_TYPE_RESET_DEVICE:
+        //     ret = "2. Reset GPU";
+        //     break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+bool GrpcCoreStub::isCliSupportedPolicyType(XpumPolicyType type) {
+    if (type == XpumPolicyType::POLICY_TYPE_GPU_TEMPERATURE || type == XpumPolicyType::POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS || type == XpumPolicyType::POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS || type == XpumPolicyType::POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE || type == XpumPolicyType::POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE) {
+        return true;
+    }
+    return false;
+}
+
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllPolicy() {
     assert(this->stub != nullptr);
     grpc::ClientContext context;
@@ -1154,7 +1238,17 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllPolicyActionType() {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::setPolicy(bool isDevcie, uint32_t id, XpumPolicyData& policy) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::setPolicy(bool isDevcie, uint32_t id, PolicyData& policy) {
+    XpumPolicyData policy_;
+    policy_.set_type((XpumPolicyType)policy.type);
+    policy_.mutable_condition()->set_type((XpumPolicyConditionType)policy.condition.type);
+    policy_.mutable_condition()->set_threshold(policy.condition.threshold);
+    policy_.mutable_action()->set_throttle_device_frequency_max(policy.action.throttle_device_frequency_max);
+    policy_.mutable_action()->set_throttle_device_frequency_min(policy.action.throttle_device_frequency_min);
+    policy_.mutable_action()->set_type((XpumPolicyActionType)policy.action.type);
+    policy_.set_deviceid(policy.deviceId);
+    policy_.set_isdeletepolicy(policy.isDeletePolicy);
+
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -1164,12 +1258,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setPolicy(bool isDevcie, uint32_t 
     //request.set_allocated_policy(&policy);
     //Answer* ans = detail->mutable_answer();
     XpumPolicyData* p_policy = request.mutable_policy();
-    p_policy->CopyFrom(policy);
+    p_policy->CopyFrom(policy_);
     SetPolicyResponse response;
     grpc::Status status = stub->setPolicy(&context, request, &response);
     /////
-    bool isRemove = policy.isdeletepolicy();
-    std::string policyType = "\"" + policyTypeEnumToString(policy.type()) + "\"";
+    bool isRemove = policy_.isdeletepolicy();
+    std::string policyType = "\"" + policyTypeEnumToString(policy_.type()) + "\"";
     /////
     if (isDevcie) {
         (*json)["device_id"] = id;

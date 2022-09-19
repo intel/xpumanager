@@ -184,8 +184,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             isDevcie = false;
             id = this->opts->groupId;
         }
-        XpumPolicyData policy;
-        policy.set_deviceid(id);
+        PolicyData policy;
+        policy.deviceId = id;
         if (this->opts->policyType.length() == 0) {
             (*json)["is_success"] = false;
             (*json)["error"] = "Wrong argument: <type> should be specified by --type option";
@@ -201,7 +201,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             (*json)["error"] = "Wrong argument: <type> is invalid";
             return json;
         }
-        policy.set_type(this->policyTypeEnumFromString(this->opts->policyType));
+        policy.type = this->policyTypeEnumFromString(this->opts->policyType);
 
         //
         if (this->opts->policyConditionType.length() == 0) {
@@ -229,9 +229,9 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
                     (*json)["error"] = "Wrong argument: <threshold> is invalid (not empty and greater than or equal 0)";
                     return json;
                 }
-                policy.mutable_condition()->set_threshold(this->opts->threshold);
+                policy.condition.threshold = this->opts->threshold;
             }
-            policy.mutable_condition()->set_type(this->policyConditionTypeEnumFromString(this->opts->policyConditionType));
+            policy.condition.type =  this->policyConditionTypeEnumFromString(this->opts->policyConditionType);
         }
         if (this->opts->policyActionType.length() == 0) {
             (*json)["is_success"] = false;
@@ -257,10 +257,10 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
                     (*json)["error"] = "Wrong argument: <throttlefrequencymax> should be specified by --throttlefrequencymax option";
                     return json;
                 }
-                policy.mutable_action()->set_throttle_device_frequency_min(this->opts->throttlefrequencymin);
-                policy.mutable_action()->set_throttle_device_frequency_max(this->opts->throttlefrequencymax);
+                policy.action.throttle_device_frequency_min = this->opts->throttlefrequencymin;
+                policy.action.throttle_device_frequency_max = this->opts->throttlefrequencymax;
             }
-            policy.mutable_action()->set_type(this->policyActionTypeEnumFromString(this->opts->policyActionType));
+            policy.action.type = this->policyActionTypeEnumFromString(this->opts->policyActionType);
         }
 
         //isTypeConditionActionMatch
@@ -271,7 +271,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         }
 
         //set_notifycallbackurl
-        policy.set_notifycallbackurl("NoCallBackFromCli");
+        policy.notifyCallBackUrl = "NoCallBackFromCli";
         //policy.set_notifycallbackurl("https://www.baidu.com/");
 
         //std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPolicyData &policy) {
@@ -305,8 +305,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             isDevcie = false;
             id = this->opts->groupId;
         }
-        XpumPolicyData policy;
-        policy.set_deviceid(id);
+        PolicyData policy;
+        policy.deviceId = id;
         if (this->opts->policyType.length() == 0) {
             (*json)["is_success"] = false;
             (*json)["error"] = "Wrong argument: <type> should be specified by --type option";
@@ -317,8 +317,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             (*json)["error"] = "Wrong argument: <type> is invalid";
             return json;
         }
-        policy.set_type(this->policyTypeEnumFromString(this->opts->policyType));
-        policy.set_isdeletepolicy(true);
+        policy.type = this->policyTypeEnumFromString(this->opts->policyType);
+        policy.isDeletePolicy = true;
         //std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPolicyData &policy) {
         json = this->coreStub->setPolicy(isDevcie, id, policy);
         return json;
@@ -355,24 +355,24 @@ bool ComletPolicy::isTypeConditionActionMatch() {
     return isMatch;
 }
 
-XpumPolicyType ComletPolicy::policyTypeEnumFromString(std::string &type) {
+xpum_policy_type_t ComletPolicy::policyTypeEnumFromString(std::string &type) {
     // 1. GPU Core Temperature
     // 2. Programming Errors
     // 3. Driver Errors
     // 4. Cache Errors Correctable
     // 5. Cache Errors Uncorrectable
     if (type == "1") {
-        return POLICY_TYPE_GPU_TEMPERATURE;
+        return XPUM_POLICY_TYPE_GPU_TEMPERATURE;
     } else if (type == "2") {
-        return POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
+        return XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
     } else if (type == "3") {
-        return POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS;
+        return XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS;
     } else if (type == "4") {
-        return POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
+        return XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
     } else if (type == "5") {
-        return POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
+        return XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
     } else {
-        return POLICY_TYPE_GPU_TEMPERATURE;
+        return XPUM_POLICY_TYPE_GPU_TEMPERATURE;
     }
 
     // if (type == "POLICY_TYPE_GPU_TEMPERATURE") {
@@ -400,29 +400,29 @@ XpumPolicyType ComletPolicy::policyTypeEnumFromString(std::string &type) {
     // }
 }
 
-XpumPolicyConditionType ComletPolicy::policyConditionTypeEnumFromString(std::string &type) {
+xpum_policy_conditon_type_t ComletPolicy::policyConditionTypeEnumFromString(std::string &type) {
     // 1. More than
     // 2. When occur
     if (type == "2") {
-        return POLICY_CONDITION_TYPE_WHEN_INCREASE;
+        return XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR;
     } else if (type == "1") {
-        return POLICY_CONDITION_TYPE_GREATER;
+        return XPUM_POLICY_CONDITION_TYPE_GREATER;
     } else {
-        return POLICY_CONDITION_TYPE_LESS;
+        return XPUM_POLICY_CONDITION_TYPE_LESS;
     }
 }
 
-XpumPolicyActionType ComletPolicy::policyActionTypeEnumFromString(std::string &type) {
+xpum_policy_action_type_t ComletPolicy::policyActionTypeEnumFromString(std::string &type) {
     // 1. Throttle GPU Core
     // 2. Reset GPU
     if (type == "1") {
-        return POLICY_ACTION_TYPE_THROTTLE_DEVICE;
+        return XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE;
     }
     // else if (type == "2") {
     //     return POLICY_ACTION_TYPE_RESET_DEVICE;
     // }
     else {
-        return POLICY_ACTION_TYPE_NULL;
+        return XPUM_POLICY_ACTION_TYPE_NULL;
     }
 }
 

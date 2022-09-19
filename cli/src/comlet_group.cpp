@@ -12,7 +12,6 @@
 #include <stdexcept>
 
 #include "cli_table.h"
-#include "core.pb.h"
 #include "core_stub.h"
 #include "utility.h"
 #include "exit_code.h"

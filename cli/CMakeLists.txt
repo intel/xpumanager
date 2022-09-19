@@ -107,9 +107,9 @@ else() # Build xpu-smi
 
   target_sources(
     xpumanager
-    PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC} ${XPUM_CLI_CORE_STUB_SRC})
+    PRIVATE ${XPUM_CLI_SRC} ${XPUM_CLI_CORE_STUB_SRC})
 
-  target_link_libraries(xpumanager PRIVATE ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF} igsc)
+  target_link_libraries(xpumanager PRIVATE igsc)
 
   add_custom_command(
     TARGET xpumanager

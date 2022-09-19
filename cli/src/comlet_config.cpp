@@ -192,13 +192,13 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                     (*json)["return"] = "invalid parameter: time slice should bigger than 0.";
                     return json;
                 }
-                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMESLICE, val1, val2);
+                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, XPUM_TIMESLICE, val1, val2);
             } else if (command.compare("exclusive") == 0) {
                 if (paralist.size() != 1) {
                     (*json)["return"] = "invalid parameter: exclusive";
                     return json;
                 }
-                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_EXCLUSIVE, 0, 0);
+                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, XPUM_EXCLUSIVE, 0, 0);
             } else {
                 (*json)["return"] = "invalid scheduler mode";
                 return json;

@@ -12,9 +12,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
-#include <grpc++/channel.h>
 
-#include "core.grpc.pb.h"
 #include "xpum_structs.h"
 #include "core_stub.h"
 
@@ -82,16 +80,13 @@ class LibCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> setMemoryEccState(int deviceId, bool enabled);
     std::unique_ptr<nlohmann::json> resetDevice(int deviceId, bool force);
 
-    std::string policyTypeEnumToString(XpumPolicyType type);
-    std::string policyConditionTypeEnumToString(XpumPolicyConditionType type);
-    std::string policyActionTypeEnumToString(XpumPolicyActionType type);
     std::unique_ptr<nlohmann::json> getAllPolicyType();
     std::unique_ptr<nlohmann::json> getAllPolicyConditionType();
     std::unique_ptr<nlohmann::json> getAllPolicyActionType();
     std::unique_ptr<nlohmann::json> getAllPolicy();
     std::unique_ptr<nlohmann::json> getPolicyById(bool isDevice, uint32_t id);
     std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie, uint32_t id);
-    std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, uint32_t id, XpumPolicyData& policy);
+    std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, uint32_t id, PolicyData& policy);
 
     std::string getRedfishAmcWarnMsg();
     std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password);
@@ -112,11 +107,6 @@ class LibCoreStub : public CoreStub {
     std::shared_ptr<nlohmann::json> getFabricCount(int deviceId);
 
     std::unique_ptr<nlohmann::json> getSensorReading();
-
-   private:
-    std::unique_ptr<XpumCoreService::Stub> stub;
-
-    std::shared_ptr<grpc::Channel> channel;
 
 };
 } // end namespace xpum::cli

@@ -10,8 +10,7 @@
 #include <string>
 
 #include "comlet_base.h"
-#include "core.grpc.pb.h"
-#include "core.pb.h"
+#include "xpum_structs.h"
 
 namespace xpum::cli {
 
@@ -42,9 +41,9 @@ class ComletPolicy : public ComletBase {
 
     virtual void getTableResult(std::ostream& out) override;
 
-    XpumPolicyActionType policyActionTypeEnumFromString(std::string& type);
-    XpumPolicyConditionType policyConditionTypeEnumFromString(std::string& type);
-    XpumPolicyType policyTypeEnumFromString(std::string& type);
+    xpum_policy_action_type_t policyActionTypeEnumFromString(std::string& type);
+    xpum_policy_conditon_type_t policyConditionTypeEnumFromString(std::string& type);
+    xpum_policy_type_t policyTypeEnumFromString(std::string& type);
 
     bool isTypeConditionActionMatch();
 

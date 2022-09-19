@@ -8,8 +8,6 @@
 #include <sstream>
 #include <vector>
 
-#include "core.grpc.pb.h"
-#include "core.pb.h"
 #include "core_stub.h"
 #include "xpum_structs.h"
 #include "xpum_api.h"

@@ -6,19 +6,26 @@
 
 #pragma once
 
-// #include <grpc++/channel.h>
-
 #include <chrono>
 #include <map>
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
+#include <cstdint>
 
-#include "core.grpc.pb.h"
 #include "xpum_structs.h"
 
 namespace xpum::cli {
+
+struct PolicyData {
+    xpum_policy_type_t type;
+    xpum_policy_condition_t condition;
+    xpum_policy_action_t action;
+    std::string notifyCallBackUrl;
+    uint32_t deviceId;
+    bool isDeletePolicy;
+};
 
 class CoreStub {
    public:
@@ -81,17 +88,13 @@ class CoreStub {
     std::string schedulerModeToString(int mode);
     std::string standbyModeToString(int mode);
 
-    std::string policyTypeEnumToString(XpumPolicyType type);
-    std::string policyConditionTypeEnumToString(XpumPolicyConditionType type);
-    std::string policyActionTypeEnumToString(XpumPolicyActionType type);
     virtual std::unique_ptr<nlohmann::json> getAllPolicyType()=0;
     virtual std::unique_ptr<nlohmann::json> getAllPolicyConditionType()=0;
     virtual std::unique_ptr<nlohmann::json> getAllPolicyActionType()=0;
     virtual std::unique_ptr<nlohmann::json> getAllPolicy()=0;
     virtual std::unique_ptr<nlohmann::json> getPolicyById(bool isDevice, uint32_t id)=0;
     virtual std::unique_ptr<nlohmann::json> getPolicy(bool isDevcie, uint32_t id)=0;
-    virtual std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, uint32_t id, XpumPolicyData& policy)=0;
-    bool isCliSupportedPolicyType(XpumPolicyType type);
+    virtual std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, uint32_t id, PolicyData& policy)=0;
 
     virtual std::string getRedfishAmcWarnMsg()=0;
     virtual std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password)=0;
