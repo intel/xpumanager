@@ -23,7 +23,8 @@ extern std::vector<xpum_sensor_reading_t> read_sensor();
 
 static void percent_callback(uint32_t percent, void* pAmcManager) {
     IpmiAmcManager* p = (IpmiAmcManager*)pAmcManager;
-    p->percent.store(percent);
+    if (p->percent.load() < percent)
+        p->percent.store(percent);
 }
 
 bool IpmiAmcManager::preInit(){

@@ -158,6 +158,7 @@ int get_sdr_list(nrv_card& card){
     bsmc_req req;
     bsmc_hal->oem_req_init(&req, ipmi_address, 0x21); // 0x21 is get device sdr
     
+    card.sdr_list.clear();
     int sdr_count = 0;
     get_sdr_count(ipmi_address,sdr_count);
     // std::cout << "sdr count: " << sdr_count << std::endl;

@@ -170,7 +170,7 @@ std::string fwdata_device_version(const char *device_path)
     if (ret != IGSC_SUCCESS) {
         XPUM_LOG_ERROR("Failed to initialize device: {}", device_path);
         igsc_device_close(&handle);
-        return "unknown";
+        return "";
     }
 
     memset(&fwdata_version, 0, sizeof(fwdata_version));
@@ -187,7 +187,7 @@ std::string fwdata_device_version(const char *device_path)
             // print_device_fw_status(&handle);
         }
         igsc_device_close(&handle);
-        return "unknown";
+        return "";
     }
 
     auto version = print_fwdata_version(&fwdata_version);
