@@ -213,11 +213,11 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
     if (targetId >= 0) {
         if (this->opts->threshold >= -1) {
             if (this->opts->componentType == 1) {
-                json = this->coreStub->setHealthConfig(targetId, HEALTH_CORE_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfig(targetId, 0, this->opts->threshold);
             } else if (this->opts->componentType == 2) {
-                json = this->coreStub->setHealthConfig(targetId, HEALTH_MEMORY_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfig(targetId, 1, this->opts->threshold);
             } else if (this->opts->componentType == 3) {
-                json = this->coreStub->setHealthConfig(targetId, HEALTH_POWER_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfig(targetId, 2, this->opts->threshold);
             } else {
                 (*json)["error"] = "threshold setting unsupported";
                 (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_CONIG_TYPE;
@@ -239,11 +239,11 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
     if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
         if (this->opts->threshold >= -1) {
             if (this->opts->componentType == 1) {
-                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_CORE_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, 0, this->opts->threshold);
             } else if (this->opts->componentType == 2) {
-                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_MEMORY_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, 1, this->opts->threshold);
             } else if (this->opts->componentType == 3) {
-                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_POWER_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, 2, this->opts->threshold);
             } else {
                 (*json)["error"] = "threshold setting unsupported";
                 (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_CONIG_TYPE;

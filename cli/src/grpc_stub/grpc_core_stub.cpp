@@ -719,6 +719,54 @@ nlohmann::json GrpcCoreStub::appendHealthThreshold(int deviceId, nlohmann::json 
     return json;
 }
 
+static std::string healthStatusEnumToString(HealthStatusType status) {
+    std::string ret;
+    switch (status) {
+        case HEALTH_STATUS_UNKNOWN:
+            ret = "Unknown";
+            break;
+        case HEALTH_STATUS_OK:
+            ret = "OK";
+            break;
+        case HEALTH_STATUS_WARNING:
+            ret = "Warning";
+            break;
+        case HEALTH_STATUS_CRITICAL:
+            ret = "Critical";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
+static std::string healthTypeEnumToString(HealthType type) {
+    std::string ret;
+    switch (type) {
+        case HEALTH_CORE_THERMAL:
+            ret = "core_temperature";
+            break;
+        case HEALTH_MEMORY_THERMAL:
+            ret = "memory_temperature";
+            break;
+        case HEALTH_POWER:
+            ret = "power";
+            break;
+        case HEALTH_MEMORY:
+            ret = "memory";
+            break;
+        case HEALTH_FABRIC_PORT:
+            ret = "xe_link_port";
+            break;
+        case HEALTH_FREQUENCY:
+            ret = "frequency";
+            break;
+        default:
+            break;
+    }
+    return ret;
+}
+
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllHealth() {
     assert(this->stub != nullptr);
     grpc::ClientContext context;
@@ -810,13 +858,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getHealth(int deviceId, HealthType
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::setHealthConfig(int deviceId, HealthConfigType cfgtype, int threshold) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::setHealthConfig(int deviceId, int cfgtype, int threshold) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     HealthConfigRequest request;
     request.set_deviceid(deviceId);
-    request.set_configtype(cfgtype);
+    request.set_configtype((HealthConfigType)cfgtype);
     request.set_threshold(threshold);
     HealthConfigInfo response;
     grpc::Status status = stub->setHealthConfig(&context, request, &response);
@@ -925,13 +973,13 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getHealthByGroup(uint32_t groupId,
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::setHealthConfigByGroup(uint32_t groupId, HealthConfigType cfgtype, int threshold) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::setHealthConfigByGroup(uint32_t groupId, int cfgtype, int threshold) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     HealthConfigByGroupRequest request;
     request.set_groupid(groupId);
-    request.set_configtype(cfgtype);
+    request.set_configtype((HealthConfigType)cfgtype);
     request.set_threshold(threshold);
     HealthConfigByGroupInfo response;
     grpc::Status status = stub->setHealthConfigByGroup(&context, request, &response);

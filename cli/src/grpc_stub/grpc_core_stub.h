@@ -56,11 +56,12 @@ class GrpcCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> getAllHealth();
     std::unique_ptr<nlohmann::json> getHealth(int deviceId, int componentType);
-    std::unique_ptr<nlohmann::json> getHealth(int deviceId, HealthType type);
     std::unique_ptr<nlohmann::json> getHealthByGroup(uint32_t groupId, int componentType);
+    std::unique_ptr<nlohmann::json> setHealthConfig(int deviceId, int cfgtype, int threshold);
+    std::unique_ptr<nlohmann::json> setHealthConfigByGroup(uint32_t groupId, int cfgtype, int threshold);
+    
+    std::unique_ptr<nlohmann::json> getHealth(int deviceId, HealthType type);
     std::unique_ptr<nlohmann::json> getHealthByGroup(uint32_t groupId, HealthType type);
-    std::unique_ptr<nlohmann::json> setHealthConfig(int deviceId, HealthConfigType cfgtype, int threshold);
-    std::unique_ptr<nlohmann::json> setHealthConfigByGroup(uint32_t groupId, HealthConfigType cfgtype, int threshold);
     int getHealthConfig(int deviceId, HealthConfigType cfgtype);
     nlohmann::json appendHealthThreshold(int deviceId, nlohmann::json, HealthType type, uint64_t throttleValue, uint64_t shutdownValue);
 

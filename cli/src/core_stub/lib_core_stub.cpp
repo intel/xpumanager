@@ -606,261 +606,29 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResultByGroup(uint32_
     return json;
 }
 
-nlohmann::json LibCoreStub::appendHealthThreshold(int deviceId, nlohmann::json json, HealthType type,
-                                               uint64_t throttleValue, uint64_t shutdownValue) {
-    if (type == HEALTH_POWER) {
-        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_POWER_LIMIT);
-        json["throttle_threshold"] = throttleValue;
-    }
-    if (type == HEALTH_CORE_THERMAL) {
-        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_CORE_THERMAL_LIMIT);
-        json["throttle_threshold"] = throttleValue;
-        json["shutdown_threshold"] = shutdownValue;
-    }
-    if (type == HEALTH_MEMORY_THERMAL) {
-        json["custom_threshold"] = getHealthConfig(deviceId, HEALTH_MEMORY_THERMAL_LIMIT);
-        json["throttle_threshold"] = throttleValue;
-        json["shutdown_threshold"] = shutdownValue;
-    }
-    return json;
-}
-
 std::unique_ptr<nlohmann::json> LibCoreStub::getAllHealth() {
-    assert(this->stub != nullptr);
-    grpc::ClientContext context;
-    XpumDeviceBasicInfoArray response;
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::Status status = stub->getDeviceList(&context, google::protobuf::Empty(), &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            std::vector<nlohmann::json> healthJsonList;
-            for (int i = 0; i < response.info_size(); i++) {
-                auto healthJson = (*getHealth(response.info(i).id().id(), -1));
-                healthJsonList.push_back(healthJson);
-            }
-            (*json)["device_list"] = healthJsonList;
-        } else {
-            (*json)["error"] = response.errormsg();
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-    }
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getHealth(int deviceId, int componentType) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    HealthDataRequest request;
-    request.set_deviceid(deviceId);
-    HealthData response;
-    (*json)["device_id"] = deviceId;
-    grpc::Status status = grpc::Status::OK;
-    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
-    if (componentType >= 1 && componentType <= (int)(types.size())) {
-        HealthType targetType = types[componentType - 1];
-        types.clear();
-        types.push_back(targetType);
-    }
-    for (auto& type : types) {
-        auto componentJson = (*getHealth(deviceId, type));
-        if (componentJson.contains("error")) {
-            auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-            (*errorJson)["error"] = componentJson["error"];
-            return errorJson;
-        }
-        std::string currentHealthType = healthTypeEnumToString(type);
-        (*json)[currentHealthType]["status"] = componentJson["status"];
-        (*json)[currentHealthType]["description"] = componentJson["description"];
-        if (componentJson.contains("custom_threshold")) {
-            (*json)[currentHealthType]["custom_threshold"] = componentJson["custom_threshold"];
-        }
-        if (componentJson.contains("throttle_threshold")) {
-            (*json)[currentHealthType]["throttle_threshold"] = componentJson["throttle_threshold"];
-        }
-        if (componentJson.contains("shutdown_threshold")) {
-            (*json)[currentHealthType]["shutdown_threshold"] = componentJson["shutdown_threshold"];
-        }
-    }
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::getHealth(int deviceId, HealthType type) {
-    assert(this->stub != nullptr);
+std::unique_ptr<nlohmann::json> LibCoreStub::setHealthConfig(int deviceId, int cfgtype, int threshold) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    HealthDataRequest request;
-    request.set_deviceid(deviceId);
-    request.set_type(type);
-    HealthData response;
-    grpc::Status status = stub->getHealth(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["type"] = healthTypeEnumToString(response.type());
-            (*json)["status"] = healthStatusEnumToString(response.statustype());
-            (*json)["description"] = response.description();
-            (*json) = appendHealthThreshold(deviceId, (*json), response.type(),
-                                            response.throttlethreshold(), response.shutdownthreshold());
-        } else {
-            (*json)["error"] = response.errormsg();
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-    }
-    return json;
-}
-
-std::unique_ptr<nlohmann::json> LibCoreStub::setHealthConfig(int deviceId, HealthConfigType cfgtype, int threshold) {
-    assert(this->stub != nullptr);
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    HealthConfigRequest request;
-    request.set_deviceid(deviceId);
-    request.set_configtype(cfgtype);
-    request.set_threshold(threshold);
-    HealthConfigInfo response;
-    grpc::Status status = stub->setHealthConfig(&context, request, &response);
-    std::string healthTypeStr = healthTypeEnumToString((HealthType)cfgtype);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Failed to set health threshold on device %d type %s threshold %d", deviceId, healthTypeStr.c_str(), threshold);
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Failed to set health threshold on device %d type %s threshold %d", deviceId, healthTypeStr.c_str(), threshold);
-    }
-    XPUM_LOG_AUDIT("Succeed to set health threshold on device %d type %s threshold %d", deviceId, healthTypeStr.c_str(), threshold);
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getHealthByGroup(uint32_t groupId, int componentType) {
-    assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    (*json)["group_id"] = groupId;
-    HealthDataByGroupRequest request;
-    request.set_groupid(groupId);
-    HealthDataByGroup response;
-    std::vector<nlohmann::json> deviceJsonList;
-    std::vector<HealthType> types = {HEALTH_CORE_THERMAL, HEALTH_MEMORY_THERMAL, HEALTH_POWER, HEALTH_MEMORY, HEALTH_FABRIC_PORT};
-    if (componentType >= 1 && componentType <= (int)(types.size())) {
-        HealthType targetType = types[componentType - 1];
-        types.clear();
-        types.push_back(targetType);
-    }
-    for (auto& type : types) {
-        auto deviceHealthTypeJsons = (*getHealthByGroup(groupId, type));
-        if (deviceHealthTypeJsons.contains("error")) {
-            auto errorJson = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-            (*errorJson)["error"] = deviceHealthTypeJsons["error"];
-            return errorJson;
-        }
-        std::string currentHealthType = healthTypeEnumToString(type);
-        for (auto& component : deviceHealthTypeJsons[currentHealthType]) {
-            std::size_t targetDeviceIndex = deviceJsonList.size();
-            for (std::size_t i = 0; i < deviceJsonList.size(); i++) {
-                if (deviceJsonList[i]["device_id"] == component["device_id"]) {
-                    targetDeviceIndex = i;
-                }
-            }
-            if (targetDeviceIndex == deviceJsonList.size()) {
-                auto deviceJson = nlohmann::json();
-                deviceJson["device_id"] = component["device_id"];
-                deviceJsonList.push_back(deviceJson);
-            }
-            deviceJsonList[targetDeviceIndex][currentHealthType]["status"] = component["status"];
-            deviceJsonList[targetDeviceIndex][currentHealthType]["description"] = component["description"];
-            if (component.contains("custom_threshold")) {
-                deviceJsonList[targetDeviceIndex][currentHealthType]["custom_threshold"] = component["custom_threshold"];
-            }
-            if (component.contains("throttle_threshold")) {
-                deviceJsonList[targetDeviceIndex][currentHealthType]["throttle_threshold"] = component["throttle_threshold"];
-            }
-            if (component.contains("shutdown_threshold")) {
-                deviceJsonList[targetDeviceIndex][currentHealthType]["shutdown_threshold"] = component["shutdown_threshold"];
-            }
-        }
-    }
-    (*json)["device_count"] = deviceJsonList.size();
-    (*json)["device_list"] = deviceJsonList;
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::getHealthByGroup(uint32_t groupId, HealthType type) {
+std::unique_ptr<nlohmann::json> LibCoreStub::setHealthConfigByGroup(uint32_t groupId, int cfgtype, int threshold) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    HealthDataByGroupRequest request;
-    request.set_groupid(groupId);
-    request.set_type(type);
-    HealthDataByGroup response;
-    std::vector<nlohmann::json> componentJsonList;
-    grpc::Status status = stub->getHealthByGroup(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            for (int i = 0; i < response.healthdata_size(); i++) {
-                auto component = nlohmann::json();
-                component["device_id"] = response.healthdata(i).deviceid();
-                component["status"] = healthStatusEnumToString(response.healthdata(i).statustype());
-                component["description"] = response.healthdata(i).description();
-                component = appendHealthThreshold(response.healthdata(i).deviceid(), component, response.type(),
-                                                  response.healthdata(i).throttlethreshold(), response.healthdata(i).shutdownthreshold());
-
-                componentJsonList.push_back(component);
-            }
-        } else {
-            (*json)["error"] = response.errormsg();
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-    }
-    (*json)[healthTypeEnumToString(type)] = componentJsonList;
     return json;
-}
-
-std::unique_ptr<nlohmann::json> LibCoreStub::setHealthConfigByGroup(uint32_t groupId, HealthConfigType cfgtype, int threshold) {
-    assert(this->stub != nullptr);
-    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    grpc::ClientContext context;
-    HealthConfigByGroupRequest request;
-    request.set_groupid(groupId);
-    request.set_configtype(cfgtype);
-    request.set_threshold(threshold);
-    HealthConfigByGroupInfo response;
-    grpc::Status status = stub->setHealthConfigByGroup(&context, request, &response);
-    std::string healthTypeStr = healthTypeEnumToString((HealthType)cfgtype);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            (*json)["status"] = "OK";
-        } else {
-            (*json)["error"] = response.errormsg();
-            XPUM_LOG_AUDIT("Failed to set health threshold on group %d type %s threshold %d", groupId, healthTypeStr.c_str(), threshold);
-        }
-    } else {
-        (*json)["error"] = status.error_message();
-        XPUM_LOG_AUDIT("Failed to set health threshold on group %d type %s threshold %d", groupId, healthTypeStr.c_str(), threshold);
-    }
-    XPUM_LOG_AUDIT("Succeed to set health threshold on group %d type %s threshold %d", groupId, healthTypeStr.c_str(), threshold);
-    return json;
-}
-
-int LibCoreStub::getHealthConfig(int deviceId, HealthConfigType cfgtype) {
-    int threshold = -1;
-    grpc::ClientContext context;
-    HealthConfigRequest request;
-    request.set_deviceid(deviceId);
-    request.set_configtype(cfgtype);
-    HealthConfigInfo response;
-    grpc::Status status = stub->getHealthConfig(&context, request, &response);
-    if (status.ok()) {
-        if (response.errormsg().length() == 0) {
-            threshold = response.threshold();
-        }
-    }
-    return threshold;
 }
 
 std::string LibCoreStub::policyTypeEnumToString(XpumPolicyType type) {

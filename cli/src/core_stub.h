@@ -53,15 +53,9 @@ class CoreStub {
 
     virtual std::unique_ptr<nlohmann::json> getAllHealth()=0;
     virtual std::unique_ptr<nlohmann::json> getHealth(int deviceId, int componentType)=0;
-    virtual std::unique_ptr<nlohmann::json> getHealth(int deviceId, HealthType type)=0;
     virtual std::unique_ptr<nlohmann::json> getHealthByGroup(uint32_t groupId, int componentType)=0;
-    virtual std::unique_ptr<nlohmann::json> getHealthByGroup(uint32_t groupId, HealthType type)=0;
-    virtual std::unique_ptr<nlohmann::json> setHealthConfig(int deviceId, HealthConfigType cfgtype, int threshold)=0;
-    virtual std::unique_ptr<nlohmann::json> setHealthConfigByGroup(uint32_t groupId, HealthConfigType cfgtype, int threshold)=0;
-    virtual int getHealthConfig(int deviceId, HealthConfigType cfgtype)=0;
-    std::string healthStatusEnumToString(HealthStatusType status);
-    std::string healthTypeEnumToString(HealthType type);
-    virtual nlohmann::json appendHealthThreshold(int deviceId, nlohmann::json, HealthType type, uint64_t throttleValue, uint64_t shutdownValue)=0;
+    virtual std::unique_ptr<nlohmann::json> setHealthConfig(int deviceId, int cfgtype, int threshold)=0;
+    virtual std::unique_ptr<nlohmann::json> setHealthConfigByGroup(uint32_t groupId, int cfgtype, int threshold)=0;
 
     virtual std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter = false, bool enableScale = false)=0;
     virtual std::unique_ptr<nlohmann::json> getStatisticsByGroup(uint32_t groupId, bool enableFilter = false, bool enableScale = false)=0;

@@ -100,54 +100,6 @@ std::string CoreStub::getCardUUID(const std::string& rawUUID) {
     }
 }
 
-std::string CoreStub::healthStatusEnumToString(HealthStatusType status) {
-    std::string ret;
-    switch (status) {
-        case HEALTH_STATUS_UNKNOWN:
-            ret = "Unknown";
-            break;
-        case HEALTH_STATUS_OK:
-            ret = "OK";
-            break;
-        case HEALTH_STATUS_WARNING:
-            ret = "Warning";
-            break;
-        case HEALTH_STATUS_CRITICAL:
-            ret = "Critical";
-            break;
-        default:
-            break;
-    }
-    return ret;
-}
-
-std::string CoreStub::healthTypeEnumToString(HealthType type) {
-    std::string ret;
-    switch (type) {
-        case HEALTH_CORE_THERMAL:
-            ret = "core_temperature";
-            break;
-        case HEALTH_MEMORY_THERMAL:
-            ret = "memory_temperature";
-            break;
-        case HEALTH_POWER:
-            ret = "power";
-            break;
-        case HEALTH_MEMORY:
-            ret = "memory";
-            break;
-        case HEALTH_FABRIC_PORT:
-            ret = "xe_link_port";
-            break;
-        case HEALTH_FREQUENCY:
-            ret = "frequency";
-            break;
-        default:
-            break;
-    }
-    return ret;
-}
-
 std::string CoreStub::schedulerModeToString(int mode) {
     std::string ret = "null"; //"SCHEDULER_MODE_NULL";
     switch (mode) {
