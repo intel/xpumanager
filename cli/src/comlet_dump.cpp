@@ -66,7 +66,7 @@ void ComletDump::setupOptions() {
         std::string errStr = "Device id should be a non-negative integer or a BDF string";
         std::vector<std::string> deviceIds = split(str, ',');
         for (auto id : deviceIds) {
-            if (!isValidDeviceId(id) && !isBDF(id)) {
+            if (!isValidDeviceId(id) && !isBDF(id) && (id!="-1")) {
                 return errStr;
             }
         }
@@ -273,6 +273,19 @@ void ComletDump::printByLine(std::ostream &out) {
         exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return;
     }
+
+    // convert deviceIds if deviceId equals -1
+    if(this->opts->deviceIds.size()==1 && this->opts->deviceIds[0]=="-1"){
+        std::vector<std::string> deviceIds;
+        auto deviceListJson = this->coreStub->getDeviceList();
+        auto deviceList = (*deviceListJson)["device_list"];
+        for (auto& device : deviceList) {
+            int id = device["device_id"];
+            deviceIds.push_back(std::to_string(id));
+        }
+        this->opts->deviceIds = deviceIds;
+    }
+
     std::string deviceId = this->opts->deviceIds[0];
 
     // check deviceId and tileId is valid
