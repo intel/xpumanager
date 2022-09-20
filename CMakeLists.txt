@@ -143,14 +143,18 @@ if(CPACK_GENERATOR MATCHES "RPM")
 
   if(NOT DAEMONLESS)
     set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/postinst")
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/post")
     set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/prerm")
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/preun")
+    set(CPACK_RPM_POST_TRANS_SCRIPT_FILE
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/posttrans")
   else()
     set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/smi/postinst")
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/smi/post")
     set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/smi/prerm")
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/smi/preun")
+    set(CPACK_RPM_POST_TRANS_SCRIPT_FILE
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/smi/posttrans")
   endif()
 endif()
 
@@ -170,11 +174,11 @@ if(CPACK_GENERATOR MATCHES "DEB")
   set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
   if(NOT DAEMONLESS)
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/prerm;"
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/deb/prerm;"
     )
   else()
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/smi/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/smi/prerm;"
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/smi/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/deb/smi/prerm;"
     )
   endif()
 
