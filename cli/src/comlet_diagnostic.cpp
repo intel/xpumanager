@@ -56,11 +56,35 @@ static CharTableConfig ComletConfigDiagnosticDevice(R"({
     }]
 })"_json);
 
+static CharTableConfig ComletConfigDiagnosticPreCheck(R"({
+    "showTitleRow": true,
+    "columns": [{
+        "title": "Component",
+        "size": 16
+    }, {
+        "title": "Status"
+    }],
+    "rows": [{
+        "instance": "",
+        "cells": [[
+            { "rowTitle": "GPU" },
+            { "rowTitle": "Driver" },
+            { "rowTitle": "GPU Status" },
+            { "rowTitle": "CPU Status" }
+        ], [
+            { "value": "gpu_basic_info" },
+            { "value": "gpu_driver_info" },
+            { "value": "gpu_status_info" },
+            { "value": "cpu_status_info" }
+        ]]
+    }]
+})"_json);
+
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
 #ifndef DAEMONLESS
-    addOption("-g,--group", this->opts->groupId, "The group ID");
+    auto groupIdOpt = addOption("-g,--group", this->opts->groupId, "The group ID");
 #endif
     deviceIdOpt->check([this](const std::string &str) {
 #ifndef DAEMONLESS
@@ -75,11 +99,24 @@ void ComletDiagnostic::setupOptions() {
     }
     return errStr;
     });
-    addOption("-l,--level", this->opts->level,
+    auto level = addOption("-l,--level", this->opts->level,
               "The diagnostic levels to run. The valid options include\n\
       1. quick test\n\
       2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs\n\
       3. long test - this diagnostic level will have the significant performance impact on the specified GPUs");
+    auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver");
+
+    preCheckOpt->excludes(deviceIdOpt);
+    preCheckOpt->excludes(level);
+    level->excludes(preCheckOpt);
+    deviceIdOpt->excludes(preCheckOpt);
+    deviceIdOpt->needs(level);
+
+#ifndef DAEMONLESS
+    preCheckOpt->excludes(groupIdOpt);
+    groupIdOpt->excludes(preCheckOpt);
+    groupIdOpt->needs(level);
+#endif
 }
 
 std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
@@ -118,14 +155,24 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
         }
 #endif
     }
+
+    if (this->opts->preCheck) {
+        json = this->coreStub->getPreCheckInfo();
+        return json;
+    }
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
     (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
     return json;
 }
 
-static void showDeviceDiagnostic(std::ostream &out, std::shared_ptr<nlohmann::json> json, const bool cont = false) {
-    CharTable table(ComletConfigDiagnosticDevice, *json, cont);
-    table.show(out);
+static void showDeviceDiagnostic(std::ostream &out, std::shared_ptr<nlohmann::json> json, bool precheck = false, const bool cont = false) {
+    if (precheck) {
+        CharTable table(ComletConfigDiagnosticPreCheck, *json, cont);
+        table.show(out);
+    } else {
+        CharTable table(ComletConfigDiagnosticDevice, *json, cont);
+        table.show(out);
+    }
 }
 
 void ComletDiagnostic::getTableResult(std::ostream &out) {
@@ -153,6 +200,11 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
 #endif
     if (isDeviceOperation()) {
         showDeviceDiagnostic(out, json);
+        return;
+    }
+
+    if (this->opts->preCheck) {
+        showDeviceDiagnostic(out, json, true);
         return;
     }
 }

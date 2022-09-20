@@ -120,6 +120,8 @@ class CoreStub {
 
     virtual std::unique_ptr<nlohmann::json> getSensorReading()=0;
 
+    std::unique_ptr<nlohmann::json> getPreCheckInfo();
+
    protected:
     std::string getCardUUID(const std::string& rawUUID);
 };

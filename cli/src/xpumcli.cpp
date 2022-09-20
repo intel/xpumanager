@@ -104,13 +104,20 @@ int main(int argc, char** argv) {
 
     xpum::cli::CLIWrapper wrapper(app, priv);
 #ifndef DAEMONLESS
-    if (!wrapper.getCoreStub()->isChannelReady()) {
-        std::cout << "Error: XPUM Service Status Error. ";
-        if (!levelZeroLoaderCheck()) {
-            std::cout << "Cannot find level zero loader.";
+    bool help = false;
+    for (int i = 1; !help && i < argc; i++)
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+            help = true;
+    bool precheck = argc >= 3 && strcmp(argv[1], "diag") == 0 && strcmp(argv[2], "--precheck") == 0;
+    if (!help && !precheck) {
+        if (!wrapper.getCoreStub()->isChannelReady()) {
+            std::cout << "Error: XPUM Service Status Error. ";
+            if (!levelZeroLoaderCheck()) {
+                std::cout << "Cannot find level zero loader.";
+            }
+            std::cout << std::endl;
+            return 0;
         }
-        std::cout << std::endl;
-        return 0;
     }
 #endif
 

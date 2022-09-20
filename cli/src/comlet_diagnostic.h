@@ -21,6 +21,7 @@ struct ComletDiagnosticOptions {
 #endif
     int level = INT_MIN;
     bool rawComponentTypeStr = true;
+    bool preCheck = false;
 };
 
 class ComletDiagnostic : public ComletBase {
