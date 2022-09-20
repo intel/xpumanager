@@ -109,7 +109,7 @@ else() # Build xpu-smi
     xpumanager
     PRIVATE ${XPUM_CLI_SRC} ${XPUM_CLI_CORE_STUB_SRC})
 
-  target_link_libraries(xpumanager PRIVATE igsc)
+  target_link_libraries(xpumanager PRIVATE igsc ${CMAKE_DL_LIBS})
 
   add_custom_command(
     TARGET xpumanager
