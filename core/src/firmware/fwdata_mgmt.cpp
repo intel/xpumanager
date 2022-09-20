@@ -151,11 +151,7 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
 
 static std::string print_fwdata_version(const struct igsc_fwdata_version *fwdata_version) {
     std::stringstream ss;
-    ss << fwdata_version->major_version;
-    ss << ".";
-    ss << fwdata_version->oem_manuf_data_version;
-    ss << ".";
-    ss << fwdata_version->major_vcn;
+    ss << "0x" << std::hex << fwdata_version->oem_manuf_data_version;
     return ss.str();
 }
 
