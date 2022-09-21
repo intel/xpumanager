@@ -143,7 +143,7 @@ static std::string dmesg_log_file_name = "/var/log/dmesg";
 static std::string syslog_file_name = "/var/log/syslog";
 static std::string messages_file_name = "/var/log/messages";
 static int cpu_temperature_threshold = 85;
-static int detect_number_of_last_logs = 100;
+static int detect_number_of_last_logs = 500;
 
 std::string i915_error_log_lines;
 std::string cpu_error_log_lines;
@@ -180,6 +180,12 @@ static void updateErrorLogLine(std::string line, std::string pattern, std::strin
     }
 }
 
+static size_t findCaseInsensitive(std::string data, std::string toSearch, size_t pos = 0) {
+    std::transform(data.begin(), data.end(), data.begin(), ::tolower);
+    std::transform(toSearch.begin(), toSearch.end(), toSearch.begin(), ::tolower);
+    return data.find(toSearch, pos);
+}
+
 static void getErrorLogLinesByFile(std::string print_log_cmd, std::map<std::string, std::string> patterns, std::string log_source) {
     FILE* f = popen(print_log_cmd.c_str(), "r");
     char c_line[1024];
@@ -190,6 +196,19 @@ static void getErrorLogLinesByFile(std::string print_log_cmd, std::map<std::stri
             c_line[--len] = '\0';
         }
         std::string line(c_line);
+        // skip useless los for speed up
+        std::vector<std::string> targeted_words = {"i915", "drm", "mce", "caterr", "GUC"
+                                            "initialized", "blocked", "Hardware", "perf",
+                                            "memory", "HANG", "segfault", "panic",  "terminated",
+                                            "traps", "catastrophic"};
+        bool target_found = false;
+        for (auto tw : targeted_words)
+            if (findCaseInsensitive(line, tw) != std::string::npos) {
+                target_found = true;
+                break;
+            }
+        if (!target_found)
+            continue;
         for (auto pattern : patterns) {
             std::regex re(pattern.first, std::regex_constants::icase);
             if(std::regex_search(line, match, re)) {
