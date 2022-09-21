@@ -6,6 +6,7 @@
 
 #include "comlet_sensor.h"
 #include "cli_table.h"
+#include <iomanip>
 
 using namespace nlohmann;
 
@@ -62,7 +63,7 @@ void ComletSensor::getTableResult(std::ostream &out) {
             if (value == (int)value) {
                 ss << (int)value;
             } else {
-                ss << reading["value"];
+                ss << std::fixed << std::setprecision(3) << reading["value"];
             }
             amc_sensor_values+=ss.str();
         }
