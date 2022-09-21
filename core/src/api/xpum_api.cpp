@@ -2077,10 +2077,10 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         std::float_t hypoInUse = 0;
         std::float_t engine = 0;
         std::float_t workload = 0;
-        std::float_t hypoActive = 0;
         std::float_t nonOccupancy = 0;
         std::float_t remaining = 0;
         std::float_t tlpRatio = 1;
+        std::float_t stallRatio = 0;
 
         for (auto group_data : (*p_perf_datas)[i]->data) {
             for (auto metric_data : group_data.data) {
@@ -2149,8 +2149,12 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         }
 
         if (inUse != 0) {
-            hypoActive = active / (occupancy / (inUse * tlpRatio));
-            nonOccupancy = hypoActive - active;
+            if (inUse > 0) {
+                stallRatio = stall / inUse;
+            }
+            if (occupancy > 0) {
+                nonOccupancy = (stallRatio - std::pow(stallRatio, inUse / occupancy)) * inUse;
+            }
             if (nonOccupancy < 0) {
                 nonOccupancy = 0;
             }
