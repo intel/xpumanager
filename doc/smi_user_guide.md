@@ -12,7 +12,7 @@ Show the XPU System Management Interface help info.
 ```
 xpu-smi 
 Intel XPU System Management Interface -- v1.0 
-Intel XPU System Management Interface provides the Intel datacenter GPU model. It can also be used to update the firmware.  
+Intel XPU System Management Interface provides the Intel data center GPU device info. It can also be used to update the firmware.  
 Intel XPU System Management Interface is based on Intel oneAPI Level Zero. Before using Intel XPU System Management Interface, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
  
 Supported devices: 
@@ -205,7 +205,7 @@ optional arguments:
   -m,--matrix                 Print the CPU/GPU topology matrix. 
                                 S: Self
                                 XL[laneCount]: Two tiles on the different cards are directly connected by Xe Link.  Xe Link lane count is also provided.
-                                XL*: Two tiles on the differen cards are connected by Xe Link + MDF. They are not directly connected by Xe Link. 
+                                XL*: Two tiles on the different cards are connected by Xe Link + MDF. They are not directly connected by Xe Link. 
                                 SYS: Connected with PCIe between NUMA nodes
                                 NODE: Connected with PCIe within a NUMA node
                                 MDF: Connected with Multi-Die Fabric Interface
@@ -359,7 +359,7 @@ Options:
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); 
                                 "timeslice",interval (us),yieldtimeout (us); "exclusive". The valid range of all time values (us) is from 5000 to 100,000,000.
   --performancefactor         Set the tile-level performance factor. Valid options: "compute/media";factorValue. The factor value should be 
-                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
+                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bounded and the performance of the memory controller needs to be increased. 
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
@@ -514,11 +514,12 @@ xpu-smi stats -d 0
 | EU Array Stall (%)          |                                                                    |
 | EU Array Idle (%)           |                                                                    |
 |                             |                                                                    |
-| Compute Engine Util (%)     | Engine 0: 0                                                        |
-| Render Engine Util (%)      | Engine 0: 0                                                        |
+| Compute Engine Util (%)     | 0; Engine 0: 0                                                     |
+| Render Engine Util (%)      | 0; Engine 0: 0                                                     |
+| Media Engine Util (%)       | 0                                                                  |
 | Decoder Engine Util (%)     | Engine 0: 0, Engine 1: 0                                           |
 | Encoder Engine Util (%)     | Engine 0: 0, Engine 1: 0                                           |
-| Copy Engine Util (%)        | Engine 0: 0                                                        |
+| Copy Engine Util (%)        | 0; Engine 0: 0                                                     |
 | Media EM Engine Util (%)    | Engine 0: 0, Engine 1: 0                                           |
 | 3D Engine Util (%)          |                                                                    |
 +-----------------------------+--------------------------------------------------------------------+
@@ -549,7 +550,8 @@ xpu-smi dump -h
 Dump device statistics data.
 
 Usage: xpu-smi dump [Options]
-  xpu-smi dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
+  xpu-smi dump -d [deviceIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
+  xpu-smi dump -d [deviceIds] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
   xpu-smi dump -d [pciBdfAddress] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
 
 Options:
@@ -557,7 +559,7 @@ Options:
   -j,--json                   Print result in JSON format
   --debug                     Print debug info
 
-  -d,--device                 The device ID or PCI BDF address to query
+  -d,--device                 The device IDs or PCI BDF addresses to query. The value of "-1" means all devices.
   -t,--tile                   The device tile ID to query. If the device has only one tile, this parameter should not be specified.
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
                               0. GPU Utilization (%), GPU active time of the elapsed time, per tile
@@ -592,6 +594,10 @@ Options:
                               28. 3D engine utilizations (%), per tile.
                               29. GPU Memory Errors Correctable, per tile. Other non-compute correctable errors are also included.
                               30. GPU Memory Errors Uncorrectable, per tile. Other non-compute uncorrectable errors are also included.
+                              31. Compute engine group utilization (%), per tile
+                              32. Render engine group utilization (%), per tile
+                              33. Media engine group utilization (%), per tile
+                              34. Copy engine group utilization (%), per tile
 
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second.
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.
@@ -602,9 +608,9 @@ Dump the device statistics to screen in CSV format.
 ```
 xpu-smi dump -d 0 -m 0,1,2 -i 1 -n 5
 Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz)
-2022-07-25T06:14:46.000Z,    0, 0.00, 14.61,    0
-2022-07-25T06:14:47.000Z,    0, 0.00, 14.59,    0
-2022-07-25T06:14:48.000Z,    0, 0.00, 14.61,    0
-2022-07-25T06:14:49.000Z,    0, 0.00, 14.61,    0
-2022-07-25T06:14:50.000Z,    0, 0.00, 14.61,    0
+06:14:46.000,    0, 0.00, 14.61,    0
+06:14:47.000,    0, 0.00, 14.59,    0
+06:14:48.000,    0, 0.00, 14.61,    0
+06:14:49.000,    0, 0.00, 14.61,    0
+06:14:50.000,    0, 0.00, 14.61,    0
 ```

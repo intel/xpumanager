@@ -1,6 +1,12 @@
 
 # Intel XPU-SMI Installation Guide
 
+## Requirements
+oneAPI Level Zero
+Intel(R) Graphics System Controller Firmware Update Library
+Intel(R) Metrics Library for MDAPI
+Intel(R) Metrics Discovery Application Programming Interface
+
 ## DEB install
 sudo dpkg -i xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
 
@@ -14,10 +20,13 @@ sudo rpm -i xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 rpm -i --prefix=/opt/abc xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 
 ## Start to user Intel XPU-SMI
-By default, Intel XPU-SMI is installed the folder, /opt/xpum. The command line tool is xpu-smi. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
+By default, Intel XPU-SMI is installed the folder, /opt/xpum. The command line tool is xpu-smi. Please refer to "smi_user_guide.md" for how to use the command line tool. 
 
 ## RPM uninstall
 sudo rpm -e xpu-smi
 
-## GPU memroy ECC on/off
+## RPM upgrade
+sudo rpm -Uxh xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+
+## GPU memory ECC on/off
 XPU-SMI provides the GPU memory ECC on/off feature based on IGSC. GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer versions. 
