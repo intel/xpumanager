@@ -4,7 +4,8 @@
 ## Requirements
 oneAPI Level Zero
 Intel(R) Graphics System Controller Firmware Update Library
-openssl11-libs (for CentOS 7)
+Intel(R) Metrics Library for MDAPI
+Intel(R) Metrics Discovery Application Programming Interface
 
 ## DEB install
 sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
