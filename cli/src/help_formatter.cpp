@@ -95,28 +95,36 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " health -l \n"
                "  " + appName + " health -l -j \n"
                "  " + appName + " health -d [deviceId] \n"
+               "  " + appName + " health -d [pciBdfAddress] \n"
                "  " + appName + " health -d [deviceId] -j \n"
+               "  " + appName + " health -d [pciBdfAddress] -j \n"
                "  " + appName + " health -g [groupId] \n"
                "  " + appName + " health -g [groupId] -j \n"
                "  " + appName + " health -d [deviceId] -c [componentTypeId] --threshold [threshold] \n"
+               "  " + appName + " health -d [pciBdfAddress] -c [componentTypeId] --threshold [threshold] \n"
                "  " + appName + " health -d [deviceId] -c [componentTypeId] --threshold [threshold] -j \n"
+               "  " + appName + " health -d [pciBdfAddress] -c [componentTypeId] --threshold [threshold] -j \n"
                "  " + appName + " health -g [groupId] -c [componentTypeId] --threshold [threshold] \n"
                "  " + appName + " health -g [groupId] -c [componentTypeId] --threshold [threshold] -j \n";
     } else if (app->get_name().compare("diag") == 0) {
 #ifndef DAEMONLESS
         return "\nUsage: " + appName + " diag [Options] \n"
                "  " + appName + " diag -d [deviceId] -l [level] \n"
-               "  " + appName + " diag -d [deviceId] -l [level] -j \n"
                "  " + appName + " diag -d [pciBdfAddress] -l [level] \n"
+               "  " + appName + " diag -d [deviceId] -l [level] -j \n"
                "  " + appName + " diag -d [pciBdfAddress] -l [level] -j \n"
                "  " + appName + " diag -g [groupId] -l [level] \n"
-               "  " + appName + " diag -g [groupId] -l [level] -j \n";
+               "  " + appName + " diag -g [groupId] -l [level] -j \n"
+               "  " + appName + " diag --precheck\n"
+               "  " + appName + " diag --precheck -j\n";
 #else
         return "\nUsage: " + appName + " diag [Options] \n"
                "  " + appName + " diag -d [deviceId] -l [level] \n"
                "  " + appName + " diag -d [pciBdfAddress] -l [level] \n"
                "  " + appName + " diag -d [deviceId] -l [level] -j \n"
-               "  " + appName + " diag -d [pciBdfAddress] -l [level] -j \n";
+               "  " + appName + " diag -d [pciBdfAddress] -l [level] -j \n"
+               "  " + appName + " diag --precheck\n"
+               "  " + appName + " diag --precheck -j\n";
 #endif
     } else if (app->get_name().compare("dump") == 0) {
 #ifndef DAEMONLESS
