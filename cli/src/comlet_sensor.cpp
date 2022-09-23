@@ -63,7 +63,7 @@ void ComletSensor::getTableResult(std::ostream &out) {
             if (value == (int)value) {
                 ss << (int)value;
             } else {
-                ss << std::fixed << std::setprecision(3) << reading["value"];
+                ss << std::fixed << std::setprecision(3) << value;
             }
             amc_sensor_values+=ss.str();
         }

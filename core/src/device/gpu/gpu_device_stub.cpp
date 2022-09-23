@@ -40,6 +40,7 @@
 #include "infrastructure/handle_lock.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/measurement_data.h"
+#include "firmware/system_cmd.h"
 
 #define MAX_SUB_DEVICE 256
 
@@ -216,47 +217,6 @@ bool GPUDeviceStub::isDevEntry(const std::string& entryName) {
 
 void GPUDeviceStub::discoverDevices(Callback_t callback) {
     invokeTask(callback, toDiscover);
-}
-
-class SystemCommandResult {
-    std::string _output;
-    int _exitStatus;
-
-   public:
-    SystemCommandResult(std::string& cmd_output, int cmd_exit_status) {
-        _output = cmd_output;
-        _exitStatus = cmd_exit_status;
-    }
-
-    const std::string& output() {
-        return _output;
-    }
-
-    const int exitStatus() {
-        return _exitStatus;
-    }
-};
-
-static SystemCommandResult execCommand(const std::string& command) {
-    int exitcode = 0;
-    std::array<char, 1048576> buffer{};
-    std::string result;
-
-    FILE* pipe = popen(command.c_str(), "r");
-    if (pipe != nullptr) {
-        try {
-            std::size_t bytesread;
-            while ((bytesread = std::fread(buffer.data(), sizeof(buffer.at(0)), sizeof(buffer), pipe)) != 0) {
-                result += std::string(buffer.data(), bytesread);
-            }
-        } catch (...) {
-            pclose(pipe);
-        }
-        int ret = pclose(pipe);
-        exitcode = WEXITSTATUS(ret);
-    }
-
-    return SystemCommandResult(result, exitcode);
 }
 
 static const std::string PCI_FILE_SYS("sys");
