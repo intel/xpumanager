@@ -2079,7 +2079,6 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         std::float_t workload = 0;
         std::float_t nonOccupancy = 0;
         std::float_t remaining = 0;
-        std::float_t tlpRatio = 1;
         std::float_t stallRatio = 0;
 
         for (auto group_data : (*p_perf_datas)[i]->data) {
