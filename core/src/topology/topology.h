@@ -45,12 +45,15 @@ class Topology {
    private:
     Topology();
     virtual ~Topology();
+    static std::mutex mutex;
+    static hwloc_topology_t *hwtopology;
 
    public:
-    static bool getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds, bool checkDevice = true);
-    static xpum_result_t getSwitchTopo(std::string bdfAddress, xpum_topology_t* topology, std::size_t* memSize);
+    static bool getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds, bool checkDevice = true, bool reload = false);
+    static xpum_result_t getSwitchTopo(std::string bdfAddress, xpum_topology_t* topology, std::size_t* memSize, bool reload = false);
     static std::string getLocalCpus(std::string address);
     static std::string getLocalCpusList(std::string address);
+    static void clearTopology();
 
     static xpum_result_t topo2xml(char* buffer, int* buflen, std::map<device_pair, GraphicDevice>& device_map);
     static xpum_result_t getXelinkTopo(std::vector<std::shared_ptr<Device>>& devices, std::vector<xpum_fabric_port_pair>& fabricPorts);
@@ -61,6 +64,7 @@ class Topology {
     static int get_p_switch_count(hwloc_obj_t chi_obj);
     static void get_p_switch_dev_path(hwloc_obj_t par_obj, parent_switch* pSwitch);
     static std::string pci2RegxString(hwloc_obj_t obj);
+    static void reNewTopology(bool reload);
 
     static void export_cb(void* reserved, hwloc_topology_t topo, hwloc_obj_t obj);
     static void getBDF(std::string bdfAddress, zes_pci_address_t& pciAddress);
