@@ -830,7 +830,7 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                         res = zesMemoryGetState(mem, &sysman_memory_state);
                         if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
                             uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
-                            data.max = data.min = data.avg = data.value = used;
+                            data.max = data.min = data.avg = data.value = used / 1024 / 1024;
                         }
                     }
                 }
