@@ -170,7 +170,78 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
                     return convertResult;
                 }
             }
-            deviceJsons[deviceId] = this->coreStub->getStatistics(targetId);
+            auto tempdeviceJsons = this->coreStub->getStatistics(targetId);
+            deviceJsons[deviceId] = combineTileAndDeviceLevel(*tempdeviceJsons);
+        }
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> ComletDump::combineTileAndDeviceLevel(nlohmann::json rawJson){
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    *json = rawJson;
+    if (!json->contains("tile_level"))
+        return json;
+    if (!json->contains("device_level"))
+        rawJson["device_level"] = {};
+    std::vector<nlohmann::json> deviceLevelStatsDataList = rawJson["device_level"];
+    std::vector<nlohmann::json> tileLevelStatsDataList = rawJson["tile_level"];
+    std::set<std::string> deviceMetrics;
+    for (auto deviceLevelStatsData: deviceLevelStatsDataList) 
+        deviceMetrics.insert(deviceLevelStatsData["metrics_type"].get<std::string>());
+    std::set<std::string> tileMetrics;
+    for (auto tileLevelStatsData: tileLevelStatsDataList) {
+        nlohmann::json StatsData = tileLevelStatsData["data_list"];
+        for (auto data: StatsData) 
+            tileMetrics.insert(data["metrics_type"].get<std::string>());
+    }
+    std::set<std::string> metricsList;
+    std::set_difference( tileMetrics.begin(), tileMetrics.end(), deviceMetrics.begin(), deviceMetrics.end(), std::inserter(metricsList, metricsList.begin()));
+    nlohmann::json tmpJson;
+    for (auto metric: metricsList){
+        int c = 0; // count of current tiles which contain the certain metric
+        for (auto tileLevelStatsData: tileLevelStatsDataList) {
+            nlohmann::json StatsData = tileLevelStatsData["data_list"];
+            for (std::size_t i = 0; i < StatsData.size(); i++) {
+                if(metric == StatsData[i]["metrics_type"]){
+                    std::string met = "value";
+                    if (StatsData[i].contains("avg"))
+                        met = "avg";
+                    if ( c == 0 ) {
+                        tmpJson[metric]["metrics_type"] = StatsData[i]["metrics_type"];
+                        tmpJson[metric][met] = StatsData[i][met];
+                    }
+                    else{
+                        if (sumMetricsList.find(metric) != sumMetricsList.end()){
+                            if(StatsData[i][met].is_number_float())
+                                tmpJson[metric][met] = tmpJson[metric][met].get<double>() + StatsData[i][met].get<double>();
+                            else
+                                tmpJson[metric][met] = tmpJson[metric][met].get<uint64_t>() + StatsData[i][met].get<uint64_t>();
+                        }
+                        else{
+                            auto doubleNumber = (double)round((tmpJson[metric][met].get<double>() * c + StatsData[i][met].get<double>())/ ( c + 1 ));
+                            auto intNumber = (tmpJson[metric][met].get<uint64_t>() * c + StatsData[i][met].get<uint64_t>())/ ( c + 1 );
+                            if (doubleNumber == (double)intNumber)
+                                tmpJson[metric][met] = intNumber;
+                            else
+                                tmpJson[metric][met] = doubleNumber;
+                        }
+                    }
+                    c += 1;
+                }
+            }
+        }
+    }
+    for (auto& item : tmpJson.items())
+        (*json)["device_level"].push_back(item.value());
+    //engine metrics
+    if (!json->contains("engine_util")) {
+        (*json)["engine_util"]={};
+        for (auto tileLevelStatsData: tileLevelStatsDataList) {
+            int t = tileLevelStatsData["tile_id"].get<int>();
+            if (tileLevelStatsData.contains("engine_util")){
+                (*json)["engine_util"]["tile_id_"+std::to_string(t)] = tileLevelStatsData["engine_util"];
+            }
         }
     }
     return json;
@@ -440,33 +511,86 @@ void ComletDump::printByLine(std::ostream &out) {
                 }};
             columnSchemaList.push_back(dc);
         } else if (config.optionType == xpum::dump::DUMP_OPTION_ENGINE) {
-            if (pEngineCountMap->find(tileId) != pEngineCountMap->end()) {
+            std::map<int, int> tileIdsMap;
+            bool deviceLevelHeader = false;
+            if(pEngineCountMap->find(tileId) != pEngineCountMap->end()){
                 int engineCount = (*pEngineCountMap)[tileId][config.engineType];
-                for (int engineIdx = 0; engineIdx < engineCount; engineIdx++) {
-                    std::string header = engineNameMap[config.engineType] + " " + std::to_string(engineIdx) + " (%)";
-                    DumpColumn dc{
-                        header,
-                        [config, engineIdx, this]() {
-                            if (engineUtilJson != nullptr) {
-                                auto engineUtilByType = (*engineUtilJson)[config.key];
-                                for (auto u : engineUtilByType) {
-                                    if (u["engine_id"].get<int>() == engineIdx) {
-                                        #ifndef DAEMONLESS
-                                        return getJsonValue(u["avg"], config.scale);
-                                        #else
-                                        return getJsonValue(u["value"], config.scale);
-                                        #endif
+                tileIdsMap.insert({tileId,engineCount});
+            }
+            else if(tileId == -1){
+                for(auto const &ent1 : (*pEngineCountMap)) {
+                    if (ent1.first != -1){
+                        int engineCount = (*pEngineCountMap)[ent1.first][config.engineType];
+                        tileIdsMap.insert({ent1.first,engineCount});
+                    }
+                }
+                deviceLevelHeader = true;
+            }
+            if (tileIdsMap.size()==0){
+                tileIdsMap.insert({-1,0});
+                deviceLevelHeader = false;
+            }
+            for (auto itr = tileIdsMap.begin(); itr != tileIdsMap.end(); ++itr) {
+                int tileIdx = -1;
+                if (deviceLevelHeader)
+                    tileIdx = itr->first;
+                int engineCount = itr->second;
+                if (engineCount){
+                    for (int engineIdx = 0; engineIdx < engineCount; engineIdx++) {
+                        std::string header;
+                        if (deviceLevelHeader)
+                            header = engineNameMap[config.engineType] + " " + std::to_string(tileIdx) + "/" + std::to_string(engineIdx) + " (%)";
+                        else
+                            header = engineNameMap[config.engineType] + " " + std::to_string(engineIdx) + " (%)";
+                        DumpColumn dc{
+                            header,
+                            [config, tileIdx, engineIdx, this]() {
+                                if (engineUtilJson != nullptr) {
+                                    nlohmann::json engineUtilByType;
+                                    if (tileIdx == -1)
+                                        engineUtilByType = (*engineUtilJson)[config.key];
+                                    else
+                                        engineUtilByType = (*engineUtilJson)["tile_id_"+std::to_string(tileIdx)][config.key];
+                                    for (auto u : engineUtilByType) {
+                                        if (u["engine_id"].get<int>() == engineIdx) {
+                                            #ifndef DAEMONLESS
+                                            return getJsonValue(u["avg"], config.scale);
+                                            #else
+                                            return getJsonValue(u["value"], config.scale);
+                                            #endif
+                                        }
                                     }
                                 }
-                            }
+                                return std::string();
+                            }};
+                        columnSchemaList.push_back(dc);
+                    }
+                }
+                else{
+                    std::string header;
+                    if (deviceLevelHeader)
+                        header = engineNameMap[config.engineType] + " " + std::to_string(tileIdx) + " (%)";
+                    else
+                        header = engineNameMap[config.engineType] + " (%)";
+                    DumpColumn dc{
+                        header,
+                        [config, this]() {
                             return std::string();
                         }};
                     columnSchemaList.push_back(dc);
                 }
             }
         } else if (config.optionType == xpum::dump::DUMP_OPTION_FABRIC) {
-            std::string strTileId = tileId == -1 ? "device" : std::to_string(tileId);
-            if (pFabricCountJson->contains(strTileId)) {
+            std::vector<std::string> strTileIds;
+            if (tileId == -1){
+                for (auto& el : (*pFabricCountJson).items())
+                    strTileIds.push_back(el.key());
+            }
+            else{
+                if (pFabricCountJson->contains(std::to_string(tileId))) 
+                    strTileIds.push_back(std::to_string(tileId));
+            }
+            for (auto strTileId: strTileIds) {
                 for (auto obj : (*pFabricCountJson)[strTileId]) {
                     std::stringstream ss;
                     std::string key;
@@ -484,7 +608,7 @@ void ComletDump::printByLine(std::ostream &out) {
                                                                 #ifndef DAEMONLESS
                                                                 return getJsonValue(tp["avg"], config.scale);
                                                                 #else
-                                                                return getJsonValue(tp["value"], config.scale);
+                                                                return getJsonValue(tp["value"], config.scale);     
                                                                 #endif
                                                             }
                                                         }
@@ -514,6 +638,13 @@ void ComletDump::printByLine(std::ostream &out) {
                                                     return std::string();
                                                 }});
                 }
+            }
+            if (strTileIds.size() == 0){
+                std::string header = "XL (kB/s)"; 
+                columnSchemaList.push_back({header,
+                            [config, this]() {
+                                return std::string();
+                            }});
             }
         }
     }
