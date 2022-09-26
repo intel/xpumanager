@@ -161,7 +161,7 @@ static void updateErrorLogLine(std::string line, std::string pattern, std::strin
             i915_error_log_lines += "Check " + log_source + ":\n";
         }
         i915_error_log_lines += "  " + line;
-    } else if (pattern == ".*mce.*error.*" || pattern == ".*caterr.*") {
+    } else if (pattern == ".*(mce|mca).*err.*" || pattern == ".*caterr.*") {
         if (cpu_error_log_lines.size() > 0)
             cpu_error_log_lines += "\n";
         if (cpu_error_log_headers[log_source] == false) {
@@ -197,7 +197,7 @@ static void getErrorLogLinesByFile(std::string print_log_cmd, std::map<std::stri
         }
         std::string line(c_line);
         // skip useless los for speed up
-        std::vector<std::string> targeted_words = {"i915", "drm", "mce", "caterr", "GUC"
+        std::vector<std::string> targeted_words = {"i915", "drm", "mce", "mca", "caterr", "GUC"
                                             "initialized", "blocked", "Hardware", "perf",
                                             "memory", "HANG", "segfault", "panic",  "terminated",
                                             "traps", "catastrophic"};
@@ -419,7 +419,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
         // i915 error
         {".*ERROR.*i915.*", ""},
         // cpu error
-        {".*mce.*error.*", ""},
+        {".*(mce|mca).*err.*", ""},
         {".*caterr.*", ""},
         // gpu error
         {".*ERROR.*drm.*", "i915"},
