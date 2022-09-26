@@ -438,6 +438,7 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
             { "rowTitle": " " },
             { "rowTitle": "Compute Engine Util (%) " },
             { "rowTitle": "Render Engine Util (%) " },
+            { "rowTitle": "Media Engine Util (%) " },
             { "rowTitle": "Decoder Engine Util (%) " },
             { "rowTitle": "Encoder Engine Util (%) " },
             { "rowTitle": "Copy Engine Util (%) " },
@@ -459,6 +460,9 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
             { "value": " "},
             { "value": "compute_engine_util"},
             { "value": "render_engine_util"},
+            { "label_tag": "tile_id", "value": "tile_level[]", "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION].value", "fixer": "round" }
+            ]},
             { "value": "decoder_engine_util"},
             { "value": "encoder_engine_util"},
             { "value": "copy_engine_util"},
@@ -620,6 +624,27 @@ std::string engineUtilByType(std::shared_ptr<nlohmann::json> jsonPtr, std::strin
     // device level
     if (jsonPtr->contains("engine_util") && (*jsonPtr)["engine_util"].contains(key)) {
         auto jsonObj = (*jsonPtr)["engine_util"][key];
+        auto found = std::find_if(
+            (*jsonPtr)["device_level"].begin(),
+            (*jsonPtr)["device_level"].end(),
+            [key](nlohmann::json item) {
+                std::string tmpKey(key);
+                std::transform(tmpKey.begin(), tmpKey.end(), tmpKey.begin(), toupper);
+                tmpKey += "_ALL_UTILIZATION";
+                // return true;
+                return item["metrics_type"].get<std::string>().find(tmpKey) != std::string::npos;
+            }
+        );
+        if (found != (*jsonPtr)["device_level"].end()) {
+            res += std::to_string((*found)["value"].get<int>());
+        }
+        // std::cout << "found: " << (*found)["value"].get<int>() << '\n';
+        if (strcasecmp(key.c_str(), "compute") == 0
+            || strcasecmp(key.c_str(), "render") == 0
+            || strcasecmp(key.c_str(), "copy") == 0
+        ) {
+            res += "; ";
+        }
         res += engineUtilFormater(jsonObj) + "\n";
     }
     // tile level
