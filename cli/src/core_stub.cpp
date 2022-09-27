@@ -197,10 +197,10 @@ static void getErrorLogLinesByFile(std::string print_log_cmd, std::map<std::stri
         }
         std::string line(c_line);
         // skip useless los for speed up
-        std::vector<std::string> targeted_words = {"i915", "drm", "mce", "mca", "caterr", "GUC"
+        std::vector<std::string> targeted_words = {"i915", "drm", "mce", "mca", "caterr", "GUC",
                                             "initialized", "blocked", "Hardware", "perf",
                                             "memory", "HANG", "segfault", "panic",  "terminated",
-                                            "traps", "catastrophic"};
+                                            "traps", "catastrophic", "PCIe"};
         bool target_found = false;
         for (auto tw : targeted_words)
             if (findCaseInsensitive(line, tw) != std::string::npos) {
@@ -435,7 +435,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
         {".*(Kernel panic).*", ""},
         {".*(gdm-x-session).*(Server terminated with error).*", ""},
         {".*(traps:).*", ""},
-        {".*(IO: IOMMU catastrophic error).*", ""} });
+        {".*(IO: IOMMU catastrophic error).*", ""},
+        {".*(PCIe error).*", ""} });
 
     if (is_i915_loaded && i915_error_log_lines.empty() && level0_driver_error_info.empty()) {
         (*json)["gpu_driver_info"] = "Pass";
