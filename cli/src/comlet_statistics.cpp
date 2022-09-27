@@ -631,19 +631,11 @@ std::string engineUtilByType(std::shared_ptr<nlohmann::json> jsonPtr, std::strin
                 std::string tmpKey(key);
                 std::transform(tmpKey.begin(), tmpKey.end(), tmpKey.begin(), toupper);
                 tmpKey += "_ALL_UTILIZATION";
-                // return true;
                 return item["metrics_type"].get<std::string>().find(tmpKey) != std::string::npos;
             }
         );
         if (found != (*jsonPtr)["device_level"].end()) {
-            res += std::to_string((*found)["value"].get<int>());
-        }
-        // std::cout << "found: " << (*found)["value"].get<int>() << '\n';
-        if (strcasecmp(key.c_str(), "compute") == 0
-            || strcasecmp(key.c_str(), "render") == 0
-            || strcasecmp(key.c_str(), "copy") == 0
-        ) {
-            res += "; ";
+            res += std::to_string((*found)["value"].get<int>()) + "; ";
         }
         res += engineUtilFormater(jsonObj) + "\n";
     }
