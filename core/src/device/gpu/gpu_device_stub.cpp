@@ -491,6 +491,8 @@ void GPUDeviceStub::addEuActiveStallIdleCapabilities(zes_device_handle_t device,
     } catch (BaseException& e) {
         if (strcmp(e.what(), "toGetEuActiveStallIdleCore - zetMetricStreamerOpen") == 0) {
             XPUM_LOG_WARN("Device {}{} has no Active/Stall/Idle monitoring capability. Or because there are other applications on the current machine that are monitoring related data, XPUM cannot monitor these data at the same time.", props.core.name, bdf_address);
+        } else if (strcmp(e.what(), "toGetEuActiveStallIdleCore - abnormal EU data") == 0) {
+            XPUM_LOG_WARN("Device {}{} has no Active/Stall/Idle monitoring capability due to abnormal EU data.", props.core.name, bdf_address);
         } else {
             XPUM_LOG_WARN("Device {}{} has no Active/Stall/Idle monitoring capability.", props.core.name, bdf_address);
         }
@@ -1861,6 +1863,9 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         }
         currentEuActive = std::max(currentEuActive, currentXueActive);
         currentEuStall = std::max(currentEuStall, currentXveStall);
+        if (currentEuActive > 100 || currentEuStall > 100) {
+            throw BaseException("toGetEuActiveStallIdleCore - abnormal EU data");
+        }        
         totalGpuBusy += currentGPUElapsedTime * currentGpuBusy;
         totalEuStall += currentGPUElapsedTime * currentEuStall;
         totalEuActive += currentGPUElapsedTime * currentEuActive;
