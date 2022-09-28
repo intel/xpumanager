@@ -55,7 +55,7 @@ bool ComletDump::dumpEUMetrics() {
 
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device IDs or PCI BDF addresses to query. The value of "-1" means all devices.");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device IDs or PCI BDF addresses to query. The value of \"-1\" means all devices.");
 #ifndef DAEMONLESS
     auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
 #else
@@ -63,7 +63,7 @@ void ComletDump::setupOptions() {
 #endif
 
     deviceIdOpt->check([this](const std::string &str) {
-        std::string errStr = "Device id should be a non-negative integer or a BDF string. "-1" means all devices.";
+        std::string errStr = "Device id should be a non-negative integer or a BDF string. \"-1\" means all devices.";
         std::vector<std::string> deviceIds = split(str, ',');
         for (auto id : deviceIds) {
             if (!isValidDeviceId(id) && !isBDF(id) && (id!="-1")) {
