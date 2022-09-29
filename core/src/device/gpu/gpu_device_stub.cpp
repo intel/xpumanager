@@ -2220,7 +2220,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetGPUUtilization(const zes_de
                 props.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetProperties(engine, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    if (props.type == ZES_ENGINE_GROUP_ALL || props.type == ZES_ENGINE_GROUP_COMPUTE_SINGLE || props.type == ZES_ENGINE_GROUP_RENDER_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE || props.type == ZES_ENGINE_GROUP_COPY_SINGLE || props.type == ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE || props.type == ZES_ENGINE_GROUP_3D_SINGLE) {
+                    if (props.type == ZES_ENGINE_GROUP_ALL) {
                         zes_engine_stats_t snap = {};
                         XPUM_ZE_HANDLE_LOCK(engine, res = zesEngineGetActivity(engine, &snap));
                         if (res == ZE_RESULT_SUCCESS) {
