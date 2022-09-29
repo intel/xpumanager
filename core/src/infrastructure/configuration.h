@@ -36,7 +36,6 @@ class Configuration {
     static bool INITIALIZE_PCIE_MANAGER;
     static uint32_t DEFAULT_MEASUREMENT_DATA_SCALE;
     static uint32_t MAX_STATISTICS_SESSION_NUM;
-    static uint32_t MEMORY_IO_THROUGHPUT_DATA_SCALE;
     static bool INITIALIZE_PERF_METRIC;
 
    public:
