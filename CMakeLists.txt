@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.18.0)
 
 if(NOT DEFINED WORK_PATH)
   set(WORK_PATH ${CMAKE_CURRENT_BINARY_DIR})
@@ -142,15 +142,11 @@ if(CPACK_GENERATOR MATCHES "RPM")
     "/usr/local/lib")
 
   if(NOT DAEMONLESS)
-    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/post")
     set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
         "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/preun")
     set(CPACK_RPM_POST_TRANS_SCRIPT_FILE
         "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/posttrans")
   else()
-    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/smi/post")
     set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
         "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/smi/preun")
     set(CPACK_RPM_POST_TRANS_SCRIPT_FILE
