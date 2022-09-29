@@ -624,6 +624,7 @@ std::string engineUtilByType(std::shared_ptr<nlohmann::json> jsonPtr, std::strin
     // device level
     if (jsonPtr->contains("engine_util") && (*jsonPtr)["engine_util"].contains(key)) {
         auto jsonObj = (*jsonPtr)["engine_util"][key];
+        #ifdef DAEMONLESS
         auto found = std::find_if(
             (*jsonPtr)["device_level"].begin(),
             (*jsonPtr)["device_level"].end(),
@@ -637,6 +638,7 @@ std::string engineUtilByType(std::shared_ptr<nlohmann::json> jsonPtr, std::strin
         if (found != (*jsonPtr)["device_level"].end()) {
             res += std::to_string((*found)["value"].get<int>()) + "; ";
         }
+        #endif
         res += engineUtilFormater(jsonObj) + "\n";
     }
     // tile level
