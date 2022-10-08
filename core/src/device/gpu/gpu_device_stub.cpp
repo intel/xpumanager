@@ -733,10 +733,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     // p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(memory_health)));
                 }
 
-                uint32_t firmware_count = 0;
-                XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFirmwares(device, &firmware_count, nullptr));
-                std::vector<zes_firmware_handle_t> firmwares(firmware_count);
-                XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFirmwares(device, &firmware_count, firmwares.data()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_NAME, std::string("GFX")));
                 std::string fwVersion = "";
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, fwVersion));
