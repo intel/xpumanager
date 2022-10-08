@@ -331,13 +331,13 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_UTILIZATION].value", "fixer": "round" }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].value" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].value", "scale": 1 }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].value" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].value", "scale": 1 }
             ]},
             { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].value" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].value", "scale": 1 }
             ]},
             { "value": " "},
             { "value": "compute_engine_util"},
@@ -449,13 +449,13 @@ static CharTableConfig ComletConfigDeviceStatisticsDeviceLevel(R"({
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_UTILIZATION].value", "fixer": "round" }
             ]},
             { "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].value" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_ACTIVE].value", "scale": 1 }
             ]},
             { "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].value" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_STALL].value", "scale": 1 }
             ]},
             { "label_tag": "tile_id", "value": "tile_level[]", "subs": [
-                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].value" }
+                { "value": "data_list[metrics_type==XPUM_STATS_EU_IDLE].value", "scale": 1 }
             ]},
             { "value": " "},
             { "value": "compute_engine_util"},
