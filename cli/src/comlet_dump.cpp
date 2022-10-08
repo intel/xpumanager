@@ -219,12 +219,12 @@ std::unique_ptr<nlohmann::json> ComletDump::combineTileAndDeviceLevel(nlohmann::
                                 tmpJson[metric][met] = tmpJson[metric][met].get<uint64_t>() + StatsData[i][met].get<uint64_t>();
                         }
                         else{
-                            auto doubleNumber = (double)round((tmpJson[metric][met].get<double>() * c + StatsData[i][met].get<double>())/ ( c + 1 ));
+                            auto doubleNumber = (tmpJson[metric][met].get<double>() * c + StatsData[i][met].get<double>())/ (double)( c + 1 );
                             auto intNumber = (tmpJson[metric][met].get<uint64_t>() * c + StatsData[i][met].get<uint64_t>())/ ( c + 1 );
                             if (doubleNumber == (double)intNumber)
                                 tmpJson[metric][met] = intNumber;
                             else
-                                tmpJson[metric][met] = doubleNumber;
+                                tmpJson[metric][met] = round(doubleNumber * 100) /100;
                         }
                     }
                     c += 1;
