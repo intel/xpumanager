@@ -185,6 +185,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             id = this->opts->groupId;
         }
         PolicyData policy;
+        policy.isDeletePolicy = false;
         policy.deviceId = id;
         if (this->opts->policyType.length() == 0) {
             (*json)["is_success"] = false;
