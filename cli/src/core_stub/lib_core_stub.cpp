@@ -28,7 +28,10 @@ using namespace xpum;
 namespace xpum::cli {
 
 LibCoreStub::LibCoreStub() {
-    putenv(const_cast<char *>("SPDLOG_LEVEL=OFF"));
+    char* env = std::getenv("SPDLOG_LEVEL");
+    if (!env) {
+        putenv(const_cast<char*>("SPDLOG_LEVEL=OFF"));
+    }
     xpumInit();
 }
 
