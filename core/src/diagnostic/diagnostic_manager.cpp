@@ -939,8 +939,11 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &
             try {
                 ze_result_t ret;
                 ze_context_handle_t context;
-                ze_context_desc_t context_desc;
-                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                ze_context_desc_t context_desc = {
+                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                        nullptr, 
+                        0
+                };
                 XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeContextCreate()");
@@ -1140,8 +1143,11 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetProperties()");
                 }
-                ze_context_desc_t context_desc = {};
-                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                ze_context_desc_t context_desc = {
+                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                        nullptr, 
+                        0
+                };
                 ze_context_handle_t context;
                 XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
                 if (ret != ZE_RESULT_SUCCESS) {
@@ -1576,6 +1582,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 float input_value = 1.3f;
 
                 ze_device_properties_t device_properties;
+                device_properties.pNext = nullptr;
                 device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
@@ -1583,14 +1590,18 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 }
 
                 ze_device_compute_properties_t device_compute_properties;
+                device_compute_properties.pNext = nullptr;
                 device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetComputeProperties()");
                 }
                 ze_context_handle_t context;
-                ze_context_desc_t context_desc = {};
-                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                ze_context_desc_t context_desc = {
+                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                        nullptr, 
+                        0
+                };
                 XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeContextCreate()");
@@ -2043,20 +2054,25 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 struct ZeWorkGroups workgroup_info;
                 uint64_t temp_global_size;
                 ze_device_properties_t device_properties;
+                device_properties.pNext = nullptr;
                 device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetProperties()");
                 }
                 ze_device_compute_properties_t device_compute_properties;
+                device_compute_properties.pNext = nullptr;
                 device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetComputeProperties()");
                 }
                 ze_context_handle_t context;
-                ze_context_desc_t context_desc = {};
-                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                ze_context_desc_t context_desc = {
+                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                        nullptr, 
+                        0
+                };
                 XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeContextCreate()");
