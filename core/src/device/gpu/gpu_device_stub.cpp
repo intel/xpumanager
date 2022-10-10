@@ -221,6 +221,7 @@ void GPUDeviceStub::discoverDevices(Callback_t callback) {
 
 static const std::string PCI_FILE_SYS("sys");
 static const std::string PCI_FILE_DEVICES("devices");
+static const std::string PCI_FILE_DRM("drm");
 static std::deque<std::string> getParentPciBridges(const std::string& origin_str) {
     std::deque<std::string> res;
     if (!origin_str.empty()) {
@@ -232,7 +233,9 @@ static std::deque<std::string> getParentPciBridges(const std::string& origin_str
             switch (cc) {
                 case '/':
                     if (!nstr.empty()) {
-                        if (nstr != PCI_FILE_SYS && nstr != PCI_FILE_DEVICES) {
+                        if (nstr == PCI_FILE_DRM)
+                            break;
+                        if (nstr != ".." && nstr != PCI_FILE_SYS && nstr != PCI_FILE_DEVICES) {
                             res.push_front(nstr);
                         }
                         nstr.clear();
@@ -328,15 +331,52 @@ static std::vector<DMISystemSlot> getSystemSlotBlocks(const std::string& ssInfos
     return res;
 }
 
+static std::string getCardFullPath(std::string& bdf_address) {
+    char link_path[PATH_MAX];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    int len = 0;
+    std::string ret = "";
+
+    pdir = opendir("/sys/class/drm");
+    if (pdir == NULL) {
+        return ret;
+    }
+
+    while ((pdirent = readdir(pdir)) != NULL) {
+        if (pdirent->d_name[0] == '.') {
+            continue;
+        }
+        if (strncmp(pdirent->d_name, "card", 4) != 0) {
+            continue;
+        }
+        if (strstr(pdirent->d_name, "-") != NULL) {
+            continue;
+        }
+        len = snprintf(link_path, PATH_MAX, "/sys/class/drm/%s", pdirent->d_name);
+        if (len <= 0 || len >= PATH_MAX) {
+            break;
+        }
+        char full_path[PATH_MAX];
+        ssize_t full_len = ::readlink(link_path, full_path, sizeof(full_path));
+        full_path[full_len] = '\0';
+
+        if (strstr(full_path, bdf_address.c_str()) != NULL) {
+            ret = full_path;
+            break;
+        }
+    }
+    closedir(pdir);
+    return ret;
+}
+
 std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     std::string res;
-    std::string bdf_regex = to_regex_string(address);
     std::string bdf = to_string(address);
-    std::string cmd_find_device_link = "find /sys/devices -name \"*" + bdf_regex + "\"";
-    SystemCommandResult sc_res = execCommand(cmd_find_device_link);
+    std::string card_full_path = getCardFullPath(bdf);
     SystemCommandResult ss_res = execCommand("dmidecode -t 9 2>/dev/null");
 
-    if (sc_res.exitStatus() == 0 && ss_res.exitStatus() == 0) {
+    if (card_full_path.size() > 0 && ss_res.exitStatus() == 0) {
         /* 
             Add a temporary workaround for SMC servers because they return
             GPU BDF as bus address of a slot. Here the BDF of a GPU would be 
@@ -348,8 +388,7 @@ std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
             instead of a bridge/ switch) once Intel smbios implementaion
             is updated.  
         */
-        std::deque<std::string> allBdf = getParentPciBridges(sc_res.output());
-        allBdf.push_front(bdf);
+        std::deque<std::string> allBdf = getParentPciBridges(card_full_path);
         std::vector<DMISystemSlot> systemSlots = getSystemSlotBlocks(ss_res.output());
         for (auto& pBdf : allBdf) {
             for (auto& sysSlot : systemSlots) {
