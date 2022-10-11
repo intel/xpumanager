@@ -23,9 +23,9 @@ pipeline {
       BUILD_DATE = "${env.BUILD_TIMESTAMP}".substring(0, 8)
       BUILD_TIME = "${env.BUILD_TIMESTAMP}".substring(9)
       GIT_COMMIT_SHORT = env.GIT_COMMIT.take(8)
-      DOCKER_IMG_TAG = "${env.BUILD_TIMESTAMP}-${env.GIT_COMMIT_SHORT}"
+      DOCKER_IMG_TAG = "${env.BUILD_TIMESTAMP}i-${env.GIT_COMMIT_SHORT}"
       WEBHOOK_URL = 'https://intel.webhook.office.com/webhookb2/df60700c-6bcb-46de-9a4a-d5f324db9f11@46c98d88-e344-4ed4-8496-4ed7712e255d/IncomingWebhook/0d756f8858c241ed8f219df29410a4d0/0f689104-5007-497d-ab31-8663e5b0238e'
-      ARCHIVE_FILES = 'build-deb/*.deb,build-centos/*.rpm,build-sles/*.rpm,XPUM_PGP_KEY.pem'
+      ARCHIVE_FILES = 'build-deb-*/*.deb,build-centos*/*.rpm,build-sles/*.rpm,XPUM_PGP_KEY.pem'
       PUBLISH_DOCKER_REGISTRY = "${params.PUBLISH_DOCKER_REGISTRY}"
       BUILD_DESC = """<table><tr><td>Timestamp:</td><td>${env.BUILD_TIMESTAMP}</td></tr>
 <tr><td>Git Commit:</td><td>${env.GIT_COMMIT_SHORT}</td></tr>
@@ -35,41 +35,91 @@ pipeline {
     stages {
       stage('Build') {
         parallel {
-          stage('build deb') {
+          stage('build focal deb') {
             steps {
-              container(name: 'xpum-builder-ubuntu') {
+              container(name: 'xpum-builder-ubuntu-focal') {
                 sh '''env && MAIN_WORKSPACE=$PWD && \
-                mkdir ../ws_ubuntu && \
-                cp -rp . ../ws_ubuntu && \
-                cd ../ws_ubuntu && \
+                mkdir ../ws_ubuntu_focal && \
+                cp -rp . ../ws_ubuntu_focal && \
+                cd ../ws_ubuntu_focal && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
+                mkdir $MAIN_WORKSPACE/build-deb-focal && \
                 ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
-                mkdir $MAIN_WORKSPACE/build-deb && \
-                cp ./build/xpum*.deb $MAIN_WORKSPACE/build-deb'''
+                cp ./build/xpum*.deb $MAIN_WORKSPACE/build-deb-focal && \
+                rm -fr build && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.deb $MAIN_WORKSPACE/build-deb-focal
+                '''
               }
             }
           }
 
-          stage('build Redhat rpm') {
+          // stage('build jammy deb') {
+          //   steps {
+          //     container(name: 'xpum-builder-ubuntu-jammy') {
+          //       sh '''env && MAIN_WORKSPACE=$PWD && \
+          //       mkdir ../ws_ubuntu_jammy && \
+          //       cp -rp . ../ws_ubuntu_jammy && \
+          //       cd ../ws_ubuntu_jammy && \
+          //       export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+          //       export CCACHE_BASEDIR=$PWD && \
+          //       mkdir $MAIN_WORKSPACE/build-deb-jammy && \
+          //       ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+          //       cp ./build/xpum*.deb $MAIN_WORKSPACE/build-deb-jammy && \
+          //       rm -fr build && \
+          //       ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+          //       cp ./build/xpu*.deb $MAIN_WORKSPACE/build-deb-jammy
+          //       '''
+          //     }
+          //   }
+          // }
+
+          stage('build redhat-7 rpm') {
             steps {
-              container(name: 'xpum-builder-centos', shell: 'bash') {
+              container(name: 'xpum-builder-centos7', shell: 'bash') {
                 sh '''env && MAIN_WORKSPACE=$PWD && \
-                mkdir ../ws_centos && \
-                cp -rp . ../ws_centos && \
-                cd ../ws_centos && \
+                mkdir ../ws_centos7 && \
+                cp -rp . ../ws_centos7 && \
+                cd ../ws_centos7 && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
                 ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
-                mkdir $MAIN_WORKSPACE/build-centos && \
-                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos'''
+                mkdir $MAIN_WORKSPACE/build-centos7 && \
+                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos7'''
               }
             }
           }
 
-          stage('build SLES rpm') {
+          stage('build redhat-8 rpm') {
+            steps {
+              container(name: 'xpum-builder-centos8', shell: 'bash') {
+                sh '''env && MAIN_WORKSPACE=$PWD && \
+                mkdir ../ws_centos8 && \
+                cp -rp . ../ws_centos8 && \
+                cd ../ws_centos8 && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
+                mkdir $MAIN_WORKSPACE/build-centos8 && \
+                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos8 && \
+                rm -fr build && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.rpm $MAIN_WORKSPACE/build-centos8
+                '''
+              }
+            }
+          }
+
+          stage('build suse rpm') {
             steps {
               container(name: 'xpum-builder-sles', shell: 'bash') {
                 sh '''env && MAIN_WORKSPACE=$PWD && \
                 mkdir ../ws_sles && \
                 cp -rp . ../ws_sles && \
                 cd ../ws_sles && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
                 ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 mkdir $MAIN_WORKSPACE/build-sles && \
                 cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-sles'''
@@ -79,39 +129,51 @@ pipeline {
         }
       }
 
-      stage('Create Docker Image') {
-        steps {
-          container(name: 'docker') {
-            sh 'pwd && env'
-            sh 'cp rest/requirements.txt deployment/docker'
-            sh 'cp third-party-programs.txt deployment/docker'
-            sh 'mkdir deployment/docker/build-deb && cp build-deb/xpum*.deb deployment/docker/build-deb'
-            sh 'docker pull ccr-registry.caas.intel.com/cache/library/ubuntu:20.04 && docker tag ccr-registry.caas.intel.com/cache/library/ubuntu:20.04 ubuntu:20.04'
-            sh '''docker build \
-            --build-arg git_commit=$GIT_COMMIT_SHORT \
-            --build-arg https_proxy=${https_proxy:-http://child-prc.intel.com:913} \
-            --build-arg http_proxy=${http_proxy:-http://child-prc.intel.com:913} \
-            --build-arg HTTPS_PROXY=${HTTPS_PROXY:-http://child-prc.intel.com:913} \
-            --build-arg HTTP_PROXY=${HTTP_PROXY:-http://child-prc.intel.com:913} \
-            -f ./deployment/docker/Dockerfile.ubuntu \
-            -t $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:$DOCKER_IMG_TAG \
-            -t $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:latest ./deployment/docker'''
-            sh '''docker push $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:$DOCKER_IMG_TAG &&
-            docker push $PUBLISH_DOCKER_REGISTRY/intel-xpumanager:latest'''
-            sh returnStatus: true, script: 'docker rmi $(docker image ls $PUBLISH_DOCKER_REGISTRY/intel-xpumanager -q | tail -n +6)'
+      stage('Publish') {
+        parallel {
+          stage('Create Docker Image') {
+            steps {
+              container(name: 'kaniko') { 
+                sh 'pwd && env'
+                sh 'cp rest/requirements.txt deployment/docker'
+                sh 'cp third-party-programs.txt deployment/docker'
+                sh 'mkdir deployment/docker/build-deb && cp build-deb-focal/xpum*.deb deployment/docker/build-deb'
+                sh '''
+                export http_proxy=http://proxy-dmz.intel.com:911 && \
+                export HTTP_PROXY=http://proxy-dmz.intel.com:911 && \
+                export https_proxy=http://proxy-dmz.intel.com:912 && \
+                export HTTPS_PROXY=http://proxy-dmz.intel.com:912 && \
+                export no_proxy=.intel.com && \
+                export NO_PROXY=.intel.com && \
+                /kaniko/executor \
+                  --cache=true \
+                  --build-arg http_proxy=http://proxy-dmz.intel.com:911 \
+                  --build-arg HTTP_PROXY=http://proxy-dmz.intel.com:911 \
+                  --build-arg https_proxy=http://proxy-dmz.intel.com:912 \
+                  --build-arg HTTPS_PROXY=http://proxy-dmz.intel.com:912 \
+                  --build-arg no_proxy=.intel.com \
+                  --build-arg NO_PROXY=.intel.com \
+                  --dockerfile `pwd`/deployment/docker/Dockerfile.ubuntu \
+                  --context `pwd`/deployment/docker \
+                  --skip-tls-verify \
+                  --destination=$PUBLISH_DOCKER_REGISTRY/intel-xpumanager:$DOCKER_IMG_TAG'''
+              }
+            }
+          }
+
+          stage('Archive') {
+            steps {
+              archiveArtifacts(artifacts: "${env.ARCHIVE_FILES}", fingerprint: true, onlyIfSuccessful: true)
+            }
           }
         }
       }
-
-      stage('Archive') {
-        steps {
-          archiveArtifacts(artifacts: "${env.ARCHIVE_FILES}", fingerprint: true, onlyIfSuccessful: true)
-        }
-      }
     }
+
     post {
       success {
-        cifsPublisher alwaysPublishFromMaster: false, continueOnError: false, failOnError: false, publishers: [[
+        script {
+          cifsPublisher alwaysPublishFromMaster: false, continueOnError: false, failOnError: false, publishers: [[
           configName: 'ftao1-desk14', transfers: [[
           cleanRemote: false,
           excludes: '',
@@ -127,6 +189,26 @@ pipeline {
           useWorkspaceInPromotion: false,
           verbose: true
           ]]
+
+          if (env.BRANCH_NAME == 'master') {
+            cifsPublisher alwaysPublishFromMaster: false, continueOnError: false, failOnError: false, publishers: [[
+              configName: 'ftao1-desk3-xpum', transfers: [[
+              cleanRemote: true,
+              excludes: '',
+              flatten: true,
+              makeEmptyDirs: false,
+              noDefaultExcludes: false,
+              patternSeparator: '[, ]+',
+              remoteDirectory: "./",
+              remoteDirectorySDF: false,
+              removePrefix: '',
+              sourceFiles: "${env.ARCHIVE_FILES}"]],
+              usePromotionTimestamp: false,
+              useWorkspaceInPromotion: false,
+              verbose: true
+              ]]
+          }
+        }
       }
 
       always {
