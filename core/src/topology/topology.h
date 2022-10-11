@@ -47,6 +47,7 @@ class Topology {
     virtual ~Topology();
     static std::mutex mutex;
     static hwloc_topology_t *hwtopology;
+    static int maxTraversingLevel;
 
    public:
     static bool getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds, bool checkDevice = true, bool reload = false);

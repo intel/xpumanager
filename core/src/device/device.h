@@ -84,19 +84,9 @@ class Device {
 
     virtual void getTemperature(Callback_t callback, zes_temp_sensors_t type) noexcept = 0;
 
-    virtual void getMemory(Callback_t callback) noexcept = 0;
+    virtual void getMemoryUsedUtilization(Callback_t callback) noexcept = 0;
 
-    virtual void getMemoryUtilization(Callback_t callback) noexcept = 0;
-
-    virtual void getMemoryBandwidth(Callback_t callback) noexcept = 0;
-
-    virtual void getMemoryRead(Callback_t callback) noexcept = 0;
-
-    virtual void getMemoryWrite(Callback_t callback) noexcept = 0;
-
-    virtual void getMemoryReadThroughput(Callback_t callback) noexcept = 0;
-
-    virtual void getMemoryWriteThroughput(Callback_t callback) noexcept = 0;
+    virtual void getMemoryBandwidthReadWrite(Callback_t callback) noexcept = 0;
 
     virtual void getEngineUtilization(Callback_t callback) noexcept = 0;
 

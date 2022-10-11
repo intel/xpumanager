@@ -104,32 +104,42 @@ uint32_t MeasurementData::getSubdeviceDataSize() {
     return p_subdevice_datas->size();
 }
 
-void MeasurementData::setSubdeviceAdditionalCurrentData(uint32_t subdevice_id, MeasurementType type, uint64_t data) {
-    subdevice_additional_current_datas[subdevice_id][type] = data;
+void MeasurementData::setSubdeviceAdditionalData(uint32_t subdevice_id, MeasurementType type, uint64_t data, int scale, bool is_raw_data, uint64_t timestamp) {
+    AdditionalData add_data;
+    add_data.scale = scale;
+    if (is_raw_data) {
+        add_data.is_raw_data = is_raw_data;
+        add_data.raw_data = data;
+        add_data.raw_timestamp = timestamp;
+    } else {
+        add_data.current = data;
+    }
+    subdevice_additional_datas[subdevice_id][type] = add_data;
+    subdevice_additional_data_types.insert(type);
 }
 
-std::map<uint32_t, std::map<MeasurementType, uint64_t>> MeasurementData::getSubdeviceAdditionalCurrentDatas() {
-    return subdevice_additional_current_datas;
+std::map<uint32_t, std::map<MeasurementType, AdditionalData>> MeasurementData::getSubdeviceAdditionalDatas() {
+    return subdevice_additional_datas;
 }
 
-void MeasurementData::insertSubdeviceAdditionalCurrentDataType(MeasurementType type) {
-    subdevice_additional_current_data_types.insert(type);
+void MeasurementData::insertSubdeviceAdditionalDataType(MeasurementType type) {
+    subdevice_additional_data_types.insert(type);
 }
 
-std::set<MeasurementType> MeasurementData::getSubdeviceAdditionalCurrentDataTypes() {
-    return subdevice_additional_current_data_types;
+std::set<MeasurementType> MeasurementData::getSubdeviceAdditionalDataTypes() {
+    return subdevice_additional_data_types;
 }
 
-uint32_t MeasurementData::getSubdeviceAdditionalCurrentDataTypeSize() {
-    return subdevice_additional_current_data_types.size();
+uint32_t MeasurementData::getSubdeviceAdditionalDataTypeSize() {
+    return subdevice_additional_data_types.size();
 }
 
-void MeasurementData::clearSubdeviceAdditionalCurrentDataTypes() {
-    subdevice_additional_current_data_types.clear();
+void MeasurementData::clearSubdeviceAdditionalDataTypes() {
+    subdevice_additional_data_types.clear();
 }
 
-void MeasurementData::clearSubdeviceAdditionalCurrentData() {
-    subdevice_additional_current_datas.clear();
+void MeasurementData::clearSubdeviceAdditionalData() {
+    subdevice_additional_datas.clear();
 }
 
 const std::shared_ptr<std::map<uint64_t, ExtendedMeasurementData>> MeasurementData::getExtendedDatas() {

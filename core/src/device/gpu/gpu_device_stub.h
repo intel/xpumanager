@@ -64,19 +64,9 @@ class GPUDeviceStub {
 
     void getTemperature(const zes_device_handle_t& device, Callback_t callback, zes_temp_sensors_t type) noexcept;
 
-    void getMemory(const zes_device_handle_t& device, Callback_t callback) noexcept;
+    void getMemoryUsedUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-    void getMemoryUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
-
-    void getMemoryBandwidth(const zes_device_handle_t& device, Callback_t callback) noexcept;
-
-    void getMemoryRead(const zes_device_handle_t& device, Callback_t callback) noexcept;
-
-    void getMemoryWrite(const zes_device_handle_t& device, Callback_t callback) noexcept;
-
-    void getMemoryReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
-
-    void getMemoryWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
+    void getMemoryBandwidthReadWrite(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getGPUUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
@@ -205,19 +195,9 @@ class GPUDeviceStub {
 
     static std::shared_ptr<MeasurementData> toGetTemperature(const zes_device_handle_t& device, zes_temp_sensors_t type);
 
-    static std::shared_ptr<MeasurementData> toGetMemory(const zes_device_handle_t& device);
+    static std::shared_ptr<MeasurementData> toGetMemoryUsedUtilization(const zes_device_handle_t& device);
 
-    static std::shared_ptr<MeasurementData> toGetMemoryUtilization(const zes_device_handle_t& device);
-
-    static std::shared_ptr<MeasurementData> toGetMemoryBandwidth(const zes_device_handle_t& device);
-
-    static std::shared_ptr<MeasurementData> toGetMemoryRead(const zes_device_handle_t& device);
-
-    static std::shared_ptr<MeasurementData> toGetMemoryWrite(const zes_device_handle_t& device);
-
-    static std::shared_ptr<MeasurementData> toGetMemoryReadThroughput(const zes_device_handle_t& device);
-
-    static std::shared_ptr<MeasurementData> toGetMemoryWriteThroughput(const zes_device_handle_t& device);
+    static std::shared_ptr<MeasurementData> toGetMemoryBandwidthReadWrite(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetGPUUtilization(const zes_device_handle_t& device);
 

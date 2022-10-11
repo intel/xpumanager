@@ -468,20 +468,10 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
     if (checkCapability(props.core.name, bdf_address, "Memory Temperature", toGetTemperature, device, ZES_TEMP_SENSORS_MEMORY))
         capabilities.push_back(DeviceCapability::METRIC_MEMORY_TEMPERATURE);
-    if (checkCapability(props.core.name, bdf_address, "Memory", toGetMemory, device))
-        capabilities.push_back(DeviceCapability::METRIC_MEMORY_USED);
-    if (checkCapability(props.core.name, bdf_address, "Memory Utilization", toGetMemoryUtilization, device))
-        capabilities.push_back(DeviceCapability::METRIC_MEMORY_UTILIZATION);
-    if (checkCapability(props.core.name, bdf_address, "Memory Bandwidth", toGetMemoryBandwidth, device))
-        capabilities.push_back(DeviceCapability::METRIC_MEMORY_BANDWIDTH);
-    if (checkCapability(props.core.name, bdf_address, "Memory Read", toGetMemoryRead, device))
-        capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ);
-    if (checkCapability(props.core.name, bdf_address, "Memory Write", toGetMemoryWrite, device))
-        capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE);
-    if (checkCapability(props.core.name, bdf_address, "Memory Read Throughput", toGetMemoryReadThroughput, device))
-        capabilities.push_back(DeviceCapability::METRIC_MEMORY_READ_THROUGHPUT);
-    if (checkCapability(props.core.name, bdf_address, "Memory Write Throughput", toGetMemoryWriteThroughput, device))
-        capabilities.push_back(DeviceCapability::METRIC_MEMORY_WRITE_THROUGHPUT);
+    if (checkCapability(props.core.name, bdf_address, "Memory Used Utilization", toGetMemoryUsedUtilization, device))
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_USED_UTILIZATION);
+    if (checkCapability(props.core.name, bdf_address, "Memory Bandwidth Read Write Throughput", toGetMemoryBandwidthReadWrite, device))
+        capabilities.push_back(DeviceCapability::METRIC_MEMORY_BANDWIDTH_READ_WRITE);
     if (checkCapability(props.core.name, bdf_address, "GPU Utilization", toGetGPUUtilization, device))
         capabilities.push_back(DeviceCapability::METRIC_COMPUTATION);
     if (checkCapability(props.core.name, bdf_address, "Engine Utilization", toGetEngineUtilization, device))
@@ -1365,70 +1355,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
     }
 }
 
-void GPUDeviceStub::getMemory(const zes_device_handle_t& device, Callback_t callback) noexcept {
+void GPUDeviceStub::getMemoryUsedUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept {
     if (device == nullptr) {
         return;
     }
-    invokeTask(callback, toGetMemory, device);
+    invokeTask(callback, toGetMemoryUsedUtilization, device);
 }
 
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemory(const zes_device_handle_t& device) {
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUsedUtilization(const zes_device_handle_t& device) {
     if (device == nullptr) {
-        throw BaseException("toGetMemory error");
-    }
-    std::map<std::string, ze_result_t> exception_msgs;
-    bool data_acquired = false;
-    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    uint32_t mem_module_count = 0;
-    ze_result_t res;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
-    if (res == ZE_RESULT_SUCCESS) {
-        std::vector<zes_mem_handle_t> mems(mem_module_count);
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
-        if (res == ZE_RESULT_SUCCESS) {
-            for (auto& mem : mems) {
-                zes_mem_properties_t props;
-                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                if (res == ZE_RESULT_SUCCESS) {
-                    zes_mem_state_t sysman_memory_state = {};
-                    sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
-                    if (res == ZE_RESULT_SUCCESS) {
-                        uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
-                        props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, used) : ret->setCurrent(used);
-                        data_acquired = true;
-                    } else {
-                        exception_msgs["zesMemoryGetState"] = res;
-                    }
-                } else {
-                    exception_msgs["zesMemoryGetProperties"] = res;
-                }
-            }
-        } else {
-            exception_msgs["zesDeviceEnumMemoryModules"] = res;
-        }
-    } else {
-        exception_msgs["zesDeviceEnumMemoryModules"] = res;
-    }
-    if (data_acquired) {
-        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
-        return ret;
-    } else {
-        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
-    }
-}
-
-void GPUDeviceStub::getMemoryUtilization(const zes_device_handle_t& device, Callback_t callback) noexcept {
-    if (device == nullptr) {
-        return;
-    }
-    invokeTask(callback, toGetMemoryUtilization, device);
-}
-
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes_device_handle_t& device) {
-    if (device == nullptr) {
-        throw BaseException("toGetMemoryUtilization error");
+        throw BaseException("toGetMemoryUsedUtilization error");
     }
     std::map<std::string, ze_result_t> exception_msgs;
     bool data_acquired = false;
@@ -1451,8 +1387,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
                     if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
                         uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
                         uint64_t utilization = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * used * 100 / (props.physicalSize == 0 ? sysman_memory_state.size : props.physicalSize);
-                        props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, utilization) : ret->setCurrent(utilization);
-                        ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+                        uint32_t subdeviceId = UINT32_MAX;
+                        if (props.onSubdevice) {
+                            subdeviceId = props.subdeviceId;
+                            ret->setSubdeviceDataCurrent(props.subdeviceId, used);
+                        } else {
+                            ret->setCurrent(used);
+                        }
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_UTILIZATION, utilization, Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                         data_acquired = true;
                     } else {
                         exception_msgs["zesMemoryGetState"] = res;
@@ -1475,16 +1417,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUtilization(const zes
     }
 }
 
-void GPUDeviceStub::getMemoryBandwidth(const zes_device_handle_t& device, Callback_t callback) noexcept {
+void GPUDeviceStub::getMemoryBandwidthReadWrite(const zes_device_handle_t& device, Callback_t callback) noexcept {
     if (device == nullptr) {
         return;
     }
-    invokeTask(callback, toGetMemoryBandwidth, device);
+    invokeTask(callback, toGetMemoryBandwidthReadWrite, device);
 }
 
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_device_handle_t& device) {
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidthReadWrite(const zes_device_handle_t& device) {
     if (device == nullptr) {
-        throw BaseException("toGetMemoryBandwidth error");
+        throw BaseException("toGetMemoryBandwidthReadWrite error");
     }
     std::map<std::string, ze_result_t> exception_msgs;
     bool data_acquired = false;
@@ -1514,217 +1456,21 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
                         if (val > 100) {
                             val = 100;
                         }
-                        props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, val) : ret->setCurrent(val);
+                        uint32_t subdeviceId = UINT32_MAX;
+                        if (props.onSubdevice) {
+                            subdeviceId = props.subdeviceId;
+                            ret->setSubdeviceDataCurrent(props.subdeviceId, val);
+                        } else {
+                            ret->setCurrent(val);
+                        }
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ, s2.readCounter);
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE, s2.writeCounter);
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, s2.readCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, s2.writeCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
                         data_acquired = true;
                     } else {
                         exception_msgs["zesMemoryGetBandwidth"] = res;
                     }
-                } else {
-                    exception_msgs["zesMemoryGetBandwidth"] = res;
-                }
-            }
-        } else {
-            exception_msgs["zesDeviceEnumMemoryModules"] = res;
-        }
-    } else {
-        exception_msgs["zesDeviceEnumMemoryModules"] = res;
-    }
-    if (data_acquired) {
-        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
-        return ret;
-    } else {
-        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
-    }
-}
-
-void GPUDeviceStub::getMemoryRead(const zes_device_handle_t& device, Callback_t callback) noexcept {
-    if (device == nullptr) {
-        return;
-    }
-    invokeTask(callback, toGetMemoryRead, device);
-}
-
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryRead(const zes_device_handle_t& device) {
-    if (device == nullptr) {
-        throw BaseException("toGetMemoryRead error");
-    }
-    std::map<std::string, ze_result_t> exception_msgs;
-    bool data_acquired = false;
-    uint32_t mem_module_count = 0;
-    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
-    if (res == ZE_RESULT_SUCCESS) {
-        std::vector<zes_mem_handle_t> mems(mem_module_count);
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
-        if (res == ZE_RESULT_SUCCESS) {
-            for (auto& mem : mems) {
-                zes_mem_properties_t props;
-                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
-                    continue;
-                }
-                zes_mem_bandwidth_t mem_bandwidth;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
-                if (res == ZE_RESULT_SUCCESS) {
-                    props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, mem_bandwidth.readCounter) : ret->setCurrent(mem_bandwidth.readCounter);
-                    data_acquired = true;
-                } else {
-                    exception_msgs["zesMemoryGetBandwidth"] = res;
-                }
-            }
-        } else {
-            exception_msgs["zesDeviceEnumMemoryModules"] = res;
-        }
-    } else {
-        exception_msgs["zesDeviceEnumMemoryModules"] = res;
-    }
-    if (data_acquired) {
-        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
-        return ret;
-    } else {
-        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
-    }
-}
-
-void GPUDeviceStub::getMemoryWrite(const zes_device_handle_t& device, Callback_t callback) noexcept {
-    if (device == nullptr) {
-        return;
-    }
-    invokeTask(callback, toGetMemoryWrite, device);
-}
-
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWrite(const zes_device_handle_t& device) {
-    if (device == nullptr) {
-        throw BaseException("toGetMemoryWrite error");
-    }
-    std::map<std::string, ze_result_t> exception_msgs;
-    bool data_acquired = false;
-    uint32_t mem_module_count = 0;
-    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
-    if (res == ZE_RESULT_SUCCESS) {
-        std::vector<zes_mem_handle_t> mems(mem_module_count);
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
-        if (res == ZE_RESULT_SUCCESS) {
-            for (auto& mem : mems) {
-                zes_mem_properties_t props;
-                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
-                    continue;
-                }
-                zes_mem_bandwidth_t mem_bandwidth;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
-                if (res == ZE_RESULT_SUCCESS) {
-                    props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, mem_bandwidth.writeCounter) : ret->setCurrent(mem_bandwidth.writeCounter);
-                    data_acquired = true;
-                } else {
-                    exception_msgs["zesMemoryGetBandwidth"] = res;
-                }
-            }
-        } else {
-            exception_msgs["zesDeviceEnumMemoryModules"] = res;
-        }
-    } else {
-        exception_msgs["zesDeviceEnumMemoryModules"] = res;
-    }
-    if (data_acquired) {
-        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
-        return ret;
-    } else {
-        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
-    }
-}
-
-void GPUDeviceStub::getMemoryReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept {
-    if (device == nullptr) {
-        return;
-    }
-    invokeTask(callback, toGetMemoryReadThroughput, device);
-}
-
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadThroughput(const zes_device_handle_t& device) {
-    if (device == nullptr) {
-        throw BaseException("toGetMemoryReadThroughput error");
-    }
-    std::map<std::string, ze_result_t> exception_msgs;
-    bool data_acquired = false;
-    uint32_t mem_module_count = 0;
-    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
-    if (res == ZE_RESULT_SUCCESS) {
-        std::vector<zes_mem_handle_t> mems(mem_module_count);
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
-        if (res == ZE_RESULT_SUCCESS) {
-            for (auto& mem : mems) {
-                zes_mem_properties_t props;
-                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
-                    continue;
-                }
-                zes_mem_bandwidth_t mem_bandwidth;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
-                if (res == ZE_RESULT_SUCCESS) {
-                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, mem_bandwidth.readCounter /1024 *1000) : ret->setRawData(mem_bandwidth.readCounter /1024 *1000);
-                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond()) : ret->setRawTimestamp(Utility::getCurrentMillisecond());
-                    data_acquired = true;
-                } else {
-                    exception_msgs["zesMemoryGetBandwidth"] = res;
-                }
-            }
-        } else {
-            exception_msgs["zesDeviceEnumMemoryModules"] = res;
-        }
-    } else {
-        exception_msgs["zesDeviceEnumMemoryModules"] = res;
-    }
-    if (data_acquired) {
-        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
-        return ret;
-    } else {
-        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
-    }
-}
-
-void GPUDeviceStub::getMemoryWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept {
-    if (device == nullptr) {
-        return;
-    }
-    invokeTask(callback, toGetMemoryWriteThroughput, device);
-}
-
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryWriteThroughput(const zes_device_handle_t& device) {
-    if (device == nullptr) {
-        throw BaseException("toGetMemoryWriteThroughput error");
-    }
-    std::map<std::string, ze_result_t> exception_msgs;
-    bool data_acquired = false;
-    uint32_t mem_module_count = 0;
-    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
-    if (res == ZE_RESULT_SUCCESS) {
-        std::vector<zes_mem_handle_t> mems(mem_module_count);
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
-        if (res == ZE_RESULT_SUCCESS) {
-            for (auto& mem : mems) {
-                zes_mem_properties_t props;
-                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                if (res != ZE_RESULT_SUCCESS || props.location != ZES_MEM_LOC_DEVICE) {
-                    continue;
-                }
-                zes_mem_bandwidth_t mem_bandwidth;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &mem_bandwidth));
-                if (res == ZE_RESULT_SUCCESS) {
-                    props.onSubdevice ? ret->setSubdeviceRawData(props.subdeviceId, mem_bandwidth.writeCounter /1024 *1000) : ret->setRawData(mem_bandwidth.writeCounter /1024 *1000);
-                    props.onSubdevice ? ret->setSubdeviceDataRawTimestamp(props.subdeviceId, Utility::getCurrentMillisecond()) : ret->setRawTimestamp(Utility::getCurrentMillisecond());
-                    data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;
                 }
@@ -1907,37 +1653,32 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
     uint64_t euActive = totalEuActive / totalGPUElapsedTime;
     uint64_t euStall = totalEuStall / totalGPUElapsedTime;
     uint64_t euIdle = 100 - euActive - euStall;
-    euActive *= Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
-    euStall *= Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
-    euIdle *= Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
-    data->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+    int scale = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE;
+    euActive *= scale;
+    euStall *= scale;
+    euIdle *= scale;
+    data->setScale(scale);
     if (type == MeasurementType::METRIC_EU_ACTIVE) {
         if (subdeviceId == UINT32_MAX)
             data->setCurrent(euActive);
         else
             data->setSubdeviceDataCurrent(subdeviceId, euActive);
-        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_STALL, euStall);
-        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_IDLE, euIdle);
-        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_STALL);
-        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_IDLE);
+        data->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_EU_STALL, euStall, scale);
+        data->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_EU_IDLE, euIdle, scale);
     } else if (type == MeasurementType::METRIC_EU_STALL) {
-        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_ACTIVE, euActive);
+        data->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_EU_ACTIVE, euActive, scale);
         if (subdeviceId == UINT32_MAX)
             data->setCurrent(euStall);
         else
             data->setSubdeviceDataCurrent(subdeviceId, euStall);
-        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_IDLE, euIdle);
-        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_ACTIVE);
-        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_IDLE);
+        data->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_EU_IDLE, euIdle, scale);
     } else if (type == MeasurementType::METRIC_EU_IDLE) {
-        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_ACTIVE, euActive);
-        data->setSubdeviceAdditionalCurrentData(subdeviceId, MeasurementType::METRIC_EU_STALL, euStall);
+        data->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_EU_ACTIVE, euActive, scale);
+        data->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_EU_STALL, euStall, scale);
         if (subdeviceId == UINT32_MAX)
             data->setCurrent(euIdle);
         else
             data->setSubdeviceDataCurrent(subdeviceId, euIdle);
-        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_ACTIVE);
-        data->insertSubdeviceAdditionalCurrentDataType(MeasurementType::METRIC_EU_STALL);
     }
 }
 
@@ -2065,21 +1806,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const z
                             props.onSubdevice ? ret->setSubdeviceDataCurrent(subdeviceId, rasCounter) : ret->setCurrent(rasCounter);
                             //
                             rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS];
-                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS, rasCounter);
-                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS);
+                            ret->setSubdeviceAdditionalData(subdeviceId, METRIC_RAS_ERROR_CAT_PROGRAMMING_ERRORS, rasCounter);
                             rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_DRIVER_ERRORS];
-                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_DRIVER_ERRORS, rasCounter);
-                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_DRIVER_ERRORS);
+                            ret->setSubdeviceAdditionalData(subdeviceId, METRIC_RAS_ERROR_CAT_DRIVER_ERRORS, rasCounter);
                             //
                             rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_CACHE_ERRORS];
-                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, rasCounter);
-                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE);
+                            ret->setSubdeviceAdditionalData(subdeviceId, METRIC_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE, rasCounter);
                             rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_DISPLAY_ERRORS];
-                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE, rasCounter);
-                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE);
+                            ret->setSubdeviceAdditionalData(subdeviceId, METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE, rasCounter);
                             rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS];
-                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, rasCounter);
-                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE);
+                            ret->setSubdeviceAdditionalData(subdeviceId, METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE, rasCounter);
                             dataAcquired = true;
                         }
                     } else if (props.type == ZES_RAS_ERROR_TYPE_CORRECTABLE) {
@@ -2088,14 +1824,11 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRasErrorOnSubdevice(const z
                             subdeviceId = props.onSubdevice ? props.subdeviceId : UINT32_MAX;
                             //
                             rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_CACHE_ERRORS];
-                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, rasCounter);
-                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE);
+                            ret->setSubdeviceAdditionalData(subdeviceId, METRIC_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE, rasCounter);
                             rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_DISPLAY_ERRORS];
-                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE, rasCounter);
-                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE);
+                            ret->setSubdeviceAdditionalData(subdeviceId, METRIC_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE, rasCounter);
                             rasCounter = errorDetails.category[ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS];
-                            ret->setSubdeviceAdditionalCurrentData(subdeviceId, METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, rasCounter);
-                            ret->insertSubdeviceAdditionalCurrentDataType(METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE);
+                            ret->setSubdeviceAdditionalData(subdeviceId, METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE, rasCounter);
                             dataAcquired = true;
                         }
                     }

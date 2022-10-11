@@ -159,15 +159,15 @@ std::shared_ptr<MeasurementData> DeviceManager::getRealtimeMeasurementData(
         throw(*exception);
     }
 
-    auto subdeviceAdditionalCurrentDataTypes = p_data->getSubdeviceAdditionalCurrentDataTypes();
-    if (subdeviceAdditionalCurrentDataTypes.find(type) != subdeviceAdditionalCurrentDataTypes.end()) {
+    auto subdeviceAdditionalDataTypes = p_data->getSubdeviceAdditionalDataTypes();
+    if (subdeviceAdditionalDataTypes.find(type) != subdeviceAdditionalDataTypes.end()) {
         auto mData = std::make_shared<MeasurementData>();
-        auto subdeviceAdditionalCurrentDatas = p_data->getSubdeviceAdditionalCurrentDatas();
-        for (auto& sData : subdeviceAdditionalCurrentDatas) {
+        auto subdeviceAdditionalDatas = p_data->getSubdeviceAdditionalDatas();
+        for (auto& sData : subdeviceAdditionalDatas) {
             if (sData.first == UINT32_MAX)
-                mData->setCurrent(sData.second[type]);
+                mData->setCurrent(sData.second[type].current);
             else
-                mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
+                mData->setSubdeviceDataCurrent(sData.first, sData.second[type].current);
         }
         return mData;
     }
