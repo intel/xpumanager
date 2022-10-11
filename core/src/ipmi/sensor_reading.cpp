@@ -255,7 +255,7 @@ std::vector<xpum_sensor_reading_t> read_sensor() {
     // csv_buffer cbuf_data;
     int err = NRV_SUCCESS;
     int card_id = CARD_SELECT_ALL;
-    nrv_list cards;
+    nrv_list cards{};
     err = get_card_list(&cards, card_id);
     if (err)
         goto exit;

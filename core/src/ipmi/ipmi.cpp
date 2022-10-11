@@ -97,8 +97,8 @@ static inline bool check_codename(card_get_info_res *card_get_info, const char *
 }
 
 static int get_device_id(nrv_card *card, unsigned char *data) {
-    bsmc_req req;
-    bsmc_res res;
+    bsmc_req req{};
+    bsmc_res res{};
 
     bsmc_hal->oem_req_init(&req, &card->ipmi_address, IPMI_CARD_GET_INFO_CMD);
 
@@ -114,8 +114,8 @@ static int get_device_id(nrv_card *card, unsigned char *data) {
 }
 
 static int card_detect(nrv_card *card) {
-    bsmc_req req;
-    bsmc_res res;
+    bsmc_req req{};
+    bsmc_res res{};
     bsmc_hal->oem_req_init(&req, &card->ipmi_address, IPMI_CARD_GET_INFO_CMD);
 
     gNetfn = IPMI_INTEL_OEM_NETFN;
@@ -177,7 +177,7 @@ static int init_card_list() {
     if (err)
         return err;
 
-    nrv_card card;
+    nrv_card card{};
     unsigned char devid = 0;
     uint8_t slot_count = 0;
 
@@ -243,9 +243,6 @@ int get_card_list(nrv_list *out_list, int select) {
             return err;
         }
     }
-
-    /* Clean list before adding card */
-    memset(out_list, 0, sizeof(nrv_list));
 
     if (select == CARD_SELECT_ALL) {
         *out_list = g_list;

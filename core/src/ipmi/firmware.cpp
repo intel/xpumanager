@@ -764,7 +764,7 @@ int cmd_test_update_sync() {
     ipmi_address_t addr;
     uint8_t status;
 
-    nrv_list cards;
+    nrv_list cards{};
 
     int card_id = CARD_SELECT_ALL;
 
@@ -777,7 +777,7 @@ int cmd_test_update_sync() {
 int cmd_probe() {
     int card_id = CARD_SELECT_ALL;
 
-    nrv_list cards;
+    nrv_list cards{};
 
     int err = get_card_list(&cards, card_id);
 
@@ -795,7 +795,7 @@ int cmd_get_amc_firmware_versions(int buf[][4], int *count) {
     int err = NRV_SUCCESS;
     int card_id = CARD_SELECT_ALL;
 
-    nrv_list cards;
+    nrv_list cards{};
 
     err = get_card_list(&cards, card_id);
     if (err)
@@ -838,7 +838,7 @@ int cmd_firmware(const char* file, unsigned int versions[4]) {
     int err = NRV_SUCCESS;
     int card_id = CARD_SELECT_ALL;
 
-    nrv_list cards;
+    nrv_list cards{};
 
     err = get_card_list(&cards, card_id);
     if (err)
