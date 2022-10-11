@@ -137,8 +137,8 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getActuralFrequency(callback); };
         case DeviceCapability::METRIC_TEMPERATURE:
             return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_GPU); };
-        case DeviceCapability::METRIC_MEMORY_USED:
-            return [p_device](Callback_t callback) { p_device->getMemory(callback); };
+        case DeviceCapability::METRIC_MEMORY_USED_UTILIZATION:
+            return [p_device](Callback_t callback) { p_device->getMemoryUsedUtilization(callback); };
         case DeviceCapability::METRIC_COMPUTATION:
             return [p_device](Callback_t callback) { p_device->getGPUUtilization(callback); };
         case DeviceCapability::METRIC_ENGINE_UTILIZATION:
@@ -153,20 +153,10 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_RENDER_ALL); };
         case DeviceCapability::METRIC_ENGINE_GROUP_3D_ALL_UTILIZATION:
             return [p_device](Callback_t callback) { p_device->getEngineGroupUtilization(callback, ZES_ENGINE_GROUP_3D_ALL); };
-        case DeviceCapability::METRIC_MEMORY_READ:
-            return [p_device](Callback_t callback) { p_device->getMemoryRead(callback); };
-        case DeviceCapability::METRIC_MEMORY_WRITE:
-            return [p_device](Callback_t callback) { p_device->getMemoryWrite(callback); };
-        case DeviceCapability::METRIC_MEMORY_READ_THROUGHPUT:
-            return [p_device](Callback_t callback) { p_device->getMemoryReadThroughput(callback); };
-        case DeviceCapability::METRIC_MEMORY_WRITE_THROUGHPUT:
-            return [p_device](Callback_t callback) { p_device->getMemoryWriteThroughput(callback); };
         case DeviceCapability::METRIC_ENERGY:
             return [p_device](Callback_t callback) { p_device->getEnergy(callback); };
-        case DeviceCapability::METRIC_MEMORY_UTILIZATION:
-            return [p_device](Callback_t callback) { p_device->getMemoryUtilization(callback); };
-        case DeviceCapability::METRIC_MEMORY_BANDWIDTH:
-            return [p_device](Callback_t callback) { p_device->getMemoryBandwidth(callback); };
+        case DeviceCapability::METRIC_MEMORY_BANDWIDTH_READ_WRITE:
+            return [p_device](Callback_t callback) { p_device->getMemoryBandwidthReadWrite(callback); };
         case DeviceCapability::METRIC_EU_ACTIVE_STALL_IDLE:
             return [p_device](Callback_t callback) { p_device->getEuActiveStallIdle(callback, MeasurementType::METRIC_EU_ACTIVE); };
         case DeviceCapability::METRIC_RAS_ERROR:
