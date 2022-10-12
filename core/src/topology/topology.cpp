@@ -397,8 +397,8 @@ xpum_result_t Topology::topo2xml(char* buffer, int* buflen, std::map<device_pair
         result = XPUM_GENERIC_ERROR;
     } else {
         if (buffer != nullptr) {
-            if (*buflen < xmlbuflen) {
-                *buflen = xmlbuflen;
+            if (*buflen <= xmlbuflen) {
+                *buflen = xmlbuflen + 1;
                 result = XPUM_BUFFER_TOO_SMALL;
             } else {
                 *buflen = xmlbuflen;
