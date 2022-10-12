@@ -89,13 +89,19 @@ void GPUDevice::getMemoryUsedUtilization(Callback_t callback) noexcept {
                                         });
 }
 
-void GPUDevice::getMemoryBandwidthReadWrite(Callback_t callback) noexcept {
-    GPUDeviceStub::instance().getMemoryBandwidthReadWrite(zes_device_handle,
+void GPUDevice::getMemoryBandwidth(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getMemoryBandwidth(zes_device_handle,
                                                    [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                                                        callback(ret, e);
                                                    });
 }
 
+void GPUDevice::getMemoryReadWrite(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getMemoryReadWrite(zes_device_handle,
+                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                       callback(ret, e);
+                                                   });
+}
 
 void GPUDevice::getEnergy(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getEnergy(zes_device_handle,

@@ -86,7 +86,9 @@ class Device {
 
     virtual void getMemoryUsedUtilization(Callback_t callback) noexcept = 0;
 
-    virtual void getMemoryBandwidthReadWrite(Callback_t callback) noexcept = 0;
+    virtual void getMemoryBandwidth(Callback_t callback) noexcept = 0;
+
+    virtual void getMemoryReadWrite(Callback_t callback) noexcept = 0;
 
     virtual void getEngineUtilization(Callback_t callback) noexcept = 0;
 

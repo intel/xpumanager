@@ -71,8 +71,10 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_ENERGY;
         case DeviceCapability::METRIC_MEMORY_USED_UTILIZATION:
             return MeasurementType::METRIC_MEMORY_USED;
-        case DeviceCapability::METRIC_MEMORY_BANDWIDTH_READ_WRITE:
+        case DeviceCapability::METRIC_MEMORY_BANDWIDTH:
             return MeasurementType::METRIC_MEMORY_BANDWIDTH;
+        case DeviceCapability::METRIC_MEMORY_READ_WRITE_THROUGHPUT:
+            return MeasurementType::METRIC_MEMORY_READ;
         case DeviceCapability::METRIC_COMPUTATION:
             return MeasurementType::METRIC_COMPUTATION;
         case DeviceCapability::METRIC_ENGINE_UTILIZATION:
@@ -125,15 +127,15 @@ DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& m
         case MeasurementType::METRIC_MEMORY_UTILIZATION:
             return DeviceCapability::METRIC_MEMORY_USED_UTILIZATION;
         case MeasurementType::METRIC_MEMORY_BANDWIDTH:
-            return DeviceCapability::METRIC_MEMORY_BANDWIDTH_READ_WRITE;
+            return DeviceCapability::METRIC_MEMORY_BANDWIDTH;
         case MeasurementType::METRIC_MEMORY_READ:
-            return DeviceCapability::METRIC_MEMORY_BANDWIDTH_READ_WRITE;
+            return DeviceCapability::METRIC_MEMORY_READ_WRITE_THROUGHPUT;
         case MeasurementType::METRIC_MEMORY_WRITE:
-            return DeviceCapability::METRIC_MEMORY_BANDWIDTH_READ_WRITE;
+            return DeviceCapability::METRIC_MEMORY_READ_WRITE_THROUGHPUT;
         case MeasurementType::METRIC_MEMORY_READ_THROUGHPUT:
-            return DeviceCapability::METRIC_MEMORY_BANDWIDTH_READ_WRITE;
+            return DeviceCapability::METRIC_MEMORY_READ_WRITE_THROUGHPUT;
         case MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT:
-            return DeviceCapability::METRIC_MEMORY_BANDWIDTH_READ_WRITE;
+            return DeviceCapability::METRIC_MEMORY_READ_WRITE_THROUGHPUT;
         case MeasurementType::METRIC_COMPUTATION:
             return DeviceCapability::METRIC_COMPUTATION;
         case MeasurementType::METRIC_ENGINE_UTILIZATION:
