@@ -406,7 +406,7 @@ xpum_result_t Topology::topo2xml(char* buffer, int* buflen, std::map<device_pair
                 buffer[xmlbuflen] = 0;
             }
         } else {
-            *buflen = xmlbuflen;
+            *buflen = xmlbuflen + 1;
         }
         hwloc_free_xmlbuffer(hwtopology, xmlbuf);
     }
