@@ -460,10 +460,8 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
 
     if (checkCapability(props.core.name, bdf_address, "Power", toGetPower, device))
         capabilities.push_back(DeviceCapability::METRIC_POWER);
-    if (checkCapability(props.core.name, bdf_address, "Actual Frequency", toGetActuralFrequency, device))
+    if (checkCapability(props.core.name, bdf_address, "Actual Request Frequency", toGetActuralRequestFrequency, device))
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY);
-    if (checkCapability(props.core.name, bdf_address, "Request Frequency", toGetRequestFrequency, device))
-        capabilities.push_back(DeviceCapability::METRIC_REQUEST_FREQUENCY);
     if (checkCapability(props.core.name, bdf_address, "GPU Temperature", toGetTemperature, device, ZES_TEMP_SENSORS_GPU))
         capabilities.push_back(DeviceCapability::METRIC_TEMPERATURE);
     if (checkCapability(props.core.name, bdf_address, "Memory Temperature", toGetTemperature, device, ZES_TEMP_SENSORS_MEMORY))
@@ -1072,16 +1070,16 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetEnergy(const zes_device_han
     }
 }
 
-void GPUDeviceStub::getActuralFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept {
+void GPUDeviceStub::getActuralRequestFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept {
     if (device == nullptr) {
         return;
     }
-    invokeTask(callback, toGetActuralFrequency, device);
+    invokeTask(callback, toGetActuralRequestFrequency, device);
 }
 
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_device_handle_t& device) {
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralRequestFrequency(const zes_device_handle_t& device) {
     if (device == nullptr) {
-        throw BaseException("toGetActuralFrequency error");
+        throw BaseException("toGetActuralRequestFrequency error");
     }
     std::map<std::string, ze_result_t> exception_msgs;
     bool data_acquired = false;
@@ -1099,7 +1097,14 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralFrequency(const zes_
                 zes_freq_state_t freq_state;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
                 if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0) {
-                    props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.actual) : ret->setCurrent(freq_state.actual);
+                    uint32_t subdeviceId = UINT32_MAX;
+                    if (props.onSubdevice) {
+                        subdeviceId = props.subdeviceId;
+                        ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.actual);
+                    } else {
+                        ret->setCurrent(freq_state.actual);
+                    }
+                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_REQUEST_FREQUENCY, freq_state.request);
                     data_acquired = true;
                 } else {
                     exception_msgs["zesFrequencyGetState"] = res;
@@ -1152,53 +1157,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottle(const zes
                     data_acquired = true;
                 } else {
                     exception_msgs["zesFrequencyGetThrottleTime"] = res;
-                }
-            } else {
-                exception_msgs["zesFrequencyGetProperties"] = res;
-            }
-        }
-    } else {
-        exception_msgs["zesDeviceEnumFrequencyDomains"] = res;
-    }
-    if (data_acquired) {
-        ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
-        return ret;
-    } else {
-        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
-    }
-}
-
-void GPUDeviceStub::getRequestFrequency(const zes_device_handle_t& device, Callback_t callback) noexcept {
-    if (device == nullptr) {
-        return;
-    }
-    invokeTask(callback, toGetRequestFrequency, device);
-}
-
-std::shared_ptr<MeasurementData> GPUDeviceStub::toGetRequestFrequency(const zes_device_handle_t& device) {
-    if (device == nullptr) {
-        throw BaseException("toGetRequestFrequency error");
-    }
-    std::map<std::string, ze_result_t> exception_msgs;
-    bool data_acquired = false;
-    uint32_t freq_count = 0;
-    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
-    ze_result_t res;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, nullptr));
-    std::vector<zes_freq_handle_t> freq_handles(freq_count);
-    if (res == ZE_RESULT_SUCCESS) {
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freq_count, freq_handles.data()));
-        for (auto& ph_freq : freq_handles) {
-            zes_freq_properties_t props;
-            XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetProperties(ph_freq, &props));
-            if (res == ZE_RESULT_SUCCESS) {
-                zes_freq_state_t freq_state;
-                XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
-                if (res == ZE_RESULT_SUCCESS) {
-                    props.onSubdevice ? ret->setSubdeviceDataCurrent(props.subdeviceId, freq_state.request) : ret->setCurrent(freq_state.request);
-                    data_acquired = true;
-                } else {
-                    exception_msgs["zesFrequencyGetState"] = res;
                 }
             } else {
                 exception_msgs["zesFrequencyGetProperties"] = res;

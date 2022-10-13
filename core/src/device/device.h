@@ -78,9 +78,7 @@ class Device {
 
     virtual void getPower(Callback_t callback) noexcept = 0;
 
-    virtual void getActuralFrequency(Callback_t callback) noexcept = 0;
-
-    virtual void getRequestFrequency(Callback_t callback) noexcept = 0;
+    virtual void getActuralRequestFrequency(Callback_t callback) noexcept = 0;
 
     virtual void getTemperature(Callback_t callback, zes_temp_sensors_t type) noexcept = 0;
 

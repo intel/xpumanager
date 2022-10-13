@@ -134,7 +134,7 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
         case DeviceCapability::METRIC_POWER:
             return [p_device](Callback_t callback) { p_device->getPower(callback); };
         case DeviceCapability::METRIC_FREQUENCY:
-            return [p_device](Callback_t callback) { p_device->getActuralFrequency(callback); };
+            return [p_device](Callback_t callback) { p_device->getActuralRequestFrequency(callback); };
         case DeviceCapability::METRIC_TEMPERATURE:
             return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_GPU); };
         case DeviceCapability::METRIC_MEMORY_USED_UTILIZATION:
@@ -163,8 +163,6 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getEuActiveStallIdle(callback, MeasurementType::METRIC_EU_ACTIVE); };
         case DeviceCapability::METRIC_RAS_ERROR:
             return [p_device](Callback_t callback) { p_device->getRasErrorOnSubdevice(callback); };
-        case DeviceCapability::METRIC_REQUEST_FREQUENCY:
-            return [p_device](Callback_t callback) { p_device->getRequestFrequency(callback); };
         case DeviceCapability::METRIC_MEMORY_TEMPERATURE:
             return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_MEMORY); };
         case DeviceCapability::METRIC_FREQUENCY_THROTTLE:

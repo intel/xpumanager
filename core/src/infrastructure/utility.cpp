@@ -63,8 +63,6 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_TEMPERATURE;
         case DeviceCapability::METRIC_FREQUENCY:
             return MeasurementType::METRIC_FREQUENCY;
-        case DeviceCapability::METRIC_REQUEST_FREQUENCY:
-            return MeasurementType::METRIC_REQUEST_FREQUENCY;
         case DeviceCapability::METRIC_POWER:
             return MeasurementType::METRIC_POWER;
         case DeviceCapability::METRIC_ENERGY:
@@ -119,7 +117,7 @@ DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& m
         case MeasurementType::METRIC_FREQUENCY:
             return DeviceCapability::METRIC_FREQUENCY;
         case MeasurementType::METRIC_REQUEST_FREQUENCY:
-            return DeviceCapability::METRIC_REQUEST_FREQUENCY;
+            return DeviceCapability::METRIC_FREQUENCY;
         case MeasurementType::METRIC_POWER:
             return DeviceCapability::METRIC_POWER;
         case MeasurementType::METRIC_MEMORY_USED:

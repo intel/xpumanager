@@ -59,15 +59,8 @@ void GPUDevice::getPower(Callback_t callback) noexcept {
                                        });
 }
 
-void GPUDevice::getActuralFrequency(Callback_t callback) noexcept {
-    GPUDeviceStub::instance().getActuralFrequency(zes_device_handle,
-                                                  [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                      callback(ret, e);
-                                                  });
-}
-
-void GPUDevice::getRequestFrequency(Callback_t callback) noexcept {
-    GPUDeviceStub::instance().getRequestFrequency(zes_device_handle,
+void GPUDevice::getActuralRequestFrequency(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getActuralRequestFrequency(zes_device_handle,
                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                                                       callback(ret, e);
                                                   });
