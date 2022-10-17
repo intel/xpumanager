@@ -886,13 +886,20 @@ bool imageVerifyResult(RedfishHostInterface interface,
         parseErrorMsg(taskJson, flashAmcParam.errMsg);
         return false;
     }
-    if (taskJson["TaskState"].get<std::string>().compare("Running") == 0) {
+    std::string taskState = taskJson["TaskState"].get<std::string>();
+    if (
+        taskState.compare("New") == 0 ||
+        taskState.compare("Pending") == 0 ||
+        taskState.compare("Running") == 0 ||
+        taskState.compare("Starting") == 0 ||
+        taskState.compare("Stopping") == 0 ||
+        taskState.compare("Suspended") == 0) {
         finished = false;
     } else {
         finished = true;
         success = false;
         // success if TaskState is Completed
-        if (taskJson["TaskState"].get<std::string>().compare("Completed") == 0) {
+        if (taskState.compare("Completed") == 0) {
             success = true;
         }
         if (!success) {
