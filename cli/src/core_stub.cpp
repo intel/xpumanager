@@ -368,15 +368,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
     if (!ze_init) {
         level0_driver_error_info  = "Not found zeInit in libze_loader";
     }
+    putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
     int init_res = ze_init(0);
     if (init_res != 0) {
-        level0_driver_error_info = "Failed to init sysman: " + zeInitResultToString(init_res);
-    } else {
-        putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
-        init_res = ze_init(0);
-        if (init_res != 0) {
-            level0_driver_error_info = "Failed to init level zero metrics: " + zeInitResultToString(init_res);
-        }   
+        level0_driver_error_info = "Failed to init level zero: " + zeInitResultToString(init_res);
     } 
     dlclose(handle);
 
