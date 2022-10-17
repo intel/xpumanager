@@ -1806,6 +1806,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
             else
                 throw BaseException(error_messages[i]);
         }
+        XPUM_LOG_DEBUG("single precision compute: {} GFLOPS", all_gflops[i]);
         all_gflops_value += all_gflops[i];
     }
 
@@ -2319,6 +2320,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
             else
                 throw BaseException(error_messages[i]);
         }
+        XPUM_LOG_DEBUG("memory bandwidth: {} GBPS", all_gbps[i]);
         all_gbps_value += all_gbps[i];
     }
 
