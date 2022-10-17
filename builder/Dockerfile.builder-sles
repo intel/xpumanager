@@ -9,21 +9,23 @@ ARG ZLIB_VERSION=v1.2.13
 ARG GRPC_VERSION=v1.49.1
 ARG PROTOBUF_VERSION=v3.19.4
 
-RUN zypper install -y -t pattern devel_basis && \
-    zypper install -y \
+RUN echo gpgcheck=off >> /etc/zypp/repos.d/repo-oss.repo && rm -f /etc/zypp/repos.d/*backport*
+
+RUN zypper -n in --no-recommends -t pattern devel_basis && \
+    zypper -n in --no-recommends \
     ccache \
     gcc-c++ \
     git \
     glibc-devel-static \
-    libudev-devel \
-    openssl-devel \
+    libopenssl-1_1-devel \
     python39 \
     python39-devel \
     python39-pip \
     rpm-build \
+    systemd-devel \
     wget \
     doxygen \
-    lua-devel && \
+    lua53-devel && \
     zypper clean -a
 
 RUN mkdir cmake && \
@@ -82,3 +84,5 @@ RUN ln -sf $(which python3.9) /usr/bin/python && \
     ln -sf $(which python3.9) /usr/bin/python3 && \
     ln -sf /usr/lib64/liblua.so.5.3 /usr/lib64/liblua-5.3.so && \
     ldconfig
+
+ENV ACLOCAL_PATH=/usr/share/aclocal
