@@ -27,6 +27,7 @@
 namespace xpum {
 
 class FwDataMgmt;
+class PscMgmt;
 
 /*
   Device class defines various interfaces for communication with devices.
@@ -186,6 +187,14 @@ class Device {
         return pFwDataMgmt;
     }
 
+    void setPscMgmt(std::shared_ptr<PscMgmt> pPscMgmt) {
+        this->pPscMgmt = pPscMgmt;
+    }
+
+    std::shared_ptr<PscMgmt> getPscMgmt() {
+        return pPscMgmt;
+    }
+
     bool try_lock() {
         if (_operation_lock.test_and_set()) {
             return false;
@@ -234,6 +243,8 @@ class Device {
     std::string mei_device_path;
 
     std::shared_ptr<FwDataMgmt> pFwDataMgmt;
+
+    std::shared_ptr<PscMgmt> pPscMgmt;
 
    private:
     std::atomic_flag _operation_lock = ATOMIC_FLAG_INIT;

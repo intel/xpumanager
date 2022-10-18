@@ -119,6 +119,10 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "NUMBER_OF_LANES_PER_FABRIC_PORT";
         case XPUM_DEVICE_PROPERTY_LINUX_KERNEL_VERSION:
             return "KERNEL_VERSION";
+        case XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_NAME:
+            return "GFX_PSCBIN_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_VERSION:
+            return "GFX_PSCBIN_FIRMWARE_VERSION";
         default:
             return "";
     }
@@ -535,7 +539,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         xpum_result_t rc;
 
-        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
+        if (job->type != xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_AMC) {
             rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
             return rc;
         }
@@ -576,6 +580,11 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
             if (res != XPUM_OK)
                 return res;
             return Core::instance().getFirmwareManager()->runFwDataFlash(deviceId, job->filePath);
+        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_PSCBIN) {
+            res = validateDeviceId(deviceId);
+            if (res != XPUM_OK)
+                return res;
+            return Core::instance().getFirmwareManager()->runPscFwFlash(deviceId, job->filePath);
         } else {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         }
@@ -609,6 +618,8 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
     else if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX_DATA)
         Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result);
+    else if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN)
+        Core::instance().getFirmwareManager()->getPscFwFlashResult(deviceId, result);
     else
         return XPUM_GENERIC_ERROR;
 
@@ -667,12 +678,16 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION;
         case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_NAME:
             return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION;
         case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME:
             return XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME;
         case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION;
-        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_VERSION:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_VERSION;
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER;
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:

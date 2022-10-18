@@ -123,8 +123,7 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC,
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
-    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
-    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL,
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL,   ///< Don't support updating GFX firmwares on all device
     XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
     XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND, /// "/usr/bin/igsc" not found
     XPUM_UPDATE_FIRMWARE_TASK_RUNNING,       /// Firmware update task is already running
@@ -141,6 +140,9 @@ typedef enum xpum_result_enum {
     XPUM_LEVEL_ZERO_INITIALIZATION_ERROR, ///< Level Zero initialization error.
     XPUM_UNSUPPORTED_SESSIONID,           ///< Unsupported session id
     XPUM_RESULT_MEMORY_ECC_LIB_NOT_SUPPORT,
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA, ///< The device doesn't support GFX_DATA firmware update
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC, ///< The device doesn't support PSCBIN firmware update
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC, ///< Installed igsc doesn't support PSCBIN firmware update
     XPUM_INTERVAL_INVALID,
 } xpum_result_t;
 
@@ -224,6 +226,8 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_NUMBER,             ///< Number of fabric ports
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_MAX_SPEED,          ///< Maximum speed supported by the port (sum of all lanes)
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER,       ///< The number of lanes of the port
+    XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_NAME,       ///< The GFX_PSCBIN firmware name of device
+    XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_VERSION,    ///< The GFX_PSCBIN firmware version of device
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 
@@ -336,7 +340,8 @@ typedef enum xpum_device_config_type_enum {
 typedef enum xpum_firmware_type_enum {
     XPUM_DEVICE_FIRMWARE_GFX = 0, ///< GFX firmware
     XPUM_DEVICE_FIRMWARE_AMC = 1, ///< AMC firmware
-    XPUM_DEVICE_FIRMWARE_GFX_DATA = 2, ///< GFX FW DATA
+    XPUM_DEVICE_FIRMWARE_GFX_DATA = 2, ///< GFX_DATA firmware
+    XPUM_DEVICE_FIRMWARE_GFX_PSCBIN = 3, ///< GFX_PSCBIN firmware
 } xpum_firmware_type_t;
 
 /**
