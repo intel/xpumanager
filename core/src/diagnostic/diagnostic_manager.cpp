@@ -374,7 +374,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             try {
                 doDeviceDiagnosticPeformancePower(ze_device, ze_driver, p_task_info);
             } catch (BaseException &e) {
-                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_POWER, e.what(), p_task_info);
             }
             XPUM_LOG_INFO("start memory bandwidth diagnostic");
             try {
