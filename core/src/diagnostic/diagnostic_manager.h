@@ -79,7 +79,11 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                               const ze_driver_handle_t &ze_driver,
                                               std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
-    static void doDeviceDiagnosticPeformanceComputationAndPower(const ze_device_handle_t &ze_device,
+    static void doDeviceDiagnosticPeformanceComputation(const ze_device_handle_t &ze_device,
+                                                                const ze_driver_handle_t &ze_driver,
+                                                                std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+    
+    static void doDeviceDiagnosticPeformancePower(const ze_device_handle_t &ze_device,
                                                                 const ze_driver_handle_t &ze_driver,
                                                                 std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
