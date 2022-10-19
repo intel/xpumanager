@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <sstream>
+#include <iomanip>
 
 #include "api/device_model.h"
 #include "firmware_manager.h"
@@ -22,14 +23,18 @@ static LibIgsc libIgsc;
 
 static std::string print_psc_version(const struct igsc_psc_version *psc_version) {
     std::stringstream ss;
-    ss << "0x" << std::hex << psc_version->date;
+    ss << "0x" << std::setfill('0') << std::setw(4) << std::hex << psc_version->cfg_version;
     ss << ".";
-    ss << "0x" << std::hex << psc_version->cfg_version;
+    ss << "0x" << std::setfill('0') << std::setw(4) << std::hex << psc_version->date;
     return ss.str();
 }
 
 static void progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
     uint32_t percent = (done * 100) / total;
+
+    if (percent > 100) {
+        percent = 100;
+    }
 
     // store percent 
     PscMgmt* p = (PscMgmt*) ctx;

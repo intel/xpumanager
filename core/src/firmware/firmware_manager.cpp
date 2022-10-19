@@ -637,6 +637,8 @@ void FirmwareManager::getPscFwFlashResult(xpum_device_id_t deviceId, xpum_firmwa
         result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
         return;
     }
+    result->percentage = pDevice->getPscMgmt()->percent.load();
+    
     auto res = pDevice->getPscMgmt()->getFlashPscFwResult();
     result->result = res;
 }
