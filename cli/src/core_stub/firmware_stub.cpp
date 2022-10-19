@@ -116,6 +116,9 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getFirmwareFlashResult(int deviceId
         (*json)["errno"] = errorNumTranslate(res);
         return json;
     }
+
+    (*json)["percentage"] = result.percentage;
+
     switch (result.result) {
         case XPUM_DEVICE_FIRMWARE_FLASH_OK:
             (*json)["result"] = "OK";
