@@ -254,11 +254,18 @@ std::string ComletFirmware::getCurrentFwVersion(nlohmann::json json) {
             return res;
         }
         return json["gfx_firmware_version"];
-    } else {
+    } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
         if (!json.contains("gfx_data_firmware_version")) {
             return res;
         }
         return json["gfx_data_firmware_version"];
+    } else if (type == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN) {
+        if (!json.contains("gfx_pscbin_firmware_version")) {
+            return res;
+        }
+        return json["gfx_pscbin_firmware_version"];
+    } else {
+        return res;
     }
 }
 
