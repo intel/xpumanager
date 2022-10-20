@@ -52,6 +52,7 @@ link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/spdlog)
 link_directories(${CMAKE_CURRENT_LIST_DIR}/../build/third_party/pcm)
 
 # Specifiy header file location
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/json/include)
 
 # Scan source code files
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/api API_SRC)
@@ -73,6 +74,8 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/topology TOPOLOGY_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data
                      DUMP_RAW_DATA_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/firmware FIRMWARE_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/amc AMC_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/redfish REDFISH_SRC)
 
 add_library(xpum SHARED)
 
@@ -89,7 +92,8 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/src/ipmi)
 
   target_include_directories(
     amcfw
-    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include
+            ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
             ${CMAKE_CURRENT_LIST_DIR}/src
             ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 
@@ -147,7 +151,9 @@ target_sources(
           ${DIAGNOSTIC_SRC}
           ${TOPOLOGY_SRC}
           ${DUMP_RAW_DATA_SRC}
-          ${FIRMWARE_SRC})
+          ${FIRMWARE_SRC}
+          ${AMC_SRC}
+          ${REDFISH_SRC})
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   target_sources(
@@ -168,7 +174,9 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${DIAGNOSTIC_SRC}
             ${TOPOLOGY_SRC}
             ${DUMP_RAW_DATA_SRC}
-            ${FIRMWARE_SRC})
+            ${FIRMWARE_SRC}
+            ${AMC_SRC}
+            ${REDFISH_SRC})
 endif()
 
 target_link_libraries(xpum PRIVATE amcfw)

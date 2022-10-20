@@ -284,8 +284,9 @@ namespace xpum {
           *
           */
         typedef enum xpum_firmware_type_enum {
-            XPUM_DEVICE_FIRMWARE_GSC = 0, ///< GSC firmware
-            XPUM_DEVICE_FIRMWARE_AMC = 1, ///< GSC firmware
+            XPUM_DEVICE_FIRMWARE_GFX = 0,      ///< GFX firmware
+            XPUM_DEVICE_FIRMWARE_AMC = 1,      ///< AMC firmware
+            XPUM_DEVICE_FIRMWARE_GFX_DATA = 2, ///< GFX FW DATA
         } xpum_firmware_type_t;
 
         /**

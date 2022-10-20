@@ -58,6 +58,7 @@ class GroupManager : public GroupManagerInterface,
 
     void createBuildInGroup();
     void createBuildInGroup(bool bBuildInDevice, int vendorId, int deviceId, std::string devID, std::string bdfAddress);
+    void copySlotNameForBuildinGroups();
 
    private:
     std::shared_ptr<DeviceManagerInterface> p_devicemanager;

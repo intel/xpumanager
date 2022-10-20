@@ -18,3 +18,4 @@ from .config import setStandby, setPowerLimit, setFrequencyRange, setScheduler, 
 from .dump_raw_data import startDumpRawDataTask, stopDumpRawDataTask, listDumpRawDataTasks
 from .agent_settings import getAllAgentConfig, setAgentConfig
 from .xpum_enums import XpumStatsType, XpumResult, XpumEngineType, XpumDumpType
+from .sensor import getAMCSensorReading

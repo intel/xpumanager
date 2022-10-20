@@ -28,7 +28,7 @@ void TimeWeightedAverageDataHandler::counterOverflowDetection(std::shared_ptr<Sh
 
     std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
-        if (iter->second->hasDataOnDevice() 
+        if (iter->second->hasRawDataOnDevice() 
         && p_preData->getData().find(iter->first) != p_preData->getData().end()
         && p_preData->getData()[iter->first]->hasRawDataOnDevice()
         && p_data->getData().find(iter->first) != p_data->getData().end()) {

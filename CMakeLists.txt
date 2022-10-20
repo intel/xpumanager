@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.18.0)
 
 if(NOT DEFINED WORK_PATH)
   set(WORK_PATH ${CMAKE_CURRENT_BINARY_DIR})
@@ -7,7 +7,11 @@ endif()
 include(.cmake/xpum_version.cmake)
 include(.cmake/os_release_info.cmake)
 
+if(DAEMONLESS)
+project(xpu-smi VERSION ${PROJECT_VERSION})
+else()
 project(xpumanager VERSION ${PROJECT_VERSION})
+endif()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -47,7 +51,9 @@ include(GNUInstallDirs)
 set(CPACK_XPUM_LIB_INSTALL_DIR "/usr/${CMAKE_INSTALL_LIBDIR}")
 set(CPACK_XPUM_INCLUDE_INSTALL_DIR "/usr/include")
 set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/xpum")
-set(SYSTEMD_UNIT_NAME "${CMAKE_CURRENT_LIST_DIR}/daemon/xpum.service.template")
+if(NOT DAEMONLESS)
+  set(SYSTEMD_UNIT_NAME "${CMAKE_CURRENT_LIST_DIR}/daemon/xpum.service.template")
+endif()
 
 set(XPUM_CONFIG_DIR "${CPACK_PACKAGING_INSTALL_PREFIX}/config")
 
@@ -58,7 +64,7 @@ add_definitions(-DLOADER_VERSION_PATCH=${PROJECT_VERSION_PATCH})
 
 message(STATUS "CMAKE_PROJECT_VERSION: ${CMAKE_PROJECT_VERSION}")
 
-if(EXISTS third_party/googletest)
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/third_party/googletest)
   add_subdirectory(third_party/googletest)
 endif()
 add_subdirectory(third_party/spdlog)
@@ -67,8 +73,10 @@ add_subdirectory(third_party/pcm)
 
 add_subdirectory(core)
 add_subdirectory(cli)
-add_subdirectory(daemon)
-add_subdirectory(rest)
+if(NOT DAEMONLESS)
+  add_subdirectory(daemon)
+  add_subdirectory(rest)
+endif()
 if(BUILD_DOC)
   add_subdirectory(doc)
 endif()
@@ -94,33 +102,37 @@ message("CPACK_PACKAGE_NAME=${PROJECT_NAME}")
 set(CPACK_PACKAGE_CONTACT "Intel Corporation")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Intel")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "XPU Manager")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
 if(CPACK_GENERATOR MATCHES "RPM")
-  set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_REAL_VERSION}-${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}.${os_name}.x86_64")
-  configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" COPYONLY)
-  configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template.in"
-                 "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template" COPYONLY)
-
-  file(WRITE "${CMAKE_BINARY_DIR}/package_file_name"
-       "${CPACK_PACKAGE_FILE_NAME}.rpm")
+  if(NOT DAEMONLESS)  
+    configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" COPYONLY)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template.in"
+                  "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template" COPYONLY)
+  endif()
   set(CPACK_RPM_SPEC_MORE_DEFINE
       "%global __os_install_post %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')"
   )
   set(CPACK_RPM_COMPRESSION_TYPE "xz")
   set(CPACK_RPM_PACKAGE_ARCHITECTURE "x86_64")
   set(CPACK_RPM_PACKAGE_AUTOREQ OFF)
-  set(CPACK_RPM_PACKAGE_DESCRIPTION "XPU Manager")
-  set(CPACK_RPM_PACKAGE_REQUIRES "level-zero >= 1.7.9.1, intel-gsc >= 0.7.1")
+  set(CPACK_RPM_PACKAGE_DESCRIPTION "${PROJECT_NAME}")
+  if(EXISTS "/etc/redhat-release")
+    set(CPACK_RPM_PACKAGE_REQUIRES "level-zero >= 1.7.9.1, intel-gsc >= 0.8.4, intel-metrics-discovery >= 1.10.141, intel-metrics-library >= 1.0.76, intel-level-zero-gpu >= 1.3.23726, intel-mediasdk-utils >= 22.5.0")
+  else()
+    set(CPACK_RPM_PACKAGE_REQUIRES "level-zero >= 1.7.9.1, intel-gsc >= 0.8.4, intel-metrics-discovery >= 1.10.141, intel-metrics-library >= 1.0.76, intel-level-zero-gpu >= 1.3.23726, libmfx-utils >= 22.5.0")
+  endif()
   set(CPACK_RPM_PACKAGE_GROUP "System Environment/Libraries")
   set(CPACK_RPM_PACKAGE_LICENSE "MIT")
   set(CPACK_RPM_PACKAGE_RELEASE "${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}")
   set(CPACK_RPM_PACKAGE_RELEASE_DIST OFF)
   set(CPACK_RPM_COMPONENT_INSTALL ON)
   set(CPACK_RPM_PACKAGE_NAME "${PROJECT_NAME}")
+  set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_REAL_VERSION}-${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}.${os_name}${os_version}.${CPACK_RPM_PACKAGE_ARCHITECTURE}")
+  file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}.rpm")
   list(
     APPEND
     CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION
@@ -133,46 +145,71 @@ if(CPACK_GENERATOR MATCHES "RPM")
     "/usr/lib"
     "/usr/local/lib")
 
-  set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
-      "${CMAKE_CURRENT_LIST_DIR}/install/script/postinst")
-  set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
-      "${CMAKE_CURRENT_LIST_DIR}/install/script/prerm")
+  if(NOT DAEMONLESS)
+    set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/preun")
+    set(CPACK_RPM_POST_TRANS_SCRIPT_FILE
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/posttrans")
+  else()
+    set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/smi/preun")
+    set(CPACK_RPM_POST_TRANS_SCRIPT_FILE
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/smi/posttrans")
+  endif()
 endif()
 
 if(CPACK_GENERATOR MATCHES "DEB")
-  set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}_${PROJECT_REAL_VERSION}_${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}_amd64")
-  configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" @ONLY)
-  configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template.in"
+  if(NOT DAEMONLESS)
+    configure_file("${SYSTEMD_UNIT_NAME}.in" "${SYSTEMD_UNIT_NAME}" @ONLY)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template.in"
                  "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template" @ONLY)
-
-  file(WRITE "${CMAKE_BINARY_DIR}/package_file_name"
-       "${CPACK_PACKAGE_FILE_NAME}.deb")
+  endif()
 
   set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
   set(CPACK_DEBIAN_PACKAGE_RELEASE "${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}")
   set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
   set(CPACK_DEBIAN_XPUM_PACKAGE_NAME "${PROJECT_NAME}.${os_name}")
-  set(CPACK_DEBIAN_PACKAGE_DEPENDS "level-zero (>= 1.7.9.1), intel-gsc (>=0.7.1)")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "level-zero (>= 1.7.9.1), intel-gsc (>=0.8.4), intel-metrics-discovery (>=1.10.141), intel-metrics-library (>=1.0.76), intel-level-zero-gpu (>=1.3.23726), libmfx-tools (>=22.5.0)")
   set(CPACK_DEB_COMPONENT_INSTALL ON)
   set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+  if(NOT DAEMONLESS)
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/deb/prerm;"
+    )
+  else()
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/smi/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/deb/smi/prerm;"
+    )
+  endif()
 
-  set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-      "${CMAKE_CURRENT_LIST_DIR}/install/script/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/prerm;"
-  )
+  set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}_${PROJECT_REAL_VERSION}_${BUILD_DATE}.${BUILD_TIME}.${GIT_COMMIT}+${os_name}${os_version}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+  file(WRITE "${CMAKE_BINARY_DIR}/package_file_name" "${CPACK_PACKAGE_FILE_NAME}.deb")
 endif()
 
 install(DIRECTORY core/include/ DESTINATION ${CPACK_XPUM_INCLUDE_INSTALL_DIR})
 
-install(DIRECTORY install/tools/rest/ DESTINATION .)
+if(NOT DAEMONLESS)
+  install(DIRECTORY install/tools/rest/ DESTINATION .)
+endif()
 
+if(DAEMONLESS)
+  install(
+    TARGETS xpum xpumanager
+    LIBRARY DESTINATION ${CPACK_XPUM_LIB_INSTALL_DIR}
+    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION .)
+else()
 install(
   TARGETS xpum xpumcli xpumd
   LIBRARY DESTINATION ${CPACK_XPUM_LIB_INSTALL_DIR}
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION .)
+endif()
 
+if(NOT DAEMONLESS)
 install(FILES "${SYSTEMD_UNIT_NAME}"
               "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template"
         DESTINATION ".")
 
+endif()
 include(CPack)

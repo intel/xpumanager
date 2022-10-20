@@ -14,7 +14,7 @@
 namespace xpum::cli {
 
 struct ComletResetOptions {
-    int deviceId = -1;
+    std::string deviceId = "-1";
 };
 
 class ComletReset : public ComletBase {

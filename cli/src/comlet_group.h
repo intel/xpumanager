@@ -28,7 +28,7 @@ enum GroupOperationType {
 
 struct ComletGroupOptions {
     uint32_t groupId = 0;
-    std::vector<int> deviceList;
+    std::vector<std::string> deviceList;
     std::string name = "";
     enum GroupOperationType opType;
     bool flagCreate;

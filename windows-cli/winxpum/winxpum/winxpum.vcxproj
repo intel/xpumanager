@@ -95,13 +95,15 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)winxpum\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ControlFlowGuard>Guard</ControlFlowGuard>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)winxpum\ze_loader.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)winxpum\ze_loader.lib;$(SolutionDir)winxpum\igsc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>igsc.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -111,10 +113,12 @@
     <ClCompile Include="comlet_config.cpp" />
     <ClCompile Include="comlet_discovery.cpp" />
     <ClCompile Include="comlet_dump.cpp" />
+    <ClCompile Include="comlet_firmware.cpp" />
     <ClCompile Include="comlet_statistics.cpp" />
     <ClCompile Include="comlet_version.cpp" />
     <ClCompile Include="core_stub.cpp" />
     <ClCompile Include="help_formatter.cpp" />
+    <ClCompile Include="igsc_manager.cpp" />
     <ClCompile Include="pretty_table.cpp" />
     <ClCompile Include="xpumcli.cpp" />
   </ItemGroup>
@@ -126,10 +130,12 @@
     <ClInclude Include="comlet_config.h" />
     <ClInclude Include="comlet_discovery.h" />
     <ClInclude Include="comlet_dump.h" />
+    <ClInclude Include="comlet_firmware.h" />
     <ClInclude Include="comlet_statistics.h" />
     <ClInclude Include="comlet_version.h" />
     <ClInclude Include="core_stub.h" />
     <ClInclude Include="help_formatter.h" />
+    <ClInclude Include="igsc_manager.h" />
     <ClInclude Include="pretty_table.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="xpum_structs.h" />

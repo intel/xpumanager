@@ -9,6 +9,7 @@
 #include <future>
 #include <mutex>
 #include <string>
+#include <atomic>
 
 #include "device/device.h"
 
@@ -27,6 +28,8 @@ class FwDataMgmt {
     bool isUpgradingFw();
 
     bool isReady();
+
+    std::atomic<int> percent;
 
    private:
     std::string devicePath;

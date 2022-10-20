@@ -9,6 +9,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <igsc_lib.h>
 
 #include "core/core.h"
 #include "device/gpu/gpu_device_stub.h"
@@ -200,75 +201,91 @@ void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
                                                    });
 }
 
+static void progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
+    uint32_t percent = (done * 100) / total;
 
-xpum_result_t GPUDevice::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
-    // auto meiPathList = getSiblingDeviceMeiPath(this);
-    std::vector<std::string> meiPathList{getMeiDevicePath()};
+    // store percent 
+    GPUDevice* pDevice = (GPUDevice*) ctx;
+    pDevice->gscFwFlashPercent.store(percent);
+}
 
-    std::vector<std::string> commands;
+static std::string print_fw_version(const struct igsc_fw_version* fw_version) {
+    std::stringstream ss;
+    ss << fw_version->project[0];
+    ss << fw_version->project[1];
+    ss << fw_version->project[2];
+    ss << fw_version->project[3];
+    ss << "_";
+    ss << fw_version->hotfix;
+    ss << ".";
+    ss << fw_version->build;
+    return ss.str();
+}
 
-    for (auto& meiPath : meiPathList) {
-        XPUM_LOG_INFO("prepare update GSC on {}", meiPath);
-        std::string command = toolPath + " fw update -a -d " + meiPath + " -i " + filePath +" 2>&1";
-        commands.push_back(command);
-    }
-    if (commands.size() == 0) {
-        return xpum_result_t::XPUM_GENERIC_ERROR;
-    }
 
+xpum_result_t GPUDevice::runFirmwareFlash(std::vector<char> img) noexcept {
     std::lock_guard<std::mutex> lck(mtx);
     if (taskGSC.valid()) {
         // task already running
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     } else {
-        taskGSC = std::async(std::launch::async, [&, commands] {
-            XPUM_LOG_INFO("Start update GSC fw, total {} commands", commands.size());
-            bool ok = true;
-            for (std::string command : commands) {
-                XPUM_LOG_INFO("Execute command: {}", command);
-                FILE* commandExec = popen(command.c_str(), "r");
-                if (!commandExec) {
-                    ok = false;
-                    break;
-                }
-                while (true) {
-                    char buf[BUFFERSIZE];
-                    char* res = fgets(buf, BUFFERSIZE, commandExec);
-                    if (res != nullptr) {
-                        // log += std::string{res};
-                        XPUM_LOG_DEBUG("GSC FW update log: {}", res);
-                        std::string line(res);
-                        int i = 0;
-                        while (res[i]) {
-                            line[i] = tolower(res[i]);
-                            i++;
-                        }
-                        if (line.find("error") != line.npos || line.find("fail") != line.npos) {
-                            ok = false;
-                        }
-                    } else {
-                        bool commandResult = pclose(commandExec) == 0;
-                        XPUM_LOG_INFO("Command success: {}", commandResult);
-                        ok = ok && commandResult;
-                        commandExec = nullptr;
-                        break;
-                    }
-                }
-                // break when previous update fail
-                if (!ok) break;
+        gscFwFlashPercent.store(0);
+        taskGSC = std::async(std::launch::async, [this, img] {
+            std::string meiPath = getMeiDevicePath();
+
+            if(meiPath.empty()){
+                unlock();
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
-            // dumpFirmwareFlashLog();
-            log.clear();
-            // refresh SoC fw version
-            Core::instance().getFirmwareManager()->detectGscFw();
-            xpum_firmware_flash_result_t rc;
-            if (ok) {
-                rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
-            } else {
-                rc = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+
+            XPUM_LOG_INFO("Start update GSC fw on device {}", meiPath);
+
+            // struct img *img = NULL;
+            struct igsc_device_handle handle;
+            struct igsc_fw_version device_fw_version;
+            // struct igsc_fw_version image_fw_version;
+            igsc_progress_func_t progress_func = progress_percentage_func;
+            int ret;
+            // uint8_t cmp;
+            struct igsc_fw_update_flags flags = {0};
+
+            memset(&handle, 0, sizeof(handle));
+
+            ret = igsc_device_init_by_device(&handle, meiPath.c_str());
+            if (ret)
+            {
+                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}", meiPath, ret);
+                (void)igsc_device_close(&handle);
+                unlock();
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
+
+
+            ret = igsc_device_fw_update_ex(&handle, (const uint8_t*)img.data(), img.size(),
+                                           progress_func, this, flags);
+
+            if (ret){
+                XPUM_LOG_ERROR("Update process failed, error code: {}", ret);
+                (void)igsc_device_close(&handle);
+                unlock();
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            }
+
+            // get new fw version
+            ret = igsc_device_fw_version(&handle, &device_fw_version);
+            if (ret != IGSC_SUCCESS)
+            {
+                XPUM_LOG_ERROR("Cannot retrieve firmware version from device: {}", meiPath);
+            } else{
+                std::string version = print_fw_version(&device_fw_version);
+                addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, version));
+
+                XPUM_LOG_INFO("Device {} GSC fw flashed successfully to {}", meiPath, version);
+            }
+
+            (void)igsc_device_close(&handle);
             unlock();
-            return rc;
+            return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
         });
 
         return xpum_result_t::XPUM_OK;
@@ -288,7 +305,7 @@ void GPUDevice::dumpFirmwareFlashLog() noexcept {
 
 xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_type_t type) noexcept {
     std::future<xpum_firmware_flash_result_t>* task;
-    if (type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+    if (type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
         task = &taskGSC;
     }
     else {
@@ -350,6 +367,13 @@ void GPUDevice::getPCIeWrite(Callback_t callback) noexcept {
 
 void GPUDevice::getFabricThroughput(Callback_t callback) noexcept {
     GPUDeviceStub::instance().getFabricThroughput(zes_device_handle,
+                                                  [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+                                                      callback(ret, e);
+                                                  });
+}
+
+void GPUDevice::getPerfMetrics(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getPerfMetrics(zes_device_handle, ze_driver_handle,
                                                   [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
                                                       callback(ret, e);
                                                   });

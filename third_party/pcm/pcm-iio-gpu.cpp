@@ -188,6 +188,8 @@ vector<struct data> prepare_data(const vector<uint64_t> &values, const vector<st
     return v;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"  
 vector<string> query_data(vector<struct iio_stacks_on_socket>& iios, vector<struct counter>& ctrs)
 {
     vector<string> iio_datas;
@@ -265,7 +267,7 @@ vector<string> query_data(vector<struct iio_stacks_on_socket>& iios, vector<stru
     cacheSocketStack = true;
     return iio_datas;
 }
-
+#pragma GCC diagnostic pop
 
 class IPlatformMapping {
 private:

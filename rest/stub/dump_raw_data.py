@@ -29,7 +29,7 @@ def startDumpRawDataTask(deviceId, tileId, metricsTypeList):
     if len(resp.errorMsg) != 0:
         logger.audit("Dump", "Failed",
                      "Start dump raw data task on device {} tile {}", deviceId, tileId)
-        return resp.status, resp.errorMsg, None
+        return resp.errorNo, resp.errorMsg, None
 
     taskInfo = resp.taskInfo
 
@@ -51,7 +51,7 @@ def stopDumpRawDataTask(taskId):
     if len(resp.errorMsg) != 0:
         logger.audit("Dump", "Failed",
                      "Stop dump raw data task {}", taskId)
-        return resp.status, resp.errorMsg, None
+        return resp.errorNo, resp.errorMsg, None
     taskInfo = resp.taskInfo
     data = dict()
 
@@ -69,7 +69,7 @@ def listDumpRawDataTasks():
     resp = stub.listDumpRawDataTasks(empty_pb2.Empty())
 
     if len(resp.errorMsg) != 0:
-        return resp.status, resp.errorMsg, None
+        return resp.errorNo, resp.errorMsg, None
 
     data = dict(dump_task_ids=[
                 taskInfo.dumpTaskId for taskInfo in resp.taskList])

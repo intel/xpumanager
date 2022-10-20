@@ -36,7 +36,7 @@ class DeviceManager : public DeviceManagerInterface,
     void getDeviceList(DeviceCapability cap,
                        std::vector<std::shared_ptr<Device>>& devices) override;
 
-    MeasurementData getRealtimeMeasurementData(MeasurementType type,
+    std::shared_ptr<MeasurementData> getRealtimeMeasurementData(MeasurementType type,
                                                std::string& device_id) override;
 
     void getDeviceSchedulers(const std::string& id, std::vector<Scheduler>& schedulers) override;
@@ -103,6 +103,8 @@ class DeviceManager : public DeviceManagerInterface,
 
     std::shared_ptr<Device> getDevice(const std::string& id);
 
+    std::shared_ptr<Device> getDevicebyBDF(const std::string& bdf);
+
     void discoverFabricLinks();
 
     std::string getDeviceIDByFabricID(uint64_t fabric_id);
@@ -115,6 +117,8 @@ class DeviceManager : public DeviceManagerInterface,
 
     void unlockDevices(std::vector<std::shared_ptr<Device>>& deviceList);
 
+    SystemInfo getSystemInfo();
+
    private:
     DeviceManager() = default;
 
@@ -124,6 +128,8 @@ class DeviceManager : public DeviceManagerInterface,
 
     zes_device_handle_t getDeviceHandle(const std::string& Id);
 
+    void initSystemInfo();
+
    private:
     std::shared_ptr<DataLogicInterface> p_data_logic;
 
@@ -132,6 +138,8 @@ class DeviceManager : public DeviceManagerInterface,
     std::map<uint32_t, std::string> fabric_ids;
 
     std::mutex mutex;
+
+    SystemInfo systemInfo;
 };
 
 } // end namespace xpum

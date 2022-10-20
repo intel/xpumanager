@@ -17,6 +17,7 @@
 #include "infrastructure/logger.h"
 #include "monitor/monitor_manager.h"
 #include "policy/policy_manager.h"
+#include "topology/topology.h"
 
 namespace xpum {
 
@@ -29,7 +30,6 @@ Core::Core()
       p_policy_manager(nullptr),
       p_dump_raw_data_manager(nullptr),
       initialized(false) {
-    Logger::init();
     XPUM_LOG_TRACE("core()");
 }
 
@@ -139,6 +139,8 @@ void Core::close() {
     p_firmware_manager = nullptr;
 
     p_dump_raw_data_manager = nullptr;
+
+    Topology::clearTopology();
 
     close(std::dynamic_pointer_cast<InitCloseInterface>(p_policy_manager),
           "Failed to close policy manager");

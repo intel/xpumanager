@@ -15,7 +15,7 @@
 namespace xpum::cli {
 
 struct ComletTopOptions {
-    int deviceId = -1;
+    std::string deviceId = "-1";
 };
 
 class ComletTop: public ComletBase {

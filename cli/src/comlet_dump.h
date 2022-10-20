@@ -20,7 +20,7 @@ using xpum::dump::dumpTypeOptions;
 namespace xpum::cli {
 
 struct ComletDumpOptions {
-    int deviceId = -1;
+    std::vector<std::string> deviceIds = {"-1"};
     int deviceTileId = -1;
     std::vector<int> metricsIdList;
     uint32_t timeInterval = 1;
@@ -40,8 +40,11 @@ class ComletDump : public ComletBase {
     std::shared_ptr<nlohmann::json> statsJson;
     std::shared_ptr<nlohmann::json> engineUtilJson;
     std::shared_ptr<nlohmann::json> fabricThroughputJson;
+    std::map<std::string, std::unique_ptr<nlohmann::json>> deviceJsons;
+    std::string curDeviceId;
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
+    std::set<std::string> sumMetricsList{"XPUM_STATS_MEMORY_READ", "XPUM_STATS_MEMORY_WRITE", "XPUM_STATS_MEMORY_READ_THROUGHPUT", "XPUM_STATS_MEMORY_WRITE_THROUGHPUT", "XPUM_STATS_MEMORY_USED", "XPUM_STATS_PCIE_READ_THROUGHPUT", "XPUM_STATS_PCIE_WRITE_THROUGHPUT", "XPUM_STATS_RAS_ERROR_CAT_RESET", "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS", "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS", "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE"};
 
    public:
     ComletDump() : ComletBase("dump", "Dump device statistics data.") {
@@ -66,5 +69,11 @@ class ComletDump : public ComletBase {
     void printByLine(std::ostream &out);
 
     void dumpRawDataToFile(std::ostream &out);
+
+    bool dumpPCIeMetrics();
+
+    bool dumpEUMetrics();
+
+    std::unique_ptr<nlohmann::json> combineTileAndDeviceLevel(nlohmann::json rawJson);
 };
 } // end namespace xpum::cli

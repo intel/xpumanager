@@ -9,6 +9,8 @@
 #include "fwdata_mgmt.h"
 #include "group/group_manager.h"
 #include "api/device_model.h"
+#include "amc/ipmi_amc_manager.h"
+#include "amc/redfish_amc_manager.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -20,9 +22,6 @@
 
 namespace xpum {
 
-extern int cmd_firmware(const char* file, unsigned int versions[4]);
-
-extern int cmd_get_amc_firmware_versions(int buf[][4], int *count);
 
 static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<Device> pDevice);
 
@@ -134,41 +133,10 @@ void FirmwareManager::detectGscFw() {
         auto address = pDevice->getPciAddress();
         for (auto fw : fwList) {
             if (fw.bdfAddr == address) {
-                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION, fw.fwVersion));
+                pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION, fw.fwVersion));
                 pDevice->setMeiDevicePath(fw.devicePath);
             }
         }
-    }
-}
-
-static std::vector<std::string> getAMCFwVersionsInternal() {
-    std::vector<std::string> versions;
-    int count;
-    int err = cmd_get_amc_firmware_versions(nullptr, &count);
-    if (err != 0 || count <= 0) {
-        return versions;
-    }
-    int buf[count][4];
-    err = cmd_get_amc_firmware_versions(buf, &count);
-    if (err != 0) {
-        return versions;
-    }
-    for (int i = 0; i < count; i++) {
-        std::stringstream ss;
-        ss << buf[i][0] << ".";
-        ss << buf[i][1] << ".";
-        ss << buf[i][2] << ".";
-        ss << buf[i][3];
-        versions.push_back(ss.str());
-    }
-    return versions;
-}
-
-void FirmwareManager::getAMCFwVersions() {
-    if(amcUpdated){
-        // firmware updated, need to re get version info
-        amcUpdated = false;
-        amcFwList = getAMCFwVersionsInternal();
     }
 }
 
@@ -182,80 +150,113 @@ void FirmwareManager::initFwDataMgmt(){
 }
 
 void FirmwareManager::init() {
-    // get amc fw versions
-    amcFwList = getAMCFwVersionsInternal();
+    char* env = std::getenv("_XPUM_INIT_SKIP");
+    std::string xpum_init_skip_module_list{env != NULL ? env : ""};
+    if (xpum_init_skip_module_list.find("FIRMWARE") != xpum_init_skip_module_list.npos) {
+        return;
+    }
     // get gsc fw versions
     detectGscFw();
     // init fw-data management
     initFwDataMgmt();
+    if (xpum_init_skip_module_list.find("AMC") == xpum_init_skip_module_list.npos) {
+        // init amc manager
+        preInitAmcManager();
+    }
 };
 
-std::vector<std::string> FirmwareManager::getAMCFirmwareVersions() {
-    getAMCFwVersions();
-    return amcFwList;
+void FirmwareManager::preInitAmcManager() {
+    p_amc_manager = std::make_shared<IpmiAmcManager>();
+    auto ipmi_enabled = p_amc_manager->preInit();
+    if (!ipmi_enabled) {
+        p_amc_manager = std::make_shared<RedfishAmcManager>();
+        p_amc_manager->preInit();
+    }
 }
 
-xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath) {
-    if (amcFwList.size() <= 0) {
+bool FirmwareManager::initAmcManager() {
+    InitParam param;
+    if (p_amc_manager->init(param))
+        return true;
+    getAmcFwErrMsg = flashFwErrMsg = param.errMsg;
+    return false;
+}
+
+xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& versions, AmcCredential credential) {
+    getAmcFwErrMsg.clear();
+    if (!initAmcManager()) {
+        // getAmcFwErrMsg = "Fail to get AMC firmware versions";
+        return XPUM_GENERIC_ERROR;
+        // return XPUM_OK;
+    }
+    GetAmcFirmwareVersionsParam param;
+    param.username = credential.username;
+    param.password = credential.password;
+    
+    p_amc_manager->getAmcFirmwareVersions(param);
+    getAmcFwErrMsg = param.errMsg;
+    if (param.errCode != xpum_result_t::XPUM_OK) {
+        return param.errCode;
+    }
+    for (auto version : param.versions) {
+        versions.push_back(version);
+    }
+    return param.errCode;
+}
+
+xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCredential credential) {
+    flashFwErrMsg.clear();
+    if (!initAmcManager()) {
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
     }
 
-    std::lock_guard<std::mutex> lck(mtx);
-    if (taskAMC.valid()) {
+    std::vector<std::shared_ptr<Device>> allDevices;
+    Core::instance().getDeviceManager()->getDeviceList(allDevices);
+    // lock all devices
+    bool locked = Core::instance().getDeviceManager()->tryLockDevices(allDevices);
+    if (!locked) {
+        flashFwErrMsg = "Device is bussy";
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
-    } else {
+    }
+
+    FlashAmcFirmwareParam param;
+    param.file = std::string(filePath);
+    param.username = credential.username;
+    param.password = credential.password;
+    param.callback = [this]() {
+        // unlock all device when update finish
         std::vector<std::shared_ptr<Device>> allDevices;
         Core::instance().getDeviceManager()->getDeviceList(allDevices);
-        // lock all devices
-        bool locked = Core::instance().getDeviceManager()->tryLockDevices(allDevices);
-        if (!locked)
-            return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
-        std::string dupPath(filePath);
-        taskAMC = std::async(std::launch::async, [dupPath, this] {
-            int rc = cmd_firmware(dupPath.c_str(), nullptr);
-            this->amcUpdated = true;
-            std::vector<std::shared_ptr<Device>> allDevices;
-            Core::instance().getDeviceManager()->getDeviceList(allDevices);
-            Core::instance().getDeviceManager()->unlockDevices(allDevices);
-            if (rc == 0) {
-                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
-            } else {
-                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
-            }
-        });
+        Core::instance().getDeviceManager()->unlockDevices(allDevices);
+    };
 
-        return xpum_result_t::XPUM_OK;
-    }
+    p_amc_manager->flashAMCFirmware(param);
+    flashFwErrMsg = param.errMsg;
+    return (xpum_result_t)param.errCode;
 }
 
-void FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t* result) {
-    std::future<xpum_firmware_flash_result_t>* task = &taskAMC;
-
-    xpum_firmware_flash_result_t res;
-
-    if (task->valid()) {
-        using namespace std::chrono_literals;
-        auto status = task->wait_for(0ms);
-        if (status == std::future_status::ready) {
-            std::lock_guard<std::mutex> lck(mtx);
-            res = task->get();
-        } else {
-            res = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
-        }
-    } else {
-        res = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+xpum_result_t FirmwareManager::getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t* result, AmcCredential credential) {
+    if (!initAmcManager()) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
     }
-    result->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
-    result->type = XPUM_DEVICE_FIRMWARE_AMC;
-    result->result = res;
+    GetAmcFirmwareFlashResultParam param;
+    param.username = credential.username;
+    param.password = credential.password;
+    p_amc_manager->getAMCFirmwareFlashResult(param);
+
+    flashFwErrMsg = param.errMsg;
+
+    if (param.errCode != XPUM_OK) {
+        return param.errCode;
+    }
+    *result = param.result;
+    return XPUM_OK;
 }
 
-static bool detectGfxTool() {
-    std::string cmd = igscPath + " -V 2>&1";
-    SystemCommandResult sc_res = execCommand(cmd);
-    if (sc_res.exitStatus() != 0)
-        return false;
-    return true;
+std::string FirmwareManager::getAmcWarnMsg() {
+    if (p_amc_manager)
+        return "";
+    return getRedfishAmcWarn();
 }
 
 static bool isGscFwImage(std::vector<char>& buffer) {
@@ -269,7 +270,7 @@ static bool isGscFwImage(std::vector<char>& buffer) {
     return type == IGSC_IMAGE_TYPE_GFX_FW;
 }
 
-static bool isFwImageAndDeviceCompatible(std::string meiPath, std::vector<char>& buffer) {
+static bool atsmHwConfigCompatibleCheck(std::string meiPath, std::vector<char>& buffer) {
     struct igsc_hw_config img_hw_config, dev_hw_config;
     int ret;
     // image hw config
@@ -355,12 +356,6 @@ std::vector<char> readImageContent(const char* filePath) {
 }
 
 xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath) {
-    // check tool if tool exists
-    if (!detectGfxTool()) {
-        XPUM_LOG_INFO("flash tool not exists");
-        return XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND;
-    }
-
     // read image file
     auto buffer = readImageContent(filePath);
 
@@ -376,12 +371,12 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
     }
 
     // validate the image is compatible with the device
-    if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
-        if (!isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer)) {
+    if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
+        if (!atsmHwConfigCompatibleCheck(pDevice->getMeiDevicePath(), buffer)) {
             return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
         }
     } else {
-        if (!isFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer)) {
+        if (!isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer)) {
             return XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
         }
     }
@@ -405,7 +400,7 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
     std::vector<std::shared_ptr<Device>> toUnlock;
     for (auto pd : deviceList) {
         if (!stop) {
-            res = pd->runFirmwareFlash(filePath, igscPath);
+            res = pd->runFirmwareFlash(buffer);
             if (res != XPUM_OK) {
                 stop = true;
                 toUnlock.push_back(pd);
@@ -428,22 +423,29 @@ void FirmwareManager::getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_
     // res = device->getFirmwareFlashResult(XPUM_DEVICE_FIRMWARE_GSC);
 
     result->deviceId = deviceId;
-    result->type = XPUM_DEVICE_FIRMWARE_GSC;
+    result->type = XPUM_DEVICE_FIRMWARE_GFX;
     // result->result = res;
     auto deviceList = getSiblingDevices(device);
 
+    int totalPercent = 0;
+    bool ongoing = false;
     for (auto pd : deviceList) {
+        totalPercent += pd->gscFwFlashPercent.load();
         // if sibling device is upgrading, and dont get the result until all device is ready
         if (pd->isUpgradingFw() && !pd->isUpgradingFwResultReady()) {
             result->result = XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
-            return;
+            ongoing = true;
         }
+    }
+    result->percentage = totalPercent / deviceList.size();
+    if (ongoing) {
+        return;
     }
 
     result->result = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
 
     for (auto pd : deviceList) {
-        res = pd->getFirmwareFlashResult(XPUM_DEVICE_FIRMWARE_GSC);
+        res = pd->getFirmwareFlashResult(XPUM_DEVICE_FIRMWARE_GFX);
         if (res != xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK) {
             result->result = res;
         }
@@ -491,12 +493,6 @@ static std::vector<std::shared_ptr<Device>> getSiblingDevices(std::shared_ptr<De
 }
 
 xpum_result_t FirmwareManager::runFwDataFlash(xpum_device_id_t deviceId, const char* filePath) {
-    // check tool if tool exists
-    if (!detectGfxTool()) {
-        XPUM_LOG_INFO("flash tool not exists");
-        return XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND;
-    }
-    
     std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (pDevice == nullptr) {
         return XPUM_GENERIC_ERROR;
@@ -542,16 +538,23 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
     std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
 
     result->deviceId = deviceId;
-    result->type = XPUM_DEVICE_FIRMWARE_FW_DATA;
+    result->type = XPUM_DEVICE_FIRMWARE_GFX_DATA;
     auto deviceList = getSiblingDevices(pDevice);
 
+    bool ongoing = false;
+    int totalPercent = 0;
     for (auto pd : deviceList) {
         // if sibling device is upgrading, and dont get the result until all device is ready
         auto fwDataMgmt = pd->getFwDataMgmt();
+        totalPercent += fwDataMgmt->percent.load();
         if (fwDataMgmt->isUpgradingFw() && !fwDataMgmt->isReady()) {
             result->result = XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
-            return;
+            ongoing = true;
         }
+    }
+    result->percentage = totalPercent / deviceList.size();
+    if (ongoing) {
+        return;
     }
 
     result->result = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
@@ -562,5 +565,40 @@ void FirmwareManager::getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmw
             result->result = res;
         }
     }
+}
+
+xpum_result_t FirmwareManager::getAMCSensorReading(xpum_sensor_reading_t data[], int* count) {
+    if (!initAmcManager()) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
+    }
+    GetAmcSensorReadingParam param;
+    p_amc_manager->getAMCSensorReading(param);
+    if (param.errCode != XPUM_OK) {
+        return param.errCode;
+    }
+    auto& readingDataList = param.dataList;
+    if (data == nullptr) {
+        *count = readingDataList.size();
+        return XPUM_OK;
+    }
+    if (*count < (int)readingDataList.size()) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    for (std::size_t i = 0; i < readingDataList.size(); i++) {
+        data[i] = readingDataList.at(i);
+    }
+    return XPUM_OK;
+}
+
+xpum_result_t FirmwareManager::getAMCSlotSerialNumbers(AmcCredential credential, std::vector<SlotSerialNumberAndFwVersion>& serialNumberList){
+    if (!initAmcManager()) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
+    }
+    GetAmcSlotSerialNumbersParam param;
+    param.username = credential.username;
+    param.password = credential.password;
+    p_amc_manager->getAMCSlotSerialNumbers(param);
+    serialNumberList = param.serialNumberList;
+    return XPUM_OK;
 }
 } // namespace xpum

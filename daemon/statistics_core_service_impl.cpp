@@ -28,9 +28,9 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
         // XPUM_STATS_MEMORY_WRITE,
         XPUM_STATS_MEMORY_READ_THROUGHPUT,
         XPUM_STATS_MEMORY_WRITE_THROUGHPUT,
-        // XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION,
-        // XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION,
-        // XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,
+        XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION,
+        XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION,
+        XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,
         XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION,
         XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION,
         XPUM_STATS_RAS_ERROR_CAT_RESET,
@@ -70,6 +70,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
                 response->set_errormsg("Error");
                 break;
         }
+        response->set_errorno(res);
         return grpc::Status::OK;
     }
     response->set_begin(begin);
@@ -96,6 +97,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
             deviceStatsData->set_scale(data.scale);
         }
     }
+    response->set_errorno(res);
     return grpc::Status::OK;
 }
 
@@ -106,6 +108,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
     xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end, sessionId);
+    response->set_errorno(res);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_RESULT_GROUP_NOT_FOUND:
@@ -151,8 +154,8 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
     xpum_result_t res = xpumGetStats(deviceId, dataList, &count, &begin, &end, sessionId);
+    response->set_errorno(res);
     if (res != XPUM_OK || count < 0) {
-        response->set_status(res);
         switch (res) {
             case XPUM_RESULT_DEVICE_NOT_FOUND:
                 response->set_errormsg("device not found");
@@ -200,6 +203,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
     xpum_result_t res = xpumGetStatsByGroup(groupId, dataList, &count, &begin, &end, sessionId);
+    response->set_errorno(res);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_RESULT_GROUP_NOT_FOUND:
@@ -246,8 +250,8 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     uint32_t count;
     uint64_t begin, end;
     xpum_result_t res = xpumGetEngineStats(deviceId, nullptr, &count, &begin, &end, sessionId);
+    response->set_errorno(res);
     if (res != XPUM_OK) {
-        response->set_status(res);
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
@@ -260,8 +264,8 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     xpum_device_engine_stats_t dataList[count];
     res = xpumGetEngineStats(deviceId, dataList, &count, &begin, &end, sessionId);
+    response->set_errorno(res);
     if (res != XPUM_OK) {
-        response->set_status(res);
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
@@ -304,6 +308,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
             dataList->set_count(typeCountInfo.count);
         }
     }
+    response->set_errorno(XPUM_OK);
     return grpc::Status::OK;
 }
 
@@ -313,8 +318,8 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     uint32_t count;
     uint64_t begin, end;
     auto res = xpumGetFabricThroughputStats(deviceId, nullptr, &count, &begin, &end, sessionId);
+    response->set_errorno(res);
     if (res != XPUM_OK) {
-        response->set_status(res);
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
@@ -327,8 +332,8 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
     }
     xpum_device_fabric_throughput_stats_t dataList[count];
     res = xpumGetFabricThroughputStats(deviceId, dataList, &count, &begin, &end, sessionId);
+    response->set_errorno(res);
     if (res != XPUM_OK) {
-        response->set_status(res);
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
@@ -372,6 +377,7 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
             dataList->set_remotetileid(d.remote_tile_id);
         }
     }
+    response->set_errorno(XPUM_OK);
     return grpc::Status::OK;
 }
 } // namespace xpum::daemon

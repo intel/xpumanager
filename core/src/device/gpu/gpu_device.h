@@ -51,8 +51,9 @@ class GPUDevice : public Device {
     void getPCIeRead(Callback_t callback) noexcept override;
     void getPCIeWrite(Callback_t callback) noexcept override;
     void getFabricThroughput(Callback_t callback) noexcept override;
+    void getPerfMetrics(Callback_t callback) noexcept override;
 
-    virtual xpum_result_t runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept override; //GSC
+    virtual xpum_result_t runFirmwareFlash(std::vector<char> img) noexcept override; //GSC
     virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept override;
 
     virtual bool isUpgradingFw(void) noexcept override;

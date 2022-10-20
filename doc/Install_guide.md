@@ -3,7 +3,9 @@
 
 ## Requirements
 oneAPI Level Zero
-openssl11-libs
+Intel(R) Graphics System Controller Firmware Update Library
+Intel(R) Metrics Library for MDAPI
+Intel(R) Metrics Discovery Application Programming Interface
 
 ## DEB install
 sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
@@ -14,17 +16,17 @@ sudo dpkg -r xpumanager
 ## RPM install
 sudo rpm -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 
+## Start to use Intel XPU Manager
+By default, Intel XPU Manager is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
+
 ## RPM relocation install
 rpm -i --prefix=/opt/abc xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
-
-## Start to user Intel XPU Manager
-By default, Intel XPU Manager is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
 
 ## RPM uninstall
 sudo rpm -e xpumanager
 
 ## How to enable or disable some daemon monitor metrics
-By default, Intel XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrices or disable some metrices. 
+By default, Intel XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics. 
   
 1. edit file "/lib/systemd/system/xpum.service" or "/etc/systemd/system/xpum.service" in some system.
    add "-m metric-indexes" to ExecStart. 
@@ -65,7 +67,7 @@ Metric types:
 26. Display Errors Uncorrectable, per tile (Not supported so far)
 27. Memory Errors Correctable, per tile
 28. Memory Errors Uncorrectable, per tile
-29. GPU Requsted Frequency, per tile
+29. GPU Requested Frequency, per tile
 30. GPU Memory Temperature, per tile
 31. GPU Frequency Throttle Ratio, per tile (Not supported so far)
 32. GPU PCIe Read Throughput (kB/s), per GPU (Disabled by default)
@@ -77,6 +79,6 @@ Metric types:
 
 ### Change the system settings to enable some GPU advanced metrics
 * GPU PCIe Read/Write Throughput: if these metrics are enabled, XPU Manager automatically loads MSR module by command 'modprobe msr', but XPU Manager will not automatically unload the MSR module. If you want to unload it, please run the command 'modprobe -r msr'.
-
+  
 ## GPU memory ECC on/off
-XPU Manager provides the GPU memory ECC on/off feature based on [IGSC](https://github.com/intel/igsc). GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer version. 
+XPU Manager provides the GPU memory ECC on/off feature based on [IGSC](https://github.com/intel/igsc). GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer version.

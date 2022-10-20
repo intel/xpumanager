@@ -11,6 +11,8 @@
 
 #include "core_stub.h"
 #include "cli_table.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -20,17 +22,33 @@ ComletTop::ComletTop() : ComletBase("top",
 
 void ComletTop::setupOptions() {
     this->opts = std::unique_ptr<ComletTopOptions>(new ComletTopOptions());
-    addOption("-d,--device", this->opts->deviceId, 
-            "To specify a device ID to query.");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
+    deviceIdOpt->check([](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+    });
 }
 
 std::unique_ptr<nlohmann::json> ComletTop::run() {
     std::unique_ptr<nlohmann::json> json;
-    if (this->opts->deviceId == -1) {
+    if (this->opts->deviceId == "-1") {
         json = this->coreStub->getAllDeviceUtilizationByProcess(200 * 1000);
     } else {
-        json = this->coreStub->getDeviceUtilizationByProcess(
-            this->opts->deviceId, 200 * 1000);
+        int targetId = -1;
+        if (isNumber(this->opts->deviceId)) {
+            targetId = std::stoi(this->opts->deviceId);
+        } else {
+            auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+            if (convertResult->contains("error")) {
+                return convertResult;
+            }
+        }
+        json = this->coreStub->getDeviceUtilizationByProcess(targetId, 200 * 1000);
     }
     return json;
 }

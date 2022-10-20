@@ -12,8 +12,9 @@
 #include <stdexcept>
 
 #include "cli_table.h"
-#include "core.pb.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -85,6 +86,19 @@ static CharTableConfig ComletConfigRemoveDeviceFromGroup(R"({
     }]
 })"_json);
 
+static std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> result;
+    std::stringstream ss (s);
+    std::string item;
+
+    while (getline (ss, item, delim)) {
+        if (item.size() > 0)
+            result.push_back(item);
+    }
+
+    return result;
+}
+
 void ComletGroup::setupOptions() {
     this->opts = std::unique_ptr<ComletGroupOptions>(new ComletGroupOptions());
 
@@ -97,6 +111,16 @@ void ComletGroup::setupOptions() {
     auto g = addOption("-g,--group", this->opts->groupId, "Group ID.")->check(CLI::Range((uint32_t)1, std::numeric_limits<uint32_t>::max(), "unsigned"));
     auto n = addOption("-n,--name", this->opts->name, "Group name.");
     auto d = addOption("-d,--device", this->opts->deviceList, "Device IDs.");
+    d->check([this](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        std::vector<std::string> deviceIds = split(str, ' ');
+        for (auto id : deviceIds) {
+            if (!isValidDeviceId(id) && !isBDF(id)) {
+                return errStr;
+            }
+        }
+        return std::string();
+    });
 
     c->needs(n);
     c->excludes(de);
@@ -164,10 +188,19 @@ std::unique_ptr<nlohmann::json> ComletGroup::addDeviceToGroup() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     bool fail = false, sucess = false;
     std::vector<nlohmann::json> failList;
-    std::vector<int> sucessList;
+    std::vector<std::string> sucessList;
     for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
         auto &id = this->opts->deviceList[i];
-        std::unique_ptr<nlohmann::json> result = this->coreStub->groupAddDevice(opts->groupId, id);
+        int targetId = -1;
+        if (isNumber(id)) {
+            targetId = std::stoi(id);
+        } else {
+            auto convertResult = this->coreStub->getDeivceIdByBDF(id.c_str(), &targetId);
+            if (convertResult->contains("error")) {
+                return convertResult;
+            }
+        }
+        std::unique_ptr<nlohmann::json> result = this->coreStub->groupAddDevice(opts->groupId, targetId);
         if (result->contains("error")) {
             fail = true;
             failList.push_back(*result);
@@ -192,10 +225,19 @@ std::unique_ptr<nlohmann::json> ComletGroup::removeDeviceFromGroup() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     bool fail = false, sucess = false;
     std::vector<nlohmann::json> failList;
-    std::vector<int> sucessList;
+    std::vector<std::string> sucessList;
     for (size_t i = 0; i < this->opts->deviceList.size(); i++) {
         auto &id = this->opts->deviceList[i];
-        std::unique_ptr<nlohmann::json> result = this->coreStub->groupRemoveDevice(opts->groupId, id);
+        int targetId = -1;
+        if (isNumber(id)) {
+            targetId = std::stoi(id);
+        } else {
+            auto convertResult = this->coreStub->getDeivceIdByBDF(id.c_str(), &targetId);
+            if (convertResult->contains("error")) {
+                return convertResult;
+            }
+        }
+        std::unique_ptr<nlohmann::json> result = this->coreStub->groupRemoveDevice(opts->groupId, targetId);
         if (result->contains("error")) {
             fail = true;
             failList.push_back(*result);
@@ -276,6 +318,7 @@ static void showRemoveDeviceFromGroupResult(std::ostream &out, std::shared_ptr<n
 void ComletGroup::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
+        setExitCodeByJson(*res);
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         return;
     }

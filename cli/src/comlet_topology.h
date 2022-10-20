@@ -15,6 +15,7 @@ namespace xpum::cli {
 
 struct ComletTopologyOptions {
     int deviceId = -1;
+    std::string device = "";
     std::string xmlFile = "";
     bool xeLink = false;
 };
@@ -31,7 +32,7 @@ class ComletTopology : public ComletBase {
     virtual void getTableResult(std::ostream &out) override;
 
     inline const bool isDeviceOperation() const {
-        return opts->deviceId >= 0;
+        return opts->deviceId >= 0 || opts->device != "";
     }
 
    private:

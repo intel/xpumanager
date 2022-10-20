@@ -10,6 +10,8 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -128,10 +130,37 @@ static CharTableConfig ComletConfigHealthFabricPort(R"({
     }]
 })"_json);
 
+static CharTableConfig ComletConfigHealthFrequency(R"({
+    "showTitleRow": false,
+    "columns": [{
+        "title": "none",
+        "size": 26
+    }, {
+        "title": "none"
+    }],
+    "rows": [{
+        "instance": "frequency",
+        "cells": [
+            { "rowTitle": "6. GPU Frequency" }, [
+            { "label": "Status", "value": "status" },
+            { "label": "Description", "value": "description" }
+        ]]
+    }]
+})"_json);
+
 void ComletHealth::setupOptions() {
     this->opts = std::unique_ptr<ComletHealthOptions>(new ComletHealthOptions());
     addFlag("-l,--list", this->opts->listAll, "Display health info for all devices");
-    addOption("-d,--device", this->opts->deviceId, "The device ID");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
+    deviceIdOpt->check([](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+    });
     addOption("-g,--group", this->opts->groupId, "The group ID");
     addOption("-c,--component", this->opts->componentType,
               "Component types\n\
@@ -139,7 +168,8 @@ void ComletHealth::setupOptions() {
       2. GPU Memory Temperature\n\
       3. GPU Power\n\
       4. GPU Memory\n\
-      5. Xe Link Port");
+      5. Xe Link Port\n\
+      6. GPU Frequency");
     addOption("--threshold", this->opts->threshold, "Set custom threshold for device component");
 }
 
@@ -150,47 +180,58 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         return json;
     }
 
-    if (this->opts->deviceId != INT_MIN && this->opts->deviceId < 0) {
-        (*json)["error"] = "device not found";
-        return json;
-    }
-
     if (this->opts->groupId == 0) {
         (*json)["error"] = "group not found";
+        (*json)["errno"] = XPUM_CLI_ERROR_GROUP_NOT_FOUND;
         return json;
     }
 
-    if (this->opts->componentType != INT_MIN && (this->opts->componentType < 1 || this->opts->componentType > 5)) {
+    if (this->opts->componentType != INT_MIN && (this->opts->componentType < 1 || this->opts->componentType > 6)) {
         (*json)["error"] = "invalid component";
+        (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_TYPE;
         return json;
     }
 
     if ((this->opts->threshold != INT_MIN && this->opts->threshold < -1) || (this->opts->threshold == 0)) {
         (*json)["error"] = "invalid threshold";
+        (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_THRESHOLD;
         return json;
     }
 
-    if (this->opts->deviceId >= 0) {
+    int targetId = -1;
+    if (this->opts->deviceId != "-1") {
+        if (isNumber(this->opts->deviceId)) {
+            targetId = std::stoi(this->opts->deviceId);
+        } else {
+            auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+            if (convertResult->contains("error")) {
+                return convertResult;
+            }
+        }
+    }
+
+    if (targetId >= 0) {
         if (this->opts->threshold >= -1) {
             if (this->opts->componentType == 1) {
-                json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_CORE_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfig(targetId, 0, this->opts->threshold);
             } else if (this->opts->componentType == 2) {
-                json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_MEMORY_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfig(targetId, 1, this->opts->threshold);
             } else if (this->opts->componentType == 3) {
-                json = this->coreStub->setHealthConfig(this->opts->deviceId, HEALTH_POWER_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfig(targetId, 2, this->opts->threshold);
             } else {
                 (*json)["error"] = "threshold setting unsupported";
+                (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_CONIG_TYPE;
             }
             if ((*json).contains("error")) {
                 return json;
             }
-            json = this->coreStub->getHealth(this->opts->deviceId, this->opts->componentType);
+            json = this->coreStub->getHealth(targetId, this->opts->componentType);
             return json;
         } else {
-            if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
-                json = this->coreStub->getHealth(this->opts->deviceId, this->opts->componentType);
+            if (this->opts->componentType >= 1 && this->opts->componentType <= 6)
+                json = this->coreStub->getHealth(targetId, this->opts->componentType);
             else
-                json = this->coreStub->getHealth(this->opts->deviceId, -1);
+                json = this->coreStub->getHealth(targetId, -1);
             return json;
         }
     }
@@ -198,13 +239,14 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
     if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
         if (this->opts->threshold >= -1) {
             if (this->opts->componentType == 1) {
-                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_CORE_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, 0, this->opts->threshold);
             } else if (this->opts->componentType == 2) {
-                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_MEMORY_THERMAL_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, 1, this->opts->threshold);
             } else if (this->opts->componentType == 3) {
-                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, HEALTH_POWER_LIMIT, this->opts->threshold);
+                json = this->coreStub->setHealthConfigByGroup(this->opts->groupId, 2, this->opts->threshold);
             } else {
                 (*json)["error"] = "threshold setting unsupported";
+                (*json)["errno"] = XPUM_CLI_ERROR_HEALTH_INVALID_CONIG_TYPE;
             }
             if ((*json).contains("error")) {
                 return json;
@@ -212,7 +254,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
             json = this->coreStub->getHealthByGroup(this->opts->groupId, this->opts->componentType);
             return json;
         } else {
-            if (this->opts->componentType >= 1 && this->opts->componentType <= 5)
+            if (this->opts->componentType >= 1 && this->opts->componentType <= 6)
                 json = this->coreStub->getHealthByGroup(this->opts->groupId, this->opts->componentType);
             else
                 json = this->coreStub->getHealthByGroup(this->opts->groupId, -1);
@@ -220,6 +262,7 @@ std::unique_ptr<nlohmann::json> ComletHealth::run() {
         }
     }
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
+    (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
     return json;
 }
 
@@ -235,6 +278,7 @@ static void showHealthAllComps(std::ostream &out, std::shared_ptr<nlohmann::json
     showHealth(out, json, ComletConfigHealthPower);
     showHealth(out, json, ComletConfigHealthMemory);
     showHealth(out, json, ComletConfigHealthFabricPort);
+    showHealth(out, json, ComletConfigHealthFrequency);
 }
 
 static void showHealthComp(std::ostream &out, std::shared_ptr<nlohmann::json> json, CharTableConfig &healthConfig, const bool cont = false) {
@@ -263,6 +307,7 @@ static void showHealthMultiDeviceComp(std::ostream &out, std::shared_ptr<nlohman
 void ComletHealth::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
+        setExitCodeByJson(*res);
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         return;
     }
@@ -274,8 +319,9 @@ void ComletHealth::getTableResult(std::ostream &out) {
         showHealthMultiDevicesAllComps(out, json);
         return;
     }
-    if (this->opts->deviceId >= 0) {
-        if (ct >= 1 && ct <= 5) {
+
+    if (this->opts->deviceId != "-1") {
+        if (ct >= 1 && ct <= 6) {
             switch (ct) {
                 case 1:
                     showHealthComp(out, json, ComletConfigHealthCoreTemp);
@@ -292,6 +338,9 @@ void ComletHealth::getTableResult(std::ostream &out) {
                 case 5:
                     showHealthComp(out, json, ComletConfigHealthFabricPort);
                     break;
+                case 6:
+                    showHealthComp(out, json, ComletConfigHealthFrequency);
+                    break;
             }
         } else {
             showHealthAllComps(out, json);
@@ -299,7 +348,7 @@ void ComletHealth::getTableResult(std::ostream &out) {
         return;
     }
     if (this->opts->groupId > 0) {
-        if (ct >= 1 && ct <= 5) {
+        if (ct >= 1 && ct <= 6) {
             switch (ct) {
                 case 1:
                     showHealthMultiDeviceComp(out, json, ComletConfigHealthCoreTemp);
@@ -315,6 +364,9 @@ void ComletHealth::getTableResult(std::ostream &out) {
                     break;
                 case 5:
                     showHealthMultiDeviceComp(out, json, ComletConfigHealthFabricPort);
+                    break;
+                case 6:
+                    showHealthMultiDeviceComp(out, json, ComletConfigHealthFrequency);
                     break;
             }
         } else {

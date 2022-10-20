@@ -1,6 +1,6 @@
 # Intel XPU Manager
 Intel XPU Manager is an in-band node-level tool that provides local/remote GPU management. It is easily integrated into the cluster management solutions and cluster scheduler. GPU users may use it to manage Intel GPUs, locally. 
-It supports local command line interface, local library call and remote RESTful API interface.
+It supports local command line interface, local library call and remote RESTFul API interface.
 
 ***So far, this container image is targeted as a Prometheus exporter.***
 

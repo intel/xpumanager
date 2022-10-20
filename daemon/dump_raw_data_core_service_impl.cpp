@@ -88,7 +88,7 @@ static void removeFileOnStartTaskFail(std::string filePath) {
         dumpTypeList.size(),
         dumpFilePath.c_str(),
         &taskInfo);
-    response->set_status(res);
+    response->set_errorno(res);
     if (res == XPUM_OK) {
         auto grpcTaskInfo = response->mutable_taskinfo();
         grpcTaskInfo->set_dumptaskid(taskInfo.taskId);
@@ -123,7 +123,7 @@ static void removeFileOnStartTaskFail(std::string filePath) {
 ::grpc::Status XpumCoreServiceImpl::stopDumpRawDataTask(::grpc::ServerContext* context, const ::StopDumpRawDataTaskRequest* request, ::StopDumpRawDataTaskReponse* response) {
     xpum_dump_raw_data_task_t taskInfo;
     auto res = xpumStopDumpRawDataTask(request->dumptaskid(), &taskInfo);
-    response->set_status(res);
+    response->set_errorno(res);
     if (res == XPUM_OK) {
         auto grpcTaskInfo = response->mutable_taskinfo();
         grpcTaskInfo->set_dumptaskid(taskInfo.taskId);
@@ -157,7 +157,7 @@ static void removeFileOnStartTaskFail(std::string filePath) {
     std::vector<xpum_dump_raw_data_task_t> taskInfoList;
     do {
         res = xpumListDumpRawDataTasks(nullptr, &count);
-        response->set_status(res);
+        response->set_errorno(res);
         if (res != XPUM_OK || count < 0) {
             switch (res) {
                 case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
@@ -177,7 +177,7 @@ static void removeFileOnStartTaskFail(std::string filePath) {
 
         res = xpumListDumpRawDataTasks(taskInfoList.data(), &count);
 
-        response->set_status(res);
+        response->set_errorno(res);
 
     } while (res == XPUM_BUFFER_TOO_SMALL);
 

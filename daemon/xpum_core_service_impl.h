@@ -36,9 +36,13 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
     virtual grpc::Status getDeviceList(grpc::ServerContext* context, const google::protobuf::Empty* request,
                                        XpumDeviceBasicInfoArray* response) override;
 
-    virtual grpc::Status getAMCFirmwareVersions(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAMCFirmwareVersionsResponse* response) override;
+    virtual grpc::Status getAMCFirmwareVersions(::grpc::ServerContext* context, const ::GetAMCFirmwareVersionsRequest* request, ::GetAMCFirmwareVersionsResponse* response) override;
+
+    virtual grpc::Status getRedfishAmcWarnMsg(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetRedfishAmcWarnMsgResponse* response) override;
 
     virtual grpc::Status getDeviceProperties(grpc::ServerContext* context, const DeviceId* request, XpumDeviceProperties* response) override;
+
+    virtual grpc::Status getDeviceIdByBDF(grpc::ServerContext* context, const DeviceBDF* request, DeviceId* response) override;
 
     virtual grpc::Status getTopology(grpc::ServerContext* context, const DeviceId* request,
                                      XpumTopologyInfo* response) override;
@@ -61,6 +65,8 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
                                                  ::DiagnosticsGroupTaskInfo* response) override;
     virtual ::grpc::Status getDiagnosticsResult(::grpc::ServerContext* context, const ::DeviceId* request,
                                                 ::DiagnosticsTaskInfo* response) override;
+    virtual ::grpc::Status getDiagnosticsMediaCodecResult(::grpc::ServerContext* context, const ::DeviceId* request, 
+                                                ::DiagnosticsMediaCodecInfoArray* response) override;
     virtual ::grpc::Status getDiagnosticsResultByGroup(::grpc::ServerContext* context, const ::GroupId* request,
                                                        ::DiagnosticsGroupTaskInfo* response) override;
     virtual ::grpc::Status getHealth(::grpc::ServerContext* context, const ::HealthDataRequest* request,
@@ -100,6 +106,7 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
     virtual ::grpc::Status setDeviceFrequencyRange(::grpc::ServerContext* context, const ::ConfigDeviceFrequencyRangeRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status setDeviceStandbyMode(::grpc::ServerContext* context, const ::ConfigDeviceStandbyRequest* request, ::ConfigDeviceResultData* response) override;
     virtual ::grpc::Status getDeviceProcessState(::grpc::ServerContext* context, const ::DeviceId* request, ::DeviceProcessStateResponse* response) override;
+    virtual ::grpc::Status getDeviceComponentOccupancyRatio(::grpc::ServerContext* context, const ::DeviceComponentOccupancyRatioRequest* request, ::DeviceComponentOccupancyRatioResponse* response) override;
     virtual ::grpc::Status getDeviceUtilizationByProcess(::grpc::ServerContext* context, const ::DeviceUtilizationByProcessRequest* request, ::DeviceUtilizationByProcessResponse* response) override;
     virtual ::grpc::Status getAllDeviceUtilizationByProcess(::grpc::ServerContext* context, const ::UtilizationInterval* request, ::DeviceUtilizationByProcessResponse* response) override;
     virtual ::grpc::Status resetDevice(::grpc::ServerContext* context, const ::ResetDeviceRequest* request, ::ResetDeviceResponse* response) override;
@@ -128,6 +135,10 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
     virtual ::grpc::Status getFabricStatistics(::grpc::ServerContext* context, const ::GetFabricStatsRequest* request, ::GetFabricStatsResponse* response) override;
 
     virtual ::grpc::Status getFabricCount(::grpc::ServerContext* context, const ::GetFabricCountRequest* request, ::GetFabricCountResponse* response) override;
+
+    virtual ::grpc::Status getAMCSensorReading(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::GetAMCSensorReadingResponse* response) override;
+
+    virtual ::grpc::Status getDeviceSerialNumberAndAmcFwVersion(::grpc::ServerContext* context, const ::GetDeviceSerialNumberRequest* request, ::GetDeviceSerialNumberResponse* response) override;
 
    private:
     std::atomic_bool stop;

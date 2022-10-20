@@ -48,22 +48,6 @@ RUN pip3 install grpcio-tools mistune==0.8.4 apispec apispec_webframeworks \
       apispec-webframeworks myst-parser marshmallow \
       prometheus-client flask flask_httpauth
 
-RUN wget -qc --no-check-certificate https://github.com/intel/metee/archive/refs/tags/3.1.3.tar.gz -O - | tar -xz && \
-    cd /metee-3.1.3 && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make -j4 && \
-    make install
-    
-RUN wget -qc --no-check-certificate https://github.com/intel/igsc/archive/refs/tags/V0.8.0.tar.gz -O - | tar -xz && \
-    cd /igsc-0.8.0 && \
-    mkdir build && \
-    cd build && \
-    cmake -DENABLE_ENUM=OFF .. && \
-    make -j4 && \
-    make install DESTDIR=/stage
-
 RUN apt-get remove -y libpciaccess-dev libpciaccess0 && \
   apt-get autoremove -y
 
@@ -106,6 +90,7 @@ RUN apt-get update && \
     python3 \
     libnl-genl-3-200 \
     libgrpc++1 \
+    intel-gsc \
     intel-level-zero-gpu \
     level-zero \
     libdrm2 \
@@ -115,7 +100,6 @@ RUN apt-get update && \
   apt-get autoremove -y && \
   rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /stage/* /usr
 COPY --from=builder /opt/venv /opt/venv
 
 COPY build-deb/*.deb .

@@ -10,6 +10,8 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -85,7 +87,16 @@ static CharTableConfig ComletTileConfiguration(R"({
 */
 void ComletConfig::setupOptions() {
     this->opts = std::unique_ptr<ComletConfigOptions>(new ComletConfigOptions());
-    addOption("-d,--device", this->opts->deviceId, "The device ID");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->device, "The device ID or PCI BDF address to query");
+    deviceIdOpt->check([this](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+    });
     addOption("-t,--tile", this->opts->tileId, "The tile ID");
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
@@ -119,6 +130,17 @@ std::vector<std::string> ComletConfig::split(std::string str, std::string delimi
 }
 
 std::unique_ptr<nlohmann::json> ComletConfig::run() {
+    if (this->opts->device != "") {
+        if (isNumber(this->opts->device)) {
+            this->opts->deviceId = std::stoi(this->opts->device);
+        } else {
+            auto json = this->coreStub->getDeivceIdByBDF(
+                this->opts->device.c_str(), &this->opts->deviceId);
+            if (json->contains("error")) {
+                return json;
+            }
+        }
+    }
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     (*json)["return"] = "error";
     if (isQuery()) {
@@ -141,7 +163,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
 
                 try {
                     val1 = std::stoi(paralist.at(1));
-                } catch (std::invalid_argument const& e) {
+                } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: timeout";
                     return json;
                 }
@@ -151,7 +173,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                     return json;
                 }
 
-                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMEOUT,
+                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, 0,
                                                               val1, 0);
             } else if (command.compare("timeslice") == 0) {
                 if (paralist.size() != 3 || paralist.at(1).empty() || paralist.at(2).empty()) {
@@ -161,7 +183,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 try {
                     val1 = std::stoi(paralist.at(1));
                     val2 = std::stoi(paralist.at(2));
-                } catch (std::invalid_argument const& e) {
+                } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: timeslice";
                     return json;
                 }
@@ -170,13 +192,13 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                     (*json)["return"] = "invalid parameter: time slice should bigger than 0.";
                     return json;
                 }
-                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_TIMESLICE, val1, val2);
+                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, XPUM_TIMESLICE, val1, val2);
             } else if (command.compare("exclusive") == 0) {
                 if (paralist.size() != 1) {
                     (*json)["return"] = "invalid parameter: exclusive";
                     return json;
                 }
-                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, SCHEDULER_EXCLUSIVE, 0, 0);
+                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, XPUM_EXCLUSIVE, 0, 0);
             } else {
                 (*json)["return"] = "invalid scheduler mode";
                 return json;
@@ -192,7 +214,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 int val1;
                 try {
                     val1 = std::stoi(paralist.at(0));
-                } catch (std::invalid_argument const& e) {
+                } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: powerlimit";
                     return json;
                 }
@@ -219,14 +241,14 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             }
             return json;
         } else if (this->opts->tileId >= 0 && !this->opts->standby.empty()) {
-            XpumStandbyMode mode;
+            int mode;
             std::for_each(this->opts->standby.begin(), this->opts->standby.end(), [](char &c) {
                 c = ::tolower(c);
             });
             if (this->opts->standby.compare("never") == 0) {
-                mode = STANDBY_NEVER;
+                mode = 1;
             } else if (this->opts->standby.compare("default") == 0) {
-                mode = STANDBY_DEFAULT;
+                mode = 0;
             } else {
                 (*json)["return"] = "invalid parameter: standby mode";
                 return json;
@@ -244,7 +266,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                 try {
                     val1 = std::stoi(paralist.at(0));
                     val2 = std::stoi(paralist.at(1));
-                } catch (std::invalid_argument const& e) {
+                } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: frequency range";
                     return json;
                 }
@@ -305,7 +327,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             try {
                 port = std::stoi(paralist.at(0));
                 enabled = std::stoi(paralist.at(1));
-            } catch (std::invalid_argument const& e) {
+            } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: xeLink port";
                     return json;
             }
@@ -331,7 +353,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             try {
                 port = std::stoi(paralist.at(0));
                 beaconing = std::stoi(paralist.at(1));
-            } catch (std::invalid_argument const& e) {
+            } catch (std::exception &e) {
                     (*json)["return"] = "invalid parameter: xeLink beaconing";
                     return json;
             }
@@ -351,7 +373,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             int eccVal;
             try {
                 eccVal = std::stoi(this->opts->setecc);
-            } catch (std::invalid_argument const &e) {
+            } catch (std::exception &e) {
                 (*json)["return"]="invalid parameter value";
                 return json;     
             }
@@ -436,9 +458,14 @@ void ComletConfig::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("return")) {
         out << "Return: " << (*res)["return"].get<std::string>() << std::endl;
+        if ((res->contains("status") == false) || 
+            ((*res)["status"] != "OK" && (*res)["status"] != "CANCEL")) {
+            exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
+        }
         return;
     } else if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+        setExitCodeByJson(*res);
         return;
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();

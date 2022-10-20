@@ -49,6 +49,13 @@ CoreStub::CoreStub() {
     }
 
     ze_driver_handle = drivers[0];
+    ze_driver_properties_t driver_prop;
+    status = zeDriverGetProperties(ze_driver_handle, &driver_prop); 
+    if (status != ZE_RESULT_SUCCESS) {
+        std::cout << "zeDriverGetProperties Failed with return code: " << to_string(status) << std::endl;
+        exit(-1);
+    }
+    driver_version = std::to_string(driver_prop.driverVersion);
 
     uint32_t deviceCount = 0;
     status = zeDeviceGet(ze_driver_handle, &deviceCount, nullptr);
@@ -64,19 +71,24 @@ CoreStub::CoreStub() {
         exit(-1);
     }
 
-    for (uint32_t device = 0; device < deviceCount; ++device) {
-        ze_device_handles.push_back(devices[device]);
-        zes_device_handles.push_back((zes_device_handle_t)devices[device]);
+    for (int deviceIdx = 0; deviceIdx < deviceCount; deviceIdx++) {
+        ze_device_handles.push_back(devices[deviceIdx]);
+        zes_device_handles.push_back((zes_device_handle_t)devices[deviceIdx]);
 
         ze_device_properties_t ze_device_properties;
         ze_device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-        status = zeDeviceGetProperties(devices[device], &ze_device_properties);
+        status = zeDeviceGetProperties(devices[deviceIdx], &ze_device_properties);
         if (status != ZE_RESULT_SUCCESS) {
             std::cout << "zeDeviceGetProperties Failed with return code: " << to_string(status) << std::endl;
             exit(-1);
         }
         uint32_t deviceId = ze_device_properties.deviceId;
         if (deviceId == 0x56c1) {
+            if (deviceIdx % 2 == 0) {
+                sibling_devices[deviceIdx] = {deviceIdx, deviceIdx + 1};
+            } else {
+                sibling_devices[deviceIdx] = {deviceIdx - 1, deviceIdx};
+            }
             power_limit = 23;
         } else if (deviceId == 0x56c0) {
             power_limit = 120;
@@ -107,8 +119,8 @@ CoreStub::~CoreStub() {
 std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
-    (*json)["xpum_version"] = "1.0";
-    (*json)["xpum_version_git"] = "1.0";
+    // (*json)["xpum_version"] = "1.1";
+    // (*json)["xpum_version_git"] = "1.1";
     (*json)["level_zero_version"] = "Not Detected";
     ze_result_t res;
     size_t size = 0;
@@ -121,7 +133,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
                 std::string str = std::to_string(versions[0].component_lib_version.major)
                     + "." + std::to_string(versions[0].component_lib_version.minor)
                     + "." + std::to_string(versions[0].component_lib_version.patch);
-                driver_version = str;
                 (*json)["level_zero_version"] = str;
             }
            
@@ -176,7 +187,7 @@ std::string CoreStub::getUUID(uint8_t(&uuidBuf)[16]) {
     return uuid;
 }
 
-std::string CoreStub::getBdfAddress(const ze_device_handle_t& zes_device) {
+std::string CoreStub::getBdfAddress(const zes_device_handle_t& zes_device) {
     zes_pci_properties_t pci_props;
     pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
     ze_result_t res = zesDevicePciGetProperties(zes_device, &pci_props);
@@ -222,8 +233,11 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     (*deviceJson)["core_clock_rate_mhz"] = zes_device_properties.core.coreClockRate;
     (*deviceJson)["device_stepping"] = "unknown";
     (*deviceJson)["driver_version"] = driver_version;
-
     (*deviceJson)["pci_bdf_address"] = getBdfAddress(zes_device);
+    (*deviceJson)["gfx_firmware_name"] = "GFX";
+    (*deviceJson)["gfx_firmware_version"] = igsc_instance.getDeviceGSCVersion((*deviceJson)["pci_bdf_address"]);
+    (*deviceJson)["gfx_data_firmware_name"] = "GFX_DATA";
+    (*deviceJson)["gfx_data_firmware_version"] = igsc_instance.getDeviceGSCDataVersion((*deviceJson)["pci_bdf_address"]);
     zes_pci_properties_t pci_props;
     pci_props.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
     res = zesDevicePciGetProperties(zes_device, &pci_props);
@@ -313,6 +327,16 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     return deviceJson;
 }
 
+static std::string eccStateToString(uint8_t state) {
+    if (state == 1) {
+        return "enabled";
+    } else if (state == 0) {
+        return "disabled";
+    } else {
+        return "unavailable";
+    }
+}
+
 std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tileId) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
@@ -323,12 +347,12 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     std::vector<nlohmann::json> tileJsonList;
     ze_result_t res;
     uint32_t sub_device_count = 0;
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, nullptr);
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
@@ -341,13 +365,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
             (*json)["error"] = "invalid tile id";
             return json;
         }
-        sub_device_handles.push_back(zes_device_handles[deviceId]);
+        sub_device_handles.push_back(ze_device_handles[deviceId]);
     }
     for (int i = 0; i < sub_device_handles.size(); ++i) {
         auto tileJson = nlohmann::json();
         tileJson["tile_id"] = i;
         bool freq_supported = true;
-        auto freq_datas = handleFreqByLevel0(sub_device_handles[i], false, 0, 0, freq_supported);
+        auto freq_datas = handleFreqByLevel0((zes_device_handle_t)sub_device_handles[i], false, 0, 0, freq_supported);
         if (!freq_supported) {
             (*json)["error"] = "unsupported feature or insufficient privilege";
             return json;
@@ -367,6 +391,13 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceConfig(int deviceId, int tile
     }
     (*json)["power_limit"] = power_datas[0];
     (*json)["power_vaild_range"] = "1 to " + std::to_string(power_limit);
+    uint8_t cur = 0xFF;
+    uint8_t pen = 0xFF;
+    std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
+    if (igsc_instance.getDeviceEccState(bdf, &cur, &pen)) {
+        (*json)["memory_ecc_current_state"] = eccStateToString(cur);
+        (*json)["memory_ecc_pending_state"] = eccStateToString(pen);
+    }
     return json;
 }
 
@@ -379,12 +410,12 @@ std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int 
     }
     ze_result_t res;
     uint32_t sub_device_count = 0;
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, nullptr);
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
@@ -399,10 +430,10 @@ std::unique_ptr<nlohmann::json> CoreStub::setDevicePowerlimit(int deviceId, int 
             (*json)["error"] = "invalid tile id";
             return json;
         }
-        sub_device_handles.push_back(zes_device_handles[deviceId]);
+        sub_device_handles.push_back(ze_device_handles[deviceId]);
     }
     bool supported = true;
-    auto power_datas = handlePowerByLevel0(sub_device_handles[tileId], true, power * 1000, interval, supported);
+    auto power_datas = handlePowerByLevel0((zes_device_handle_t)sub_device_handles[tileId], true, power * 1000, interval, supported);
     if (supported) {
         if (power_datas.size() > 2 && power_datas[2] == -1) {
             (*json)["error"] = "Invalid power limit value";
@@ -435,6 +466,7 @@ std::vector<int> CoreStub::handlePowerByLevel0(zes_device_handle_t device, bool 
             for (auto& power : power_handles) {
                 zes_power_properties_t props;
                 props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+                props.pNext = nullptr;
                 status = zesPowerGetProperties(power, &props);
                 if (status == ZE_RESULT_SUCCESS) {
                     zes_power_sustained_limit_t sustained;
@@ -479,12 +511,12 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceFrequencyRange(int deviceId, 
     }
     ze_result_t res;
     uint32_t sub_device_count = 0;
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, nullptr);
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
@@ -497,10 +529,10 @@ std::unique_ptr<nlohmann::json> CoreStub::setDeviceFrequencyRange(int deviceId, 
             (*json)["error"] = "invalid tile id";
             return json;
         }
-        sub_device_handles.push_back(zes_device_handles[deviceId]);
+        sub_device_handles.push_back(ze_device_handles[deviceId]);
     }
     bool supported = true;
-    handleFreqByLevel0(sub_device_handles[tileId], true, minFreq, maxFreq, supported);
+    handleFreqByLevel0((zes_device_handle_t)sub_device_handles[tileId], true, minFreq, maxFreq, supported);
     if (supported)
         (*json)["status"] = "OK";
     else
@@ -528,6 +560,7 @@ std::vector<std::string> CoreStub::handleFreqByLevel0(zes_device_handle_t device
             for (auto& freq : freq_handles) {
                 zes_freq_properties_t prop;
                 prop.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+                prop.pNext = nullptr;
                 status = zesFrequencyGetProperties(freq, &prop);
                 if (status == ZE_RESULT_SUCCESS) {
                     if (prop.type != ZES_FREQ_DOMAIN_GPU) {
@@ -580,15 +613,21 @@ long long  CoreStub::getCurrentMillisecond() {
         .count();
 }
 
-std::string CoreStub::isotimestamp(uint64_t t) {
+std::string CoreStub::isotimestamp(uint64_t t, bool withoutDate) {
     time_t seconds = t / 1000;
     int milli_seconds = t % 1000;
     tm* tm_p = gmtime(&seconds);
     char buf[50];
-    strftime(buf, sizeof(buf), "%FT%T", tm_p);
     char milli_buf[10];
     sprintf_s(milli_buf, "%03d", milli_seconds);
-    return std::string(buf) + "." + std::string(milli_buf) + "Z";
+    if (withoutDate) {
+        strftime(buf, sizeof(buf), "%T", tm_p);
+        return std::string(buf) + "." + std::string(milli_buf);
+    }
+    else {
+        strftime(buf, sizeof(buf), "%FT%T", tm_p);
+        return std::string(buf) + "." + std::string(milli_buf) + "Z";
+    }
 }
 
 struct MetricsTypeEntry {
@@ -791,7 +830,7 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                         res = zesMemoryGetState(mem, &sysman_memory_state);
                         if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
                             uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
-                            data.max = data.min = data.avg = data.value = used;
+                            data.max = data.min = data.avg = data.value = used / 1024 / 1024;
                         }
                     }
                 }
@@ -823,13 +862,13 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                         double val = 0.0;
                         if (res == ZE_RESULT_SUCCESS) {
                             if (metricsType == XPUM_STATS_MEMORY_READ_THROUGHPUT) {
-                                if (mem_bandwidth2.readCounter > mem_bandwidth1.readCounter)
+                                if (mem_bandwidth2.readCounter >= mem_bandwidth1.readCounter)
                                     val = (mem_bandwidth2.readCounter - mem_bandwidth1.readCounter) * (1000.0 / memory_sampling_interval) / 1024;
                                 else
                                     val = -1;
                             }
                             else {
-                                if (mem_bandwidth2.writeCounter > mem_bandwidth1.writeCounter)
+                                if (mem_bandwidth2.writeCounter >= mem_bandwidth1.writeCounter)
                                     val = (mem_bandwidth2.writeCounter - mem_bandwidth1.writeCounter) * (1000.0 / memory_sampling_interval) / 1024;
                                 else
                                     val = -1;
@@ -925,17 +964,17 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
     std::vector<nlohmann::json> tileJsonList;
     ze_result_t res;
     uint32_t sub_device_count = 0;
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, nullptr);
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, nullptr);
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     std::vector<ze_device_handle_t> sub_device_handles(sub_device_count);
-    res = zeDeviceGetSubDevices(zes_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
+    res = zeDeviceGetSubDevices(ze_device_handles[deviceId], &sub_device_count, sub_device_handles.data());
     if (res != ZE_RESULT_SUCCESS) {
         std::cout << "zeDeviceGetSubDevices Failed with return code: " << to_string(res) << std::endl;
     }
     if (sub_device_count == 0) {
-        sub_device_handles.push_back(zes_device_handles[deviceId]);
+        sub_device_handles.push_back(ze_device_handles[deviceId]);
     }
     for (int i = 0; i < sub_device_handles.size(); ++i) {
         std::vector<nlohmann::json> dataList;
@@ -945,9 +984,9 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
                 || item.key == XPUM_STATS_MEMORY_BANDWIDTH || item.key == XPUM_STATS_MEMORY_USED 
                 || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
                 || item.key == XPUM_STATS_GPU_UTILIZATION
-                // || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT
+                || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT
             ) {
-                xpum_device_stats_data_t data = getMetricsByLevel0(sub_device_handles[i], item.key);
+                xpum_device_stats_data_t data = getMetricsByLevel0((zes_device_handle_t)sub_device_handles[i], item.key);
                 auto tmp = nlohmann::json();
                 if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE 
                     || item.key == XPUM_STATS_MEMORY_TEMPERATURE || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
@@ -987,4 +1026,104 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
     if (tileLevelStatsDataList.size() > 0 && sub_device_handles.size() > 1)
         (*json)["tile_level"] = tileLevelStatsDataList;
     return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool enabled) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+        (*json)["error"] = "invalid device id";
+        return json;
+    }
+    bool available = false;
+    bool configurable = false;
+    uint8_t cur = 0xFF;
+    uint8_t pen = 0xFF;
+    uint8_t req = enabled ? 1 : 0;
+    std::string bdf = getBdfAddress(zes_device_handles[deviceId]);
+    if (igsc_instance.setDeviceEccState(bdf, req, &cur, &pen)) {
+        (*json)["status"] = "OK";
+        (*json)["memory_ecc_current_state"] = eccStateToString(cur);
+        (*json)["memory_ecc_pending_state"] = eccStateToString(pen);
+
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+        (*json)["error"] = "invalid device id";
+        return json;
+    }
+
+    std::string invalidChars = "{}()><&*'|=?;[]$-#~!\"%:+,`";
+    auto file_name_pos = filePath.find_last_of('\\');
+    auto itr = std::find_if(filePath.begin() + file_name_pos, filePath.end(),
+                            [invalidChars](unsigned char ch) { return invalidChars.find(ch) != invalidChars.npos; });
+    if (itr != filePath.end()) {
+        (*json)["error"] = "Illegal firmware image filename. Image filename should not contain following characters: {}()><&*'|=?;[]$-#~!\"%:+,`";
+        return json;
+    }
+    auto deviceList = getSiblingDevices(deviceId);
+    if (deviceList.size() == 0)
+        deviceList.push_back(deviceId);
+
+    std::string image_file = filePath;
+    for (auto id : deviceList) {
+        std::string bdf = getBdfAddress(zes_device_handles[id]);
+        if (type == XPUM_DEVICE_FIRMWARE_GFX && !igsc_instance.isFwImageAndDeviceCompatible(bdf, image_file)) {
+            (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
+            return json;        
+        }
+        std::string error_message;
+        if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA && !igsc_instance.isFwDataImageAndDeviceCompatible(bdf, image_file, error_message)) {
+            (*json)["error"] = error_message;
+            return json;  
+        }
+
+        flash_results.push_back(std::async(std::launch::async, [bdf, image_file, type, this] {
+            int res = 0;
+            if (type == XPUM_DEVICE_FIRMWARE_GFX)
+                res = igsc_instance.runFlashGSC(bdf, image_file);
+            else
+                res = igsc_instance.runFlashGSCData(bdf, image_file);
+            if (res == 0)
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+            else
+                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+        }));
+    }
+
+    (*json)["result"] = "OK";
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, unsigned int type) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+        (*json)["error"] = "invalid device id";
+        return json;
+    }
+    for (int i = 0; i < flash_results.size(); i++) {
+        std::future_status status = flash_results[i].wait_for(std::chrono::milliseconds(0));
+        if (status != std::future_status::ready) {
+            (*json)["result"] = "ONGOING";
+            return json;
+        }
+    }
+    for (int i = 0; i < flash_results.size(); i++) {
+        if (flash_results[i].get() == xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR) {
+            (*json)["result"] = "FAILED";
+            return json;
+        }
+    }
+    (*json)["result"] = "OK";
+    return json;
+}
+
+std::vector<int> CoreStub::getSiblingDevices(int deviceId) {
+    std::vector<int> res;
+    for (int id : sibling_devices[deviceId])
+        res.push_back(id);
+    return res;
 }

@@ -18,7 +18,9 @@ HealthManager::HealthManager(std::shared_ptr<DeviceManagerInterface>& p_device_m
                              std::shared_ptr<DataLogicInterface>& p_data_logic)
     : p_device_manager(p_device_manager), p_data_logic(p_data_logic) {
     XPUM_LOG_TRACE("HealthManager()");
-    p_health_device_to_tdps = {{0x0205, 150}, {0x0203, 150}, {0x020A, 300}, {0x56C0, 150}, {0x56C1, 37.5}, {0x0BD5, 600}, {0x0BD8, 450}};
+    p_health_device_to_tdps = {{0x0205, 150}, {0x0203, 150}, {0x020A, 300}, {0x56C0, 150}, {0x56C1, 37.5}, 
+                               {0x0BD0, 600}, {0x0BD5, 600}, {0x0BD6, 600}, {0x0BD7, 450}, {0x0BD8, 450},
+                               {0x0BD9, 300}, {0x0BDA, 300}, {0x0BDB, 300}, {0x0BE5, 600}};
     p_health_device_to_throttle_core_temperatures = {{0x56C0, 100}, {0x56C1, 95}};
     p_health_device_to_shutdown_core_temperatures = {{0x56C0, 125}, {0x56C1, 125}};
     p_health_device_to_shutdown_memory_temperatures = {{0x56C0, 105}, {0x56C1, 105}};
@@ -46,7 +48,7 @@ xpum_result_t HealthManager::setHealthConfig(xpum_device_id_t deviceId, xpum_hea
                 p_health_core_thermal_configs.erase(deviceId);
                 break;
             case xpum_health_config_type_t::XPUM_HEALTH_MEMORY_THERMAL_LIMIT:
-                p_health_core_thermal_configs.erase(deviceId);
+                p_health_memory_thermal_configs.erase(deviceId);
                 break;
             case xpum_health_config_type_t::XPUM_HEALTH_POWER_LIMIT:
                 p_health_power_configs.erase(deviceId);
@@ -148,7 +150,8 @@ xpum_result_t HealthManager::getHealth(xpum_device_id_t deviceId, xpum_health_ty
     } else if (type == xpum_health_type_t::XPUM_HEALTH_POWER) {
         data->throttleThreshold = getThrottlePower(pciDeviceId);
     } else {
-        if (type != xpum_health_type_t::XPUM_HEALTH_MEMORY && type != xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT)
+        if (type != xpum_health_type_t::XPUM_HEALTH_MEMORY && type != xpum_health_type_t::XPUM_HEALTH_FABRIC_PORT
+            && type != xpum_health_type_t::XPUM_HEALTH_FREQUENCY)
             return XPUM_RESULT_HEALTH_INVALID_TYPE;
     }
 

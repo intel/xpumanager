@@ -19,6 +19,10 @@ class FirmwareFlashJobOnAllDevicesSchema(Schema):
         validate=validate.Equal("AMC"),
         metadata={"description": "Firmware name, options are: AMC"}
     )
+    username = fields.Str(
+        metadata={"description": "Username for redfish auth"})
+    password = fields.Str(
+        metadata={"description": "Password for redfish auth"})
 
 
 class FirmwareFlashJobOnSingleDeviceSchema(Schema):
@@ -27,8 +31,8 @@ class FirmwareFlashJobOnSingleDeviceSchema(Schema):
         metadata={"description": "The path of firmware binary file to flash"}
     )
     firmware_name = fields.Str(
-        validate=validate.OneOf(["GSC","GSC_DATA"]),
-        metadata={"description": "Firmware name, options are: GSC, GSC_DATA"}
+        validate=validate.OneOf(["GFX","GFX_DATA"]),
+        metadata={"description": "Firmware name, options are: GFX, GFX_DATA"}
     )
 
 
@@ -58,6 +62,8 @@ def run_firmware_flash_all():
             200:
                 description: OK
                 schema: RunFirmwareFlashJobResultSchema
+            400:
+                description: Bad Request
             500:
                 description: Error
 
@@ -70,7 +76,7 @@ def run_firmware_flash_all():
         value = err.messages[key]
         errStr = key+": "+";".join(value)
         return jsonify({'error': errStr}), 400
-    return runFirmwareFlash(1024)
+    return runFirmwareFlash(1024, req.get("username", ""), req.get("password", ""))
 
 
 def run_firmware_flash_single(deviceId):
@@ -99,6 +105,8 @@ def run_firmware_flash_single(deviceId):
             200:
                 description: OK
                 schema: RunFirmwareFlashJobResultSchema
+            400:
+                description: Bad Request
             500:
                 description: Error
     """
@@ -113,7 +121,7 @@ def run_firmware_flash_single(deviceId):
     return runFirmwareFlash(deviceId)
 
 
-def runFirmwareFlash(deviceId):
+def runFirmwareFlash(deviceId, username="", password=""):
     req = request.get_json()
     # validate file path
     filePath = req.get('file')
@@ -126,14 +134,14 @@ def runFirmwareFlash(deviceId):
         filePath = filePath[pos:]    # trunc the file path
 
     fwType = req.get('firmware_name')
-    if fwType == 'GSC' and deviceId == 1024:
-        return jsonify({'error': 'Updating GSC firmware on all devices is not supported'}), 400
-    if fwType == 'GSC_DATA' and deviceId == 1024:
-        return jsonify({'error': 'Updating GSC_DATA firmware on all devices is not supported'}), 400
+    if fwType == 'GFX' and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX firmware on all devices is not supported'}), 400
+    if fwType == 'GFX_DATA' and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX_DATA firmware on all devices is not supported'}), 400
     if fwType == 'AMC' and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'}), 400
 
-    code, msg, data = stub.runFirmwareFlash(deviceId, fwType, filePath)
+    code, msg, data = stub.runFirmwareFlash(deviceId, fwType, filePath, username, password)
     if code == stub.XpumResult['XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND'].value:
         return jsonify({'error': msg}), 500
     elif code != 0:
@@ -144,8 +152,8 @@ def runFirmwareFlash(deviceId):
 class FirmwareFlashResultQuerySingleDeviceSchema(Schema):
     firmware_name = fields.Str(
         required=True,
-        validate=validate.OneOf(["GSC","GSC_DATA"]),
-        metadata={"description": "Firmware name, options are: GSC, GSC_DATA"}
+        validate=validate.OneOf(["GFX","GFX_DATA"]),
+        metadata={"description": "Firmware name, options are: GFX, GFX_DATA"}
     )
 
 
@@ -155,7 +163,6 @@ class FirmwareFlashResultQueryAllDevicesSchema(Schema):
         validate=validate.Equal("AMC"),
         metadata={"description": "Firmware name, options are: AMC"}
     )
-
 
 class FirmwareFlashResultSchema(Schema):
     result = fields.Str(
@@ -197,7 +204,7 @@ def get_firmware_flash_result_all():
         value = err.messages[key]
         errStr = key+": "+";".join(value)
         return jsonify({'error': errStr}), 400
-    return get_firmware_flash_result(1024)
+    return get_firmware_flash_result(1024, req.get("username", ""), req.get("password", ""))
 
 
 def get_firmware_flash_result_single(deviceId):
@@ -242,17 +249,17 @@ def get_firmware_flash_result_single(deviceId):
     return get_firmware_flash_result(deviceId)
 
 
-def get_firmware_flash_result(deviceId):
+def get_firmware_flash_result(deviceId, username="", password=""):
     req = request.get_json()
     fwType = req.get('firmware_name')
-    if fwType == "GSC" and deviceId == 1024:
-        return jsonify({'error': 'Updating GSC firmware on all devices is not supported'})
-    if fwType == "GSC_DATA" and deviceId == 1024:
-        return jsonify({'error': 'Updating GSC_DATA firmware on all devices is not supported'})
+    if fwType == "GFX" and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX firmware on all devices is not supported'})
+    if fwType == "GFX_DATA" and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX_DATA firmware on all devices is not supported'})
     if fwType == "AMC" and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'})
 
-    code, msg, data = stub.getFirmwareFlashResult(deviceId, fwType)
+    code, msg, data = stub.getFirmwareFlashResult(deviceId, fwType, username, password)
     if code == 0:
         return jsonify(data)
     else:

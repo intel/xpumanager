@@ -16,67 +16,121 @@ git clone $xpum_git_clone_options \
     -b $xpum_git_branch $xpum_git_repo /tmp/xpum_src
 
 git_commit=$(git -C /tmp/xpum_src rev-parse --short HEAD)
+
+cd /tmp/xpum_src
+mkdir -p .ccache
 ```
 
 # Build .deb package
 ```sh
+# in /tmp/xpum_src
+
+# Create builder
 sudo docker build \
 --build-arg http_proxy=$http_proxy \
 --build-arg https_proxy=$https_proxy \
---build-arg XPUM_GIT_COMMIT=$git_commit \
 --iidfile /tmp/xpum_builder_ubuntu.iid \
--f /tmp/xpum_src/builder/Dockerfile.builder-ubuntu /tmp/xpum_src
+-f builder/Dockerfile.builder-ubuntu .
 
-# Retrieve package
-containerid=$(sudo docker create $(cat /tmp/xpum_builder_ubuntu.iid))
-sudo docker cp $containerid:/artifacts/. .
-sudo docker rm -v $containerid
+# Build xpumanager package
+rm -fr build
+sudo docker run --rm \
+    -v $PWD:$PWD \
+    -u $UID \
+    -e CCACHE_DIR=$PWD/.ccache \
+    -e CCACHE_BASEDIR=$PWD \
+    $(cat /tmp/xpum_builder_ubuntu.iid) $PWD/build.sh -DBUILD_DOC=ON
+
+## ==> $PWD/build/xpumanager*.deb generated
+
+# Build xpu-smi package
+rm -fr build
+sudo docker run --rm \
+    -v $PWD:$PWD \
+    -u $UID \
+    -e CCACHE_DIR=$PWD/.ccache \
+    -e CCACHE_BASEDIR=$PWD \
+    $(cat /tmp/xpum_builder_ubuntu.iid) $PWD/build.sh -DBUILD_DOC=ON -DDAEMONLESS=ON
+
+## ==> $PWD/build/xpu-smi*.deb generated
 ```
 
 # Build .rpm package for Redhat / CentOS 7 
 ```sh
 # in /tmp/xpum_src
+
+# Create builder
 sudo docker build \
 --build-arg http_proxy=$http_proxy \
 --build-arg https_proxy=$https_proxy \
---build-arg XPUM_GIT_COMMIT=$git_commit \
 --iidfile /tmp/xpum_builder_centos7.iid \
--f /tmp/xpum_src/builder/Dockerfile.builder-centos7 /tmp/xpum_src
+-f builder/Dockerfile.builder-centos7 .
 
-# Retrieve package
-containerid=$(sudo docker create $(cat /tmp/xpum_builder_centos7.iid))
-sudo docker cp $containerid:/artifacts/. .
-sudo docker rm -v $containerid
+# Build xpumanager package
+rm -fr build
+sudo docker run --rm \
+    -v $PWD:$PWD \
+    -u $UID \
+    -e CCACHE_DIR=$PWD/.ccache \
+    -e CCACHE_BASEDIR=$PWD \
+    $(cat /tmp/xpum_builder_centos7.iid) $PWD/build.sh -DBUILD_DOC=ON
+
+## ==> $PWD/build/xpumanager*.rpm generated
 ```
 
 # Build .rpm package for Redhat / CentOS 8
 ```sh
 # in /tmp/xpum_src
+
+# Create builder
 sudo docker build \
 --build-arg http_proxy=$http_proxy \
 --build-arg https_proxy=$https_proxy \
---build-arg XPUM_GIT_COMMIT=$git_commit \
 --iidfile /tmp/xpum_builder_centos8.iid \
--f /tmp/xpum_src/builder/Dockerfile.builder-centos8 /tmp/xpum_src
+-f builder/Dockerfile.builder-centos8 .
 
-# Retrieve package
-containerid=$(sudo docker create $(cat /tmp/xpum_builder_centos8.iid))
-sudo docker cp $containerid:/artifacts/. .
-sudo docker rm -v $containerid
+# Build xpumanager package
+rm -fr build
+sudo docker run --rm \
+    -v $PWD:$PWD \
+    -u $UID \
+    -e CCACHE_DIR=$PWD/.ccache \
+    -e CCACHE_BASEDIR=$PWD \
+    $(cat /tmp/xpum_builder_centos8.iid) $PWD/build.sh -DBUILD_DOC=ON
+
+## ==> $PWD/build/xpumanager*.rpm generated
+
+# Build xpu-smi package
+rm -fr build
+sudo docker run --rm \
+    -v $PWD:$PWD \
+    -u $UID \
+    -e CCACHE_DIR=$PWD/.ccache \
+    -e CCACHE_BASEDIR=$PWD \
+    $(cat /tmp/xpum_builder_centos8.iid) $PWD/build.sh -DBUILD_DOC=ON -DDAEMONLESS=ON
+
+## ==> $PWD/build/xpu-smi*.rpm generated.
 ```
 
 # Build .rpm package for SUSE
 ```sh
 # in /tmp/xpum_src
+
+# Create builder
 sudo docker build \
 --build-arg http_proxy=$http_proxy \
 --build-arg https_proxy=$https_proxy \
---build-arg XPUM_GIT_COMMIT=$git_commit \
 --iidfile /tmp/xpum_builder_sles.iid \
--f /tmp/xpum_src/builder/Dockerfile.builder-sles /tmp/xpum_src
+-f builder/Dockerfile.builder-sles .
 
-# Retrieve package
-containerid=$(sudo docker create $(cat /tmp/xpum_builder_sles.iid))
-sudo docker cp $containerid:/artifacts/. .
-sudo docker rm -v $containerid
+# Build xpumanager package
+rm -fr build
+sudo docker run --rm \
+    -v $PWD:$PWD \
+    -u $UID \
+    -e CCACHE_DIR=$PWD/.ccache \
+    -e CCACHE_BASEDIR=$PWD \
+    $(cat /tmp/xpum_builder_sles.iid) $PWD/build.sh -DBUILD_DOC=ON
+
+## ==> $PWD/build/xpumanager*.rpm generated
 ```

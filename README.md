@@ -19,7 +19,7 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
 	* 3 levels of GPU diagnostic tests
 * Configuration:
 	* GPU Settings - GPU power limits, frequency range, standby mode, scheduler mode, ECC On/Off, performance factor, fabric port status, fabric port beaconing
-	* GPU policies - Throttle GPU when the temperature set threshold is reached. 
+	* GPU policies - Throttle GPU when the temperature set threshold is reached, reset GPU when hanging etc. 
 * Supported Frameworks:
 	* Prometheus exporter, Docker container support, Icinga plugin
 
@@ -28,9 +28,7 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
 
 ## Supported OSes
 * Ubuntu 20.04.3
-* RHEL 8.5
-* CentOS 7.4
-* CentOS 8 Stream
+* RHEL 8.4 and CentOS 8 Stream
 * SLES 15 SP3
 * Windows Server 2022 (limited features including: GPU device info, GPU telemetry and GPU settings)
   
@@ -39,7 +37,6 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
   
 ## GPU telemetry exported from Intel XPU Manager to Grafana
 ![GPU telemetry exported from Intel XPU Manager to Grafana](doc/img/Grafana.PNG)
-for a Docker container image that can be used as a Prometheus exporter in a K8s environment.
   
 ## Intel XPU Manager Documentation
 * Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) for how to install/uninstall Intel XPU Manager.

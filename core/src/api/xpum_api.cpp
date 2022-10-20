@@ -7,6 +7,7 @@
 #include "xpum_api.h"
 
 #include <algorithm>
+#include <string>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -14,6 +15,8 @@
 #include <sstream>
 #include <vector>
 #include <dlfcn.h>
+#include <math.h>
+#include <regex>
 
 #include "api_types.h"
 #include "core/core.h"
@@ -26,6 +29,7 @@
 #include "infrastructure/device_property.h"
 #include "infrastructure/exception/level_zero_initialization_exception.h"
 #include "infrastructure/version.h"
+#include "infrastructure/perf_measurement_data.h"
 #include "internal_api.h"
 #include "ext-include/igsc_lib.h"
 
@@ -47,6 +51,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "PCI_VENDOR_ID";
         case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
             return "PCI_BDF_ADDRESS";
+        case XPUM_DEVICE_PROPERTY_DRM_DEVICE:
+            return "DRM_DEVICE";
         case XPUM_DEVICE_PROPERTY_PCI_SLOT:
             return "PCI_SLOT";
         case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
@@ -57,14 +63,18 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "DEVICE_STEPPING";
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
             return "DRIVER_VERSION";
-        case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
-            return "FIRMWARE_NAME";
-        case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
-            return "FIRMWARE_VERSION";
-        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME:
-            return "FW_DATA_FIRMWARE_NAME";
-        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION:
-            return "FW_DATA_FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_NAME:
+            return "GFX_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_VERSION:
+            return "GFX_FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_NAME:
+            return "GFX_DATA_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_VERSION:
+            return "GFX_DATA_FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME:
+            return "AMC_FIRMWARE_NAME";
+        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION:
+            return "AMC_FIRMWARE_VERSION";
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return "SERIAL_NUMBER";
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
@@ -107,6 +117,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "MAX_FABRIC_PORT_SPEED";
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER:
             return "NUMBER_OF_LANES_PER_FABRIC_PORT";
+        case XPUM_DEVICE_PROPERTY_LINUX_KERNEL_VERSION:
+            return "KERNEL_VERSION";
         default:
             return "";
     }
@@ -234,6 +246,7 @@ std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId) 
 
 xpum_result_t xpumInit() {
     try {
+        Logger::init();
         XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());
         XPUM_LOG_INFO("Build:\t\t{}", Version::getVersionGit());
         XPUM_LOG_INFO("Level Zero:\t{}", Version::getZeLibVersion());
@@ -346,6 +359,10 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
                     value.copy(info.VendorName, value.size());
                     info.VendorName[value.size()] = 0;
                     break;
+                case XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE:
+                    value.copy(info.drmDevice, value.size());
+                    info.drmDevice[value.size()] = 0;
+                    break;
                 default:
                     break;
             }
@@ -356,8 +373,14 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
     return XPUM_OK;
 }
 
-xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count) {
-    auto versions = Core::instance().getFirmwareManager()->getAMCFirmwareVersions();
+xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count, const char *username, const char *password) {
+    AmcCredential credential;
+    credential.username = std::string(username);
+    credential.password = std::string(password);
+    std::vector<std::string> versions;
+    auto result = Core::instance().getFirmwareManager()->getAMCFirmwareVersions(versions, credential);
+    if (result != XPUM_OK) 
+        return result;
     if (versionList == nullptr) {
         *count = versions.size();
         return XPUM_OK;
@@ -373,10 +396,119 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
     return XPUM_OK;
 }
 
+xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char *buffer, int *count) {
+    auto errMsg = Core::instance().getFirmwareManager()->getGetAmcFwErrMsg();
+    if (buffer == nullptr) {
+        *count = errMsg.length() + 1;
+        return XPUM_OK;
+    }
+    if (*count < (int) errMsg.length() + 1) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    std::strcpy(buffer, errMsg.c_str());
+    buffer[errMsg.length() + 1] = '\0';
+    return XPUM_OK;
+}
+
+xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
+                                  const char *username,
+                                  const char *password,
+                                  char serialNumber[XPUM_MAX_STR_LENGTH],
+                                  char amcFwVersion[XPUM_MAX_STR_LENGTH]) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK)
+        return res;
+
+    auto pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+
+    std::vector<Property> properties;
+    pDevice->getProperties(properties);
+
+    std::string pciSlot;
+
+    for (size_t i = 0; i < properties.size(); i++) {
+        auto &prop = properties[i];
+        xpum_device_internal_property_name_t name = prop.getName();
+        if (name == XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT) {
+            pciSlot = prop.getValue();
+            break;
+        }
+    }
+
+    auto systemInfo = Core::instance().getDeviceManager()->getSystemInfo();
+
+    std::vector<SlotSerialNumberAndFwVersion> serialNumberList;
+    Core::instance().getFirmwareManager()->getAMCSlotSerialNumbers({username, password}, serialNumberList);
+
+    int systemSlotId = -1;
+
+    if (systemInfo.manufacturer.compare("Supermicro") == 0) {
+        if (systemInfo.productName.compare("SYS-420GP-TNR") == 0) {
+            // SMC 4U
+            std::regex pattern("SLOT(\\d+)\\s", std::regex_constants::icase);
+            std::smatch sm;
+            if (std::regex_search(pciSlot, sm, pattern)) {
+                int riserSlotId = std::stoi(sm[1].str());
+                systemSlotId = riserSlotId;
+            }
+        } else if (systemInfo.productName.compare("SYS-620C-TN12R") == 0) {
+            // SMC 2U
+            if (pciSlot.find("RSC-D2-668G4") != pciSlot.npos) {
+                std::regex pattern("RSC-D2-668G4\\sSLOT(\\d+)\\s", std::regex_constants::icase);
+                std::smatch sm;
+                if (std::regex_search(pciSlot, sm, pattern)) {
+                    int riserSlotId = std::stoi(sm[1].str());
+                    systemSlotId = riserSlotId;
+                }
+            } else if (pciSlot.find("RSC-D2R-668G4") != pciSlot.npos) {
+                std::regex pattern("RSC-D2R-668G4\\sSLOT(\\d+)\\s", std::regex_constants::icase);
+                std::smatch sm;
+                if (std::regex_search(pciSlot, sm, pattern)) {
+                    int riserSlotId = std::stoi(sm[1].str());
+                    switch (riserSlotId) {
+                        case 1:
+                            systemSlotId = 4;
+                            break;
+                        case 2:
+                            systemSlotId = 5;
+                            break;
+                        case 3:
+                            systemSlotId = 6;
+                            break;
+                        default:
+                            systemSlotId = -1;
+                    }
+                }
+            }
+        }
+    }
+
+    for (auto slotSN : serialNumberList) {
+        if (slotSN.slotId == systemSlotId) {
+            std::size_t length = slotSN.serialNumber.copy(serialNumber, slotSN.serialNumber.length());
+            serialNumber[length] = '\0';
+            length = slotSN.firmwareVersion.copy(amcFwVersion, slotSN.firmwareVersion.length());
+            amcFwVersion[length] = '\0';
+            return XPUM_OK;
+        }
+    }
+    serialNumber[0] = '\0';
+    amcFwVersion[0] = '\0';
+    return XPUM_OK;
+}
 
 static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
     if (job->filePath == nullptr)
-        return XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME;
+        return XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND;
 
     std::ifstream fwFile(job->filePath);
     if (!fwFile.is_open()) {
@@ -387,19 +519,10 @@ static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
 
     fwFile.close();
 
-    std::string invalidChars = "{}()><&*'|=?;[]$-#~!\"%:+,`";
-
-    std::string filePath(job->filePath);
-
-    auto itr = std::find_if(filePath.begin(), filePath.end(),
-                            [invalidChars](unsigned char ch) { return invalidChars.find(ch) != invalidChars.npos; });
-    if (itr != filePath.end())
-        return XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME;
-
     return XPUM_OK;
 }
 
-xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job) {
+xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -412,8 +535,8 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         xpum_result_t rc;
 
-        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
-            rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
+        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
+            rc = XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
             return rc;
         }
 
@@ -437,16 +560,18 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
                 }
             }
         }
-
-        rc = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath);
+        AmcCredential credential;
+        credential.username = username ? std::string(username) : "";
+        credential.password = password ? std::string(password) : "";
+        rc = Core::instance().getFirmwareManager()->runAMCFirmwareFlash(job->filePath, credential);
         return rc;
     } else {
-        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GSC) {
+        if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
                 return res;
             return Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath);
-        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_FW_DATA) {
+        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_DATA) {
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
                 return res;
@@ -458,7 +583,8 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
 }
 
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
-                                         xpum_firmware_type_t firmwareType, xpum_firmware_flash_task_result_t *result) {
+                                         xpum_firmware_type_t firmwareType,
+                                         xpum_firmware_flash_task_result_t *result) {
     xpum_result_t ret = Core::instance().apiAccessPreCheck();
     if (ret != XPUM_OK) {
         return ret;
@@ -466,10 +592,9 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
 
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
-            return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL;
-        Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result);
-        
-        return XPUM_OK;
+            return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
+        AmcCredential credential;
+        return Core::instance().getFirmwareManager()->getAMCFirmwareFlashResult(result, credential);
     }
 
     if(firmwareType == XPUM_DEVICE_FIRMWARE_AMC){
@@ -480,13 +605,27 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     if (res != XPUM_OK)
         return res;
 
-    if (firmwareType == XPUM_DEVICE_FIRMWARE_GSC)
+    if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX)
         Core::instance().getFirmwareManager()->getGSCFirmwareFlashResult(deviceId, result);
-    else if (firmwareType == XPUM_DEVICE_FIRMWARE_FW_DATA)
+    else if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX_DATA)
         Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result);
     else
         return XPUM_GENERIC_ERROR;
 
+    return XPUM_OK;
+}
+
+xpum_result_t xpumGetFirmwareFlashErrorMsg(char *buffer, int *count) {
+    auto errMsg = Core::instance().getFirmwareManager()->getFlashFwErrMsg();
+    if (buffer == nullptr) {
+        *count = errMsg.length() + 1;
+        return XPUM_OK;
+    }
+    if (*count < (int) errMsg.length() + 1) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+    std::strcpy(buffer, errMsg.c_str());
+    buffer[errMsg.length() + 1] = '\0';
     return XPUM_OK;
 }
 
@@ -510,6 +649,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID;
         case XPUM_DEVICE_PROPERTY_PCI_BDF_ADDRESS:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS;
+        case XPUM_DEVICE_PROPERTY_DRM_DEVICE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE;
         case XPUM_DEVICE_PROPERTY_PCI_SLOT:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT;
         case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
@@ -520,14 +661,18 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING;
         case XPUM_DEVICE_PROPERTY_DRIVER_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION;
-        case XPUM_DEVICE_PROPERTY_FIRMWARE_NAME:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME;
-        case XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION;
-        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_NAME:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME;
-        case XPUM_DEVICE_PROPERTY_FWDATA_FIRMWARE_VERSION:
-            return XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_NAME:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME;
+        case XPUM_DEVICE_PROPERTY_AMC_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION;
+        case XPUM_DEVICE_PROPERTY_GFX_DATA_FIRMWARE_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION;
         case XPUM_DEVICE_PROPERTY_SERIAL_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER;
         case XPUM_DEVICE_PROPERTY_CORE_CLOCK_RATE_MHZ:
@@ -570,6 +715,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_RX_SPEED;
         case XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER:
             return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_RX_LANES_NUMBER;
+        case XPUM_DEVICE_PROPERTY_LINUX_KERNEL_VERSION:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION;
         default:
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX;
     }
@@ -612,14 +759,13 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 if (prop_map.find(propNameInternal) == prop_map.end()) {
                     continue;
                 }
-                propertyLen++;
                 auto &prop = prop_map[propNameInternal];
                 std::string value = prop.getValue();
 
-                if (propName == XPUM_DEVICE_PROPERTY_FIRMWARE_VERSION) {
+                if (propName == XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_VERSION) {
                     value.erase(remove_if(value.begin(), value.end(), invalidChar), value.end());
                 }
-                auto &copy = pXpumProperties->properties[i];
+                auto &copy = pXpumProperties->properties[propertyLen++];
                 copy.name = propName;
                 strcpy(copy.value, value.c_str());
             }
@@ -631,6 +777,29 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
     }
 
     return XPUM_RESULT_DEVICE_NOT_FOUND;
+}
+
+xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *deviceId) {
+    if (bdf == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
+    auto device = Core::instance().getDeviceManager()->getDevicebyBDF(std::string(bdf));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    *deviceId = stoi(device->getId());
+    return XPUM_OK;    
 }
 
 xpum_result_t xpumGroupCreate(const char *groupName, xpum_group_id_t *pGroupId) {
@@ -710,6 +879,14 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
         return XPUM_UNSUPPORTED_SESSIONID;
     }
 
+    char* env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        if (!Core::instance().getMonitorManager()->initOneTimeMetricMonitorTasks(MeasurementType::METRIC_MAX)) {
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+
     return Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 
@@ -734,6 +911,14 @@ xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
 
     if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
         return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
+    char* env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        if (!Core::instance().getMonitorManager()->initOneTimeMetricMonitorTasks(MeasurementType::METRIC_ENGINE_UTILIZATION)) {
+            return XPUM_GENERIC_ERROR;
+        }
     }
 
     return Core::instance().getDataLogic()->getEngineStatistics(deviceId, dataList, count, begin, end, sessionId);
@@ -786,6 +971,33 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
         return XPUM_UNSUPPORTED_SESSIONID;
     }
 
+    auto metric_types = Configuration::getEnabledMetrics();
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        *count = 0;
+        return XPUM_METRIC_NOT_ENABLED;
+    }
+    std::vector<xpum::DeviceCapability> capabilities;
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
+    for (auto metric = metric_types.begin(); metric != metric_types.end();) {
+        if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric)); })) {
+            metric = metric_types.erase(metric);
+        } else {
+            metric++;
+        }
+    }
+    if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+        *count = 0;
+        return XPUM_METRIC_NOT_SUPPORTED;
+    }
+
+    char* env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        if (!Core::instance().getMonitorManager()->initOneTimeMetricMonitorTasks(MeasurementType::METRIC_FABRIC_THROUGHPUT)) {
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+    
     return Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 
@@ -1201,6 +1413,22 @@ xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
     return ret;
 }
 
+xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t deviceId,
+                                                xpum_diag_media_codec_metrics_t resultList[],
+                                                int *count) {
+    xpum_result_t ret = Core::instance().apiAccessPreCheck();
+    if (ret != XPUM_OK) {
+        return ret;
+    }
+
+    ret = validateDeviceId(deviceId);
+    if (ret != XPUM_OK) {
+        return ret;
+    }
+    
+    return Core::instance().getDiagnosticManager()->getDiagnosticsMediaCodecResult(deviceId, resultList, count);
+}
+
 void convertStandbyData(Standby &src, xpum_standby_data_t *des) {
     des->type = (xpum_standby_type_t)src.getType();
     des->mode = (xpum_standby_mode_t)src.getMode();
@@ -1480,6 +1708,43 @@ xpum_result_t xpumGetDeviceSchedulers(xpum_device_id_t deviceId,
     return XPUM_OK;
 }
 
+int32_t defaultMaxPowerLimit(std::string device_name) {
+   if (device_name == "Intel(R) Graphics [0x56c0]"){
+    return 120 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x56c1]"){
+    return 23 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0bd0]"){
+    return 600 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0bd5]"){
+    return 600 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0bd6]"){
+    return 600 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0bd7]"){
+    return 450 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0bd8]"){
+    return 450 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0bd9]"){
+    return 300 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0bda]"){
+    return 300 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0bdb]"){
+    return 300 *1000;
+   }
+   if (device_name == "Intel(R) Graphics [0x0be5]"){
+    return 600 *1000;
+   }
+   return -1;
+}
+
 xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop_data_t *dataArray, uint32_t *count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -1495,13 +1760,7 @@ xpum_result_t xpumGetDevicePowerProps(xpum_device_id_t deviceId, xpum_power_prop
     int32_t default_maxLimit = -1;
     Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, prop);
 
-    if (Utility::isATSM1(prop.getValue())) {
-        default_maxLimit = 120 *1000;
-    }
-
-    if (Utility::isATSM3(prop.getValue())) {
-        default_maxLimit = 23 *1000;
-    }
+    default_maxLimit = defaultMaxPowerLimit(prop.getValue());
 
     std::vector<Power> powers;
     Core::instance().getDeviceManager()->getDevicePowerProps(std::to_string(deviceId), powers);
@@ -1701,6 +1960,261 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_p
             i++;
         }
     }
+    return XPUM_OK;
+}
+
+xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId, 
+                                                   xpum_device_tile_id_t tileId,
+                                                   xpum_sampling_interval_t samplingInterval,
+                                                   xpum_device_components_ratio_t *dataArray, 
+                                                   uint32_t *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (Core::instance().getDeviceManager() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
+    if (tileId == -1) {
+        res = validateDeviceId(deviceId);
+    } else {
+        res = validateDeviceIdAndTileId(deviceId, tileId);
+    }
+    
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    Property prop;
+    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
+    uint32_t tileCount = prop.getValueInt();
+
+    if (*count > 0 && *count < tileCount && dataArray != nullptr) {
+        return XPUM_BUFFER_TOO_SMALL;
+    } else {
+        *count = tileCount;
+    }
+
+    if (dataArray == nullptr) {
+        return XPUM_OK;
+    }
+
+    std::string device_id = std::to_string(deviceId);
+    if (samplingInterval != -1 && samplingInterval > 0) {
+        Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD = samplingInterval * 1000000;
+    }
+
+    auto p_data = Core::instance().getDeviceManager()->getRealtimeMeasurementData(METRIC_PERF, device_id);
+    std::shared_ptr<PerfMeasurementData> p_measurement_data = std::static_pointer_cast<PerfMeasurementData>(p_data);
+
+    uint32_t engineUtilRawDataSize = 0;
+    Core::instance().getDataLogic()->getEngineUtilizations(deviceId, nullptr, &engineUtilRawDataSize);
+    std::vector<xpum_device_engine_metric_t> engineUtilRawDataList(engineUtilRawDataSize);
+    Core::instance().getDataLogic()->getEngineUtilizations(deviceId, engineUtilRawDataList.data(), &engineUtilRawDataSize);
+
+    /* calculate engine utilization of current device */
+    std::float_t engineCompute = 0;
+    std::float_t engineRender = 0;
+    std::int16_t countRenderEngine = 0;
+    std::int16_t countComputeEngine = 0;
+    std::float_t engineUsage = 0;
+    std::int16_t scale = 100;
+
+    for (auto engineUtilRawData : engineUtilRawDataList) {
+        if (engineUtilRawData.type == XPUM_ENGINE_TYPE_COMPUTE && engineUtilRawData.value > 0) {
+            countComputeEngine++;
+            engineCompute += engineUtilRawData.value;
+            scale = engineUtilRawData.scale;
+        } else if (engineUtilRawData.type == XPUM_ENGINE_TYPE_RENDER) {
+            countRenderEngine++;
+            engineRender += engineUtilRawData.value;
+            scale = engineUtilRawData.scale;
+        }
+    }
+    engineUsage = std::max(engineCompute / countComputeEngine, engineRender / countRenderEngine);
+    engineUsage /= scale;
+
+    auto p_perf_datas = p_measurement_data->getDatas();
+    if (p_perf_datas->size() <= 0) {
+        return XPUM_METRIC_NOT_SUPPORTED;
+    }
+
+    /*  calculate the component occupancy ratio of each tile in current device */
+    for (size_t i = 0; i < p_perf_datas->size(); i++) {
+        std::float_t active = 0;
+        std::float_t stall = 0;
+        std::float_t inUse = 0;
+        
+        std::float_t occupancy = 0;
+        std::float_t stallALU = 0;
+        std::float_t stallSFU = 0;
+        std::float_t stallSB = 0;
+        std::float_t stallSEND = 0;
+        std::float_t stallDep = 0;
+        std::float_t stallOther = 0;
+        std::float_t stallBarrier = 0;
+        std::float_t stallInstFetch = 0;
+        std::float_t fpuActive = 0;
+        std::float_t emActive = 0;
+        std::float_t xmxActive = 0;
+        std::float_t xmxOnly = 0;
+        std::float_t fpuWithoutXMX = 0;
+        std::float_t fpuOnly = 0;
+        std::float_t emIntOnly = 0;
+        std::float_t emFpuActive = 0;
+        std::float_t xmxFpuActive = 0;
+        std::float_t aluActive = 0;
+        std::float_t other = 0;
+        std::float_t stallTotal = 0;
+        std::float_t notInUse = 0;
+        std::float_t hypoInUse = 0;
+        std::float_t engine = 0;
+        std::float_t workload = 0;
+        std::float_t nonOccupancy = 0;
+        std::float_t remaining = 0;
+        std::float_t stallRatio = 0;
+
+        for (auto group_data : (*p_perf_datas)[i]->data) {
+            for (auto metric_data : group_data.data) {
+                if (std::strcmp(metric_data.name.c_str(), "XveActive") == 0) {
+                    active = metric_data.average;
+                } 
+                if (std::strcmp(metric_data.name.c_str(), "XveStall") == 0) {
+                    stall = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "EmActive") == 0) {
+                    emActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "XmxActive") == 0) {
+                    xmxActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "FpuActive") == 0) {
+                    fpuActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "XveFpuEmActive") == 0) {
+                    emFpuActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "XveFpuXmxActive") == 0) {
+                    xmxFpuActive = metric_data.average;
+                }
+                if (std::strcmp(metric_data.name.c_str(), "XveThreadOccupancy") == 0) {
+                    occupancy = metric_data.average;
+                }
+                if (metric_data.name.find("ALUWR") != std::string::npos) {
+                    stallALU += metric_data.average;
+                }
+                if (metric_data.name.find("BARRIER") != std::string::npos) {
+                    stallBarrier += metric_data.average;
+                }
+                if (metric_data.name.find("SHARED_FUNCTION") != std::string::npos) {
+                    stallSFU += metric_data.average;
+                }
+                if (metric_data.name.find("SBID") != std::string::npos) {
+                    stallSB += metric_data.average;
+                }
+                if (metric_data.name.find("SENDWR") != std::string::npos) {
+                    stallSEND += metric_data.average;
+                }
+                if (metric_data.name.find("OTHER") != std::string::npos) {
+                    stallOther += metric_data.average;
+                }
+                if (metric_data.name.find("INSTFETCH") != std::string::npos) {
+                    stallInstFetch += metric_data.average;
+                }
+            }
+        }
+
+        inUse = active + stall;
+        notInUse = 100 - inUse;
+        hypoInUse = inUse * 100 / engineUsage;
+        if (hypoInUse > 100) {
+            hypoInUse = 100;
+        }
+
+        engine = hypoInUse - inUse;
+        if (engine < 0 || isnan(engine)) {
+            engine = 0;
+        } 
+        workload = notInUse - engine;
+        if (workload < 0) {
+            workload = 0;
+        }
+
+        if (inUse != 0) {
+            if (inUse > 0) {
+                stallRatio = stall / inUse;
+            }
+            if (occupancy > 0) {
+                nonOccupancy = (stallRatio - std::pow(stallRatio, inUse / occupancy)) * inUse;
+            }
+            if (nonOccupancy < 0) {
+                nonOccupancy = 0;
+            }
+            remaining = stall - nonOccupancy;
+            if (remaining < 0) {
+                remaining = 0;
+            }
+
+            stallDep = stallSB;
+            if (stallDep < stallSFU) {
+                stallDep = stallSFU;
+            }
+            stallTotal = stallALU + stallBarrier + stallDep + stallOther + stallInstFetch;
+
+            remaining /= stallTotal;
+            stallALU *= remaining;
+            stallBarrier *= remaining;
+            stallDep *= remaining;
+            stallOther *= remaining;
+            stallInstFetch *= remaining;
+                
+            aluActive = emActive + fpuActive - emFpuActive + xmxActive - xmxFpuActive;
+            xmxOnly = xmxActive - xmxFpuActive;
+            fpuWithoutXMX = fpuActive - xmxFpuActive;
+            fpuOnly = fpuActive - xmxFpuActive - emFpuActive;
+            emIntOnly = emActive - emFpuActive;
+            other = active - aluActive;
+        }
+
+        std::vector<std::pair<std::string, std::double_t>> components_ratios;
+        components_ratios.push_back(std::pair<std::string, std::double_t>("notInUse", notInUse));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("workload", workload));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("engine", engine));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("inUse", inUse));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("active", active));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("aluActive", aluActive));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("xmxActive", xmxActive));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("xmxOnly", xmxOnly));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("xmxFpuActive", xmxFpuActive));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("fpuWithoutXMX", fpuWithoutXMX));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("fpuOnly", fpuOnly));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("emFpuActive", emFpuActive));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("emIntOnly", emIntOnly));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("other", other));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stall", stall));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("nonOccupancy", nonOccupancy));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallALU", stallALU));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallBarrier", stallBarrier));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallDep", stallDep));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallOther", stallOther));
+        components_ratios.push_back(std::pair<std::string, std::double_t>("stallInstFetch", stallInstFetch));
+
+        dataArray[i].componentNum = components_ratios.size();
+        int idx = 0;
+        for (auto it = components_ratios.begin(); it != components_ratios.end(); it++) {
+            std::strcpy(dataArray[i].ratios[idx].occupancyName, (*it).first.c_str());
+            dataArray[i].ratios[idx].value = (*it).second;
+            idx++;
+        }
+    }
+
     return XPUM_OK;
 }
 
@@ -2268,6 +2782,10 @@ xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int
     }
 
     return Core::instance().getDumpRawDataManager()->listDumpRawDataTasks(taskList, count);
+}
+
+xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count) {
+    return Core::instance().getFirmwareManager()->getAMCSensorReading(data, count);
 }
 
 } // end namespace xpum

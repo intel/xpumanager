@@ -11,6 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <regex>
 
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/device_process.h"
@@ -20,6 +21,7 @@
 #include "infrastructure/logger.h"
 #include "infrastructure/utility.h"
 #include "level_zero/zes_api.h"
+#include "firmware/system_cmd.h"
 
 namespace xpum {
 
@@ -33,7 +35,28 @@ DeviceManager::~DeviceManager() {
     XPUM_LOG_TRACE("~DeviceManager()");
 }
 
+void DeviceManager::initSystemInfo(){
+    auto res = execCommand("dmidecode -t 1 2>/dev/null");
+    if(res.exitStatus())
+        return;
+    auto output = res.output();
+    std::regex manufacturerPattern("Manufacturer\\: (.*)");
+    std::regex productNamePattern("Product Name\\: (.*)");
+    std::smatch sm;
+    if (std::regex_search(output, sm, manufacturerPattern)) {
+        systemInfo.manufacturer = sm[1].str();
+    }
+    if (std::regex_search(output, sm, productNamePattern)) {
+        systemInfo.productName = sm[1].str();
+    }
+}
+
+SystemInfo DeviceManager::getSystemInfo(){
+    return systemInfo;
+}
+
 void DeviceManager::init() {
+    initSystemInfo();
     std::unique_lock<std::mutex> lock(this->mutex);
     std::condition_variable cv;
     std::atomic<bool> ready(false);
@@ -91,7 +114,7 @@ void DeviceManager::getDeviceList(
     }
 }
 
-MeasurementData DeviceManager::getRealtimeMeasurementData(
+std::shared_ptr<MeasurementData> DeviceManager::getRealtimeMeasurementData(
     MeasurementType type, std::string& device_id) {
     std::shared_ptr<Device> p_device = getDevice(device_id);
     if (p_device == nullptr) {
@@ -146,9 +169,10 @@ MeasurementData DeviceManager::getRealtimeMeasurementData(
             else
                 mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
         }
-        return *mData;
+        return mData;
     }
-    return *p_data;
+
+    return p_data;
 }
 
 std::shared_ptr<Device> DeviceManager::getDevice(const std::string& id) {
@@ -161,6 +185,22 @@ std::shared_ptr<Device> DeviceManager::getDevice(const std::string& id) {
 
     return nullptr;
 }
+
+std::shared_ptr<Device> DeviceManager::getDevicebyBDF(const std::string& bdf) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    for (auto& p_device : this->devices) {
+        std::vector<Property> properties;
+        p_device->getProperties(properties);
+        for (Property &prop : properties) {
+            if (prop.getName() == XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS
+                && prop.getValue() == bdf) {
+                return p_device;
+            }
+        }
+    }
+
+    return nullptr;
+ }
 
 void DeviceManager::getDeviceSchedulers(const std::string& id, std::vector<Scheduler>& schedulers) {
     std::unique_lock<std::mutex> lock(this->mutex);

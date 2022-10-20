@@ -13,7 +13,8 @@ healthTypeEnumToString = {
     core_pb2.HEALTH_MEMORY_THERMAL: "memory_temperature",
     core_pb2.HEALTH_POWER: "power",
     core_pb2.HEALTH_MEMORY: "memory",
-    core_pb2.HEALTH_FABRIC_PORT: "xe_link_port"
+    core_pb2.HEALTH_FABRIC_PORT: "xe_link_port",
+    core_pb2.HEALTH_FREQUENCY: "frequency"
 }
 
 healthStatusEnumToString = {
@@ -38,9 +39,9 @@ def appendHealthThreshold(healthData, healthType, throttleValue, shudownValue):
 def getHealth(deviceId, healthType):
     types = []
     healthTypes = ["coreTemperature", "memoryTemperature",
-                   "power", "memory", "xeLinkPort"]
+                   "power", "memory", "xeLinkPort", "frequency"]
     if healthType == "All":
-        types = [0, 1, 2, 3, 4]
+        types = [0, 1, 2, 3, 4, 5]
     else:
         types.append(healthTypes.index(healthType))
     data = dict()
@@ -70,9 +71,9 @@ def getHealth(deviceId, healthType):
 def getHealthByGroup(groupId, healthType):
     types = []
     healthTypes = ["coreTemperature", "memoryTemperature",
-                   "power", "memory", "xeLinkPort"]
+                   "power", "memory", "xeLinkPort", "frequency"]
     if healthType == "All":
-        types = [0, 1, 2, 3, 4]
+        types = [0, 1, 2, 3, 4, 5]
     else:
         types.append(healthTypes.index(healthType))
 

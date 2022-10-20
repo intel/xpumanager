@@ -17,8 +17,8 @@ void ComletVersion::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletVersion::run() {
     auto json = this->coreStub->getVersion();
-    (*json)["cli_version"] = "1.0";
-    (*json)["cli_version_git"] = "1.0";
+    (*json)["cli_version"] = "1.1";
+    (*json)["cli_version_git"] = "1.1";
     return json;
 }
 
@@ -27,9 +27,9 @@ void ComletVersion::getTableResult(std::ostream& out) {
     out << "CLI:" << std::endl;
     out << "    Version: " << res->value("cli_version", "") << std::endl;
     out << "    Build ID: " << res->value("cli_version_git", "") << std::endl;
-    out << std::endl;
-    out << "Service:" << std::endl;
-    out << "    Version: " << res->value("xpum_version", "") << std::endl;
-    out << "    Build ID: " << res->value("xpum_version_git", "") << std::endl;
+    // out << std::endl;
+    // out << "Service:" << std::endl;
+    // out << "    Version: " << res->value("xpum_version", "") << std::endl;
+    // out << "    Build ID: " << res->value("xpum_version_git", "") << std::endl;
     out << "    Level Zero Version: " << res->value("level_zero_version", "") << std::endl;
 }

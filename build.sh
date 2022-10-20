@@ -26,7 +26,12 @@ else
     mkdir build
 fi
 cd build
-cmake ..  $@ 
+ccache_opts=
+if command -v ccache &> /dev/null
+then
+    ccache_opts="-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+fi
+cmake .. $ccache_opts $@
 make -j4
 
 echo "---------Create installation package-----------"

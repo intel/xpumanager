@@ -1,0 +1,53 @@
+#!/bin/bash
+
+LOG_FILE="/dev/null"
+
+function CreateUser()
+{
+  groupadd "$1"
+  useradd "$1" -s /bin/sh -g "$1" >> ${LOG_FILE} 2>&1
+  if [ $? -ne 0 ]; then
+   	echo "CreateUser $1 failed!"
+  fi
+}
+
+CreateUser xpum
+
+if [ -d /lib/systemd/system ]; then
+  export LIB_PATH=/usr/lib
+  export SERVICE_PATH=/lib/systemd/system
+else
+  export LIB_PATH=/usr/lib64
+  export SERVICE_PATH=/etc/systemd/system
+fi
+
+if [ -n "${RPM_INSTALL_PREFIX}" ]; then
+  cp -f ${RPM_INSTALL_PREFIX}/xpum.service.template ${SERVICE_PATH}/xpum.service
+  cp -f ${RPM_INSTALL_PREFIX}/xpum_rest.service.template ${SERVICE_PATH}/xpum_rest.service
+
+  sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" ${SERVICE_PATH}/xpum.service > ${SERVICE_PATH}/xpum.service.n
+  mv -f ${SERVICE_PATH}/xpum.service.n ${SERVICE_PATH}/xpum.service
+
+  sed -e "s:@CPACK_PACKAGING_INSTALL_PREFIX@:${RPM_INSTALL_PREFIX}:g" ${SERVICE_PATH}/xpum_rest.service > ${SERVICE_PATH}/xpum_rest.service.n
+  mv -f ${SERVICE_PATH}/xpum_rest.service.n ${SERVICE_PATH}/xpum_rest.service 
+
+  chown -R xpum ${RPM_INSTALL_PREFIX}
+  chmod g+x ${RPM_INSTALL_PREFIX}/keytool.sh
+  ln -s ${RPM_INSTALL_PREFIX}/bin/xpumcli /usr/bin/xpumcli
+  
+else
+  cp -f /opt/xpum/xpum.service.template ${SERVICE_PATH}/xpum.service
+  cp -f /opt/xpum/xpum_rest.service.template ${SERVICE_PATH}/xpum_rest.service
+  chown -R xpum /opt/xpum
+  chmod g+x /opt/xpum/keytool.sh
+  ln -s /opt/xpum/bin/xpumcli /usr/bin/xpumcli
+fi
+
+sed -e "s:@CPACK_XPUM_LIB_INSTALL_DIR@:${LIB_PATH}:g" ${SERVICE_PATH}/xpum.service > ${SERVICE_PATH}/xpum.service.n
+mv -f ${SERVICE_PATH}/xpum.service.n ${SERVICE_PATH}/xpum.service
+# Start xpum service when systemctl is available
+if [ -x "$(command -v systemctl)" ]; then
+  systemctl daemon-reload >> ${LOG_FILE} 2>&1
+  systemctl enable xpum >> ${LOG_FILE} 2>&1 
+  systemctl start xpum
+fi

@@ -11,20 +11,40 @@
 
 #include "cli_wrapper.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
 void ComletReset::setupOptions() {
     this->opts = std::unique_ptr<ComletResetOptions>(new ComletResetOptions());
-    addOption("-d,--device", this->opts->deviceId, "device id");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
+    deviceIdOpt->check([](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+    });
 }
 
 std::unique_ptr<nlohmann::json> ComletReset::run() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     char confirmed;
     (*json)["return"] = "error";
-    if (this->opts->deviceId >= 0) {
-        json = this->coreStub->getDeviceProcessState(this->opts->deviceId);
+    int targetId = -1;
+    if (isNumber(this->opts->deviceId)) {
+        targetId = std::stoi(this->opts->deviceId);
+    } else {
+        auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+        if (convertResult->contains("error")) {
+            return convertResult;
+        }
+    }
+    if (targetId >= 0) {
+        json = this->coreStub->getDeviceProcessState(targetId);
         std::cout << "The process(es) below are using this device."
                   << "\n";
 
@@ -37,7 +57,7 @@ std::unique_ptr<nlohmann::json> ComletReset::run() {
         std::cout << "All process(es) above will be forcibly killed if you reset it. Do you want to continue? (Y/N):";
         std::cin >> confirmed;
         if (std::tolower(confirmed) == 'y') {
-            json = this->coreStub->resetDevice(this->opts->deviceId, true);
+            json = this->coreStub->resetDevice(targetId, true);
         } else {
             json->clear();
             (*json)["status"] = "CANCEL";
@@ -47,7 +67,7 @@ std::unique_ptr<nlohmann::json> ComletReset::run() {
 
     if ((*json)["status"] == "OK") {
         //json->clear();
-        (*json)["return"] = "Succeed to reset the GPU " + std::to_string(this->opts->deviceId);
+        (*json)["return"] = "Succeed to reset the GPU " + this->opts->deviceId;
     }
     return json;
 }

@@ -28,6 +28,48 @@ extern "C" {
 /**
  * @brief This method is used to initialize XPUM within this process.
  * 
+ * @details Below environment variables will impact the XPUM initialization:
+ * - XPUM_DISABLE_PERIODIC_METRIC_MONITOR: value options are {0,1}, default is 0. Whether disable periodic metric monitor or not. 0 means metric-pulling tasks will periodically run and collect GPU telemetries once core library is initialized. 1 means metric-pulling tasks will only run and collect GPU telemetries when calling stats related APIs.
+ * - XPUM_METRICS: enabled metric indexes, value options are listed below, default value: "0,4-31,36-37". Enables metrics which are separated by comma, use hyphen to indicate a range (e.g., 0,4-7,27-29). It will take effect during core initialization.
+ *      - 0       GPU_UTILIZATION
+ *      - 1       EU_ACTIVE
+ *      - 2       EU_STALL
+ *      - 3       EU_IDLE
+ *      - 4       POWER
+ *      - 5       ENERGY
+ *      - 6       GPU_FREQUENCY
+ *      - 7       GPU_CORE_TEMPERATURE
+ *      - 8       MEMORY_USED
+ *      - 9       MEMORY_UTILIZATION
+ *      - 10      MEMORY_BANDWIDTH
+ *      - 11      MEMORY_READ
+ *      - 12      MEMORY_WRITE
+ *      - 13      MEMORY_READ_THROUGHPUT
+ *      - 14      MEMORY_WRITE_THROUGHPUT
+ *      - 15      ENGINE_GROUP_COMPUTE_ALL_UTILIZATION
+ *      - 16      ENGINE_GROUP_MEDIA_ALL_UTILIZATION
+ *      - 17      ENGINE_GROUP_COPY_ALL_UTILIZATION
+ *      - 18      ENGINE_GROUP_RENDER_ALL_UTILIZATION
+ *      - 19      ENGINE_GROUP_3D_ALL_UTILIZATION
+ *      - 20      RAS_ERROR_CAT_RESET
+ *      - 21      RAS_ERROR_CAT_PROGRAMMING_ERRORS
+ *      - 22      RAS_ERROR_CAT_DRIVER_ERRORS
+ *      - 23      RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE
+ *      - 24      RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE
+ *      - 25      RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE
+ *      - 26      RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE
+ *      - 27      RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE
+ *      - 28      RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE
+ *      - 29      GPU_REQUEST_FREQUENCY
+ *      - 30      MEMORY_TEMPERATURE
+ *      - 31      FREQUENCY_THROTTLE
+ *      - 32      PCIE_READ_THROUGHPUT
+ *      - 33      PCIE_WRITE_THROUGHPUT
+ *      - 34      PCIE_READ
+ *      - 35      PCIE_WRITE
+ *      - 36      ENGINE_UTILIZATION
+ *      - 37      FABRIC_THROUGHPUT
+ *                              
  * @return \ref xpum_result_t 
  */
 xpum_result_t xpumInit(void);
@@ -92,19 +134,59 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
  */
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties);
 
+/**
+ * @brief Get device id corresponding to the \a PCI BDF address.
+ * 
+ * @param bdf                   IN: The PCI BDF address string
+ * @param deviceId              OUT: Device id
+ * @return \ref xpum_result_t 
+ */
+xpum_result_t xpumGetDeviceIdByBDF(const char *bdf, xpum_device_id_t *deviceId);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Get all AMC firmware versions
  * 
  * @param versionList   IN/OUT: The array to store AMC firmware version
  * @param count         IN/OUT: When \a versionList is NULL, \a count will be filled with the number of AMC firmware versions, and return.
  *                              When \a versionList is not NULL, \a count denotes the length of \a versionList, \a count should be equal to or larger than the number of AMC firmware versions, when return, the \a count will store real number of AMC firmware versions returned by \a versionList
+ * @param username      IN: Username used for redfish host authentication
+ * @param password      IN: Password used for redfish host authentication
  * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
  */
-xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count);
+xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count, const char *username, const char *password);
+
+/**
+ * @brief Get error message when fail to get amc firmware versions
+ * 
+ * @param buffer        IN/OUT: The buffer to store error message
+ * @param count         IN/OUT: When \a buffer is NULL, \a count will be filled with the length of buffer needed, and return.
+ *                              When \a buffer is not NULL, \a count denotes the length of \a buffer, \a count should be equal to or larger than needed length, if not, it will return XPUM_BUFFER_TOO_SMALL; if return successfully, the error message will be stored in \a buffer
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char* buffer, int *count);
+
+/**
+ * @brief Get device serial number from AMC
+ * 
+ * @param deviceId       IN: Device id
+ * @param username       IN: Username used for redfish host authentication      
+ * @param password       IN: Password used for redfish host authentication 
+ * @param serialNumber  OUT: Device serial number
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK
+ *      - \ref XPUM_RESULT_DEVICE_NOT_FOUND
+ */
+xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId, const char *username, const char *password, char serialNumber[XPUM_MAX_STR_LENGTH], char amcFwVersion[XPUM_MAX_STR_LENGTH]);
+/// @endcond
 
 /** @} */ // Closing for DEVICE_API
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup GROUP_MANAGEMENT_API Group management
  * These APIs are for group management
@@ -169,7 +251,9 @@ xpum_result_t xpumGroupGetInfo(xpum_group_id_t groupId, xpum_group_info_t *pGrou
 xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count);
 
 /** @} */ // Closing for GROUP_MANAGEMENT_API
+/// @endcond
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup HEALTH_API Device health
  * These APIs are for health
@@ -265,6 +349,7 @@ xpum_result_t xpumGetHealthByGroup(xpum_group_id_t groupId,
                                    int *count);
 
 /** @} */ // Closing for HEALTH_API
+/// @endcond
 
 /**************************************************************************/
 /** @defgroup CONFIGURATION_API Device configurations
@@ -442,6 +527,25 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
 xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_process_t dataArray[], uint32_t *count);
 
 /**
+ * @brief Get the GPU function component occupancy ratio of the device
+ * @details This function is used to get the gpu function component occupancy ratio of the device
+ *
+ * @param deviceId          IN: The device Id\
+ * @param tileId            IN: The tile Id\
+ * @param samplingInterval  IN: The sampling interval
+ * @param dataArray         IN/OUT: First pass NULL to query raw data count. Then pass array with desired length to store raw data.
+ * @param count             IN/OUT: When \a dataArray is NULL, \a count will be filled with the number of tile, and return. When \a dataArray is not NULL, \a count denotes the length of \a dataArray, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataArray
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
+                                                   xpum_device_tile_id_t tileId,
+                                                   xpum_sampling_interval_t samplingInterval,
+                                                   xpum_device_components_ratio_t dataArray[],
+                                                   uint32_t *count);
+
+/**
  * @brief Get the device utiliztions by processes
  * @details This function is used to get the device utiliztions by process
  *
@@ -577,9 +681,11 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
  * 
  * @param deviceId      IN: Device id
  * @param job           IN: The job description for firmware flash
+ * @param username      IN: Username used for authentication
+ * @param password      IN: Password used for authentication
  * @return xpum_result_t 
  */
-xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job);
+xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password);
 
 /**
  * @brief Get the status of firmware flash job
@@ -596,7 +702,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
  *      - \ref XPUM_UPDATE_FIRMWARE_ILLEGAL_FILENAME
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC
  *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE
- *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL
+ *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL
  *      - \ref XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE
  *      - \ref XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND
  *      - \ref XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE
@@ -606,6 +712,18 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
 xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
                                          xpum_firmware_type_t firmwareType,
                                          xpum_firmware_flash_task_result_t *result);
+
+/**
+ * @brief Get error message when fail to flash firmware
+ * 
+ * @param buffer        IN/OUT: The buffer to store error message
+ * @param count         IN/OUT: When \a buffer is NULL, \a count will be filled with the length of buffer needed, and return.
+ *                              When \a buffer is not NULL, \a count denotes the length of \a buffer, \a count should be equal to or larger than needed length, if not, it will return XPUM_BUFFER_TOO_SMALL; if return successfully, the error message will be stored in \a buffer
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetFirmwareFlashErrorMsg(char* buffer, int *count);
 
 /** @} */ // Closing for FIRMWARE_UPDATE_API
 
@@ -626,6 +744,7 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
  */
 xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Run diagnostics on a group of devices
  * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResultByGroup
@@ -635,6 +754,7 @@ xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t le
  * @return xpum_result_t 
  */
 xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level);
+/// @endcond
 
 /**
  * @brief Get diagnostics result
@@ -647,6 +767,7 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
  */
 xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Get diagnostics result by group
  * 
@@ -663,9 +784,24 @@ xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task
 xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
                                               xpum_diag_task_info_t resultList[],
                                               int *count);
+/// @endcond
 
+/**
+ * @brief Get diagnostics media codec result
+ * 
+ * @param deviceId          IN: The device id to query diagnostics media codec result
+ * @param resultList       OUT: The result of diagnostics media codec result run on device with \a deviceId
+ * @param count         IN/OUT: When \a resultList is NULL, \a count will be filled with the number of available entries, and return. When \a resultList is not NULL, \a count denotes the length of \a resultList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a resultList
+ * @return
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t deviceId,
+                                                xpum_diag_media_codec_metrics_t resultList[],
+                                                int *count);
 /** @} */ // Closing for DIAGNOSTICS_API
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup AGENT_SETTING_API Agent settings
  * These APIs are for agent setting
@@ -694,6 +830,7 @@ xpum_result_t xpumSetAgentConfig(xpum_agent_config_t key, void *value);
 xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
 
 /** @} */ // Closing for AGENT_SETTING_API
+/// @endcond
 
 /**************************************************************************/
 /** @defgroup STATISTICS_API Device statistics
@@ -764,6 +901,7 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
                                            uint64_t *end,
                                            uint64_t sessionId);
 
+/// @cond DAEMON_ONLY
 /**
  * @brief Get statistics data by group
  * 
@@ -783,9 +921,11 @@ xpum_result_t xpumGetStatsByGroup(xpum_group_id_t groupId,
                                   uint64_t *begin,
                                   uint64_t *end,
                                   uint64_t sessionId);
+/// @endcond                                  
 
 /** @} */ // Closing for STATISTICS_API
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup DUMP_RAW_DATA_API Dump metrics raw data
  * These APIs are for collecting metrics raw data
@@ -837,6 +977,7 @@ xpum_result_t xpumStopDumpRawDataTask(xpum_dump_task_id_t taskId, xpum_dump_raw_
 xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int *count);
 
 /** @} */ // Closing for DUMP_RAW_DATA_API
+/// @endcond
 
 /**************************************************************************/
 /** @defgroup TOPOLOGY_API Topologies
@@ -882,6 +1023,7 @@ xpum_result_t xpumGetXelinkTopology(xpum_xelink_topo_info xelink_topo[], int *co
 
 /** @} */ // Closing for TOPOLOGY_API
 
+/// @cond DAEMON_ONLY
 /**************************************************************************/
 /** @defgroup POLICY_API Policy management
  * These APIs are for policy management
@@ -930,6 +1072,31 @@ xpum_result_t xpumGetPolicy(xpum_device_id_t deviceId, xpum_policy_t resultList[
 xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t resultList[], int *count);
 
 /** @} */ // Closing for POLICY_API
+/// @endcond
+
+/// @cond DAEMON_ONLY
+/**************************************************************************/
+/** @defgroup SENSOR_READING_API Sensor reading
+ * These APIs are for sensor reading
+ * @{
+ */
+/**************************************************************************/
+
+/**
+ * @brief Get device sensor reading
+ * 
+ * @param data          OUT: The buffer to store sensor reading data
+ * @param count      IN/OUT: When \a data is NULL, \a count will be filled with the array size needed, and return.
+ *                           When \a data is not NULL, \a count denotes the length of \a data, \a count should be equal to or larger than needed size. When return, the \a count will store real size of array returned by \a data.
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ *      - \ref XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC    if no AMC can be found
+ */
+xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count);
+
+/** @} */ // Closing for SENSOR_READING_API
+/// @endcond
 
 #if defined(__cplusplus)
 } // extern "C"

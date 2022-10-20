@@ -10,8 +10,7 @@
 #include <string>
 
 #include "comlet_base.h"
-#include "core.grpc.pb.h"
-#include "core.pb.h"
+#include "xpum_structs.h"
 
 namespace xpum::cli {
 
@@ -20,7 +19,7 @@ struct ComletPolicyOptions {
     bool listalltypes = false;
     bool create = false;
     bool remove = false;
-    int32_t deviceId = -1;
+    std::string deviceId = "-1";
     uint32_t groupId = 0;
     std::string policyType = "";
     std::string policyConditionType = "";
@@ -42,9 +41,9 @@ class ComletPolicy : public ComletBase {
 
     virtual void getTableResult(std::ostream& out) override;
 
-    XpumPolicyActionType policyActionTypeEnumFromString(std::string& type);
-    XpumPolicyConditionType policyConditionTypeEnumFromString(std::string& type);
-    XpumPolicyType policyTypeEnumFromString(std::string& type);
+    xpum_policy_action_type_t policyActionTypeEnumFromString(std::string& type);
+    xpum_policy_conditon_type_t policyConditionTypeEnumFromString(std::string& type);
+    xpum_policy_type_t policyTypeEnumFromString(std::string& type);
 
     bool isTypeConditionActionMatch();
 
@@ -54,7 +53,7 @@ class ComletPolicy : public ComletBase {
     inline const bool isListAll() const {
         return opts->listAll;
     }
-    inline const int getDeviceId() const {
+    inline const std::string getDeviceId() const {
         return opts->deviceId;
     }
     inline const int getGroupId() const {

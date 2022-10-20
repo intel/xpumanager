@@ -30,6 +30,11 @@ namespace xpum {
   DeviceManagerInterface class defines various interfaces for managing devices.
 */
 
+struct SystemInfo {
+    std::string manufacturer;
+    std::string productName;
+};
+
 class DeviceManagerInterface : public InitCloseInterface {
    public:
     virtual ~DeviceManagerInterface() {}
@@ -39,7 +44,7 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual void getDeviceList(DeviceCapability cap,
                                std::vector<std::shared_ptr<Device>>& devices) = 0;
 
-    virtual MeasurementData getRealtimeMeasurementData(
+    virtual std::shared_ptr<MeasurementData> getRealtimeMeasurementData(
         MeasurementType type, std::string& device_id) = 0;
 
     virtual void getDeviceSchedulers(const std::string& id,
@@ -110,6 +115,8 @@ class DeviceManagerInterface : public InitCloseInterface {
 
     virtual std::shared_ptr<Device> getDevice(const std::string& id) = 0;
 
+    virtual std::shared_ptr<Device> getDevicebyBDF(const std::string& bdf) = 0;
+
     virtual void discoverFabricLinks() = 0;
 
     virtual std::string getDeviceIDByFabricID(uint64_t fabric_id) = 0;
@@ -121,6 +128,8 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual void unlockDevices(const std::vector<std::string>& deviceList) = 0;
 
     virtual void unlockDevices(std::vector<std::shared_ptr<Device>>& deviceList) = 0;
+
+    virtual SystemInfo getSystemInfo() = 0;
 };
 
 } // end namespace xpum

@@ -21,6 +21,7 @@
 #include "shared_data.h"
 #include "temperature_data_handler.h"
 #include "throughput_data_handler.h"
+#include "perf_metrics_data_handler.h"
 
 namespace xpum {
 
@@ -170,6 +171,10 @@ void RawDataManager::init() {
     data_handlers[MeasurementType::METRIC_FABRIC_THROUGHPUT] =
         std::make_shared<FabricThroughputDataHandler>(MeasurementType::METRIC_FABRIC_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_FABRIC_THROUGHPUT]->init();
+
+    data_handlers[MeasurementType::METRIC_PERF] =
+        std::make_shared<PerfMetricsHandler>(MeasurementType::METRIC_PERF, p_persistency);
+    data_handlers[MeasurementType::METRIC_PERF]->init();
 }
 
 void RawDataManager::close() {

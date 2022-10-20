@@ -12,6 +12,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <atomic>
 
 #include "../include/xpum_structs.h"
 #include "engine_info.h"
@@ -124,6 +125,8 @@ class Device {
 
     virtual void getFabricThroughput(Callback_t callback) noexcept = 0;
 
+    virtual void getPerfMetrics(Callback_t callback) noexcept = 0;
+
     void addCapability(DeviceCapability& capability);
 
     void removeCapability(DeviceCapability& capability);
@@ -134,8 +137,7 @@ class Device {
 
     zes_device_handle_t getDeviceHandle();
 
-    virtual xpum_result_t runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept; //GSC
-    virtual xpum_result_t runFirmwareFlash(const char* filePath) noexcept;                              //AMC
+    virtual xpum_result_t runFirmwareFlash(std::vector<char> img) noexcept; //GSC
     virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept;
 
     ze_device_handle_t getDeviceZeHandle();
@@ -206,6 +208,8 @@ class Device {
     }
 
     int getDeviceModel();
+
+    std::atomic<int> gscFwFlashPercent;
 
    public:
     virtual ~Device() {}

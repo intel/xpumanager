@@ -107,11 +107,7 @@ zes_device_handle_t Device::getDeviceHandle() {
     return zes_device_handle;
 }
 
-xpum_result_t Device::runFirmwareFlash(const char* filePath, const std::string& toolPath) noexcept {
-    return xpum_result_t::XPUM_GENERIC_ERROR;
-}
-
-xpum_result_t Device::runFirmwareFlash(const char* filePath) noexcept {
+xpum_result_t Device::runFirmwareFlash(std::vector<char> img) noexcept {
     return xpum_result_t::XPUM_GENERIC_ERROR;
 }
 
@@ -191,6 +187,8 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getPCIeWrite(callback); };
         case DeviceCapability::METRIC_FABRIC_THROUGHPUT:
             return [p_device](Callback_t callback) { p_device->getFabricThroughput(callback); };
+        case DeviceCapability::METRIC_PERF:
+            return [p_device](Callback_t callback) { p_device->getPerfMetrics(callback); };            
         default:
             break;
     }

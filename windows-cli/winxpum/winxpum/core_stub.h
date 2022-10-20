@@ -13,12 +13,15 @@
 #include <thread>
 #include <chrono>
 #include <map>
+#include <set>
 #include <vector>
+#include <future>
 #include <unordered_map>
 #include <unordered_set>
 #include <ze_api.h>
 #include <zes_api.h>
 #include "xpum_structs.h"
+#include "igsc_manager.h"
 using namespace xpum;
 
 class CoreStub {
@@ -41,13 +44,21 @@ public:
 
     std::unique_ptr<nlohmann::json> getStatistics(int deviceId, bool enableFilter = false);
 
-    static std::string isotimestamp(uint64_t t);
+    std::unique_ptr<nlohmann::json> setMemoryEccState(int deviceId, bool enabled);
+
+    std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath);
+    
+    std::unique_ptr<nlohmann::json> getFirmwareFlashResult(int deviceId, unsigned int type);
+
+    std::vector<int> getSiblingDevices(int deviceId);
+
+    static std::string isotimestamp(uint64_t t, bool withoutDate = false);
 
 private:
 
     std::string getUUID(uint8_t(&uuidBuf)[16]);
 
-    std::string getBdfAddress(const ze_device_handle_t& zes_device);
+    std::string getBdfAddress(const zes_device_handle_t& zes_device);
 
     static long long getCurrentMillisecond();
 
@@ -74,5 +85,11 @@ private:
     int engine_sampling_interval = 100;
 
     int power_limit = 300;
+
+    IGSC_Manager igsc_instance;
+
+    std::unordered_map<int, std::set<int>> sibling_devices;
+
+    std::vector<std::future<xpum_firmware_flash_result_t>> flash_results;
 };
 

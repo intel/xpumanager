@@ -17,7 +17,7 @@ Show the XPU Manager CLI help info.
 ```
 ./xpumcli 
 Intel XPU Manager Command Line Interface -- v1.0 
-Intel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.  
+Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities. It can also be used to change the Intel data center GPU settings and update the firmware.  
 Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
  
 Supported devices: 
@@ -44,6 +44,7 @@ Subcommands:
   dump                        Dump device statistics data.
   topology                    get the system topology
   policy                      Get and set the GPU policies.
+  amcsensor                   List the AMC real-time sensor reading. 
 ```
   
 Show Intel XPU Manager version and Level Zero version. 
@@ -78,6 +79,8 @@ Options:
 
   -d,--device                 Device ID to query. It will show more detailed info.
   --listamcversions           Show all AMC firmware versions.
+  -u,--username               Username used to get AMC version with Redfish Host interface
+  -p,--password               Password used to get AMC version with Redfish Host interface
 
 ```
 
@@ -128,11 +131,12 @@ Show the detailed info of one device. The device info includes the model, freque
 |           | Core Clock Rate: 2050 MHz                                                            |
 |           | Stepping: C0                                                                         |
 |           |                                                                                      |
-|           | Driver Version: 16929133                                                             |
-|           | Firmware Name: GSC                                                                   |
-|           | Firmware Version: DG02->1->3041                                                      |
-|           | Firmware Name: GSC_DATA                                                              |
-|           | Firmware Version: 101->0->0                                                          |
+|           | Driver Version:                                                                      |
+|           | Kernel Version: 5.10.54+prerelease35                                                 |
+|           | GFX Firmware Name: GFX                                                               |
+|           | GFX Firmware Version: DG02_1.3172                                                    |
+|           | GFX Data Firmware Name: GFX_DATA                                                     |
+|           | GFX Data Firmware Version: 0x141                                                     |
 |           |                                                                                      |
 |           | PCI BDF Address: 0000:4d:00.0                                                        |
 |           | PCI Slot: Riser 1, slot 1                                                            |
@@ -321,6 +325,10 @@ List the GPU device aggregated statistics that are collected by XPU Manager
 | Elapsed Time (Second)        | 204                                                               |
 | Energy Consumed (J)          | Tile 0: 18264.05, Tile 1: 18264.06                                |
 | GPU Utilization (%)          | Tile 0: 0, Tile 1: 0                                              |
+| Compute Engines Util(%)      | Tile 0: 0, Tile 1: 0                                              |
+| Render Engines Util(%)       | Tile 0: 0, Tile 1: 0                                              |
+| Media Engines Util (%)       | Tile 0: 0, Tile 1: 0                                              |
+| Copy Engines Util(%)         | Tile 0: 0, Tile 1: 0                                              |
 | EU Array Active (%)          | Tile 0: 0, Tile 1: 0                                              |
 | EU Array Stall (%)           | Tile 0: 0, Tile 1: 0                                              |
 | EU Array Idle (%)            | Tile 0: 0, Tile 1: 0                                              |
@@ -483,7 +491,7 @@ Help info of the device statistics dump. Please note that the metrics 'GPU Energ
 Dump device statistics data.
 
 Usage: xpumcli dump [Options]
-  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
+  xpumcli dump -d [deviceIds] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
   
   xpumcli dump --rawdata --start -d [deviceId] -t [deviceTileId] -m [metricsIds] 
   xpumcli dump --rawdata --list
@@ -492,7 +500,7 @@ Usage: xpumcli dump [Options]
 optional arguments:
   -h,--help                   Print this help message and exit
 
-  -d,--device                 The device id to query
+  -d,--device                 The device id(s) to query
   -t,--tile                   The device tile ID to query. If the device has only one tile, this parameter should not be specified. 
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
                                 0. GPU Utilization (%), GPU active time of the elapsed time, per tile
@@ -526,6 +534,11 @@ optional arguments:
                                 28. 3D engine utilizations (%), per tile.
                                 29. GPU Memory Errors Correctable, per tile. Other non-compute correctable errors are also included. 
                                 30. GPU Memory Errors Uncorrectable, per tile. Other non-compute uncorrectable errors are also included. 
+                                31. Compute engine group utilization (%), per tile
+                                32. Render engine group utilization (%), per tile
+                                33. Media engine group utilization (%), per tile
+                                34. Copy engine group utilization (%), per tile
+
   
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second. 
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified. 
@@ -540,11 +553,11 @@ Dump the device statistics to screen in CSV format.
 ```
 ./xpumcli dump -d 0 -t 0 -m 0,1,2,21,22 -i 1 -n 5
 Timestamp,DeviceId,TileId,GPU Utilization (%),GPU Power (W),GPU Frequency (MHz),XL 0/0->1/1 (kB/s),XL 1/1->0/0 (kB/s),Compute Engine 0 (%), Compute Engine 1 (%)
-2021-11-08 13:31:43.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
-2021-11-08 13:31:44.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
-2021-11-08 13:31:45.100, 00, 0, 046,    , 1100, 400, 700, 100, 0
-2021-11-08 13:31:46.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
-2021-11-08 13:31:47.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
+13:31:43.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
+13:31:44.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
+13:31:45.100, 00, 0, 046,    , 1100, 400, 700, 100, 0
+13:31:46.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
+13:31:47.100, 00, 0, 000,    , 0300, 400, 700, 100, 0
 ```
 
 Start to dump the device raw statistics to the CSV file.
@@ -590,7 +603,7 @@ optional arguments:
   -m,--matrix                 Print the CPU/GPU topology matrix. 
                                 S: Self
                                 XL[laneCount]: Two tiles on the different cards are directly connected by Xe Link.  Xe Link lane count is also provided.
-                                XL*: Two tiles on the differen cards are connected by Xe Link + MDF. They are not directly connected by Xe Link. 
+                                XL*: Two tiles on the different cards are connected by Xe Link + MDF. They are not directly connected by Xe Link. 
                                 SYS: Connected with PCIe between NUMA nodes
                                 NODE: Connected with PCIe within a NUMA node
                                 MDF: Connected with Multi-Die Fabric Interface
@@ -636,7 +649,7 @@ Help info of updating GPU firmware
 Update GPU firmware.
 
 Usage: xpumcli updatefw [Options]
-  xpumcli updatefw -d [deviceId] -t GSC -f [imageFilePath]
+  xpumcli updatefw -d [deviceId] -t GFX -f [imageFilePath]
   xpumcli updatefw -t AMC -f [imageFilePath]
 
 Options:
@@ -644,16 +657,19 @@ Options:
   -j,--json                   Print result in JSON format
 
   -d,--device                 The device ID
-  -t,--type                   The firmware name. Valid options: GSC, AMC, GSC_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).
+  -t,--type                   The firmware name. Valid options: GFX, GFX_DATA, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).
   -f,--file                   The firmware image file path on this server.
+  -u,--username               Username used to update AMC firmware through Redfish Host interface
+  -p,--password               Password used to update AMC firmware through Redfish Host interface
+  -y,--assumeyes              Assume that the answer to any question which would be asked is yes
 ```
 
-Update GPU GSC firmware
+Update GPU GFX firmware
 ```
-./xpumcli updatefw -d 0 -t GSC -f /home/test/tools/ATS_M3.bin
+./xpumcli updatefw -d 0 -t GFX -f /home/test/tools/ATS_M3.bin
 This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n) y
 Start to update firmware:
-Firmware name: GSC
+Firmware name: GFX
 Image path: /home/test/tools/ATS_M3.bin
 Update firmware successfully. Please reboot OS to take effect. 
 ```
@@ -704,13 +720,14 @@ Options:
   --scheduler                 Tile-level scheduler mode. Value options: "timeout",timeoutValue (us); 
                                 "timeslice",interval (us),yieldtimeout (us); "exclusive". The valid range of all time values (us) is from 5000 to 100,000,000.
   --performancefactor         Set the tile-level performance factor. Valid options: "compute/media";factorValue. The factor value should be 
-                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bouded and the performance of the memory controller needs to be increased. 
+                                between 0 to 100. 100 means that the workload is completely compute bounded and requires very little support from the memory support. 0 means that the workload is completely memory bounded and the performance of the memory controller needs to be increased. 
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
+
 ```
 
-Show the GPU settings
+show the GPU settings
 ```
 ./xpumcli config -d 0
 +-------------+-------------------+----------------------------------------------------------------+
@@ -919,6 +936,8 @@ Usage: xpumcli diag [Options]
   xpumcli diag -d [deviceId] -l [level] -j
   xpumcli diag -g [groupId] -l
   xpumcli diag -g [groupId] -l -j
+  xpumcli diag --precheck
+  xpumcli diag --precheck -j
   
 Options:
   -h,--help                   Print this help message and exit.
@@ -930,6 +949,7 @@ Options:
                                 1. quick test
                                 2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs
                                 3. long test - this diagnostic level will have the significant performance impact on the specified GPUs
+  --precheck                  Do the precheck on the GPU and GPU driver.
 ```
 
 Run test to diagnose GPU
@@ -960,3 +980,51 @@ Device Type: GPU
 +------------------------+-------------------------------------------------------------------------+
 
 ```
+
+Pre-check the GPU and GPU driver status
+```
+xpumcli diag --precheck
++------------------------+-------------------------------------------------------------------------+
+| Component              | Status                                                                  |
++------------------------+-------------------------------------------------------------------------+
+| GPU                    | 2 (0x56c1), 1 (0x5bc0)                                                  |
+| Driver                 | Pass                                                                    |
+| GPU Status             | Pass                                                                    |
+| CPU Status             | Pass                                                                    |
++------------------------+-------------------------------------------------------------------------+
+```
+
+## Show AMC real-time sensor readings
+This command only works for Intel(R) Data Center GPU Flex 140/170 on Intel M50CYP servers. 
+
+Help info for get AMC senor readings
+```
+xpumcli amcsensor -h
+List the AMC real-time sensor readings.
+
+Usage: xpumcli amcsensor [Options]
+ xpumcli amcsensor
+ xpumcli amcsensor -j
+
+Options:
+  -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
+```
+
+Get the AMC sensor readings.
+```
+xpumcli amcsensor
++--------+-----------------------------------------------------------------------------------------+
+| AMC ID | Sensors                                                                                 |
++--------+-----------------------------------------------------------------------------------------+
+| AMC 0  |                                                                                         |
+|        | temp_sensor_0 (degrees C): 41                                                           |
+|        | temp_sensor_1 (degrees C): 39                                                           |
+|        | VCCGT_GPU2_volt (Volts): 0.093                                                          |
+|        | soc_die_temp_1 (degrees C): 46                                                          |
+|        | soc_die_temp_2 (degrees C): 45                                                          |
++--------+-----------------------------------------------------------------------------------------+
+```
+
+

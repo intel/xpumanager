@@ -5,8 +5,8 @@
 #
 
 import stub
-from flask import jsonify
-from marshmallow import Schema, fields
+from flask import jsonify, request
+from marshmallow import Schema, fields, ValidationError
 
 
 class DeviceBasicInfoSchema(Schema):
@@ -78,6 +78,7 @@ class DevicePropertiesSchema(Schema):
     device_stepping = fields.Str(
         metadata={"description": "The stepping of device"})
     driver_version = fields.Str(metadata={"description": "The driver version"})
+    kernel_version = fields.Str(metadata={"description": "Linux kernel version"})
     firmware_name = fields.Str(
         metadata={"description": "The firmware name of device"})
     firmware_version = fields.Str(
@@ -116,6 +117,8 @@ class DevicePropertiesSchema(Schema):
         metadata={"description": "The number of media engines"})
     number_of_media_enh_engines = fields.Str(
         metadata={"description": "The number of media enhancement engines"})
+    amc_firmware_version = fields.Str(
+        metadata={"description": "The firmware version of AMC"})
     health = fields.Nested(DevicePropertiesLinkSchema)
     topology = fields.Nested(DevicePropertiesLinkSchema)
 
@@ -134,6 +137,11 @@ def get_device_properties(deviceId):
                 in: path
                 description: Device id
                 type: integer
+            - 
+                name: Get device properties request schema
+                in: body
+                description: Credential used for redfish auth
+                schema: RequestAMCFwVersionSchema
         produces: 
             - application/json
         responses:
@@ -148,7 +156,19 @@ def get_device_properties(deviceId):
                 description: Error
     """
     try:
-        code, message, data = stub.getDeviceProperties(int(deviceId))
+        if request.data:
+            req = request.get_json()
+            try:
+                RequestAMCFwVersionSchema().load(req)
+            except ValidationError as err:
+                key = next(iter(err.messages))
+                value = err.messages[key]
+                errStr = key+": "+";".join(value)
+                return jsonify({'error': errStr}), 400
+            code, message, data = stub.getDeviceProperties(
+                int(deviceId), req.get("username", ""), req.get("password", ""))
+        else:
+            code, message, data = stub.getDeviceProperties(int(deviceId))
         if code == 0:
             return jsonify(data)
         error = dict(Status=code, Message=message)
@@ -158,6 +178,13 @@ def get_device_properties(deviceId):
     except Exception as e:
         print(e)
         return "Internal error", 500
+
+
+class RequestAMCFwVersionSchema(Schema):
+    username = fields.Str(
+        metadata={"description": "Username for redfish auth"})
+    password = fields.Str(
+        metadata={"description": "Password for redfish auth"})
 
 
 class AMCFwVersionSchema(Schema):
@@ -174,6 +201,14 @@ def get_amc_fw_versions():
         tags:
             - "Devices"
         description: Get amc firmware versions.
+        consumes:
+            - application/json
+        parameters:
+            - 
+                name: Get AMC firmware version request schema
+                in: body
+                description: Credential used for redfish auth
+                schema: RequestAMCFwVersionSchema
         produces: 
             - application/json
         responses:
@@ -183,7 +218,19 @@ def get_amc_fw_versions():
             500:
                 description: Error
     """
-    code, message, data = stub.getAMCFirmwareVersions()
+    if request.data:
+        req = request.get_json()
+        try:
+            RequestAMCFwVersionSchema().load(req)
+        except ValidationError as err:
+            key = next(iter(err.messages))
+            value = err.messages[key]
+            errStr = key+": "+";".join(value)
+            return jsonify({'error': errStr}), 400
+        code, message, data = stub.getAMCFirmwareVersions(
+            req.get("username", ""), req.get("password", ""))
+    else:
+        code, message, data = stub.getAMCFirmwareVersions("", "")
     if code != 0:
         return jsonify({"error": message}), 500
     return jsonify(data)

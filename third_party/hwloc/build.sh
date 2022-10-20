@@ -20,15 +20,20 @@ if [ ! -f $1/hwloc/lib/libhwloc.a ]; then
     ./autogen.sh --with-pic
     cd ${WORK_DIR}
     echo "---------------------hwloc configure [$2]------------------------"
-    
+
+    ccache_opts=
+    if command -v ccache &> /dev/null
+    then
+        ccache_opts=CC='ccache gcc'
+    fi
     if [ "$2" = 'Debug' ]; then
       #./configure --prefix=$1/hwloc --enable-debug --disable-shared --disable-libxml2 --disable-libudev LDFLAGS="-lz" CFLAGS="-fPIC" 
-      ./configure --prefix=$1/hwloc --enable-static --disable-shared --disable-libxml2 LDFLAGS="--static -lz" CFLAGS="-fPIC $CFLAGS"
+      ./configure "$ccache_opts" --prefix=$1/hwloc --enable-static --disable-shared --disable-libxml2 LDFLAGS="--static -lz" CFLAGS="-fPIC $CFLAGS"
     else
-      ./configure --prefix=$1/hwloc --enable-static --disable-shared --disable-libxml2 LDFLAGS="--static -lz" CFLAGS="-fPIC $CFLAGS"
+      ./configure "$ccache_opts" --prefix=$1/hwloc --enable-static --disable-shared --disable-libxml2 LDFLAGS="--static -lz" CFLAGS="-fPIC $CFLAGS"
     fi
     echo "------------------------hwloc make---------------------------"
-    make -j 
+    make -j
     echo "------------------------hwloc install---------------------------" 
     #make install cd
     cp -r hwloc/.libs/ lib/

@@ -60,8 +60,8 @@ void DiagnosticManager::close() {
 std::map<std::string, std::map<std::string, int>> DiagnosticManager::thresholds;
 std::map<ze_device_handle_t, std::string> DiagnosticManager::device_names;
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_PATH = "/usr/share/mfx/samples/";
-std::string DiagnosticManager::MEDIA_CODER_TOOLS_DECODE_FILE = "test_stream.264";
-std::string DiagnosticManager::MEDIA_CODER_TOOLS_ENCODE_FILE = "test_stream_176x96.yuv";
+std::string DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE = "test_stream_1080p.265";
+std::string DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE = "test_stream_4K.265";
 int DiagnosticManager::ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = 600;
 std::string DiagnosticManager::XPUM_DAEMON_INSTALL_PATH;
 
@@ -93,10 +93,10 @@ void DiagnosticManager::readConfigFile() {
                 if (value == "/usr/bin/" || value == "/usr/share/mfx/samples/") {
                     MEDIA_CODER_TOOLS_PATH = value;
                 }
-            } else if (name == "MEDIA_CODER_TOOLS_DECODE_FILE") {
-                MEDIA_CODER_TOOLS_DECODE_FILE = value;
-            } else if (name == "MEDIA_CODER_TOOLS_ENCODE_FILE") {
-                MEDIA_CODER_TOOLS_ENCODE_FILE = value;
+            } else if (name == "MEDIA_CODER_TOOLS_1080P_FILE") {
+                MEDIA_CODER_TOOLS_1080P_FILE = value;
+            } else if (name == "MEDIA_CODER_TOOLS_4K_FILE") {
+                MEDIA_CODER_TOOLS_4K_FILE = value;
             } else if (name == "ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT") {
                 try {
                     int val = std::stoi(value);
@@ -168,7 +168,7 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
     std::thread task(DiagnosticManager::doDeviceDiagnosticCore,
                      this->p_device_manager->getDevice(std::to_string(deviceId))->getDeviceZeHandle(),
                      this->p_device_manager->getDevice(std::to_string(deviceId))->getDriverHandle(),
-                     p_task_info, gpu_total_count);
+                     p_task_info, gpu_total_count, std::ref(this->media_codec_perf_datas));
     task.detach();
     return XPUM_OK;
 }
@@ -193,7 +193,7 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
 
     std::unique_lock<std::mutex> lock(this->mutex);
     if (diagnostic_task_infos.find(deviceId) == diagnostic_task_infos.end()) {
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
+        return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND;
     }
 
     result->deviceId = deviceId;
@@ -218,6 +218,36 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
     if (result->finished && result->result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN) {
         result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
     }
+    return XPUM_OK;
+}
+
+xpum_result_t DiagnosticManager::getDiagnosticsMediaCodecResult(xpum_device_id_t deviceId, xpum_diag_media_codec_metrics_t resultList[], int *count) {
+    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    std::unique_lock<std::mutex> lock(this->mutex);
+    if (media_codec_perf_datas.find(deviceId) == media_codec_perf_datas.end()) {
+        return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_FOUND;
+    }
+
+    if (resultList == NULL) {
+        *count = media_codec_perf_datas[deviceId].size();
+        return XPUM_OK;
+    }
+
+    if ((*count) < (int)media_codec_perf_datas[deviceId].size()) {
+        *count = media_codec_perf_datas[deviceId].size();
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    for (int i = 0; i < (int)media_codec_perf_datas[deviceId].size(); i++) {
+        resultList[i].deviceId = deviceId;
+        resultList[i].format = media_codec_perf_datas[deviceId][i].format;
+        resultList[i].resolution = media_codec_perf_datas[deviceId][i].resolution;
+        std::strcpy(resultList[i].fps, media_codec_perf_datas[deviceId][i].fps);
+    }
+    *count = media_codec_perf_datas[deviceId].size();
     return XPUM_OK;
 }
 
@@ -275,7 +305,8 @@ void DiagnosticManager::doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t 
 }
 
 void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver,
-                                               std::shared_ptr<xpum_diag_task_info_t> p_task_info, int gpu_total_count) {
+                                               std::shared_ptr<xpum_diag_task_info_t> p_task_info, int gpu_total_count,
+                                               std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas) {
     bool find_error = false;
     std::string error_details;
     try {
@@ -332,7 +363,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             }
             XPUM_LOG_INFO("start mediacodec diagnostic");
             try {
-                doDeviceDiagnosticMediaCodec(zes_device, p_task_info);
+                doDeviceDiagnosticMediaCodec(zes_device, p_task_info, media_codec_perf_datas);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_MEDIA_CODEC, e.what(), p_task_info);
             }
@@ -599,7 +630,60 @@ void DiagnosticManager::doDeviceDiagnosticHardwareSysman(const zes_device_handle
     component.finished = true;
 }
 
-void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &device, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
+static std::string getDevicePath(const zes_pci_properties_t& pci_props) {
+    char path[PATH_MAX];
+    char buf[128];
+    char uevent[1024];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    int len = 0;
+    std::string ret = "";
+
+    pdir = opendir("/sys/class/drm");
+    if (pdir == NULL) {
+        return ret;
+    }
+
+    while ((pdirent = readdir(pdir)) != NULL) {
+        if (pdirent->d_name[0] == '.') {
+            continue;
+        }
+        if (strncmp(pdirent->d_name, "render", 6) != 0) {
+            continue;
+        }
+        if (strstr(pdirent->d_name, "-") != NULL) {
+            continue;
+        }
+        len = snprintf(path, PATH_MAX, "/sys/class/drm/%s/device/uevent",
+                pdirent->d_name);
+        if (len <= 0 || len >= PATH_MAX) {
+            break;
+        }
+        int fd = open(path, O_RDONLY);
+        if (fd < 0) {
+            break;
+        }
+        int szRead = read(fd, uevent, 1024);
+        close(fd);
+        if (szRead < 0 || szRead >= 1024) {
+            break;
+        }
+        uevent[szRead] = 0;
+        len = snprintf(buf, 128, "%04d:%02x:%02x.%x",
+                pci_props.address.domain, pci_props.address.bus,
+                pci_props.address.device, pci_props.address.function);
+        if (strstr(uevent, buf) != NULL) {
+            ret = "/dev/dri/";
+            ret += pdirent->d_name;
+            break;
+        }
+    }
+    closedir(pdir);
+    return ret;
+}
+
+void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &device, std::shared_ptr<xpum_diag_task_info_t> p_task_info,
+                                                    std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas) {
     xpum_diag_component_info_t &component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC];
     p_task_info->count += 1;
     updateMessage(component.message, std::string("Running"));
@@ -611,103 +695,113 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zesDevicePciGetProperties()");
     }
-    uint32_t pcie_bus = pci_props.address.bus;
-    uint32_t pcie_device = pci_props.address.device;
-    uint32_t filename_pcie_bus = 0, filename_pcie_device = 0;
-    std::string device_path;
-
-    DIR *dir;
-    struct dirent *ent;
-    std::string dir_name = "/dev/dri/by-path";
-    dir = opendir(dir_name.c_str());
-    if (nullptr != dir) {
-        ent = readdir(dir);
-        while (nullptr != ent) {
-            std::string entry_name = ent->d_name;
-            if (entry_name.find("render") != std::string::npos) {
-                std::stringstream ss;
-                ss << dir_name << "/" << entry_name;
-                std::string file_name = ss.str();
-                device_path = file_name;
-                int pos = file_name.find_first_of(":");
-                file_name = file_name.substr(pos + 1);
-                pos = file_name.find_first_of(":");
-                filename_pcie_bus = static_cast<u_int32_t>(std::stoul(file_name.substr(0, pos), nullptr, 16));
-                file_name = file_name.substr(pos + 1);
-                pos = file_name.find_first_of(".");
-                filename_pcie_device = static_cast<u_int32_t>(std::stoul(file_name.substr(0, pos), nullptr, 16));
-                if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
-                    break;
-                }
-            }
-            ent = readdir(dir);
+    std::string device_path = getDevicePath(pci_props);
+    XPUM_LOG_DEBUG("device path for media codec : {}", device_path);
+    if (device_path.size() > 0) {
+        std::string current_file = XPUM_DAEMON_INSTALL_PATH;
+        if (current_file.empty()) {
+            char exe_path[XPUM_MAX_PATH_LEN];
+            ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+            exe_path[len] = '\0';
+            current_file = exe_path;
         }
-        closedir(dir);
-        if (filename_pcie_bus == pcie_bus && filename_pcie_device == pcie_device) {
-            std::string current_file = XPUM_DAEMON_INSTALL_PATH;
-            if (current_file.empty()) {
-                char exe_path[XPUM_MAX_PATH_LEN];
-                ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
-                exe_path[len] = '\0';
-                current_file = exe_path;
-            }
-            std::string mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/mediadata/";
-            std::string decode_file_name = mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_DECODE_FILE;
-            std::string command_decode = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_decode h264 -device " + device_path +
-                                         " -hw -i " + decode_file_name + " 2>&1";
-            XPUM_LOG_INFO(command_decode);
-            std::string result_decode = getCommandResult(command_decode);
+        bool sample_multi_transcode_tool_exist = true;
+        std::ifstream file_transcode(DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode");
+        if (!file_transcode.good()) {
+            sample_multi_transcode_tool_exist = false;
+        }
 
-            std::string encodefileName = mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_ENCODE_FILE;
-            std::string encode_output_file_name = "/tmp/" + device_path.substr(device_path.rfind('/') + 1) + "_encode_latest_result.out";
-            std::string command_encode = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_encode h264 -device " + device_path +
-                                         " -hw -i " + encodefileName + " -w 176 -h 96 -u quality -cqp -qpi 32 -qpp 32 -qpb 32 -async 1 -vaapi -o " + encode_output_file_name + " 2>&1";
-            XPUM_LOG_INFO(command_encode);
-            std::string result_encode = getCommandResult(command_encode);
+        std::string mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/mediadata/";
 
-            if (result_decode.find("Decoding finished") != std::string::npos && result_encode.find("Processing finished") != std::string::npos) {
-                component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-                updateMessage(component.message, std::string("Pass to check Media codec."));
-            } else {
-                std::string desc = "Fail to check Media codec.";
-                if (result_decode.find("Decoding finished") == std::string::npos) {
-                    if (result_decode.find("ERR_UNSUPPORTED") != std::string::npos)
-                        desc += " Decoder unsupported.";
-                    else
-                        desc += " Errors happened when run sample_decode.";
-                    XPUM_LOG_INFO("detail error message:\n {}", result_decode);
-                }
+        bool h265_1080p_file_exist = true;
+        std::ifstream file_h265_1080p(mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE);
+        if (!file_h265_1080p.good()) {
+            h265_1080p_file_exist = false;
+        }
 
-                if (result_encode.find("Processing finished") == std::string::npos) {
-                    if (result_encode.find("ERR_UNSUPPORTED") != std::string::npos)
-                        desc += " Encoder unsupported.";
-                    else
-                        desc += " Errors happened when run sample_encode.";
-                    XPUM_LOG_INFO("detail error message:\n {}", result_encode);
-                }
+        bool h265_4k_file_exist = true;
+        std::ifstream file_h265_4k(mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE);
+        if (!file_h265_4k.good()) {
+            h265_4k_file_exist = false;
+        }
+
+        if (sample_multi_transcode_tool_exist) {
+            if (!h265_1080p_file_exist && !h265_4k_file_exist) {
                 component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-                updateMessage(component.message, desc);
-            }
+                updateMessage(component.message, std::string("No Media test file."));
+            } else {
+                std::string test_command;
+                std::string result;
+                int fps = 0;
+                if (h265_1080p_file_exist) {
+                    test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
+                                            " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE + " -o::h265 /tmp/" + MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
+                    XPUM_LOG_INFO("Transcoding capability check command: {}", test_command);
+                    result += getCommandResult(test_command, fps);
+                }
+                if (h265_4k_file_exist) {
+                    test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
+                                        " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE + " -o::h265 /tmp/test_stream_4K.265 2>&1";
+                    XPUM_LOG_INFO("Transcoding capability check command: {}", test_command);
+                    result += getCommandResult(test_command, fps);
+                }
+                if (result.find("ERR_UNSUPPORTED") != std::string::npos) {
+                    XPUM_LOG_ERROR("detailed error message:\n {}", result);
+                    std::string desc = "Fail to check Media transcode performance.";
+                    test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_decode h265 -device " + device_path +
+                                        " -hw -i " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
+                    XPUM_LOG_INFO("Decoding capability check command: {}", test_command);
+                    result = getCommandResult(test_command, fps);
+                    if (result.find("Decoding finished") != std::string::npos)
+                        desc += " Encoding is unsupported.";
+                    else {
+                        XPUM_LOG_ERROR("detail error message:\n {}", result);
+                        desc += " Transcoding is unsupported.";
+                    }
+                    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+                    updateMessage(component.message, desc);
+                } else if (result.find("ERROR") != std::string::npos) { 
+                    XPUM_LOG_ERROR("detailed error message:\n {}", result);
+                    std::string desc = "Fail to check Media transcode performance.";
+                    if (result.find("MFX_ERR_DEVICE_FAILED") != std::string::npos)
+                        desc += " Hardware device unexpected errors.";
+                    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+                    updateMessage(component.message, desc);
+                } else {
+                    media_codec_perf_datas[p_task_info->deviceId] = getMediaCodecMetricsData(p_task_info->deviceId, 
+                                                    device_path, h265_1080p_file_exist, h265_4k_file_exist);
+                    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+                    updateMessage(component.message, std::string("Pass to check Media transcode performance."));
+                }
+            }   
         } else {
             component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-            updateMessage(component.message, std::string("Can't find the graphics device."));
+            updateMessage(component.message, std::string("No sample_multi_transcode tool."));
         }
+
     } else {
         component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(component.message, std::string("Fail to check Media codec."));
+        updateMessage(component.message, std::string("Can't find the graphics device."));
     }
     component.finished = true;
 }
 
-std::string DiagnosticManager::getCommandResult(std::string command) {
+std::string DiagnosticManager::getCommandResult(std::string command, int& fps) {
     std::array<char, 128> buffer;
     std::string result;
     FILE *pipe = popen(command.c_str(), "r");
     if (pipe == nullptr) {
         return "Failed to execute command";
     }
+    std::string key = "frames, ";
     while (fgets(buffer.data(), 128, pipe) != nullptr) {
-        result += buffer.data();
+        std::string str(buffer.data());
+        auto pos = str.find(key);
+        if (pos != std::string::npos) {
+            std::string data = str.substr(pos + key.size());
+            fps = stoi(data);
+        }
+        result += str;
     }
     pclose(pipe);
     std::string::size_type pos;
@@ -718,6 +812,91 @@ std::string DiagnosticManager::getCommandResult(std::string command) {
     if (pos == result.size() - 1)
         result.erase(pos, 1);
     return result;
+}
+
+std::vector<xpum_diag_media_codec_metrics_t> DiagnosticManager::getMediaCodecMetricsData(xpum_device_id_t deviceId, std::string device_path, bool h265_1080p_file_exist, bool h265_4k_file_exist) {
+    
+    std::map<xpum_media_format_t, std::string> format_to_filename_1080p = {{XPUM_MEDIA_FORMAT_H264,"test_stream_1080p.264"}, {XPUM_MEDIA_FORMAT_AV1,"test_stream_1080p.av1"}};
+    std::map<xpum_media_format_t, std::string> format_to_filename_4k = {{XPUM_MEDIA_FORMAT_H264,"test_stream_4K.264"}, {XPUM_MEDIA_FORMAT_AV1, "test_stream_4K.av1"}};
+    int fps = -1;
+
+    std::string convert_command;
+    std::string result;
+    if (h265_1080p_file_exist) {
+        for (auto target : format_to_filename_1080p) {
+            convert_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
+                            " -hw -i::h265 /tmp/" + MEDIA_CODER_TOOLS_1080P_FILE + " -o::" + (target.first == XPUM_MEDIA_FORMAT_H264 ? "h264":"av1") + " /tmp/" + target.second + " 2>&1";
+            XPUM_LOG_DEBUG("Format convert command: {}", convert_command);
+            result = getCommandResult(convert_command, fps);
+            XPUM_LOG_DEBUG(result);
+        }
+    }
+    if (h265_4k_file_exist) {
+        for (auto target : format_to_filename_4k) {
+            convert_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
+                            " -hw -i::h265 /tmp/" + MEDIA_CODER_TOOLS_4K_FILE + " -o::" + (target.first == XPUM_MEDIA_FORMAT_H264 ? "h264":"av1") + " /tmp/" + target.second + " 2>&1";
+            XPUM_LOG_DEBUG("Format convert command: {}", convert_command);
+            result = getCommandResult(convert_command, fps);
+            XPUM_LOG_DEBUG("Format convert result: {}", result);
+        }
+    }
+
+    format_to_filename_1080p[XPUM_MEDIA_FORMAT_H265] = MEDIA_CODER_TOOLS_1080P_FILE;
+    format_to_filename_4k[XPUM_MEDIA_FORMAT_H265] = MEDIA_CODER_TOOLS_4K_FILE;
+    std::string transcode_command;
+    std::vector<xpum_diag_media_codec_metrics_t> datas;
+    for (int r = XPUM_MEDIA_RESOLUTION_1080P; r <= XPUM_MEDIA_RESOLUTION_4K; r++) {
+        if (r == XPUM_MEDIA_RESOLUTION_1080P && !h265_1080p_file_exist)
+            continue;
+        if (r == XPUM_MEDIA_RESOLUTION_4K && !h265_4k_file_exist)
+            continue;
+        
+        for (int f = XPUM_MEDIA_FORMAT_H265; f <= XPUM_MEDIA_FORMAT_AV1; f++) {
+            xpum_diag_media_codec_metrics_t data;
+            data.deviceId = deviceId;
+            data.resolution = static_cast<xpum_media_resolution_t>(r);
+            data.format = static_cast<xpum_media_format_t>(f);
+
+            std::string target_src_file;
+            std::string target_dst_file;
+            if (r == XPUM_MEDIA_RESOLUTION_1080P) {
+                target_src_file = "/tmp/" + format_to_filename_1080p[data.format];
+                target_dst_file = "/tmp/out_" + format_to_filename_1080p[data.format];
+            } else {
+                target_src_file = "/tmp/" + format_to_filename_4k[data.format];
+                target_dst_file = "/tmp/out_" + format_to_filename_4k[data.format];
+            }
+
+            std::string format;
+            std::string async_para = " -async 5";
+            if (f == XPUM_MEDIA_FORMAT_H265) {
+                format = "h265";
+            }
+            else if (f == XPUM_MEDIA_FORMAT_H264) {
+                format = "h264";
+            }
+            else {
+                format = "av1";
+            }
+
+            transcode_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
+                    " -hw" + async_para + " -i::" + format + " " + target_src_file + " -o::" + format + " " + target_dst_file + " 2>&1";
+            XPUM_LOG_INFO("Transcoding command: {}", transcode_command);
+            int metric_fps = -1;
+            
+            for (int round = 1; round <= 3; round++) {
+                fps = -1;
+                result = getCommandResult(transcode_command, fps);
+                XPUM_LOG_DEBUG("Transcoding round {} result: {}", round, result);
+                metric_fps = std::max(metric_fps, fps);
+            }
+            if (metric_fps > 0) {
+                updateMessage(data.fps, std::to_string(metric_fps) + " FPS");
+                datas.push_back(data);
+            }
+        }
+    }
+    return datas;
 }
 
 void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &ze_device,
@@ -760,8 +939,11 @@ void DiagnosticManager::doDeviceDiagnosticIntegration(const ze_device_handle_t &
             try {
                 ze_result_t ret;
                 ze_context_handle_t context;
-                ze_context_desc_t context_desc;
-                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                ze_context_desc_t context_desc = {
+                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                        nullptr, 
+                        0
+                };
                 XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeContextCreate()");
@@ -946,7 +1128,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
 
     std::vector<float> memory_uses = {0.1}; // {0.1, 0.5, 0.9, 1}
     std::vector<uint64_t> allocate_sizes = {one_MB, one_GB};
-    std::vector<std::string> memory_types = {"HOST", "DEVICE", "SHARED"};
+    std::vector<std::string> memory_types = {"DEVICE", "SHARED"};
 
     bool pass_test = true;
     for (auto &memory_use : memory_uses)
@@ -961,8 +1143,11 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetProperties()");
                 }
-                ze_context_desc_t context_desc = {};
-                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                ze_context_desc_t context_desc = {
+                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                        nullptr, 
+                        0
+                };
                 ze_context_handle_t context;
                 XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
                 if (ret != ZE_RESULT_SUCCESS) {
@@ -977,15 +1162,10 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
 
                 std::size_t one_case_allocation_count = one_case_requested_allocation_size / (number_of_kernel_args_ * sizeof(uint8_t));
                 std::uint64_t number_of_dispatch = max_allocation_size / one_case_requested_allocation_size;
-                // Turn down number_of_dispatch and allocate_size to support unstable PVC and DUAL-ATSM3
-                if (device_names.find(ze_device) != device_names.end() 
-                    && (device_names[ze_device].find("0x0bd5") != std::string::npos
-                        || device_names[ze_device].find("0x56c1") != std::string::npos)) {
-                    if (allocate_size == one_GB) {
-                        continue;
-                    }
-                    number_of_dispatch = std::min((int)number_of_dispatch, 100);
+                if (allocate_size == one_GB) {
+                    continue;
                 }
+                number_of_dispatch = std::min((int)number_of_dispatch, 100);
                 std::vector<uint8_t *> input_allocations;
                 std::vector<uint8_t *> output_allocations;
                 std::vector<std::vector<uint8_t>> data_out_vector;
@@ -1367,7 +1547,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                             std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
                             XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
                             if (res == ZE_RESULT_SUCCESS) {
-                                int value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+                                int value = std::ceil((snap2.energy - snap1.energy) * 1.0 / (snap2.timestamp - snap1.timestamp));
                                 if (!props.onSubdevice) {
                                     current_device_value = value;
                                 } else {
@@ -1403,6 +1583,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
 
                 ze_device_properties_t device_properties;
                 device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+                device_properties.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetProperties()");
@@ -1410,13 +1591,17 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
 
                 ze_device_compute_properties_t device_compute_properties;
                 device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
+                device_compute_properties.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetComputeProperties()");
                 }
                 ze_context_handle_t context;
-                ze_context_desc_t context_desc = {};
-                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                ze_context_desc_t context_desc = {
+                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                        nullptr, 
+                        0
+                };
                 XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeContextCreate()");
@@ -1870,19 +2055,24 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 uint64_t temp_global_size;
                 ze_device_properties_t device_properties;
                 device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+                device_properties.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetProperties()");
                 }
                 ze_device_compute_properties_t device_compute_properties;
                 device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
+                device_compute_properties.pNext = nullptr;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetComputeProperties()");
                 }
                 ze_context_handle_t context;
-                ze_context_desc_t context_desc = {};
-                context_desc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+                ze_context_desc_t context_desc = {
+                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                        nullptr, 
+                        0
+                };
                 XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeContextCreate()");

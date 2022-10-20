@@ -23,6 +23,8 @@
 #include "xe_link.h"
 
 namespace xpum {
+hwloc_topology_t *Topology::hwtopology = nullptr;
+std::mutex Topology::mutex;
 
 Topology::Topology() {
     XPUM_LOG_INFO("Topology()");
@@ -30,6 +32,15 @@ Topology::Topology() {
 
 Topology::~Topology() {
     XPUM_LOG_INFO("~Topology()");
+}
+
+void Topology::clearTopology(){
+    XPUM_LOG_INFO("Clear Topology()");
+    if (hwtopology != nullptr) {
+        hwloc_topology_destroy( *hwtopology);
+        delete hwtopology;
+        hwtopology = nullptr;
+    }
 }
 
 std::string Topology::getLocalCpus(std::string address) {
@@ -44,6 +55,21 @@ std::string Topology::getLocalCpus(std::string address) {
 
     infile.close();
     return affinity;
+}
+
+void Topology::reNewTopology(bool reload){
+    if (reload == true && hwtopology != nullptr) {
+        hwloc_topology_destroy(*hwtopology);
+        delete hwtopology;
+        hwtopology = nullptr;
+    }
+
+    if (hwtopology == nullptr) {
+        hwtopology = new hwloc_topology_t();
+        hwloc_topology_init(hwtopology);
+        hwloc_topology_set_io_types_filter(*hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
+        hwloc_topology_load(*hwtopology);
+    }
 }
 
 std::string Topology::getLocalCpusList(std::string address) {
@@ -61,19 +87,18 @@ std::string Topology::getLocalCpusList(std::string address) {
     return affinity;
 }
 
-bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds, bool checkDevice) {
-    hwloc_topology_t hwtopology;
+bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds, bool checkDevice, bool reload) {
     hwloc_obj_t obj = nullptr;
     const PcieDevice* pDevice = nullptr;
     zes_pci_address_t pciAddress;
 
-    hwloc_topology_init(&hwtopology);
-    hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
-    hwloc_topology_load(hwtopology);
+    std::unique_lock<std::mutex> lock(mutex);
+
+    reNewTopology(reload);
 
     getBDF(bdfAddress, pciAddress);
 
-    while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
+    while ((obj = hwloc_get_next_pcidev(*hwtopology, obj)) != nullptr) {
         assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
         if (obj->attr->pcidev.domain == pciAddress.domain && obj->attr->pcidev.bus == pciAddress.bus && obj->attr->pcidev.dev == pciAddress.device && obj->attr->pcidev.func == pciAddress.function) {
             pDevice = PciDatabase::instance().getDevice(
@@ -118,26 +143,23 @@ bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t
             }
         }
     }
-
-    hwloc_topology_destroy(hwtopology);
     return true;
 }
 
-xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t* topology, std::size_t* memSize) {
-    hwloc_topology_t hwtopology;
+xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t* topology, std::size_t* memSize, bool reload) {
     hwloc_obj_t obj = nullptr;
     int switchCount;
     xpum_result_t result = XPUM_OK;
     std::size_t size = sizeof(xpum_topology_t);
 
-    hwloc_topology_init(&hwtopology);
-    hwloc_topology_set_io_types_filter(hwtopology, HWLOC_TYPE_FILTER_KEEP_ALL);
-    hwloc_topology_load(hwtopology);
+    std::unique_lock<std::mutex> lock(mutex);
+
+    reNewTopology(reload);
 
     zes_pci_address_t pciAddress;
     getBDF(bdfAddress, pciAddress);
 
-    while ((obj = hwloc_get_next_pcidev(hwtopology, obj)) != nullptr) {
+    while ((obj = hwloc_get_next_pcidev(*hwtopology, obj)) != nullptr) {
         assert(obj->type == HWLOC_OBJ_PCI_DEVICE);
         if (obj->attr->pcidev.domain == pciAddress.domain && obj->attr->pcidev.bus == pciAddress.bus && obj->attr->pcidev.dev == pciAddress.device && obj->attr->pcidev.func == pciAddress.function) {
             switchCount = get_p_switch_count(obj);
@@ -160,8 +182,6 @@ xpum_result_t Topology::getSwitchTopo(std::string bdfAddress, xpum_topology_t* t
             break;
         }
     }
-
-    hwloc_topology_destroy(hwtopology);
     return result;
 }
 

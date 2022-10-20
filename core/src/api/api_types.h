@@ -146,15 +146,18 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID,                  ///< The PCI device id of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID,                  ///< The PCI vendor id of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS,                ///< The PCI bdf address of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE,                     ///< DRM Device 
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT,                       ///< PCI slot of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION,                ///< PCIe generation
     XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH,            ///< PCIe max link width
     XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING,                ///< The stepping of device
     XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION,                 ///< The driver version
-    XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_NAME,                  ///< The firmware name of device
-    XPUM_DEVICE_PROPERTY_INTERNAL_FIRMWARE_VERSION,               ///< The firmware version of device
-    XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_NAME,           ///< The firmware name of fwdata of device
-    XPUM_DEVICE_PROPERTY_INTERNAL_FWDATA_FIRMWARE_VERSION,        ///< The firmware version of fwdata of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_NAME,              ///< The GFX firmware name of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION,           ///< The GFX firmware version of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_NAME,         ///< The GFX data firmware name of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION,      ///< The GFX data firmware version of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME,              ///< The AMC firmware name of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION,           ///< The AMC firmware version of device
     XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER,                  ///< Serial number
     XPUM_DEVICE_PROPERTY_INTERNAL_CORE_CLOCK_RATE_MHZ,            ///< Clock rate for device core, in MHz
     XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE,      ///< Device free memory size, in bytes
@@ -174,6 +177,7 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_PHYSICAL_EU_SIMD_WIDTH,         ///< The physical EU simd width
     XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES,        ///< The number of media engines
     XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES,    ///< The number of media enhancement engines
+    XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION,           ///< Linux kenel version
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_NUMBER,             ///< Number of fabric ports
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_RX_SPEED,       ///< Maximum speed supported by the receive side of the port (sum of all lanes)
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_TX_SPEED,       ///< Maximum speed supported by the transmit side of the port (sum of all lanes)

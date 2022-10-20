@@ -64,3 +64,7 @@ html_static_path = ['_static']
 
 master_doc = 'index'
 html_show_sourcelink = False
+
+html_copy_source = False
+
+suppress_warnings = ['app','ref','toc','autosectionlabel','download','epub','i18n','image','misc']

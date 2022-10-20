@@ -25,12 +25,13 @@ def getDeviceList():
         device['pci_device_id'] = d.pcieDeviceId
         device['pci_bdf_address'] = d.pciBdfAddress
         device['vendor_name'] = d.vendorName
+        device['drm_device'] = d.drmDevice
         device['@odata.id'] = "/rest/v1/devices/{}".format(d.id.id)
         data.append(device)
     return 0, "OK", data
 
 
-def getDeviceProperties(deviceId):
+def getDeviceProperties(deviceId, username="", password=""):
     resp = stub.getDeviceProperties(core_pb2.DeviceId(id=deviceId))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
@@ -39,6 +40,13 @@ def getDeviceProperties(deviceId):
         data[prop.name.lower()] = prop.value
     # device_id
     data["device_id"] = deviceId
+    # serial number
+    resp = stub.getDeviceSerialNumberAndAmcFwVersion(core_pb2.GetDeviceSerialNumberRequest(
+        deviceId=deviceId, username=username, password=password))
+    if resp.serialNumber:
+        data["serial_number"] = resp.serialNumber
+    if resp.amcFwVersion:
+        data["amc_firmware_version"] = resp.amcFwVersion
     # links
     data["health"] = {
         "@odata.id": "/rest/v1/devices/{}/health".format(deviceId)}
@@ -46,8 +54,10 @@ def getDeviceProperties(deviceId):
         "@odata.id": "/rest/v1/devices/{}/topology".format(deviceId)}
     return 0, "OK", data
 
-def getAMCFirmwareVersions():
-    resp = stub.getAMCFirmwareVersions(empty_pb2.Empty())
+
+def getAMCFirmwareVersions(username="", password=""):
+    resp = stub.getAMCFirmwareVersions(
+        core_pb2.GetAMCFirmwareVersionsRequest(username=username, password=password))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     versions = [v for v in resp.versions]

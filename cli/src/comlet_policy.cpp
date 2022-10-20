@@ -10,6 +10,8 @@
 
 #include "cli_table.h"
 #include "core_stub.h"
+#include "utility.h"
+#include "exit_code.h"
 
 namespace xpum::cli {
 
@@ -76,7 +78,16 @@ static CharTableConfig ComletConfigListDevice(R"({
 
 void ComletPolicy::setupOptions() {
     this->opts = std::unique_ptr<ComletPolicyOptions>(new ComletPolicyOptions());
-    addOption("-d,--device", this->opts->deviceId, "The device ID.");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
+    deviceIdOpt->check([](const std::string &str) {
+        std::string errStr = "Device id should be a non-negative integer or a BDF string";
+        if (isValidDeviceId(str)) {
+            return std::string();
+        } else if (isBDF(str)) {
+            return std::string();
+        }
+        return errStr;
+    });
     addOption("-g,--group", this->opts->groupId, "The group ID.\n");
 
     addFlag("-l,--list", this->opts->listAll, "List all policies.");
@@ -118,9 +129,18 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         //std::cout << "--GangDebug----listAll---1---" << std::endl;
         bool isDevcie;
         uint32_t id;
-        if (this->opts->deviceId != -1) {
+        if (this->opts->deviceId != "-1") {
             isDevcie = true;
-            id = this->opts->deviceId;
+            int targetId = -1;
+            if (isNumber(this->opts->deviceId)) {
+                targetId = std::stoi(this->opts->deviceId);
+            } else {
+                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+                if (convertResult->contains("error")) {
+                    return convertResult;
+                }
+            }
+            id = targetId;
             json = this->coreStub->getPolicyById(isDevcie, id);
         } else if (this->opts->groupId != 0) {
             isDevcie = false;
@@ -136,7 +156,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         return json;
     }
     if (this->opts->create) {
-        if (this->opts->deviceId == -1 && this->opts->groupId == 0) {
+        if (this->opts->deviceId == "-1" && this->opts->groupId == 0) {
             // (*json)["error"] = "Too many operation flags";
             // return json;
             (*json)["is_success"] = false;
@@ -146,15 +166,27 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
 
         //
         bool isDevcie = true;
-        uint32_t id = this->opts->deviceId;
+        int targetId = -1;
+        if (this->opts->deviceId != "-1") {
+            if (isNumber(this->opts->deviceId)) {
+                targetId = std::stoi(this->opts->deviceId);
+            } else {
+                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+                if (convertResult->contains("error")) {
+                    return convertResult;
+                }
+            }
+        }
+        uint32_t id = targetId;
 
         //std::cout << "--GangDebug--id=" << id << std::endl;
         if (this->opts->groupId != 0) {
             isDevcie = false;
             id = this->opts->groupId;
         }
-        XpumPolicyData policy;
-        policy.set_deviceid(id);
+        PolicyData policy;
+        policy.isDeletePolicy = false;
+        policy.deviceId = id;
         if (this->opts->policyType.length() == 0) {
             (*json)["is_success"] = false;
             (*json)["error"] = "Wrong argument: <type> should be specified by --type option";
@@ -170,7 +202,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             (*json)["error"] = "Wrong argument: <type> is invalid";
             return json;
         }
-        policy.set_type(this->policyTypeEnumFromString(this->opts->policyType));
+        policy.type = this->policyTypeEnumFromString(this->opts->policyType);
 
         //
         if (this->opts->policyConditionType.length() == 0) {
@@ -198,9 +230,9 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
                     (*json)["error"] = "Wrong argument: <threshold> is invalid (not empty and greater than or equal 0)";
                     return json;
                 }
-                policy.mutable_condition()->set_threshold(this->opts->threshold);
+                policy.condition.threshold = this->opts->threshold;
             }
-            policy.mutable_condition()->set_type(this->policyConditionTypeEnumFromString(this->opts->policyConditionType));
+            policy.condition.type =  this->policyConditionTypeEnumFromString(this->opts->policyConditionType);
         }
         if (this->opts->policyActionType.length() == 0) {
             (*json)["is_success"] = false;
@@ -226,10 +258,10 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
                     (*json)["error"] = "Wrong argument: <throttlefrequencymax> should be specified by --throttlefrequencymax option";
                     return json;
                 }
-                policy.mutable_action()->set_throttle_device_frequency_min(this->opts->throttlefrequencymin);
-                policy.mutable_action()->set_throttle_device_frequency_max(this->opts->throttlefrequencymax);
+                policy.action.throttle_device_frequency_min = this->opts->throttlefrequencymin;
+                policy.action.throttle_device_frequency_max = this->opts->throttlefrequencymax;
             }
-            policy.mutable_action()->set_type(this->policyActionTypeEnumFromString(this->opts->policyActionType));
+            policy.action.type = this->policyActionTypeEnumFromString(this->opts->policyActionType);
         }
 
         //isTypeConditionActionMatch
@@ -240,7 +272,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         }
 
         //set_notifycallbackurl
-        policy.set_notifycallbackurl("NoCallBackFromCli");
+        policy.notifyCallBackUrl = "NoCallBackFromCli";
         //policy.set_notifycallbackurl("https://www.baidu.com/");
 
         //std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPolicyData &policy) {
@@ -248,7 +280,7 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
         return json;
     }
     if (this->opts->remove) {
-        if (this->opts->deviceId == -1 && this->opts->groupId == 0) {
+        if (this->opts->deviceId == "-1" && this->opts->groupId == 0) {
             // (*json)["error"] = "Too many operation flags";
             // return json;
             (*json)["is_success"] = false;
@@ -258,13 +290,24 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
 
         //
         bool isDevcie = true;
-        uint32_t id = this->opts->deviceId;
+        int targetId = -1;
+        if (this->opts->deviceId != "-1") {
+            if (isNumber(this->opts->deviceId)) {
+                targetId = std::stoi(this->opts->deviceId);
+            } else {
+                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+                if (convertResult->contains("error")) {
+                    return convertResult;
+                }
+            }
+        }
+        uint32_t id = targetId;
         if (this->opts->groupId != 0) {
             isDevcie = false;
             id = this->opts->groupId;
         }
-        XpumPolicyData policy;
-        policy.set_deviceid(id);
+        PolicyData policy;
+        policy.deviceId = id;
         if (this->opts->policyType.length() == 0) {
             (*json)["is_success"] = false;
             (*json)["error"] = "Wrong argument: <type> should be specified by --type option";
@@ -275,8 +318,8 @@ std::unique_ptr<nlohmann::json> ComletPolicy::run() {
             (*json)["error"] = "Wrong argument: <type> is invalid";
             return json;
         }
-        policy.set_type(this->policyTypeEnumFromString(this->opts->policyType));
-        policy.set_isdeletepolicy(true);
+        policy.type = this->policyTypeEnumFromString(this->opts->policyType);
+        policy.isDeletePolicy = true;
         //std::unique_ptr<nlohmann::json> CoreStub::setPolicy(bool isDevcie,int id,XpumPolicyData &policy) {
         json = this->coreStub->setPolicy(isDevcie, id, policy);
         return json;
@@ -313,24 +356,24 @@ bool ComletPolicy::isTypeConditionActionMatch() {
     return isMatch;
 }
 
-XpumPolicyType ComletPolicy::policyTypeEnumFromString(std::string &type) {
+xpum_policy_type_t ComletPolicy::policyTypeEnumFromString(std::string &type) {
     // 1. GPU Core Temperature
     // 2. Programming Errors
     // 3. Driver Errors
     // 4. Cache Errors Correctable
     // 5. Cache Errors Uncorrectable
     if (type == "1") {
-        return POLICY_TYPE_GPU_TEMPERATURE;
+        return XPUM_POLICY_TYPE_GPU_TEMPERATURE;
     } else if (type == "2") {
-        return POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
+        return XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
     } else if (type == "3") {
-        return POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS;
+        return XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS;
     } else if (type == "4") {
-        return POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
+        return XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
     } else if (type == "5") {
-        return POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
+        return XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
     } else {
-        return POLICY_TYPE_GPU_TEMPERATURE;
+        return XPUM_POLICY_TYPE_GPU_TEMPERATURE;
     }
 
     // if (type == "POLICY_TYPE_GPU_TEMPERATURE") {
@@ -358,29 +401,29 @@ XpumPolicyType ComletPolicy::policyTypeEnumFromString(std::string &type) {
     // }
 }
 
-XpumPolicyConditionType ComletPolicy::policyConditionTypeEnumFromString(std::string &type) {
+xpum_policy_conditon_type_t ComletPolicy::policyConditionTypeEnumFromString(std::string &type) {
     // 1. More than
     // 2. When occur
     if (type == "2") {
-        return POLICY_CONDITION_TYPE_WHEN_INCREASE;
+        return XPUM_POLICY_CONDITION_TYPE_WHEN_OCCUR;
     } else if (type == "1") {
-        return POLICY_CONDITION_TYPE_GREATER;
+        return XPUM_POLICY_CONDITION_TYPE_GREATER;
     } else {
-        return POLICY_CONDITION_TYPE_LESS;
+        return XPUM_POLICY_CONDITION_TYPE_LESS;
     }
 }
 
-XpumPolicyActionType ComletPolicy::policyActionTypeEnumFromString(std::string &type) {
+xpum_policy_action_type_t ComletPolicy::policyActionTypeEnumFromString(std::string &type) {
     // 1. Throttle GPU Core
     // 2. Reset GPU
     if (type == "1") {
-        return POLICY_ACTION_TYPE_THROTTLE_DEVICE;
+        return XPUM_POLICY_ACTION_TYPE_THROTTLE_DEVICE;
     }
     // else if (type == "2") {
     //     return POLICY_ACTION_TYPE_RESET_DEVICE;
     // }
     else {
-        return POLICY_ACTION_TYPE_NULL;
+        return XPUM_POLICY_ACTION_TYPE_NULL;
     }
 }
 
@@ -410,6 +453,7 @@ static void showRemoveResult(std::ostream &out, std::shared_ptr<nlohmann::json> 
 void ComletPolicy::getTableResult(std::ostream &out) {
     auto res = run();
     if (res->contains("error")) {
+        setExitCodeByJson(*res);
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         return;
     }
@@ -417,7 +461,7 @@ void ComletPolicy::getTableResult(std::ostream &out) {
     *json = *res;
 
     if (this->opts->listAll) {
-        if (this->opts->deviceId >= 0) {
+        if (this->opts->deviceId != "-1") {
             showListDevice(out, json);
         } else if (this->opts->groupId > 0) {
             showListDevice(out, json);

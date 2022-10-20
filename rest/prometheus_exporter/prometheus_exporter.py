@@ -12,7 +12,6 @@ import traceback
 from prometheus_exporter_types import device_to_card_aggregators, tile_to_device_aggregators, metrics_map
 from itertools import filterfalse, groupby
 
-from dev_file_converter import get_dev_file
 import xpum_logger as logger
 
 registries = {}
@@ -70,8 +69,7 @@ def process_fabric_stats(core, pod_resources, devices):
                 continue
 
             link['dst_pci_bdf'] = dst_device.get('pci_bdf_address', 'N/A')
-            link['dst_dev_file'] = get_dev_file(
-                dst_device.get('pci_bdf_address', ''))
+            link['dst_dev_file'] = get_dev_shortname(dst_device.get('drm_device'))
             data_list.append(link)
 
         r = convert_to_prometheus_metrics(
@@ -339,7 +337,7 @@ def build_dev_labels(dev):
     label_values = [dev.get(key, '') for key in [
         'uuid', 'device_name', 'pci_device_id', 'vendor_name', 'pci_bdf_address']]
 
-    dev_file = get_dev_file(dev.get('pci_bdf_address', ''))
+    dev_file = get_dev_shortname(dev.get('drm_device'))
     if dev_file is not None:
         labels.append('dev_file')
         label_values.append(dev_file)
@@ -398,3 +396,8 @@ def attach_ext_labels(labels, label_values, ext_labelnames, ext_labels, stat=Non
         all_labelvalues = label_values + ext_labelvalues
         return all_labelnames, all_labelvalues, str(ext_labelvalues)
     return labels.copy(), label_values.copy(), ''
+
+def get_dev_shortname(fullname: str):
+    if fullname is None:
+        return None
+    return fullname.split('/')[-1]

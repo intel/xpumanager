@@ -27,6 +27,7 @@ from views import device_config
 from views import topology
 from views import top
 from views import dump_raw_data
+from views import sensor
 
 import xpum_logger as logger
 
@@ -190,6 +191,10 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(dump_raw_data.stopDumpRawDataTask))
     app.add_url_rule('/rest/v1/dump', methods=['GET'],
                      view_func=auth.login_required(dump_raw_data.listDumpRawDataTasks))
+
+    # sensor reading
+    app.add_url_rule('/rest/v1/sensor', methods=['GET'],
+                     view_func=auth.login_required(sensor.getAMCSensorReading))
 
     return app
 

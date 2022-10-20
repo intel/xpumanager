@@ -83,8 +83,8 @@ function(get_os_release_info _vn_id _vn_version_id _vn_codename)
             string(REGEX REPLACE "\\([^)]+\\)" "" file_line "${file_line}")
 
             # Extract start and end, discard optional "version" or "release"
-            string(REGEX MATCH "^([A-Za-z0-9_]+)( +(version|release))? +(.*)$" _dummy "${file_line}")
-            #                    1              2  3                    4
+            string(REGEX MATCH "^([A-Za-z0-9_]+)( .*)(version|release)+ +([0-9]+\\.[0-9]+).*$" _dummy "${file_line}")
+            #                    1              2    3                   4
 
             set(_var_id "${CMAKE_MATCH_1}")
             set(_var_version_id "${CMAKE_MATCH_4}")

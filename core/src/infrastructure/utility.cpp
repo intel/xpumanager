@@ -38,10 +38,10 @@ std::string Utility::getUTCTimeString(uint64_t t) {
     tm* tm_p = gmtime(&seconds);
     if (!tm_p) return "";
     char buf[50];
-    strftime(buf, sizeof(buf), "%FT%T", tm_p);
+    strftime(buf, sizeof(buf), "%T", tm_p);
     char milli_buf[10];
     sprintf(milli_buf, "%03d", milli_seconds);
-    return std::string(buf) + "." + std::string(milli_buf) + "Z";
+    return std::string(buf) + "." + std::string(milli_buf);
 }
 
 std::string Utility::getTimeString(long long milliseconds) {
@@ -198,6 +198,8 @@ DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& m
             return DeviceCapability::METRIC_PCIE_WRITE;
         case MeasurementType::METRIC_FABRIC_THROUGHPUT:
             return DeviceCapability::METRIC_FABRIC_THROUGHPUT;
+        case MeasurementType::METRIC_PERF:
+            return DeviceCapability::METRIC_PERF;
         default:
             return DeviceCapability::DEVICE_CAPABILITY_MAX;
     }
@@ -579,6 +581,18 @@ bool Utility::isATSPlatform(std::string device_name) {
     || device_name == "Intel(R) Graphics [0x56c1]"
     || device_name == "Intel(R) Graphics [0x0207]";
 }
+bool Utility::isPVCPlatform(std::string device_name) {
+    return device_name == "Intel(R) Graphics [0x0BD0]"
+    || device_name == "Intel(R) Graphics [0x0BD5]"
+    || device_name == "Intel(R) Graphics [0x0BD6]"
+    || device_name == "Intel(R) Graphics [0x0BD7]"
+    || device_name == "Intel(R) Graphics [0x0BD8]"
+    || device_name == "Intel(R) Graphics [0x0BD9]"
+    || device_name == "Intel(R) Graphics [0x0BDA]"
+    || device_name == "Intel(R) Graphics [0x0BDB]"
+    || device_name == "Intel(R) Graphics [0x0BE5]";
+}
+
 bool Utility::isATSM1(std::string device_name) {
     return device_name == "Intel(R) Graphics [0x56c0]";
 }

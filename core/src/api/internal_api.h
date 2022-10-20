@@ -125,6 +125,4 @@ xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
                                     xpum_device_metrics_t dataList[],
                                     int *count);
 
-/** @} */ // Closing for METRICS_API
-
 } // namespace xpum

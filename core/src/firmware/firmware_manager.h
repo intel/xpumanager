@@ -12,33 +12,58 @@
 #include <vector>
 
 #include "xpum_structs.h"
+#include "amc/amc_manager.h"
 
 namespace xpum {
+
+struct AmcCredential {
+    std::string username;
+    std::string password;
+};
+
 class FirmwareManager {
    private:
-    bool amcUpdated = false;
-    std::vector<std::string> amcFwList;
-
     std::mutex mtx;
 
     std::future<xpum_firmware_flash_result_t> taskAMC;
 
-    void getAMCFwVersions();
+    std::shared_ptr<AmcManager> p_amc_manager;
+
     void initFwDataMgmt();
+
+    void preInitAmcManager();
+
+    bool initAmcManager();
+
+    std::string getAmcFwErrMsg;
+    std::string flashFwErrMsg;
 
    public:
     void init();
     bool isUpgradingFw(void);
 
-    std::vector<std::string> getAMCFirmwareVersions();
     void detectGscFw();
-    xpum_result_t runAMCFirmwareFlash(const char* filePath);
-    void getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result);
+    xpum_result_t getAMCFirmwareVersions(std::vector<std::string> &versions,AmcCredential credential);
+    xpum_result_t runAMCFirmwareFlash(const char* filePath, AmcCredential credential);
+    xpum_result_t getAMCFirmwareFlashResult(xpum_firmware_flash_task_result_t *result, AmcCredential credential);
+    std::string getAmcWarnMsg();
+    xpum_result_t getAMCSensorReading(xpum_sensor_reading_t data[], int *count);
+
     xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath);
     void getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 
     xpum_result_t runFwDataFlash(xpum_device_id_t deviceId, const char* filePath);
     void getFwDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
+
+    std::string getGetAmcFwErrMsg() {
+        return getAmcFwErrMsg;
+    }
+
+    std::string getFlashFwErrMsg() {
+        return flashFwErrMsg;
+    }
+
+    xpum_result_t getAMCSlotSerialNumbers(AmcCredential credential, std::vector<SlotSerialNumberAndFwVersion>& serialNumberList);
 };
 
 std::vector<char> readImageContent(const char* filePath);

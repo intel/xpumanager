@@ -29,6 +29,16 @@ diagnosticResultEnumToString = {
     core_pb2.DIAG_RESULT_FAIL: "Fail"
 }
 
+diagnosticMediaCodecResolutionEnumToString = {
+    core_pb2.DIAG_MEDIA_1080p: "1080p",
+    core_pb2.DIAG_MEDIA_4K: "4K"
+}
+
+diagnosticMediaCodecFormatEnumToString = {
+    core_pb2.DIAG_MEDIA_H265: "H.265",
+    core_pb2.DIAG_MEDIA_H264: "H.264",
+    core_pb2.DIAG_MEDIA_AV1: "AV1"
+}
 
 def runDiagnostics(deviceId, level):
     if level not in [1, 2, 3]:
@@ -93,14 +103,26 @@ def getDiagnosticsResult(deviceId):
         if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
             process_list_resp = stub.getDeviceProcessState(
                 core_pb2.DeviceId(id=deviceId))
-            if len(resp.errorMsg) == 0:
+            if len(process_list_resp.errorMsg) == 0:
                 processList = []
                 for process in process_list_resp.processlist:
                     new_process = dict()
                     new_process["process_id"] = process.processId
                     new_process["process_name"] = process.processName
-                    processList.append(new_process)
+                    if process.processName != "":
+                        processList.append(new_process)
                 new_component['process_list'] = processList
+        if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC and component.result == core_pb2.DIAG_RESULT_PASS:
+            media_codec_list_resp = stub.getDiagnosticsMediaCodecResult(
+                core_pb2.DeviceId(id=deviceId))
+            if len(media_codec_list_resp.errorMsg) == 0:
+                mediaPerfList = []
+                for media_codec_data in media_codec_list_resp.dataList:
+                    new_perf_data = dict()
+                    fps_key = diagnosticMediaCodecResolutionEnumToString[media_codec_data.resolution] + " " + diagnosticMediaCodecFormatEnumToString[media_codec_data.format]
+                    new_perf_data[fps_key] = media_codec_data.fps
+                    mediaPerfList.append(new_perf_data)
+                new_component['media_codec_list'] = mediaPerfList
         componentList.append(new_component)
     data['component_list'] = componentList
 
@@ -146,14 +168,26 @@ def getDiagnosticsResultByGroup(groupId):
             if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE and component.result == core_pb2.DIAG_RESULT_FAIL:
                 process_list_resp = stub.getDeviceProcessState(
                     core_pb2.DeviceId(id=diagTaskInfo.deviceId))
-                if len(resp.errorMsg) == 0:
+                if len(process_list_resp.errorMsg) == 0:
                     processList = []
                     for process in process_list_resp.processlist:
                         new_process = dict()
                         new_process["process_id"] = process.processId
                         new_process["process_name"] = process.processName
-                        processList.append(new_process)
+                        if process.processName != "":
+                            processList.append(new_process)
                     new_component['process_list'] = processList
+            if component.type == core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC and component.result == core_pb2.DIAG_RESULT_PASS:
+                media_codec_list_resp = stub.getDiagnosticsMediaCodecResult(
+                    core_pb2.DeviceId(id=diagTaskInfo.deviceId))
+                if len(media_codec_list_resp.errorMsg) == 0:
+                    mediaPerfList = []
+                    for media_codec_data in media_codec_list_resp.dataList:
+                        new_perf_data = dict()
+                        fps_key = diagnosticMediaCodecResolutionEnumToString[media_codec_data.resolution]+ " " + diagnosticMediaCodecFormatEnumToString[media_codec_data.format]
+                        new_perf_data[fps_key] = media_codec_data.fps
+                        mediaPerfList.append(new_perf_data)
+                    new_component['media_codec_list'] = mediaPerfList
             componentList.append(new_component)
         data['component_list'] = componentList
         datas.append(data)

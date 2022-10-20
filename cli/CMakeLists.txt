@@ -82,14 +82,63 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src XPUM_CLI_SRC)
 set(GRPC_SRC ${core_grpc_srcs} ${core_grpc_hdrs} ${core_proto_srcs}
              ${core_proto_hdrs})
 
-add_executable(xpumcli ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
+if(NOT DAEMONLESS) # Build xpumcli
 
-target_sources(
-  xpumcli
-  PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC}
-          ${CMAKE_CURRENT_LIST_DIR}/../core/src/api/internal_dump_raw_data.cpp)
+  include_directories(${CMAKE_CURRENT_LIST_DIR}/src/grpc_stub)
+  aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/grpc_stub XPUM_CLI_GRPC_STUB_SRC)
 
-target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF} igsc)
+  add_executable(xpumcli ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
+
+  target_sources(
+    xpumcli
+    PRIVATE ${XPUM_CLI_SRC} ${GRPC_SRC} ${XPUM_CLI_GRPC_STUB_SRC}
+    ${CMAKE_CURRENT_LIST_DIR}/../core/src/api/internal_dump_raw_data.cpp)
+  
+  target_link_libraries(xpumcli ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF} igsc ${CMAKE_DL_LIBS})
+  
+else() # Build xpu-smi
+
+  include_directories(${CMAKE_CURRENT_LIST_DIR}/src/core_stub)
+  aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/core_stub XPUM_CLI_CORE_STUB_SRC)
+
+  add_executable(xpumanager ${CMAKE_CURRENT_LIST_DIR}/src/xpumcli.cpp)
+  set_target_properties(xpumanager PROPERTIES OUTPUT_NAME "xpu-smi")
+  target_compile_definitions(xpumanager PRIVATE DAEMONLESS)
+
+  target_sources(
+    xpumanager
+    PRIVATE ${XPUM_CLI_SRC} ${XPUM_CLI_CORE_STUB_SRC})
+
+  target_link_libraries(xpumanager PRIVATE igsc ${CMAKE_DL_LIBS})
+
+  add_custom_command(
+    TARGET xpumanager
+    PRE_BUILD
+    COMMAND
+      /bin/sh -c
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources/config ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+    COMMAND
+      /bin/sh -c
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+  )
+
+  if(NOT DEFINED WORK_PATH)
+    message(STATUS "WORK_PATH not defined!")
+    message("PATH = $ENV{PATH}")
+    find_library(
+      DGM_LIB
+      NAMES libxpum.so
+      PATHS ${CMAKE_CURRENT_LIST_DIR}/../core/build
+            ${CMAKE_CURRENT_LIST_DIR}/../build/core
+      NO_CMAKE_ENVIRONMENT_PATH NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH)
+
+    message(STATUS "DGM_LIB=${DGM_LIB}")
+    target_link_libraries(xpumanager PRIVATE ${DGM_LIB})
+  else()
+    target_link_libraries(xpumanager PRIVATE xpum)
+  endif()
+
+endif()
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   enable_testing()

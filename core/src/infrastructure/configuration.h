@@ -6,11 +6,18 @@
 
 #pragma once
 #include <set>
+#include <vector>
 #include <string>
 
 #include "measurement_type.h"
 
 namespace xpum {
+
+struct PerfMetric_t {
+    std::string name;
+    std::string group;
+    std::string type;
+};
 
 class Configuration {
    public:
@@ -29,21 +36,28 @@ class Configuration {
     static bool INITIALIZE_PCIE_MANAGER;
     static uint32_t DEFAULT_MEASUREMENT_DATA_SCALE;
     static uint32_t MAX_STATISTICS_SESSION_NUM;
-    static uint32_t MEMORY_IO_THROUGHPUT_DATA_SCALE;
+    static bool INITIALIZE_PERF_METRIC;
 
    public:
     static void init() {
         initEnabledMetrics();
+        initPerfMetrics();
     }
 
     static void initEnabledMetrics();
+    static void initPerfMetrics();
 
     static std::set<MeasurementType>& getEnabledMetrics() {
         return enabled_metrics;
     }
+    
+    static std::vector<PerfMetric_t>& getPerfMetrics() {
+        return perf_metrics;
+    }
 
    private:
     static std::set<MeasurementType> enabled_metrics;
+    static std::vector<PerfMetric_t> perf_metrics;
 };
 
 } // end namespace xpum

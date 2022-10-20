@@ -9,6 +9,12 @@ message GeneralEnum {
 
 message DeviceId {
     uint32 id = 1;
+    string errorMsg = 2;
+    int32 errorNo=3;
+}
+
+message DeviceBDF {
+    string bdf = 1;
 }
 
 /* Specific Message */
@@ -19,6 +25,7 @@ message XpumVersionInfoArray {
     }
     repeated XpumVersionInfo versions = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message XpumDeviceBasicInfoArray {
@@ -30,9 +37,11 @@ message XpumDeviceBasicInfoArray {
         string pcieDeviceId = 5;
         string pciBdfAddress = 6;
         string vendorName = 7;
+        string drmDevice = 8;
     }
     repeated XpumDeviceBasicInfo info = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message XpumDeviceProperties {
@@ -42,12 +51,19 @@ message XpumDeviceProperties {
     }
     repeated XpumDeviceProperty properties = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
+}
+
+message GetAMCFirmwareVersionsRequest {
+    string username = 1;
+    string password = 2;
 }
 
 message GetAMCFirmwareVersionsResponse {
     repeated string versions = 1;
     string errorMsg = 2;
     int32 status = 3;
+    int32 errorNo = 4;
 }
 
 message XpumTopologyInfo {
@@ -63,6 +79,7 @@ message XpumTopologyInfo {
     }        
     repeated XpumSwitchInfo switchInfo = 4;
     string errorMsg = 5;    
+    int32 errorNo = 6;
 }
 
 message GroupId {
@@ -79,12 +96,14 @@ message GroupInfo {
     uint32 count = 3;    
     repeated DeviceId deviceList = 4;
     string errorMsg = 5;
+    int32 errorNo = 6;
 }
 
 message GroupArray{
     uint32 count = 1;
     repeated GroupInfo groupList = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message GroupAddRemoveDevice{
@@ -140,6 +159,31 @@ message DiagnosticsTaskInfo{
     uint64 startTime = 8;
     uint64 endTime = 9;
     string errorMsg = 10;
+    int32 errorNo = 11;
+}
+
+enum DiagnosticsMediaCodecResolution {
+    DIAG_MEDIA_1080p = 0;
+    DIAG_MEDIA_4K = 1;
+}
+
+enum DiagnosticsMediaCodecFormat {
+    DIAG_MEDIA_H265 = 0;
+    DIAG_MEDIA_H264 = 1;
+    DIAG_MEDIA_AV1 = 2;
+}
+
+message DiagnosticsMediaCodecInfo{
+    uint32 deviceId = 1;
+    DiagnosticsMediaCodecResolution resolution = 2;
+    DiagnosticsMediaCodecFormat format = 3;
+    string fps = 4;
+}
+
+message DiagnosticsMediaCodecInfoArray{
+    repeated DiagnosticsMediaCodecInfo dataList = 1;
+    string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message DiagnosticsGroupTaskInfo{
@@ -147,6 +191,7 @@ message DiagnosticsGroupTaskInfo{
     repeated DiagnosticsTaskInfo taskInfo = 2;
     uint32 count = 3;
     string errorMsg = 4;
+    int32 errorNo = 5;
 }
 
 enum HealthType{
@@ -155,6 +200,7 @@ enum HealthType{
     HEALTH_POWER = 2;
     HEALTH_MEMORY = 3;
     HEALTH_FABRIC_PORT = 4;
+    HEALTH_FREQUENCY = 5;
 }
 
 enum HealthConfigType{
@@ -188,6 +234,7 @@ message HealthData{
     uint64 throttleThreshold = 5;
     uint64 shutdownThreshold = 6;
     string errorMsg = 7;
+    int32 errorNo = 8;
 }
 
 
@@ -197,6 +244,7 @@ message HealthDataByGroup{
     repeated HealthData healthData = 3;
     uint32 count = 4;
     string errorMsg = 5;
+    int32 errorNo = 6;
 }
 
 message HealthConfigRequest{
@@ -216,6 +264,7 @@ message HealthConfigInfo{
     HealthConfigType configType = 2;
     int32 threshold = 3;
     string errorMsg = 4;
+    int32 errorNo = 5;
 }
 
 message HealthConfigByGroupInfo{
@@ -225,6 +274,7 @@ message HealthConfigByGroupInfo{
     repeated int32 threshold = 4;
     uint32 count = 5;
     string errorMsg = 6;
+    int32 errorNo = 7;
 }
 
 message DeviceStatsData{
@@ -249,6 +299,7 @@ message DeviceStatsInfo{
 message DeviceStatsInfoArray {
     repeated DeviceStatsInfo dataList = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message XpumGetStatsRequest {
@@ -268,23 +319,28 @@ message XpumGetStatsResponse {
     uint64 begin=2;
     uint64 end=3;
     string errorMsg = 4;
-    int32 status = 5;
+    int32 errorNo = 5;
 }
 
 message XpumFirmwareFlashJob {
     DeviceId id = 1;
     GeneralEnum type = 2;
     string path = 3;
+    string username = 4;
+    string password = 5;
 }
 
 message XpumFirmwareFlashJobResponse {
     GeneralEnum type = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message XpumFirmwareFlashTaskRequest {
     DeviceId id = 1;
     GeneralEnum type = 2;
+    string username = 3;
+    string password = 4;
 }
 
 message XpumFirmwareFlashTaskResult {
@@ -294,6 +350,8 @@ message XpumFirmwareFlashTaskResult {
     string desc = 4;
     string version = 5;
     string errorMsg = 6;
+    int32 percentage = 7;
+    int32 errorNo = 8;
 }
 enum XpumPolicyConditionType {  
     POLICY_CONDITION_TYPE_GREATER=0;
@@ -335,6 +393,7 @@ message ResetDeviceResponse{
     uint32 deviceId = 1;
     uint32 retCode = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message DeviceProcessState{
@@ -350,6 +409,46 @@ message DeviceProcessStateResponse{
     uint32 count = 1;
     repeated DeviceProcessState processlist = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
+}
+
+message DeviceComponentOccupancyRatioRequest {
+    uint32 deviceId = 1;
+    uint32 tileId = 2;
+    uint32 samplingInterval = 3;
+    bool isTileData = 4;
+}
+
+message DeviceComponentOccupancyRatio {
+    string notInUse = 1;
+    string workload = 2;
+    string engine = 3;
+    string inUse = 4;
+    string active = 5;
+    string aluActive = 6;
+    string xmxActive = 7;
+    string xmxOnly = 8;
+    string xmxFpuActive = 9;
+    string fpuWithoutXMX = 10;
+    string fpuOnly = 11;
+    string emFpuActive = 12;
+    string emIntOnly = 13;
+    string other = 14;
+    string stall = 15;
+    string nonOccupancy = 16;
+    string stallALU = 17;
+    string stallBarrier = 18;
+    string stallDep = 19;
+    string stallOther = 20;
+    string stallInstFetch = 21;
+    string tileId = 22;
+}
+
+message DeviceComponentOccupancyRatioResponse {
+    uint32 tileCount = 1;
+    repeated DeviceComponentOccupancyRatio componentOccupancyList = 2;
+    string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message DeviceUtilizationByProcess {
@@ -378,6 +477,7 @@ message DeviceUtilizationByProcessResponse {
     uint32 count = 1;
     repeated DeviceUtilizationByProcess processList = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message PerformanceFactor{
@@ -392,6 +492,7 @@ message DevicePerformanceFactorResponse{
     uint32 count = 1;
     repeated PerformanceFactor pf = 2;
     string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message DeviceDataRequest{
@@ -441,6 +542,7 @@ message ConfigDeviceData{
     string intervalScope = 6; 
     repeated ConfigTileData tileConfigData = 7;
     string errorMsg = 8;
+    int32 errorNo = 9;
 }
 message ConfigDeviceSchdeulerModeRequest{
     uint32 deviceId = 1;
@@ -504,6 +606,7 @@ message ConfigDeviceMemoryEccStateResultData {
     string currentState = 6;
     string pendingState = 7;
     string pendingAction = 8;
+    int32 errorNo = 9;
 }
 
 message ConfigDeviceResultData {
@@ -512,6 +615,7 @@ message ConfigDeviceResultData {
     uint32 tileId = 3;
     uint32 retCode = 4;
     string errorMsg = 5;
+    int32 errorNo = 6;
 }
 
 message DevicePerformanceFactorSettingResponse {
@@ -520,6 +624,7 @@ message DevicePerformanceFactorSettingResponse {
     uint32 tileId = 3;
     uint32 retCode = 4;
     string errorMsg = 5;
+    int32 errorNo = 6;
 }
 
 enum XpumPolicyType {  
@@ -532,7 +637,8 @@ enum XpumPolicyType {
     POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE=6;
     POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE=7;
     POLICY_TYPE_GPU_MISSING=8;
-    POLICY_TYPE_MAX=9;
+    POLICY_TYPE_GPU_THROTTLE=9;
+    POLICY_TYPE_MAX=10;
 }
 message XpumPolicyData {
     XpumPolicyType type = 1;
@@ -545,6 +651,7 @@ message XpumPolicyData {
 message GetPolicyResponse {
     repeated XpumPolicyData policyList = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 message GetPolicyRequest{
     uint32 id = 1;
@@ -560,6 +667,7 @@ message SetPolicyRequest{
 message SetPolicyResponse{
     bool isOk = 1;
     string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 message ReadPolicyNotifyDataResponse{
@@ -572,6 +680,7 @@ message ReadPolicyNotifyDataResponse{
     uint64 curValue = 7;    
     bool isTileData = 8;
     int32 tileId = 9;
+    string description = 10;
 }
 
 message DumpRawDataTaskInfo{
@@ -591,7 +700,7 @@ message StartDumpRawDataTaskRequest{
 
 message StartDumpRawDataTaskResponse{
     DumpRawDataTaskInfo taskInfo = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
 }
 
@@ -601,13 +710,13 @@ message StopDumpRawDataTaskRequest{
 
 message StopDumpRawDataTaskReponse{
     DumpRawDataTaskInfo taskInfo = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
 }
 
 message ListDumpRawDataTaskResponse{
     repeated DumpRawDataTaskInfo taskList = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
 }
 
@@ -639,21 +748,22 @@ message AgentConfigEntryList{
 
 message SetAgentConfigResponse{
     AgentConfigEntryList entryList = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
     repeated AgentConfigError errorList = 4;
 }
 
 message GetAgentConfigResponse{
     AgentConfigEntryList entryList = 1;
-    int32 status = 2;
+    int32 errorNo = 2;
     string errorMsg = 3;
 }
 
 message TopoXMLResponse {
     uint32 length = 1;
     string xmlString = 2;
-    string errorMsg = 5;
+    string errorMsg = 3;
+    int32 errorNo = 4;
 }
 
 message XpumGetEngineStatsRequest {
@@ -679,7 +789,7 @@ message XpumGetEngineStatsResponse {
     uint64 begin = 2;
     uint64 end = 3;
     string errorMsg = 4;
-    int32 status = 5;
+    int32 errorNo = 5;
 }
 
 message GetEngineCountRequest {
@@ -698,7 +808,7 @@ message EngineCountInfo {
 }
 
 message GetEngineCountResponse {
-    int32 status = 1;
+    int32 errorNo = 1;
     string errorMsg = 2;
     repeated EngineCountInfo engineCountList = 3;
 }
@@ -719,6 +829,7 @@ message XpumXelinkTopoInfoArray{
     }
     repeated XelinkTopoInfo topoInfo=1;
     string errorMsg = 4;
+    int32 errorNo = 5;
 }
 
 message GetFabricStatsRequest {
@@ -744,7 +855,7 @@ message GetFabricStatsResponse {
     uint64 begin = 2;
     uint64 end = 3;
     string errorMsg = 4;
-    int32 status = 5;
+    int32 errorNo = 5;
 }
 
 message GetFabricCountRequest {
@@ -768,6 +879,38 @@ message GetFabricCountResponse {
     int32 tileId = 2;
     repeated FabricCountInfo fabricCountList= 3;
     string errorMsg = 4;
+    int32 errorNo = 5;
+}
+
+message GetRedfishAmcWarnMsgResponse {
+    string warnMsg = 1;
+    int32 errorNo = 2;
+}
+
+message SensorReadingSchema{
+    int32 deviceIdx=1;
+    double value=2;
+    string sensorName=3;
+    double sensorHigh=4;
+    double sensorLow=5;
+    string sensorUnit=6;
+}
+
+message GetAMCSensorReadingResponse {
+    repeated SensorReadingSchema dataList=1;
+    int32 errorNo=2;
+    string errorMsg =3; 
+}
+
+message GetDeviceSerialNumberRequest {
+    int32 deviceId = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message GetDeviceSerialNumberResponse {
+    string serialNumber = 1;
+    string amcFwVersion = 2;
 }
 
 /* services */
@@ -775,7 +918,9 @@ service XpumCoreService {
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
     rpc getDeviceList( google.protobuf.Empty ) returns ( XpumDeviceBasicInfoArray );
     rpc getDeviceProperties( DeviceId ) returns ( XpumDeviceProperties );
-    rpc getAMCFirmwareVersions( google.protobuf.Empty ) returns ( GetAMCFirmwareVersionsResponse );
+    rpc getDeviceIdByBDF( DeviceBDF ) returns ( DeviceId );
+    rpc getAMCFirmwareVersions( GetAMCFirmwareVersionsRequest ) returns ( GetAMCFirmwareVersionsResponse );
+    rpc getRedfishAmcWarnMsg( google.protobuf.Empty ) returns ( GetRedfishAmcWarnMsgResponse );
     rpc getTopology(  DeviceId ) returns ( XpumTopologyInfo );
     rpc groupCreate( GroupName ) returns ( GroupInfo );
     rpc groupDestory( GroupId ) returns ( GroupInfo );
@@ -786,6 +931,7 @@ service XpumCoreService {
     rpc runDiagnostics( RunDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
     rpc runDiagnosticsByGroup( RunDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
     rpc getDiagnosticsResult ( DeviceId ) returns ( DiagnosticsTaskInfo );
+    rpc getDiagnosticsMediaCodecResult ( DeviceId ) returns ( DiagnosticsMediaCodecInfoArray );
     rpc getDiagnosticsResultByGroup( GroupId ) returns (DiagnosticsGroupTaskInfo);
     rpc getHealth( HealthDataRequest ) returns ( HealthData );
     rpc getHealthByGroup( HealthDataByGroupRequest ) returns ( HealthDataByGroup );
@@ -808,6 +954,7 @@ service XpumCoreService {
     rpc readPolicyNotifyData( google.protobuf.Empty ) returns ( stream ReadPolicyNotifyDataResponse );
     rpc getDeviceConfig( ConfigDeviceDataRequest ) returns ( ConfigDeviceData );
     rpc getDeviceProcessState( DeviceId ) returns ( DeviceProcessStateResponse );
+    rpc getDeviceComponentOccupancyRatio( DeviceComponentOccupancyRatioRequest ) returns ( DeviceComponentOccupancyRatioResponse );
     rpc getDeviceUtilizationByProcess( DeviceUtilizationByProcessRequest ) returns ( DeviceUtilizationByProcessResponse );
     rpc getAllDeviceUtilizationByProcess( UtilizationInterval ) returns ( DeviceUtilizationByProcessResponse );
     rpc getPerformanceFactor( DeviceDataRequest ) returns ( DevicePerformanceFactorResponse );
@@ -829,4 +976,6 @@ service XpumCoreService {
     rpc getXelinkTopology( google.protobuf.Empty ) returns ( XpumXelinkTopoInfoArray );
     rpc getFabricStatistics( GetFabricStatsRequest ) returns ( GetFabricStatsResponse );
     rpc getFabricCount( GetFabricCountRequest ) returns ( GetFabricCountResponse );
+    rpc getAMCSensorReading( google.protobuf.Empty ) returns ( GetAMCSensorReadingResponse );
+    rpc getDeviceSerialNumberAndAmcFwVersion( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );
 }
