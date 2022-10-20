@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dump metrics raw data &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/target-highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Topologies" href="group_TOPOLOGY_API.html" />
+    <link rel="prev" title="Device statistics" href="group_STATISTICS_API.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../README.html">Intel XPU Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../CLI_user_guide.html">Intel XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../restful.html">Restful API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_GROUP_MANAGEMENT_API.html">Group management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_HEALTH_API.html">Device health</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DIAGNOSTICS_API.html">Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_AGENT_SETTING_API.html">Agent settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Dump metrics raw data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#detailed-documentation">Detailed Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_POLICY_API.html">Policy management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_SENSOR_READING_API.html">Sensor reading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../xpum_index.html">XPUM Documentation</a> &raquo;</li>
+          <li><a href="index.html">Core Library API</a> &raquo;</li>
+      <li>Dump metrics raw data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dump-metrics-raw-data">
+<span id="doxid-group-dump-raw-data-api"></span><span id="index-0"></span><h1>Dump metrics raw data<a class="headerlink" href="#dump-metrics-raw-data" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>These APIs are for collecting metrics raw data. <a class="reference internal" href="#details-group-dump-raw-data-api"><span class="std std-ref">More…</span></a></p>
+<pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
+
+<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumStartDumpRawDataTask<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <span class="n">dumpTypeList</span><span class="p">[],</span>
+    <span class="k">const</span> <span class="kt">int</span> <span class="n">count</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">dumpFilePath</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumStopDumpRawDataTask<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span class="std std-ref">xpum_dump_task_id_t</span></a><span></span> <span class="n">taskId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumListDumpRawDataTasks<span></span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span> <span class="n">taskList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-group-dump-raw-data-api"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<p>These APIs are for collecting metrics raw data.</p>
+<section id="global-functions">
+<h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-dump-raw-data-api-1gaf93fab667533a5c38e251b160e4a684e"><span id="index-1"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumStartDumpRawDataTask</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <span class="n">dumpTypeList</span><span class="p">[],</span>
+    <span class="k">const</span> <span class="kt">int</span> <span class="n">count</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">dumpFilePath</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
+    <span class="p">)</span></pre>
+<p>Start dump raw data task. When call this function, core lib will start to write raw data into dump file.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id to query</p></td>
+</tr>
+<tr class="row-even"><td><p>tileId</p></td>
+<td><p>IN: tile id to query, when pass -1, means to get device level data</p></td>
+</tr>
+<tr class="row-odd"><td><p>dumpTypeList</p></td>
+<td><p>IN: metrics to dump</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN: The count of entries in <em>metricsTypeList</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>dumpFilePath</p></td>
+<td><p>IN: The path of file to dump raw data</p></td>
+</tr>
+<tr class="row-even"><td><p>taskInfo</p></td>
+<td><p>OUT: The info of the task just created</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a0d7d6ad6c725268d29d2fc4bb1ccffec"><span class="std std-ref">XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT</span></a> if not supported metrics type passed in</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if other error happens</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-dump-raw-data-api-1ga0d24c1d5ab7226c335c600f228f36445"><span id="index-2"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumStopDumpRawDataTask</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span class="std std-ref">xpum_dump_task_id_t</span></a><span></span> <span class="n">taskId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="o">*</span> <span class="n">taskInfo</span>
+    <span class="p">)</span></pre>
+<p>Stop write to dumpFilePath.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>taskId</p></td>
+<td><p>IN: Task id</p></td>
+</tr>
+<tr class="row-even"><td><p>taskInfo</p></td>
+<td><p>OUT: The info of the task just stopped</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a71cd28cf7f2457ff93f0e25d21f7ca2d"><span class="std std-ref">XPUM_DUMP_RAW_DATA_TASK_NOT_EXIST</span></a> if task id not exists</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if other error happens</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-dump-raw-data-api-1ga891385decc431203284f5e909222f8c0"><span id="index-3"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumListDumpRawDataTasks</span><span class="p">(</span>
+    <a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html#doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span> <span class="n">taskList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>List all the active dump tasks.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>taskList</p></td>
+<td><p>OUT: The array to store task info. First pass NULL to query raw data count. Then pass array with desired length to store raw data.</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>taskList</em> is NULL, <em>count</em> will be filled with the number of running tasks, and return. When <em>taskList</em> is not NULL, <em>count</em> denotes the length of <em>taskList</em>, <em>count</em> should be equal to or larger than the number of running tasks, when return, the <em>count</em> will store real number of entries returned by <em>taskList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if other error happens</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="group_STATISTICS_API.html" class="btn btn-neutral float-left" title="Device statistics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="group_TOPOLOGY_API.html" class="btn btn-neutral float-right" title="Topologies" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

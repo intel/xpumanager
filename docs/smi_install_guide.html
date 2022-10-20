@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intel XPU-SMI Installation Guide &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/target-highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Intel XPU System Management Interface User Guide" href="smi_user_guide.html" />
+    <link rel="prev" title="Intel XPU System Management Interface" href="SMI_README.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="SMI_README.html">Intel XPU System Management Interface</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Intel XPU-SMI Installation Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deb-install">DEB install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deb-uninstall">DEB uninstall</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rpm-install">RPM install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rpm-relocation-install">RPM relocation install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#start-to-user-intel-xpu-smi">Start to user Intel XPU-SMI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rpm-uninstall">RPM uninstall</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rpm-upgrade">RPM upgrade</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gpu-memory-ecc-on-off">GPU memory ECC on/off</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="smi_user_guide.html">Intel XPU System Management Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="smidoc/rst/index.html">Core Library API</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
+      <li>Intel XPU-SMI Installation Guide</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-smi-installation-guide">
+<h1>Intel XPU-SMI Installation Guide<a class="headerlink" href="#intel-xpu-smi-installation-guide" title="Permalink to this headline"></a></h1>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline"></a></h2>
+<p>oneAPI Level Zero
+Intel(R) Graphics System Controller Firmware Update Library
+Intel(R) Metrics Library for MDAPI
+Intel(R) Metrics Discovery Application Programming Interface</p>
+</section>
+<section id="deb-install">
+<h2>DEB install<a class="headerlink" href="#deb-install" title="Permalink to this headline"></a></h2>
+<p>sudo dpkg -i xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb</p>
+</section>
+<section id="deb-uninstall">
+<h2>DEB uninstall<a class="headerlink" href="#deb-uninstall" title="Permalink to this headline"></a></h2>
+<p>sudo dpkg -r xpu-smi</p>
+</section>
+<section id="rpm-install">
+<h2>RPM install<a class="headerlink" href="#rpm-install" title="Permalink to this headline"></a></h2>
+<p>sudo rpm -i xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+</section>
+<section id="rpm-relocation-install">
+<h2>RPM relocation install<a class="headerlink" href="#rpm-relocation-install" title="Permalink to this headline"></a></h2>
+<p>rpm -i –prefix=/opt/abc xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+</section>
+<section id="start-to-user-intel-xpu-smi">
+<h2>Start to user Intel XPU-SMI<a class="headerlink" href="#start-to-user-intel-xpu-smi" title="Permalink to this headline"></a></h2>
+<p>By default, Intel XPU-SMI is installed the folder, /opt/xpum. The command line tool is xpu-smi. Please refer to “smi_user_guide.md” for how to use the command line tool.</p>
+</section>
+<section id="rpm-uninstall">
+<h2>RPM uninstall<a class="headerlink" href="#rpm-uninstall" title="Permalink to this headline"></a></h2>
+<p>sudo rpm -e xpu-smi</p>
+</section>
+<section id="rpm-upgrade">
+<h2>RPM upgrade<a class="headerlink" href="#rpm-upgrade" title="Permalink to this headline"></a></h2>
+<p>sudo rpm -Uxh xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+</section>
+<section id="gpu-memory-ecc-on-off">
+<h2>GPU memory ECC on/off<a class="headerlink" href="#gpu-memory-ecc-on-off" title="Permalink to this headline"></a></h2>
+<p>XPU-SMI provides the GPU memory ECC on/off feature based on IGSC. GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer versions.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="SMI_README.html" class="btn btn-neutral float-left" title="Intel XPU System Management Interface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="smi_user_guide.html" class="btn btn-neutral float-right" title="Intel XPU System Management Interface User Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

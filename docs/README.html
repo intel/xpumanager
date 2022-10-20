@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intel XPU Manager &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/target-highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="XPUM Documentation" href="xpum_index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Intel XPU Manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#intel-xpu-manager-features">Intel XPU Manager features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#supported-devices">Supported Devices</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#supported-oses">Supported OSes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#intel-xpu-manager-architecture">Intel XPU Manager Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gpu-telemetry-exported-from-intel-xpu-manager-to-grafana">GPU telemetry exported from Intel XPU Manager to Grafana</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#intel-xpu-manager-documentation">Intel XPU Manager Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="restful.html">Restful API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpumdoc/rst/index.html">Core Library API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="xpum_index.html">XPUM Documentation</a> &raquo;</li>
+      <li>Intel XPU Manager</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-manager">
+<h1>Intel XPU Manager<a class="headerlink" href="#intel-xpu-manager" title="Permalink to this headline"></a></h1>
+<p>Intel XPU Manager is a free and open-source solution for monitoring and managing Intel data center GPUs.</p>
+<p>It is designed to simplify administration, maximize reliability and uptime, and improve utilization.</p>
+<p>Intel XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely.</p>
+<p>3rd party open-source and commercial workload and cluster managers, job schedulers, and monitoring solutions can also integrate the Intel XPU Manager to support Intel data center GPUs.</p>
+<section id="intel-xpu-manager-features">
+<h2>Intel XPU Manager features<a class="headerlink" href="#intel-xpu-manager-features" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>Administration:</p>
+<ul>
+<li><p>GPU discovery and information - name, model, serial, stepping, location, frequency, memory capacity, firmware version</p></li>
+<li><p>GPU topology and grouping</p></li>
+<li><p>GPU Firmware updating</p></li>
+</ul>
+</li>
+<li><p>Monitoring:</p>
+<ul>
+<li><p>GPU health – memory, power, temperature, fabric port, etc.</p></li>
+<li><p>GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory bandwidth, errors</p></li>
+</ul>
+</li>
+<li><p>Diagnostics:</p>
+<ul>
+<li><p>3 levels of GPU diagnostic tests</p></li>
+</ul>
+</li>
+<li><p>Configuration:</p>
+<ul>
+<li><p>GPU Settings - GPU power limits, frequency range, standby mode, scheduler mode, ECC On/Off, performance factor, fabric port status, fabric port beaconing</p></li>
+<li><p>GPU policies - Throttle GPU when the temperature set threshold is reached, reset GPU when hanging etc.</p></li>
+</ul>
+</li>
+<li><p>Supported Frameworks:</p>
+<ul>
+<li><p>Prometheus exporter, Docker container support, Icinga plugin</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="supported-devices">
+<h2>Supported Devices<a class="headerlink" href="#supported-devices" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>Intel Data Center GPUs</p></li>
+</ul>
+</section>
+<section id="supported-oses">
+<h2>Supported OSes<a class="headerlink" href="#supported-oses" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>Ubuntu 20.04.3</p></li>
+<li><p>RHEL 8.4 and CentOS 8 Stream</p></li>
+<li><p>SLES 15 SP3</p></li>
+<li><p>Windows Server 2022 (limited features including: GPU device info, GPU telemetry and GPU settings)</p></li>
+</ul>
+</section>
+<section id="intel-xpu-manager-architecture">
+<h2>Intel XPU Manager Architecture<a class="headerlink" href="#intel-xpu-manager-architecture" title="Permalink to this headline"></a></h2>
+<p><img alt="Intel XPU Manager Architecture" src="_images/architecture.PNG" /></p>
+</section>
+<section id="gpu-telemetry-exported-from-intel-xpu-manager-to-grafana">
+<h2>GPU telemetry exported from Intel XPU Manager to Grafana<a class="headerlink" href="#gpu-telemetry-exported-from-intel-xpu-manager-to-grafana" title="Permalink to this headline"></a></h2>
+<p><img alt="GPU telemetry exported from Intel XPU Manager to Grafana" src="_images/Grafana.PNG" /></p>
+</section>
+<section id="intel-xpu-manager-documentation">
+<h2>Intel XPU Manager Documentation<a class="headerlink" href="#intel-xpu-manager-documentation" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>Refer to the <span class="xref myst">XPU Manager Installation Guide</span> for how to install/uninstall Intel XPU Manager.</p></li>
+<li><p>Refer to the <span class="xref myst">XPU Manager CLI User Guide</span> to start using Intel XPU Manager.</p></li>
+<li><p>Refer to <a class="reference external" href="https://hub.docker.com/r/intel/xpumanager">DockerHub</a> for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="xpum_index.html" class="btn btn-neutral float-left" title="XPUM Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

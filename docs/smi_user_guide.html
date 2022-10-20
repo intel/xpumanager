@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intel XPU System Management Interface User Guide &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/target-highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Core Library API" href="smidoc/rst/index.html" />
+    <link rel="prev" title="Intel XPU-SMI Installation Guide" href="smi_install_guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="SMI_README.html">Intel XPU System Management Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="smi_install_guide.html">Intel XPU-SMI Installation Guide</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Intel XPU System Management Interface User Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#intel-xpu-system-management-interface-main-features">Intel XPU System Management Interface main features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#help-info">Help info</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#discover-the-devices-in-this-machine">Discover the devices in this machine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-the-system-topology">Get the system topology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#update-the-gpu-firmware">Update the GPU firmware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#diagnose-gpu-with-different-test-suites">Diagnose GPU with different test suites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-and-change-the-gpu-settings">Get and change the GPU settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-the-device-real-time-statistics">Get the device real-time statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dump-the-device-statistics-in-csv-format">Dump the device statistics in CSV format</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="smidoc/rst/index.html">Core Library API</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
+      <li>Intel XPU System Management Interface User Guide</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-system-management-interface-user-guide">
+<h1>Intel XPU System Management Interface User Guide<a class="headerlink" href="#intel-xpu-system-management-interface-user-guide" title="Permalink to this headline"></a></h1>
+<p>This guide describes how to use Intel XPU System Management Interface to manage Intel GPU devices.</p>
+<section id="intel-xpu-system-management-interface-main-features">
+<h2>Intel XPU System Management Interface main features<a class="headerlink" href="#intel-xpu-system-management-interface-main-features" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>Show the device info.</p></li>
+<li><p>Update the device firmware.</p></li>
+</ul>
+</section>
+<section id="help-info">
+<h2>Help info<a class="headerlink" href="#help-info" title="Permalink to this headline"></a></h2>
+<p>Show the XPU System Management Interface help info.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> 
+<span class="n">Intel</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span> <span class="o">--</span> <span class="n">v1</span><span class="mf">.0</span> 
+<span class="n">Intel</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span> <span class="n">provides</span> <span class="n">the</span> <span class="n">Intel</span> <span class="n">data</span> <span class="n">center</span> <span class="n">GPU</span> <span class="n">device</span> <span class="n">info</span><span class="o">.</span> <span class="n">It</span> <span class="n">can</span> <span class="n">also</span> <span class="n">be</span> <span class="n">used</span> <span class="n">to</span> <span class="n">update</span> <span class="n">the</span> <span class="n">firmware</span><span class="o">.</span>  
+<span class="n">Intel</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span> <span class="ow">is</span> <span class="n">based</span> <span class="n">on</span> <span class="n">Intel</span> <span class="n">oneAPI</span> <span class="n">Level</span> <span class="n">Zero</span><span class="o">.</span> <span class="n">Before</span> <span class="n">using</span> <span class="n">Intel</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span><span class="p">,</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">driver</span> <span class="ow">and</span> <span class="n">Intel</span> <span class="n">oneAPI</span> <span class="n">Level</span> <span class="n">Zero</span> <span class="n">should</span> <span class="n">be</span> <span class="n">installed</span> <span class="n">rightly</span><span class="o">.</span>  
+ 
+<span class="n">Supported</span> <span class="n">devices</span><span class="p">:</span> 
+  <span class="o">-</span> <span class="n">Intel</span> <span class="n">Data</span> <span class="n">Center</span> <span class="n">GPU</span> 
+ 
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="o">-</span><span class="n">v</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="o">-</span><span class="n">h</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span>
+
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>                  <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">v</span><span class="p">,</span> <span class="o">--</span><span class="n">version</span>               <span class="n">Display</span> <span class="n">version</span> <span class="n">information</span> <span class="ow">and</span> <span class="n">exit</span><span class="o">.</span>
+
+<span class="n">Subcommands</span><span class="p">:</span>
+  <span class="n">discovery</span>                   <span class="n">Discover</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">devices</span> <span class="n">installed</span> <span class="n">on</span> <span class="n">this</span> <span class="n">machine</span> <span class="ow">and</span> <span class="n">provide</span> <span class="n">the</span> <span class="n">device</span> <span class="n">info</span><span class="o">.</span>
+  <span class="n">diag</span>                        <span class="n">Run</span> <span class="n">some</span> <span class="n">test</span> <span class="n">suites</span> <span class="n">to</span> <span class="n">diagnose</span> <span class="n">GPU</span><span class="o">.</span>
+  <span class="n">updatefw</span>                    <span class="n">Update</span> <span class="n">GPU</span> <span class="n">firmware</span><span class="o">.</span>
+  <span class="n">topology</span>                    <span class="n">get</span> <span class="n">the</span> <span class="n">system</span> <span class="n">topology</span>
+  <span class="n">config</span>                      <span class="n">Get</span> <span class="ow">and</span> <span class="n">change</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">settings</span><span class="o">.</span>
+  <span class="n">stats</span>                       <span class="n">List</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">statistics</span><span class="o">.</span>
+  <span class="n">dump</span>                        <span class="n">Dump</span> <span class="n">device</span> <span class="n">statistics</span> <span class="n">data</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>Show Intel XPU System Management Interface version and Level Zero version.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="o">-</span><span class="n">v</span>
+<span class="n">CLI</span><span class="p">:</span>
+    <span class="n">Version</span><span class="p">:</span> <span class="mf">1.0.0.20211217</span>
+    <span class="n">Build</span> <span class="n">ID</span><span class="p">:</span> <span class="n">f847c0fa</span>
+
+<span class="n">Service</span><span class="p">:</span>
+    <span class="n">Version</span><span class="p">:</span> <span class="mf">1.0.0.20211217</span>
+    <span class="n">Build</span> <span class="n">ID</span><span class="p">:</span> <span class="n">f847c0fa</span>
+    <span class="n">Level</span> <span class="n">Zero</span> <span class="n">Version</span><span class="p">:</span> <span class="mf">1.6.2</span>
+</pre></div>
+</div>
+</section>
+<section id="discover-the-devices-in-this-machine">
+<h2>Discover the devices in this machine<a class="headerlink" href="#discover-the-devices-in-this-machine" title="Permalink to this headline"></a></h2>
+<p>Help info of the “discovery” subcommand</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">h</span>
+
+<span class="n">Discover</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">devices</span> <span class="n">installed</span> <span class="n">on</span> <span class="n">this</span> <span class="n">machine</span> <span class="ow">and</span> <span class="n">provide</span> <span class="n">the</span> <span class="n">device</span> <span class="n">info</span><span class="o">.</span> 
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="o">--</span><span class="n">dump</span>
+
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+  <span class="o">--</span><span class="n">debug</span>                     <span class="n">Print</span> <span class="n">debug</span> <span class="n">info</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">Device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span> <span class="n">to</span> <span class="n">query</span><span class="o">.</span> <span class="n">It</span> <span class="n">will</span> <span class="n">show</span> <span class="n">more</span> <span class="n">detailed</span> <span class="n">info</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">dump</span>                      <span class="n">Property</span> <span class="n">ID</span> <span class="n">to</span> <span class="n">dump</span> <span class="n">device</span> <span class="n">properties</span> <span class="ow">in</span> <span class="n">CSV</span> <span class="nb">format</span><span class="o">.</span> <span class="n">Separated</span> <span class="n">by</span> <span class="n">the</span> <span class="n">comma</span><span class="o">.</span>
+                              <span class="mf">1.</span> <span class="n">Device</span> <span class="n">ID</span>
+                              <span class="mf">2.</span> <span class="n">Device</span> <span class="n">Name</span>
+                              <span class="mf">3.</span> <span class="n">Vendor</span> <span class="n">Name</span>
+                              <span class="mf">4.</span> <span class="n">UUID</span>
+                              <span class="mf">5.</span> <span class="n">Serial</span> <span class="n">Number</span>
+                              <span class="mf">6.</span> <span class="n">Core</span> <span class="n">Clock</span> <span class="n">Rate</span>
+                              <span class="mf">7.</span> <span class="n">Stepping</span>
+                              <span class="mf">8.</span> <span class="n">Driver</span> <span class="n">Version</span>
+                              <span class="mf">9.</span> <span class="n">GFX</span> <span class="n">Firmware</span> <span class="n">Version</span>
+                              <span class="mf">10.</span> <span class="n">GFX</span> <span class="n">Data</span> <span class="n">Firmware</span> <span class="n">Version</span>
+                              <span class="mf">11.</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span>
+                              <span class="mf">12.</span> <span class="n">PCI</span> <span class="n">Slot</span>
+                              <span class="mf">13.</span> <span class="n">PCIe</span> <span class="n">Generation</span>
+                              <span class="mf">14.</span> <span class="n">PCIe</span> <span class="n">Max</span> <span class="n">Link</span> <span class="n">Width</span>
+                              <span class="mf">15.</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span>
+                              <span class="mf">16.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Memory</span> <span class="n">Channels</span>
+                              <span class="mf">17.</span> <span class="n">Memory</span> <span class="n">Bus</span> <span class="n">Width</span>
+                              <span class="mf">18.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">EUs</span>
+                              <span class="mf">19.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Media</span> <span class="n">Engines</span>
+                              <span class="mf">20.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Media</span> <span class="n">Enhancement</span> <span class="n">Engines</span>
+
+
+</pre></div>
+</div>
+<p>Discover the devices in this machine</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span>
+<span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Device</span> <span class="n">Information</span>                                                                   <span class="o">|</span>
+<span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="mi">0</span>         <span class="o">|</span> <span class="n">Device</span> <span class="n">Name</span><span class="p">:</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">Graphics</span> <span class="p">[</span><span class="mh">0x020a</span><span class="p">]</span>                                              <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Vendor</span> <span class="n">Name</span><span class="p">:</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">Corporation</span>                                                    <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">UUID</span><span class="p">:</span> <span class="mi">00000000</span><span class="o">-</span><span class="mi">0000</span><span class="o">-</span><span class="mi">0000</span><span class="o">-</span><span class="mi">0000</span><span class="o">-</span><span class="mi">020</span><span class="n">a00008086</span>                                           <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.0</span>                                                        <span class="o">|</span>
+<span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
+</pre></div>
+</div>
+<p>Discover the devices in this machine and get the JSON format output</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">j</span>
+<span class="p">{</span>
+    <span class="s2">&quot;device_list&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;device_id&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;device_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Intel(R) Graphics [0x020a]&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;device_type&quot;</span><span class="p">:</span> <span class="s2">&quot;GPU&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pci_bdf_address&quot;</span><span class="p">:</span> <span class="s2">&quot;0000:4d:00.0&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;pci_device_id&quot;</span><span class="p">:</span> <span class="s2">&quot;0x20a&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="s2">&quot;00000000-0000-0000-0000-020a00008086&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;vendor_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Intel(R) Corporation&quot;</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Show the detailed info of one device. The device info includes the model, frequency, driver/firmware info, PCI info, memory info and tile/execution unit info.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.0</span>
+<span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Device</span> <span class="n">Information</span>                                                                   <span class="o">|</span>
+<span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="mi">0</span>         <span class="o">|</span> <span class="n">Device</span> <span class="n">Type</span><span class="p">:</span> <span class="n">GPU</span>                                                                     <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Device</span> <span class="n">Name</span><span class="p">:</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">Graphics</span> <span class="p">[</span><span class="mh">0x020a</span><span class="p">]</span>                                              <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Vendor</span> <span class="n">Name</span><span class="p">:</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">Corporation</span>                                                    <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">UUID</span><span class="p">:</span> <span class="mi">00000000</span><span class="o">-</span><span class="mi">0000</span><span class="o">-</span><span class="mi">0000</span><span class="o">-</span><span class="mi">0000</span><span class="o">-</span><span class="mi">020</span><span class="n">a00008086</span>                                           <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Serial</span> <span class="n">Number</span><span class="p">:</span> <span class="n">unknown</span>                                                               <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Core</span> <span class="n">Clock</span> <span class="n">Rate</span><span class="p">:</span> <span class="mi">1400</span> <span class="n">MHz</span>                                                            <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Stepping</span><span class="p">:</span> <span class="n">B1</span>                                                                         <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span>                                                                                      <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Driver</span> <span class="n">Version</span><span class="p">:</span> <span class="mi">16929133</span>                                                             <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Firmware</span> <span class="n">Name</span><span class="p">:</span> <span class="n">GFX</span>                                                                   <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Firmware</span> <span class="n">Version</span><span class="p">:</span> <span class="n">ATS0_1</span><span class="mf">.1</span>                                                           <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span>                                                                                      <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.0</span>                                                        <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">PCI</span> <span class="n">Slot</span><span class="p">:</span> <span class="n">Riser</span> <span class="mi">1</span><span class="p">,</span> <span class="n">slot</span> <span class="mi">1</span>                                                            <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">PCIe</span> <span class="n">Generation</span><span class="p">:</span> <span class="mi">4</span>                                                                   <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">PCIe</span> <span class="n">Max</span> <span class="n">Link</span> <span class="n">Width</span><span class="p">:</span> <span class="mi">16</span>                                                              <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span>                                                                                      <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">32768.00</span> <span class="n">MiB</span>                                                   <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Max</span> <span class="n">Mem</span> <span class="n">Alloc</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">4095.99</span> <span class="n">MiB</span>                                                      <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Memory</span> <span class="n">Channels</span><span class="p">:</span> <span class="mi">2</span>                                                         <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Memory</span> <span class="n">Bus</span> <span class="n">Width</span><span class="p">:</span> <span class="mi">128</span>                                                                <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Max</span> <span class="n">Hardware</span> <span class="n">Contexts</span><span class="p">:</span> <span class="mi">65536</span>                                                         <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Max</span> <span class="n">Command</span> <span class="n">Queue</span> <span class="n">Priority</span><span class="p">:</span> <span class="mi">0</span>                                                        <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span>                                                                                      <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">EUs</span><span class="p">:</span> <span class="mi">512</span>                                                                   <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Tiles</span><span class="p">:</span> <span class="mi">2</span>                                                                   <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Slices</span><span class="p">:</span> <span class="mi">2</span>                                                                  <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Sub</span> <span class="n">Slices</span> <span class="n">per</span> <span class="n">Slice</span><span class="p">:</span> <span class="mi">30</span>                                                   <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Threads</span> <span class="n">per</span> <span class="n">EU</span><span class="p">:</span> <span class="mi">8</span>                                                          <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Physical</span> <span class="n">EU</span> <span class="n">SIMD</span> <span class="n">Width</span><span class="p">:</span> <span class="mi">8</span>                                                            <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Media</span> <span class="n">Engines</span><span class="p">:</span> <span class="mi">2</span>                                                           <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Media</span> <span class="n">Enhancement</span> <span class="n">Engines</span><span class="p">:</span> <span class="mi">2</span>                                               <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span>                                                                                      <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">ports</span><span class="p">:</span> <span class="mi">16</span>                                                          <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Max</span> <span class="n">Tx</span><span class="o">/</span><span class="n">Rx</span> <span class="n">Speed</span> <span class="n">per</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span><span class="p">:</span> <span class="mf">51879.88</span> <span class="n">MiB</span><span class="o">/</span><span class="n">s</span>                                     <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Lanes</span> <span class="n">per</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span><span class="p">:</span> <span class="mi">4</span>                                                  <span class="o">|</span>
+<span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
+</pre></div>
+</div>
+<p>Dump the specified GPU device info to csv format.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">discovery</span> <span class="o">--</span><span class="n">dump</span> <span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span>
+<span class="n">Device</span> <span class="n">ID</span><span class="p">,</span><span class="n">Device</span> <span class="n">Name</span><span class="p">,</span><span class="n">Vendor</span> <span class="n">Name</span><span class="p">,</span><span class="n">Core</span> <span class="n">Clock</span> <span class="n">Rate</span>
+<span class="mi">0</span><span class="p">,</span><span class="s2">&quot;Intel(R) Graphics [0x56c0]&quot;</span><span class="p">,</span><span class="s2">&quot;Intel(R) Corporation&quot;</span><span class="p">,</span><span class="s2">&quot;2050 MHz&quot;</span>
+<span class="mi">1</span><span class="p">,</span><span class="s2">&quot;Intel(R) Graphics [0x56c0]&quot;</span><span class="p">,</span><span class="s2">&quot;Intel(R) Corporation&quot;</span><span class="p">,</span><span class="s2">&quot;2050 MHz&quot;</span>
+
+</pre></div>
+</div>
+</section>
+<section id="get-the-system-topology">
+<h2>Get the system topology<a class="headerlink" href="#get-the-system-topology" title="Permalink to this headline"></a></h2>
+<p>Help info of get the system topology</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span>
+
+<span class="n">Get</span> <span class="n">the</span> <span class="n">system</span> <span class="n">topology</span> <span class="n">info</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span> <span class="o">-</span><span class="n">f</span> <span class="p">[</span><span class="n">filename</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span> <span class="o">-</span><span class="n">m</span>
+
+<span class="n">optional</span> <span class="n">arguments</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span> <span class="n">to</span> <span class="n">query</span>
+  <span class="o">-</span><span class="n">f</span><span class="p">,</span><span class="o">--</span><span class="n">file</span>                   <span class="n">Generate</span> <span class="n">the</span> <span class="n">system</span> <span class="n">topology</span> <span class="k">with</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">info</span> <span class="n">to</span> <span class="n">a</span> <span class="n">XML</span> <span class="n">file</span><span class="o">.</span> 
+  <span class="o">-</span><span class="n">m</span><span class="p">,</span><span class="o">--</span><span class="n">matrix</span>                 <span class="n">Print</span> <span class="n">the</span> <span class="n">CPU</span><span class="o">/</span><span class="n">GPU</span> <span class="n">topology</span> <span class="n">matrix</span><span class="o">.</span> 
+                                <span class="n">S</span><span class="p">:</span> <span class="n">Self</span>
+                                <span class="n">XL</span><span class="p">[</span><span class="n">laneCount</span><span class="p">]:</span> <span class="n">Two</span> <span class="n">tiles</span> <span class="n">on</span> <span class="n">the</span> <span class="n">different</span> <span class="n">cards</span> <span class="n">are</span> <span class="n">directly</span> <span class="n">connected</span> <span class="n">by</span> <span class="n">Xe</span> <span class="n">Link</span><span class="o">.</span>  <span class="n">Xe</span> <span class="n">Link</span> <span class="n">lane</span> <span class="n">count</span> <span class="ow">is</span> <span class="n">also</span> <span class="n">provided</span><span class="o">.</span>
+                                <span class="n">XL</span><span class="o">*</span><span class="p">:</span> <span class="n">Two</span> <span class="n">tiles</span> <span class="n">on</span> <span class="n">the</span> <span class="n">different</span> <span class="n">cards</span> <span class="n">are</span> <span class="n">connected</span> <span class="n">by</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="o">+</span> <span class="n">MDF</span><span class="o">.</span> <span class="n">They</span> <span class="n">are</span> <span class="ow">not</span> <span class="n">directly</span> <span class="n">connected</span> <span class="n">by</span> <span class="n">Xe</span> <span class="n">Link</span><span class="o">.</span> 
+                                <span class="n">SYS</span><span class="p">:</span> <span class="n">Connected</span> <span class="k">with</span> <span class="n">PCIe</span> <span class="n">between</span> <span class="n">NUMA</span> <span class="n">nodes</span>
+                                <span class="n">NODE</span><span class="p">:</span> <span class="n">Connected</span> <span class="k">with</span> <span class="n">PCIe</span> <span class="n">within</span> <span class="n">a</span> <span class="n">NUMA</span> <span class="n">node</span>
+                                <span class="n">MDF</span><span class="p">:</span> <span class="n">Connected</span> <span class="k">with</span> <span class="n">Multi</span><span class="o">-</span><span class="n">Die</span> <span class="n">Fabric</span> <span class="n">Interface</span>
+</pre></div>
+</div>
+<p>Get the hardware topology info which is related to the GPU</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
+<span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Topology</span> <span class="n">Information</span>                                                                 <span class="o">|</span>
+<span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="mi">0</span>         <span class="o">|</span> <span class="n">Local</span> <span class="n">CPU</span> <span class="n">List</span><span class="p">:</span> <span class="mi">0</span><span class="o">-</span><span class="mi">23</span><span class="p">,</span><span class="mi">48</span><span class="o">-</span><span class="mi">71</span>                                                           <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Local</span> <span class="n">CPUs</span><span class="p">:</span> <span class="mi">000000</span><span class="n">ff</span><span class="p">,</span><span class="n">ffff0000</span><span class="p">,</span><span class="mi">00</span><span class="n">ffffff</span>                                               <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">PCIe</span> <span class="n">Switch</span> <span class="n">Count</span><span class="p">:</span> <span class="mi">1</span>                                                                 <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">PCIe</span> <span class="n">Switch</span><span class="p">:</span> <span class="o">/</span><span class="n">sys</span><span class="o">/</span><span class="n">devices</span><span class="o">/</span><span class="n">pci0000</span><span class="p">:</span><span class="mi">4</span><span class="n">a</span><span class="o">/</span><span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">a</span><span class="p">:</span><span class="mf">02.0</span><span class="o">/</span><span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">b</span><span class="p">:</span><span class="mf">00.0</span><span class="o">/</span><span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">c</span><span class="p">:</span><span class="mf">00.0</span>          <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span>   <span class="o">/</span><span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.0</span><span class="o">/</span><span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">e</span><span class="p">:</span><span class="mf">18.0</span><span class="o">/</span><span class="mi">0000</span><span class="p">:</span><span class="mi">54</span><span class="p">:</span><span class="mf">00.0</span><span class="o">/</span><span class="mi">0000</span><span class="p">:</span><span class="mi">55</span><span class="p">:</span><span class="mi">01</span>                                 <span class="o">|</span>
+<span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
+</pre></div>
+</div>
+<p>Generate the system hardware topology to a XML file.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span> <span class="o">-</span><span class="n">f</span> <span class="n">topo</span><span class="o">.</span><span class="n">xml</span>
+<span class="n">The</span> <span class="n">system</span> <span class="n">topology</span> <span class="ow">is</span> <span class="n">generated</span> <span class="n">to</span> <span class="n">the</span> <span class="n">file</span> <span class="n">topo</span><span class="o">.</span><span class="n">xml</span><span class="o">.</span> 
+</pre></div>
+</div>
+<p>Generate the CPU/GPU topology matrix.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">topology</span> <span class="o">-</span><span class="n">m</span>
+
+         <span class="n">GPU</span> <span class="mi">0</span><span class="o">/</span><span class="mi">0</span><span class="o">|</span><span class="n">GPU</span> <span class="mi">0</span><span class="o">/</span><span class="mi">1</span><span class="o">|</span><span class="n">GPU</span> <span class="mi">1</span><span class="o">/</span><span class="mi">0</span><span class="o">|</span><span class="n">GPU</span> <span class="mi">1</span><span class="o">/</span><span class="mi">1</span><span class="o">|</span><span class="n">CPU</span> <span class="n">Affinity</span>
+<span class="n">GPU</span> <span class="mi">0</span><span class="o">/</span><span class="mi">0</span> <span class="o">|</span><span class="n">S</span>      <span class="o">|</span><span class="n">MDF</span>    <span class="o">|</span><span class="n">XL</span><span class="o">*</span>    <span class="o">|</span><span class="n">XL16</span>   <span class="o">|</span><span class="mi">0</span><span class="o">-</span><span class="mi">23</span><span class="p">,</span><span class="mi">48</span><span class="o">-</span><span class="mi">71</span>
+<span class="n">GPU</span> <span class="mi">0</span><span class="o">/</span><span class="mi">1</span> <span class="o">|</span><span class="n">MDF</span>    <span class="o">|</span><span class="n">S</span>      <span class="o">|</span><span class="n">XL16</span>   <span class="o">|</span><span class="n">XL</span><span class="o">*</span>    <span class="o">|</span><span class="mi">0</span><span class="o">-</span><span class="mi">23</span><span class="p">,</span><span class="mi">48</span><span class="o">-</span><span class="mi">71</span>
+<span class="n">GPU</span> <span class="mi">1</span><span class="o">/</span><span class="mi">0</span> <span class="o">|</span><span class="n">XL</span><span class="o">*</span>    <span class="o">|</span><span class="n">XL16</span>   <span class="o">|</span><span class="n">S</span>      <span class="o">|</span><span class="n">MDF</span>    <span class="o">|</span><span class="mi">24</span><span class="o">-</span><span class="mi">47</span><span class="p">,</span><span class="mi">72</span><span class="o">-</span><span class="mi">95</span>
+<span class="n">GPU</span> <span class="mi">1</span><span class="o">/</span><span class="mi">1</span> <span class="o">|</span><span class="n">XL16</span>   <span class="o">|</span><span class="n">XL</span><span class="o">*</span>    <span class="o">|</span><span class="n">MDF</span>    <span class="o">|</span><span class="n">S</span>      <span class="o">|</span><span class="mi">24</span><span class="o">-</span><span class="mi">47</span><span class="p">,</span><span class="mi">72</span><span class="o">-</span><span class="mi">95</span>
+</pre></div>
+</div>
+</section>
+<section id="update-the-gpu-firmware">
+<h2>Update the GPU firmware<a class="headerlink" href="#update-the-gpu-firmware" title="Permalink to this headline"></a></h2>
+<p>Help info of updating GPU firmware</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">updatefw</span>
+
+<span class="n">Update</span> <span class="n">GPU</span> <span class="n">firmware</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">updatefw</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">updatefw</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="n">GFX</span> <span class="o">-</span><span class="n">f</span> <span class="p">[</span><span class="n">imageFilePath</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">updatefw</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="n">GFX</span> <span class="o">-</span><span class="n">f</span> <span class="p">[</span><span class="n">imageFilePath</span><span class="p">]</span>
+
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span>
+  <span class="o">-</span><span class="n">t</span><span class="p">,</span><span class="o">--</span><span class="nb">type</span>                   <span class="n">The</span> <span class="n">firmware</span> <span class="n">name</span><span class="o">.</span> <span class="n">Valid</span> <span class="n">options</span><span class="p">:</span> <span class="n">GFX</span><span class="p">,</span> <span class="n">GFX_DATA</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">f</span><span class="p">,</span><span class="o">--</span><span class="n">file</span>                   <span class="n">The</span> <span class="n">firmware</span> <span class="n">image</span> <span class="n">file</span> <span class="n">path</span> <span class="n">on</span> <span class="n">this</span> <span class="n">server</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>Update GPU GFX firmware</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>xpu-smi updatefw -d 0 -t GFX -f /home/test/tools/ATS_M3.bin
+This GPU card has multiple cores. This operation will update all firmware. Do you want to continue? (y/n) y
+Start to update firmware:
+Firmware name: GFX
+Image path: /home/test/tools/ATS_M3.bin
+Update firmware successfully. Please reboot OS to take effect. 
+</pre></div>
+</div>
+</section>
+<section id="diagnose-gpu-with-different-test-suites">
+<h2>Diagnose GPU with different test suites<a class="headerlink" href="#diagnose-gpu-with-different-test-suites" title="Permalink to this headline"></a></h2>
+<p>When running tests on GPU, GPU will be used exclusively. There will be obviously performance impact on the GPU. Some CPU performance may also be impacted.</p>
+<p>Help info for GPU diagnostics</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span>
+
+<span class="n">Run</span> <span class="n">some</span> <span class="n">test</span> <span class="n">suites</span> <span class="n">to</span> <span class="n">diagnose</span> <span class="n">GPU</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">l</span> <span class="p">[</span><span class="n">level</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">l</span> <span class="p">[</span><span class="n">level</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">l</span> <span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span><span class="o">.</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">l</span><span class="p">,</span><span class="o">--</span><span class="n">level</span>                  <span class="n">The</span> <span class="n">diagnostic</span> <span class="n">levels</span> <span class="n">to</span> <span class="n">run</span><span class="o">.</span> <span class="n">The</span> <span class="n">valid</span> <span class="n">options</span> <span class="n">include</span>
+                                <span class="mf">1.</span> <span class="n">quick</span> <span class="n">test</span>
+                                <span class="mf">2.</span> <span class="n">medium</span> <span class="n">test</span> <span class="o">-</span> <span class="n">this</span> <span class="n">diagnostic</span> <span class="n">level</span> <span class="n">will</span> <span class="n">have</span> <span class="n">the</span> <span class="n">significant</span> <span class="n">performance</span> <span class="n">impact</span> <span class="n">on</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">GPUs</span>
+                                <span class="mf">3.</span> <span class="n">long</span> <span class="n">test</span> <span class="o">-</span> <span class="n">this</span> <span class="n">diagnostic</span> <span class="n">level</span> <span class="n">will</span> <span class="n">have</span> <span class="n">the</span> <span class="n">significant</span> <span class="n">performance</span> <span class="n">impact</span> <span class="n">on</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">GPUs</span>
+</pre></div>
+</div>
+<p>Run test to diagnose GPU</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">diag</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">l</span> <span class="mi">1</span>
+<span class="n">Device</span> <span class="n">Type</span><span class="p">:</span> <span class="n">GPU</span>
+<span class="o">+------------------------+-------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span>              <span class="o">|</span> <span class="mi">0</span>                                                                       <span class="o">|</span>
+<span class="o">+------------------------+-------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Level</span>                  <span class="o">|</span> <span class="mi">1</span>                                                                       <span class="o">|</span>
+<span class="o">|</span> <span class="n">Result</span>                 <span class="o">|</span> <span class="n">Fail</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Items</span>                  <span class="o">|</span> <span class="mi">4</span>                                                                       <span class="o">|</span>
+<span class="o">+------------------------+-------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Software</span> <span class="n">Env</span> <span class="n">Variables</span> <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Pass</span>                                                            <span class="o">|</span>
+<span class="o">|</span>                        <span class="o">|</span> <span class="n">Message</span><span class="p">:</span> <span class="n">Pass</span> <span class="n">to</span> <span class="n">check</span> <span class="n">environment</span> <span class="n">variables</span><span class="o">.</span>                           <span class="o">|</span>
+<span class="o">+------------------------+-------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Software</span> <span class="n">Library</span>       <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Pass</span>                                                            <span class="o">|</span>
+<span class="o">|</span>                        <span class="o">|</span> <span class="n">Message</span><span class="p">:</span> <span class="n">Pass</span> <span class="n">to</span> <span class="n">check</span> <span class="n">libraries</span>                                        <span class="o">|</span>
+<span class="o">+------------------------+-------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Software</span> <span class="n">Permission</span>    <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Pass</span>                                                            <span class="o">|</span>
+<span class="o">|</span>                        <span class="o">|</span> <span class="n">Message</span><span class="p">:</span> <span class="n">Pass</span> <span class="n">to</span> <span class="n">check</span> <span class="n">permission</span>                                       <span class="o">|</span>
+<span class="o">+------------------------+-------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Software</span> <span class="n">Exclusive</span>     <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Fail</span>                                                            <span class="o">|</span>
+<span class="o">|</span>                        <span class="o">|</span> <span class="n">Message</span><span class="p">:</span> <span class="n">Fail</span> <span class="n">to</span> <span class="n">check</span> <span class="n">the</span> <span class="n">software</span> <span class="n">exclusive</span><span class="o">.</span> <span class="mi">2</span> <span class="n">process</span><span class="p">(</span><span class="n">es</span><span class="p">)</span> <span class="n">are</span>        <span class="o">|</span>
+<span class="o">|</span>                        <span class="o">|</span>   <span class="n">using</span> <span class="n">the</span> <span class="n">device</span><span class="o">.</span>                                                     <span class="o">|</span>
+<span class="o">|</span>                        <span class="o">|</span>   <span class="n">PID</span><span class="p">:</span> <span class="mi">633972</span><span class="p">,</span> <span class="n">Command</span><span class="p">:</span> <span class="o">./</span><span class="n">ze_gemm</span>                                       <span class="o">|</span>
+<span class="o">|</span>                        <span class="o">|</span>   <span class="n">PID</span><span class="p">:</span> <span class="mi">633973</span><span class="p">,</span> <span class="n">Command</span><span class="p">:</span> <span class="o">./</span><span class="n">ze_gemm</span>                                       <span class="o">|</span>
+<span class="o">+------------------------+-------------------------------------------------------------------------+</span>
+
+</pre></div>
+</div>
+</section>
+<section id="get-and-change-the-gpu-settings">
+<h2>Get and change the GPU settings<a class="headerlink" href="#get-and-change-the-gpu-settings" title="Permalink to this headline"></a></h2>
+<p>Help info of getting/changing the GPU settings</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span>
+
+<span class="n">Get</span> <span class="ow">and</span> <span class="n">change</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">settings</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">tileId</span><span class="p">]</span> <span class="o">--</span><span class="n">frequencyrange</span> <span class="p">[</span><span class="n">minFrequency</span><span class="p">,</span><span class="n">maxFrequency</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">--</span><span class="n">powerlimit</span> <span class="p">[</span><span class="n">powerValue</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">--</span><span class="n">memoryecc</span> <span class="p">[</span><span class="mi">0</span><span class="o">|</span><span class="mi">1</span><span class="p">]</span> <span class="mi">0</span><span class="p">:</span><span class="n">disable</span><span class="p">;</span> <span class="mi">1</span><span class="p">:</span><span class="n">enable</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">tileId</span><span class="p">]</span> <span class="o">--</span><span class="n">standby</span> <span class="p">[</span><span class="n">standbyMode</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">tileId</span><span class="p">]</span> <span class="o">--</span><span class="n">scheduler</span> <span class="p">[</span><span class="n">schedulerMode</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">tileId</span><span class="p">]</span> <span class="o">--</span><span class="n">performancefactor</span> <span class="p">[</span><span class="n">engineType</span><span class="p">,</span><span class="n">factorValue</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">tileId</span><span class="p">]</span> <span class="o">--</span><span class="n">xelinkport</span> <span class="p">[</span><span class="n">portId</span><span class="p">,</span><span class="n">value</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">tileId</span><span class="p">]</span> <span class="o">--</span><span class="n">xelinkportbeaconing</span> <span class="p">[</span><span class="n">portId</span><span class="p">,</span><span class="n">value</span><span class="p">]</span>
+  
+  
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span> <span class="n">to</span> <span class="n">query</span>
+  <span class="o">-</span><span class="n">t</span><span class="p">,</span><span class="o">--</span><span class="n">tile</span>                   <span class="n">The</span> <span class="n">tile</span> <span class="n">ID</span>
+
+  <span class="o">--</span><span class="n">frequencyrange</span>            <span class="n">GPU</span> <span class="n">tile</span><span class="o">-</span><span class="n">level</span> <span class="n">core</span> <span class="n">frequency</span> <span class="nb">range</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">powerlimit</span>                <span class="n">GPU</span><span class="o">-</span><span class="n">level</span> <span class="n">power</span> <span class="n">limit</span><span class="o">.</span> 
+  <span class="o">--</span><span class="n">standby</span>                   <span class="n">Tile</span><span class="o">-</span><span class="n">level</span> <span class="n">standby</span> <span class="n">mode</span><span class="o">.</span> <span class="n">Valid</span> <span class="n">options</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">;</span> <span class="s2">&quot;never&quot;</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">scheduler</span>                 <span class="n">Tile</span><span class="o">-</span><span class="n">level</span> <span class="n">scheduler</span> <span class="n">mode</span><span class="o">.</span> <span class="n">Value</span> <span class="n">options</span><span class="p">:</span> <span class="s2">&quot;timeout&quot;</span><span class="p">,</span><span class="n">timeoutValue</span> <span class="p">(</span><span class="n">us</span><span class="p">);</span> 
+                                <span class="s2">&quot;timeslice&quot;</span><span class="p">,</span><span class="n">interval</span> <span class="p">(</span><span class="n">us</span><span class="p">),</span><span class="n">yieldtimeout</span> <span class="p">(</span><span class="n">us</span><span class="p">);</span> <span class="s2">&quot;exclusive&quot;</span><span class="o">.</span> <span class="n">The</span> <span class="n">valid</span> <span class="nb">range</span> <span class="n">of</span> <span class="nb">all</span> <span class="n">time</span> <span class="n">values</span> <span class="p">(</span><span class="n">us</span><span class="p">)</span> <span class="ow">is</span> <span class="kn">from</span> <span class="mi">5000</span> <span class="n">to</span> <span class="mi">100</span><span class="p">,</span><span class="mi">000</span><span class="p">,</span><span class="mf">000.</span>
+  <span class="o">--</span><span class="n">performancefactor</span>         <span class="n">Set</span> <span class="n">the</span> <span class="n">tile</span><span class="o">-</span><span class="n">level</span> <span class="n">performance</span> <span class="n">factor</span><span class="o">.</span> <span class="n">Valid</span> <span class="n">options</span><span class="p">:</span> <span class="s2">&quot;compute/media&quot;</span><span class="p">;</span><span class="n">factorValue</span><span class="o">.</span> <span class="n">The</span> <span class="n">factor</span> <span class="n">value</span> <span class="n">should</span> <span class="n">be</span> 
+                                <span class="n">between</span> <span class="mi">0</span> <span class="n">to</span> <span class="mf">100.</span> <span class="mi">100</span> <span class="n">means</span> <span class="n">that</span> <span class="n">the</span> <span class="n">workload</span> <span class="ow">is</span> <span class="n">completely</span> <span class="n">compute</span> <span class="n">bounded</span> <span class="ow">and</span> <span class="n">requires</span> <span class="n">very</span> <span class="n">little</span> <span class="n">support</span> <span class="kn">from</span> <span class="nn">the</span> <span class="n">memory</span> <span class="n">support</span><span class="o">.</span> <span class="mi">0</span> <span class="n">means</span> <span class="n">that</span> <span class="n">the</span> <span class="n">workload</span> <span class="ow">is</span> <span class="n">completely</span> <span class="n">memory</span> <span class="n">bounded</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">performance</span> <span class="n">of</span> <span class="n">the</span> <span class="n">memory</span> <span class="n">controller</span> <span class="n">needs</span> <span class="n">to</span> <span class="n">be</span> <span class="n">increased</span><span class="o">.</span> 
+  <span class="o">--</span><span class="n">xelinkport</span>                <span class="n">Change</span> <span class="n">the</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="n">status</span><span class="o">.</span> <span class="n">The</span> <span class="n">value</span> <span class="mi">0</span> <span class="n">means</span> <span class="n">down</span> <span class="ow">and</span> <span class="mi">1</span> <span class="n">means</span> <span class="n">up</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">xelinkportbeaconing</span>       <span class="n">Change</span> <span class="n">the</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="n">beaconing</span> <span class="n">status</span><span class="o">.</span> <span class="n">The</span> <span class="n">value</span> <span class="mi">0</span> <span class="n">means</span> <span class="n">off</span> <span class="ow">and</span> <span class="mi">1</span> <span class="n">means</span> <span class="n">on</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">memoryecc</span>                 <span class="n">Enable</span><span class="o">/</span><span class="n">disable</span> <span class="n">memory</span> <span class="n">ECC</span> <span class="n">setting</span><span class="o">.</span> <span class="mi">0</span><span class="p">:</span><span class="n">disable</span><span class="p">;</span> <span class="mi">1</span><span class="p">:</span><span class="n">enable</span>
+
+</pre></div>
+</div>
+<p>show the GPU settings</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
+<span class="o">+-------------+-------------------+----------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Device</span> <span class="n">Type</span> <span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span><span class="o">/</span><span class="n">Tile</span> <span class="n">ID</span> <span class="o">|</span> <span class="n">Configuration</span>                                                  <span class="o">|</span>
+<span class="o">+-------------+-------------------+----------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">GPU</span>         <span class="o">|</span> <span class="mi">0</span>                 <span class="o">|</span> <span class="n">Power</span> <span class="n">Limit</span> <span class="p">(</span><span class="n">w</span><span class="p">):</span> <span class="mf">300.0</span>                                         <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Valid</span> <span class="n">Range</span><span class="p">:</span> <span class="mi">1</span> <span class="n">to</span> <span class="mi">500</span>                                        <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>                                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Memory</span> <span class="n">ECC</span><span class="p">:</span>                                                    <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Current</span><span class="p">:</span> <span class="n">enabled</span>                                             <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Pending</span><span class="p">:</span> <span class="n">enabled</span>                                             <span class="o">|</span>
+<span class="o">+-------------+-------------------+----------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">GPU</span>         <span class="o">|</span> <span class="mi">0</span><span class="o">/</span><span class="mi">0</span>               <span class="o">|</span> <span class="n">GPU</span> <span class="n">Min</span> <span class="n">Frequency</span><span class="p">(</span><span class="n">MHz</span><span class="p">):</span> <span class="mf">300.0</span>                                  <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">GPU</span> <span class="n">Max</span> <span class="n">Frequency</span><span class="p">(</span><span class="n">MHz</span><span class="p">):</span> <span class="mf">1300.0</span>                                 <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Valid</span> <span class="n">Options</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">350</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">450</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span><span class="mi">550</span><span class="p">,</span> <span class="mi">600</span><span class="p">,</span> <span class="mi">650</span><span class="p">,</span> <span class="mi">700</span>    <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>       <span class="mi">750</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="mi">850</span><span class="p">,</span> <span class="mi">900</span><span class="p">,</span> <span class="mi">950</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1050</span><span class="p">,</span> <span class="mi">1100</span><span class="p">,</span> <span class="mi">1150</span><span class="p">,</span> <span class="mi">1200</span>    <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>       <span class="mi">1250</span><span class="p">,</span> <span class="mi">1300</span>                                               <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>                                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Standby</span> <span class="n">Mode</span><span class="p">:</span> <span class="n">default</span>                                          <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Valid</span> <span class="n">Options</span><span class="p">:</span> <span class="n">default</span><span class="p">,</span> <span class="n">never</span>                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>                                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Scheduler</span> <span class="n">Mode</span><span class="p">:</span> <span class="n">timeslice</span>                                      <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Interval</span><span class="p">(</span><span class="n">us</span><span class="p">):</span> <span class="mi">5000</span>                                           <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Yield</span> <span class="n">Timeout</span> <span class="p">(</span><span class="n">us</span><span class="p">):</span> <span class="mi">640000</span>                                   <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>                                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Engine</span> <span class="n">Type</span><span class="p">:</span> <span class="n">compute</span>                                           <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Performance</span> <span class="n">Factor</span><span class="p">:</span> <span class="mi">70</span>                                       <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Engine</span> <span class="n">Type</span><span class="p">:</span> <span class="n">media</span>                                             <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Performance</span> <span class="n">Factor</span><span class="p">:</span> <span class="mi">50</span>                                       <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>                                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">ports</span><span class="p">:</span>                                                 <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Up</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span>                                                  <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Down</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span>                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Beaconing</span> <span class="n">On</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span>                                        <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Beaconing</span> <span class="n">Off</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span>                                       <span class="o">|</span>
+<span class="o">+-------------+-------------------+----------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">GPU</span>         <span class="o">|</span> <span class="mi">0</span><span class="o">/</span><span class="mi">1</span>               <span class="o">|</span> <span class="n">GPU</span> <span class="n">Min</span> <span class="n">Frequency</span><span class="p">(</span><span class="n">MHz</span><span class="p">):</span> <span class="mf">300.0</span>                                  <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">GPU</span> <span class="n">Max</span> <span class="n">Frequency</span><span class="p">(</span><span class="n">MHz</span><span class="p">):</span> <span class="mf">1300.0</span>                                 <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Valid</span> <span class="n">Options</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">350</span><span class="p">,</span> <span class="mi">400</span><span class="p">,</span> <span class="mi">450</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span><span class="mi">550</span><span class="p">,</span> <span class="mi">600</span><span class="p">,</span> <span class="mi">650</span><span class="p">,</span> <span class="mi">700</span>    <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>     <span class="mi">750</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="mi">850</span><span class="p">,</span> <span class="mi">900</span><span class="p">,</span> <span class="mi">950</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1050</span><span class="p">,</span> <span class="mi">1100</span><span class="p">,</span> <span class="mi">1150</span><span class="p">,</span> <span class="mi">1200</span>      <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>     <span class="mi">1250</span><span class="p">,</span> <span class="mi">1300</span>                                                 <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>                                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Standby</span> <span class="n">Mode</span><span class="p">:</span> <span class="n">default</span>                                          <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Valid</span> <span class="n">Options</span><span class="p">:</span> <span class="n">default</span><span class="p">,</span> <span class="n">never</span>                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>                                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Scheduler</span> <span class="n">Mode</span><span class="p">:</span> <span class="n">timeslice</span>                                      <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Interval</span><span class="p">(</span><span class="n">us</span><span class="p">):</span> <span class="mi">5000</span>                                           <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Yield</span> <span class="n">Timeout</span> <span class="p">(</span><span class="n">us</span><span class="p">):</span> <span class="mi">640000</span>                                   <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>                                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Engine</span> <span class="n">Type</span><span class="p">:</span> <span class="n">compute</span>                                           <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Performance</span> <span class="n">Factor</span><span class="p">:</span> <span class="mi">70</span>                                       <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Engine</span> <span class="n">Type</span><span class="p">:</span> <span class="n">media</span>                                             <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Performance</span> <span class="n">Factor</span><span class="p">:</span> <span class="mi">50</span>                                       <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>                                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">ports</span><span class="p">:</span>                                                 <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Up</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span>                                                  <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Down</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span>                                                <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Beaconing</span> <span class="n">On</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span>                                        <span class="o">|</span>
+<span class="o">|</span>             <span class="o">|</span>                   <span class="o">|</span>   <span class="n">Beaconing</span> <span class="n">Off</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span>                                       <span class="o">|</span>
+<span class="o">+-------------+-------------------+----------------------------------------------------------------+</span>
+</pre></div>
+</div>
+<p>Change the GPU tile core frequency range.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">frequencyrange</span> <span class="mi">1200</span><span class="p">,</span><span class="mi">1300</span>
+<span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">core</span> <span class="n">frequency</span> <span class="nb">range</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mi">0</span> <span class="n">tile</span> <span class="mf">0.</span>
+</pre></div>
+</div>
+<p>Change the GPU power limit.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="n">powerlimit</span> <span class="mi">299</span>
+<span class="n">Succeed</span> <span class="n">to</span> <span class="nb">set</span> <span class="n">the</span> <span class="n">power</span> <span class="n">limit</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mf">0.</span>
+</pre></div>
+</div>
+<p>Change the GPU memory ECC mode.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">--</span><span class="n">memoryecc</span> <span class="mi">0</span>
+<span class="n">Return</span><span class="p">:</span> <span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">ECC</span> <span class="n">mode</span> <span class="n">to</span> <span class="n">be</span> <span class="n">disabled</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mf">0.</span> <span class="n">Please</span> <span class="n">reset</span> <span class="n">GPU</span> <span class="ow">or</span> <span class="n">reboot</span> <span class="n">OS</span> <span class="n">to</span> <span class="n">take</span> <span class="n">effect</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>Change the GPU tile standby mode.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">standby</span> <span class="n">never</span>
+<span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">standby</span> <span class="n">mode</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mf">0.</span>
+</pre></div>
+</div>
+<p>Change the GPU tile scheduler mode.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">scheduler</span> <span class="n">timeout</span><span class="p">,</span><span class="mi">640000</span>
+<span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">scheduler</span> <span class="n">mode</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mi">0</span> <span class="n">tile</span> <span class="mf">0.</span>
+</pre></div>
+</div>
+<p>Set the performance factor</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">performancefactor</span> <span class="n">compute</span><span class="p">,</span><span class="mi">70</span>
+<span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">the</span> <span class="n">compute</span> <span class="n">performance</span> <span class="n">factor</span> <span class="n">to</span> <span class="mi">70</span> <span class="n">on</span> <span class="n">GPU</span> <span class="mi">0</span> <span class="n">tile</span> <span class="mf">0.</span>
+</pre></div>
+</div>
+<p>Change the Xe Link port status</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">xelinkport</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span>
+<span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="mi">0</span> <span class="n">to</span> <span class="n">up</span><span class="o">.</span>
+</pre></div>
+</div>
+<p>Change the Xe Link port beaconing status</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">t</span> <span class="mi">0</span> <span class="o">--</span><span class="n">xelinkportbeaconing</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span>
+<span class="n">Succeed</span> <span class="n">to</span> <span class="n">change</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="mi">0</span> <span class="n">beaconing</span> <span class="n">to</span> <span class="n">on</span><span class="o">.</span>
+</pre></div>
+</div>
+</section>
+<section id="get-the-device-real-time-statistics">
+<h2>Get the device real-time statistics<a class="headerlink" href="#get-the-device-real-time-statistics" title="Permalink to this headline"></a></h2>
+<p>Help info for getting the GPU device real-time statistics</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">List</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">statistics</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">e</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">e</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">e</span> <span class="o">-</span><span class="n">j</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">e</span> <span class="o">-</span><span class="n">j</span>
+
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+  <span class="o">--</span><span class="n">debug</span>                     <span class="n">Print</span> <span class="n">debug</span> <span class="n">info</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span> <span class="n">to</span> <span class="n">query</span>
+  <span class="o">-</span><span class="n">e</span><span class="p">,</span><span class="o">--</span><span class="n">eu</span>                     <span class="n">Show</span> <span class="n">the</span> <span class="n">EU</span> <span class="n">metrics</span>
+</pre></div>
+</div>
+<p>List the GPU device real-time statistics that are collected by xpu-smi</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">stats</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span>
+<span class="o">+-----------------------------+--------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Device</span> <span class="n">ID</span>                   <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">+-----------------------------+--------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">GPU</span> <span class="n">Utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>         <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">|</span> <span class="n">EU</span> <span class="n">Array</span> <span class="n">Active</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>         <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">EU</span> <span class="n">Array</span> <span class="n">Stall</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>          <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">EU</span> <span class="n">Array</span> <span class="n">Idle</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>           <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">|</span>                             <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Compute</span> <span class="n">Engine</span> <span class="n">Util</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>     <span class="o">|</span> <span class="mi">0</span><span class="p">;</span> <span class="n">Engine</span> <span class="mi">0</span><span class="p">:</span> <span class="mi">0</span>                                                     <span class="o">|</span>
+<span class="o">|</span> <span class="n">Render</span> <span class="n">Engine</span> <span class="n">Util</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>      <span class="o">|</span> <span class="mi">0</span><span class="p">;</span> <span class="n">Engine</span> <span class="mi">0</span><span class="p">:</span> <span class="mi">0</span>                                                     <span class="o">|</span>
+<span class="o">|</span> <span class="n">Media</span> <span class="n">Engine</span> <span class="n">Util</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>       <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">|</span> <span class="n">Decoder</span> <span class="n">Engine</span> <span class="n">Util</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>     <span class="o">|</span> <span class="n">Engine</span> <span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Engine</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span>                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Encoder</span> <span class="n">Engine</span> <span class="n">Util</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>     <span class="o">|</span> <span class="n">Engine</span> <span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Engine</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span>                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Copy</span> <span class="n">Engine</span> <span class="n">Util</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>        <span class="o">|</span> <span class="mi">0</span><span class="p">;</span> <span class="n">Engine</span> <span class="mi">0</span><span class="p">:</span> <span class="mi">0</span>                                                     <span class="o">|</span>
+<span class="o">|</span> <span class="n">Media</span> <span class="n">EM</span> <span class="n">Engine</span> <span class="n">Util</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>    <span class="o">|</span> <span class="n">Engine</span> <span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">Engine</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span>                                           <span class="o">|</span>
+<span class="o">|</span> <span class="mi">3</span><span class="n">D</span> <span class="n">Engine</span> <span class="n">Util</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>          <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">+-----------------------------+--------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Reset</span>                       <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">|</span> <span class="n">Programming</span> <span class="n">Errors</span>          <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">|</span> <span class="n">Driver</span> <span class="n">Errors</span>               <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">|</span> <span class="n">Cache</span> <span class="n">Errors</span> <span class="n">Correctable</span>    <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">|</span> <span class="n">Cache</span> <span class="n">Errors</span> <span class="n">Uncorrectable</span>  <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">|</span> <span class="n">Mem</span> <span class="n">Errors</span> <span class="n">Correctable</span>      <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">|</span> <span class="n">Mem</span> <span class="n">Errors</span> <span class="n">Uncorrectable</span>    <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">+-----------------------------+--------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">GPU</span> <span class="n">Power</span> <span class="p">(</span><span class="n">W</span><span class="p">)</span>               <span class="o">|</span> <span class="mi">15</span>                                                                 <span class="o">|</span>
+<span class="o">|</span> <span class="n">GPU</span> <span class="n">Frequency</span> <span class="p">(</span><span class="n">MHz</span><span class="p">)</span>         <span class="o">|</span> <span class="mi">0</span>                                                                  <span class="o">|</span>
+<span class="o">|</span> <span class="n">GPU</span> <span class="n">Core</span> <span class="n">Temperature</span> <span class="p">(</span><span class="n">C</span><span class="p">)</span>    <span class="o">|</span> <span class="mi">41</span>                                                                 <span class="o">|</span>
+<span class="o">|</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Temperature</span> <span class="p">(</span><span class="n">C</span><span class="p">)</span>  <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Read</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">)</span>      <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Write</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">)</span>     <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Bandwidth</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>    <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Used</span> <span class="p">(</span><span class="n">MiB</span><span class="p">)</span>       <span class="o">|</span> <span class="mi">24</span>                                                                 <span class="o">|</span>
+<span class="o">|</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">Throughput</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">)</span>   <span class="o">|</span>                                                                    <span class="o">|</span>
+<span class="o">+-----------------------------+--------------------------------------------------------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="dump-the-device-statistics-in-csv-format">
+<h2>Dump the device statistics in CSV format<a class="headerlink" href="#dump-the-device-statistics-in-csv-format" title="Permalink to this headline"></a></h2>
+<p>Help info of the device statistics dump. Please note that the metrics ‘Programming Errors’, ‘Driver Errors’, ‘Cache Errors Correctable’ and ‘Cache Errors Uncorrectable’ are not implemented in dump sub-command so far. Please do not dump these metrics.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">dump</span> <span class="o">-</span><span class="n">h</span>
+<span class="n">Dump</span> <span class="n">device</span> <span class="n">statistics</span> <span class="n">data</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">dump</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">dump</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceIds</span><span class="p">]</span> <span class="o">-</span><span class="n">m</span> <span class="p">[</span><span class="n">metricsIds</span><span class="p">]</span> <span class="o">-</span><span class="n">i</span> <span class="p">[</span><span class="n">timeInterval</span><span class="p">]</span> <span class="o">-</span><span class="n">n</span> <span class="p">[</span><span class="n">dumpTimes</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">dump</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceIds</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">deviceTileId</span><span class="p">]</span> <span class="o">-</span><span class="n">m</span> <span class="p">[</span><span class="n">metricsIds</span><span class="p">]</span> <span class="o">-</span><span class="n">i</span> <span class="p">[</span><span class="n">timeInterval</span><span class="p">]</span> <span class="o">-</span><span class="n">n</span> <span class="p">[</span><span class="n">dumpTimes</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">dump</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">deviceTileId</span><span class="p">]</span> <span class="o">-</span><span class="n">m</span> <span class="p">[</span><span class="n">metricsIds</span><span class="p">]</span> <span class="o">-</span><span class="n">i</span> <span class="p">[</span><span class="n">timeInterval</span><span class="p">]</span> <span class="o">-</span><span class="n">n</span> <span class="p">[</span><span class="n">dumpTimes</span><span class="p">]</span>
+
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+  <span class="o">--</span><span class="n">debug</span>                     <span class="n">Print</span> <span class="n">debug</span> <span class="n">info</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">The</span> <span class="n">device</span> <span class="n">IDs</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">addresses</span> <span class="n">to</span> <span class="n">query</span><span class="o">.</span> <span class="n">The</span> <span class="n">value</span> <span class="n">of</span> <span class="s2">&quot;-1&quot;</span> <span class="n">means</span> <span class="nb">all</span> <span class="n">devices</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">t</span><span class="p">,</span><span class="o">--</span><span class="n">tile</span>                   <span class="n">The</span> <span class="n">device</span> <span class="n">tile</span> <span class="n">ID</span> <span class="n">to</span> <span class="n">query</span><span class="o">.</span> <span class="n">If</span> <span class="n">the</span> <span class="n">device</span> <span class="n">has</span> <span class="n">only</span> <span class="n">one</span> <span class="n">tile</span><span class="p">,</span> <span class="n">this</span> <span class="n">parameter</span> <span class="n">should</span> <span class="ow">not</span> <span class="n">be</span> <span class="n">specified</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">m</span><span class="p">,</span><span class="o">--</span><span class="n">metrics</span>                <span class="n">Metrics</span> <span class="nb">type</span> <span class="n">to</span> <span class="n">collect</span> <span class="n">raw</span> <span class="n">data</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span> <span class="n">Separated</span> <span class="n">by</span> <span class="n">the</span> <span class="n">comma</span><span class="o">.</span>
+                              <span class="mf">0.</span> <span class="n">GPU</span> <span class="n">Utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">GPU</span> <span class="n">active</span> <span class="n">time</span> <span class="n">of</span> <span class="n">the</span> <span class="n">elapsed</span> <span class="n">time</span><span class="p">,</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">1.</span> <span class="n">GPU</span> <span class="n">Power</span> <span class="p">(</span><span class="n">W</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">2.</span> <span class="n">GPU</span> <span class="n">Frequency</span> <span class="p">(</span><span class="n">MHz</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">3.</span> <span class="n">GPU</span> <span class="n">Core</span> <span class="n">Temperature</span> <span class="p">(</span><span class="n">Celsius</span> <span class="n">Degree</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">4.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Temperature</span> <span class="p">(</span><span class="n">Celsius</span> <span class="n">Degree</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">5.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">6.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Read</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">7.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Write</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">8.</span> <span class="n">GPU</span> <span class="n">Energy</span> <span class="n">Consumed</span> <span class="p">(</span><span class="n">J</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">9.</span> <span class="n">GPU</span> <span class="n">EU</span> <span class="n">Array</span> <span class="n">Active</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">the</span> <span class="n">normalized</span> <span class="nb">sum</span> <span class="n">of</span> <span class="nb">all</span> <span class="n">cycles</span> <span class="n">on</span> <span class="nb">all</span> <span class="n">EUs</span> <span class="n">that</span> <span class="n">were</span> <span class="n">spent</span> <span class="n">actively</span> <span class="n">executing</span> <span class="n">instructions</span><span class="o">.</span> <span class="n">Per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">10.</span> <span class="n">GPU</span> <span class="n">EU</span> <span class="n">Array</span> <span class="n">Stall</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">the</span> <span class="n">normalized</span> <span class="nb">sum</span> <span class="n">of</span> <span class="nb">all</span> <span class="n">cycles</span> <span class="n">on</span> <span class="nb">all</span> <span class="n">EUs</span> <span class="n">during</span> <span class="n">which</span> <span class="n">the</span> <span class="n">EUs</span> <span class="n">were</span> <span class="n">stalled</span><span class="o">.</span> <span class="n">Per</span> <span class="n">tile</span><span class="o">.</span>
+                                  <span class="n">At</span> <span class="n">least</span> <span class="n">one</span> <span class="n">thread</span> <span class="ow">is</span> <span class="n">loaded</span><span class="p">,</span> <span class="n">but</span> <span class="n">the</span> <span class="n">EU</span> <span class="ow">is</span> <span class="n">stalled</span><span class="o">.</span> <span class="n">Per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">11.</span> <span class="n">GPU</span> <span class="n">EU</span> <span class="n">Array</span> <span class="n">Idle</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">the</span> <span class="n">normalized</span> <span class="nb">sum</span> <span class="n">of</span> <span class="nb">all</span> <span class="n">cycles</span> <span class="n">on</span> <span class="nb">all</span> <span class="n">cores</span> <span class="n">when</span> <span class="n">no</span> <span class="n">threads</span> <span class="n">were</span> <span class="n">scheduled</span> <span class="n">on</span> <span class="n">a</span> <span class="n">core</span><span class="o">.</span> <span class="n">Per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">12.</span> <span class="n">Reset</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">13.</span> <span class="n">Programming</span> <span class="n">Errors</span><span class="p">,</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">14.</span> <span class="n">Driver</span> <span class="n">Errors</span><span class="p">,</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">15.</span> <span class="n">Cache</span> <span class="n">Errors</span> <span class="n">Correctable</span><span class="p">,</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">16.</span> <span class="n">Cache</span> <span class="n">Errors</span> <span class="n">Uncorrectable</span><span class="p">,</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">17.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Bandwidth</span> <span class="n">Utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">)</span>
+                              <span class="mf">18.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Used</span> <span class="p">(</span><span class="n">MiB</span><span class="p">)</span>
+                              <span class="mf">19.</span> <span class="n">PCIe</span> <span class="n">Read</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">),</span> <span class="n">per</span> <span class="n">GPU</span>
+                              <span class="mf">20.</span> <span class="n">PCIe</span> <span class="n">Write</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">),</span> <span class="n">per</span> <span class="n">GPU</span>
+                              <span class="mf">21.</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">Throughput</span> <span class="p">(</span><span class="n">kB</span><span class="o">/</span><span class="n">s</span><span class="p">),</span> <span class="n">a</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">tile</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">tile</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">throughput</span><span class="o">.</span>
+                              <span class="mf">22.</span> <span class="n">Compute</span> <span class="n">engine</span> <span class="n">utilizations</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">23.</span> <span class="n">Render</span> <span class="n">engine</span> <span class="n">utilizations</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">24.</span> <span class="n">Media</span> <span class="n">decoder</span> <span class="n">engine</span> <span class="n">utilizations</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">25.</span> <span class="n">Media</span> <span class="n">encoder</span> <span class="n">engine</span> <span class="n">utilizations</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">26.</span> <span class="n">Copy</span> <span class="n">engine</span> <span class="n">utilizations</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">27.</span> <span class="n">Media</span> <span class="n">enhancement</span> <span class="n">engine</span> <span class="n">utilizations</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">28.</span> <span class="mi">3</span><span class="n">D</span> <span class="n">engine</span> <span class="n">utilizations</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span>
+                              <span class="mf">29.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Errors</span> <span class="n">Correctable</span><span class="p">,</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span> <span class="n">Other</span> <span class="n">non</span><span class="o">-</span><span class="n">compute</span> <span class="n">correctable</span> <span class="n">errors</span> <span class="n">are</span> <span class="n">also</span> <span class="n">included</span><span class="o">.</span>
+                              <span class="mf">30.</span> <span class="n">GPU</span> <span class="n">Memory</span> <span class="n">Errors</span> <span class="n">Uncorrectable</span><span class="p">,</span> <span class="n">per</span> <span class="n">tile</span><span class="o">.</span> <span class="n">Other</span> <span class="n">non</span><span class="o">-</span><span class="n">compute</span> <span class="n">uncorrectable</span> <span class="n">errors</span> <span class="n">are</span> <span class="n">also</span> <span class="n">included</span><span class="o">.</span>
+                              <span class="mf">31.</span> <span class="n">Compute</span> <span class="n">engine</span> <span class="n">group</span> <span class="n">utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">32.</span> <span class="n">Render</span> <span class="n">engine</span> <span class="n">group</span> <span class="n">utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">33.</span> <span class="n">Media</span> <span class="n">engine</span> <span class="n">group</span> <span class="n">utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+                              <span class="mf">34.</span> <span class="n">Copy</span> <span class="n">engine</span> <span class="n">group</span> <span class="n">utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">per</span> <span class="n">tile</span>
+
+  <span class="o">-</span><span class="n">i</span>                          <span class="n">The</span> <span class="n">interval</span> <span class="p">(</span><span class="ow">in</span> <span class="n">seconds</span><span class="p">)</span> <span class="n">to</span> <span class="n">dump</span> <span class="n">the</span> <span class="n">device</span> <span class="n">statistics</span> <span class="n">to</span> <span class="n">screen</span><span class="o">.</span> <span class="n">Default</span> <span class="n">value</span><span class="p">:</span> <span class="mi">1</span> <span class="n">second</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">n</span>                          <span class="n">Number</span> <span class="n">of</span> <span class="n">the</span> <span class="n">device</span> <span class="n">statistics</span> <span class="n">dump</span> <span class="n">to</span> <span class="n">screen</span><span class="o">.</span> <span class="n">The</span> <span class="n">dump</span> <span class="n">will</span> <span class="n">never</span> <span class="n">be</span> <span class="n">ended</span> <span class="k">if</span> <span class="n">this</span> <span class="n">parameter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">specified</span><span class="o">.</span>
+
+</pre></div>
+</div>
+<p>Dump the device statistics to screen in CSV format.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">dump</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">m</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span> <span class="o">-</span><span class="n">i</span> <span class="mi">1</span> <span class="o">-</span><span class="n">n</span> <span class="mi">5</span>
+<span class="n">Timestamp</span><span class="p">,</span> <span class="n">DeviceId</span><span class="p">,</span> <span class="n">GPU</span> <span class="n">Utilization</span> <span class="p">(</span><span class="o">%</span><span class="p">),</span> <span class="n">GPU</span> <span class="n">Power</span> <span class="p">(</span><span class="n">W</span><span class="p">),</span> <span class="n">GPU</span> <span class="n">Frequency</span> <span class="p">(</span><span class="n">MHz</span><span class="p">)</span>
+<span class="mi">06</span><span class="p">:</span><span class="mi">14</span><span class="p">:</span><span class="mf">46.000</span><span class="p">,</span>    <span class="mi">0</span><span class="p">,</span> <span class="mf">0.00</span><span class="p">,</span> <span class="mf">14.61</span><span class="p">,</span>    <span class="mi">0</span>
+<span class="mi">06</span><span class="p">:</span><span class="mi">14</span><span class="p">:</span><span class="mf">47.000</span><span class="p">,</span>    <span class="mi">0</span><span class="p">,</span> <span class="mf">0.00</span><span class="p">,</span> <span class="mf">14.59</span><span class="p">,</span>    <span class="mi">0</span>
+<span class="mi">06</span><span class="p">:</span><span class="mi">14</span><span class="p">:</span><span class="mf">48.000</span><span class="p">,</span>    <span class="mi">0</span><span class="p">,</span> <span class="mf">0.00</span><span class="p">,</span> <span class="mf">14.61</span><span class="p">,</span>    <span class="mi">0</span>
+<span class="mi">06</span><span class="p">:</span><span class="mi">14</span><span class="p">:</span><span class="mf">49.000</span><span class="p">,</span>    <span class="mi">0</span><span class="p">,</span> <span class="mf">0.00</span><span class="p">,</span> <span class="mf">14.61</span><span class="p">,</span>    <span class="mi">0</span>
+<span class="mi">06</span><span class="p">:</span><span class="mi">14</span><span class="p">:</span><span class="mf">50.000</span><span class="p">,</span>    <span class="mi">0</span><span class="p">,</span> <span class="mf">0.00</span><span class="p">,</span> <span class="mf">14.61</span><span class="p">,</span>    <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="smi_install_guide.html" class="btn btn-neutral float-left" title="Intel XPU-SMI Installation Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="smidoc/rst/index.html" class="btn btn-neutral float-right" title="Core Library API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Installation &mdash; XPU Manager  documentation</title>
@@ -16,14 +16,13 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/target-highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Intel XPU-SMI Installation Guide" href="Install_guide.html" />
-    <link rel="prev" title="Intel XPU System Management Interface" href="build/README.html" /> 
+    <link rel="next" title="Intel XPU Manager Installation Guide" href="Install_guide.html" />
+    <link rel="prev" title="Intel XPU Manager" href="README.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -42,16 +41,19 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="build/README.html">Intel XPU System Management Interface</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="README.html">Intel XPU Manager</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Installation</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="Install_guide.html">Intel XPU-SMI Installation Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Install_guide.html">Intel XPU Manager Installation Guide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="REST_README.html">XPUM REST API Setup Guide</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel XPU System Management Interface User Guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="build/rst/index.html">Core Library API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="restful.html">Restful API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpumdoc/rst/index.html">Core Library API</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a></li>
 </ul>
 
         </div>
@@ -68,7 +70,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
+          <li><a href="xpum_index.html">XPUM Documentation</a> &raquo;</li>
       <li>Installation</li>
       <li class="wy-breadcrumbs-aside">
       </li>
@@ -79,17 +81,30 @@
            <div itemprop="articleBody">
              
   <section id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h1>
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Install_guide.html">Intel XPU-SMI Installation Guide</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="Install_guide.html">Intel XPU Manager Installation Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Install_guide.html#requirements">Requirements</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Install_guide.html#deb-install">DEB install</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Install_guide.html#deb-uninstall">DEB uninstall</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Install_guide.html#rpm-install">RPM install</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Install_guide.html#start-to-use-intel-xpu-smi">Start to use Intel XPU-SMI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Install_guide.html#start-to-use-intel-xpu-manager">Start to use Intel XPU Manager</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Install_guide.html#rpm-relocation-install">RPM relocation install</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Install_guide.html#rpm-uninstall">RPM uninstall</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Install_guide.html#how-to-enable-or-disable-some-daemon-monitor-metrics">How to enable or disable some daemon monitor metrics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Install_guide.html#change-the-system-settings-to-enable-some-gpu-advanced-metrics">Change the system settings to enable some GPU advanced metrics</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="Install_guide.html#gpu-memory-ecc-on-off">GPU memory ECC on/off</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="REST_README.html">XPUM REST API Setup Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="REST_README.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="REST_README.html#run-script">Run Script</a></li>
+<li class="toctree-l2"><a class="reference internal" href="REST_README.html#start-service">Start Service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="REST_README.html#change-rest-service-binding-address-port">Change rest service binding address &amp; port</a></li>
+<li class="toctree-l2"><a class="reference internal" href="REST_README.html#replace-rest-service-certificate-private-key">Replace rest service certificate &amp; private key</a></li>
 </ul>
 </li>
 </ul>
@@ -100,8 +115,8 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="build/README.html" class="btn btn-neutral float-left" title="Intel XPU System Management Interface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="Install_guide.html" class="btn btn-neutral float-right" title="Intel XPU-SMI Installation Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="README.html" class="btn btn-neutral float-left" title="Intel XPU Manager" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Install_guide.html" class="btn btn-neutral float-right" title="Intel XPU Manager Installation Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

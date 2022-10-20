@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagnostics &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/target-highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Agent settings" href="group_AGENT_SETTING_API.html" />
+    <link rel="prev" title="Firmware flash" href="group_FIRMWARE_UPDATE_API.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../README.html">Intel XPU Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../CLI_user_guide.html">Intel XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../restful.html">Restful API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_GROUP_MANAGEMENT_API.html">Group management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_HEALTH_API.html">Device health</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Diagnostics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#detailed-documentation">Detailed Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="group_AGENT_SETTING_API.html">Agent settings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DUMP_RAW_DATA_API.html">Dump metrics raw data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_POLICY_API.html">Policy management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_SENSOR_READING_API.html">Sensor reading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="global.html">Global Namespace</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../xpum_index.html">XPUM Documentation</a> &raquo;</li>
+          <li><a href="index.html">Core Library API</a> &raquo;</li>
+      <li>Diagnostics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="diagnostics">
+<span id="doxid-group-diagnostics-api"></span><span id="index-0"></span><h1>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>These APIs are for diagnostics. <a class="reference internal" href="#details-group-diagnostics-api"><span class="std std-ref">More…</span></a></p>
+<pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
+
+<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunDiagnostics<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="n">level</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunDiagnosticsByGroup<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="n">level</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsResult<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_diag_task_info_t.html#doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsResultByGroup<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_diag_task_info_t.html#doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsMediaCodecResult<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_diag_media_codec_metrics_t.html#doxid-structxpum-diag-media-codec-metrics-t"><span class="std std-ref">xpum_diag_media_codec_metrics_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-group-diagnostics-api"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<p>These APIs are for diagnostics.</p>
+<section id="global-functions">
+<h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-diagnostics-api-1ga63c9157f62e1f7b3998863c81fece569"><span id="index-1"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunDiagnostics</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="n">level</span>
+    <span class="p">)</span></pre>
+<p>Run diagnostics on single device This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#doxid-group-diagnostics-api-1ga56a9d6b80e23dc7ba72cbd5f67bbd28a"><span class="std std-ref">xpumGetDiagnosticsResult</span></a>.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id</p></td>
+</tr>
+<tr class="row-even"><td><p>level</p></td>
+<td><p>IN: The diagnostics level to run</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-diagnostics-api-1ga4114feaebeeff3f4daa85a6bec653d2f"><span id="index-2"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunDiagnosticsByGroup</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="n">level</span>
+    <span class="p">)</span></pre>
+<p>Run diagnostics on a group of devices This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#doxid-group-diagnostics-api-1ga9759f43112a96ee1338f05193b6d1d60"><span class="std std-ref">xpumGetDiagnosticsResultByGroup</span></a>.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>groupId</p></td>
+<td><p>IN: Group id</p></td>
+</tr>
+<tr class="row-even"><td><p>level</p></td>
+<td><p>IN: The diagnostics level to run</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-diagnostics-api-1ga56a9d6b80e23dc7ba72cbd5f67bbd28a"><span id="index-3"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDiagnosticsResult</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_diag_task_info_t.html#doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
+    <span class="p">)</span></pre>
+<p>Get diagnostics result This function will return immediately. Caller may have to call this function multiple times until <em>result</em> indicates diagnostics job is finished.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: The device id to query diagnostics status</p></td>
+</tr>
+<tr class="row-even"><td><p>result</p></td>
+<td><p>OUT: The status of diagnostics task run on device with <em>deviceId</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-diagnostics-api-1ga9759f43112a96ee1338f05193b6d1d60"><span id="index-4"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDiagnosticsResultByGroup</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_diag_task_info_t.html#doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get diagnostics result by group.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>groupId</p></td>
+<td><p>IN: The group id to query diagnostics status</p></td>
+</tr>
+<tr class="row-even"><td><p>resultList</p></td>
+<td><p>OUT: The status of diagnostics task run on device of group with <em>groupId</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>count</p></td>
+<td><p>IN/OUT: The number of entries that <em>resultList</em> array can store, count should equal to or larger than device count of the group (<em>groupid</em>); when return, the <em>count</em> will store real number of entries returned by <em>resultList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than device count of group</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-diagnostics-api-1gabdb86046eaeb0d3be9754f3972413c30"><span id="index-5"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDiagnosticsMediaCodecResult</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_diag_media_codec_metrics_t.html#doxid-structxpum-diag-media-codec-metrics-t"><span class="std std-ref">xpum_diag_media_codec_metrics_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get diagnostics media codec result.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: The device id to query diagnostics media codec result</p></td>
+</tr>
+<tr class="row-even"><td><p>resultList</p></td>
+<td><p>OUT: The result of diagnostics media codec result run on device with <em>deviceId</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>resultList</em> is NULL, <em>count</em> will be filled with the number of available entries, and return. When <em>resultList</em> is not NULL, <em>count</em> denotes the length of <em>resultList</em>, <em>count</em> should be equal to or larger than the number of available entries, when return, the <em>count</em> will store real number of entries returned by <em>resultList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="group_FIRMWARE_UPDATE_API.html" class="btn btn-neutral float-left" title="Firmware flash" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="group_AGENT_SETTING_API.html" class="btn btn-neutral float-right" title="Agent settings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

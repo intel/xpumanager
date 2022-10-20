@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Namespace &mdash; XPU Manager  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/doxyrest-sphinx_rtd_theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/target-highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="enum xpum_agent_config_enum" href="enum_xpum_agent_config_enum.html" />
+    <link rel="prev" title="Topologies" href="group_TOPOLOGY_API.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../smi_index.html">XPU-SMI Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../SMI_README.html">Intel XPU System Management Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../smi_install_guide.html">Intel XPU-SMI Installation Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../smi_user_guide.html">Intel XPU System Management Interface User Guide</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_CONFIGURATION_API.html">Device configurations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_FIRMWARE_UPDATE_API.html">Firmware flash</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_DIAGNOSTICS_API.html">Diagnostics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_STATISTICS_API.html">Device statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="group_TOPOLOGY_API.html">Topologies</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Global Namespace</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_diag_level_enum.html">enum xpum_diag_level_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_diag_task_result_enum.html">enum xpum_diag_task_result_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_diag_task_type_enum.html">enum xpum_diag_task_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_dump_type_enum.html">enum xpum_dump_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_ecc_action_t.html">enum xpum_ecc_action_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_ecc_state_t.html">enum xpum_ecc_state_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_engine_type_enum.html">enum xpum_engine_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_engine_type_flags_t.html">enum xpum_engine_type_flags_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_fabric_throughput_type_enum.html">enum xpum_fabric_throughput_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_firmware_flash_result_enum.html">enum xpum_firmware_flash_result_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_firmware_type_enum.html">enum xpum_firmware_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_frequency_type_t.html">enum xpum_frequency_type_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_health_config_type_enum.html">enum xpum_health_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_health_status_enum.html">enum xpum_health_status_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_health_type_enum.html">enum xpum_health_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_link_type_enum.html">enum xpum_link_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_media_format_enum.html">enum xpum_media_format_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_media_resolution_enum.html">enum xpum_media_resolution_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_action_type_enum.html">enum xpum_policy_action_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_conditon_type_enum.html">enum xpum_policy_conditon_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_type_enum.html">enum xpum_policy_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_ras_type_enum.html">enum xpum_ras_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_result_enum.html">enum xpum_result_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_scheduler_mode_t.html">enum xpum_scheduler_mode_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_standby_mode_t.html">enum xpum_standby_mode_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_standby_type_t.html">enum xpum_standby_type_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_stats_type_enum.html">enum xpum_stats_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_version_enum.html">enum xpum_version_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_parent_switch.html">struct parent_switch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_amc_fw_version_t.html">struct xpum_amc_fw_version_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_basic_info.html">struct xpum_device_basic_info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_component_ratio_t.html">struct xpum_device_component_ratio_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_components_ratio_t.html">struct xpum_device_components_ratio_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_engine_metric_t.html">struct xpum_device_engine_metric_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_engine_stats_t.html">struct xpum_device_engine_stats_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_fabric_throughput_metric_t.html">struct xpum_device_fabric_throughput_metric_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_fabric_throughput_stats_t.html">struct xpum_device_fabric_throughput_stats_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_metric_data_t.html">struct xpum_device_metric_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_metrics_t.html">struct xpum_device_metrics_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_performancefactor_t.html">struct xpum_device_performancefactor_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_process_t.html">struct xpum_device_process_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_properties_t.html">struct xpum_device_properties_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_property_t.html">struct xpum_device_property_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_data_t.html">struct xpum_device_stats_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_stats_t.html">struct xpum_device_stats_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_util_by_process_t.html">struct xpum_device_util_by_process_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_component_info_t.html">struct xpum_diag_component_info_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_media_codec_metrics_t.html">struct xpum_diag_media_codec_metrics_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_diag_task_info_t.html">struct xpum_diag_task_info_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_dump_raw_data_task_t.html">struct xpum_dump_raw_data_task_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_fabric_port_config_t.html">struct xpum_fabric_port_config_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_firmware_flash_job.html">struct xpum_firmware_flash_job</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_firmware_flash_task_result_t.html">struct xpum_firmware_flash_task_result_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_frequency_range_t.html">struct xpum_frequency_range_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_group_info_t.html">struct xpum_group_info_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_health_data_t.html">struct xpum_health_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_metrics_raw_data_t.html">struct xpum_metrics_raw_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_action_t.html">struct xpum_policy_action_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_condition_t.html">struct xpum_policy_condition_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_notify_callback_para_t.html">struct xpum_policy_notify_callback_para_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_t.html">struct xpum_policy_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_burst_limit_t.html">struct xpum_power_burst_limit_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_limits_t.html">struct xpum_power_limits_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_peak_limit_t.html">struct xpum_power_peak_limit_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_prop_data_t.html">struct xpum_power_prop_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_sustained_limit_t.html">struct xpum_power_sustained_limit_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_data_t.html">struct xpum_scheduler_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_exclusive_t.html">struct xpum_scheduler_exclusive_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_timeout_t.html">struct xpum_scheduler_timeout_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_timeslice_t.html">struct xpum_scheduler_timeslice_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_sensor_reading_t.html">struct xpum_sensor_reading_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_standby_data_t.html">struct xpum_standby_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_topology_t.html">struct xpum_topology_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_version_info.html">struct xpum_version_info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_xelink_topo_info.html">struct xpum_xelink_topo_info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_xelink_unit.html">struct xpum_xelink_unit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#detailed-documentation">Detailed Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
+          <li><a href="index.html">Core Library API</a> &raquo;</li>
+      <li>Global Namespace</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <span class="target" id="global"></span><section id="global-namespace">
+<span id="index-0"></span><h1>Global Namespace<a class="headerlink" href="#global-namespace" title="Permalink to this headline"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// typedefs</span>
+
+<span class="k">typedef</span> <span class="kt">int32_t</span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="kt">uint32_t</span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="kt">int32_t</span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a97c660530e43b683c98f0421299ac55e"><span class="std std-ref">xpum_event_id_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="kt">int32_t</span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span class="std std-ref">xpum_dump_task_id_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="kt">int32_t</span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="kt">int32_t</span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a1eee847f85cc684bcb2d0b34c12a4bbb"><span class="std std-ref">xpum_sampling_interval_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867"><span class="std std-ref">xpum_result_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_type_enum.html#doxid-xpum-structs-8h-1abe65531e7808a5abfd51a1785d3679b4"><span class="std std-ref">xpum_device_type_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a0ca55052421c7b8a0050fdbd51f4d7b9"><span></span><span class="n">xpum_device_type_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_version_enum.html#doxid-xpum-structs-8h-1aab3b6d20aae50d8d21b2ee4eb62025f5"><span class="std std-ref">xpum_version_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1ab5148c9fd9742c2494238ca56f6dd34b"><span class="std std-ref">xpum_version_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_version_info.html#doxid-structxpum-version-info"><span class="std std-ref">xpum_version_info</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a2dd3a63bc114aada29bffba03e83acdd"><span class="std std-ref">xpum_version_info</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1aebc82d617408ff36fd8c00840527897f"><span class="std std-ref">xpum_device_basic_info</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_property_name_enum.html#doxid-xpum-structs-8h-1a94051aa5b6ca3abf697e13a757f690bf"><span class="std std-ref">xpum_device_property_name_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a9aa4acf19619a57f00e1bd71c392353d"><span class="std std-ref">xpum_device_property_name_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_property_t.html#doxid-structxpum-device-property-t"><span class="std std-ref">xpum_device_property_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1ae50fda318e36692f0901e33556c09cbd"><span class="std std-ref">xpum_device_property_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_properties_t.html#doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1aad2f326145d07ea958413de6e5f0daad"><span class="std std-ref">xpum_device_properties_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_amc_fw_version_t.html#doxid-structxpum-amc-fw-version-t"><span class="std std-ref">xpum_amc_fw_version_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a712a052725775338a028f0416fcd03e9"><span class="std std-ref">xpum_amc_fw_version_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_group_info_t.html#doxid-structxpum-group-info-t"><span class="std std-ref">xpum_group_info_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a2fb0eae58e255ee20dd92137444a7965"><span class="std std-ref">xpum_group_info_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_health_config_type_enum.html#doxid-xpum-structs-8h-1a5f532637a96cf5c2fae23c0b10c313e3"><span class="std std-ref">xpum_health_config_type_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span class="std std-ref">xpum_health_config_type_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_health_type_enum.html#doxid-xpum-structs-8h-1ad27e64fc91f56f3396a44c5f66fd9b45"><span class="std std-ref">xpum_health_type_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span></span><span class="n">xpum_health_type_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_health_status_enum.html#doxid-xpum-structs-8h-1a79ac1d84baf35c185c16c0883c81fd7d"><span class="std std-ref">xpum_health_status_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1ad8029da8c5aecb11f7a855a5ff36b62d"><span></span><span class="n">xpum_health_status_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_mode_enum.html#doxid-xpum-structs-8h-1aee8d8b0b53bdba0b79e9485f069fab48"><span class="std std-ref">xpum_device_mode_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7a640e28147b93b2fecc4341bafbd55e"><span class="std std-ref">xpum_device_mode_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_config_type_enum.html#doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4"><span class="std std-ref">xpum_device_config_type_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a54a670a8cbadccbb27e0aaa0955038b8"><span></span><span class="n">xpum_device_config_type_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_firmware_type_enum.html#doxid-xpum-structs-8h-1aca109f7e44221fc6cf0dac64790ad943"><span class="std std-ref">xpum_firmware_type_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1aa9fbf56c59280e7d89168f97e2ae43c6"><span class="std std-ref">xpum_firmware_type_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_firmware_flash_result_enum.html#doxid-xpum-structs-8h-1a713139f0c3114ec45e77507f8c2d472a"><span class="std std-ref">xpum_firmware_flash_result_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a5b3040aff4642f710440d38026a17a64"><span class="std std-ref">xpum_firmware_flash_result_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_firmware_flash_job.html#doxid-structxpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a3eefcc6fc42cd515bfb6152a23879615"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_firmware_flash_task_result_t.html#doxid-structxpum-firmware-flash-task-result-t"><span class="std std-ref">xpum_firmware_flash_task_result_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a645889e3c609566392cf70314da1fbed"><span class="std std-ref">xpum_firmware_flash_task_result_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_diag_task_type_enum.html#doxid-xpum-structs-8h-1a48850cc6e230d1c35cbfd5751ee78390"><span class="std std-ref">xpum_diag_task_type_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_diag_task_result_enum.html#doxid-xpum-structs-8h-1ad763cffdc66fa170568bdd41459da749"><span class="std std-ref">xpum_diag_task_result_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1ad6664144568c8a26b44d9d828efb53b5"><span></span><span class="n">xpum_diag_task_result_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_diag_level_enum.html#doxid-xpum-structs-8h-1a3e8f06cde755263f45c7751c4db6b664"><span class="std std-ref">xpum_diag_level_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span></span><span class="n">xpum_diag_level_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_media_format_enum.html#doxid-xpum-structs-8h-1ac4f991538a092d634a2cadc07555ee34"><span class="std std-ref">xpum_media_format_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1aa98e85abd2b7ff4a78842f8e6003fa37"><span></span><span class="n">xpum_media_format_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_media_resolution_enum.html#doxid-xpum-structs-8h-1af785692e28dcdc2a61225d3d50a9e932"><span class="std std-ref">xpum_media_resolution_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1ad790c663b6ce1b238265ec4620b33afb"><span></span><span class="n">xpum_media_resolution_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_agent_config_enum.html#doxid-xpum-structs-8h-1a125c31fe97edad25ef356d653fa3a212"><span class="std std-ref">xpum_agent_config_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a1f12f2a09799fd9e710627f61fb55827"><span class="std std-ref">xpum_agent_config_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_stats_type_enum.html#doxid-xpum-structs-8h-1a2ec4f2b8826ca1db6fe84edfbbeffba7"><span class="std std-ref">xpum_stats_type_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span class="std std-ref">xpum_stats_type_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_data_t.html#doxid-structxpum-device-stats-data-t"><span class="std std-ref">xpum_device_stats_data_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a4bac203e2956fc69e399e8365ecdbfc8"><span class="std std-ref">xpum_device_stats_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t"><span class="std std-ref">xpum_device_stats_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a9094baee59aefbd7406ff22de954d558"><span class="std std-ref">xpum_device_stats_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_engine_type_enum.html#doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866"><span class="std std-ref">xpum_engine_type_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a000951b2de34e96f70caa2188b84b628"><span class="std std-ref">xpum_engine_type_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_stats_t.html#doxid-structxpum-device-engine-stats-t"><span class="std std-ref">xpum_device_engine_stats_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a2eb4ef79bc04ba7f11d8f1c7e8770a57"><span class="std std-ref">xpum_device_engine_stats_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_metric_t.html#doxid-structxpum-device-engine-metric-t"><span class="std std-ref">xpum_device_engine_metric_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1af4c64aeb1cfe6448006ba412e26398c2"><span class="std std-ref">xpum_device_engine_metric_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_fabric_throughput_type_enum.html#doxid-xpum-structs-8h-1ad5e008446ada2dc069b0215bcc104d7e"><span class="std std-ref">xpum_fabric_throughput_type_enum</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a2b2f2366e1e55a34e41017b4d0ee0f28"><span class="std std-ref">xpum_fabric_throughput_type_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t"><span class="std std-ref">xpum_device_fabric_throughput_stats_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a082755be9d65ec4fdbb71610447f145a"><span class="std std-ref">xpum_device_fabric_throughput_stats_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_metric_t.html#doxid-structxpum-device-fabric-throughput-metric-t"><span class="std std-ref">xpum_device_fabric_throughput_metric_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1ae5ec5af9b960cf9029424f370282d25f"><span class="std std-ref">xpum_device_fabric_throughput_metric_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_metrics_raw_data_t.html#doxid-structxpum-metrics-raw-data-t"><span class="std std-ref">xpum_metrics_raw_data_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a47f5851801ec7c542225eddf2abd8ade"><span class="std std-ref">xpum_metrics_raw_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metric_data_t.html#doxid-structxpum-device-metric-data-t"><span class="std std-ref">xpum_device_metric_data_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a2dc311be4091eb1e016d79f66d7ff798"><span class="std std-ref">xpum_device_metric_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metrics_t.html#doxid-structxpum-device-metrics-t"><span class="std std-ref">xpum_device_metrics_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0a18faf398308b56645a3ae500cf8009"><span class="std std-ref">xpum_device_metrics_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_component_ratio_t.html#doxid-structxpum-device-component-ratio-t"><span class="std std-ref">xpum_device_component_ratio_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1ae2107764e0508f08c94153a4b38513ee"><span class="std std-ref">xpum_device_component_ratio_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_components_ratio_t.html#doxid-structxpum-device-components-ratio-t"><span class="std std-ref">xpum_device_components_ratio_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a32bf5f2ae1806097681228ae5f00b000"><span class="std std-ref">xpum_device_components_ratio_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_topology_t.html#doxid-structxpum-topology-t"><span class="std std-ref">xpum_topology_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1afbc150abaec0652e5056d5d75b72c1c2"><span class="std std-ref">xpum_topology_t</span></a><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_link_type_enum.html#doxid-xpum-structs-8h-1a4b84ecdeea30582fcdf906ff31b6bd9d"><span class="std std-ref">xpum_link_type_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a28b0d6cb197dd155fc07518af0bb0730"><span></span><span class="n">xpum_xelink_type_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ras_type_enum.html#doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18"><span class="std std-ref">xpum_ras_type_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a85c694676d4fc26095737fcad65142c3"><span></span><span class="n">xpum_ras_type_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_policy_type_enum.html#doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5"><span class="std std-ref">xpum_policy_type_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1aca031e62fa7b6894babe9f88fed99923"><span></span><span class="n">xpum_policy_type_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_policy_conditon_type_enum.html#doxid-xpum-structs-8h-1accec5f9c1aa5b4b0da469bb817688340"><span class="std std-ref">xpum_policy_conditon_type_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1ad1d53cc1a672df3502a2f343e19dd8ab"><span></span><span class="n">xpum_policy_conditon_type_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_policy_action_type_enum.html#doxid-xpum-structs-8h-1a8d2016a53e767cd81d55b7cbbcff55ae"><span class="std std-ref">xpum_policy_action_type_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a39a6fbfdc3a897ca00ace2abdde289c3"><span></span><span class="n">xpum_policy_action_type_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a77a0a01c6fcad4dd8bdec162f311168e"><span></span><span class="n">xpum_notify_callback_ptr_t</span></span><span></span><span class="p">)(</span><span class="n">xpum_policy_notify_callback_para_t</span> <span class="o">*</span><span class="p">);</span>
+<span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_dump_type_enum.html#doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704e"><span class="std std-ref">xpum_dump_type_enum</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span></span><span class="n">xpum_dump_type_t</span></span><span></span><span class="p">;</span>
+<span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_dump_raw_data_task_t.html#doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1aac097ce9997fbb1b090bc2f6bb11cd55"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="p">;</span>
+
+<span class="c1">// enums</span>
+
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_agent_config_enum.html#doxid-xpum-structs-8h-1a125c31fe97edad25ef356d653fa3a212"><span class="std std-ref">xpum_agent_config_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_config_type_enum.html#doxid-xpum-structs-8h-1adfa91eff44bac93acd7f90b7ac9e31b4"><span class="std std-ref">xpum_device_config_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_mode_enum.html#doxid-xpum-structs-8h-1aee8d8b0b53bdba0b79e9485f069fab48"><span class="std std-ref">xpum_device_mode_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_property_name_enum.html#doxid-xpum-structs-8h-1a94051aa5b6ca3abf697e13a757f690bf"><span class="std std-ref">xpum_device_property_name_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_type_enum.html#doxid-xpum-structs-8h-1abe65531e7808a5abfd51a1785d3679b4"><span class="std std-ref">xpum_device_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_diag_level_enum.html#doxid-xpum-structs-8h-1a3e8f06cde755263f45c7751c4db6b664"><span class="std std-ref">xpum_diag_level_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_diag_task_result_enum.html#doxid-xpum-structs-8h-1ad763cffdc66fa170568bdd41459da749"><span class="std std-ref">xpum_diag_task_result_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_diag_task_type_enum.html#doxid-xpum-structs-8h-1a48850cc6e230d1c35cbfd5751ee78390"><span class="std std-ref">xpum_diag_task_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_dump_type_enum.html#doxid-xpum-structs-8h-1a615cffe2a84e946c65056c6a2b7a704e"><span class="std std-ref">xpum_dump_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_action_t.html#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_engine_type_enum.html#doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866"><span class="std std-ref">xpum_engine_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_engine_type_flags_t.html#doxid-xpum-structs-8h-1a72dafa75f567022365f0232689cfdb77"><span class="std std-ref">xpum_engine_type_flags_t</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_fabric_throughput_type_enum.html#doxid-xpum-structs-8h-1ad5e008446ada2dc069b0215bcc104d7e"><span class="std std-ref">xpum_fabric_throughput_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_firmware_flash_result_enum.html#doxid-xpum-structs-8h-1a713139f0c3114ec45e77507f8c2d472a"><span class="std std-ref">xpum_firmware_flash_result_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_firmware_type_enum.html#doxid-xpum-structs-8h-1aca109f7e44221fc6cf0dac64790ad943"><span class="std std-ref">xpum_firmware_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_frequency_type_t.html#doxid-xpum-structs-8h-1a2e9b0d7416ed117b7600ecf06b589e9b"><span class="std std-ref">xpum_frequency_type_t</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_health_config_type_enum.html#doxid-xpum-structs-8h-1a5f532637a96cf5c2fae23c0b10c313e3"><span class="std std-ref">xpum_health_config_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_health_status_enum.html#doxid-xpum-structs-8h-1a79ac1d84baf35c185c16c0883c81fd7d"><span class="std std-ref">xpum_health_status_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_health_type_enum.html#doxid-xpum-structs-8h-1ad27e64fc91f56f3396a44c5f66fd9b45"><span class="std std-ref">xpum_health_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_link_type_enum.html#doxid-xpum-structs-8h-1a4b84ecdeea30582fcdf906ff31b6bd9d"><span class="std std-ref">xpum_link_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_media_format_enum.html#doxid-xpum-structs-8h-1ac4f991538a092d634a2cadc07555ee34"><span class="std std-ref">xpum_media_format_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_media_resolution_enum.html#doxid-xpum-structs-8h-1af785692e28dcdc2a61225d3d50a9e932"><span class="std std-ref">xpum_media_resolution_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_policy_action_type_enum.html#doxid-xpum-structs-8h-1a8d2016a53e767cd81d55b7cbbcff55ae"><span class="std std-ref">xpum_policy_action_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_policy_conditon_type_enum.html#doxid-xpum-structs-8h-1accec5f9c1aa5b4b0da469bb817688340"><span class="std std-ref">xpum_policy_conditon_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_policy_type_enum.html#doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5"><span class="std std-ref">xpum_policy_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ras_type_enum.html#doxid-xpum-structs-8h-1a82355013bcfe62746b5ea91db3a2ec18"><span class="std std-ref">xpum_ras_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867"><span class="std std-ref">xpum_result_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_scheduler_mode_t.html#doxid-xpum-structs-8h-1a33c91392c46e4ed645476cea0d15ecfa"><span class="std std-ref">xpum_scheduler_mode_t</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_standby_mode_t.html#doxid-xpum-structs-8h-1a730fda2cf38a6c18bf75a907e293550b"><span class="std std-ref">xpum_standby_mode_t</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_standby_type_t.html#doxid-xpum-structs-8h-1abab642f44927a5398f6466dd581f4cca"><span class="std std-ref">xpum_standby_type_t</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_stats_type_enum.html#doxid-xpum-structs-8h-1a2ec4f2b8826ca1db6fe84edfbbeffba7"><span class="std std-ref">xpum_stats_type_enum</span></a><span></span><span class="p">;</span>
+<span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_version_enum.html#doxid-xpum-structs-8h-1aab3b6d20aae50d8d21b2ee4eb62025f5"><span class="std std-ref">xpum_version_enum</span></a><span></span><span class="p">;</span>
+
+<span class="c1">// structs</span>
+
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_parent_switch.html#doxid-structparent-switch"><span class="std std-ref">parent_switch</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_amc_fw_version_t.html#doxid-structxpum-amc-fw-version-t"><span class="std std-ref">xpum_amc_fw_version_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_component_ratio_t.html#doxid-structxpum-device-component-ratio-t"><span class="std std-ref">xpum_device_component_ratio_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_components_ratio_t.html#doxid-structxpum-device-components-ratio-t"><span class="std std-ref">xpum_device_components_ratio_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_metric_t.html#doxid-structxpum-device-engine-metric-t"><span class="std std-ref">xpum_device_engine_metric_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_stats_t.html#doxid-structxpum-device-engine-stats-t"><span class="std std-ref">xpum_device_engine_stats_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_metric_t.html#doxid-structxpum-device-fabric-throughput-metric-t"><span class="std std-ref">xpum_device_fabric_throughput_metric_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t"><span class="std std-ref">xpum_device_fabric_throughput_stats_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metric_data_t.html#doxid-structxpum-device-metric-data-t"><span class="std std-ref">xpum_device_metric_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metrics_t.html#doxid-structxpum-device-metrics-t"><span class="std std-ref">xpum_device_metrics_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_performancefactor_t.html#doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_process_t.html#doxid-structxpum-device-process-t"><span class="std std-ref">xpum_device_process_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_properties_t.html#doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_property_t.html#doxid-structxpum-device-property-t"><span class="std std-ref">xpum_device_property_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_data_t.html#doxid-structxpum-device-stats-data-t"><span class="std std-ref">xpum_device_stats_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t"><span class="std std-ref">xpum_device_stats_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_util_by_process_t.html#doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_diag_component_info_t.html#doxid-structxpum-diag-component-info-t"><span class="std std-ref">xpum_diag_component_info_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_diag_media_codec_metrics_t.html#doxid-structxpum-diag-media-codec-metrics-t"><span class="std std-ref">xpum_diag_media_codec_metrics_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_diag_task_info_t.html#doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_dump_raw_data_task_t.html#doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_fabric_port_config_t.html#doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_firmware_flash_job.html#doxid-structxpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_firmware_flash_task_result_t.html#doxid-structxpum-firmware-flash-task-result-t"><span class="std std-ref">xpum_firmware_flash_task_result_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_frequency_range_t.html#doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_group_info_t.html#doxid-structxpum-group-info-t"><span class="std std-ref">xpum_group_info_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_health_data_t.html#doxid-structxpum-health-data-t"><span class="std std-ref">xpum_health_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_metrics_raw_data_t.html#doxid-structxpum-metrics-raw-data-t"><span class="std std-ref">xpum_metrics_raw_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_policy_action_t.html#doxid-structxpum-policy-action-t"><span class="std std-ref">xpum_policy_action_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_policy_condition_t.html#doxid-structxpum-policy-condition-t"><span class="std std-ref">xpum_policy_condition_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_policy_notify_callback_para_t.html#doxid-structxpum-policy-notify-callback-para-t"><span class="std std-ref">xpum_policy_notify_callback_para_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_policy_t.html#doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_burst_limit_t.html#doxid-structxpum-power-burst-limit-t"><span class="std std-ref">xpum_power_burst_limit_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_limits_t.html#doxid-structxpum-power-limits-t"><span class="std std-ref">xpum_power_limits_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_peak_limit_t.html#doxid-structxpum-power-peak-limit-t"><span class="std std-ref">xpum_power_peak_limit_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_prop_data_t.html#doxid-structxpum-power-prop-data-t"><span class="std std-ref">xpum_power_prop_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_sustained_limit_t.html#doxid-structxpum-power-sustained-limit-t"><span class="std std-ref">xpum_power_sustained_limit_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_data_t.html#doxid-structxpum-scheduler-data-t"><span class="std std-ref">xpum_scheduler_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_exclusive_t.html#doxid-structxpum-scheduler-exclusive-t"><span class="std std-ref">xpum_scheduler_exclusive_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_timeout_t.html#doxid-structxpum-scheduler-timeout-t"><span class="std std-ref">xpum_scheduler_timeout_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_timeslice_t.html#doxid-structxpum-scheduler-timeslice-t"><span class="std std-ref">xpum_scheduler_timeslice_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_sensor_reading_t.html#doxid-structxpum-sensor-reading-t"><span class="std std-ref">xpum_sensor_reading_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_standby_data_t.html#doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_topology_t.html#doxid-structxpum-topology-t"><span class="std std-ref">xpum_topology_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_version_info.html#doxid-structxpum-version-info"><span class="std std-ref">xpum_version_info</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_xelink_topo_info.html#doxid-structxpum-xelink-topo-info"><span class="std std-ref">xpum_xelink_topo_info</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_xelink_unit.html#doxid-structxpum-xelink-unit"><span class="std std-ref">xpum_xelink_unit</span></a><span></span><span class="p">;</span>
+
+<span class="c1">// global functions</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumInit<span></span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumShutdown<span></span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumVersionInfo<span></span><span class="p">(</span><a class="reference internal" href="../../xpumdoc/rst/struct_xpum_version_info.html#doxid-structxpum-version-info"><span class="std std-ref">xpum_version_info</span></a><span></span> <span class="n">versionInfoList</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span>
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceList<span></span><span class="p">(</span><a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">deviceList</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceProperties<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_properties_t.html#doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span><span class="o">*</span> <span class="n">pXpumProperties</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceIdByBDF<span></span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span><span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceStandbys<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_standby_data_t.html#doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceStandby<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_standby_data_t.html#doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">standby</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDevicePowerLimits<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">int32_t</span> <span class="n">tileId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_limits_t.html#doxid-structxpum-power-limits-t"><span class="std std-ref">xpum_power_limits_t</span></a><span></span><span class="o">*</span> <span class="n">pPowerLimits</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDevicePowerSustainedLimits<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">int32_t</span> <span class="n">tileId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_sustained_limit_t.html#doxid-structxpum-power-sustained-limit-t"><span class="std std-ref">xpum_power_sustained_limit_t</span></a><span></span> <span class="n">sustained_limit</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceFrequencyRanges<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_frequency_range_t.html#doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceFrequencyRange<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_frequency_range_t.html#doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">frequency</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceSchedulers<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_data_t.html#doxid-structxpum-scheduler-data-t"><span class="std std-ref">xpum_scheduler_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerTimeoutMode<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_timeout_t.html#doxid-structxpum-scheduler-timeout-t"><span class="std std-ref">xpum_scheduler_timeout_t</span></a><span></span> <span class="n">sched_timeout</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDevicePowerProps<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_prop_data_t.html#doxid-structxpum-power-prop-data-t"><span class="std std-ref">xpum_power_prop_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerTimesliceMode<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_timeslice_t.html#doxid-structxpum-scheduler-timeslice-t"><span class="std std-ref">xpum_scheduler_timeslice_t</span></a><span></span> <span class="n">sched_timeslice</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerExclusiveMode<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_exclusive_t.html#doxid-structxpum-scheduler-exclusive-t"><span class="std std-ref">xpum_scheduler_exclusive_t</span></a><span></span> <span class="n">sched_exclusive</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFreqAvailableClocks<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">uint32_t</span> <span class="n">tileId</span><span class="p">,</span>
+    <span class="kt">double</span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceProcessState<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_process_t.html#doxid-structxpum-device-process-t"><span class="std std-ref">xpum_device_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceComponentOccupancyRatio<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a1eee847f85cc684bcb2d0b34c12a4bbb"><span class="std std-ref">xpum_sampling_interval_t</span></a><span></span> <span class="n">samplingInterval</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_components_ratio_t.html#doxid-structxpum-device-components-ratio-t"><span class="std std-ref">xpum_device_components_ratio_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceUtilizationByProcess<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">uint32_t</span> <span class="n">utilInterval</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_util_by_process_t.html#doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAllDeviceUtilizationByProcess<span></span><span class="p">(</span>
+    <span class="kt">uint32_t</span> <span class="n">utilInterval</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_util_by_process_t.html#doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPerformanceFactor<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_performancefactor_t.html#doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetPerformanceFactor<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_performancefactor_t.html#doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">performanceFactor</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFabricPortConfig<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_fabric_port_config_t.html#doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetFabricPortConfig<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_fabric_port_config_t.html#doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">fabricPortConfig</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetEccState<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="kt">bool</span><span class="o">*</span> <span class="n">available</span><span class="p">,</span>
+    <span class="kt">bool</span><span class="o">*</span> <span class="n">configurable</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_action_t.html#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetEccState<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span> <span class="n">newState</span><span class="p">,</span>
+    <span class="kt">bool</span><span class="o">*</span> <span class="n">available</span><span class="p">,</span>
+    <span class="kt">bool</span><span class="o">*</span> <span class="n">configurable</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_action_t.html#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunFirmwareFlash<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_firmware_flash_job.html#doxid-structxpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span><span class="o">*</span> <span class="n">job</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">username</span><span class="p">,</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFirmwareFlashResult<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1aa9fbf56c59280e7d89168f97e2ae43c6"><span class="std std-ref">xpum_firmware_type_t</span></a><span></span> <span class="n">firmwareType</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_firmware_flash_task_result_t.html#doxid-structxpum-firmware-flash-task-result-t"><span class="std std-ref">xpum_firmware_flash_task_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFirmwareFlashErrorMsg<span></span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunDiagnostics<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="n">level</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsResult<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_diag_task_info_t.html#doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsMediaCodecResult<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_diag_media_codec_metrics_t.html#doxid-structxpum-diag-media-codec-metrics-t"><span class="std std-ref">xpum_diag_media_codec_metrics_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetStats<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t"><span class="std std-ref">xpum_device_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetEngineStats<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_stats_t.html#doxid-structxpum-device-engine-stats-t"><span class="std std-ref">xpum_device_engine_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFabricThroughputStats<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t"><span class="std std-ref">xpum_device_fabric_throughput_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetTopology<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_topology_t.html#doxid-structxpum-topology-t"><span class="std std-ref">xpum_topology_t</span></a><span></span><span class="o">*</span> <span class="n">topology</span><span class="p">,</span>
+    <span class="kt">long</span> <span class="kt">unsigned</span> <span class="kt">int</span><span class="o">*</span> <span class="n">memSize</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumExportTopology2XML<span></span><span class="p">(</span><span class="kt">char</span> <span class="n">xmlBuffer</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">memSize</span><span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-group-topology-api-1ga0a69b66c85f85ba78b68d28338014ae1"><span></span><span class="n">xpumGetXelinkTopology</span></span><span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_xelink_topo_info.html#doxid-structxpum-xelink-topo-info"><span class="std std-ref">xpum_xelink_topo_info</span></a><span></span> <span class="n">xelink_topo</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a98e211c44d926f02268edabe61c712d7"><span></span><span class="n">getXpumDevicePropertyNameString</span></span><span></span><span class="p">(</span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a9aa4acf19619a57f00e1bd71c392353d"><span class="std std-ref">xpum_device_property_name_t</span></a><span></span> <span class="n">name</span><span class="p">);</span>
+
+<span class="c1">// macros</span>
+
+<span class="cp">#define </span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a8ea4640f7632fc95e90738362419c163"><span class="std std-ref">XPUM_DEVICE_ID_ALL_DEVICES</span></a><span></span>
+<span class="cp">#define </span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1ac5903e4c99d66a36395f2b2eba46234f"><span class="std std-ref">XPUM_MAX_CACHED_METRICS_TASK_NUM</span></a><span></span>
+<span class="cp">#define </span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1acf22d29535b1743798448b7161be7ece"><span class="std std-ref">XPUM_MAX_COMPONENT_OCCUPANCY_NUM</span></a><span></span>
+<span class="cp">#define </span><span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a4e4fc33ed64a383b5898ab1f0273905c"><span></span><span class="n">XPUM_MAX_CPU_LIST_LEN</span></span><span></span>
+<span class="cp">#define </span><span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a385bd86fe9471f93e3d35f65a78259a6"><span></span><span class="n">XPUM_MAX_CPU_S_LEN</span></span><span></span>
+<span class="cp">#define </span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1accd9dac12bbd322171cc7d5e05b436b1"><span class="std std-ref">XPUM_MAX_DEVICE_UUID_SIZE</span></a><span></span>
+<span class="cp">#define </span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1af49ebe8613dc1d625439bd4976e2d594"><span class="std std-ref">XPUM_MAX_NUM_DEVICES</span></a><span></span>
+<span class="cp">#define </span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a86498817a27a3ecf0c338ad3a9813177"><span class="std std-ref">XPUM_MAX_NUM_GROUPS</span></a><span></span>
+<span class="cp">#define </span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1ad44987416379876edbdc30f9d2a30e23"><span class="std std-ref">XPUM_MAX_NUM_PROPERTIES</span></a><span></span>
+<span class="cp">#define </span><span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a07fbb05386fce004bb3f33a362338f63"><span></span><span class="n">XPUM_MAX_PATH_LEN</span></span><span></span>
+<span class="cp">#define </span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a873b35818ed2e0d75f8f8a5db23b7955"><span class="std std-ref">XPUM_MAX_STR_LENGTH</span></a><span></span>
+<span class="cp">#define </span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1aa90725e7f12de5f3e957e23f0460415e"><span class="std std-ref">XPUM_MAX_VERSION_STR_LENGTH</span></a><span></span>
+<span class="cp">#define </span><span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a1ecd52a0a68403eea749f1d315b6259b"><span></span><span class="n">XPUM_MAX_XELINK_PORT</span></span></pre>
+</section>
+<section id="detailed-documentation">
+<span id="details-global"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
+<section id="typedefs">
+<h3>Typedefs<a class="headerlink" href="#typedefs" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span id="index-1"></span><span></span><span class="k">typedef</span> <span class="kt">int32_t</span> <span class="n">xpum_device_id_t</span></pre>
+<p>Device id</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span id="index-2"></span><span></span><span class="k">typedef</span> <span class="kt">uint32_t</span> <span class="n">xpum_group_id_t</span></pre>
+<p>Group id</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a97c660530e43b683c98f0421299ac55e"><span id="index-3"></span><span></span><span class="k">typedef</span> <span class="kt">int32_t</span> <span class="n">xpum_event_id_t</span></pre>
+<p>Event id</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span id="index-4"></span><span></span><span class="k">typedef</span> <span class="kt">int32_t</span> <span class="n">xpum_dump_task_id_t</span></pre>
+<p>Task id</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span id="index-5"></span><span></span><span class="k">typedef</span> <span class="kt">int32_t</span> <span class="n">xpum_device_tile_id_t</span></pre>
+<p>Tile id</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a1eee847f85cc684bcb2d0b34c12a4bbb"><span id="index-6"></span><span></span><span class="k">typedef</span> <span class="kt">int32_t</span> <span class="n">xpum_sampling_interval_t</span></pre>
+<p>sampling interval</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span id="index-7"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867"><span class="std std-ref">xpum_result_enum</span></a><span></span> <span class="n">xpum_result_t</span></pre>
+<p>API call results</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1ab5148c9fd9742c2494238ca56f6dd34b"><span id="index-8"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_version_enum.html#doxid-xpum-structs-8h-1aab3b6d20aae50d8d21b2ee4eb62025f5"><span class="std std-ref">xpum_version_enum</span></a><span></span> <span class="n">xpum_version_t</span></pre>
+<p>XPUM version types</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a2dd3a63bc114aada29bffba03e83acdd"><span id="index-9"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_version_info.html#doxid-structxpum-version-info"><span class="std std-ref">xpum_version_info</span></a><span></span> <span class="n">xpum_version_info</span></pre>
+<p>XPUM version info</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1aebc82d617408ff36fd8c00840527897f"><span id="index-10"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">xpum_device_basic_info</span></pre>
+<p>Device basic info</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a9aa4acf19619a57f00e1bd71c392353d"><span id="index-11"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_property_name_enum.html#doxid-xpum-structs-8h-1a94051aa5b6ca3abf697e13a757f690bf"><span class="std std-ref">xpum_device_property_name_enum</span></a><span></span> <span class="n">xpum_device_property_name_t</span></pre>
+<p>Device property types</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1ae50fda318e36692f0901e33556c09cbd"><span id="index-12"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_property_t.html#doxid-structxpum-device-property-t"><span class="std std-ref">xpum_device_property_t</span></a><span></span> <span class="n">xpum_device_property_t</span></pre>
+<p>Struct for one device property.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1aad2f326145d07ea958413de6e5f0daad"><span id="index-13"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_properties_t.html#doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span> <span class="n">xpum_device_properties_t</span></pre>
+<p>Struct stores all properties of a device.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a712a052725775338a028f0416fcd03e9"><span id="index-14"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_amc_fw_version_t.html#doxid-structxpum-amc-fw-version-t"><span class="std std-ref">xpum_amc_fw_version_t</span></a><span></span> <span class="n">xpum_amc_fw_version_t</span></pre>
+<p>Struct AMC firmware version.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a2fb0eae58e255ee20dd92137444a7965"><span id="index-15"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_group_info_t.html#doxid-structxpum-group-info-t"><span class="std std-ref">xpum_group_info_t</span></a><span></span> <span class="n">xpum_group_info_t</span></pre>
+<p>Struct for group info.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a47bcc515f8801c3acc49e5c55d66addf"><span id="index-16"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_health_config_type_enum.html#doxid-xpum-structs-8h-1a5f532637a96cf5c2fae23c0b10c313e3"><span class="std std-ref">xpum_health_config_type_enum</span></a><span></span> <span class="n">xpum_health_config_type_t</span></pre>
+<p>Definitions for health</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a7a640e28147b93b2fecc4341bafbd55e"><span id="index-17"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_device_mode_enum.html#doxid-xpum-structs-8h-1aee8d8b0b53bdba0b79e9485f069fab48"><span class="std std-ref">xpum_device_mode_enum</span></a><span></span> <span class="n">xpum_device_mode_t</span></pre>
+<p>Definitions for configuration</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1aa9fbf56c59280e7d89168f97e2ae43c6"><span id="index-18"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_firmware_type_enum.html#doxid-xpum-structs-8h-1aca109f7e44221fc6cf0dac64790ad943"><span class="std std-ref">xpum_firmware_type_enum</span></a><span></span> <span class="n">xpum_firmware_type_t</span></pre>
+<p>Firmware types.</p>
+<p>Definitions for firmware update</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a5b3040aff4642f710440d38026a17a64"><span id="index-19"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_firmware_flash_result_enum.html#doxid-xpum-structs-8h-1a713139f0c3114ec45e77507f8c2d472a"><span class="std std-ref">xpum_firmware_flash_result_enum</span></a><span></span> <span class="n">xpum_firmware_flash_result_t</span></pre>
+<p>Firmware flash states.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a3eefcc6fc42cd515bfb6152a23879615"><span id="index-20"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_firmware_flash_job.html#doxid-structxpum-firmware-flash-job"><span class="std std-ref">xpum_firmware_flash_job</span></a><span></span> <span class="n">xpum_firmware_flash_job</span></pre>
+<p>Firmware flash job.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a645889e3c609566392cf70314da1fbed"><span id="index-21"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_firmware_flash_task_result_t.html#doxid-structxpum-firmware-flash-task-result-t"><span class="std std-ref">xpum_firmware_flash_task_result_t</span></a><span></span> <span class="n">xpum_firmware_flash_task_result_t</span></pre>
+<p>The struct stores the firmware flash states.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span id="index-22"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_diag_task_type_enum.html#doxid-xpum-structs-8h-1a48850cc6e230d1c35cbfd5751ee78390"><span class="std std-ref">xpum_diag_task_type_enum</span></a><span></span> <span class="n">xpum_diag_task_type_t</span></pre>
+<p>Definitions for diagnosis</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a1f12f2a09799fd9e710627f61fb55827"><span id="index-23"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_agent_config_enum.html#doxid-xpum-structs-8h-1a125c31fe97edad25ef356d653fa3a212"><span class="std std-ref">xpum_agent_config_enum</span></a><span></span> <span class="n">xpum_agent_config_t</span></pre>
+<p>Agent setting types.</p>
+<p>Definitions for agent setting</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span id="index-24"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_stats_type_enum.html#doxid-xpum-structs-8h-1a2ec4f2b8826ca1db6fe84edfbbeffba7"><span class="std std-ref">xpum_stats_type_enum</span></a><span></span> <span class="n">xpum_stats_type_t</span></pre>
+<p>Statistics and metrics types.</p>
+<p>Definitions for metrics collection</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a4bac203e2956fc69e399e8365ecdbfc8"><span id="index-25"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_data_t.html#doxid-structxpum-device-stats-data-t"><span class="std std-ref">xpum_device_stats_data_t</span></a><span></span> <span class="n">xpum_device_stats_data_t</span></pre>
+<p>Struct to store statistics data for different metric types.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a9094baee59aefbd7406ff22de954d558"><span id="index-26"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t"><span class="std std-ref">xpum_device_stats_t</span></a><span></span> <span class="n">xpum_device_stats_t</span></pre>
+<p>Struct to store device statistics data.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a000951b2de34e96f70caa2188b84b628"><span id="index-27"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_engine_type_enum.html#doxid-xpum-structs-8h-1aa157bdea7cacca9203e587f9100ca866"><span class="std std-ref">xpum_engine_type_enum</span></a><span></span> <span class="n">xpum_engine_type_t</span></pre>
+<p>Engine types.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a2eb4ef79bc04ba7f11d8f1c7e8770a57"><span id="index-28"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_stats_t.html#doxid-structxpum-device-engine-stats-t"><span class="std std-ref">xpum_device_engine_stats_t</span></a><span></span> <span class="n">xpum_device_engine_stats_t</span></pre>
+<p>Struct to store device engine statistics data.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1af4c64aeb1cfe6448006ba412e26398c2"><span id="index-29"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_metric_t.html#doxid-structxpum-device-engine-metric-t"><span class="std std-ref">xpum_device_engine_metric_t</span></a><span></span> <span class="n">xpum_device_engine_metric_t</span></pre>
+<p>Struct to store device engine metric data.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a2b2f2366e1e55a34e41017b4d0ee0f28"><span id="index-30"></span><span></span><span class="k">typedef</span> <span class="k">enum</span> <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_fabric_throughput_type_enum.html#doxid-xpum-structs-8h-1ad5e008446ada2dc069b0215bcc104d7e"><span class="std std-ref">xpum_fabric_throughput_type_enum</span></a><span></span> <span class="n">xpum_fabric_throughput_type_t</span></pre>
+<p>Fabric throughput types.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a082755be9d65ec4fdbb71610447f145a"><span id="index-31"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t"><span class="std std-ref">xpum_device_fabric_throughput_stats_t</span></a><span></span> <span class="n">xpum_device_fabric_throughput_stats_t</span></pre>
+<p>Struct to store device fabric throughput statistics data.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1ae5ec5af9b960cf9029424f370282d25f"><span id="index-32"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_metric_t.html#doxid-structxpum-device-fabric-throughput-metric-t"><span class="std std-ref">xpum_device_fabric_throughput_metric_t</span></a><span></span> <span class="n">xpum_device_fabric_throughput_metric_t</span></pre>
+<p>Struct to store device fabric throughput metric data.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a47f5851801ec7c542225eddf2abd8ade"><span id="index-33"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_metrics_raw_data_t.html#doxid-structxpum-metrics-raw-data-t"><span class="std std-ref">xpum_metrics_raw_data_t</span></a><span></span> <span class="n">xpum_metrics_raw_data_t</span></pre>
+<p>Struct to store raw statistics data, not aggregated yet.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a2dc311be4091eb1e016d79f66d7ff798"><span id="index-34"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metric_data_t.html#doxid-structxpum-device-metric-data-t"><span class="std std-ref">xpum_device_metric_data_t</span></a><span></span> <span class="n">xpum_device_metric_data_t</span></pre>
+<p>Struct to store metric data for different metric types.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a0a18faf398308b56645a3ae500cf8009"><span id="index-35"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metrics_t.html#doxid-structxpum-device-metrics-t"><span class="std std-ref">xpum_device_metrics_t</span></a><span></span> <span class="n">xpum_device_metrics_t</span></pre>
+<p>Struct to store device metrics data.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1ae2107764e0508f08c94153a4b38513ee"><span id="index-36"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_component_ratio_t.html#doxid-structxpum-device-component-ratio-t"><span class="std std-ref">xpum_device_component_ratio_t</span></a><span></span> <span class="n">xpum_device_component_ratio_t</span></pre>
+<p>Struct to store one component occupancy.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a32bf5f2ae1806097681228ae5f00b000"><span id="index-37"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_components_ratio_t.html#doxid-structxpum-device-components-ratio-t"><span class="std std-ref">xpum_device_components_ratio_t</span></a><span></span> <span class="n">xpum_device_components_ratio_t</span></pre>
+<p>Struct to store all component occupancy ratio.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1afbc150abaec0652e5056d5d75b72c1c2"><span id="index-38"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_topology_t.html#doxid-structxpum-topology-t"><span class="std std-ref">xpum_topology_t</span></a><span></span> <span class="n">xpum_topology_t</span></pre>
+<p>Struct to store topology data.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1aac097ce9997fbb1b090bc2f6bb11cd55"><span id="index-39"></span><span></span><span class="k">typedef</span> <span class="k">struct</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_dump_raw_data_task_t.html#doxid-structxpum-dump-raw-data-task-t"><span class="std std-ref">xpum_dump_raw_data_task_t</span></a><span></span> <span class="n">xpum_dump_raw_data_task_t</span></pre>
+<p>dump raw data task structure</p>
+</section>
+<section id="macros">
+<h3>Macros<a class="headerlink" href="#macros" title="Permalink to this headline"></a></h3>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a8ea4640f7632fc95e90738362419c163"><span id="index-40"></span><span></span><span class="cp">#define XPUM_DEVICE_ID_ALL_DEVICES</span></pre>
+<p>The device id stand for all devices</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1ac5903e4c99d66a36395f2b2eba46234f"><span id="index-41"></span><span></span><span class="cp">#define XPUM_MAX_CACHED_METRICS_TASK_NUM</span></pre>
+<p>The max number of cached metrics collecting task</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1acf22d29535b1743798448b7161be7ece"><span id="index-42"></span><span></span><span class="cp">#define XPUM_MAX_COMPONENT_OCCUPANCY_NUM</span></pre>
+<p>The max number of monitored function component occupancy situation in GPU</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1accd9dac12bbd322171cc7d5e05b436b1"><span id="index-43"></span><span></span><span class="cp">#define XPUM_MAX_DEVICE_UUID_SIZE</span></pre>
+<p>Max uuid bytes</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1af49ebe8613dc1d625439bd4976e2d594"><span id="index-44"></span><span></span><span class="cp">#define XPUM_MAX_NUM_DEVICES</span></pre>
+<p>Max number of devices supported by XPUM</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a86498817a27a3ecf0c338ad3a9813177"><span id="index-45"></span><span></span><span class="cp">#define XPUM_MAX_NUM_GROUPS</span></pre>
+<p>Max limit on the number of groups supported by XPUM</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1ad44987416379876edbdc30f9d2a30e23"><span id="index-46"></span><span></span><span class="cp">#define XPUM_MAX_NUM_PROPERTIES</span></pre>
+<p>Max limit on the number of properties of a device supported by XPUM</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a873b35818ed2e0d75f8f8a5db23b7955"><span id="index-47"></span><span></span><span class="cp">#define XPUM_MAX_STR_LENGTH</span></pre>
+<p>Max string length</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1aa90725e7f12de5f3e957e23f0460415e"><span id="index-48"></span><span></span><span class="cp">#define XPUM_MAX_VERSION_STR_LENGTH</span></pre>
+<p>Max version string length</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="group_TOPOLOGY_API.html" class="btn btn-neutral float-left" title="Topologies" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="enum_xpum_agent_config_enum.html" class="btn btn-neutral float-right" title="enum xpum_agent_config_enum" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Intel.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Intel XPU-SMI Installation Guide &mdash; XPU Manager  documentation</title>
+  <title>Intel XPU Manager Installation Guide &mdash; XPU Manager  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
@@ -16,13 +16,12 @@
         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
-        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
         <script src="_static/target-highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Intel XPU System Management Interface User Guide" href="CLI_user_guide.html" />
+    <link rel="next" title="XPUM REST API Setup Guide" href="REST_README.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
 </head>
 
@@ -42,25 +41,30 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="build/README.html">Intel XPU System Management Interface</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="README.html">Intel XPU Manager</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Intel XPU-SMI Installation Guide</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Intel XPU Manager Installation Guide</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#requirements">Requirements</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deb-install">DEB install</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deb-uninstall">DEB uninstall</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#rpm-install">RPM install</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#start-to-use-intel-xpu-smi">Start to use Intel XPU-SMI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#start-to-use-intel-xpu-manager">Start to use Intel XPU Manager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#rpm-relocation-install">RPM relocation install</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#rpm-uninstall">RPM uninstall</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#how-to-enable-or-disable-some-daemon-monitor-metrics">How to enable or disable some daemon monitor metrics</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#gpu-memory-ecc-on-off">GPU memory ECC on/off</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="REST_README.html">XPUM REST API Setup Guide</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel XPU System Management Interface User Guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="build/rst/index.html">Core Library API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="restful.html">Restful API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpumdoc/rst/index.html">Core Library API</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a></li>
 </ul>
 
         </div>
@@ -77,9 +81,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
+          <li><a href="xpum_index.html">XPUM Documentation</a> &raquo;</li>
           <li><a href="installation.html">Installation</a> &raquo;</li>
-      <li>Intel XPU-SMI Installation Guide</li>
+      <li>Intel XPU Manager Installation Guide</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -88,35 +92,102 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-smi-installation-guide">
-<h1>Intel XPU-SMI Installation Guide<a class="headerlink" href="#intel-xpu-smi-installation-guide" title="Permalink to this heading"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-manager-installation-guide">
+<h1>Intel XPU Manager Installation Guide<a class="headerlink" href="#intel-xpu-manager-installation-guide" title="Permalink to this headline"></a></h1>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline"></a></h2>
+<p>oneAPI Level Zero
+Intel(R) Graphics System Controller Firmware Update Library
+Intel(R) Metrics Library for MDAPI
+Intel(R) Metrics Discovery Application Programming Interface</p>
+</section>
 <section id="deb-install">
-<h2>DEB install<a class="headerlink" href="#deb-install" title="Permalink to this heading"></a></h2>
-<p>sudo dpkg -i xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb</p>
+<h2>DEB install<a class="headerlink" href="#deb-install" title="Permalink to this headline"></a></h2>
+<p>sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb</p>
 </section>
 <section id="deb-uninstall">
-<h2>DEB uninstall<a class="headerlink" href="#deb-uninstall" title="Permalink to this heading"></a></h2>
-<p>sudo dpkg -r xpu-smi</p>
+<h2>DEB uninstall<a class="headerlink" href="#deb-uninstall" title="Permalink to this headline"></a></h2>
+<p>sudo dpkg -r xpumanager</p>
 </section>
 <section id="rpm-install">
-<h2>RPM install<a class="headerlink" href="#rpm-install" title="Permalink to this heading"></a></h2>
-<p>sudo rpm -i xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+<h2>RPM install<a class="headerlink" href="#rpm-install" title="Permalink to this headline"></a></h2>
+<p>sudo rpm -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
 </section>
-<section id="start-to-use-intel-xpu-smi">
-<h2>Start to use Intel XPU-SMI<a class="headerlink" href="#start-to-use-intel-xpu-smi" title="Permalink to this heading"></a></h2>
-<p>By default, Intel XPU-SMI is installed the folder, /opt/xpum. The command line tool is xpu-smi. Please refer to “CLI_user_guide.md” for how to use the command line tool.</p>
+<section id="start-to-use-intel-xpu-manager">
+<h2>Start to use Intel XPU Manager<a class="headerlink" href="#start-to-use-intel-xpu-manager" title="Permalink to this headline"></a></h2>
+<p>By default, Intel XPU Manager is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to “CLI_user_guide.md” for how to use the command line tool.</p>
 </section>
 <section id="rpm-relocation-install">
-<h2>RPM relocation install<a class="headerlink" href="#rpm-relocation-install" title="Permalink to this heading"></a></h2>
-<p>rpm -i –prefix=/opt/abc xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+<h2>RPM relocation install<a class="headerlink" href="#rpm-relocation-install" title="Permalink to this headline"></a></h2>
+<p>rpm -i –prefix=/opt/abc xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
 </section>
 <section id="rpm-uninstall">
-<h2>RPM uninstall<a class="headerlink" href="#rpm-uninstall" title="Permalink to this heading"></a></h2>
-<p>sudo rpm -e xpu-smi</p>
+<h2>RPM uninstall<a class="headerlink" href="#rpm-uninstall" title="Permalink to this headline"></a></h2>
+<p>sudo rpm -e xpumanager</p>
+</section>
+<section id="how-to-enable-or-disable-some-daemon-monitor-metrics">
+<h2>How to enable or disable some daemon monitor metrics<a class="headerlink" href="#how-to-enable-or-disable-some-daemon-monitor-metrics" title="Permalink to this headline"></a></h2>
+<p>By default, Intel XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics.</p>
+<ol class="arabic simple">
+<li><p>edit file “/lib/systemd/system/xpum.service” or “/etc/systemd/system/xpum.service” in some system.
+add “-m metric-indexes” to ExecStart.
+Use “/opt/xpum/bin/xpumd -h” to get detailed info.<br />
+Sample:
+ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-37</p></li>
+<li><p>Run command “sudo systemctl daemon-reload”</p></li>
+<li><p>Run command “sudo systemctl restart xpum”</p></li>
+</ol>
+<p>Metric types:</p>
+<ol class="arabic simple">
+<li><p>GPU Utilization (%), GPU active time of the elapsed time, per tile</p></li>
+<li><p>GPU EU Array Active (%),  the normalized sum of all cycles on all EUs that were spent actively executing instructions, per tile (Disabled by default)</p></li>
+<li><p>GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled, per tile. (Disabled by default)</p></li>
+<li><p>GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. per tile.  (Disabled by default)</p></li>
+<li><p>GPU Power (W), per tile</p></li>
+<li><p>GPU Energy Consumed (J), per tile</p></li>
+<li><p>GPU Frequency (MHz), per tile</p></li>
+<li><p>GPU Core Temperature (Celsius Degree), per tile</p></li>
+<li><p>GPU Memory Used (MiB)</p></li>
+<li><p>GPU Memory Utilization (%), per tile</p></li>
+<li><p>GPU Memory Bandwidth Utilization (%), per tile</p></li>
+<li><p>GPU Memory Read (kB), per tile</p></li>
+<li><p>GPU Memory Write (kB), per tile</p></li>
+<li><p>GPU Memory Read Throughput(kB/s), per tile</p></li>
+<li><p>GPU Memory Write Throughput(kB/s), per tile</p></li>
+<li><p>GPU Compute Engine Group Utilization (%), per tile</p></li>
+<li><p>GPU Media Engine Group Utilization (%), per tile</p></li>
+<li><p>GPU Copy Engine Group Utilization (%), per tile</p></li>
+<li><p>GPU Render Engine Group Utilization (%), per tile</p></li>
+<li><p>GPU 3D Engine Group Utilization (%), per tile</p></li>
+<li><p>Reset Counter, per GPU</p></li>
+<li><p>Programming Errors, per tile</p></li>
+<li><p>Driver Errors, per tile</p></li>
+<li><p>Cache Errors Correctable, per tile</p></li>
+<li><p>Cache Errors Uncorrectable, per tile</p></li>
+<li><p>Display Errors Correctable, per tile (Not supported so far)</p></li>
+<li><p>Display Errors Uncorrectable, per tile (Not supported so far)</p></li>
+<li><p>Memory Errors Correctable, per tile</p></li>
+<li><p>Memory Errors Uncorrectable, per tile</p></li>
+<li><p>GPU Requested Frequency, per tile</p></li>
+<li><p>GPU Memory Temperature, per tile</p></li>
+<li><p>GPU Frequency Throttle Ratio, per tile (Not supported so far)</p></li>
+<li><p>GPU PCIe Read Throughput (kB/s), per GPU (Disabled by default)</p></li>
+<li><p>GPU PCIe Write Throughput (kB/s), per GPU (Disabled by default)</p></li>
+<li><p>GPU PCIe Read (bytes), per GPU (Disabled by default)</p></li>
+<li><p>GPU PCIe Write (bytes), per GPU (Disabled by default)</p></li>
+<li><p>GPU Engine Utilization, per GPU engine</p></li>
+<li><p>Fabric Throughput (kB/s), per tile</p></li>
+</ol>
+<section id="change-the-system-settings-to-enable-some-gpu-advanced-metrics">
+<h3>Change the system settings to enable some GPU advanced metrics<a class="headerlink" href="#change-the-system-settings-to-enable-some-gpu-advanced-metrics" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p>GPU PCIe Read/Write Throughput: if these metrics are enabled, XPU Manager automatically loads MSR module by command ‘modprobe msr’, but XPU Manager will not automatically unload the MSR module. If you want to unload it, please run the command ‘modprobe -r msr’.</p></li>
+</ul>
+</section>
 </section>
 <section id="gpu-memory-ecc-on-off">
-<h2>GPU memory ECC on/off<a class="headerlink" href="#gpu-memory-ecc-on-off" title="Permalink to this heading"></a></h2>
-<p>XPU-SMI provides the GPU memory ECC on/off feature based on IGSC. GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer versions.</p>
+<h2>GPU memory ECC on/off<a class="headerlink" href="#gpu-memory-ecc-on-off" title="Permalink to this headline"></a></h2>
+<p>XPU Manager provides the GPU memory ECC on/off feature based on <a class="reference external" href="https://github.com/intel/igsc">IGSC</a>. GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer version.</p>
 </section>
 </section>
 
@@ -125,7 +196,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="CLI_user_guide.html" class="btn btn-neutral float-right" title="Intel XPU System Management Interface User Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="REST_README.html" class="btn btn-neutral float-right" title="XPUM REST API Setup Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
