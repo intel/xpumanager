@@ -8,7 +8,7 @@ export https_proxy=...
 
 # prepare source
 rm -fr /tmp/xpum_src
-xpum_git_clone_options="--depth 1 -c http.sslVerify=false --reference /root/1s/XPUManagerGit/"
+xpum_git_clone_options="--depth 1 -c http.sslVerify=false"
 xpum_git_repo=https://github.com/intel/xpumanager.git
 xpum_git_branch=master
 
