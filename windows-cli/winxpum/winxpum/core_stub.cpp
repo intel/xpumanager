@@ -322,8 +322,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
             }
         }
     }
-    (*deviceJson)["number_of_media_engines"] = media_engine_count;
-    (*deviceJson)["number_of_media_enh_engines"] = meida_enhancement_engine_count;
+    if (media_engine_count > 0)
+        (*deviceJson)["number_of_media_engines"] = media_engine_count;
+    if (meida_enhancement_engine_count > 0)
+        (*deviceJson)["number_of_media_enh_engines"] = meida_enhancement_engine_count;
     return deviceJson;
 }
 
