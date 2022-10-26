@@ -1,8 +1,8 @@
-XPU Manager Documentation
+XPU-SMI Documentation
 =========================
 
 .. toctree::
     SMI_README
     smi_install_guide
     smi_user_guide
-    rst/index
+    smidoc/rst/index
