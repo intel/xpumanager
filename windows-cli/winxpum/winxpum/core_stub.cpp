@@ -221,6 +221,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
         std::cout << "zesDeviceGetProperties Failed with return code: " << to_string(res) << std::endl;
         exit(-1);
     }
+    (*deviceJson)["device_id"] = deviceId;
     (*deviceJson)["device_type"] = "GPU";
     (*deviceJson)["device_name"] = zes_device_properties.core.name;
     std::string vendor_name = std::string(zes_device_properties.vendorName);
