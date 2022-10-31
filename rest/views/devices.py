@@ -75,6 +75,7 @@ class DevicePropertiesSchema(Schema):
     pcie_generation = fields.Str(metadata={"description": "PCIe generation"})
     pcie_max_link_width = fields.Str(
         metadata={"description": "PCIe max link width"})
+    socket_id = fields.Str(metadata={"description": "socket id of OAM GPU"})
     device_stepping = fields.Str(
         metadata={"description": "The stepping of device"})
     driver_version = fields.Str(metadata={"description": "The driver version"})

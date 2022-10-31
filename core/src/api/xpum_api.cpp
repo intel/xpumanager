@@ -55,6 +55,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "DRM_DEVICE";
         case XPUM_DEVICE_PROPERTY_PCI_SLOT:
             return "PCI_SLOT";
+        case XPUM_DEVICE_PROPERTY_OAM_SOCKET_ID:
+            return "SOCKET_ID";
         case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
             return "PCIE_GENERATION";
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
@@ -664,6 +666,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE;
         case XPUM_DEVICE_PROPERTY_PCI_SLOT:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT;
+        case XPUM_DEVICE_PROPERTY_OAM_SOCKET_ID:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID;
         case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION;
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:

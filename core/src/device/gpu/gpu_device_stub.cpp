@@ -369,6 +369,62 @@ static std::string getCardFullPath(std::string& bdf_address) {
     closedir(pdir);
     return ret;
 }
+static bool readStrSysFsFile(char *buf, char *fileName);
+
+std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
+    std::string bdf_address = to_string(address);
+    char link_path[PATH_MAX];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    int len = 0;
+    std::string ret = "";
+
+    pdir = opendir("/sys/class/drm");
+    if (pdir == NULL) {
+        return ret;
+    }
+
+    while ((pdirent = readdir(pdir)) != NULL) {
+        if (pdirent->d_name[0] == '.') {
+            continue;
+        }
+        
+        if (strstr(pdirent->d_name, "-") != NULL) {
+            continue;
+        }
+
+        if (!strncmp(pdirent->d_name, "card", 4)) {
+            len = snprintf(link_path, PATH_MAX, "/sys/class/drm/%s", pdirent->d_name);
+            if (len <= 0 || len >= PATH_MAX) {
+                break;
+            }
+            char full_path[PATH_MAX];
+            char card_path[PATH_MAX];
+            char socketId_buf[16];
+
+            ssize_t full_len = ::readlink(link_path, full_path, sizeof(full_path));
+            full_path[full_len] = '\0';
+            if (strstr(full_path, bdf_address.c_str()) != NULL) {
+                int cardLen = snprintf(card_path, PATH_MAX,"%s/iaf_socket_id",link_path);
+                if (cardLen <= 0 || cardLen >= PATH_MAX) {
+                    return ret;
+                }
+                if (readStrSysFsFile(socketId_buf, card_path) == false) {
+                    return ret;
+                } else {
+                    if(!strncmp(socketId_buf, "0x1f", 4)) {
+                        return ret;
+                    }
+                    socketId_buf[strlen(socketId_buf)-1] = '\0';
+                    return socketId_buf;
+                }
+                break;
+            }
+        }
+    }
+    closedir(pdir);
+    return ret;
+}
 
 std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     std::string res;
@@ -720,6 +776,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     }
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(pci_props.address)));
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
                 }
 
                 uint64_t physical_size = 0;

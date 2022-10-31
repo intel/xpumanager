@@ -60,6 +60,7 @@ static CharTableConfig ComletConfigDiscoveryDetailed(R"({
             { "label": "PCI Slot", "value": "pci_slot" },
             { "label": "PCIe Generation", "value": "pcie_generation" },
             { "label": "PCIe Max Link Width", "value": "pcie_max_link_width" },
+            { "label": "OAM Socket Id", "value": "socket_id" },
             { "rowTitle": " " },
             { "label": "Memory Physical Size", "value": "memory_physical_size_byte", "suffix": " MiB", "scale": 1048576 },
             { "label": "Max Mem Alloc Size", "value": "max_mem_alloc_size_byte", "suffix": " MiB", "scale": 1048576 },
