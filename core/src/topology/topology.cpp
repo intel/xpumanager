@@ -25,7 +25,14 @@
 namespace xpum {
 hwloc_topology_t *Topology::hwtopology = nullptr;
 std::mutex Topology::mutex;
-
+int Topology::maxTraversingLevel = 4;
+/* According to the hardware design, a ATS-M3 package includes two ATS-M3 SOCs and a internal pci switch which is
+   connected between two SOCs and outside. And the internal pci switch contains 4 level pci address mapping.
+   In some multi-ATS-M3 system (ex: 10-ATS-M3-package server), there are also a series of external pci switches to bridge
+   multi-ATS-M3 packages into local pci slots with further pci address mapping.
+   In order to identify the relationship (grouping) of these ATS-M3 SOCs within and between ATS-M3 package, we have to hard 
+   code the pci address mapping boundary (level number) between internal and external pci switch(es).
+*/
 Topology::Topology() {
     XPUM_LOG_INFO("Topology()");
 }
@@ -86,11 +93,14 @@ std::string Topology::getLocalCpusList(std::string address) {
 
     return affinity;
 }
-
+/*Get the current pcie address as well as back-travsering its parent address(es) till non-bridge (non-pcie-switch) device\.
+  Currently, ATS-M3 calls the function and fetches pcie address set ONLY.
+*/
 bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t>& pcieAdds, bool checkDevice, bool reload) {
     hwloc_obj_t obj = nullptr;
     const PcieDevice* pDevice = nullptr;
     zes_pci_address_t pciAddress;
+    int level = 0;
 
     std::unique_lock<std::mutex> lock(mutex);
 
@@ -113,13 +123,15 @@ bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t
             hwloc_obj_t parentObj = obj->parent;
             while (parentObj != nullptr) {
                 zes_pci_address_t addr;
-                if (parentObj->type == HWLOC_OBJ_BRIDGE) {
+                if (parentObj->type == HWLOC_OBJ_BRIDGE && level < maxTraversingLevel) {
                     addr.bus = parentObj->attr->pcidev.bus;
                     addr.domain = parentObj->attr->pcidev.domain;
                     addr.device = parentObj->attr->pcidev.dev;
                     addr.function = parentObj->attr->pcidev.func;
                     pcieAdds.emplace_back(addr);
                     parentObj = parentObj->parent;
+                    level++;
+
                 } else {
                     break;
                 }
@@ -130,13 +142,14 @@ bool Topology::getPcieTopo(std::string bdfAddress, std::vector<zes_pci_address_t
             hwloc_obj_t parentObj = obj->parent;
             while (parentObj != nullptr) {
                 zes_pci_address_t addr;
-                if (parentObj->type == HWLOC_OBJ_BRIDGE) {
+                if (parentObj->type == HWLOC_OBJ_BRIDGE && level < maxTraversingLevel) {
                     addr.bus = parentObj->attr->pcidev.bus;
                     addr.domain = parentObj->attr->pcidev.domain;
                     addr.device = parentObj->attr->pcidev.dev;
                     addr.function = parentObj->attr->pcidev.func;
                     pcieAdds.emplace_back(addr);
                     parentObj = parentObj->parent;
+                    level++;
                 } else {
                     break;
                 }
@@ -384,8 +397,8 @@ xpum_result_t Topology::topo2xml(char* buffer, int* buflen, std::map<device_pair
         result = XPUM_GENERIC_ERROR;
     } else {
         if (buffer != nullptr) {
-            if (*buflen < xmlbuflen) {
-                *buflen = xmlbuflen;
+            if (*buflen <= xmlbuflen) {
+                *buflen = xmlbuflen + 1;
                 result = XPUM_BUFFER_TOO_SMALL;
             } else {
                 *buflen = xmlbuflen;
@@ -393,7 +406,7 @@ xpum_result_t Topology::topo2xml(char* buffer, int* buflen, std::map<device_pair
                 buffer[xmlbuflen] = 0;
             }
         } else {
-            *buflen = xmlbuflen;
+            *buflen = xmlbuflen + 1;
         }
         hwloc_free_xmlbuffer(hwtopology, xmlbuf);
     }

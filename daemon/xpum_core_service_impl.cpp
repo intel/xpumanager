@@ -2326,7 +2326,7 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
                                                       ::XpumXelinkTopoInfoArray* response) {
     XPUM_LOG_TRACE("call getXelinkTopology");
     xpum_xelink_topo_info* topoInfo;
-    int count{256};
+    int count{1024};
     xpum_xelink_topo_info xelink_topo[count];
     topoInfo = xelink_topo;
     xpum_result_t res = xpumGetXelinkTopology(xelink_topo, &count);

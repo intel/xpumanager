@@ -221,6 +221,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
         std::cout << "zesDeviceGetProperties Failed with return code: " << to_string(res) << std::endl;
         exit(-1);
     }
+    (*deviceJson)["device_id"] = deviceId;
     (*deviceJson)["device_type"] = "GPU";
     (*deviceJson)["device_name"] = zes_device_properties.core.name;
     std::string vendor_name = std::string(zes_device_properties.vendorName);
@@ -322,8 +323,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
             }
         }
     }
-    (*deviceJson)["number_of_media_engines"] = media_engine_count;
-    (*deviceJson)["number_of_media_enh_engines"] = meida_enhancement_engine_count;
+    if (media_engine_count > 0)
+        (*deviceJson)["number_of_media_engines"] = media_engine_count;
+    if (meida_enhancement_engine_count > 0)
+        (*deviceJson)["number_of_media_enh_engines"] = meida_enhancement_engine_count;
     return deviceJson;
 }
 

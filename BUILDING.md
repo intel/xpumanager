@@ -21,15 +21,17 @@ cd /tmp/xpum_src
 mkdir -p .ccache
 ```
 
-# Build .deb package
+# Build .deb package for Ubuntu 20.04 / 22.04
 ```sh
 # in /tmp/xpum_src
 
 # Create builder
+BASE_VERSION=20.04 # or 22.04
 sudo docker build \
+--build-arg BASE_VERSION=$BASE_VERSION \
 --build-arg http_proxy=$http_proxy \
 --build-arg https_proxy=$https_proxy \
---iidfile /tmp/xpum_builder_ubuntu.iid \
+--iidfile /tmp/xpum_builder_ubuntu_$BASE_VERSION.iid \
 -f builder/Dockerfile.builder-ubuntu .
 
 # Build xpumanager package
@@ -39,7 +41,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_ubuntu.iid) $PWD/build.sh -DBUILD_DOC=ON
+    $(cat /tmp/xpum_builder_ubuntu_$BASE_VERSION.iid) $PWD/build.sh -DBUILD_DOC=ON
 
 ## ==> $PWD/build/xpumanager*.deb generated
 
@@ -50,7 +52,7 @@ sudo docker run --rm \
     -u $UID \
     -e CCACHE_DIR=$PWD/.ccache \
     -e CCACHE_BASEDIR=$PWD \
-    $(cat /tmp/xpum_builder_ubuntu.iid) $PWD/build.sh -DBUILD_DOC=ON -DDAEMONLESS=ON
+    $(cat /tmp/xpum_builder_ubuntu_$BASE_VERSION.iid) $PWD/build.sh -DBUILD_DOC=ON -DDAEMONLESS=ON
 
 ## ==> $PWD/build/xpu-smi*.deb generated
 ```
@@ -133,4 +135,15 @@ sudo docker run --rm \
     $(cat /tmp/xpum_builder_sles.iid) $PWD/build.sh -DBUILD_DOC=ON
 
 ## ==> $PWD/build/xpumanager*.rpm generated
+
+# Build xpu-smi package
+rm -fr build
+sudo docker run --rm \
+    -v $PWD:$PWD \
+    -u $UID \
+    -e CCACHE_DIR=$PWD/.ccache \
+    -e CCACHE_BASEDIR=$PWD \
+    $(cat /tmp/xpum_builder_sles.iid) $PWD/build.sh -DBUILD_DOC=ON -DDAEMONLESS=ON
+
+## ==> $PWD/build/xpu-smi*.rpm generated.
 ```

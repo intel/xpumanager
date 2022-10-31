@@ -19,6 +19,8 @@ static std::string getFirmwareName(unsigned int firmwareType) {
             return "AMC";
         case XPUM_DEVICE_FIRMWARE_GFX_DATA:
             return "GFX_DATA";
+        case XPUM_DEVICE_FIRMWARE_GFX_PSCBIN:
+            return "GFX_PSCBIN";
         default:
             return "UNKOWN";
     }
@@ -54,7 +56,12 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsi
                 (*json)["error"] = "Device not found.";
                 break;
             case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL:
-                (*json)["error"] = "Updating GFX firmware on all devices is not supported";
+                if (type == XPUM_DEVICE_FIRMWARE_GFX)
+                    (*json)["error"] = "Updating GFX firmware on all devices is not supported";
+                else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA)
+                    (*json)["error"] = "Updating GFX_DATA firmware on all devices is not supported";
+                else
+                    (*json)["error"] = "Updating GFX_PSCBIN firmware on all devices is not supported";
                 break;
             case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE:
                 (*json)["error"] = "Updating AMC firmware on single device is not supported";
@@ -67,6 +74,15 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsi
                 break;
             case xpum_result_t::XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE:
                 (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA:
+                (*json)["error"] = "The device doesn't support GFX_DATA firmware update";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC:
+                (*json)["error"] = "The device doesn't support PSCBIN firmware update";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC:
+                (*json)["error"] = "Installed igsc doesn't support PSCBIN firmware update";
                 break;
             default:
                 (*json)["error"] = "Unknown error.";
@@ -100,12 +116,18 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getFirmwareFlashResult(int deviceId
         (*json)["errno"] = errorNumTranslate(res);
         return json;
     }
+
+    (*json)["percentage"] = result.percentage;
+
     switch (result.result) {
         case XPUM_DEVICE_FIRMWARE_FLASH_OK:
             (*json)["result"] = "OK";
             break;
         case XPUM_DEVICE_FIRMWARE_FLASH_ERROR:
             (*json)["result"] = "FAILED";
+            break;
+        case XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED:
+            (*json)["result"] = "UNSUPPORTED";
             break;
         default:
             (*json)["result"] = "ONGOING";

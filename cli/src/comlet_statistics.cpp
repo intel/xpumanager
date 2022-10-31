@@ -321,6 +321,7 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": " " },
             { "rowTitle": "Compute Engine Util (%) " },
             { "rowTitle": "Render Engine Util (%) " },
+            { "rowTitle": "Media Engine Util (%) " },
             { "rowTitle": "Decoder Engine Util (%) " },
             { "rowTitle": "Encoder Engine Util (%) " },
             { "rowTitle": "Copy Engine Util (%) " },
@@ -342,6 +343,9 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "value": " "},
             { "value": "compute_engine_util"},
             { "value": "render_engine_util"},
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subs": [
+                { "value": "data_list[metrics_type==XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION].value", "fixer": "round" }
+            ]},
             { "value": "decoder_engine_util"},
             { "value": "encoder_engine_util"},
             { "value": "copy_engine_util"},
@@ -394,21 +398,21 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "rowTitle": "GPU Memory Used (MiB) " },
             { "rowTitle": "Xe Link Throughput (kB/s) " }
         ], [
-            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_POWER].value", "fixer": "round" }
-            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_FREQUENCY].value" }
-            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_GPU_CORE_TEMPERATURE].value", "fixer": "round" }
-            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_TEMPERATURE].value", "fixer": "round" }
-            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_READ_THROUGHPUT].value", "fixer": "round" }
-            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_WRITE_THROUGHPUT].value", "fixer": "round" }
-            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_BANDWIDTH].value" }
-            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            ]}, { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": false, "subs": [
                 { "value": "data_list[metrics_type==XPUM_STATS_MEMORY_USED].value", "scale": 1, "fixer": "round" }
             ]}, { "value": "fabric_throughput"}
         ]]
@@ -620,6 +624,12 @@ std::string engineUtilFormater(nlohmann::json json, bool intent = false) {
 
 std::string engineUtilByType(std::shared_ptr<nlohmann::json> jsonPtr, std::string key) {
     std::string res;
+    auto findEngineGroupUtilFn = [key](nlohmann::json item) {
+        std::string tmpKey(key);
+        std::transform(tmpKey.begin(), tmpKey.end(), tmpKey.begin(), toupper);
+        tmpKey += "_ALL_UTILIZATION";
+        return item["metrics_type"].get<std::string>().find(tmpKey) != std::string::npos;
+    };
 
     // device level
     if (jsonPtr->contains("engine_util") && (*jsonPtr)["engine_util"].contains(key)) {
@@ -628,12 +638,7 @@ std::string engineUtilByType(std::shared_ptr<nlohmann::json> jsonPtr, std::strin
         auto found = std::find_if(
             (*jsonPtr)["device_level"].begin(),
             (*jsonPtr)["device_level"].end(),
-            [key](nlohmann::json item) {
-                std::string tmpKey(key);
-                std::transform(tmpKey.begin(), tmpKey.end(), tmpKey.begin(), toupper);
-                tmpKey += "_ALL_UTILIZATION";
-                return item["metrics_type"].get<std::string>().find(tmpKey) != std::string::npos;
-            }
+            findEngineGroupUtilFn
         );
         if (found != (*jsonPtr)["device_level"].end()) {
             res += std::to_string((*found)["value"].get<int>()) + "; ";
@@ -647,9 +652,25 @@ std::string engineUtilByType(std::shared_ptr<nlohmann::json> jsonPtr, std::strin
             if (tileJson.contains("engine_util") && tileJson["engine_util"].contains(key)) {
                 auto jsonObj = tileJson["engine_util"][key];
                 auto engineStr = engineUtilFormater(jsonObj, true);
+                #ifdef DAEMONLESS
+                auto found = std::find_if(
+                    tileJson["data_list"].begin(),
+                    tileJson["data_list"].end(),
+                    findEngineGroupUtilFn
+                );
+                #endif
                 if (!engineStr.empty()) {
                     res += "Tile " + std::to_string(tileJson["tile_id"].get<int>()) + ":\n";
+                    #ifdef DAEMONLESS
+                    if (found != tileJson["data_list"].end()) {
+                        res +=  "  " + std::to_string((*found)["value"].get<int>()) + "; "
+                            + engineUtilFormater(jsonObj, false) + "\n";
+                    } else {
+                        res += engineUtilFormater(jsonObj, true) + "\n";
+                    }
+                    #else
                     res += engineUtilFormater(jsonObj, true) + "\n";
+                    #endif
                 }
             }
         }

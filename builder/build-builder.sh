@@ -24,7 +24,7 @@ https_proxy=http://proxy-dmz.intel.com:912
 
 centos7_ver=7
 centos8_ver=8
-suse_ver=15.3
+suse_ver=15.4
 ubuntu_ver_focal=20.04
 ubuntu_ver_jammy=22.04
 

@@ -27,6 +27,7 @@
 namespace xpum {
 
 class FwDataMgmt;
+class PscMgmt;
 
 /*
   Device class defines various interfaces for communication with devices.
@@ -78,25 +79,15 @@ class Device {
 
     virtual void getPower(Callback_t callback) noexcept = 0;
 
-    virtual void getActuralFrequency(Callback_t callback) noexcept = 0;
-
-    virtual void getRequestFrequency(Callback_t callback) noexcept = 0;
+    virtual void getActuralRequestFrequency(Callback_t callback) noexcept = 0;
 
     virtual void getTemperature(Callback_t callback, zes_temp_sensors_t type) noexcept = 0;
 
-    virtual void getMemory(Callback_t callback) noexcept = 0;
-
-    virtual void getMemoryUtilization(Callback_t callback) noexcept = 0;
+    virtual void getMemoryUsedUtilization(Callback_t callback) noexcept = 0;
 
     virtual void getMemoryBandwidth(Callback_t callback) noexcept = 0;
 
-    virtual void getMemoryRead(Callback_t callback) noexcept = 0;
-
-    virtual void getMemoryWrite(Callback_t callback) noexcept = 0;
-
-    virtual void getMemoryReadThroughput(Callback_t callback) noexcept = 0;
-
-    virtual void getMemoryWriteThroughput(Callback_t callback) noexcept = 0;
+    virtual void getMemoryReadWrite(Callback_t callback) noexcept = 0;
 
     virtual void getEngineUtilization(Callback_t callback) noexcept = 0;
 
@@ -196,6 +187,14 @@ class Device {
         return pFwDataMgmt;
     }
 
+    void setPscMgmt(std::shared_ptr<PscMgmt> pPscMgmt) {
+        this->pPscMgmt = pPscMgmt;
+    }
+
+    std::shared_ptr<PscMgmt> getPscMgmt() {
+        return pPscMgmt;
+    }
+
     bool try_lock() {
         if (_operation_lock.test_and_set()) {
             return false;
@@ -244,6 +243,8 @@ class Device {
     std::string mei_device_path;
 
     std::shared_ptr<FwDataMgmt> pFwDataMgmt;
+
+    std::shared_ptr<PscMgmt> pPscMgmt;
 
    private:
     std::atomic_flag _operation_lock = ATOMIC_FLAG_INIT;

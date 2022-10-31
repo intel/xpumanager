@@ -296,12 +296,6 @@ void DiagnosticManager::doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t 
     XPUM_LOG_ERROR("Error in diagnostics {} : {}", type_str, error);
     updateMessage(component.message, desc);
     component.finished = true;
-    if (type == XPUM_DIAG_PERFORMANCE_COMPUTATION) {
-        xpum_diag_component_info_t &power_component = p_task_info->componentList[XPUM_DIAG_PERFORMANCE_POWER];
-        power_component.finished = true;
-        power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(power_component.message, "Error in " + type_str);
-    }
 }
 
 void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver,
@@ -370,11 +364,17 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
         }
 
         if (p_task_info->level == xpum_diag_level_t::XPUM_DIAG_LEVEL_3) {
-            XPUM_LOG_INFO("start computation and power diagnostic");
+            XPUM_LOG_INFO("start computation diagnostic");
             try {
-                doDeviceDiagnosticPeformanceComputationAndPower(ze_device, ze_driver, p_task_info);
+                doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
+            }
+            XPUM_LOG_INFO("start power diagnostic");
+            try {
+                doDeviceDiagnosticPeformancePower(ze_device, ze_driver, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_POWER, e.what(), p_task_info);
             }
             XPUM_LOG_INFO("start memory bandwidth diagnostic");
             try {
@@ -1481,17 +1481,11 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
     }
 }
 
-void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
-    std::atomic<bool> computation_done(false);
+void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
     xpum_diag_component_info_t &compute_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTATION];
     p_task_info->count += 1;
     updateMessage(compute_component.message, std::string("Running"));
     compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
-
-    xpum_diag_component_info_t &power_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_POWER];
-    p_task_info->count += 1;
-    updateMessage(power_component.message, std::string("Running"));
-    power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
     ze_result_t ret;
     std::vector<ze_device_handle_t> device_handles;
@@ -1521,57 +1515,6 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
         }
     }
 
-    int power_value = 0;
-    zes_device_handle_t device = (zes_device_handle_t)ze_device;
-    std::thread read_power_thread = std::thread([&computation_done, &power_value, device]() {
-        while (!computation_done.load()) {
-            try {
-                auto current_device_value = 0;
-                auto current_sub_device_value_sum = 0;
-                ze_result_t res;
-                uint32_t power_domain_count = 0;
-                XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
-                std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
-                XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
-                if (res == ZE_RESULT_SUCCESS) {
-                    for (auto &power : power_handles) {
-                        zes_power_properties_t props = {};
-                        props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
-                        XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
-                        if (res != ZE_RESULT_SUCCESS) {
-                            continue;
-                        }
-                        zes_power_energy_counter_t snap1, snap2;
-                        XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
-                        if (res == ZE_RESULT_SUCCESS) {
-                            std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::POWER_MONITOR_INTERNAL_PERIOD));
-                            XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
-                            if (res == ZE_RESULT_SUCCESS) {
-                                int value = std::ceil((snap2.energy - snap1.energy) * 1.0 / (snap2.timestamp - snap1.timestamp));
-                                if (!props.onSubdevice) {
-                                    current_device_value = value;
-                                } else {
-                                    current_sub_device_value_sum += value;
-                                }
-                            }
-                        }
-                    }
-                }
-                XPUM_LOG_DEBUG("diagnostic: current device power value: {}", current_device_value);
-                XPUM_LOG_DEBUG("diagnostic: current sum of sub-device power values: {}", current_sub_device_value_sum);
-                auto current_value = std::max(current_device_value, current_sub_device_value_sum);
-                if (current_value > power_value) {
-                    power_value = current_value;
-                    XPUM_LOG_DEBUG("update peak power value: {}", power_value);
-                }
-            } catch (...) {
-                break;
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-        }
-    });
-
     for (std::size_t i = 0; i < device_handles.size(); i++) {
         compute_threads.push_back(std::thread([&all_gflops, &error_messages, i, &device_handles, &ze_driver]() {
             try {
@@ -1582,16 +1525,16 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                 float input_value = 1.3f;
 
                 ze_device_properties_t device_properties;
-                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
                 device_properties.pNext = nullptr;
+                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetProperties()");
                 }
 
                 ze_device_compute_properties_t device_compute_properties;
-                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
                 device_compute_properties.pNext = nullptr;
+                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetComputeProperties()");
@@ -1781,12 +1724,12 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
                     throw BaseException("zeContextDestroy()");
                 }
             } catch (BaseException &e) {
-                XPUM_LOG_DEBUG("Error in computation and power diagnostic");
+                XPUM_LOG_DEBUG("Error in computation diagnostic");
                 XPUM_LOG_DEBUG(e.what());
                 all_gflops[i] = -1;
                 error_messages[i] = e.what();
             } catch (...) {
-                XPUM_LOG_DEBUG("Error in computation and power diagnostic");
+                XPUM_LOG_DEBUG("Error in computation diagnostic");
                 all_gflops[i] = -1;
             }
         }));
@@ -1795,8 +1738,6 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
     for (std::size_t i = 0; i < compute_threads.size(); i++) {
         compute_threads[i].join();
     }
-    computation_done.store(true);
-    read_power_thread.join();
 
     long double all_gflops_value = 0;
     for (size_t i = 0; i < all_gflops.size(); i++) {
@@ -1806,6 +1747,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
             else
                 throw BaseException(error_messages[i]);
         }
+        XPUM_LOG_DEBUG("single precision compute: {} GFLOPS", all_gflops[i]);
         all_gflops_value += all_gflops[i];
     }
 
@@ -1833,6 +1775,264 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputationAndPower(const ze
         updateMessage(compute_component.message, desc);
     }
     compute_component.finished = true;
+}
+
+void DiagnosticManager::doDeviceDiagnosticPeformancePower(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
+    std::atomic<bool> computation_done(false);
+    xpum_diag_component_info_t &power_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_POWER];
+    p_task_info->count += 1;
+    updateMessage(power_component.message, std::string("Running"));
+    power_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
+
+    ze_result_t ret;
+    std::vector<ze_device_handle_t> device_handles;
+    std::vector<long double> all_gflops;
+    std::vector<std::thread> compute_threads;
+    std::vector<std::string> error_messages;
+
+    uint32_t subdevice_count = 0;
+    ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, nullptr);
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw BaseException("zeDeviceGetSubDevices()");
+    }
+    if (subdevice_count == 0) {
+        device_handles.push_back(ze_device);
+        all_gflops.push_back(0);
+        error_messages.push_back("");
+    } else {
+        std::vector<ze_device_handle_t> subdevices(subdevice_count);
+        ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, subdevices.data());
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeDeviceGetSubDevices()");
+        }
+        for (auto &subdevice : subdevices) {
+            device_handles.push_back(subdevice);
+            all_gflops.push_back(0);
+            error_messages.push_back("");
+        }
+    }
+
+    int power_value = 0;
+    zes_device_handle_t device = (zes_device_handle_t)ze_device;
+    std::thread read_power_thread = std::thread([&computation_done, &power_value, device]() {
+        while (!computation_done.load()) {
+            try {
+                auto current_device_value = 0;
+                auto current_sub_device_value_sum = 0;
+                ze_result_t res;
+                uint32_t power_domain_count = 0;
+                XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, nullptr));
+                std::vector<zes_pwr_handle_t> power_handles(power_domain_count);
+                XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumPowerDomains(device, &power_domain_count, power_handles.data()));
+                if (res == ZE_RESULT_SUCCESS) {
+                    for (auto &power : power_handles) {
+                        zes_power_properties_t props = {};
+                        props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
+                        props.pNext = nullptr;
+                        XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetProperties(power, &props));
+                        if (res != ZE_RESULT_SUCCESS) {
+                            continue;
+                        }
+                        zes_power_energy_counter_t snap1, snap2;
+                        XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap1));
+                        if (res == ZE_RESULT_SUCCESS) {
+                            std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE * 2));
+                            XPUM_ZE_HANDLE_LOCK(power, res = zesPowerGetEnergyCounter(power, &snap2));
+                            if (res == ZE_RESULT_SUCCESS) {
+                                int value = std::ceil((snap2.energy - snap1.energy) * 1.0 / (snap2.timestamp - snap1.timestamp));
+                                if (!props.onSubdevice) {
+                                    current_device_value = value;
+                                } else {
+                                    current_sub_device_value_sum += value;
+                                }
+                            }
+                        }
+                    }
+                }
+                XPUM_LOG_DEBUG("diagnostic: current device power value: {}", current_device_value);
+                XPUM_LOG_DEBUG("diagnostic: current sum of sub-device power values: {}", current_sub_device_value_sum);
+                auto current_value = std::max(current_device_value, current_sub_device_value_sum);
+                if (current_value > power_value) {
+                    power_value = current_value;
+                    XPUM_LOG_DEBUG("update peak power value: {}", power_value);
+                }
+            } catch (...) {
+                break;
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+        }
+    });
+
+    for (std::size_t i = 0; i < device_handles.size(); i++) {
+        compute_threads.push_back(std::thread([&all_gflops, &error_messages, i, &device_handles, &ze_driver]() {
+            try {
+                ze_result_t ret;
+                long double timed;
+                std::size_t flops_per_work_item = 2048;
+                struct ZeWorkGroups workgroup_info;
+                int input_value = 4;
+
+                ze_device_properties_t device_properties;
+                device_properties.pNext = nullptr;
+                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeDeviceGetProperties()");
+                }
+
+                ze_device_compute_properties_t device_compute_properties;
+                device_compute_properties.pNext = nullptr;
+                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeDeviceGetComputeProperties()");
+                }
+                ze_context_handle_t context;
+                ze_context_desc_t context_desc = {
+                        ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                        nullptr, 
+                        0
+                };
+                XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeContextCreate()");
+                }
+                ze_module_handle_t module_handle;
+                ze_module_desc_t module_description = {};
+                std::vector<uint8_t> binary_file = loadBinaryFile("ze_int_compute.spv");
+                module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+                module_description.pNext = nullptr;
+                module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
+                module_description.inputSize = static_cast<uint32_t>(binary_file.size());
+                module_description.pInputModule = binary_file.data();
+                module_description.pBuildFlags = nullptr;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeModuleCreate(context, device_handles[i], &module_description, &module_handle, nullptr));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeModuleCreate()");
+                }
+                uint64_t max_work_items = device_properties.numSlices *
+                                          device_properties.numSubslicesPerSlice *
+                                          device_properties.numEUsPerSubslice *
+                                          device_compute_properties.maxGroupCountX * 2048;
+
+                uint64_t max_number_of_allocated_items = device_properties.maxMemAllocSize / sizeof(int);
+                uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(int)));
+                number_of_work_items = setWorkgroups(device_compute_properties, number_of_work_items, &workgroup_info);
+
+                void *device_input_value;
+                ze_device_mem_alloc_desc_t in_device_desc = {};
+                in_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+                in_device_desc.pNext = nullptr;
+                in_device_desc.ordinal = 0;
+                in_device_desc.flags = 0;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &in_device_desc, sizeof(int), 1, device_handles[i], &device_input_value));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeMemAllocDevice()");
+                }
+                void *device_output_buffer;
+                ze_device_mem_alloc_desc_t out_device_desc = {};
+                out_device_desc.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+                out_device_desc.pNext = nullptr;
+                out_device_desc.ordinal = 0;
+                out_device_desc.flags = 0;
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeMemAllocDevice(context, &out_device_desc, static_cast<std::size_t>((number_of_work_items * sizeof(int))),
+                                                                              1, device_handles[i], &device_output_buffer));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeMemAllocDevice()");
+                }
+                ze_command_list_handle_t command_list;
+                ze_command_list_desc_t command_list_description{};
+                command_list_description.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC;
+                command_list_description.pNext = nullptr;
+                command_list_description.flags = ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY;
+                command_list_description.commandQueueGroupOrdinal = 0;
+
+                ze_command_queue_handle_t command_queue;
+                ze_command_queue_desc_t command_queue_description{};
+                command_queue_description.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC;
+                command_queue_description.pNext = nullptr;
+                command_queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
+                command_queue_description.flags = ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY;
+                command_queue_description.ordinal = 0;
+                command_queue_description.index = 0;
+
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandListCreate(context, device_handles[i], &command_list_description, &command_list));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandListCreate()");
+                }
+                XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeCommandQueueCreate(context, device_handles[i], &command_queue_description, &command_queue));
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandQueueCreate()");
+                }
+                ret = zeCommandListAppendMemoryCopy(command_list, device_input_value, &input_value, sizeof(int), nullptr, 0, nullptr);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandListAppendMemoryCopy()");
+                }
+                ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandListAppendBarrier()");
+                }
+                ret = zeCommandListClose(command_list);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandListClose()");
+                }
+                ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandQueueExecuteCommandLists()");
+                }
+                waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
+                ret = zeCommandListReset(command_list);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeCommandListReset()");
+                }
+                ze_kernel_handle_t compute_int_v1;
+                setupFunction(module_handle, compute_int_v1, "compute_int_v1", device_input_value, device_output_buffer);
+
+                timed = 0;
+                long double current;
+                timed = runKernel(command_queue, command_list, compute_int_v1, workgroup_info, XPUM_DIAG_PERFORMANCE_POWER);
+                current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
+                all_gflops[i] = std::max(all_gflops[i], current);
+                XPUM_LOG_INFO("compute int vector width 1 done");
+
+                ret = zeKernelDestroy(compute_int_v1);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeKernelDestroy()");
+                }
+                ret = zeMemFree(context, device_input_value);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeMemFree()");
+                }
+                ret = zeMemFree(context, device_output_buffer);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeMemFree()");
+                }
+                ret = zeModuleDestroy(module_handle);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeModuleDestroy()");
+                }
+                ret = zeContextDestroy(context);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    throw BaseException("zeContextDestroy()");
+                }
+            } catch (BaseException &e) {
+                XPUM_LOG_DEBUG("Error in power diagnostic");
+                XPUM_LOG_DEBUG(e.what());
+                all_gflops[i] = -1;
+                error_messages[i] = e.what();
+            } catch (...) {
+                XPUM_LOG_DEBUG("Error in power diagnostic");
+                all_gflops[i] = -1;
+            }
+        }));
+    }
+
+    for (std::size_t i = 0; i < compute_threads.size(); i++) {
+        compute_threads[i].join();
+    }
+    computation_done.store(true);
+    read_power_thread.join();
 
     std::string power_detail = "Its stress power is " + std::to_string(power_value) + " W.";
     auto power_threshold = 0;
@@ -2054,15 +2254,15 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
                 struct ZeWorkGroups workgroup_info;
                 uint64_t temp_global_size;
                 ze_device_properties_t device_properties;
-                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
                 device_properties.pNext = nullptr;
+                device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetProperties(device_handles[i], &device_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetProperties()");
                 }
                 ze_device_compute_properties_t device_compute_properties;
-                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
                 device_compute_properties.pNext = nullptr;
+                device_compute_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_COMPUTE_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(device_handles[i], ret = zeDeviceGetComputeProperties(device_handles[i], &device_compute_properties));
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeDeviceGetComputeProperties()");
@@ -2319,6 +2519,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryBandwidth(const ze_dev
             else
                 throw BaseException(error_messages[i]);
         }
+        XPUM_LOG_DEBUG("memory bandwidth: {} GBPS", all_gbps[i]);
         all_gbps_value += all_gbps[i];
     }
 

@@ -61,11 +61,11 @@ void ComletFirmware::setupOptions() {
 
 #ifndef DAEMONLESS
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, AMC, GFX_DATA. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).");
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, AMC, GFX_DATA, GFX_PSCBIN. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).");
 
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
-        if (str.compare("GFX") == 0 || str.compare("AMC") == 0 || str.compare("GFX_DATA") == 0) {
+        if (str.compare("GFX") == 0 || str.compare("AMC") == 0 || str.compare("GFX_DATA") == 0 || str.compare("GFX_PSCBIN") == 0) {
             return std::string();
         } else {
             return errStr;
@@ -73,11 +73,11 @@ void ComletFirmware::setupOptions() {
     });
 #else
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA.");
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_PSCBIN.");
 
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
-        if (str.compare("GFX") == 0 || str.compare("GFX_DATA") == 0) {
+        if (str.compare("GFX") == 0 || str.compare("GFX_DATA") == 0 || str.compare("GFX_PSCBIN") == 0) {
             return std::string();
         } else {
             return errStr;
@@ -146,6 +146,12 @@ nlohmann::json ComletFirmware::validateArguments() {
         return result;
     }
 
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX_PSCBIN") == 0) {
+        result["error"] = "Updating GFX_PSCBIN firmware on all devices is not supported";
+        result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
+        return result;
+    }
+
     // AMC
     if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("AMC") == 0) {
         result["error"] = "Updating AMC firmware on single device is not supported";
@@ -178,6 +184,8 @@ static int getIntFirmwareType(std::string firmwareType) {
         return XPUM_DEVICE_FIRMWARE_AMC;
     if(firmwareType.compare("GFX_DATA") == 0)
         return XPUM_DEVICE_FIRMWARE_GFX_DATA;
+    if(firmwareType.compare("GFX_PSCBIN") == 0)
+        return XPUM_DEVICE_FIRMWARE_GFX_PSCBIN;
     return -1;
 }
 
@@ -246,11 +254,18 @@ std::string ComletFirmware::getCurrentFwVersion(nlohmann::json json) {
             return res;
         }
         return json["gfx_firmware_version"];
-    } else {
+    } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
         if (!json.contains("gfx_data_firmware_version")) {
             return res;
         }
         return json["gfx_data_firmware_version"];
+    } else if (type == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN) {
+        if (!json.contains("gfx_pscbin_firmware_version")) {
+            return res;
+        }
+        return json["gfx_pscbin_firmware_version"];
+    } else {
+        return res;
     }
 }
 
@@ -384,15 +399,14 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         } else {
             out << std::endl;
         }
-    } else { // GFX and GFX_DATA caution
-        // check igsc
+    } else {
         if (type == XPUM_DEVICE_FIRMWARE_GFX) {
             if (!checkImageValid()) {
                 out << "Error: The image file is not a right GFX firmware image file." << std::endl;
                 exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
                 return;
             }
-        } else {
+        } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
             if (!validateFwDataImage()) {
                 out << "Error: The image file is not a right GFX_DATA firmware image file." << std::endl;
                 exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
@@ -446,7 +460,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         }
         if (type == XPUM_DEVICE_FIRMWARE_GFX) {
             out << "Image FW version: " << getImageFwVersion() << std::endl;
-        } else {
+        } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
             out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
         }
         out << "Do you want to continue? (y/n) ";

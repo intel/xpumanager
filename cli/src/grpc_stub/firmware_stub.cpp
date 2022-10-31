@@ -19,6 +19,8 @@ static std::string getFirmwareName(unsigned int firmwareType) {
             return "AMC";
         case XPUM_DEVICE_FIRMWARE_GFX_DATA:
             return "GFX_DATA";
+        case XPUM_DEVICE_FIRMWARE_GFX_PSCBIN:
+            return "GFX_PSCBIN";
         default:
             return "UNKOWN";
     }
@@ -54,7 +56,6 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, uns
         return json;
     }
 
-    // xpum_result_t code = (xpum_result_t)response.type().value();
     xpum_result_t code = (xpum_result_t)response.errorno();
 
     (*json)["errno"] = errorNumTranslate(response.errorno());
@@ -63,9 +64,6 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, uns
         case xpum_result_t::XPUM_OK:
             (*json)["result"] = "OK";
             return json;
-        // case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC:
-        //     (*json)["error"] = "Can't find the AMC device. AMC firmware update just works for ATS-P or ATS-M card (ATS-P AMC firmware version is 3.3.0 or later. ATS-M AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later) so far.";
-        //     return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE:
             (*json)["error"] = "Device models are inconsistent, failed to upgrade all.";
             return json;
@@ -81,8 +79,10 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, uns
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL:
             if (type == XPUM_DEVICE_FIRMWARE_GFX)
                 (*json)["error"] = "Updating GFX firmware on all devices is not supported";
-            else
+            else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA)
                 (*json)["error"] = "Updating GFX_DATA firmware on all devices is not supported";
+            else
+                (*json)["error"] = "Updating GFX_PSCBIN firmware on all devices is not supported";
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE:
             (*json)["error"] = "Updating AMC firmware on single device is not supported";
@@ -95,6 +95,15 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, uns
             return json;
         case xpum_result_t::XPUM_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE:
             (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
+            return json;
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA:
+            (*json)["error"] = "The device doesn't support GFX_DATA firmware update";
+            return json;
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC:
+            (*json)["error"] = "The device doesn't support PSCBIN firmware update";
+            return json;
+        case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC:
+            (*json)["error"] = "Installed igsc doesn't support PSCBIN firmware update";
             return json;
         default:
             (*json)["error"] = "Unknown error.";
@@ -126,17 +135,20 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getFirmwareFlashResult(int deviceI
         return json;
     }
 
-    int result = res.result().value();
+    xpum_firmware_flash_result_t result = (xpum_firmware_flash_result_t)res.result().value();
     int percent = res.percentage();
 
     (*json)["percentage"] = percent;
 
     switch (result) {
-        case 0:
+        case XPUM_DEVICE_FIRMWARE_FLASH_OK:
             (*json)["result"] = "OK";
             break;
-        case 1:
+        case XPUM_DEVICE_FIRMWARE_FLASH_ERROR:
             (*json)["result"] = "FAILED";
+            break;
+        case XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED:
+            (*json)["result"] = "UNSUPPORTED";
             break;
         default:
             (*json)["result"] = "ONGOING";

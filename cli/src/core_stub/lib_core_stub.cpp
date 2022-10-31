@@ -28,7 +28,10 @@ using namespace xpum;
 namespace xpum::cli {
 
 LibCoreStub::LibCoreStub() {
-    putenv(const_cast<char *>("SPDLOG_LEVEL=OFF"));
+    char* env = std::getenv("SPDLOG_LEVEL");
+    if (!env) {
+        putenv(const_cast<char*>("SPDLOG_LEVEL=OFF"));
+    }
     xpumInit();
 }
 
@@ -1437,7 +1440,7 @@ std::string LibCoreStub::getTopoXMLBuffer() {
 std::unique_ptr<nlohmann::json> LibCoreStub::getXelinkTopology() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_xelink_topo_info* topoInfo;
-    int count{16};
+    int count{1024};
     xpum_xelink_topo_info xelink_topo[count];
     topoInfo = xelink_topo;
     xpum_result_t res = xpumGetXelinkTopology(xelink_topo, &count);

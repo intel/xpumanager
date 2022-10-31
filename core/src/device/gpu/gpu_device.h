@@ -27,16 +27,11 @@ class GPUDevice : public Device {
 
    public:
     void getPower(Callback_t callback) noexcept override;
-    void getActuralFrequency(Callback_t callback) noexcept override;
-    void getRequestFrequency(Callback_t callback) noexcept override;
+    void getActuralRequestFrequency(Callback_t callback) noexcept override;
     void getTemperature(Callback_t callback, zes_temp_sensors_t type) noexcept override;
-    void getMemory(Callback_t callback) noexcept override;
-    void getMemoryUtilization(Callback_t callback) noexcept override;
+    void getMemoryUsedUtilization(Callback_t callback) noexcept override;
     void getMemoryBandwidth(Callback_t callback) noexcept override;
-    void getMemoryRead(Callback_t callback) noexcept override;
-    void getMemoryWrite(Callback_t callback) noexcept override;
-    void getMemoryReadThroughput(Callback_t callback) noexcept override;
-    void getMemoryWriteThroughput(Callback_t callback) noexcept override;
+    void getMemoryReadWrite(Callback_t callback) noexcept override;
     void getGPUUtilization(Callback_t callback) noexcept override;
     void getEngineUtilization(Callback_t callback) noexcept override;
     void getEngineGroupUtilization(Callback_t callback, zes_engine_group_t engine_group_type) noexcept override;

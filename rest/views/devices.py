@@ -80,9 +80,9 @@ class DevicePropertiesSchema(Schema):
     driver_version = fields.Str(metadata={"description": "The driver version"})
     kernel_version = fields.Str(metadata={"description": "Linux kernel version"})
     firmware_name = fields.Str(
-        metadata={"description": "The firmware name of device"})
+        metadata={"description": "The GFX firmware name of device"})
     firmware_version = fields.Str(
-        metadata={"description": "The firmware version of device"})
+        metadata={"description": "The GFX firmware version of device"})
     serial_number = fields.Str(metadata={"description": "Serial number"})
     core_clock_rate_mhz = fields.Str(
         metadata={"description": "Clock rate for device core, in MHz"})
@@ -117,8 +117,18 @@ class DevicePropertiesSchema(Schema):
         metadata={"description": "The number of media engines"})
     number_of_media_enh_engines = fields.Str(
         metadata={"description": "The number of media enhancement engines"})
+    gfx_data_firmware_version = fields.Str(
+        metadata={"description": "The GFX_DATA firmware version of device"})
+    gfx_data_firmware_name = fields.Str(
+        metadata={"description": "The GFX_DATA firmware name of device"})
     amc_firmware_version = fields.Str(
-        metadata={"description": "The firmware version of AMC"})
+        metadata={"description": "The AMC firmware version of device"})
+    amc_firmware_name = fields.Str(
+        metadata={"description": "The AMC firmware name of device"})
+    gfx_pscbin_firmware_version = fields.Str(
+        metadata={"description": "The PSC firmware version of device"})
+    gfx_pscbin_firmware_name = fields.Str(
+        metadata={"description": "The PSC firmware name of device"})
     health = fields.Nested(DevicePropertiesLinkSchema)
     topology = fields.Nested(DevicePropertiesLinkSchema)
 

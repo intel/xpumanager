@@ -45,6 +45,21 @@ struct ExtendedMeasurementData {
     uint64_t timestamp;
 };
 
+struct AdditionalData {
+    uint64_t current;
+    bool is_raw_data;
+    uint64_t raw_data;
+    uint64_t raw_timestamp;
+    int scale;
+
+    AdditionalData() {
+        is_raw_data = false;
+        current = raw_data = 0;
+        raw_timestamp = 0;
+        scale = 1;
+    }
+};
+
 class MeasurementData {
    public:
     ~MeasurementData() {
@@ -97,8 +112,8 @@ class MeasurementData {
         p_extended_datas = other.p_extended_datas;
         raw_timestamp = other.raw_timestamp;
         timestamp = other.timestamp;
-        subdevice_additional_current_data_types = other.subdevice_additional_current_data_types;
-        subdevice_additional_current_datas = other.subdevice_additional_current_datas;
+        subdevice_additional_data_types = other.subdevice_additional_data_types;
+        subdevice_additional_datas = other.subdevice_additional_datas;
         errors = other.errors;
     }
 
@@ -199,19 +214,19 @@ class MeasurementData {
 
     void setTimestamp(uint64_t time) { this->timestamp = time; }
 
-    void setSubdeviceAdditionalCurrentData(uint32_t subdevice_id, MeasurementType type, uint64_t data);
+    void setSubdeviceAdditionalData(uint32_t subdevice_id, MeasurementType type, uint64_t data, int scale = 1, bool is_raw_data = false, uint64_t timestamp = 0);
 
-    std::map<uint32_t, std::map<MeasurementType, uint64_t>> getSubdeviceAdditionalCurrentDatas();
+    std::map<uint32_t, std::map<MeasurementType, AdditionalData>> getSubdeviceAdditionalDatas();
 
-    void insertSubdeviceAdditionalCurrentDataType(MeasurementType type);
+    void insertSubdeviceAdditionalDataType(MeasurementType type);
 
-    std::set<MeasurementType> getSubdeviceAdditionalCurrentDataTypes();
+    std::set<MeasurementType> getSubdeviceAdditionalDataTypes();
 
-    uint32_t getSubdeviceAdditionalCurrentDataTypeSize();
+    uint32_t getSubdeviceAdditionalDataTypeSize();
 
-    void clearSubdeviceAdditionalCurrentDataTypes();
+    void clearSubdeviceAdditionalDataTypes();
 
-    void clearSubdeviceAdditionalCurrentData();
+    void clearSubdeviceAdditionalData();
 
     const std::shared_ptr<std::map<uint64_t, ExtendedMeasurementData>> getExtendedDatas();
 
@@ -264,9 +279,9 @@ class MeasurementData {
 
     std::shared_ptr<std::map<uint64_t, ExtendedMeasurementData>> p_extended_datas;
 
-    std::set<MeasurementType> subdevice_additional_current_data_types;
+    std::set<MeasurementType> subdevice_additional_data_types;
 
-    std::map<uint32_t, std::map<MeasurementType, uint64_t>> subdevice_additional_current_datas;
+    std::map<uint32_t, std::map<MeasurementType, AdditionalData>> subdevice_additional_datas;
 
     std::string errors;
 };

@@ -114,32 +114,44 @@ void MonitorTask::start(std::shared_ptr<ScheduledThreadPool>& threadPool) {
             });
         }
 
-        bool hasSubdeviceAdditionalCurrentData = false;
-        std::set<MeasurementType> subdeviceAdditionalCurrentDataTypes;
+        bool hasSubdeviceAdditionalData = false;
+        std::set<MeasurementType> subdeviceAdditionalDataTypes;
         // deviceId, subdeviceId, addtionalType, addtionalData
-        std::map<std::string, std::map<uint32_t, std::map<MeasurementType, uint64_t>>> subdeviceAdditionalCurrentDatasAll;
+        std::map<std::string, std::map<uint32_t, std::map<MeasurementType, AdditionalData>>> subdeviceAdditionalCurrentDatasAll;
         for (auto& data : (*datas)) {
-            if (data.second->getSubdeviceAdditionalCurrentDataTypeSize() > 0) {
-                hasSubdeviceAdditionalCurrentData = true;
-                subdeviceAdditionalCurrentDataTypes = data.second->getSubdeviceAdditionalCurrentDataTypes();
-                subdeviceAdditionalCurrentDatasAll[data.first] = data.second->getSubdeviceAdditionalCurrentDatas();
-                data.second->clearSubdeviceAdditionalCurrentDataTypes();
-                data.second->clearSubdeviceAdditionalCurrentData();
+            if (data.second->getSubdeviceAdditionalDataTypeSize() > 0) {
+                hasSubdeviceAdditionalData = true;
+                subdeviceAdditionalDataTypes = data.second->getSubdeviceAdditionalDataTypes();
+                subdeviceAdditionalCurrentDatasAll[data.first] = data.second->getSubdeviceAdditionalDatas();
+                data.second->clearSubdeviceAdditionalDataTypes();
+                data.second->clearSubdeviceAdditionalData();
             }
         }
         MeasurementType measurmentType = Utility::measurementTypeFromCapability(p_this->capability);
         XPUM_LOG_TRACE("Monitor passes data {} to datalogic", p_this->capability);
         p_this->p_data_logic->storeMeasurementData(measurmentType, now, datas);
-        if (hasSubdeviceAdditionalCurrentData) {
-            for (auto& type : subdeviceAdditionalCurrentDataTypes) {
+        if (hasSubdeviceAdditionalData) {
+            for (auto& type : subdeviceAdditionalDataTypes) {
                 for (auto& data : (*datas)) {
                     auto mData = std::make_shared<MeasurementData>();
-                    mData->setScale(data.second->getScale());
                     for (auto& sData : subdeviceAdditionalCurrentDatasAll[data.first]) {
-                        if (sData.first == UINT32_MAX)
-                            mData->setCurrent(sData.second[type]);
-                        else
-                            mData->setSubdeviceDataCurrent(sData.first, sData.second[type]);
+                        mData->setScale(sData.second[type].scale);
+                        if (sData.first == UINT32_MAX) {
+                            if (!sData.second[type].is_raw_data)
+                                mData->setCurrent(sData.second[type].current);
+                            else {
+                                mData->setRawData(sData.second[type].raw_data);
+                                mData->setRawTimestamp(sData.second[type].raw_timestamp);
+                            }
+                        }
+                        else {
+                            if (!sData.second[type].is_raw_data)
+                                mData->setSubdeviceDataCurrent(sData.first, sData.second[type].current);
+                            else {
+                                mData->setSubdeviceRawData(sData.first, sData.second[type].raw_data);
+                                mData->setSubdeviceDataRawTimestamp(sData.first, sData.second[type].raw_timestamp);
+                            }
+                        }
                     }
                     (*datas)[data.first] = mData;
                 }

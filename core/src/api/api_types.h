@@ -156,6 +156,8 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_VERSION,           ///< The GFX firmware version of device
     XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_NAME,         ///< The GFX data firmware name of device
     XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION,      ///< The GFX data firmware version of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_NAME,       ///< The GFX_PSCBIN firmware name of device
+    XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_VERSION,    ///< The GFX_PSCBIN firmware version of device
     XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_NAME,              ///< The AMC firmware name of device
     XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION,           ///< The AMC firmware version of device
     XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER,                  ///< Serial number

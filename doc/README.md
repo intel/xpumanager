@@ -1,4 +1,4 @@
-# Install dependencies and 
+# Install dependencies and setup build environment
 
 Before start build doc, you have to setup environment and denpendencies first.
 

@@ -71,7 +71,9 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "GFX Firmware Name", "value": "gfx_firmware_name" },
                 { "label": "GFX Firmware Version", "value": "gfx_firmware_version", "dumpId": 9 },
                 { "label": "GFX Data Firmware Name", "value": "gfx_data_firmware_name" },
-                { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },)"
+                { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },
+                { "label": "GFX PSC Firmware Name", "value": "gfx_pscbin_firmware_name" },
+                { "label": "GFX PSC Firmware Version", "value": "gfx_pscbin_firmware_version"},)"
 #ifndef DAEMONLESS
                 R"({ "label": "AMC Firmware Name", "value": "amc_firmware_name"},)"
                 R"({ "label": "AMC Firmware Version", "value": "amc_firmware_version"},)"

@@ -251,15 +251,20 @@
 </dd>
 <dt class="field-even">Response JSON Object</dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>amc_firmware_version</strong> (<em>string</em>) – The firmware version of AMC</p></li>
+<li><p><strong>amc_firmware_name</strong> (<em>string</em>) – The AMC firmware name of device</p></li>
+<li><p><strong>amc_firmware_version</strong> (<em>string</em>) – The AMC firmware version of device</p></li>
 <li><p><strong>core_clock_rate_mhz</strong> (<em>string</em>) – Clock rate for device core, in MHz</p></li>
 <li><p><strong>device_id</strong> (<em>integer</em>) – Device id</p></li>
 <li><p><strong>device_name</strong> (<em>string</em>) – Device name</p></li>
 <li><p><strong>device_stepping</strong> (<em>string</em>) – The stepping of device</p></li>
 <li><p><strong>device_type</strong> (<em>string</em>) – Device type</p></li>
 <li><p><strong>driver_version</strong> (<em>string</em>) – The driver version</p></li>
-<li><p><strong>firmware_name</strong> (<em>string</em>) – The firmware name of device</p></li>
-<li><p><strong>firmware_version</strong> (<em>string</em>) – The firmware version of device</p></li>
+<li><p><strong>firmware_name</strong> (<em>string</em>) – The GFX firmware name of device</p></li>
+<li><p><strong>firmware_version</strong> (<em>string</em>) – The GFX firmware version of device</p></li>
+<li><p><strong>gfx_data_firmware_name</strong> (<em>string</em>) – The GFX_DATA firmware name of device</p></li>
+<li><p><strong>gfx_data_firmware_version</strong> (<em>string</em>) – The GFX_DATA firmware version of device</p></li>
+<li><p><strong>gfx_pscbin_firmware_name</strong> (<em>string</em>) – The PSC firmware name of device</p></li>
+<li><p><strong>gfx_pscbin_firmware_version</strong> (<em>string</em>) – The PSC firmware version of device</p></li>
 <li><p><strong>health.&#64;odata.id</strong> (<em>string</em>) – Link to detail info</p></li>
 <li><p><strong>kernel_version</strong> (<em>string</em>) – Linux kernel version</p></li>
 <li><p><strong>max_command_queue_priority</strong> (<em>string</em>) – Maximum priority for command queues. Higher value is higher priority</p></li>
@@ -365,7 +370,7 @@
 <dt class="field-even">Request JSON Object</dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>file</strong> (<em>string</em>) – The path of firmware binary file to flash (required)</p></li>
-<li><p><strong>firmware_name</strong> (<em>string</em>) – Firmware name, options are: GFX, GFX_DATA</p></li>
+<li><p><strong>firmware_name</strong> (<em>string</em>) – Firmware name, options are: GFX, GFX_DATA, GFX_PSCBIN</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Status Codes</dt>
@@ -396,7 +401,7 @@
 </dd>
 <dt class="field-even">Request JSON Object</dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>firmware_name</strong> (<em>string</em>) – Firmware name, options are: GFX, GFX_DATA (required)</p></li>
+<li><p><strong>firmware_name</strong> (<em>string</em>) – Firmware name, options are: GFX, GFX_DATA, GFX_PSCBIN (required)</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Status Codes</dt>

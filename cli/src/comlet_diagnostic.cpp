@@ -192,7 +192,7 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
         auto devices = (*json)["device_list"].get<std::vector<nlohmann::json>>();
         bool cont = false;
         for (auto device : devices) {
-            showDeviceDiagnostic(out, std::make_shared<nlohmann::json>(device), cont);
+            showDeviceDiagnostic(out, std::make_shared<nlohmann::json>(device), false, cont);
             cont = true;
         }
         return;
