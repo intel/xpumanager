@@ -1,218 +1,17 @@
-def getPodYaml() {
-return """
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    worker: xpum-builder
-    desc: "${params.K8S_CLUSTER}"
-  namespace: dms-cluster
-spec:
-  tolerations:
-  - key: jenkins-job-only
-    effect: NoSchedule
-  - key: node-role.kubernetes.io/master
-    effect: NoSchedule
-  containers:
-    - args:
-      - "99d"
-      command:
-        - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-sles:lz-1.8.1-20221014"
-      imagePullPolicy: "IfNotPresent"
-      name: "xpum-builder-sles"
-      resources:
-        limits: 
-          memory: "6Gi"
-          cpu:  "2"
-      securityContext:
-        privileged: false
-      tty: false
-      volumeMounts:
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
-          readOnly: false
-        - mountPath: "/home/jenkins/jenkins-shared-pvc"
-          name: "jenkins-shared-pvc"
-          readOnly: false
-      workingDir: "/home/jenkins/agent"
-    - args:
-        - "99d"
-      command:
-        - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-ubuntu:lz-1.8.1-20221014"
-      imagePullPolicy: "IfNotPresent"
-      name: "xpum-builder-ubuntu"
-      resources:
-        limits: 
-          memory: "6Gi"
-          cpu:  "2"
-      securityContext:
-        privileged: false
-      tty: false
-      volumeMounts:
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
-          readOnly: false
-        - mountPath: "/home/jenkins/jenkins-shared-pvc"
-          name: "jenkins-shared-pvc"
-          readOnly: false
-      workingDir: "/home/jenkins/agent"
-    - args:
-        - "99d"
-      command:
-        - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos7:lz-1.8.1-20221014"
-      imagePullPolicy: "IfNotPresent"
-      name: "xpum-builder-centos7"
-      resources:
-        limits: 
-          memory: "6Gi"
-          cpu:  "2"
-      tty: false
-      volumeMounts:
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
-          readOnly: false
-        - mountPath: "/home/jenkins/jenkins-shared-pvc"
-          name: "jenkins-shared-pvc"
-          readOnly: false
-      workingDir: "/home/jenkins/agent"
-    - args:
-        - "99d"
-      command:
-        - "sleep"
-      image: "ccr-registry.caas.intel.com/dms-pub/xpum-builder-centos8:lz-1.8.1-20221014"
-      imagePullPolicy: "IfNotPresent"
-      name: "xpum-builder-centos8"
-      resources:
-        limits: 
-          memory: "6Gi"
-          cpu:  "2"
-      tty: false
-      volumeMounts:
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
-          readOnly: false
-        - mountPath: "/home/jenkins/jenkins-shared-pvc"
-          name: "jenkins-shared-pvc"
-          readOnly: false
-      workingDir: "/home/jenkins/agent"
-    - name: "kaniko"
-      image: "gcr.io/kaniko-project/executor:debug"
-      imagePullPolicy: Always
-      command:
-      - /busybox/cat
-      tty: true
-      resources:
-        limits: 
-          memory: "2Gi"
-          cpu:  "2"
-      securityContext:
-        privileged: false
-      volumeMounts:
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
-          readOnly: false
-        - name: docker-config
-          mountPath: /kaniko/.docker
-        - mountPath: "/home/jenkins/jenkins-shared-pvc"
-          name: "jenkins-shared-pvc"
-          readOnly: false
-      workingDir: "/home/jenkins/agent"
-    - env:
-        - name: "GIT_LFS_SKIP_SMUDGE"
-          value: "1"
-        - name: "GIT_TRACE"
-          value: "0"
-        - name: "GIT_CURL_VERBOSE"
-          value: "0"
-        - name: "JENKINS_AGENT_WORKDIR"
-          value: "/home/jenkins/agent"
-        - name: "HTTP_PROXY"
-          value: "http://proxy-dmz.intel.com:912"
-        - name: "HTTPS_PROXY"
-          value: "http://proxy-dmz.intel.com:912"
-        - name: "NO_PROXY"
-          value: "*.intel.com"
-        - name: "http_proxy"
-          value: "http://proxy-dmz.intel.com:912"
-        - name: "https_proxy"
-          value: "http://proxy-dmz.intel.com:912"
-        - name: "no_proxy"
-          value: "*.intel.com"
-      image: "jenkins/inbound-agent:4.11-1"
-      name: "jnlp"
-      resources:
-        limits: 
-          memory: "2Gi"
-          cpu:  "2"
-      volumeMounts:
-        - mountPath: "/home/jenkins/agent"
-          name: "workspace-volume"
-          readOnly: false
-        - mountPath: "/home/jenkins/jenkins-shared-pvc"
-          name: "jenkins-shared-pvc"
-          readOnly: false
-  hostNetwork: false
-  nodeSelector:
-    kubernetes.io/os: "linux"
-  restartPolicy: "Never"
-  volumes:
-    - emptyDir:
-        medium: ""
-      name: workspace-volume
-    - name: jenkins-shared-pvc
-      persistentVolumeClaim:
-        claimName: dms-cluster-jenkins-share
-    - name: docker-config
-      projected:
-        sources:
-        - secret:
-            name: regcre-amr-registry-caas-intel-com
-            items:
-              - key: .dockerconfigjson
-                path: config.json
-"""
-}
-
 def STATUS_COLOR_MAP = [
   'SUCCESS': '#78b037', 
   'FAILURE': '#d54c53', 
   'UNSTABLE': '#f5a623', 
   'ABORTED': '#949393']
 
-def buildPropertyFile = 'build.props'
-
-def createEnvironmentVariablesFile(){
-  def commit = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
-  def now = new Date()
-  def properties = [
-    'BUILD_TIMESTAMP': now.format("yyyyMMdd.HHmmss"),
-    'BUILD_DATE': now.format("yyyyMMdd"),
-    'BUILD_TIME': now.format("HHmmss"),
-    'GIT_COMMIT': commit,
-    'GIT_COMMIT_SHORT': commit.take(8),
-    'DOCKER_IMG_TAG': now.format("yyyyMMdd.HHmmss") + 'i-' + commit.take(8)
-  ]
-
-  writeYaml file:'build.props', data: properties
-}
-
-def loadEnvironmentVariables() {
-  def props = readYaml file: 'build.props'
-  keys= props.keySet()
-  for(key in keys) {
-      value = props["${key}"]
-      env."${key}" = "${value}"
-  }
-}
-
 pipeline {
-    parameters { 
-      string(name: 'PUBLISH_DOCKER_REGISTRY', defaultValue: 'amr-registry.caas.intel.com/dms-pub', description: 'the docker registry for publishing the xpum image') 
-      string(name: 'K8S_CLUSTER', defaultValue: 'amr-compute-cluster', description: 'the k8s cluster providing build agents')
+    agent {
+      kubernetes {
+        cloud 'amr-pre-compute-cluster'
+        yamlFile '.ci/xpum-builder-pod-dms-cluster.yaml'
+      }
     }
+    parameters { string(name: 'PUBLISH_DOCKER_REGISTRY', defaultValue: 'ccr-registry.caas.intel.com/dms', description: 'the docker registry for publishing the xpum image') }
     options {
         buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '20'))
         timeout(time: 60, unit: 'MINUTES')
@@ -220,123 +19,91 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
     }
-    agent {
-      kubernetes {
-        cloud "${params.K8S_CLUSTER}"
-        yaml getPodYaml()
-      }
-    }
     environment {
+      BUILD_TIMESTAMP = sh(returnStdout: true, script: 'TZ=PRC date +%Y%m%d.%H%M%S').trim()
+      BUILD_DATE = "${env.BUILD_TIMESTAMP}".substring(0, 8)
+      BUILD_TIME = "${env.BUILD_TIMESTAMP}".substring(9)
+      GIT_COMMIT_SHORT = env.GIT_COMMIT.take(8)
+      DOCKER_IMG_TAG = "${env.BUILD_TIMESTAMP}i-${env.GIT_COMMIT_SHORT}"
       WEBHOOK_URL = 'https://intel.webhook.office.com/webhookb2/df60700c-6bcb-46de-9a4a-d5f324db9f11@46c98d88-e344-4ed4-8496-4ed7712e255d/IncomingWebhook/0d756f8858c241ed8f219df29410a4d0/0f689104-5007-497d-ab31-8663e5b0238e'
       ARCHIVE_FILES = 'build-deb/*.deb,build-centos*/*.rpm,build-sles/*.rpm,XPUM_PGP_KEY.pem'
       PUBLISH_DOCKER_REGISTRY = "${params.PUBLISH_DOCKER_REGISTRY}"
+      BUILD_DESC = """<table><tr><td>Timestamp:</td><td>${env.BUILD_TIMESTAMP}</td></tr>
+<tr><td>Git Commit:</td><td>${env.GIT_COMMIT_SHORT}</td></tr>
+<tr><td>Docker Img:</td><td>${env.PUBLISH_DOCKER_REGISTRY}/dms-xpum:${env.DOCKER_IMG_TAG}</td></tr>
+</table>"""
     }
     stages {
-      stage('Prepare') {
-          steps {
-
-            container(name: 'jnlp', shell: 'bash') {
-              script {
-                createEnvironmentVariablesFile()
-                loadEnvironmentVariables()
-              }
-            }
-          }
-      } 
       stage('Build') {
         parallel {
-          stage('ubuntu deb') {
+          stage('build deb') {
             steps {
               container(name: 'xpum-builder-ubuntu') {
-                script {
-                  loadEnvironmentVariables()
-                }
-                sh '''
-                  env && MAIN_WORKSPACE=$PWD && \
-                  mkdir ../ws_ubuntu && \
-                  cp -rp . ../ws_ubuntu && \
-                  cd ../ws_ubuntu && \
-                  export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/ws_ubuntu && \
-                  export CCACHE_BASEDIR=$PWD && \
-                  mkdir -p $CCACHE_DIR && \
-                  ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT \
-                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && \
-                  mkdir $MAIN_WORKSPACE/build-deb && \
-                  cp ./build/xpum*.deb $MAIN_WORKSPACE/build-deb
+                sh '''env && MAIN_WORKSPACE=$PWD && \
+                mkdir ../ws_ubuntu && \
+                cp -rp . ../ws_ubuntu && \
+                cd ../ws_ubuntu && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
+                mkdir $MAIN_WORKSPACE/build-deb && \
+                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpum*.deb $MAIN_WORKSPACE/build-deb && \
+                rm -fr build && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.deb $MAIN_WORKSPACE/build-deb
                 '''
               }
             }
           }
 
-          stage('centos-7 rpm') {
+          stage('build redhat-7 rpm') {
             steps {
               container(name: 'xpum-builder-centos7', shell: 'bash') {
-                script {
-                  loadEnvironmentVariables()
-                }
-                sh '''
-                  env && MAIN_WORKSPACE=$PWD && \
-                  mkdir ../ws_centos7 && \
-                  cp -rp . ../ws_centos7 && \
-                  cd ../ws_centos7 && \
-                  export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/ws_centos7 && \
-                  export CCACHE_BASEDIR=$PWD && \
-                  mkdir -p $CCACHE_DIR && \
-                  ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT \
-                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && \
-                  mkdir $MAIN_WORKSPACE/build-centos7 && \
-                  cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos7
-                '''
+                sh '''env && MAIN_WORKSPACE=$PWD && \
+                mkdir ../ws_centos7 && \
+                cp -rp . ../ws_centos7 && \
+                cd ../ws_centos7 && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
+                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                mkdir $MAIN_WORKSPACE/build-centos7 && \
+                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos7'''
               }
             }
           }
 
-          stage('centos-8 rpm') {
+          stage('build redhat-8 rpm') {
             steps {
               container(name: 'xpum-builder-centos8', shell: 'bash') {
-                script {
-                  loadEnvironmentVariables()
-                }
-                sh '''
-                  env && MAIN_WORKSPACE=$PWD && \
-                  mkdir ../ws_centos8 && \
-                  cp -rp . ../ws_centos8 && \
-                  cd ../ws_centos8 && \
-                  export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/ws_centos8 && \
-                  export CCACHE_BASEDIR=$PWD && \
-                  mkdir -p $CCACHE_DIR && \
-                  ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT \
-                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && \
-                  mkdir $MAIN_WORKSPACE/build-centos8 && \
-                  cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos8
+                sh '''env && MAIN_WORKSPACE=$PWD && \
+                mkdir ../ws_centos8 && \
+                cp -rp . ../ws_centos8 && \
+                cd ../ws_centos8 && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
+                mkdir $MAIN_WORKSPACE/build-centos8 && \
+                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos8 && \
+                rm -fr build && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.rpm $MAIN_WORKSPACE/build-centos8
                 '''
               }
             }
           }
 
-          stage('suse rpm') {
+          stage('build suse rpm') {
             steps {
               container(name: 'xpum-builder-sles', shell: 'bash') {
-                script {
-                  loadEnvironmentVariables()
-                }
-                sh '''
-                  env && MAIN_WORKSPACE=$PWD && \
-                  mkdir ../ws_sles && \
-                  cp -rp . ../ws_sles && \
-                  cd ../ws_sles && \
-                  export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/ws_sles && \
-                  export CCACHE_BASEDIR=$PWD && \
-                  mkdir -p $CCACHE_DIR && \
-                  ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT \
-                    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && \
-                  mkdir $MAIN_WORKSPACE/build-sles && \
-                  cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-sles
-                '''
+                sh '''env && MAIN_WORKSPACE=$PWD && \
+                mkdir ../ws_sles && \
+                cp -rp . ../ws_sles && \
+                cd ../ws_sles && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
+                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                mkdir $MAIN_WORKSPACE/build-sles && \
+                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-sles'''
               }
             }
           }
@@ -348,33 +115,29 @@ pipeline {
           stage('Create Docker Image') {
             steps {
               container(name: 'kaniko') { 
-                script {
-                  loadEnvironmentVariables()
-                }
+                sh 'pwd && env'
+                sh 'cp rest/requirements.txt deployment/docker'
+                sh 'cp third-party-programs.txt deployment/docker'
+                sh 'mkdir deployment/docker/build-deb && cp build-deb/xpum*.deb deployment/docker/build-deb'
                 sh '''
-                  pwd && env && \
-                  cp rest/requirements.txt deployment/docker && \
-                  cp third-party-programs.txt deployment/docker && \
-                  mkdir deployment/docker/build-deb && cp build-deb/xpum*.deb deployment/docker/build-deb && \
-                  export http_proxy=http://proxy-dmz.intel.com:911 && \
-                  export HTTP_PROXY=http://proxy-dmz.intel.com:911 && \
-                  export https_proxy=http://proxy-dmz.intel.com:912 && \
-                  export HTTPS_PROXY=http://proxy-dmz.intel.com:912 && \
-                  export no_proxy=.intel.com && \
-                  export NO_PROXY=.intel.com && \
-                  /kaniko/executor \
-                    --cache=true \
-                    --build-arg http_proxy=http://proxy-dmz.intel.com:911 \
-                    --build-arg HTTP_PROXY=http://proxy-dmz.intel.com:911 \
-                    --build-arg https_proxy=http://proxy-dmz.intel.com:912 \
-                    --build-arg HTTPS_PROXY=http://proxy-dmz.intel.com:912 \
-                    --build-arg no_proxy=.intel.com \
-                    --build-arg NO_PROXY=.intel.com \
-                    --dockerfile `pwd`/deployment/docker/Dockerfile.ubuntu \
-                    --context `pwd`/deployment/docker \
-                    --skip-tls-verify \
-                    --destination=$PUBLISH_DOCKER_REGISTRY/xpumanager-kaniko:$DOCKER_IMG_TAG
-                '''
+                export http_proxy=http://proxy-dmz.intel.com:911 && \
+                export HTTP_PROXY=http://proxy-dmz.intel.com:911 && \
+                export https_proxy=http://proxy-dmz.intel.com:912 && \
+                export HTTPS_PROXY=http://proxy-dmz.intel.com:912 && \
+                export no_proxy=.intel.com && \
+                export NO_PROXY=.intel.com && \
+                /kaniko/executor \
+                  --cache=true \
+                  --build-arg http_proxy=http://proxy-dmz.intel.com:911 \
+                  --build-arg HTTP_PROXY=http://proxy-dmz.intel.com:911 \
+                  --build-arg https_proxy=http://proxy-dmz.intel.com:912 \
+                  --build-arg HTTPS_PROXY=http://proxy-dmz.intel.com:912 \
+                  --build-arg no_proxy=.intel.com \
+                  --build-arg NO_PROXY=.intel.com \
+                  --dockerfile `pwd`/deployment/docker/Dockerfile.ubuntu \
+                  --context `pwd`/deployment/docker \
+                  --skip-tls-verify \
+                  --destination=$PUBLISH_DOCKER_REGISTRY/dms-xpum:$DOCKER_IMG_TAG'''
               }
             }
           }
@@ -387,9 +150,7 @@ pipeline {
 
           stage('Upload artifact') {
             steps{
-                script {
-                  loadEnvironmentVariables()
-                }
+                echo 'Uploading'
                 rtServer (
                     id: 'AF-XPUM',
                     url: 'https://ubit-artifactory-sh.intel.com/artifactory/',
@@ -401,6 +162,7 @@ pipeline {
                     // The default value (if not configured) is 300 seconds
                     timeout: 300
                 )
+                sh "ls -ltr"
                 rtUpload(
                     serverId: 'AF-XPUM',
                     spec: '''{
@@ -424,9 +186,10 @@ pipeline {
         }
       }
     }
-    // post {
-    //   always {
-    //     office365ConnectorSend(webhookUrl: "${env.WEBHOOK_URL}", message: "${env.BUILD_DESC}", status: "${currentBuild.currentResult}", color: STATUS_COLOR_MAP[currentBuild.currentResult])
-    //   }
-    // }
+
+    post {
+      always {
+        office365ConnectorSend(webhookUrl: "${env.WEBHOOK_URL}", message: "${env.BUILD_DESC}", status: "${currentBuild.currentResult}", color: STATUS_COLOR_MAP[currentBuild.currentResult])
+      }
+    }
 }
