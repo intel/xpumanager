@@ -119,6 +119,9 @@ class GrpcCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> getSensorReading();
 
+    std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime);
+    std::unique_ptr<nlohmann::json> checkStress(int deviceId);
+
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;
 

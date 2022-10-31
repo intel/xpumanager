@@ -799,6 +799,27 @@ xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
 xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t deviceId,
                                                 xpum_diag_media_codec_metrics_t resultList[],
                                                 int *count);
+
+/**
+ * @brief Run stress test on GPU
+ * This function will return immediately. To check status of a stress test , call \ref xpumCheckStress
+ * 
+ * @param deviceId          IN: Device id, -1 means run stress test on all GPU devices
+ * @param stressTime        IN: The time (in minutes) to run the stress test. 0 means unlimited time.
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRunStress(xpum_device_id_t deviceId, uint32_t stressTime);
+
+/**
+ * @brief Check stress test status
+ * 
+ * @param deviceId          IN: The device id to check stress test status
+ * @param resultList       OUT: The status of stress test run on device with \a deviceId
+ * @param count         IN/OUT: When \a resultList is NULL, \a count will be filled with the number of available entries, and return. When \a resultList is not NULL, \a count denotes the length of \a resultList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a resultList
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count);
+
 /** @} */ // Closing for DIAGNOSTICS_API
 
 /// @cond DAEMON_ONLY

@@ -2803,4 +2803,20 @@ xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count) 
     return Core::instance().getFirmwareManager()->getAMCSensorReading(data, count);
 }
 
+xpum_result_t xpumRunStress(xpum_device_id_t deviceId, uint32_t stressTime) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    return Core::instance().getDiagnosticManager()->runStress(deviceId, stressTime);
+}
+
+xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    return Core::instance().getDiagnosticManager()->checkStress(deviceId, resultList, count);
+}
+
 } // end namespace xpum

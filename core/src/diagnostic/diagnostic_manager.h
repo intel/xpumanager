@@ -53,6 +53,10 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     xpum_result_t getDiagnosticsMediaCodecResult(xpum_device_id_t deviceId, xpum_diag_media_codec_metrics_t resultList[], int *count) override;
 
+    xpum_result_t runStress(xpum_device_id_t deviceId, uint32_t stressTime) override;
+
+    xpum_result_t checkStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count) override;
+
     static void doDeviceDiagnosticCore(const ze_device_handle_t &ze_device,
                                        const ze_driver_handle_t &ze_driver,
                                        std::shared_ptr<xpum_diag_task_info_t> p_task_info,
@@ -138,6 +142,11 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static void readConfigFile();
 
+    static void stressThreadFunc(int stress_time,
+                                 const ze_device_handle_t &ze_device,
+                                 const ze_driver_handle_t &ze_driver,
+                                 std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+
     static std::map<std::string, std::map<std::string, int>> thresholds;
 
     static std::map<ze_device_handle_t, std::string> device_names;
@@ -159,6 +168,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     std::map<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>> diagnostic_task_infos;
 
     std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>> media_codec_perf_datas; 
+
+    std::map<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>> stress_task_map;
 
     std::mutex mutex;
 };

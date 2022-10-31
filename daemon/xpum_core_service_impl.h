@@ -63,12 +63,16 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
                                           ::DiagnosticsTaskInfo* response) override;
     virtual ::grpc::Status runDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunDiagnosticsByGroupRequest* request,
                                                  ::DiagnosticsGroupTaskInfo* response) override;
+    virtual ::grpc::Status runStress(::grpc::ServerContext* context, const ::RunStressRequest* request,
+                                          ::DiagnosticsTaskInfo* response) override;
     virtual ::grpc::Status getDiagnosticsResult(::grpc::ServerContext* context, const ::DeviceId* request,
                                                 ::DiagnosticsTaskInfo* response) override;
     virtual ::grpc::Status getDiagnosticsMediaCodecResult(::grpc::ServerContext* context, const ::DeviceId* request, 
                                                 ::DiagnosticsMediaCodecInfoArray* response) override;
     virtual ::grpc::Status getDiagnosticsResultByGroup(::grpc::ServerContext* context, const ::GroupId* request,
                                                        ::DiagnosticsGroupTaskInfo* response) override;
+    virtual ::grpc::Status checkStress(::grpc::ServerContext* context, const ::CheckStressRequest* request,
+                                     ::CheckStressResponse* response) override;
     virtual ::grpc::Status getHealth(::grpc::ServerContext* context, const ::HealthDataRequest* request,
                                      ::HealthData* response) override;
     virtual ::grpc::Status getHealthByGroup(::grpc::ServerContext* context, const ::HealthDataByGroupRequest* request,
