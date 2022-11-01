@@ -56,7 +56,7 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
         case XPUM_DEVICE_PROPERTY_PCI_SLOT:
             return "PCI_SLOT";
         case XPUM_DEVICE_PROPERTY_OAM_SOCKET_ID:
-            return "SOCKET_ID";
+            return "OAM_SOCKET_ID";
         case XPUM_DEVICE_PROPERTY_PCIE_GENERATION:
             return "PCIE_GENERATION";
         case XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH:
