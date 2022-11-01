@@ -1341,7 +1341,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
                             if (type == props.type) {
                                 double temp_val = 0;
                                 XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
-                                if (res == ZE_RESULT_SUCCESS) {
+                                // filter abnormal temperatures
+                                if (res == ZE_RESULT_SUCCESS && temp_val < 150) {
                                     ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                     if (props.onSubdevice) {
                                         ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
