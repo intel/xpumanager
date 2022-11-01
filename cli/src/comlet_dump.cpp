@@ -336,7 +336,7 @@ void ComletDump::printByLine(std::ostream &out) {
         return;
     }
     if (this->opts->metricsIdList.size() == 0) {
-        out << "Metics types should be provided" << std::endl;
+        out << "Metrics types should be provided" << std::endl;
         exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return;
     }
