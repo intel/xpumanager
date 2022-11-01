@@ -79,6 +79,18 @@ Metric types:
 
 ### Change the system settings to enable some GPU advanced metrics
 * GPU PCIe Read/Write Throughput: if these metrics are enabled, XPU Manager automatically loads MSR module by command 'modprobe msr', but XPU Manager will not automatically unload the MSR module. If you want to unload it, please run the command 'modprobe -r msr'.
-  
+
+### Disable some metrics to reduce the CPU usage of XPU Manager daemon
+* We have tried our best to reduce the CPU usage of XPU Manager daemon. If you have many GPUs (10+) and still have concern with the CPU usage of XPU Manager daemon, you may disable some the RAS related metrics below to reduce the CPU usage further. 
+    * 20. Reset Counter, per GPU
+    * 21. Programming Errors, per tile
+    * 22. Driver Errors, per tile
+    * 23. Cache Errors Correctable, per tile
+    * 24. Cache Errors Uncorrectable, per tile
+    * 25. Display Errors Correctable, per tile (Not supported so far)
+    * 26. Display Errors Uncorrectable, per tile (Not supported so far)
+    * 27. Memory Errors Correctable, per tile
+    * 28. Memory Errors Uncorrectable, per tile
+ 
 ## GPU memory ECC on/off
 XPU Manager provides the GPU memory ECC on/off feature based on [IGSC](https://github.com/intel/igsc). GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer version.
