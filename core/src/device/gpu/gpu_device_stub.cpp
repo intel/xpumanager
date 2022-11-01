@@ -2685,7 +2685,8 @@ static bool readUtil1(std::vector<device_util_by_proc>& vec,
         }
         device_util_by_proc util(pid);
         util.setDeviceId(std::stoi(device_id));
-        strncpy(util.d_name, pdirent->d_name, 32);
+        memcpy(util.d_name, pdirent->d_name, 32);
+        util.d_name[31] = '0';
         if (getEngineActiveTime(util, 0, card_idx, pdirent->d_name) == false) {
             closedir(pdir);
             return false;
