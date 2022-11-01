@@ -106,7 +106,7 @@ void ComletDiagnostic::setupOptions() {
       2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs\n\
       3. long test - this diagnostic level will have the significant performance impact on the specified GPUs");
     
-    auto stressFlag = addFlag("-s,--stress", this->opts->stress, " Stress the GPU(s) for the specified time");
+    auto stressFlag = addFlag("-s,--stress", this->opts->stress, "Stress the GPU(s) for the specified time");
     auto stressTimeOpt = addOption("--stresstime", this->opts->stressTime, "Stress time (in minutes)");
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver");
 
