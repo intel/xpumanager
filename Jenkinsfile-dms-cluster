@@ -134,7 +134,7 @@ pipeline {
                   --build-arg HTTPS_PROXY=http://proxy-dmz.intel.com:912 \
                   --build-arg no_proxy=.intel.com \
                   --build-arg NO_PROXY=.intel.com \
-                  --dockerfile `pwd`/deployment/docker/Dockerfile.ubuntu \
+                  --dockerfile `pwd`/deployment/docker/Dockerfile.ubuntu.20.04 \
                   --context `pwd`/deployment/docker \
                   --skip-tls-verify \
                   --destination=$PUBLISH_DOCKER_REGISTRY/dms-xpum:$DOCKER_IMG_TAG'''
