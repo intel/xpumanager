@@ -87,6 +87,7 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "rowTitle": " " },
                 { "label": "Memory Physical Size", "value": "memory_physical_size", "suffix": " MiB", "scale": 1, "dumpId": 16 },
                 { "label": "Max Mem Alloc Size", "value": "max_mem_alloc_size", "suffix": " MiB", "scale": 1 },
+                { "label": "ECC State", "value": "memory_ecc_state" },
                 { "label": "Number of Memory Channels", "value": "number_of_memory_channels", "dumpId": 17 },
                 { "label": "Memory Bus Width", "value": "memory_bus_width", "dumpId": 18 },
                 { "label": "Max Hardware Contexts", "value": "max_hardware_contexts" },

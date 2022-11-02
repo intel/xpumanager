@@ -93,6 +93,8 @@ class DevicePropertiesSchema(Schema):
         metadata={"description": "The free memory, in bytes"})
     max_mem_alloc_size_byte = fields.Str(
         metadata={"description": "The total allocatable memory, in bytes"})
+    memory_ecc_state = fields.Str(
+        metadata={"description": "The state of memory ecc"})
     number_of_memory_channels = fields.Str(
         metadata={"description": "Number of memory channels"})
     memory_bus_width = fields.Str(metadata={"description": "Memory bus width"})

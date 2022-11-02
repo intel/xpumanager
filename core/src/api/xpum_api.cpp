@@ -125,6 +125,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "GFX_PSCBIN_FIRMWARE_NAME";
         case XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_VERSION:
             return "GFX_PSCBIN_FIRMWARE_VERSION";
+        case XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE:
+            return "MEMORY_ECC_STATE";
         default:
             return "";
     }
@@ -741,6 +743,19 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
     }
 }
 
+std::string eccStateToString(xpum_ecc_state_t state) {
+    if (state == XPUM_ECC_STATE_UNAVAILABLE) {
+        return "";
+    }
+    if (state == XPUM_ECC_STATE_ENABLED) {
+        return "enabled";
+    }
+    if (state == XPUM_ECC_STATE_DISABLED) {
+        return "disabled";
+    }
+    return "";
+}
+
 xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_properties_t *pXpumProperties) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -788,6 +803,15 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 copy.name = propName;
                 strcpy(copy.value, value.c_str());
             }
+            bool available;
+            bool configurable;
+            xpum_ecc_state_t current, pending;
+            xpum_ecc_action_t action;
+            res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
+            auto &copy = pXpumProperties->properties[propertyLen++];
+            copy.name = XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE;
+            std::string value = eccStateToString(current);
+            strcpy(copy.value, value.c_str());
 
             pXpumProperties->propertyLen = propertyLen;
 
