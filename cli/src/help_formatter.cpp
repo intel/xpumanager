@@ -113,18 +113,24 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " diag -d [pciBdfAddress] -l [level] \n"
                "  " + appName + " diag -d [deviceId] -l [level] -j \n"
                "  " + appName + " diag -d [pciBdfAddress] -l [level] -j \n"
+               "  " + appName + " diag -d [deviceIds] --stress --stresstime [time]\n"
                "  " + appName + " diag -g [groupId] -l [level] \n"
                "  " + appName + " diag -g [groupId] -l [level] -j \n"
                "  " + appName + " diag --precheck\n"
-               "  " + appName + " diag --precheck -j\n";
+               "  " + appName + " diag --precheck -j\n"
+               "  " + appName + " diag --stress --stresstime [time]\n";
 #else
         return "\nUsage: " + appName + " diag [Options] \n"
                "  " + appName + " diag -d [deviceId] -l [level] \n"
                "  " + appName + " diag -d [pciBdfAddress] -l [level] \n"
                "  " + appName + " diag -d [deviceId] -l [level] -j \n"
                "  " + appName + " diag -d [pciBdfAddress] -l [level] -j \n"
+               "  " + appName + " diag -d [deviceIds] --stress \n"
+               "  " + appName + " diag -d [deviceIds] --stress --stresstime [time] \n"
                "  " + appName + " diag --precheck\n"
-               "  " + appName + " diag --precheck -j\n";
+               "  " + appName + " diag --precheck -j\n"
+               "  " + appName + " diag --stress\n"
+               "  " + appName + " diag --stress --stresstime [time]\n";
 #endif
     } else if (app->get_name().compare("dump") == 0) {
 #ifndef DAEMONLESS
