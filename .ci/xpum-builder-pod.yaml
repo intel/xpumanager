@@ -163,7 +163,29 @@ spec:
           name: "jenkins-shared-pvc"
           readOnly: false
       workingDir: "/home/jenkins/agent"
-    - name: "kaniko"
+    - name: "kaniko-1"
+      image: "gcr.io/kaniko-project/executor:debug"
+      imagePullPolicy: Always
+      command:
+      - /busybox/cat
+      tty: true
+      resources:
+        limits: 
+          memory: "2Gi"
+          cpu: "2"
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+      securityContext:
+        privileged: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: docker-config
+          mountPath: /kaniko/.docker
+      workingDir: "/home/jenkins/agent"
+      - name: "kaniko-2"
       image: "gcr.io/kaniko-project/executor:debug"
       imagePullPolicy: Always
       command:
