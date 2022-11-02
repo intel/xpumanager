@@ -77,16 +77,39 @@ CoreStub::CoreStub() {
 
         ze_device_properties_t ze_device_properties;
         ze_device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        ze_device_properties.pNext = nullptr;
         status = zeDeviceGetProperties(devices[deviceIdx], &ze_device_properties);
         if (status != ZE_RESULT_SUCCESS) {
             std::cout << "zeDeviceGetProperties Failed with return code: " << to_string(status) << std::endl;
             exit(-1);
         }
         uint32_t deviceId = ze_device_properties.deviceId;
-        if (deviceId == 0x56c1) {
-            if (deviceIdx % 2 == 0) {
-                sibling_devices[deviceIdx] = {deviceIdx, deviceIdx + 1};
-            } else {
+        zes_pci_properties_t pci_props;
+        status = zesDevicePciGetProperties(zes_device_handles[deviceIdx], &pci_props);
+        if (status != ZE_RESULT_SUCCESS) {
+            std::cout << "zesDevicePciGetProperties Failed with return code: " << to_string(status) << std::endl;
+            exit(-1);
+        }
+
+        if (deviceIdx > 0 && deviceId == 0x56c1) {
+            ze_device_properties_t ze_pre_device_properties;
+            ze_pre_device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+            ze_pre_device_properties.pNext = nullptr;
+            status = zeDeviceGetProperties(devices[deviceIdx - 1], &ze_pre_device_properties);
+            if (status != ZE_RESULT_SUCCESS) {
+                std::cout << "zeDeviceGetProperties Failed with return code: " << to_string(status) << std::endl;
+                exit(-1);
+            }
+            uint32_t preDeviceId = ze_pre_device_properties.deviceId;
+            zes_pci_properties_t pre_pci_props;
+            status = zesDevicePciGetProperties(zes_device_handles[deviceIdx - 1], &pre_pci_props);
+            if (status != ZE_RESULT_SUCCESS) {
+                std::cout << "zesDevicePciGetProperties Failed with return code: " << to_string(status) << std::endl;
+                exit(-1);
+            }
+
+            if (preDeviceId == 0x56c1 && std::abs((int)(pci_props.address.bus - pre_pci_props.address.bus)) <= 5) {
+                sibling_devices[deviceIdx - 1] = {deviceIdx - 1, deviceIdx};
                 sibling_devices[deviceIdx] = {deviceIdx - 1, deviceIdx};
             }
             power_limit = 23;
