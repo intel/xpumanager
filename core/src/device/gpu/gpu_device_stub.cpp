@@ -3554,7 +3554,8 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                     }
                     double val = 0;
                     XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &val));
-                    if (res == ZE_RESULT_SUCCESS) {
+                    // filter abnormal temperatures
+                    if (res == ZE_RESULT_SUCCESS && val < 150) {
                         temp_val = val;
                     }
                 }
