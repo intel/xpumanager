@@ -66,7 +66,10 @@ void TimeWeightedAverageDataHandler::counterOverflowDetection(std::shared_ptr<Sh
 
 void TimeWeightedAverageDataHandler::calculateData(std::shared_ptr<SharedData>& p_data) {
     std::unique_lock<std::mutex> lock(this->mutex);
-
+    if (p_preData == nullptr || p_data == nullptr) {
+        return;
+    }
+    
     std::map<std::string, std::shared_ptr<MeasurementData>>::iterator iter = p_data->getData().begin();
     while (iter != p_data->getData().end()) {
         if (iter->second->hasRawDataOnDevice() 
