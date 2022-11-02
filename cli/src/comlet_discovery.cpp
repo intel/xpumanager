@@ -83,7 +83,7 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "PCI Slot", "value": "pci_slot", "dumpId": 12 },
                 { "label": "PCIe Generation", "value": "pcie_generation", "dumpId": 13 },
                 { "label": "PCIe Max Link Width", "value": "pcie_max_link_width", "dumpId": 14 },
-                { "label": "OAM Socket ID", "value": "socket_id", "dumpId": 15 },
+                { "label": "OAM Socket ID", "value": "oam_socket_id", "dumpId": 15 },
                 { "rowTitle": " " },
                 { "label": "Memory Physical Size", "value": "memory_physical_size", "suffix": " MiB", "scale": 1, "dumpId": 16 },
                 { "label": "Max Mem Alloc Size", "value": "max_mem_alloc_size", "suffix": " MiB", "scale": 1 },
