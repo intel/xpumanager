@@ -2401,6 +2401,10 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 response->set_errormsg("Level Zero Initialization Error");
                 break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE:
+                response->set_errormsg(
+                        "last stress task on the device is not completed");
+                break;
             default:
                 response->set_errormsg("Error");
                 break;

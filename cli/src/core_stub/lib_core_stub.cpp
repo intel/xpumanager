@@ -1511,6 +1511,10 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runStress(int deviceId, uint32_t st
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 (*json)["error"] = "Level Zero Initialization Error";
                 break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE:
+                (*json)["error"] = 
+                    "last stress task on the device is not completed";
+                break;
             default:
                 (*json)["error"] = "Error";
                 break;
