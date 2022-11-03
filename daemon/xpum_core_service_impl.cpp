@@ -2405,6 +2405,9 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
                 response->set_errormsg(
                         "last stress task on the device is not completed");
                 break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
             default:
                 response->set_errormsg("Error");
                 break;

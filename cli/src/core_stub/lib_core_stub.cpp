@@ -1515,6 +1515,9 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runStress(int deviceId, uint32_t st
                 (*json)["error"] = 
                     "last stress task on the device is not completed";
                 break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                break;
             default:
                 (*json)["error"] = "Error";
                 break;
