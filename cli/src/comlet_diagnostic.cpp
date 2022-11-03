@@ -178,6 +178,12 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     if (this->opts->stress) {
         if (isDeviceOperation()) {
             for (auto deviceId : this->opts->deviceIds) {
+                json = this->coreStub->getDeviceProperties(std::stoi(deviceId));
+                if (json->contains("error")) {
+                    return json;
+                }
+            }
+            for (auto deviceId : this->opts->deviceIds) {
                 json = this->coreStub->runStress(std::stoi(deviceId), this->opts->stressTime);
                 if (json->contains("error")) {
                     break;
