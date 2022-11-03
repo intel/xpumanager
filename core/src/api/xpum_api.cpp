@@ -933,6 +933,74 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
     return Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, count, begin, end, sessionId);
 }
 
+xpum_result_t xpumGetStatsEx(xpum_device_id_t deviceIdList[],
+                             uint32_t deviceCount,
+                             xpum_device_stats_t dataList[],
+                             uint32_t *count,
+                             uint64_t *begin,
+                             uint64_t *end,
+                             uint64_t sessionId) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
+    if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
+        return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
+    for (uint32_t i = 0; i < deviceCount; i++) {
+        xpum_device_id_t deviceId = deviceIdList[i];
+        res = validateDeviceId(deviceId);
+        if (res != XPUM_OK) {
+            return res;
+        }
+    }
+
+    char *env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        if (!Core::instance().getMonitorManager()->initOneTimeMetricMonitorTasks(MeasurementType::METRIC_MAX)) {
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+
+    if (dataList == nullptr) {
+        *count = 0;
+        for (uint32_t i = 0; i < deviceCount; i++) {
+            xpum_device_id_t deviceId = deviceIdList[i];
+            uint32_t count_ = 0;
+            res = Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList, &count_, begin, end, sessionId);
+            if (res != XPUM_OK) {
+                return res;
+            }
+            *count += count_;
+        }
+        return XPUM_OK;
+    } else {
+        uint32_t used = 0;
+        uint32_t count_;
+        for (uint32_t i = 0; i < deviceCount; i++) {
+            xpum_device_id_t deviceId = deviceIdList[i];
+            count_ = *count - used;
+            if (count_ <= 0) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+            res = Core::instance().getDataLogic()->getMetricsStatistics(deviceId, dataList + used, &count_, begin, end, sessionId);
+            if (res != XPUM_OK) {
+                return res;
+            }
+            used += count_;
+        }
+        *count = used;
+        return XPUM_OK;
+    }
+}
+
 xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
                                  xpum_device_engine_stats_t dataList[],
                                  uint32_t *count,
@@ -965,6 +1033,75 @@ xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
     }
 
     return Core::instance().getDataLogic()->getEngineStatistics(deviceId, dataList, count, begin, end, sessionId);
+}
+
+xpum_result_t xpumGetEngineStatsEx(xpum_device_id_t deviceIdList[],
+                                   uint32_t deviceCount,
+                                   xpum_device_engine_stats_t dataList[],
+                                   uint32_t *count,
+                                   uint64_t *begin,
+                                   uint64_t *end,
+                                   uint64_t sessionId) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
+    for (uint32_t i = 0; i < deviceCount; i++) {
+        xpum_device_id_t deviceId = deviceIdList[i];
+
+        res = validateDeviceId(deviceId);
+        if (res != XPUM_OK) {
+            return res;
+        }
+    }
+
+    if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
+        return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
+    char *env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        if (!Core::instance().getMonitorManager()->initOneTimeMetricMonitorTasks(MeasurementType::METRIC_ENGINE_UTILIZATION)) {
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+
+    if (dataList == nullptr) {
+        *count = 0;
+        for (uint32_t i = 0; i < deviceCount; i++) {
+            xpum_device_id_t deviceId = deviceIdList[i];
+            uint32_t count_ = 0;
+            res = Core::instance().getDataLogic()->getEngineStatistics(deviceId, dataList, &count_, begin, end, sessionId);
+            if (res != XPUM_OK) {
+                return res;
+            }
+            *count += count_;
+        }
+        return XPUM_OK;
+    } else {
+        uint32_t used = 0;
+        uint32_t count_;
+        for (uint32_t i = 0; i < deviceCount; i++) {
+            xpum_device_id_t deviceId = deviceIdList[i];
+            count_ = *count - used;
+            if (count_ <= 0) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+            res = Core::instance().getDataLogic()->getEngineStatistics(deviceId, dataList + used, &count_, begin, end, sessionId);
+            if (res != XPUM_OK) {
+                return res;
+            }
+            used += count_;
+        }
+        *count = used;
+        return XPUM_OK;
+    }
 }
 
 xpum_result_t xpumGetMetrics(xpum_device_id_t deviceId,
@@ -1042,6 +1179,97 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
     }
     
     return Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList, count, begin, end, sessionId);
+}
+
+xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
+                                             uint32_t deviceCount,
+                                             xpum_device_fabric_throughput_stats_t dataList[],
+                                             uint32_t *count,
+                                             uint64_t *begin,
+                                             uint64_t *end,
+                                             uint64_t sessionId) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    if (Core::instance().getDataLogic() == nullptr) {
+        return XPUM_NOT_INITIALIZED;
+    }
+
+    if (sessionId >= Configuration::MAX_STATISTICS_SESSION_NUM) {
+        return XPUM_UNSUPPORTED_SESSIONID;
+    }
+
+    for (uint32_t i = 0; i < deviceCount; i++) {
+        xpum_device_id_t deviceId = deviceIdList[i];
+        // check device id
+        res = validateDeviceId(deviceId);
+        if (res != XPUM_OK) {
+            return res;
+        }
+
+        // check METRIC_FABRIC_THROUGHPUT enabled
+        auto metric_types = Configuration::getEnabledMetrics();
+        if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+            *count = 0;
+            return XPUM_METRIC_NOT_ENABLED;
+        }
+
+        // check device support METRIC_FABRIC_THROUGHPUT
+        std::vector<xpum::DeviceCapability> capabilities;
+        Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getCapability(capabilities);
+        for (auto metric = metric_types.begin(); metric != metric_types.end();) {
+            if (std::none_of(capabilities.begin(), capabilities.end(), [metric](xpum::DeviceCapability cap) { return (cap == Utility::capabilityFromMeasurementType(*metric)); })) {
+                metric = metric_types.erase(metric);
+            } else {
+                metric++;
+            }
+        }
+        if (metric_types.find(METRIC_FABRIC_THROUGHPUT) == metric_types.end()) {
+            *count = 0;
+            return XPUM_METRIC_NOT_SUPPORTED;
+        }
+    }
+
+    char *env = std::getenv("XPUM_DISABLE_PERIODIC_METRIC_MONITOR");
+    std::string xpum_disable_periodic_metric_monitor{env != NULL ? env : ""};
+    if (xpum_disable_periodic_metric_monitor == "1") {
+        if (!Core::instance().getMonitorManager()->initOneTimeMetricMonitorTasks(MeasurementType::METRIC_FABRIC_THROUGHPUT)) {
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+
+    if (dataList == nullptr) {
+        *count = 0;
+        for (uint32_t i = 0; i < deviceCount; i++) {
+            xpum_device_id_t deviceId = deviceIdList[i];
+            uint32_t count_ = 0;
+            res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList, &count_, begin, end, sessionId);
+            if (res != XPUM_OK) {
+                return res;
+            }
+            *count += count_;
+        }
+        return XPUM_OK;
+    } else {
+        uint32_t used = 0;
+        uint32_t count_;
+        for (uint32_t i = 0; i < deviceCount; i++) {
+            xpum_device_id_t deviceId = deviceIdList[i];
+            count_ = *count - used;
+            if (count_ <= 0) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+            res = Core::instance().getDataLogic()->getFabricThroughputStatistics(deviceId, dataList + used, &count_, begin, end, sessionId);
+            if (res != XPUM_OK) {
+                return res;
+            }
+            used += count_;
+        }
+        *count = used;
+        return XPUM_OK;
+    }
 }
 
 xpum_result_t xpumGetFabricThroughput(xpum_device_id_t deviceId,

@@ -565,15 +565,16 @@ typedef enum xpum_engine_type_enum {
  * 
  */
 typedef struct xpum_device_engine_stats_t {
-    bool isTileData;         ///< If this statistics data is tile level
-    int32_t tileId;          ///< The tile id, only valid if isTileData is true
-    uint64_t index;          ///< The index of the engine in the same type on the device or sub-device
-    xpum_engine_type_t type; ///< The type of the engine
-    uint64_t value;          ///< The value of engine utilization
-    uint64_t min;            ///< The min value since last call
-    uint64_t avg;            ///< The average value since last call
-    uint64_t max;            ///< The max value since last call
-    uint32_t scale;          ///< The magnification of the value, accumulated, min, avg, and max fields
+    bool isTileData;           ///< If this statistics data is tile level
+    int32_t tileId;            ///< The tile id, only valid if isTileData is true
+    uint64_t index;            ///< The index of the engine in the same type on the device or sub-device
+    xpum_engine_type_t type;   ///< The type of the engine
+    uint64_t value;            ///< The value of engine utilization
+    uint64_t min;              ///< The min value since last call
+    uint64_t avg;              ///< The average value since last call
+    uint64_t max;              ///< The max value since last call
+    uint32_t scale;            ///< The magnification of the value, accumulated, min, avg, and max fields
+    xpum_device_id_t deviceId; ///< Device id
 } xpum_device_engine_stats_t;
 
 /**
@@ -616,6 +617,7 @@ typedef struct xpum_device_fabric_throughput_stats_t {
     uint64_t avg;                       ///< The average value since last call
     uint64_t max;                       ///< The max value since last call
     uint32_t scale;                     ///< The magnification of the value, accumulated, min, avg, and max fields
+    xpum_device_id_t deviceId;          ///< Device id
 } xpum_device_fabric_throughput_stats_t;
 
 /**

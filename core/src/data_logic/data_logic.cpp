@@ -336,6 +336,7 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
             data.index = engine_index;
             data.scale = p_data->getScale();
             data.type = Utility::toXPUMEngineType(std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getEngineType(engine_datas_iter->first));
+            data.deviceId = deviceId;
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }
@@ -504,6 +505,7 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
                 stats.max = fabric_datas_iter->second.max;
                 stats.scale = p_data->getScale();
             }
+            stats.deviceId = deviceId;
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }
