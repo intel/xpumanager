@@ -109,7 +109,11 @@ int CLIWrapper::printResult(std::ostream &out) {
                 else
                     setenv("XPUM_METRICS", "0,4-31,36-37", 1);
             }
-            this->coreStub = std::make_shared<LibCoreStub>();
+            if (comlet->getCommand().compare("dump") == 0 && std::dynamic_pointer_cast<ComletDump>(comlet)->dumpIdlePowerOnly()) {
+                this->coreStub = std::make_shared<LibCoreStub>(false);
+            } else {
+                this->coreStub = std::make_shared<LibCoreStub>();  
+            }
             comlet->coreStub = this->coreStub;
 #endif
             if (this->opts->json) {

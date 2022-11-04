@@ -20,8 +20,10 @@ namespace xpum::cli {
 
 class LibCoreStub : public CoreStub {
    public:
-    LibCoreStub();
+    LibCoreStub(bool initCore = true);
     ~LibCoreStub();
+
+    bool initCore;
 
     bool isChannelReady();
 
@@ -109,6 +111,8 @@ class LibCoreStub : public CoreStub {
     std::shared_ptr<nlohmann::json> getFabricCount(int deviceId);
 
     std::unique_ptr<nlohmann::json> getSensorReading();
+
+    std::vector<std::unique_ptr<nlohmann::json>> getMetricsFromSysfs(std::vector<std::string> bdfs);
 
 };
 } // end namespace xpum::cli

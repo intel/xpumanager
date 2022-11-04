@@ -468,4 +468,9 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getStatisticsByGroup(uint32_t grou
     return json;
 }
 
+std::vector<std::unique_ptr<nlohmann::json>> GrpcCoreStub::getMetricsFromSysfs(std::vector<std::string> bdfs) {
+    std::vector<std::unique_ptr<nlohmann::json>> ret;
+    return ret;
+}
+
 } // end namespace xpum::cli

@@ -4,6 +4,8 @@
  *  @file fabric_measurement_data.h
  */
 
+#pragma once
+
 #include "measurement_data.h"
 #include "metric_collection_measurement_data.h"
 

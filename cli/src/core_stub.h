@@ -123,6 +123,8 @@ class CoreStub {
 
     virtual std::unique_ptr<nlohmann::json> getSensorReading()=0;
 
+    virtual std::vector<std::unique_ptr<nlohmann::json>> getMetricsFromSysfs(std::vector<std::string> bdfs)=0;
+
     std::unique_ptr<nlohmann::json> getPreCheckInfo();
 
    protected:

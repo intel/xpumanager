@@ -989,6 +989,23 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
                                            uint64_t *begin,
                                            uint64_t *end,
                                            uint64_t sessionId);
+/**
+ * @brief Get metrics data from sysfs
+ * 
+ * @param bdfs          IN: The array of PCI BDF address strings
+ * @param length        IN: The length of array \a bdfs
+ * @param dataList     OUT: The array to store metrics data for device \a bdfs.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats size.
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+
+ xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,
+                                      uint32_t length,
+                                      xpum_device_stats_t dataList[],
+                                      uint32_t *count);
 
 /// @cond DAEMON_ONLY
 /**

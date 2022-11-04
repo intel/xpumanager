@@ -14,6 +14,9 @@
 #include "comlet_base.h"
 #include "internal_dump_raw_data.h"
 #include "xpum_structs.h"
+#include <dirent.h>
+#include <fcntl.h>
+#include <dlfcn.h>
 
 using xpum::dump::dumpTypeOptions;
 
@@ -68,11 +71,17 @@ class ComletDump : public ComletBase {
 
     void printByLine(std::ostream &out);
 
+    void printByLineWithoutInitializeCore(std::ostream &out);
+
+    std::unique_ptr<nlohmann::json> getMetricsFromSysfs();
+
     void dumpRawDataToFile(std::ostream &out);
 
     bool dumpPCIeMetrics();
 
     bool dumpEUMetrics();
+
+    bool dumpIdlePowerOnly();
 
     std::unique_ptr<nlohmann::json> combineTileAndDeviceLevel(nlohmann::json rawJson);
 };

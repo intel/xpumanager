@@ -176,6 +176,8 @@ class GPUDeviceStub {
 
     static std::shared_ptr<FabricMeasurementData> toGetFabricThroughput(const zes_device_handle_t& device);
 
+    static std::shared_ptr<MeasurementData> loadPVCIdlePowers(std::string bdf = "", bool fresh = true, int index = 0);
+
    private:
     GPUDeviceStub();
 
@@ -286,6 +288,11 @@ class GPUDeviceStub {
     static std::map<ze_device_handle_t, ze_context_handle_t> target_metric_contexts;
 
     static std::map<ze_device_handle_t, std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>> device_perf_groups;
+
+    static std::mutex pvc_idle_power_mutex;
+    static std::map<std::string, std::shared_ptr<MeasurementData>> pvc_idle_powers; // key: bdf value: idle_power
+    static std::set<std::string> pvc_gpu_bdfs;
+    static bool has_pvc_idle_powers;
 };
 
 } // end namespace xpum

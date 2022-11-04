@@ -23,6 +23,7 @@
 #include "device/device.h"
 #include "device/memoryEcc.h"
 #include "device/power.h"
+#include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_process.h"
 #include "infrastructure/device_util_by_proc.h"
@@ -1270,6 +1271,77 @@ xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
         *count = used;
         return XPUM_OK;
     }
+}
+
+xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,
+                                      uint32_t length,
+                                      xpum_device_stats_t dataList[],
+                                      uint32_t *count) {
+    if (bdfs == nullptr || length == 0) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    Logger::init();
+    if (length > 1) {
+        GPUDeviceStub::loadPVCIdlePowers();
+    }   
+    
+    int position = 0;
+    for (uint32_t index = 0; index < length; index++) {
+        std::string bdf = bdfs[index];
+        auto p_data = GPUDeviceStub::loadPVCIdlePowers(bdf);
+
+        xpum_device_stats_t device_stats;
+        device_stats.deviceId = std::stoi(p_data->getDeviceId());
+        device_stats.isTileData = false;
+        device_stats.count = 0;
+        if (p_data->hasDataOnDevice()) {
+            xpum_device_stats_data_t stats_data;
+            MeasurementType type = MeasurementType::METRIC_POWER;
+            stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+            stats_data.scale = p_data->getScale();
+            stats_data.isCounter = false;
+            stats_data.avg = p_data->getAvg();
+            stats_data.min = p_data->getMin();
+            stats_data.max = p_data->getMax();
+            stats_data.value = p_data->getCurrent();
+            device_stats.dataList[0] = stats_data;
+            device_stats.count = 1;
+        }
+
+        if (position >= (int)*count) {
+            return XPUM_BUFFER_TOO_SMALL;
+        }
+        dataList[position++] = device_stats;
+        
+        for (uint32_t tileId = 0; tileId < 4; tileId++) {
+            if (p_data->getSubdeviceDataCurrent(tileId) == std::numeric_limits<uint64_t>::max())
+                continue;
+            
+            device_stats.isTileData = true;
+            device_stats.tileId = tileId;
+            device_stats.count = 0;
+            xpum_device_stats_data_t stats_data;
+            MeasurementType type = MeasurementType::METRIC_POWER;
+            stats_data.metricsType = Utility::xpumStatsTypeFromMeasurementType(type);
+            stats_data.scale = p_data->getScale();
+            stats_data.isCounter = false;
+            stats_data.avg = p_data->getSubdeviceDataAvg(tileId);
+            stats_data.min = p_data->getSubdeviceDataMin(tileId);
+            stats_data.max = p_data->getSubdeviceDataMax(tileId);
+            stats_data.value = p_data->getSubdeviceDataCurrent(tileId);
+            device_stats.dataList[0] = stats_data;
+            device_stats.count = 1;
+
+            if (position >= (int)*count) {
+                return XPUM_BUFFER_TOO_SMALL;
+            }
+            dataList[position++] = device_stats;
+        }
+    }
+    *count = position;
+
+    return XPUM_OK;
 }
 
 xpum_result_t xpumGetFabricThroughput(xpum_device_id_t deviceId,

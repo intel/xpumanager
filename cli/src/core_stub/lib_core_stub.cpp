@@ -27,16 +27,19 @@ using namespace xpum;
 
 namespace xpum::cli {
 
-LibCoreStub::LibCoreStub() {
+LibCoreStub::LibCoreStub(bool initCore) {
     char* env = std::getenv("SPDLOG_LEVEL");
     if (!env) {
         putenv(const_cast<char*>("SPDLOG_LEVEL=OFF"));
     }
-    xpumInit();
+    this->initCore = initCore;
+    if (this->initCore)
+        xpumInit();
 }
 
 LibCoreStub::~LibCoreStub() {
-    xpumShutdown();
+    if (this->initCore)
+        xpumShutdown();
 }
 
 bool LibCoreStub::isChannelReady() {

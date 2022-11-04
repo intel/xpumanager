@@ -108,7 +108,193 @@ GPUDeviceStub& GPUDeviceStub::instance() {
 
 PCIeManager GPUDeviceStub::pcie_manager;
 
+static std::string getFileValue(std::string file_name) {
+    std::ifstream ifs(file_name);
+    std::string content((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+    return content;
+}
+
+std::mutex GPUDeviceStub::pvc_idle_power_mutex;
+std::map<std::string, std::shared_ptr<MeasurementData>> GPUDeviceStub::pvc_idle_powers;
+std::set<std::string> GPUDeviceStub::pvc_gpu_bdfs;
+bool GPUDeviceStub::has_pvc_idle_powers = true;
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bdf, bool fresh, int index) {
+    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+    if (!has_pvc_idle_powers) {
+        return ret;
+    }
+
+    std::unique_lock<std::mutex> lock(GPUDeviceStub::pvc_idle_power_mutex);
+    if (bdf != "" && pvc_idle_powers.count(bdf) > 0) {
+        ret = pvc_idle_powers[bdf];
+        pvc_idle_powers.erase(bdf);
+        if (!fresh)
+            has_pvc_idle_powers = false;
+        return ret;
+    }
+
+    if (has_pvc_idle_powers && pvc_gpu_bdfs.size() == 0) {
+        DIR *pdir = NULL;
+        struct dirent *pdirent = NULL;
+        pdir = opendir("/sys/class/drm");
+        if (pdir != NULL) {
+            while ((pdirent = readdir(pdir)) != NULL) {
+                if (pdirent->d_name[0] == '.') {
+                    continue;
+                }
+                if (strncmp(pdirent->d_name, "render", 6) == 0) {
+                    continue;
+                }
+                if (strncmp(pdirent->d_name, "card", 4) != 0) {
+                    continue;
+                }
+                if (strstr(pdirent->d_name, "-") != NULL) {
+                    continue;
+                }
+                std::string uevent = getFileValue("/sys/class/drm/" + std::string(pdirent->d_name) +"/device/uevent");
+                std::string key = "PCI_ID=8086:";
+                auto pos = uevent.find(key); 
+                if (pos != std::string::npos) {
+                    std::string bdf_key = "PCI_SLOT_NAME=";
+                    auto bdf_pos = uevent.find(bdf_key); 
+                    if (bdf_pos != std::string::npos) {
+                        auto device_id = uevent.substr(pos + key.length(), 4);
+                        if (device_id.compare(0, 3, "0BD") == 0 || device_id.compare(0, 3, "0BE") == 0)
+                            pvc_gpu_bdfs.insert(uevent.substr(bdf_pos + bdf_key.length(), 12));
+                    }
+                }
+            }
+            closedir(pdir);
+        }
+    }
+    // PVC Not Found
+    if (pvc_gpu_bdfs.size() == 0) {
+        has_pvc_idle_powers = false;
+        return ret;
+    }
+
+    auto gpu_bdfs = pvc_gpu_bdfs;
+    if (bdf != "") {
+        if (gpu_bdfs.count(bdf) == 0) {
+            return ret;
+        } else {
+            // Only read target PVC idle power
+            gpu_bdfs.clear();
+            gpu_bdfs.insert(bdf);
+        }
+    }
+
+    std::map<std::string, std::map<std::uint32_t, std::string>> gpu_bdf_to_power_paths;
+    char path[PATH_MAX];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    pdir = opendir("/sys/class/hwmon");
+    if (pdir != NULL) {
+        while ((pdirent = readdir(pdir)) != NULL) {
+            if (pdirent->d_name[0] == '.') {
+                continue;
+            }
+            if (strncmp(pdirent->d_name, "hwmon", 5) != 0) {
+                continue;
+            }
+ 
+            snprintf(path, PATH_MAX, "/sys/class/hwmon/%s", pdirent->d_name);
+            char full_path[PATH_MAX];
+            ssize_t full_len = ::readlink(path, full_path, sizeof(full_path));
+            full_path[full_len] = '\0';
+
+            for (auto& gpu_bdf: gpu_bdfs) {
+                if (strstr(full_path, gpu_bdf.c_str()) != NULL) {
+                    std::string name = getFileValue("/sys/class/hwmon/" + std::string(pdirent->d_name) +"/name");
+                    name.erase(0, name.find_first_not_of(" \n\r\t"));                                                                                               
+                    name.erase(name.find_last_not_of(" \n\r\t") + 1);
+                    auto energy_path = "/sys/class/hwmon/" + std::string(pdirent->d_name) +"/energy1_input";
+                    uint64_t value = std::stoull(getFileValue(energy_path));
+                    auto timestamp = Utility::getCurrentMillisecond();
+                    XPUM_LOG_TRACE("[{}] path:{}, value: {}, timestamp: {}", gpu_bdf, energy_path, value, timestamp);
+                    if (pvc_idle_powers.count(gpu_bdf) == 0)
+                        pvc_idle_powers[gpu_bdf] = std::make_shared<MeasurementData>();
+
+                    pvc_idle_powers[gpu_bdf]->setTimestamp(timestamp);
+                    if (name == "i915") {
+                        pvc_idle_powers[gpu_bdf]->setCurrent(value);
+                        gpu_bdf_to_power_paths[gpu_bdf][UINT32_MAX] = energy_path;
+                    } else if (name.find("gt0") != std::string::npos) {
+                        pvc_idle_powers[gpu_bdf]->setSubdeviceDataCurrent(0, value);
+                        gpu_bdf_to_power_paths[gpu_bdf][0] = energy_path;
+                    } else if (name.find("gt1") != std::string::npos) {
+                        pvc_idle_powers[gpu_bdf]->setSubdeviceDataCurrent(1, value);
+                        gpu_bdf_to_power_paths[gpu_bdf][1] = energy_path;
+                    } else if (name.find("gt2") != std::string::npos) {
+                        pvc_idle_powers[gpu_bdf]->setSubdeviceDataCurrent(2, value);
+                        gpu_bdf_to_power_paths[gpu_bdf][2] = energy_path;
+                    }
+                }
+            }
+        }
+        closedir(pdir);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    int device_id = 0;
+    for (auto& bdf_data : pvc_idle_powers) {
+        // energy:microjoules timestamp:microsecond
+        auto begin_time = bdf_data.second->getTimestamp(); 
+        auto end_time = Utility::getCurrentMillisecond();
+        bdf_data.second->setTimestamp(end_time);
+        begin_time *= 1000;
+        end_time *= 1000;
+        if (bdf_data.second->getCurrent() != std::numeric_limits<uint64_t>::max()) {
+            uint64_t value = std::stoull(getFileValue(gpu_bdf_to_power_paths[bdf_data.first][UINT32_MAX]));
+            XPUM_LOG_TRACE("[{}] path:{}, value: {}, timestamp: {}", bdf_data.first, gpu_bdf_to_power_paths[bdf_data.first][UINT32_MAX], value, bdf_data.second->getTimestamp());
+            auto val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * (value - bdf_data.second->getCurrent()) / (end_time - begin_time);
+            bdf_data.second->setCurrent(val);
+            bdf_data.second->setAvg(val);
+            bdf_data.second->setMax(val);
+            bdf_data.second->setMin(val);
+            bdf_data.second->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+            bdf_data.second->setDeviceId(std::to_string(device_id));
+            XPUM_LOG_DEBUG("[{}] idle power on device: {}", bdf_data.first, bdf_data.second->getCurrent());
+        }
+
+        for (uint32_t tile = 0; tile < 4; tile ++) {
+            if (bdf_data.second->getSubdeviceDataCurrent(tile) != std::numeric_limits<uint64_t>::max()) {
+                uint64_t value = std::stoull(getFileValue(gpu_bdf_to_power_paths[bdf_data.first][tile]));
+                XPUM_LOG_TRACE("[{}] path:{}, value: {}, timestamp: {}", bdf_data.first, gpu_bdf_to_power_paths[bdf_data.first][tile], value, bdf_data.second->getTimestamp());
+                auto val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * (value - bdf_data.second->getSubdeviceDataCurrent(tile)) / (end_time - begin_time);
+                bdf_data.second->setSubdeviceDataCurrent(tile, val);
+                bdf_data.second->setSubdeviceDataMax(tile, val);
+                bdf_data.second->setSubdeviceDataMax(tile, val);
+                bdf_data.second->setSubdeviceDataMax(tile, val);
+                bdf_data.second->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);            
+                bdf_data.second->setDeviceId(std::to_string(device_id));
+                XPUM_LOG_DEBUG("[{}] idle power on tile {} : {}", bdf_data.first, tile, bdf_data.second->getSubdeviceDataCurrent(tile));
+            }   
+        }
+        device_id++;
+    }
+    if (bdf == "") {
+        if (pvc_idle_powers.size() == 0 || index >= (int)pvc_idle_powers.size())
+            return ret;
+        else {
+            auto it = pvc_idle_powers.begin();
+            std::advance(it, index);
+            return it->second;
+        }
+    } else {
+        ret = pvc_idle_powers[bdf];
+        pvc_idle_powers.erase(bdf);
+        if (!fresh)
+            has_pvc_idle_powers = false;
+        return ret;
+    }
+}
+
 void GPUDeviceStub::init() {
+    // Add a temporary workaround for PVC idle powers
+    loadPVCIdlePowers();
+
     initialized = true;
     putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
     putenv(const_cast<char*>("ZE_ENABLE_PCI_ID_DEVICE_ORDER=1"));
