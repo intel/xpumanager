@@ -229,6 +229,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bd
                     } else if (name.find("gt2") != std::string::npos) {
                         pvc_idle_powers[gpu_bdf]->setSubdeviceDataCurrent(2, value);
                         gpu_bdf_to_power_paths[gpu_bdf][2] = energy_path;
+                    } else if (name.find("gt3") != std::string::npos) {
+                        pvc_idle_powers[gpu_bdf]->setSubdeviceDataCurrent(3, value);
+                        gpu_bdf_to_power_paths[gpu_bdf][3] = energy_path;
                     }
                 }
             }
