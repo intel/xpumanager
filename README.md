@@ -42,3 +42,4 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
 * Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) for how to install/uninstall Intel XPU Manager.
 * Refer to the [XPU Manager CLI User Guide](doc/CLI_user_guide.md) to start using Intel XPU Manager.
 * Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.
+* Refer to [Building XPU Manager Installer](BUILDING.md) to build XPU Manager installer packages. 
