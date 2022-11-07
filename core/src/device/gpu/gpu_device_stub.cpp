@@ -4205,10 +4205,7 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
         ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        if (fabric_port_count == 0 && exception_msgs.empty())
-            throw BaseException("fabric port not found");
-        else
-            throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
+        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
