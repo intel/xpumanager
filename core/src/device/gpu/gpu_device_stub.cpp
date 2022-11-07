@@ -268,8 +268,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bd
                 auto val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * (value - bdf_data.second->getSubdeviceDataCurrent(tile)) / (end_time - begin_time);
                 bdf_data.second->setSubdeviceDataCurrent(tile, val);
                 bdf_data.second->setSubdeviceDataMax(tile, val);
-                bdf_data.second->setSubdeviceDataMax(tile, val);
-                bdf_data.second->setSubdeviceDataMax(tile, val);
+                bdf_data.second->setSubdeviceDataMin(tile, val);
+                bdf_data.second->setSubdeviceDataAvg(tile, val);
                 bdf_data.second->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);            
                 bdf_data.second->setDeviceId(std::to_string(device_id));
                 XPUM_LOG_DEBUG("[{}] idle power on tile {} : {}", bdf_data.first, tile, bdf_data.second->getSubdeviceDataCurrent(tile));
@@ -4205,7 +4205,10 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
         ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
+        if (fabric_port_count == 0 && exception_msgs.empty())
+            throw BaseException("fabric port not found");
+        else
+            throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 
