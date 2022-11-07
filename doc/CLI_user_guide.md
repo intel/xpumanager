@@ -539,7 +539,7 @@ optional arguments:
                                 32. Render engine group utilization (%), per tile
                                 33. Media engine group utilization (%), per tile
                                 34. Copy engine group utilization (%), per tile
-                                35. Throttle reason
+                                35. Throttle reason, per tile
 
   
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second. 
