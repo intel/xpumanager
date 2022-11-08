@@ -922,6 +922,47 @@ void ComletDump::printByLine(std::ostream &out) {
                                 return std::string();
                             }});
             }
+        } else if (config.optionType == xpum::dump::DUMP_OPTION_THROTTLE_REASON) {
+            DumpColumn dc{
+                std::string(config.name),
+                [config, this]() {
+                    std::string metricKey = config.key;
+                    if (statsJson != nullptr) {
+                        for (auto metricObj : (*statsJson)) {
+                            if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
+                                const uint64_t flags = metricObj["value"].get<uint64_t>();
+                                std::string ss;
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP) {
+                                    ss += "Average Power Excursion, ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP) {
+                                    ss += "Burst Power Excursion, ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT) {
+                                    ss += "Current Excursion, ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT) {
+                                    ss += "Thermal Excursion, ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT) {
+                                    ss += "Power Supply Assertion, ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE) {
+                                    ss += "Software Supplied Frequency Range, ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE) {
+                                    ss += "Sub Block that has a Lower Frequency, ";
+                                }
+                                if (flags == 0) {
+                                    ss = "Not Throttled, ";
+                                }
+                                return ss.substr(0, ss.size() - 2);
+                            }
+                        }
+                    }
+                    return std::string();
+                }};
+            columnSchemaList.push_back(dc);
         }
     }
 

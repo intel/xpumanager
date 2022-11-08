@@ -167,6 +167,8 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
             return [p_device](Callback_t callback) { p_device->getTemperature(callback, ZES_TEMP_SENSORS_MEMORY); };
         case DeviceCapability::METRIC_FREQUENCY_THROTTLE:
             return [p_device](Callback_t callback) { p_device->getFrequencyThrottle(callback); };
+        case DeviceCapability::METRIC_FREQUENCY_THROTTLE_REASON_GPU:
+            return [p_device](Callback_t callback) { p_device->getFrequencyThrottleReason(callback); };
         case DeviceCapability::METRIC_PCIE_READ_THROUGHPUT:
             return [p_device](Callback_t callback) { p_device->getPCIeReadThroughput(callback); };
         case DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT:

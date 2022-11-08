@@ -508,13 +508,14 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE,
     XPUM_STATS_GPU_REQUEST_FREQUENCY, ///< Gpu Request Frequency
     XPUM_STATS_MEMORY_TEMPERATURE,    ///< Memory Temeperature
-    XPUM_STATS_FREQUENCY_THROTTLE,    ///< Frequency Throttle
+    XPUM_STATS_FREQUENCY_THROTTLE,    ///< Frequency Throttle time
     XPUM_STATS_PCIE_READ_THROUGHPUT,  ///< PCIe read throughput
     XPUM_STATS_PCIE_WRITE_THROUGHPUT, ///< PCIe write throughput
     XPUM_STATS_PCIE_READ,             ///< PCIe read
     XPUM_STATS_PCIE_WRITE,            ///< PCIe write
     XPUM_STATS_ENGINE_UTILIZATION,    ///< Engine Utilization
     XPUM_STATS_FABRIC_THROUGHPUT,     ///< Fabric throughput
+    XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU,    ///< Frequency Throttle reason
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -1012,6 +1013,7 @@ typedef enum xpum_dump_type_enum {
     XPUM_DUMP_RENDER_ENGINE_GROUP_UTILIZATION,
     XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION,
     XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION,
+    XPUM_DUMP_FREQUENCY_THROTTLE_REASON_GPU,
     XPUM_DUMP_MAX
 } xpum_dump_type_t;
 

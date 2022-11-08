@@ -32,7 +32,7 @@ By default, Intel XPU Manager has provided as many GPU metrics as possible witho
    add "-m metric-indexes" to ExecStart. 
    Use "/opt/xpum/bin/xpumd -h" to get detailed info.  
    Sample:
-   ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-37
+   ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-38
 2. Run command "sudo systemctl daemon-reload"
 3. Run command "sudo systemctl restart xpum"
   
@@ -76,6 +76,7 @@ Metric types:
 35. GPU PCIe Write (bytes), per GPU (Disabled by default)
 36. GPU Engine Utilization, per GPU engine
 37. Fabric Throughput (kB/s), per tile
+38. Throttle reason, per tile
 
 ### Change the system settings to enable some GPU advanced metrics
 * GPU PCIe Read/Write Throughput: if these metrics are enabled, XPU Manager automatically loads MSR module by command 'modprobe msr', but XPU Manager will not automatically unload the MSR module. If you want to unload it, please run the command 'modprobe -r msr'.

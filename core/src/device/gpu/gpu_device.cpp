@@ -166,6 +166,14 @@ void GPUDevice::getFrequencyThrottle(Callback_t callback) noexcept {
                                                    });
 }
 
+void GPUDevice::getFrequencyThrottleReason(Callback_t callback) noexcept {
+    GPUDeviceStub::instance().getFrequencyThrottleReason(
+        zes_device_handle,
+        [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
+            callback(ret, e);
+        });
+}
+
 static void progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
     uint32_t percent = (done * 100) / total;
 

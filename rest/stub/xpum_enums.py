@@ -144,6 +144,7 @@ XpumDumpType = Enum("xpum_dump_type_t", (
     "XPUM_DUMP_RENDER_ENGINE_GROUP_UTILIZATION",
     "XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION",
     "XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION",
+    "XPUM_DUMP_FREQUENCY_THROTTLE_REASON_GPU",
 ), start=0)
 
 XpumFirmwareType = Enum("xpum_firmware_type_t", (

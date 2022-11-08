@@ -87,6 +87,8 @@ class GPUDeviceStub {
 
     void getFrequencyThrottle(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
+    void getFrequencyThrottleReason(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
     void getPCIeReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getPCIeWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
@@ -221,6 +223,8 @@ class GPUDeviceStub {
     static std::shared_ptr<MeasurementData> toGetRasErrorOnSubdevice(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetFrequencyThrottle(const zes_device_handle_t& device);
+
+    static std::shared_ptr<MeasurementData> toGetFrequencyThrottleReason(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetPCIeReadThroughput(const zes_device_handle_t& device);
 

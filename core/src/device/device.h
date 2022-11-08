@@ -106,6 +106,8 @@ class Device {
 
     virtual void getFrequencyThrottle(Callback_t callback) noexcept = 0;
 
+    virtual void getFrequencyThrottleReason(Callback_t callback) noexcept = 0;
+
     virtual void getPCIeReadThroughput(Callback_t callback) noexcept = 0;
 
     virtual void getPCIeWriteThroughput(Callback_t callback) noexcept = 0;

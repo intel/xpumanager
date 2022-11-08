@@ -214,6 +214,49 @@ void DumpRawDataTask::buildColumns() {
                                           return getScaledValue(data.value, data.scale);
                                       }});
             }
+        } else if (config.optionType == xpum::dump::DUMP_OPTION_THROTTLE_REASON) {
+            int columnIdx = columnList.size();
+            columnList.push_back({std::string(config.name),
+                                  [config, p_this, columnIdx]() {
+                                        DumpColumn& dc = p_this->columnList.at(columnIdx);
+                                        auto statsType = config.metricsType;
+                                        auto& m = p_this->rawDataMap;
+                                        auto it = m.find(statsType);
+                                        std::string value;
+                                        if (it != m.end()) {
+                                            auto data = it->second;
+                                            if (dc.lastTimestamp != data.timestamp) {
+                                                std::string ss;
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP) {
+                                                ss += "AVE_PWR_CAP,";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP) {
+                                                ss += "BURST_PWR_CAP,";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT) {
+                                                ss += "CURRENT_LIMIT,";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT) {
+                                                ss += "THERMAL_LIMIT,";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT) {
+                                                ss += "PSU_ALERT,";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE) {
+                                                ss += "SW_RANGE,";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE) {
+                                                ss += "HW_RANGE,";
+                                            }
+                                            if (ss.size() == 0) {
+                                                ss += "Not Throttled,";
+                                            }
+                                            return ss.substr(0, ss.size() - 1);
+                                          }
+                                          dc.lastTimestamp = data.timestamp;
+                                      }
+                                      return value;
+                                  }});
         }
     }
 }

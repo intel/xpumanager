@@ -95,6 +95,8 @@ MeasurementType Utility::measurementTypeFromCapability(DeviceCapability& capabil
             return MeasurementType::METRIC_MEMORY_TEMPERATURE;
         case DeviceCapability::METRIC_FREQUENCY_THROTTLE:
             return MeasurementType::METRIC_FREQUENCY_THROTTLE;
+        case DeviceCapability::METRIC_FREQUENCY_THROTTLE_REASON_GPU:
+            return MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU;
         case DeviceCapability::METRIC_PCIE_READ_THROUGHPUT:
             return MeasurementType::METRIC_PCIE_READ_THROUGHPUT;
         case DeviceCapability::METRIC_PCIE_WRITE_THROUGHPUT:
@@ -178,6 +180,8 @@ DeviceCapability Utility::capabilityFromMeasurementType(const MeasurementType& m
             return DeviceCapability::METRIC_MEMORY_TEMPERATURE;
         case MeasurementType::METRIC_FREQUENCY_THROTTLE:
             return DeviceCapability::METRIC_FREQUENCY_THROTTLE;
+        case MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU:
+            return DeviceCapability::METRIC_FREQUENCY_THROTTLE_REASON_GPU;
         case MeasurementType::METRIC_PCIE_READ_THROUGHPUT:
             return DeviceCapability::METRIC_PCIE_READ_THROUGHPUT;
         case MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT:
@@ -252,6 +256,7 @@ void Utility::getMetricsTypes(std::vector<MeasurementType>& metric_types) {
     metric_types.push_back(MeasurementType::METRIC_REQUEST_FREQUENCY);
     metric_types.push_back(MeasurementType::METRIC_MEMORY_TEMPERATURE);
     metric_types.push_back(MeasurementType::METRIC_FREQUENCY_THROTTLE);
+    metric_types.push_back(MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU);
     metric_types.push_back(MeasurementType::METRIC_PCIE_READ_THROUGHPUT);
     metric_types.push_back(MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT);
     metric_types.push_back(MeasurementType::METRIC_PCIE_READ);
@@ -327,6 +332,8 @@ MeasurementType Utility::measurementTypeFromXpumStatsType(xpum_stats_type_t& xpu
             return MeasurementType::METRIC_MEMORY_TEMPERATURE;
         case xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE:
             return MeasurementType::METRIC_FREQUENCY_THROTTLE;
+        case xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU:
+            return MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU;
         case xpum_stats_type_enum::XPUM_STATS_PCIE_READ_THROUGHPUT:
             return MeasurementType::METRIC_PCIE_READ_THROUGHPUT;
         case xpum_stats_type_enum::XPUM_STATS_PCIE_WRITE_THROUGHPUT:
@@ -410,6 +417,8 @@ xpum_stats_type_t Utility::xpumStatsTypeFromMeasurementType(MeasurementType& mea
             return xpum_stats_type_enum::XPUM_STATS_MEMORY_TEMPERATURE;
         case MeasurementType::METRIC_FREQUENCY_THROTTLE:
             return xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE;
+        case MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU:
+            return xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU;
         case MeasurementType::METRIC_PCIE_READ_THROUGHPUT:
             return xpum_stats_type_enum::XPUM_STATS_PCIE_READ_THROUGHPUT;
         case MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT:
@@ -491,6 +500,8 @@ std::string Utility::getXpumStatsTypeString(MeasurementType type) {
             return std::string("memory temperature");
         case MeasurementType::METRIC_FREQUENCY_THROTTLE:
             return std::string("throttle frequency");
+        case MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU:
+            return std::string("throttle reason");
         case MeasurementType::METRIC_PCIE_READ_THROUGHPUT:
             return std::string("PCIE read throughput");
         case MeasurementType::METRIC_PCIE_WRITE_THROUGHPUT:

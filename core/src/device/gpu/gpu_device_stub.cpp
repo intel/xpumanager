@@ -727,6 +727,8 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
     if (checkCapability(props.core.name, bdf_address, "Frequency Throttle", toGetFrequencyThrottle, device))
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
+    if (checkCapability(props.core.name, bdf_address, "Frequency Throttle Reason(GPU)", toGetFrequencyThrottleReason, device))
+        capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE_REASON_GPU);
     for (auto metric: Configuration::getEnabledMetrics()) {
         if (metric == METRIC_PCIE_READ_THROUGHPUT) {
             if (checkCapability(props.core.name, bdf_address, "PCIe read throughput", toGetPCIeReadThroughput, device))
@@ -4045,6 +4047,59 @@ bool GPUDeviceStub::setEccState(const zes_device_handle_t& device, ecc_state_t& 
     ecc.setAction(props.pendingAction);
     return true;
 #endif
+}
+
+void GPUDeviceStub::getFrequencyThrottleReason(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetFrequencyThrottleReason, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottleReason(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetFrequencyThrottleReason error: device handle is nullptr");
+    }
+    uint32_t freqDomainCount = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freqDomainCount, nullptr));
+    if (res != ZE_RESULT_SUCCESS) {
+        std::stringstream err;
+        err << "zesDeviceEnumFrequencyDomains error, result: 0x" << std::hex << res;
+        throw BaseException(err.str());
+    }
+    std::vector<zes_freq_handle_t> freqDomainList(freqDomainCount);
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freqDomainCount, freqDomainList.data()));
+    if (res != ZE_RESULT_SUCCESS) {
+        std::stringstream err;
+        err << "zesDeviceEnumFrequencyDomains error, result: 0x" << std::hex << res;
+        throw BaseException(err.str());
+    }
+    std::shared_ptr<MeasurementData> outData = std::make_shared<MeasurementData>();
+    for (auto &hFreq: freqDomainList) {
+        zes_freq_properties_t freqProps;
+        XPUM_ZE_HANDLE_LOCK(hFreq, res = zesFrequencyGetProperties(hFreq, &freqProps));
+        if (res != ZE_RESULT_SUCCESS) {
+            std::stringstream err;
+            err << "zesFrequencyGetProperties error, result: 0x" << std::hex << res;
+            throw BaseException(err.str());
+        }
+        if (freqProps.type == ZES_FREQ_DOMAIN_GPU) {
+            zes_freq_state_t freqState;
+            XPUM_ZE_HANDLE_LOCK(hFreq, zesFrequencyGetState(hFreq, &freqState));
+            if (res != ZE_RESULT_SUCCESS) {
+                std::stringstream err;
+                err << "zesFrequencyGetState error, result: 0x" << std::hex << res;
+                throw BaseException(err.str());
+            }
+            if (freqProps.onSubdevice) {
+                outData->setSubdeviceDataCurrent(freqProps.subdeviceId, freqState.throttleReasons);
+            } else {
+                outData->setCurrent(freqState.throttleReasons);
+            }
+        }
+    }
+    return outData;
 }
 
 void GPUDeviceStub::getPCIeReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept {
