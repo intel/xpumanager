@@ -49,7 +49,7 @@ void DiagnosticManager::init() {
         }
     }
     if (XPUM_DAEMON_INSTALL_PATH.empty()) {
-        XPUM_LOG_ERROR("couldn't find xpum install path in service file: {} and {}",
+        XPUM_LOG_TRACE("couldn't find xpum install path in service file: {} and {}",
                     service_file_names.front(), service_file_names.back());
     }
 }
