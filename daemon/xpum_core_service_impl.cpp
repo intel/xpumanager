@@ -419,9 +419,26 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                                                  ::GroupArray* response) {
     XPUM_LOG_TRACE("call get all group id");
 
-    xpum_group_id_t groups[XPUM_MAX_NUM_GROUPS];
-    int count = XPUM_MAX_NUM_GROUPS;
-    xpum_result_t res = xpumGetAllGroupIds(groups, &count);
+    int count;
+    xpum_result_t res = xpumGetAllGroupIds(nullptr, &count);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
+        response->set_errorno(res);
+        return grpc::Status::OK;
+    } else if (count < 0) {
+        response->set_errormsg("Fail to get group count");
+        response->set_errorno(XPUM_GENERIC_ERROR);
+        return grpc::Status::OK;
+    }
+    xpum_group_id_t groups[count];
+    res = xpumGetAllGroupIds(groups, &count);
     if (res == XPUM_OK) {
         response->set_count(count);
 

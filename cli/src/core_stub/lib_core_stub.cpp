@@ -141,9 +141,20 @@ std::unique_ptr<nlohmann::json> LibCoreStub::groupListAll() {
     using namespace xpum;
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
-    xpum_group_id_t groups[XPUM_MAX_NUM_GROUPS];
     int count = XPUM_MAX_NUM_GROUPS;
-    xpum_result_t res = xpumGetAllGroupIds(groups, &count);
+    xpum_result_t res = xpumGetAllGroupIds(nullptr, &count);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                return json;
+            default:
+                (*json)["error"] = "Error";
+                return json;
+        }
+    }
+    xpum_group_id_t groups[count];
+    res = xpumGetAllGroupIds(groups, &count);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:

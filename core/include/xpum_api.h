@@ -249,7 +249,7 @@ xpum_result_t xpumGroupGetInfo(xpum_group_id_t groupId, xpum_group_info_t *pGrou
  * @param count            OUT: Count of groups
  * @return xpum_result_t 
  */
-xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count);
+xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[], int *count);
 
 /** @} */ // Closing for GROUP_MANAGEMENT_API
 /// @endcond
