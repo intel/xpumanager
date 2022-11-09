@@ -4237,7 +4237,7 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
                         zes_fabric_port_throughput_t throughput;
                         XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetThroughput(fp, &throughput));
                         if (res == ZE_RESULT_SUCCESS) {
-                            ret->addRawData(uint64_t(device), throughput.timestamp, throughput.rxCounter, throughput.txCounter, props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId);
+                            ret->addRawData(uint64_t(fp), throughput.timestamp, throughput.rxCounter, throughput.txCounter, props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId);
                             data_acquired = true;
                         } else {
                             exception_msgs["zesFabricPortGetThroughput"] = res;
