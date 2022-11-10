@@ -4076,6 +4076,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottleReason(con
         throw BaseException(err.str());
     }
     std::shared_ptr<MeasurementData> outData = std::make_shared<MeasurementData>();
+    zes_freq_throttle_reason_flags_t deviceLevelFlag = 0;
+    bool hasDataOnSubDevice = false;
     for (auto &hFreq: freqDomainList) {
         zes_freq_properties_t freqProps;
         XPUM_ZE_HANDLE_LOCK(hFreq, res = zesFrequencyGetProperties(hFreq, &freqProps));
@@ -4094,10 +4096,15 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottleReason(con
             }
             if (freqProps.onSubdevice) {
                 outData->setSubdeviceDataCurrent(freqProps.subdeviceId, freqState.throttleReasons);
+                deviceLevelFlag |= freqState.throttleReasons;
+                hasDataOnSubDevice = true;
             } else {
                 outData->setCurrent(freqState.throttleReasons);
             }
         }
+    }
+    if (hasDataOnSubDevice) {
+        outData->setCurrent(deviceLevelFlag);
     }
     return outData;
 }

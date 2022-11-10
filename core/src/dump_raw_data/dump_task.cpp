@@ -228,30 +228,30 @@ void DumpRawDataTask::buildColumns() {
                                             if (dc.lastTimestamp != data.timestamp) {
                                                 std::string ss;
                                             if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP) {
-                                                ss += "AVE_PWR_CAP,";
+                                                ss += "AVE_PWR_CAP | ";
                                             }
                                             if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP) {
-                                                ss += "BURST_PWR_CAP,";
+                                                ss += "BURST_PWR_CAP | ";
                                             }
                                             if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT) {
-                                                ss += "CURRENT_LIMIT,";
+                                                ss += "CURRENT_LIMIT | ";
                                             }
                                             if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT) {
-                                                ss += "THERMAL_LIMIT,";
+                                                ss += "THERMAL_LIMIT | ";
                                             }
                                             if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT) {
-                                                ss += "PSU_ALERT,";
+                                                ss += "PSU_ALERT | ";
                                             }
                                             if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE) {
-                                                ss += "SW_RANGE,";
+                                                ss += "SW_RANGE | ";
                                             }
                                             if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE) {
-                                                ss += "HW_RANGE,";
+                                                ss += "HW_RANGE | ";
                                             }
                                             if (ss.size() == 0) {
-                                                ss += "Not Throttled,";
+                                                ss += "Not Throttled | ";
                                             }
-                                            return ss.substr(0, ss.size() - 1);
+                                            return ss.substr(0, ss.size() - 3);
                                           }
                                           dc.lastTimestamp = data.timestamp;
                                       }
