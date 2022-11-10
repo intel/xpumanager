@@ -242,11 +242,11 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getFabricStatistics(int deviceId) {
             continue;
         }
 
-        int32_t scale = fabricInfo.scale;
+        int32_t scale = fabricInfo.scale * 1000; // kB
         if (scale == 1) {
             obj["value"] = fabricInfo.value;
         } else {
-            obj["value"] = (double)fabricInfo.value / scale;
+            obj["value"] = round((double)fabricInfo.value / scale * 100) / 100;
         }
         obj["name"] = ss.str();
         obj["tile_id"] = fabricInfo.tile_id;

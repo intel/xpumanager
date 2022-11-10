@@ -204,17 +204,17 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getFabricStatistics(int deviceId) 
             continue;
         }
 
-        int32_t scale = fabricInfo.scale();
+        int32_t scale = fabricInfo.scale() * 1000; // kB
         if (scale == 1) {
             obj["value"] = fabricInfo.value();
             obj["min"] = fabricInfo.min();
             obj["max"] = fabricInfo.max();
             obj["avg"] = fabricInfo.avg();
         } else {
-            obj["value"] = (double)fabricInfo.value() / scale;
-            obj["min"] = (double)fabricInfo.min() / scale;
-            obj["max"] = (double)fabricInfo.max() / scale;
-            obj["avg"] = (double)fabricInfo.avg() / scale;
+            obj["value"] = round((double)fabricInfo.value() / scale * 100) / 100;
+            obj["min"] = round((double)fabricInfo.min() / scale * 100) / 100;
+            obj["max"] = round((double)fabricInfo.max() / scale * 100) / 100;
+            obj["avg"] = round((double)fabricInfo.avg() / scale * 100) / 100;
         }
         obj["name"] = ss.str();
         obj["tile_id"] = fabricInfo.tileid();
