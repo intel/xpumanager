@@ -35,6 +35,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -57,6 +60,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -79,6 +85,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -99,6 +108,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -119,6 +131,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -211,3 +226,9 @@ spec:
             items:
               - key: .dockerconfigjson
                 path: config.json
+    - name: sign-secret
+      secret:
+        secretName: sign-secret
+        items:
+          - key: password
+            path: password.sys_dcm
