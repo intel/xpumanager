@@ -193,7 +193,7 @@ void DumpRawDataTask::buildColumns() {
                                               return value;
                                           }
                                           auto& data = it->second;
-                                          return getScaledValue(data.value, data.scale * config.scale);
+                                          return getScaledValue(data.value, data.scale * config.scale * 1000); // kB
                                       }});
                 // rx
                 ss.str("");
@@ -211,7 +211,7 @@ void DumpRawDataTask::buildColumns() {
                                               return value;
                                           }
                                           auto& data = it->second;
-                                          return getScaledValue(data.value, data.scale);
+                                          return getScaledValue(data.value, data.scale * config.scale * 1000); // kB
                                       }});
             }
         } else if (config.optionType == xpum::dump::DUMP_OPTION_THROTTLE_REASON) {
