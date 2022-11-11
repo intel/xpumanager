@@ -316,10 +316,12 @@ void DumpRawDataTask::updateData() {
             ss << p_this->deviceId << "/" << fabricRawData.tile_id;
             ss << "->";
             ss << fabricRawData.remote_device_id << "/" << fabricRawData.remote_device_tile_id;
-        } else {
+        } else if (fabricRawData.type == XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED) {
             ss << fabricRawData.remote_device_id << "/" << fabricRawData.remote_device_tile_id;
             ss << "->";
             ss << p_this->deviceId << "/" << fabricRawData.tile_id;
+        } else {
+            continue;
         }
         std::string key = ss.str();
         fabricRawDataMap[key] = fabricRawData;
