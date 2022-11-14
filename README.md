@@ -24,8 +24,8 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
 	* Prometheus exporter, Docker container support, Icinga plugin
 
 ## Supported Devices
-* Intel Data Center Flex Series GPU
-
+* Intel Data Center Flex Series GPU ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
+ 
 ## Supported OSes
 * Ubuntu 20.04.3/22.04
 * RHEL 8.5/8.6
