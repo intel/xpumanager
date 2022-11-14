@@ -274,45 +274,25 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getStatistics(int deviceId, bool en
     uint32_t count = 5;
     xpum_device_stats_t dataList[count];
     uint64_t begin, end;
-
-    auto start_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    auto end_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    // waiting slow ras metrics for PVC because of sysman/igsc
-    while (end_time - start_time <= 30) {
-        xpum_result_t res = xpumGetStats(xpum_device_id, dataList, &count, &begin, &end, sessionId);
-        if (res != XPUM_OK || count < 0) {
-            switch (res) {
-                case XPUM_RESULT_DEVICE_NOT_FOUND:
-                    (*json)["error"] = "device not found";
-                    (*json)["errno"] = errorNumTranslate(res);
-                    break;
-                case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
-                    (*json)["error"] = "Level Zero Initialization Error";
-                    (*json)["errno"] = errorNumTranslate(res);
-                    break;
-                default:
-                    (*json)["error"] = "Error";
-                    (*json)["errno"] = errorNumTranslate(res);
-                    break;
-            }
-            return json;
+    xpum_result_t res = xpumGetStats(xpum_device_id, dataList, &count, &begin, &end, sessionId);
+    if (res != XPUM_OK || count < 0) {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
+            default:
+                (*json)["error"] = "Error";
+                (*json)["errno"] = errorNumTranslate(res);
+                break;
         }
-        bool has_ras_metrics = false;
-        for (uint32_t i = 0; i < count && !has_ras_metrics; i++) {
-            xpum_device_stats_t& stats_info = dataList[i];
-            for (int j = 0; j < stats_info.count && !has_ras_metrics; j++) {
-                xpum_device_stats_data_t& stats_data = stats_info.dataList[j];
-                if (stats_data.metricsType >= XPUM_STATS_RAS_ERROR_CAT_RESET && stats_data.metricsType <= XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE) {
-                    has_ras_metrics = true;
-                }
-            }
-        }
-        if (has_ras_metrics) {
-            break;
-        }
-        std::this_thread::sleep_for(std::chrono::seconds(4));
-        end_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        return json;
     }
+
     // get engine stats
     auto engineStatsJson = getEngineStatistics(deviceId);
     if (engineStatsJson->contains("error")) {
