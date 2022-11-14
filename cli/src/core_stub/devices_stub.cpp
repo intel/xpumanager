@@ -65,13 +65,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(int deviceId, s
         for (int i = 0; i < data.propertyLen; i++) {
             auto& p = data.properties[i];
             std::string name = getXpumDevicePropertyNameString(p.name);
-            if (name.compare("MEMORY_PHYSICAL_SIZE_BYTE") == 0) {
-                name = "memory_physical_size";
-                (*json)[name] = scale(p.value, 1048576);
-            } else if (name.compare("MAX_MEM_ALLOC_SIZE_BYTE") == 0) {
-                name = "max_mem_alloc_size";
-                (*json)[name] = scale(p.value, 1048576);
-            } else if (name.compare("MAX_FABRIC_PORT_SPEED") == 0) {
+            if (name.compare("MAX_FABRIC_PORT_SPEED") == 0) {
                 name = "max_fabric_port_speed";
                 (*json)[name] = scale(p.value, 1048576);
             } else {
