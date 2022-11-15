@@ -122,6 +122,18 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
             if (p_data != nullptr) {
                 hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
                 m_datas.insert(std::make_pair(*metric_types_iter, p_data));
+            } else if (*metric_types_iter >= METRIC_RAS_ERROR_CAT_RESET && *metric_types_iter <= METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE) {
+                auto start_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                auto end_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                while (end_time - start_time <= 30) {
+                    p_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
+                    if (p_data != nullptr) {
+                        hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
+                        m_datas.insert(std::make_pair(*metric_types_iter, p_data));
+                        break; 
+                    }
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
             }
         }
         ++metric_types_iter;
