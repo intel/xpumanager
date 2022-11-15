@@ -2,10 +2,11 @@
 # Intel XPU-SMI Installation Guide
 
 ## Requirements
-oneAPI Level Zero
-Intel(R) Graphics System Controller Firmware Update Library
-Intel(R) Metrics Library for MDAPI
-Intel(R) Metrics Discovery Application Programming Interface
+* Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
+* oneAPI Level Zero
+* Intel(R) Graphics System Controller Firmware Update Library
+* Intel(R) Metrics Library for MDAPI
+* Intel(R) Metrics Discovery Application Programming Interface
 
 ## DEB install
 sudo dpkg -i xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb

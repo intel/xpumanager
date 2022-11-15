@@ -86,7 +86,6 @@ void ComletFirmware::setupOptions() {
     deviceIdOpt->needs(fwPathOpt);
 
     opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
-    addFlag("-y, --assumeyes", opts->assumeyes, "Assume that the answer to any question which would be asked is yes");
 }
 
 nlohmann::json ComletFirmware::validateArguments() {
@@ -332,16 +331,11 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         deviceIdsToFlashFirmware.push_back(opts->deviceId);
     } else {
         std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) " << std::endl;
-        if (!opts->assumeyes) {
-            std::string confirm;
-            std::cin >> confirm;
-            if (confirm != "Y" && confirm != "y") {
-                out << "update aborted" << std::endl;
-                return;
-            }
-        }
-        else {
-            out << std::endl;
+        std::string confirm;
+        std::cin >> confirm;
+        if (confirm != "Y" && confirm != "y") {
+            out << "update aborted" << std::endl;
+            return;
         }
     }
     // version confirmation
@@ -359,16 +353,13 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
     }
     out << "Do you want to continue? (y/n) " << std::endl;
-    if (!opts->assumeyes) {
-        std::string confirm;
-        std::cin >> confirm;
-        if (confirm != "Y" && confirm != "y") {
-            out << "update aborted" << std::endl;
-            return;
-        }
-    } else {
-        out << std::endl;
+    std::string confirm;
+    std::cin >> confirm;
+    if (confirm != "Y" && confirm != "y") {
+        out << "update aborted" << std::endl;
+        return;
     }
+
     // start run
     auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
 

@@ -16,7 +16,6 @@ struct FlashFirmwareOptions {
     int deviceId;
     std::string firmwareType;
     std::string firmwarePath;
-    bool assumeyes;
 
     /*
         FlashFirmwareOptions( unsigned int id, const std::string& type, const std::string& path )
