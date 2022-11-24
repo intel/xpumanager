@@ -153,6 +153,7 @@ xpu-smi discovery -d 0000:4d:00.0
 |           |                                                                                      |
 |           | Memory Physical Size: 32768.00 MiB                                                   |
 |           | Max Mem Alloc Size: 4095.99 MiB                                                      |
+|           | ECC State: enabled                                                                   |
 |           | Number of Memory Channels: 2                                                         |
 |           | Memory Bus Width: 128                                                                |
 |           | Max Hardware Contexts: 65536                                                         |
@@ -286,16 +287,25 @@ Usage: xpu-smi diag [Options]
   xpu-smi diag -d [deviceId] -l [level]
   xpu-smi diag -d [pciBdfAddress] -l [level]
   xpu-smi diag -d [deviceId] -l [level] -j
+  xpu-smi diag -d [deviceIds] --stress --stresstime [stress time]
+  xpu-smi diag --precheck
+  xpu-smi diag --precheck -j
+  xpu-smi diag --stress
+  xpu-smi diag --stress --stresstime [time]
+
   
 Options:
   -h,--help                   Print this help message and exit.
   -j,--json                   Print result in JSON format.
 
-  -d,--device                 The device ID or PCI BDF address.
+  -d,--device                 The device IDs or PCI BDF addresses. -1 means all devices
   -l,--level                  The diagnostic levels to run. The valid options include
                                 1. quick test
                                 2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs
                                 3. long test - this diagnostic level will have the significant performance impact on the specified GPUs
+  --stress                    Stress the GPU(s) for the specified time
+  --stresstime                Stress time (in minutes). It is an optional parameter. If not specified, CLI does the stress until manually stopped.
+  --precheck                  Do the precheck on the GPU and GPU driver
 ```
 
 Run test to diagnose GPU
@@ -325,6 +335,30 @@ Device Type: GPU
 |                        |   PID: 633973, Command: ./ze_gemm                                       |
 +------------------------+-------------------------------------------------------------------------+
 
+```
+
+Check the GPU status
+```
+xpu-smi diag --precheck
++------------------+-------------------------------------------------------------------------------+
+| Component        | Status                                                                        |
++------------------+-------------------------------------------------------------------------------+
+| GPU              | 2 (0x56c1)                                                                    |
+| Driver           | Pass                                                                          |
+| GPU Status       | Pass                                                                          |
+| CPU Status       | Pass                                                                          |
++------------------+-------------------------------------------------------------------------------+
+```
+
+Stress the GPU
+```
+xpu-smi diag --stress
+Stress on all GPU
+Device: 0 Finished:0 Time: 0 seconds
+Device: 1 Finished:0 Time: 0 seconds
+Device: 0 Finished:0 Time: 5 seconds
+Device: 1 Finished:0 Time: 5 seconds
+^C
 ```
 
 ## Get and change the GPU settings
@@ -598,6 +632,7 @@ Options:
                               32. Render engine group utilization (%), per tile
                               33. Media engine group utilization (%), per tile
                               34. Copy engine group utilization (%), per tile
+                              35. Throttle reason, per tile
 
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second.
   -n                          Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.

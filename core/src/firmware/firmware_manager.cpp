@@ -145,8 +145,10 @@ void FirmwareManager::initFwDataMgmt(){
     std::vector<std::shared_ptr<Device>> devices;
     Core::instance().getDeviceManager()->getDeviceList(devices);
     for (auto pDevice : devices) {
-        pDevice->setFwDataMgmt(std::make_shared<FwDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
-        pDevice->getFwDataMgmt()->getFwDataVersion();
+        if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
+            pDevice->setFwDataMgmt(std::make_shared<FwDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
+            pDevice->getFwDataMgmt()->getFwDataVersion();
+        }
         pDevice->setPscMgmt(std::make_shared<PscMgmt>(pDevice->getMeiDevicePath(), pDevice));
         pDevice->getPscMgmt()->getPscFwVersion();
     }

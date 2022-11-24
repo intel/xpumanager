@@ -124,7 +124,9 @@ bool MonitorManager::initOneTimeMetricMonitorTasks(MeasurementType type) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE/2));
         for (auto& p_task : tasks) {
-            p_task->start(this->p_scheduled_thread_pool);
+            if (p_task->getCapability() != DeviceCapability::METRIC_RAS_ERROR) {
+                p_task->start(this->p_scheduled_thread_pool);
+            }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE/2));
 

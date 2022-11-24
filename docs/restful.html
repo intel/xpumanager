@@ -271,6 +271,7 @@
 <li><p><strong>max_hardware_contexts</strong> (<em>string</em>) – Maximum number of logical hardware contexts</p></li>
 <li><p><strong>max_mem_alloc_size_byte</strong> (<em>string</em>) – The total allocatable memory, in bytes</p></li>
 <li><p><strong>memory_bus_width</strong> (<em>string</em>) – Memory bus width</p></li>
+<li><p><strong>memory_ecc_state</strong> (<em>string</em>) – The state of memory ecc</p></li>
 <li><p><strong>memory_free_size_byte</strong> (<em>string</em>) – The free memory, in bytes</p></li>
 <li><p><strong>memory_physical_size_byte</strong> (<em>string</em>) – Device physical memory size, in bytes</p></li>
 <li><p><strong>number_of_eus</strong> (<em>string</em>) – The number of EUs</p></li>
@@ -291,6 +292,7 @@
 <li><p><strong>pcie_max_link_width</strong> (<em>string</em>) – PCIe max link width</p></li>
 <li><p><strong>physical_eu_simd_width</strong> (<em>string</em>) – The physical EU simd width</p></li>
 <li><p><strong>serial_number</strong> (<em>string</em>) – Serial number</p></li>
+<li><p><strong>socket_id</strong> (<em>string</em>) – socket id of OAM GPU</p></li>
 <li><p><strong>topology.&#64;odata.id</strong> (<em>string</em>) – Link to detail info</p></li>
 <li><p><strong>uuid</strong> (<em>string</em>) – Device uuid</p></li>
 <li><p><strong>vendor_name</strong> (<em>string</em>) – Vendor name</p></li>
@@ -937,7 +939,8 @@ XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE
 XPUM_DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION
 XPUM_DUMP_RENDER_ENGINE_GROUP_UTILIZATION
 XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION
-XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION</p></li>
+XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION
+XPUM_DUMP_FREQUENCY_THROTTLE_REASON_GPU</p></li>
 <li><p><strong>tile_id</strong> (<em>integer</em>) – The tile to dump raw data</p></li>
 </ul>
 </dd>

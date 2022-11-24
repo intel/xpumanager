@@ -691,10 +691,14 @@ std::string getXelinkThroughput(std::shared_ptr<nlohmann::json> jsonPtr) {
         key.insert(i + 2, " ");
         key.insert(i, " ");
         ss << key << ": ";
+        #ifndef DAEMONLESS
         ss << "avg: " << obj["avg"] << ", ";
         ss << "min: " << obj["min"] << ", ";
         ss << "max: " << obj["max"] << ", ";
         ss << "current: " << obj["value"];
+        #else
+        ss << obj["value"];
+        #endif
         res += ss.str() + "\n";
     }
     if (!res.empty()) res.pop_back();

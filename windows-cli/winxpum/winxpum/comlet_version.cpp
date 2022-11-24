@@ -17,8 +17,8 @@ void ComletVersion::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletVersion::run() {
     auto json = this->coreStub->getVersion();
-    (*json)["cli_version"] = "1.1";
-    (*json)["cli_version_git"] = "1.1";
+    (*json)["cli_version"] = "1.2";
+    (*json)["cli_version_git"] = "1.2";
     return json;
 }
 

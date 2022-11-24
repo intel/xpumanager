@@ -30,7 +30,7 @@ extern "C" {
  * 
  * @details Below environment variables will impact the XPUM initialization:
  * - XPUM_DISABLE_PERIODIC_METRIC_MONITOR: value options are {0,1}, default is 0. Whether disable periodic metric monitor or not. 0 means metric-pulling tasks will periodically run and collect GPU telemetries once core library is initialized. 1 means metric-pulling tasks will only run and collect GPU telemetries when calling stats related APIs.
- * - XPUM_METRICS: enabled metric indexes, value options are listed below, default value: "0,4-31,36-37". Enables metrics which are separated by comma, use hyphen to indicate a range (e.g., 0,4-7,27-29). It will take effect during core initialization.
+ * - XPUM_METRICS: enabled metric indexes, value options are listed below, default value: "0,4-31,36-38". Enables metrics which are separated by comma, use hyphen to indicate a range (e.g., 0,4-7,27-29). It will take effect during core initialization.
  *      - 0       GPU_UTILIZATION
  *      - 1       EU_ACTIVE
  *      - 2       EU_STALL
@@ -69,6 +69,7 @@ extern "C" {
  *      - 35      PCIE_WRITE
  *      - 36      ENGINE_UTILIZATION
  *      - 37      FABRIC_THROUGHPUT
+ *      - 38      FREQUENCY_THROTTLE_REASON_GPU
  *                              
  * @return \ref xpum_result_t 
  */
@@ -248,7 +249,7 @@ xpum_result_t xpumGroupGetInfo(xpum_group_id_t groupId, xpum_group_info_t *pGrou
  * @param count            OUT: Count of groups
  * @return xpum_result_t 
  */
-xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count);
+xpum_result_t xpumGetAllGroupIds(xpum_group_id_t groupIds[], int *count);
 
 /** @} */ // Closing for GROUP_MANAGEMENT_API
 /// @endcond
@@ -799,6 +800,27 @@ xpum_result_t xpumGetDiagnosticsResultByGroup(xpum_group_id_t groupId,
 xpum_result_t xpumGetDiagnosticsMediaCodecResult(xpum_device_id_t deviceId,
                                                 xpum_diag_media_codec_metrics_t resultList[],
                                                 int *count);
+
+/**
+ * @brief Run stress test on GPU
+ * This function will return immediately. To check status of a stress test , call \ref xpumCheckStress
+ * 
+ * @param deviceId          IN: Device id, -1 means run stress test on all GPU devices
+ * @param stressTime        IN: The time (in minutes) to run the stress test. 0 means unlimited time.
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRunStress(xpum_device_id_t deviceId, uint32_t stressTime);
+
+/**
+ * @brief Check stress test status
+ * 
+ * @param deviceId          IN: The device id to check stress test status
+ * @param resultList       OUT: The status of stress test run on device with \a deviceId
+ * @param count         IN/OUT: When \a resultList is NULL, \a count will be filled with the number of available entries, and return. When \a resultList is not NULL, \a count denotes the length of \a resultList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a resultList
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count);
+
 /** @} */ // Closing for DIAGNOSTICS_API
 
 /// @cond DAEMON_ONLY
@@ -860,6 +882,28 @@ xpum_result_t xpumGetStats(xpum_device_id_t deviceId,
                            uint64_t sessionId);
 
 /**
+ * @brief Get statistics data (not including per engine utilization & fabric throughput) by device list
+ * 
+ * @param deviceIdList  IN: Device id list
+ * @param deviceCount   IN: Device id count
+ * @param dataList     OUT: The arry to store statistics data for device \a deviceId. First pass NULL to query statistics data count. Then pass array with desired length to store statistics data.
+ * @param count     IN/OUT: When \a dataList is NULL, \a count will be filled with the number of available entries, and return. When \a dataList is not NULL, \a count denotes the length of \a dataList, \a count should be equal to or larger than the number of available entries, when return, the \a count will store real number of entries returned by \a dataList
+ * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
+ * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @param sessionId     IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetStatsEx(xpum_device_id_t deviceIdList[],
+                             uint32_t deviceCount,
+                             xpum_device_stats_t dataList[],
+                             uint32_t *count,
+                             uint64_t *begin,
+                             uint64_t *end,
+                             uint64_t sessionId);
+
+/**
  * @brief Get engine statistics data by device
  * 
  * @param deviceId      IN: Device id
@@ -881,6 +925,29 @@ xpum_result_t xpumGetEngineStats(xpum_device_id_t deviceId,
                                  uint64_t sessionId);
 
 /**
+ * @brief Get engine statistics data by device list
+ * 
+ * @param deviceIdList  IN: Device id list
+ * @param deviceCount   IN: Device id count
+ * @param dataList     OUT: The arry to store statistics data for device \a deviceId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats_size of this device. A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
+ * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @param sessionId     IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetEngineStatsEx(xpum_device_id_t deviceIdList[],
+                                   uint32_t deviceCount,
+                                   xpum_device_engine_stats_t dataList[],
+                                   uint32_t *count,
+                                   uint64_t *begin,
+                                   uint64_t *end,
+                                   uint64_t sessionId);
+
+/**
  * @brief Get Fabric throughput statistics data by device
  * 
  * @param deviceId      IN: Device id
@@ -900,6 +967,46 @@ xpum_result_t xpumGetFabricThroughputStats(xpum_device_id_t deviceId,
                                            uint64_t *begin,
                                            uint64_t *end,
                                            uint64_t sessionId);
+
+/**
+ * @brief Get Fabric throughput statistics data by device list
+ * 
+ * @param deviceIdList  IN: Device id list
+ * @param deviceCount   IN: Device id count
+ * @param dataList     OUT: The arry to store statistics data for device \a deviceId.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats_size of this device. A device's stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. 
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @param begin        OUT: Timestamp in milliseconds, the time when aggregation starts
+ * @param end          OUT: Timestamp in milliseconds, the time when aggregation ends
+ * @param sessionId     IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+xpum_result_t xpumGetFabricThroughputStatsEx(xpum_device_id_t deviceIdList[],
+                                           uint32_t deviceCount,
+                                           xpum_device_fabric_throughput_stats_t dataList[],
+                                           uint32_t *count,
+                                           uint64_t *begin,
+                                           uint64_t *end,
+                                           uint64_t sessionId);
+/**
+ * @brief Get metrics data from sysfs
+ * 
+ * @param bdfs          IN: The array of PCI BDF address strings
+ * @param length        IN: The length of array \a bdfs
+ * @param dataList     OUT: The array to store metrics data for device \a bdfs.
+ * @param count     IN/OUT: When passed in, \a count denotes the length of \a dataList, which should be equal to or larger than stats size.
+ *                          When return, \a count will store the actual number of entries stored in \a dataList.
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_BUFFER_TOO_SMALL    if \a count is smaller than needed
+ */
+
+ xpum_result_t xpumGetMetricsFromSysfs(const char **bdfs,
+                                      uint32_t length,
+                                      xpum_device_stats_t dataList[],
+                                      uint32_t *count);
 
 /// @cond DAEMON_ONLY
 /**

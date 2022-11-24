@@ -193,7 +193,7 @@ void DumpRawDataTask::buildColumns() {
                                               return value;
                                           }
                                           auto& data = it->second;
-                                          return getScaledValue(data.value, data.scale * config.scale);
+                                          return getScaledValue(data.value, data.scale * config.scale * 1000); // kB
                                       }});
                 // rx
                 ss.str("");
@@ -211,9 +211,52 @@ void DumpRawDataTask::buildColumns() {
                                               return value;
                                           }
                                           auto& data = it->second;
-                                          return getScaledValue(data.value, data.scale);
+                                          return getScaledValue(data.value, data.scale * config.scale * 1000); // kB
                                       }});
             }
+        } else if (config.optionType == xpum::dump::DUMP_OPTION_THROTTLE_REASON) {
+            int columnIdx = columnList.size();
+            columnList.push_back({std::string(config.name),
+                                  [config, p_this, columnIdx]() {
+                                        DumpColumn& dc = p_this->columnList.at(columnIdx);
+                                        auto statsType = config.metricsType;
+                                        auto& m = p_this->rawDataMap;
+                                        auto it = m.find(statsType);
+                                        std::string value;
+                                        if (it != m.end()) {
+                                            auto data = it->second;
+                                            if (dc.lastTimestamp != data.timestamp) {
+                                                std::string ss;
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP) {
+                                                ss += "AVE_PWR_CAP | ";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP) {
+                                                ss += "BURST_PWR_CAP | ";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT) {
+                                                ss += "CURRENT_LIMIT | ";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT) {
+                                                ss += "THERMAL_LIMIT | ";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT) {
+                                                ss += "PSU_ALERT | ";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE) {
+                                                ss += "SW_RANGE | ";
+                                            }
+                                            if (data.value & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE) {
+                                                ss += "HW_RANGE | ";
+                                            }
+                                            if (ss.size() == 0) {
+                                                ss += "Not Throttled | ";
+                                            }
+                                            return ss.substr(0, ss.size() - 3);
+                                          }
+                                          dc.lastTimestamp = data.timestamp;
+                                      }
+                                      return value;
+                                  }});
         }
     }
 }
@@ -273,10 +316,12 @@ void DumpRawDataTask::updateData() {
             ss << p_this->deviceId << "/" << fabricRawData.tile_id;
             ss << "->";
             ss << fabricRawData.remote_device_id << "/" << fabricRawData.remote_device_tile_id;
-        } else {
+        } else if (fabricRawData.type == XPUM_FABRIC_THROUGHPUT_TYPE_RECEIVED) {
             ss << fabricRawData.remote_device_id << "/" << fabricRawData.remote_device_tile_id;
             ss << "->";
             ss << p_this->deviceId << "/" << fabricRawData.tile_id;
+        } else {
+            continue;
         }
         std::string key = ss.str();
         fabricRawDataMap[key] = fabricRawData;

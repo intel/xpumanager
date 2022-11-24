@@ -242,11 +242,11 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getFabricStatistics(int deviceId) {
             continue;
         }
 
-        int32_t scale = fabricInfo.scale;
+        int32_t scale = fabricInfo.scale * 1000; // kB
         if (scale == 1) {
             obj["value"] = fabricInfo.value;
         } else {
-            obj["value"] = (double)fabricInfo.value / scale;
+            obj["value"] = round((double)fabricInfo.value / scale * 100) / 100;
         }
         obj["name"] = ss.str();
         obj["tile_id"] = fabricInfo.tile_id;
@@ -363,5 +363,94 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getStatistics(int deviceId, bool en
 std::unique_ptr<nlohmann::json> LibCoreStub::getStatisticsByGroup(uint32_t groupId, bool enableFilter, bool enableScale) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     return json;
+}
+
+std::vector<std::unique_ptr<nlohmann::json>> LibCoreStub::getMetricsFromSysfs(std::vector<std::string> bdfs) {
+    std::vector<std::unique_ptr<nlohmann::json>> ret;
+    uint32_t count = XPUM_MAX_NUM_DEVICES * 4;
+    xpum_device_stats_t dataListAll[count];
+    uint32_t length = bdfs.size();
+    std::vector<const char*> pointers(length);
+    for(uint32_t i = 0; i < length; ++i) {
+        pointers[i] = bdfs[i].data();
+    }
+    const char** bdf_pointers = pointers.data();
+    xpum_result_t res = xpumGetMetricsFromSysfs(bdf_pointers, length, dataListAll, &count);
+    if (res != XPUM_OK) {
+        return ret;
+    }
+    uint32_t index = 0; 
+    while (index < count) {
+        auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+        std::vector<nlohmann::json> deviceLevelStatsDataList;
+        xpum_device_stats_t& stats_info = dataListAll[index];
+        if (stats_info.isTileData)
+            continue;
+
+        auto deviceId = stats_info.deviceId;
+
+        for (int i = 0; i < stats_info.count; i++) {
+            xpum_device_stats_data_t& stats_data = stats_info.dataList[i];
+            auto tmp = nlohmann::json();
+            xpum_stats_type_t metricsType = stats_data.metricsType;
+            tmp["metrics_type"] = metricsTypeToString(metricsType);
+            int32_t scale = stats_data.scale;
+            if (scale == 1) {
+                tmp["value"] = stats_data.value;
+                if (stats_data.isCounter) {
+                    tmp["value"] = stats_data.accumulated;
+                }
+            } else {
+                tmp["value"] = (double)stats_data.value / scale;
+                if (stats_data.isCounter) {
+                    tmp["value"] = (double)stats_data.accumulated / scale;
+                }
+            }
+            deviceLevelStatsDataList.push_back(tmp);
+        }
+
+        (*json)["device_level"] = deviceLevelStatsDataList;
+
+        std::vector<nlohmann::json> tileLevelStatsDataList;
+        while (index + 1 < count 
+            && dataListAll[index + 1].deviceId == dataListAll[index].deviceId
+            && dataListAll[index + 1].isTileData) {
+            index += 1;
+            std::vector<nlohmann::json> tileDatas;
+            xpum_device_stats_t& stats_info = dataListAll[index];
+            for (int i = 0; i < stats_info.count; i++) {
+                xpum_device_stats_data_t& stats_data = stats_info.dataList[i];
+                auto tmp = nlohmann::json();
+                xpum_stats_type_t metricsType = stats_data.metricsType;
+                tmp["metrics_type"] = metricsTypeToString(metricsType);
+                int32_t scale = stats_data.scale;
+                if (scale == 1) {
+                    tmp["value"] = stats_data.value;
+                    if (stats_data.isCounter) {
+                        tmp["value"] = stats_data.accumulated;
+                    }
+                } else {
+                    tmp["value"] = (double)stats_data.value / scale;
+                    if (stats_data.isCounter) {
+                        tmp["value"] = (double)stats_data.accumulated / scale;
+                    }
+                }
+                tileDatas.push_back(tmp);
+            }
+            if (tileDatas.size() > 0) {
+                auto tmp = nlohmann::json();
+                tmp["tile_id"] = stats_info.tileId;
+                tmp["data_list"] = tileDatas;
+                tileLevelStatsDataList.push_back(tmp);
+            }
+        }    
+    
+        (*json)["tile_level"] = tileLevelStatsDataList;
+        (*json)["device_id"] = deviceId;
+        ret.push_back(std::move(json));
+        index++;
+    }
+    return ret;
 }
 } // end namespace xpum::cli

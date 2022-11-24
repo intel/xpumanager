@@ -122,6 +122,15 @@ message RunDiagnosticsByGroupRequest{
     uint32 level = 2;
 }
 
+message RunStressRequest {
+    int32 deviceId = 1;
+    uint32 stressTime = 2;
+}
+
+message CheckStressRequest {
+    int32 deviceId = 1;
+}
+
 enum DiagnosticsTaskResult {
     DIAG_RESULT_UNKNOWN = 0;
     DIAG_RESULT_PASS = 1;
@@ -192,6 +201,12 @@ message DiagnosticsGroupTaskInfo{
     uint32 count = 3;
     string errorMsg = 4;
     int32 errorNo = 5;
+}
+
+message CheckStressResponse {
+    repeated DiagnosticsTaskInfo taskInfo = 1;
+    string errorMsg = 2;
+    int32 errorNo = 3;
 }
 
 enum HealthType{
@@ -930,9 +945,11 @@ service XpumCoreService {
     rpc getAllGroups( google.protobuf.Empty ) returns ( GroupArray );
     rpc runDiagnostics( RunDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
     rpc runDiagnosticsByGroup( RunDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
+    rpc runStress( RunStressRequest ) returns ( DiagnosticsTaskInfo );
     rpc getDiagnosticsResult ( DeviceId ) returns ( DiagnosticsTaskInfo );
     rpc getDiagnosticsMediaCodecResult ( DeviceId ) returns ( DiagnosticsMediaCodecInfoArray );
     rpc getDiagnosticsResultByGroup( GroupId ) returns (DiagnosticsGroupTaskInfo);
+    rpc checkStress( CheckStressRequest ) returns ( CheckStressResponse );
     rpc getHealth( HealthDataRequest ) returns ( HealthData );
     rpc getHealthByGroup( HealthDataByGroupRequest ) returns ( HealthDataByGroup );
     rpc getHealthConfig( HealthConfigRequest ) returns ( HealthConfigInfo );

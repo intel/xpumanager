@@ -61,7 +61,7 @@ void ComletFirmware::setupOptions() {
 
 #ifndef DAEMONLESS
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, AMC, GFX_DATA, GFX_PSCBIN. AMC firmware update just works for Intel Data Center GPU (AMC firmware version is 3.6.3 or later) on Intel M50CYP server (BMC firmware version is 2.82 or later).");
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_PSCBIN, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).");
 
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";

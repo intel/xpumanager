@@ -2065,4 +2065,59 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getXelinkTopology() {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> GrpcCoreStub::runStress(int deviceId, uint32_t stressTime) {
+    assert(this->stub != nullptr);
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    RunStressRequest request;
+    request.set_deviceid(deviceId);
+    request.set_stresstime(stressTime);
+    DiagnosticsTaskInfo response;
+    grpc::Status status = stub->runStress(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+            XPUM_LOG_AUDIT("Failed to run stress test on device %d", deviceId);
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+        XPUM_LOG_AUDIT("Failed to run stress test on device %d", deviceId);
+    }
+    XPUM_LOG_AUDIT("Succeed to run stress test on device %d", deviceId);
+
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> GrpcCoreStub::checkStress(int deviceId) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    CheckStressRequest request;
+    request.set_deviceid(deviceId);
+    CheckStressResponse response;
+    grpc::Status status = stub->checkStress(&context, request, &response);
+     if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+            XPUM_LOG_AUDIT("Failed to run stress test on device %d", deviceId);
+        } else {
+            std::vector<nlohmann::json> tasks;
+            for (int i = 0; i < response.taskinfo_size(); i++) {
+                auto taskJson = nlohmann::json();
+                taskJson["device_id"] = response.taskinfo(i).deviceid();
+                taskJson["finished"] = response.taskinfo(i).finished();
+                tasks.push_back(taskJson);
+            }
+            (*json)["task_list"] = tasks;
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+        XPUM_LOG_AUDIT("Failed to check stress test on device %d", deviceId);
+    }
+    return json;
+}
+
 } // end namespace xpum::cli

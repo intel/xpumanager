@@ -196,6 +196,7 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_PCI_SLOT,                       ///< PCI slot of device
     XPUM_DEVICE_PROPERTY_PCIE_GENERATION,                ///< PCIe generation
     XPUM_DEVICE_PROPERTY_PCIE_MAX_LINK_WIDTH,            ///< PCIe max link width
+    XPUM_DEVICE_PROPERTY_OAM_SOCKET_ID,                  ///< Socket Id of OAM GPU
     XPUM_DEVICE_PROPERTY_DEVICE_STEPPING,                ///< The stepping of device
     XPUM_DEVICE_PROPERTY_DRIVER_VERSION,                 ///< The driver version
     XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_NAME,              ///< The GFX firmware name of device
@@ -228,6 +229,7 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_FABRIC_PORT_LANES_NUMBER,       ///< The number of lanes of the port
     XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_NAME,       ///< The GFX_PSCBIN firmware name of device
     XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_VERSION,    ///< The GFX_PSCBIN firmware version of device
+    XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE,               ///< The memory ECC state of device
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 
@@ -506,13 +508,14 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE,
     XPUM_STATS_GPU_REQUEST_FREQUENCY, ///< Gpu Request Frequency
     XPUM_STATS_MEMORY_TEMPERATURE,    ///< Memory Temeperature
-    XPUM_STATS_FREQUENCY_THROTTLE,    ///< Frequency Throttle
+    XPUM_STATS_FREQUENCY_THROTTLE,    ///< Frequency Throttle time
     XPUM_STATS_PCIE_READ_THROUGHPUT,  ///< PCIe read throughput
     XPUM_STATS_PCIE_WRITE_THROUGHPUT, ///< PCIe write throughput
     XPUM_STATS_PCIE_READ,             ///< PCIe read
     XPUM_STATS_PCIE_WRITE,            ///< PCIe write
     XPUM_STATS_ENGINE_UTILIZATION,    ///< Engine Utilization
     XPUM_STATS_FABRIC_THROUGHPUT,     ///< Fabric throughput
+    XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU,    ///< Frequency Throttle reason
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
@@ -563,15 +566,16 @@ typedef enum xpum_engine_type_enum {
  * 
  */
 typedef struct xpum_device_engine_stats_t {
-    bool isTileData;         ///< If this statistics data is tile level
-    int32_t tileId;          ///< The tile id, only valid if isTileData is true
-    uint64_t index;          ///< The index of the engine in the same type on the device or sub-device
-    xpum_engine_type_t type; ///< The type of the engine
-    uint64_t value;          ///< The value of engine utilization
-    uint64_t min;            ///< The min value since last call
-    uint64_t avg;            ///< The average value since last call
-    uint64_t max;            ///< The max value since last call
-    uint32_t scale;          ///< The magnification of the value, accumulated, min, avg, and max fields
+    bool isTileData;           ///< If this statistics data is tile level
+    int32_t tileId;            ///< The tile id, only valid if isTileData is true
+    uint64_t index;            ///< The index of the engine in the same type on the device or sub-device
+    xpum_engine_type_t type;   ///< The type of the engine
+    uint64_t value;            ///< The value of engine utilization
+    uint64_t min;              ///< The min value since last call
+    uint64_t avg;              ///< The average value since last call
+    uint64_t max;              ///< The max value since last call
+    uint32_t scale;            ///< The magnification of the value, accumulated, min, avg, and max fields
+    xpum_device_id_t deviceId; ///< Device id
 } xpum_device_engine_stats_t;
 
 /**
@@ -614,6 +618,7 @@ typedef struct xpum_device_fabric_throughput_stats_t {
     uint64_t avg;                       ///< The average value since last call
     uint64_t max;                       ///< The max value since last call
     uint32_t scale;                     ///< The magnification of the value, accumulated, min, avg, and max fields
+    xpum_device_id_t deviceId;          ///< Device id
 } xpum_device_fabric_throughput_stats_t;
 
 /**
@@ -1008,6 +1013,7 @@ typedef enum xpum_dump_type_enum {
     XPUM_DUMP_RENDER_ENGINE_GROUP_UTILIZATION,
     XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION,
     XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION,
+    XPUM_DUMP_FREQUENCY_THROTTLE_REASON_GPU,
     XPUM_DUMP_MAX
 } xpum_dump_type_t;
 

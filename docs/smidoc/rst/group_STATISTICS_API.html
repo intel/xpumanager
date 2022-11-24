@@ -108,8 +108,28 @@
     <span class="kt">uint64_t</span> <span class="n">sessionId</span>
     <span class="p">);</span>
 
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetStatsEx<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t"><span class="std std-ref">xpum_device_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">);</span>
+
 <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetEngineStats<span></span><span class="p">(</span>
     <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_stats_t.html#doxid-structxpum-device-engine-stats-t"><span class="std std-ref">xpum_device_engine_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetEngineStatsEx<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
     <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_stats_t.html#doxid-structxpum-device-engine-stats-t"><span class="std std-ref">xpum_device_engine_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
     <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
@@ -124,6 +144,23 @@
     <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
     <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
     <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFabricThroughputStatsEx<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t"><span class="std std-ref">xpum_device_fabric_throughput_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetMetricsFromSysfs<span></span><span class="p">(</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">**</span> <span class="n">bdfs</span><span class="p">,</span>
+    <span class="kt">uint32_t</span> <span class="n">length</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t"><span class="std std-ref">xpum_device_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -173,7 +210,53 @@
 <li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-statistics-api-1gac2ecb967e8d814de6ff28d68e2b13075"><span id="index-2"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetEngineStats</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-statistics-api-1ga4c2f6ea7e687fd628db8a945c821c424"><span id="index-2"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetStatsEx</span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t"><span class="std std-ref">xpum_device_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">)</span></pre>
+<p>Get statistics data (not including per engine utilization &amp; fabric throughput) by device list.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceIdList</p></td>
+<td><p>IN: Device id list</p></td>
+</tr>
+<tr class="row-even"><td><p>deviceCount</p></td>
+<td><p>IN: Device id count</p></td>
+</tr>
+<tr class="row-odd"><td><p>dataList</p></td>
+<td><p>OUT: The arry to store statistics data for device <em>deviceId</em>. First pass NULL to query statistics data count. Then pass array with desired length to store statistics data.</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>dataList</em> is NULL, <em>count</em> will be filled with the number of available entries, and return. When <em>dataList</em> is not NULL, <em>count</em> denotes the length of <em>dataList</em>, <em>count</em> should be equal to or larger than the number of available entries, when return, the <em>count</em> will store real number of entries returned by <em>dataList</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>begin</p></td>
+<td><p>OUT: Timestamp in milliseconds, the time when aggregation starts</p></td>
+</tr>
+<tr class="row-even"><td><p>end</p></td>
+<td><p>OUT: Timestamp in milliseconds, the time when aggregation ends</p></td>
+</tr>
+<tr class="row-odd"><td><p>sessionId</p></td>
+<td><p>IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-statistics-api-1gac2ecb967e8d814de6ff28d68e2b13075"><span id="index-3"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetEngineStats</span><span class="p">(</span>
     <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_stats_t.html#doxid-structxpum-device-engine-stats-t"><span class="std std-ref">xpum_device_engine_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
@@ -215,7 +298,53 @@
 <li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-statistics-api-1gae75bff352f8a105b004ace782f18fa11"><span id="index-3"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFabricThroughputStats</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-statistics-api-1ga592841ada22031f0b90f12fc215c78c5"><span id="index-4"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetEngineStatsEx</span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_engine_stats_t.html#doxid-structxpum-device-engine-stats-t"><span class="std std-ref">xpum_device_engine_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">)</span></pre>
+<p>Get engine statistics data by device list.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceIdList</p></td>
+<td><p>IN: Device id list</p></td>
+</tr>
+<tr class="row-even"><td><p>deviceCount</p></td>
+<td><p>IN: Device id count</p></td>
+</tr>
+<tr class="row-odd"><td><p>dataList</p></td>
+<td><p>OUT: The arry to store statistics data for device <em>deviceId</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When passed in, <em>count</em> denotes the length of <em>dataList</em>, which should be equal to or larger than stats_size of this device. A device’s stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. When return, <em>count</em> will store the actual number of entries stored in <em>dataList</em>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>begin</p></td>
+<td><p>OUT: Timestamp in milliseconds, the time when aggregation starts</p></td>
+</tr>
+<tr class="row-even"><td><p>end</p></td>
+<td><p>OUT: Timestamp in milliseconds, the time when aggregation ends</p></td>
+</tr>
+<tr class="row-odd"><td><p>sessionId</p></td>
+<td><p>IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-statistics-api-1gae75bff352f8a105b004ace782f18fa11"><span id="index-5"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFabricThroughputStats</span><span class="p">(</span>
     <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t"><span class="std std-ref">xpum_device_fabric_throughput_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
@@ -248,6 +377,86 @@
 </tr>
 <tr class="row-even"><td><p>sessionId</p></td>
 <td><p>IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-statistics-api-1ga1a91530d807b365e6ccd0369cad99186"><span id="index-6"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFabricThroughputStatsEx</span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceIdList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span> <span class="n">deviceCount</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t"><span class="std std-ref">xpum_device_fabric_throughput_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">begin</span><span class="p">,</span>
+    <span class="kt">uint64_t</span><span class="o">*</span> <span class="n">end</span><span class="p">,</span>
+    <span class="kt">uint64_t</span> <span class="n">sessionId</span>
+    <span class="p">)</span></pre>
+<p>Get Fabric throughput statistics data by device list.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceIdList</p></td>
+<td><p>IN: Device id list</p></td>
+</tr>
+<tr class="row-even"><td><p>deviceCount</p></td>
+<td><p>IN: Device id count</p></td>
+</tr>
+<tr class="row-odd"><td><p>dataList</p></td>
+<td><p>OUT: The arry to store statistics data for device <em>deviceId</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When passed in, <em>count</em> denotes the length of <em>dataList</em>, which should be equal to or larger than stats_size of this device. A device’s stats_size is 1 if no tiles exists, or 1 + count of tiles if tiles exist. When return, <em>count</em> will store the actual number of entries stored in <em>dataList</em>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>begin</p></td>
+<td><p>OUT: Timestamp in milliseconds, the time when aggregation starts</p></td>
+</tr>
+<tr class="row-even"><td><p>end</p></td>
+<td><p>OUT: Timestamp in milliseconds, the time when aggregation ends</p></td>
+</tr>
+<tr class="row-odd"><td><p>sessionId</p></td>
+<td><p>IN: Statistics session id. Currently XPUM only supports two statistic sessions, their session ids are 0 and 1 respectively.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+</ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-statistics-api-1ga517f306f23d57be3541ce650562c01e7"><span id="index-7"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetMetricsFromSysfs</span><span class="p">(</span>
+    <span class="k">const</span> <span class="kt">char</span><span class="o">**</span> <span class="n">bdfs</span><span class="p">,</span>
+    <span class="kt">uint32_t</span> <span class="n">length</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t"><span class="std std-ref">xpum_device_stats_t</span></a><span></span> <span class="n">dataList</span><span class="p">[],</span>
+    <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Get metrics data from sysfs.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>bdfs</p></td>
+<td><p>IN: The array of PCI BDF address strings</p></td>
+</tr>
+<tr class="row-even"><td><p>length</p></td>
+<td><p>IN: The length of array <em>bdfs</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>dataList</p></td>
+<td><p>OUT: The array to store metrics data for device <em>bdfs</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p>count</p></td>
+<td><p>IN/OUT: When passed in, <em>count</em> denotes the length of <em>dataList</em>, which should be equal to or larger than stats size. When return, <em>count</em> will store the actual number of entries stored in <em>dataList</em>.</p></td>
 </tr>
 </tbody>
 </table>

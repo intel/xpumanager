@@ -80,6 +80,7 @@ static MetricsTypeEntry metricsTypeArray[]{
     {XPUM_STATS_GPU_REQUEST_FREQUENCY, "XPUM_STATS_GPU_REQUEST_FREQUENCY"},
     {XPUM_STATS_MEMORY_TEMPERATURE, "XPUM_STATS_MEMORY_TEMPERATURE"},
     {XPUM_STATS_FREQUENCY_THROTTLE, "XPUM_STATS_FREQUENCY_THROTTLE"},
+    {XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU, "XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU"},
     {XPUM_STATS_PCIE_READ_THROUGHPUT, "XPUM_STATS_PCIE_READ_THROUGHPUT"},
     {XPUM_STATS_PCIE_WRITE_THROUGHPUT, "XPUM_STATS_PCIE_WRITE_THROUGHPUT"},
     {XPUM_STATS_PCIE_READ, "XPUM_STATS_PCIE_READ"},
@@ -466,24 +467,34 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
             if (!is_guc_running) {
                 if (guc_status_infos.size() > 0)
                     guc_status_infos += "\n";
-                guc_status_infos += "GPU " + gpu_id + " GuC is disabled";
+                guc_status_infos += "GPU card" + gpu_id + " GuC is disabled";
             }
         }
         guc_info_file.close();
         snprintf(path, PATH_MAX, "/sys/kernel/debug/dri/%s/gt0/uc/huc_info", gpu_id.c_str());
-        bool is_huc_running = true;
+        bool is_huc_running = false;
+        bool is_huc_disabled = false;
         std::ifstream huc_info_file(path);
         if (huc_info_file.good()) {
             while(std::getline(huc_info_file, line)) {
                 if (!line.empty() && line.find("HuC disabled") != std::string::npos) {
-                    is_huc_running = false;
+                    is_huc_disabled = true;
                     break;
+                }
+                if (!line.empty() && line.find("status: ") != std::string::npos) {
+                    if (line.find("RUNNING") != std::string::npos) {
+                        is_huc_running = true;
+                        break;
+                    }
                 }
             }
             if (!is_huc_running) {
                 if (huc_status_infos.size() > 0)
                     huc_status_infos += "\n";
-                huc_status_infos += "GPU " + gpu_id + " HuC is disabled";
+                if (is_huc_disabled)
+                    huc_status_infos += "GPU card" + gpu_id + " HuC is disabled";
+                else
+                    huc_status_infos += "GPU card" + gpu_id + " HuC is not running";
             }
         }
         huc_info_file.close();
@@ -501,7 +512,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
             if (is_i915_wedged) {
                 if (i915_wedged_infos.size() > 0)
                     i915_wedged_infos += "\n";
-                i915_wedged_infos += "GPU " + gpu_id + " i915 wedged";
+                i915_wedged_infos += "GPU card" + gpu_id + " i915 wedged";
             }
         }
         i915_wedged_file.close();

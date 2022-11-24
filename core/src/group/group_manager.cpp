@@ -143,7 +143,7 @@ xpum_result_t GroupManager::getGroupInfo(xpum_group_id_t groupId, xpum_group_inf
     return XPUM_OK;
 }
 
-xpum_result_t GroupManager::getAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int* count) {
+xpum_result_t GroupManager::getAllGroupIds(xpum_group_id_t groupIds[], int* count) {
     std::unique_lock<std::mutex> lock(this->mutex);
     xpum_result_t ret = XPUM_GENERIC_ERROR;
 

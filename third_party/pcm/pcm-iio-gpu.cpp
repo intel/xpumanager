@@ -209,7 +209,8 @@ vector<string> query_data(vector<struct iio_stacks_on_socket>& iios, vector<stru
                 for (const auto& pci_device : part.child_pci_devs) {
                     if (pci_device.vendor_id == 0x8086) {
                         if (pci_device.device_id == 0x020A || pci_device.device_id == 0x0205
-                            || pci_device.device_id == 0x56C0 || pci_device.device_id == 0x56C1 || pci_device.device_id == 0x0bd5) {
+                            || pci_device.device_id == 0x56C0 || pci_device.device_id == 0x56C1 
+                            || (pci_device.device_id/0x10 == 0x0bd) || pci_device.device_id == 0x0be5) {
                             countGPU += 1;
                             if (countGPU == 2 && pci_device.device_id == 0x56C1) {
                                 target_pci_device_buddy = pci_device;

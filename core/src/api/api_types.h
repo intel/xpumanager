@@ -150,6 +150,7 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT,                       ///< PCI slot of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_GENERATION,                ///< PCIe generation
     XPUM_DEVICE_PROPERTY_INTERNAL_PCIE_MAX_LINK_WIDTH,            ///< PCIe max link width
+    XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID,                  ///< Socket ID of OAM socket GPU
     XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING,                ///< The stepping of device
     XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION,                 ///< The driver version
     XPUM_DEVICE_PROPERTY_INTERNAL_GFX_FIRMWARE_NAME,              ///< The GFX firmware name of device

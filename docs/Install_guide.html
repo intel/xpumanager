@@ -96,10 +96,13 @@
 <h1>Intel XPU Manager Installation Guide<a class="headerlink" href="#intel-xpu-manager-installation-guide" title="Permalink to this headline"></a></h1>
 <section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline"></a></h2>
-<p>oneAPI Level Zero
-Intel(R) Graphics System Controller Firmware Update Library
-Intel(R) Metrics Library for MDAPI
-Intel(R) Metrics Discovery Application Programming Interface</p>
+<ul class="simple">
+<li><p>Intel GPU driver (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
+<li><p>oneAPI Level Zero</p></li>
+<li><p>Intel(R) Graphics System Controller Firmware Update Library</p></li>
+<li><p>Intel(R) Metrics Library for MDAPI</p></li>
+<li><p>Intel(R) Metrics Discovery Application Programming Interface</p></li>
+</ul>
 </section>
 <section id="deb-install">
 <h2>DEB install<a class="headerlink" href="#deb-install" title="Permalink to this headline"></a></h2>
@@ -133,7 +136,7 @@ Intel(R) Metrics Discovery Application Programming Interface</p>
 add “-m metric-indexes” to ExecStart.
 Use “/opt/xpum/bin/xpumd -h” to get detailed info.<br />
 Sample:
-ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-37</p></li>
+ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-38</p></li>
 <li><p>Run command “sudo systemctl daemon-reload”</p></li>
 <li><p>Run command “sudo systemctl restart xpum”</p></li>
 </ol>
@@ -177,11 +180,57 @@ ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-3
 <li><p>GPU PCIe Write (bytes), per GPU (Disabled by default)</p></li>
 <li><p>GPU Engine Utilization, per GPU engine</p></li>
 <li><p>Fabric Throughput (kB/s), per tile</p></li>
+<li><p>Throttle reason, per tile</p></li>
 </ol>
 <section id="change-the-system-settings-to-enable-some-gpu-advanced-metrics">
 <h3>Change the system settings to enable some GPU advanced metrics<a class="headerlink" href="#change-the-system-settings-to-enable-some-gpu-advanced-metrics" title="Permalink to this headline"></a></h3>
 <ul class="simple">
 <li><p>GPU PCIe Read/Write Throughput: if these metrics are enabled, XPU Manager automatically loads MSR module by command ‘modprobe msr’, but XPU Manager will not automatically unload the MSR module. If you want to unload it, please run the command ‘modprobe -r msr’.</p></li>
+</ul>
+</section>
+<section id="disable-some-metrics-to-reduce-the-cpu-usage-of-xpu-manager-daemon">
+<h3>Disable some metrics to reduce the CPU usage of XPU Manager daemon<a class="headerlink" href="#disable-some-metrics-to-reduce-the-cpu-usage-of-xpu-manager-daemon" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p>We have tried our best to reduce the CPU usage of XPU Manager daemon. If you have many GPUs (10+) and still have concern with the CPU usage of XPU Manager daemon, you may disable some the RAS related metrics below to reduce the CPU usage further.</p>
+<ul>
+<li><ol class="arabic simple">
+<li><p>Reset Counter, per GPU</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple">
+<li><p>Programming Errors, per tile</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple">
+<li><p>Driver Errors, per tile</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple">
+<li><p>Cache Errors Correctable, per tile</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple">
+<li><p>Cache Errors Uncorrectable, per tile</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple">
+<li><p>Display Errors Correctable, per tile (Not supported so far)</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple">
+<li><p>Display Errors Uncorrectable, per tile (Not supported so far)</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple">
+<li><p>Memory Errors Correctable, per tile</p></li>
+</ol>
+</li>
+<li><ol class="arabic simple">
+<li><p>Memory Errors Uncorrectable, per tile</p></li>
+</ol>
+</li>
+</ul>
+</li>
 </ul>
 </section>
 </section>

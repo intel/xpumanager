@@ -103,7 +103,7 @@
 <li><p>Monitoring:</p>
 <ul>
 <li><p>GPU health – memory, power, temperature, fabric port, etc.</p></li>
-<li><p>GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory bandwidth, errors</p></li>
+<li><p>GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory throughput, errors</p></li>
 </ul>
 </li>
 <li><p>Diagnostics:</p>
@@ -113,8 +113,8 @@
 </li>
 <li><p>Configuration:</p>
 <ul>
-<li><p>GPU Settings - GPU power limits, frequency range, standby mode, scheduler mode, ECC On/Off, performance factor, fabric port status, fabric port beaconing</p></li>
-<li><p>GPU policies - Throttle GPU when the temperature set threshold is reached, reset GPU when hanging etc.</p></li>
+<li><p>GPU Settings - GPU power limits, frequency range, standby mode, scheduler mode, ECC On/Off, performance factor, fabric port status</p></li>
+<li><p>GPU policies - Throttle GPU when the temperature set threshold is reached</p></li>
 </ul>
 </li>
 <li><p>Supported Frameworks:</p>
@@ -127,14 +127,16 @@
 <section id="supported-devices">
 <h2>Supported Devices<a class="headerlink" href="#supported-devices" title="Permalink to this headline"></a></h2>
 <ul class="simple">
-<li><p>Intel Data Center GPUs</p></li>
+<li><p>Intel Data Center Flex Series GPU (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
 </ul>
 </section>
 <section id="supported-oses">
 <h2>Supported OSes<a class="headerlink" href="#supported-oses" title="Permalink to this headline"></a></h2>
 <ul class="simple">
-<li><p>Ubuntu 20.04.3</p></li>
-<li><p>RHEL 8.4 and CentOS 8 Stream</p></li>
+<li><p>Ubuntu 20.04.3/22.04</p></li>
+<li><p>RHEL 8.5/8.6</p></li>
+<li><p>CentOS 8 Stream</p></li>
+<li><p>CentOS 7.4/7.9</p></li>
 <li><p>SLES 15 SP3</p></li>
 <li><p>Windows Server 2022 (limited features including: GPU device info, GPU telemetry and GPU settings)</p></li>
 </ul>
@@ -153,6 +155,7 @@
 <li><p>Refer to the <span class="xref myst">XPU Manager Installation Guide</span> for how to install/uninstall Intel XPU Manager.</p></li>
 <li><p>Refer to the <span class="xref myst">XPU Manager CLI User Guide</span> to start using Intel XPU Manager.</p></li>
 <li><p>Refer to <a class="reference external" href="https://hub.docker.com/r/intel/xpumanager">DockerHub</a> for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.</p></li>
+<li><p>Refer to <span class="xref myst">Building XPU Manager Installer</span> to build XPU Manager installer packages.</p></li>
 </ul>
 </section>
 </section>

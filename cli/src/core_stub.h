@@ -57,6 +57,9 @@ class CoreStub {
     virtual std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr)=0;
     virtual std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr)=0;
+    virtual std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime)=0;
+    virtual std::unique_ptr<nlohmann::json> checkStress(int deviceId)=0;
+
 
     virtual std::unique_ptr<nlohmann::json> getAllHealth()=0;
     virtual std::unique_ptr<nlohmann::json> getHealth(int deviceId, int componentType)=0;
@@ -119,6 +122,8 @@ class CoreStub {
     virtual std::shared_ptr<nlohmann::json> getFabricCount(int deviceId)=0;
 
     virtual std::unique_ptr<nlohmann::json> getSensorReading()=0;
+
+    virtual std::vector<std::unique_ptr<nlohmann::json>> getMetricsFromSysfs(std::vector<std::string> bdfs)=0;
 
     std::unique_ptr<nlohmann::json> getPreCheckInfo();
 

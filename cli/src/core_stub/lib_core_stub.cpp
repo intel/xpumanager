@@ -27,16 +27,19 @@ using namespace xpum;
 
 namespace xpum::cli {
 
-LibCoreStub::LibCoreStub() {
+LibCoreStub::LibCoreStub(bool initCore) {
     char* env = std::getenv("SPDLOG_LEVEL");
     if (!env) {
         putenv(const_cast<char*>("SPDLOG_LEVEL=OFF"));
     }
-    xpumInit();
+    this->initCore = initCore;
+    if (this->initCore)
+        xpumInit();
 }
 
 LibCoreStub::~LibCoreStub() {
-    xpumShutdown();
+    if (this->initCore)
+        xpumShutdown();
 }
 
 bool LibCoreStub::isChannelReady() {
@@ -138,9 +141,20 @@ std::unique_ptr<nlohmann::json> LibCoreStub::groupListAll() {
     using namespace xpum;
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 
-    xpum_group_id_t groups[XPUM_MAX_NUM_GROUPS];
     int count = XPUM_MAX_NUM_GROUPS;
-    xpum_result_t res = xpumGetAllGroupIds(groups, &count);
+    xpum_result_t res = xpumGetAllGroupIds(nullptr, &count);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                return json;
+            default:
+                (*json)["error"] = "Error";
+                return json;
+        }
+    }
+    xpum_group_id_t groups[count];
+    res = xpumGetAllGroupIds(groups, &count);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
@@ -1500,6 +1514,58 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getXelinkTopology() {
         (*json)["errno"] = errorNumTranslate(res);
     }
 
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::runStress(int deviceId, uint32_t stressTime) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res = xpumRunStress(deviceId, stressTime);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE:
+                (*json)["error"] = 
+                    "last stress task on the device is not completed";
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "device not found";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::checkStress(int deviceId) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    int count = XPUM_MAX_NUM_DEVICES;
+    xpum_diag_task_info_t taskInfos[XPUM_MAX_NUM_DEVICES]; 
+    xpum_result_t res = xpumCheckStress(deviceId, taskInfos, &count);
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                (*json)["error"] = "Level Zero Initialization Error";
+                break;
+            default:
+                (*json)["error"] = "Error";
+                break;
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+    std::vector<nlohmann::json> tasks;
+    for (int i = 0; i < count; i++) {
+        auto taskJson = nlohmann::json();
+        taskJson["device_id"] = taskInfos[i].deviceId;
+        taskJson["finished"] = taskInfos[i].finished;
+        tasks.push_back(taskJson);
+    }
+    (*json)["task_list"] = tasks;
     return json;
 }
 

@@ -1,8 +1,8 @@
 ARG BASE_VERSION=20.04
 FROM ubuntu:$BASE_VERSION
 
-ARG L0_DEV_DEB_URL=https://github.com/oneapi-src/level-zero/releases/download/v1.8.1/level-zero-devel_1.8.1+u18.04_amd64.deb
-ARG L0_DEB_URL=https://github.com/oneapi-src/level-zero/releases/download/v1.8.1/level-zero_1.8.1+u18.04_amd64.deb
+ARG L0_DEV_DEB_URL=https://github.com/oneapi-src/level-zero/releases/download/v1.8.5/level-zero-devel_1.8.5+u18.04_amd64.deb
+ARG L0_DEB_URL=https://github.com/oneapi-src/level-zero/releases/download/v1.8.5/level-zero_1.8.5+u18.04_amd64.deb
 ARG CMAKE_INSTALLER_URL=https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh
 ARG METEE_URL=https://github.com/intel/metee/archive/refs/tags/3.1.3.tar.gz
 ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.8.4.tar.gz

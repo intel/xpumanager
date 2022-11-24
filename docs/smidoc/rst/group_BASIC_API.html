@@ -113,7 +113,7 @@
 <p>Below environment variables will impact the XPUM initialization:</p>
 <ul class="simple">
 <li><p>XPUM_DISABLE_PERIODIC_METRIC_MONITOR: value options are {0,1}, default is 0. Whether disable periodic metric monitor or not. 0 means metric-pulling tasks will periodically run and collect GPU telemetries once core library is initialized. 1 means metric-pulling tasks will only run and collect GPU telemetries when calling stats related APIs.</p></li>
-<li><p>XPUM_METRICS: enabled metric indexes, value options are listed below, default value: “0,4-31,36-37”. Enables metrics which are separated by comma, use hyphen to indicate a range (e.g., 0,4-7,27-29). It will take effect during core initialization.</p>
+<li><p>XPUM_METRICS: enabled metric indexes, value options are listed below, default value: “0,4-31,36-38”. Enables metrics which are separated by comma, use hyphen to indicate a range (e.g., 0,4-7,27-29). It will take effect during core initialization.</p>
 <ul>
 <li><p>0 GPU_UTILIZATION</p></li>
 <li><p>1 EU_ACTIVE</p></li>
@@ -153,6 +153,7 @@
 <li><p>35 PCIE_WRITE</p></li>
 <li><p>36 ENGINE_UTILIZATION</p></li>
 <li><p>37 FABRIC_THROUGHPUT</p></li>
+<li><p>38 FREQUENCY_THROTTLE_REASON_GPU</p></li>
 </ul>
 </li>
 </ul>

@@ -82,7 +82,8 @@ static CharTableConfig ComletConfigDiagnosticPreCheck(R"({
 
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device ID or PCI BDF address");
+    deviceIdOpt->delimiter(',');
 #ifndef DAEMONLESS
     auto groupIdOpt = addOption("-g,--group", this->opts->groupId, "The group ID");
 #endif
@@ -92,7 +93,7 @@ void ComletDiagnostic::setupOptions() {
         return std::string();
 #endif
     std::string errStr = "Device id should be a non-negative integer or a BDF string";
-    if (isValidDeviceId(str)) {
+    if (isValidDeviceId(str) || str == "-1") {
         return std::string();        
     } else if (isBDF(str)) {
         return std::string();
@@ -104,18 +105,31 @@ void ComletDiagnostic::setupOptions() {
       1. quick test\n\
       2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs\n\
       3. long test - this diagnostic level will have the significant performance impact on the specified GPUs");
+    
+    auto stressFlag = addFlag("-s,--stress", this->opts->stress, "Stress the GPU(s) for the specified time");
+    auto stressTimeOpt = addOption("--stresstime", this->opts->stressTime, "Stress time (in minutes)");
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver");
 
     preCheckOpt->excludes(deviceIdOpt);
     preCheckOpt->excludes(level);
+    preCheckOpt->excludes(stressFlag);
+    preCheckOpt->excludes(stressTimeOpt);
     level->excludes(preCheckOpt);
+    level->excludes(stressFlag);
+    level->excludes(stressTimeOpt);
     deviceIdOpt->excludes(preCheckOpt);
-    deviceIdOpt->needs(level);
+    if (stressFlag == nullptr) {
+        deviceIdOpt->needs(level);
+    }
+    stressTimeOpt->needs(stressFlag);
 
 #ifndef DAEMONLESS
     preCheckOpt->excludes(groupIdOpt);
     groupIdOpt->excludes(preCheckOpt);
+    groupIdOpt->excludes(stressFlag);
+    groupIdOpt->excludes(stressTimeOpt);
     groupIdOpt->needs(level);
+    stressFlag->needs(stressTimeOpt);
 #endif
 }
 
@@ -135,12 +149,12 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
         return json;
     }
     if (this->opts->level >= 1 && this->opts->level <= 3) {
-        if (this->opts->deviceId != "-1") {
+        if (this->opts->deviceIds[0] != "-1") {
             int targetId = -1;
-            if (isNumber(this->opts->deviceId)) {
-                targetId = std::stoi(this->opts->deviceId);
+            if (isNumber(this->opts->deviceIds[0])) {
+                targetId = std::stoi(this->opts->deviceIds[0]);
             } else {
-                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceIds[0].c_str(), &targetId);
                 if (convertResult->contains("error")) {
                     return convertResult;
                 }
@@ -160,6 +174,27 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
         json = this->coreStub->getPreCheckInfo();
         return json;
     }
+
+    if (this->opts->stress) {
+        if (isDeviceOperation()) {
+            for (auto deviceId : this->opts->deviceIds) {
+                json = this->coreStub->getDeviceProperties(std::stoi(deviceId));
+                if (json->contains("error")) {
+                    return json;
+                }
+            }
+            for (auto deviceId : this->opts->deviceIds) {
+                json = this->coreStub->runStress(std::stoi(deviceId), this->opts->stressTime);
+                if (json->contains("error")) {
+                    break;
+                }
+            }
+            return json;
+        } else {
+            return this->coreStub->runStress(std::stoi(this->opts->deviceIds[0]), this->opts->stressTime);
+        }
+    }
+
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
     (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
     return json;
@@ -172,6 +207,23 @@ static void showDeviceDiagnostic(std::ostream &out, std::shared_ptr<nlohmann::js
     } else {
         CharTable table(ComletConfigDiagnosticDevice, *json, cont);
         table.show(out);
+    }
+}
+
+static void showStreesedDevices(std::ostream &out, const std::vector<std::string> &ids) {
+    if (ids.size() <= 0) {
+        return;
+    }
+    if (ids[0] == "-1") {
+        out << "Stress on all GPU" << std::endl;;
+        return;
+    } else {
+        std::string gpus;
+        for (auto id : ids) {
+            gpus += id + ",";
+        }
+        gpus.pop_back();
+        out << "Stress on GPU " << gpus << std::endl;
     }
 }
 
@@ -198,6 +250,43 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
         return;
     }
 #endif
+
+    if (this->opts->stress) {
+        showStreesedDevices(out, this->opts->deviceIds);
+        auto begin = std::chrono::system_clock::now();
+        while (true) {
+            size_t fin_dev_count = 0;
+            for (auto deviceId : this->opts->deviceIds) {
+                json = this->coreStub->checkStress(std::stoi(deviceId));
+                if (json->contains("error")) {
+                    out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
+                    setExitCodeByJson(*json);
+                    return;
+                }
+                auto tasks = (*json)["task_list"];
+                size_t fin_task_count = 0;
+                for (auto task : tasks) {
+                    auto now = std::chrono::system_clock::now();
+                    int pastSeconds = std::chrono::duration_cast<std::chrono::seconds>(now - begin).count();
+                    bool finished = task["finished"];
+                    out << "Device: " << task["device_id"] << " Finished:" << finished << " Time: " << pastSeconds << " seconds" << std::endl;
+                    if (finished) {
+                        fin_task_count++;
+                    }
+                }
+                if (tasks.size() == fin_task_count) {
+                    fin_dev_count++;
+                }
+            }
+            if (fin_dev_count == this->opts->deviceIds.size()) {
+                out << "Finish stressing." << std::endl;
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
+        return;
+    }
+
     if (isDeviceOperation()) {
         showDeviceDiagnostic(out, json);
         return;

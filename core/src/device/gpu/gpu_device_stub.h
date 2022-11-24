@@ -87,6 +87,8 @@ class GPUDeviceStub {
 
     void getFrequencyThrottle(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
+    void getFrequencyThrottleReason(const zes_device_handle_t& device, Callback_t callback) noexcept;
+
     void getPCIeReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
     void getPCIeWriteThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
@@ -176,6 +178,8 @@ class GPUDeviceStub {
 
     static std::shared_ptr<FabricMeasurementData> toGetFabricThroughput(const zes_device_handle_t& device);
 
+    static std::shared_ptr<MeasurementData> loadPVCIdlePowers(std::string bdf = "", bool fresh = true, int index = 0);
+
    private:
     GPUDeviceStub();
 
@@ -219,6 +223,8 @@ class GPUDeviceStub {
     static std::shared_ptr<MeasurementData> toGetRasErrorOnSubdevice(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetFrequencyThrottle(const zes_device_handle_t& device);
+
+    static std::shared_ptr<MeasurementData> toGetFrequencyThrottleReason(const zes_device_handle_t& device);
 
     static std::shared_ptr<MeasurementData> toGetPCIeReadThroughput(const zes_device_handle_t& device);
 
@@ -270,6 +276,7 @@ class GPUDeviceStub {
                                            std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts); 
 
     static std::string getPciSlot(zes_pci_address_t address);
+    static std::string getOAMSocketId(zes_pci_address_t address);
 
    private:
     bool initialized;
@@ -285,6 +292,11 @@ class GPUDeviceStub {
     static std::map<ze_device_handle_t, ze_context_handle_t> target_metric_contexts;
 
     static std::map<ze_device_handle_t, std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>> device_perf_groups;
+
+    static std::mutex pvc_idle_power_mutex;
+    static std::map<std::string, std::shared_ptr<MeasurementData>> pvc_idle_powers; // key: bdf value: idle_power
+    static std::set<std::string> pvc_gpu_bdfs;
+    static bool has_pvc_idle_powers;
 };
 
 } // end namespace xpum

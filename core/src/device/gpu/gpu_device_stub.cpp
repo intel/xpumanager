@@ -108,7 +108,196 @@ GPUDeviceStub& GPUDeviceStub::instance() {
 
 PCIeManager GPUDeviceStub::pcie_manager;
 
+static std::string getFileValue(std::string file_name) {
+    std::ifstream ifs(file_name);
+    std::string content((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+    return content;
+}
+
+std::mutex GPUDeviceStub::pvc_idle_power_mutex;
+std::map<std::string, std::shared_ptr<MeasurementData>> GPUDeviceStub::pvc_idle_powers;
+std::set<std::string> GPUDeviceStub::pvc_gpu_bdfs;
+bool GPUDeviceStub::has_pvc_idle_powers = true;
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::loadPVCIdlePowers(std::string bdf, bool fresh, int index) {
+    std::shared_ptr<MeasurementData> ret = std::make_shared<MeasurementData>();
+    if (!has_pvc_idle_powers) {
+        return ret;
+    }
+
+    std::unique_lock<std::mutex> lock(GPUDeviceStub::pvc_idle_power_mutex);
+    if (bdf != "" && pvc_idle_powers.count(bdf) > 0) {
+        ret = pvc_idle_powers[bdf];
+        pvc_idle_powers.erase(bdf);
+        if (!fresh)
+            has_pvc_idle_powers = false;
+        return ret;
+    }
+
+    if (has_pvc_idle_powers && pvc_gpu_bdfs.size() == 0) {
+        DIR *pdir = NULL;
+        struct dirent *pdirent = NULL;
+        pdir = opendir("/sys/class/drm");
+        if (pdir != NULL) {
+            while ((pdirent = readdir(pdir)) != NULL) {
+                if (pdirent->d_name[0] == '.') {
+                    continue;
+                }
+                if (strncmp(pdirent->d_name, "render", 6) == 0) {
+                    continue;
+                }
+                if (strncmp(pdirent->d_name, "card", 4) != 0) {
+                    continue;
+                }
+                if (strstr(pdirent->d_name, "-") != NULL) {
+                    continue;
+                }
+                std::string uevent = getFileValue("/sys/class/drm/" + std::string(pdirent->d_name) +"/device/uevent");
+                std::string key = "PCI_ID=8086:";
+                auto pos = uevent.find(key); 
+                if (pos != std::string::npos) {
+                    std::string bdf_key = "PCI_SLOT_NAME=";
+                    auto bdf_pos = uevent.find(bdf_key); 
+                    if (bdf_pos != std::string::npos) {
+                        auto device_id = uevent.substr(pos + key.length(), 4);
+                        if (device_id.compare(0, 3, "0BD") == 0 || device_id.compare(0, 3, "0BE") == 0)
+                            pvc_gpu_bdfs.insert(uevent.substr(bdf_pos + bdf_key.length(), 12));
+                    }
+                }
+            }
+            closedir(pdir);
+        }
+    }
+    // PVC Not Found
+    if (pvc_gpu_bdfs.size() == 0) {
+        has_pvc_idle_powers = false;
+        return ret;
+    }
+
+    auto gpu_bdfs = pvc_gpu_bdfs;
+    if (bdf != "") {
+        if (gpu_bdfs.count(bdf) == 0) {
+            return ret;
+        } else {
+            // Only read target PVC idle power
+            gpu_bdfs.clear();
+            gpu_bdfs.insert(bdf);
+        }
+    }
+
+    std::map<std::string, std::map<std::uint32_t, std::string>> gpu_bdf_to_power_paths;
+    char path[PATH_MAX];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    pdir = opendir("/sys/class/hwmon");
+    if (pdir != NULL) {
+        while ((pdirent = readdir(pdir)) != NULL) {
+            if (pdirent->d_name[0] == '.') {
+                continue;
+            }
+            if (strncmp(pdirent->d_name, "hwmon", 5) != 0) {
+                continue;
+            }
+ 
+            snprintf(path, PATH_MAX, "/sys/class/hwmon/%s", pdirent->d_name);
+            char full_path[PATH_MAX];
+            ssize_t full_len = ::readlink(path, full_path, sizeof(full_path));
+            full_path[full_len] = '\0';
+
+            for (auto& gpu_bdf: gpu_bdfs) {
+                if (strstr(full_path, gpu_bdf.c_str()) != NULL) {
+                    std::string name = getFileValue("/sys/class/hwmon/" + std::string(pdirent->d_name) +"/name");
+                    name.erase(0, name.find_first_not_of(" \n\r\t"));                                                                                               
+                    name.erase(name.find_last_not_of(" \n\r\t") + 1);
+                    auto energy_path = "/sys/class/hwmon/" + std::string(pdirent->d_name) +"/energy1_input";
+                    uint64_t value = std::stoull(getFileValue(energy_path));
+                    auto timestamp = Utility::getCurrentMillisecond();
+                    XPUM_LOG_TRACE("[{}] path:{}, value: {}, timestamp: {}", gpu_bdf, energy_path, value, timestamp);
+                    if (pvc_idle_powers.count(gpu_bdf) == 0)
+                        pvc_idle_powers[gpu_bdf] = std::make_shared<MeasurementData>();
+
+                    pvc_idle_powers[gpu_bdf]->setTimestamp(timestamp);
+                    if (name == "i915") {
+                        pvc_idle_powers[gpu_bdf]->setCurrent(value);
+                        gpu_bdf_to_power_paths[gpu_bdf][UINT32_MAX] = energy_path;
+                    } else if (name.find("gt0") != std::string::npos) {
+                        pvc_idle_powers[gpu_bdf]->setSubdeviceDataCurrent(0, value);
+                        gpu_bdf_to_power_paths[gpu_bdf][0] = energy_path;
+                    } else if (name.find("gt1") != std::string::npos) {
+                        pvc_idle_powers[gpu_bdf]->setSubdeviceDataCurrent(1, value);
+                        gpu_bdf_to_power_paths[gpu_bdf][1] = energy_path;
+                    } else if (name.find("gt2") != std::string::npos) {
+                        pvc_idle_powers[gpu_bdf]->setSubdeviceDataCurrent(2, value);
+                        gpu_bdf_to_power_paths[gpu_bdf][2] = energy_path;
+                    } else if (name.find("gt3") != std::string::npos) {
+                        pvc_idle_powers[gpu_bdf]->setSubdeviceDataCurrent(3, value);
+                        gpu_bdf_to_power_paths[gpu_bdf][3] = energy_path;
+                    }
+                }
+            }
+        }
+        closedir(pdir);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    int device_id = 0;
+    for (auto& bdf_data : pvc_idle_powers) {
+        // energy:microjoules timestamp:microsecond
+        auto begin_time = bdf_data.second->getTimestamp(); 
+        auto end_time = Utility::getCurrentMillisecond();
+        bdf_data.second->setTimestamp(end_time);
+        begin_time *= 1000;
+        end_time *= 1000;
+        if (bdf_data.second->getCurrent() != std::numeric_limits<uint64_t>::max()) {
+            uint64_t value = std::stoull(getFileValue(gpu_bdf_to_power_paths[bdf_data.first][UINT32_MAX]));
+            XPUM_LOG_TRACE("[{}] path:{}, value: {}, timestamp: {}", bdf_data.first, gpu_bdf_to_power_paths[bdf_data.first][UINT32_MAX], value, bdf_data.second->getTimestamp());
+            auto val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * (value - bdf_data.second->getCurrent()) / (end_time - begin_time);
+            bdf_data.second->setCurrent(val);
+            bdf_data.second->setAvg(val);
+            bdf_data.second->setMax(val);
+            bdf_data.second->setMin(val);
+            bdf_data.second->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
+            bdf_data.second->setDeviceId(std::to_string(device_id));
+            XPUM_LOG_DEBUG("[{}] idle power on device: {}", bdf_data.first, bdf_data.second->getCurrent());
+        }
+
+        for (uint32_t tile = 0; tile < 4; tile ++) {
+            if (bdf_data.second->getSubdeviceDataCurrent(tile) != std::numeric_limits<uint64_t>::max()) {
+                uint64_t value = std::stoull(getFileValue(gpu_bdf_to_power_paths[bdf_data.first][tile]));
+                XPUM_LOG_TRACE("[{}] path:{}, value: {}, timestamp: {}", bdf_data.first, gpu_bdf_to_power_paths[bdf_data.first][tile], value, bdf_data.second->getTimestamp());
+                auto val = Configuration::DEFAULT_MEASUREMENT_DATA_SCALE * (value - bdf_data.second->getSubdeviceDataCurrent(tile)) / (end_time - begin_time);
+                bdf_data.second->setSubdeviceDataCurrent(tile, val);
+                bdf_data.second->setSubdeviceDataMax(tile, val);
+                bdf_data.second->setSubdeviceDataMin(tile, val);
+                bdf_data.second->setSubdeviceDataAvg(tile, val);
+                bdf_data.second->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);            
+                bdf_data.second->setDeviceId(std::to_string(device_id));
+                XPUM_LOG_DEBUG("[{}] idle power on tile {} : {}", bdf_data.first, tile, bdf_data.second->getSubdeviceDataCurrent(tile));
+            }   
+        }
+        device_id++;
+    }
+    if (bdf == "") {
+        if (pvc_idle_powers.size() == 0 || index >= (int)pvc_idle_powers.size())
+            return ret;
+        else {
+            auto it = pvc_idle_powers.begin();
+            std::advance(it, index);
+            return it->second;
+        }
+    } else {
+        ret = pvc_idle_powers[bdf];
+        pvc_idle_powers.erase(bdf);
+        if (!fresh)
+            has_pvc_idle_powers = false;
+        return ret;
+    }
+}
+
 void GPUDeviceStub::init() {
+    // Add a temporary workaround for PVC idle powers
+    loadPVCIdlePowers();
+
     initialized = true;
     putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
     putenv(const_cast<char*>("ZE_ENABLE_PCI_ID_DEVICE_ORDER=1"));
@@ -369,6 +558,62 @@ static std::string getCardFullPath(std::string& bdf_address) {
     closedir(pdir);
     return ret;
 }
+static bool readStrSysFsFile(char *buf, char *fileName);
+
+std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
+    std::string bdf_address = to_string(address);
+    char link_path[PATH_MAX];
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    int len = 0;
+    std::string ret = "";
+
+    pdir = opendir("/sys/class/drm");
+    if (pdir == NULL) {
+        return ret;
+    }
+
+    while ((pdirent = readdir(pdir)) != NULL) {
+        if (pdirent->d_name[0] == '.') {
+            continue;
+        }
+        
+        if (strstr(pdirent->d_name, "-") != NULL) {
+            continue;
+        }
+
+        if (!strncmp(pdirent->d_name, "card", 4)) {
+            len = snprintf(link_path, PATH_MAX, "/sys/class/drm/%s", pdirent->d_name);
+            if (len <= 0 || len >= PATH_MAX) {
+                break;
+            }
+            char full_path[PATH_MAX];
+            char card_path[PATH_MAX];
+            char socketId_buf[16];
+
+            ssize_t full_len = ::readlink(link_path, full_path, sizeof(full_path));
+            full_path[full_len] = '\0';
+            if (strstr(full_path, bdf_address.c_str()) != NULL) {
+                int cardLen = snprintf(card_path, PATH_MAX,"%s/iaf_socket_id",link_path);
+                if (cardLen <= 0 || cardLen >= PATH_MAX) {
+                    return ret;
+                }
+                if (readStrSysFsFile(socketId_buf, card_path) == false) {
+                    return ret;
+                } else {
+                    if(!strncmp(socketId_buf, "0x1f", 4)) {
+                        return ret;
+                    }
+                    socketId_buf[strlen(socketId_buf)-1] = '\0';
+                    return socketId_buf;
+                }
+                break;
+            }
+        }
+    }
+    closedir(pdir);
+    return ret;
+}
 
 std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     std::string res;
@@ -482,6 +727,8 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
     if (checkCapability(props.core.name, bdf_address, "Frequency Throttle", toGetFrequencyThrottle, device))
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
+    if (checkCapability(props.core.name, bdf_address, "Frequency Throttle Reason(GPU)", toGetFrequencyThrottleReason, device))
+        capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE_REASON_GPU);
     for (auto metric: Configuration::getEnabledMetrics()) {
         if (metric == METRIC_PCIE_READ_THROUGHPUT) {
             if (checkCapability(props.core.name, bdf_address, "PCIe read throughput", toGetPCIeReadThroughput, device))
@@ -720,6 +967,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     }
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(pci_props.address)));
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
                 }
 
                 uint64_t physical_size = 0;
@@ -1266,7 +1514,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
                             if (type == props.type) {
                                 double temp_val = 0;
                                 XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
-                                if (res == ZE_RESULT_SUCCESS) {
+                                // filter abnormal temperatures
+                                if (res == ZE_RESULT_SUCCESS && temp_val < 150) {
                                     ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                     if (props.onSubdevice) {
                                         ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
@@ -1283,7 +1532,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetTemperature(const zes_devic
                             if (type == props.type) {
                                 double temp_val = 0;
                                 XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &temp_val));
-                                if (res == ZE_RESULT_SUCCESS) {
+                                // filter abnormal temperatures
+                                if (res == ZE_RESULT_SUCCESS && temp_val < 150) {
                                     ret->setScale(Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
                                     if (props.onSubdevice) {
                                         ret->setSubdeviceDataCurrent(props.subdeviceId, temp_val * Configuration::DEFAULT_MEASUREMENT_DATA_SCALE);
@@ -2628,7 +2878,8 @@ static bool readUtil1(std::vector<device_util_by_proc>& vec,
         }
         device_util_by_proc util(pid);
         util.setDeviceId(std::stoi(device_id));
-        strncpy(util.d_name, pdirent->d_name, 32);
+        memcpy(util.d_name, pdirent->d_name, 32);
+        util.d_name[31] = '\0';
         if (getEngineActiveTime(util, 0, card_idx, pdirent->d_name) == false) {
             closedir(pdir);
             return false;
@@ -3494,7 +3745,8 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
                     }
                     double val = 0;
                     XPUM_ZE_HANDLE_LOCK(temp, res = zesTemperatureGetState(temp, &val));
-                    if (res == ZE_RESULT_SUCCESS) {
+                    // filter abnormal temperatures
+                    if (res == ZE_RESULT_SUCCESS && val < 150) {
                         temp_val = val;
                     }
                 }
@@ -3797,6 +4049,66 @@ bool GPUDeviceStub::setEccState(const zes_device_handle_t& device, ecc_state_t& 
 #endif
 }
 
+void GPUDeviceStub::getFrequencyThrottleReason(const zes_device_handle_t& device, Callback_t callback) noexcept {
+    if (device == nullptr) {
+        return;
+    }
+    invokeTask(callback, toGetFrequencyThrottleReason, device);
+}
+
+std::shared_ptr<MeasurementData> GPUDeviceStub::toGetFrequencyThrottleReason(const zes_device_handle_t& device) {
+    if (device == nullptr) {
+        throw BaseException("toGetFrequencyThrottleReason error: device handle is nullptr");
+    }
+    uint32_t freqDomainCount = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freqDomainCount, nullptr));
+    if (res != ZE_RESULT_SUCCESS) {
+        std::stringstream err;
+        err << "zesDeviceEnumFrequencyDomains error, result: 0x" << std::hex << res;
+        throw BaseException(err.str());
+    }
+    std::vector<zes_freq_handle_t> freqDomainList(freqDomainCount);
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumFrequencyDomains(device, &freqDomainCount, freqDomainList.data()));
+    if (res != ZE_RESULT_SUCCESS) {
+        std::stringstream err;
+        err << "zesDeviceEnumFrequencyDomains error, result: 0x" << std::hex << res;
+        throw BaseException(err.str());
+    }
+    std::shared_ptr<MeasurementData> outData = std::make_shared<MeasurementData>();
+    zes_freq_throttle_reason_flags_t deviceLevelFlag = 0;
+    bool hasDataOnSubDevice = false;
+    for (auto &hFreq: freqDomainList) {
+        zes_freq_properties_t freqProps;
+        XPUM_ZE_HANDLE_LOCK(hFreq, res = zesFrequencyGetProperties(hFreq, &freqProps));
+        if (res != ZE_RESULT_SUCCESS) {
+            std::stringstream err;
+            err << "zesFrequencyGetProperties error, result: 0x" << std::hex << res;
+            throw BaseException(err.str());
+        }
+        if (freqProps.type == ZES_FREQ_DOMAIN_GPU) {
+            zes_freq_state_t freqState;
+            XPUM_ZE_HANDLE_LOCK(hFreq, zesFrequencyGetState(hFreq, &freqState));
+            if (res != ZE_RESULT_SUCCESS) {
+                std::stringstream err;
+                err << "zesFrequencyGetState error, result: 0x" << std::hex << res;
+                throw BaseException(err.str());
+            }
+            if (freqProps.onSubdevice) {
+                outData->setSubdeviceDataCurrent(freqProps.subdeviceId, freqState.throttleReasons);
+                deviceLevelFlag |= freqState.throttleReasons;
+                hasDataOnSubDevice = true;
+            } else {
+                outData->setCurrent(freqState.throttleReasons);
+            }
+        }
+    }
+    if (hasDataOnSubDevice) {
+        outData->setCurrent(deviceLevelFlag);
+    }
+    return outData;
+}
+
 void GPUDeviceStub::getPCIeReadThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept {
     if (device == nullptr) {
         return;
@@ -3932,7 +4244,7 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
                         zes_fabric_port_throughput_t throughput;
                         XPUM_ZE_HANDLE_LOCK(device, res = zesFabricPortGetThroughput(fp, &throughput));
                         if (res == ZE_RESULT_SUCCESS) {
-                            ret->addRawData(uint64_t(device), throughput.timestamp, throughput.rxCounter, throughput.txCounter, props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId);
+                            ret->addRawData(uint64_t(fp), throughput.timestamp, throughput.rxCounter, throughput.txCounter, props.portId.attachId, state.remotePortId.fabricId, state.remotePortId.attachId);
                             data_acquired = true;
                         } else {
                             exception_msgs["zesFabricPortGetThroughput"] = res;
@@ -3955,7 +4267,10 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
         ret->setErrors(buildErrors(exception_msgs, __func__, __LINE__));
         return ret;
     } else {
-        throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
+        if (fabric_port_count == 0 && exception_msgs.empty())
+            throw BaseException("fabric port not found");
+        else
+            throw BaseException(buildErrors(exception_msgs, __func__, __LINE__));
     }
 }
 

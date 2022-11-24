@@ -19,6 +19,7 @@
 #include "infrastructure/exception/ilegal_state_exception.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/utility.h"
+#include "device/gpu/gpu_device_stub.h"
 
 namespace xpum {
 
@@ -91,6 +92,9 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         return XPUM_OK;
     }
 
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop);
+    std::string bdf = prop.getValue();
+
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
     std::vector<xpum::DeviceCapability> capabilities;
@@ -108,10 +112,28 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
         if (*metric_types_iter != METRIC_ENGINE_UTILIZATION && *metric_types_iter != METRIC_FABRIC_THROUGHPUT) {
-            std::shared_ptr<MeasurementData> p_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
+            std::shared_ptr<MeasurementData> p_data = std::make_shared<MeasurementData>();
+            auto p_pvc_idle_power = GPUDeviceStub::loadPVCIdlePowers(bdf, false);
+            if (*metric_types_iter == METRIC_POWER && p_pvc_idle_power->hasDataOnDevice()) {
+                p_data = p_pvc_idle_power;
+            } else {
+                p_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
+            }
             if (p_data != nullptr) {
                 hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
                 m_datas.insert(std::make_pair(*metric_types_iter, p_data));
+            } else if (*metric_types_iter >= METRIC_RAS_ERROR_CAT_RESET && *metric_types_iter <= METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE) {
+                auto start_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                auto end_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+                while (end_time - start_time <= 30) {
+                    p_data = getLatestStatistics(*metric_types_iter, device_id, session_id);
+                    if (p_data != nullptr) {
+                        hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
+                        m_datas.insert(std::make_pair(*metric_types_iter, p_data));
+                        break; 
+                    }
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
             }
         }
         ++metric_types_iter;
@@ -204,6 +226,9 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
         return;
     }
 
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, prop);
+    std::string bdf = prop.getValue();
+
     std::map<MeasurementType, std::shared_ptr<MeasurementData>> m_datas;
     auto metric_types = Configuration::getEnabledMetrics();
     std::vector<xpum::DeviceCapability> capabilities;
@@ -221,7 +246,13 @@ void DataLogic::getLatestMetrics(xpum_device_id_t deviceId,
     std::string device_id = std::to_string(deviceId);
     while (metric_types_iter != metric_types.end()) {
         if (*metric_types_iter != METRIC_ENGINE_UTILIZATION && *metric_types_iter != METRIC_FABRIC_THROUGHPUT) {
-            std::shared_ptr<MeasurementData> m_data = getLatestData(*metric_types_iter, device_id);
+            std::shared_ptr<MeasurementData> m_data = std::make_shared<MeasurementData>();
+            auto p_pvc_idle_power = GPUDeviceStub::loadPVCIdlePowers(bdf, false);
+            if (*metric_types_iter == METRIC_POWER && p_pvc_idle_power->hasDataOnDevice(), false) {
+                m_data = p_pvc_idle_power;
+            } else {
+                m_data = getLatestData(*metric_types_iter, device_id);
+            }
             if (m_data != nullptr) {
                 hasDataOnDevice = hasDataOnDevice || m_data->hasDataOnDevice();
                 m_datas.insert(std::make_pair(*metric_types_iter, m_data));
@@ -336,6 +367,7 @@ xpum_result_t DataLogic::getEngineStatistics(xpum_device_id_t deviceId,
             data.index = engine_index;
             data.scale = p_data->getScale();
             data.type = Utility::toXPUMEngineType(std::static_pointer_cast<EngineCollectionMeasurementData>(p_data)->getEngineType(engine_datas_iter->first));
+            data.deviceId = deviceId;
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }
@@ -504,6 +536,7 @@ xpum_result_t DataLogic::getFabricThroughputStatistics(xpum_device_id_t deviceId
                 stats.max = fabric_datas_iter->second.max;
                 stats.scale = p_data->getScale();
             }
+            stats.deviceId = deviceId;
             if (index >= *count) {
                 return XPUM_BUFFER_TOO_SMALL;
             }

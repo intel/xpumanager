@@ -14,21 +14,23 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
 	* GPU Firmware updating
 * Monitoring:
 	* GPU health – memory, power, temperature, fabric port, etc.
-	* GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory bandwidth, errors
+	* GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory throughput, errors
 * Diagnostics:
 	* 3 levels of GPU diagnostic tests
 * Configuration:
-	* GPU Settings - GPU power limits, frequency range, standby mode, scheduler mode, ECC On/Off, performance factor, fabric port status, fabric port beaconing
-	* GPU policies - Throttle GPU when the temperature set threshold is reached, reset GPU when hanging etc. 
+	* GPU Settings - GPU power limits, frequency range, standby mode, scheduler mode, ECC On/Off, performance factor, fabric port status
+	* GPU policies - Throttle GPU when the temperature set threshold is reached 
 * Supported Frameworks:
 	* Prometheus exporter, Docker container support, Icinga plugin
 
 ## Supported Devices
-* Intel Data Center GPUs
-
+* Intel Data Center Flex Series GPU ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
+ 
 ## Supported OSes
-* Ubuntu 20.04.3
-* RHEL 8.4 and CentOS 8 Stream
+* Ubuntu 20.04.3/22.04
+* RHEL 8.5/8.6
+* CentOS 8 Stream
+* CentOS 7.4/7.9
 * SLES 15 SP3
 * Windows Server 2022 (limited features including: GPU device info, GPU telemetry and GPU settings)
   
@@ -42,3 +44,4 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
 * Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) for how to install/uninstall Intel XPU Manager.
 * Refer to the [XPU Manager CLI User Guide](doc/CLI_user_guide.md) to start using Intel XPU Manager.
 * Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.
+* Refer to [Building XPU Manager Installer](BUILDING.md) to build XPU Manager installer packages. 

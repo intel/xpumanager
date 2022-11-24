@@ -93,23 +93,27 @@ int CLIWrapper::printResult(std::ostream &out) {
             if (comlet->getCommand().compare("stats") == 0) {
                 std::shared_ptr<ComletStatistics> stats_comlet = std::dynamic_pointer_cast<ComletStatistics>(comlet);
                 if (stats_comlet->hasEUMetrics())
-                    setenv("XPUM_METRICS", "0-31,36-37", 1);
+                    setenv("XPUM_METRICS", "0-31,36-38", 1);
                 else
-                    setenv("XPUM_METRICS", "0,4-31,36-37", 1);
+                    setenv("XPUM_METRICS", "0,4-31,36-38", 1);
             }
             if (comlet->getCommand().compare("dump") == 0) {
                 putenv(const_cast<char *>("XPUM_DISABLE_PERIODIC_METRIC_MONITOR=0"));
                 std::shared_ptr<ComletDump> dump_comlet = std::dynamic_pointer_cast<ComletDump>(comlet);
                 if (dump_comlet->dumpPCIeMetrics() && dump_comlet->dumpEUMetrics())
-                    setenv("XPUM_METRICS", "0-37", 1);
+                    setenv("XPUM_METRICS", "0-38", 1);
                 else if (dump_comlet->dumpPCIeMetrics())
-                    setenv("XPUM_METRICS", "0,4-37", 1);
+                    setenv("XPUM_METRICS", "0,4-38", 1);
                 else if (dump_comlet->dumpEUMetrics())
-                    setenv("XPUM_METRICS", "0-31,36-37", 1);
+                    setenv("XPUM_METRICS", "0-31,36-38", 1);
                 else
-                    setenv("XPUM_METRICS", "0,4-31,36-37", 1);
+                    setenv("XPUM_METRICS", "0,4-31,36-38", 1);
             }
-            this->coreStub = std::make_shared<LibCoreStub>();
+            if (comlet->getCommand().compare("dump") == 0 && std::dynamic_pointer_cast<ComletDump>(comlet)->dumpIdlePowerOnly()) {
+                this->coreStub = std::make_shared<LibCoreStub>(false);
+            } else {
+                this->coreStub = std::make_shared<LibCoreStub>();  
+            }
             comlet->coreStub = this->coreStub;
 #endif
             if (this->opts->json) {

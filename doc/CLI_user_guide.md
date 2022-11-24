@@ -145,6 +145,7 @@ Show the detailed info of one device. The device info includes the model, freque
 |           |                                                                                      |
 |           | Memory Physical Size: 14248.00 MiB                                                   |
 |           | Max Mem Alloc Size: 4095.99 MiB                                                      |
+|           | ECC State: enabled                                                                   |
 |           | Number of Memory Channels: 2                                                         |
 |           | Memory Bus Width: 128                                                                |
 |           | Max Hardware Contexts: 65536                                                         |
@@ -538,6 +539,7 @@ optional arguments:
                                 32. Render engine group utilization (%), per tile
                                 33. Media engine group utilization (%), per tile
                                 34. Copy engine group utilization (%), per tile
+                                35. Throttle reason, per tile
 
   
   -i                          The interval (in seconds) to dump the device statistics to screen. Default value: 1 second. 
@@ -933,11 +935,15 @@ Run some test suites to diagnose GPU.
 
 Usage: xpumcli diag [Options]
   xpumcli diag -d [deviceId] -l [level]
+  xpumcli diag -d [pciBdfAddress] -l [level]
   xpumcli diag -d [deviceId] -l [level] -j
+  xpumcli diag -d [pciBdfAddress] -l [level] -j
   xpumcli diag -g [groupId] -l
   xpumcli diag -g [groupId] -l -j
+  xpumcli diag -d [deviceIds] --stress --stresstime [time]
   xpumcli diag --precheck
   xpumcli diag --precheck -j
+  xpumcli diag --stress --stresstime [time]
   
 Options:
   -h,--help                   Print this help message and exit.
@@ -950,6 +956,9 @@ Options:
                                 2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs
                                 3. long test - this diagnostic level will have the significant performance impact on the specified GPUs
   --precheck                  Do the precheck on the GPU and GPU driver.
+  -s,--stress                 Stress the GPU(s) for the specified time
+  --stresstime                Stress time (in minutes)
+
 ```
 
 Run test to diagnose GPU
@@ -992,6 +1001,17 @@ xpumcli diag --precheck
 | GPU Status             | Pass                                                                    |
 | CPU Status             | Pass                                                                    |
 +------------------------+-------------------------------------------------------------------------+
+```
+
+Stress the GPUs
+```
+xpumcli diag --stress
+Stress on all GPU
+Device: 0 Finished:0 Time: 0 seconds
+Device: 1 Finished:0 Time: 0 seconds
+Device: 0 Finished:0 Time: 5 seconds
+Device: 1 Finished:0 Time: 5 seconds
+
 ```
 
 ## Show AMC real-time sensor readings

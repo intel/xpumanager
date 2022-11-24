@@ -41,6 +41,7 @@ class GPUDevice : public Device {
     void getRasErrorOnSubdevice(Callback_t callback, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType) noexcept override;
     void getRasErrorOnSubdevice(Callback_t callback) noexcept override;
     void getFrequencyThrottle(Callback_t callback) noexcept override;
+    void getFrequencyThrottleReason(Callback_t callback) noexcept override;
     void getPCIeReadThroughput(Callback_t callback) noexcept override;
     void getPCIeWriteThroughput(Callback_t callback) noexcept override;
     void getPCIeRead(Callback_t callback) noexcept override;

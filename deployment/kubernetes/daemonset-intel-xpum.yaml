@@ -36,7 +36,7 @@ spec:
         - name: XPUM_EXPORTER_ONLY
           value: "1"
         - name: XPUM_METRICS
-          value: 0-37
+          value: 0-38
         resources:
           limits:
             # maps all GPUs to container

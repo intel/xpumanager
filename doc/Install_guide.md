@@ -2,10 +2,11 @@
 # Intel XPU Manager Installation Guide
 
 ## Requirements
-oneAPI Level Zero
-Intel(R) Graphics System Controller Firmware Update Library
-Intel(R) Metrics Library for MDAPI
-Intel(R) Metrics Discovery Application Programming Interface
+* Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
+* oneAPI Level Zero
+* Intel(R) Graphics System Controller Firmware Update Library
+* Intel(R) Metrics Library for MDAPI
+* Intel(R) Metrics Discovery Application Programming Interface
 
 ## DEB install
 sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
@@ -32,7 +33,7 @@ By default, Intel XPU Manager has provided as many GPU metrics as possible witho
    add "-m metric-indexes" to ExecStart. 
    Use "/opt/xpum/bin/xpumd -h" to get detailed info.  
    Sample:
-   ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-37
+   ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-38
 2. Run command "sudo systemctl daemon-reload"
 3. Run command "sudo systemctl restart xpum"
   
@@ -76,9 +77,22 @@ Metric types:
 35. GPU PCIe Write (bytes), per GPU (Disabled by default)
 36. GPU Engine Utilization, per GPU engine
 37. Fabric Throughput (kB/s), per tile
+38. Throttle reason, per tile
 
 ### Change the system settings to enable some GPU advanced metrics
 * GPU PCIe Read/Write Throughput: if these metrics are enabled, XPU Manager automatically loads MSR module by command 'modprobe msr', but XPU Manager will not automatically unload the MSR module. If you want to unload it, please run the command 'modprobe -r msr'.
-  
+
+### Disable some metrics to reduce the CPU usage of XPU Manager daemon
+* We have tried our best to reduce the CPU usage of XPU Manager daemon. If you have many GPUs (10+) and still have concern with the CPU usage of XPU Manager daemon, you may disable some the RAS related metrics below to reduce the CPU usage further. 
+    * 20. Reset Counter, per GPU
+    * 21. Programming Errors, per tile
+    * 22. Driver Errors, per tile
+    * 23. Cache Errors Correctable, per tile
+    * 24. Cache Errors Uncorrectable, per tile
+    * 25. Display Errors Correctable, per tile (Not supported so far)
+    * 26. Display Errors Uncorrectable, per tile (Not supported so far)
+    * 27. Memory Errors Correctable, per tile
+    * 28. Memory Errors Uncorrectable, per tile
+ 
 ## GPU memory ECC on/off
 XPU Manager provides the GPU memory ECC on/off feature based on [IGSC](https://github.com/intel/igsc). GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer version.

@@ -29,10 +29,16 @@ public:
     virtual ::grpc::Status runDiagnostics(::grpc::ServerContext* context, const ::RunDiagnosticsRequest* request, ::DiagnosticsTaskInfo* response) override {
         return PD;
     }
+    virtual ::grpc::Status runStress(::grpc::ServerContext* context, const ::RunStressRequest* request, ::DiagnosticsTaskInfo* response) override {
+        return PD;
+    }
     virtual ::grpc::Status runDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunDiagnosticsByGroupRequest* request, ::DiagnosticsGroupTaskInfo* response) override {
         return PD;
     }
     virtual ::grpc::Status getDiagnosticsResult(::grpc::ServerContext* context, const ::DeviceId* request, ::DiagnosticsTaskInfo* response) override {
+        return PD;
+    }
+    virtual ::grpc::Status checkStress(::grpc::ServerContext* context, const ::CheckStressRequest* request, ::CheckStressResponse* response) override {
         return PD;
     }
     virtual ::grpc::Status getDiagnosticsMediaCodecResult(::grpc::ServerContext* context, const ::DeviceId* request, ::DiagnosticsMediaCodecInfoArray* response) {

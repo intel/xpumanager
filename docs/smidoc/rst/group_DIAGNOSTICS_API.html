@@ -113,6 +113,14 @@
     <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_diag_media_codec_metrics_t.html#doxid-structxpum-diag-media-codec-metrics-t"><span class="std std-ref">xpum_diag_media_codec_metrics_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunStress<span></span><span class="p">(</span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">stressTime</span><span class="p">);</span>
+
+<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumCheckStress<span></span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_diag_task_info_t.html#doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -193,6 +201,51 @@
 <li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 <li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-diagnostics-api-1ga1ea852cb7ff55021186a2b992e560200"><span id="index-4"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunStress</span><span class="p">(</span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">stressTime</span><span class="p">)</span></pre>
+<p>Run stress test on GPU This function will return immediately. To check status of a stress test , call <a class="reference internal" href="../../xpumdoc/rst/group_DIAGNOSTICS_API.html#doxid-group-diagnostics-api-1gaf96bee6482679efa66d4b6c9268ddda7"><span class="std std-ref">xpumCheckStress</span></a>.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: Device id, -1 means run stress test on all GPU devices</p></td>
+</tr>
+<tr class="row-even"><td><p>stressTime</p></td>
+<td><p>IN: The time (in minutes) to run the stress test. 0 means unlimited time.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-diagnostics-api-1gaf96bee6482679efa66d4b6c9268ddda7"><span id="index-5"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumCheckStress</span><span class="p">(</span>
+    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_diag_task_info_t.html#doxid-structxpum-diag-task-info-t"><span class="std std-ref">xpum_diag_task_info_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">)</span></pre>
+<p>Check stress test status.</p>
+<p class="rubric">Parameters:</p>
+<table class="colwidths-given docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 80%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>deviceId</p></td>
+<td><p>IN: The device id to check stress test status</p></td>
+</tr>
+<tr class="row-even"><td><p>resultList</p></td>
+<td><p>OUT: The status of stress test run on device with <em>deviceId</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>count</p></td>
+<td><p>IN/OUT: When <em>resultList</em> is NULL, <em>count</em> will be filled with the number of available entries, and return. When <em>resultList</em> is not NULL, <em>count</em> denotes the length of <em>resultList</em>, <em>count</em> should be equal to or larger than the number of available entries, when return, the <em>count</em> will store real number of entries returned by <em>resultList</em></p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Returns:</p>
+<p>xpum_result_t</p>
 </section>
 </section>
 </section>

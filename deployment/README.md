@@ -80,6 +80,6 @@ docker run --rm --cap-drop ALL --cap-add=SYS_ADMIN \
 -v /proc/sys/kernel/nmi_watchdog:/pcm/proc/sys/kernel/nmi_watchdog \
 -v $(pwd)/rest/conf:/opt/xpum/rest/conf:ro \
 -e XPUM_REST_NO_TLS=1 \
--e XPUM_METRICS=0-37 \
+-e XPUM_METRICS=0-38 \
 ${xpum_image}
 ```

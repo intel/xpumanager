@@ -1,55 +1,30 @@
 # Copyright (c) 2021-2022 Intel Corporation.
 # SPDX-License-Identifier: MIT
 #
+# Prerequisite:
+# ./build-deb/xpumanager_xxxxx+ubuntu22.04_amd64.deb
+# ./requirements.txt (copy from rest)
+# ./third-party-programs.txt
+#
 # Build by:
-# docker build --build-arg git_commit=`git rev-parse --short HEAD` -f Dockerfile.ubuntu -t intel-xpumanager .
+# docker build -f Dockerfile.ubuntu.22.04.pvc -t intel-xpumanager:ubuntu22.04pvc .
 #
 # Run by (refer to deployment/docker/README.md for details):
-# docker run --cap-drop ALL --cap-add CAP_SYS_ADMIN --user root -e XPUM_REST_NO_TLS=1 -e XPUM_EXPORTER_NO_AUTH=1 -e XPUM_EXPORTER_ONLY=1 --publish 127.0.0.1:29999:29999 --device /dev/dri:/dev/dri --name=xpum intel-xpumanager
-FROM ubuntu:20.04 as builder
-
+# docker run --cap-drop ALL --cap-add CAP_SYS_ADMIN --user root -e XPUM_REST_NO_TLS=1 -e XPUM_EXPORTER_NO_AUTH=1 -e XPUM_EXPORTER_ONLY=1 --publish 127.0.0.1:29999:29999 --device /dev/dri:/dev/dri --name=xpum intel-xpumanager:ubuntu22.04pvc
+FROM ubuntu:22.04 as builder
 ENV HOME=/home/nobody
 ENV no_proxy=localhost,127.0.0.1
 ENV NO_PROXY=localhost,127.0.0.1
-
-ARG git_commit=1234abcd
 
 # don't ask anything
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update  && \
 apt-get install -y --no-install-recommends \ 
-  autoconf \
-  automake \
-  build-essential \
-  cmake \
-  doxygen \
-  dpkg-dev \
-  gcc \
-  gnupg2 \
-  g++ \
-  libtool \
-  liblua5.2-0 \
-  libdrm-dev \
-  libgrpc++-dev \
-  libgrpc++1 \
-  pkg-config \
   python3 \
-  python3-dev \
   python3-pip \
-  python3-venv \
-  protobuf-compiler \
-  protobuf-compiler-grpc \
-  wget && \
+  python3-venv && \
 rm -rf /var/lib/apt/lists/*
-
-RUN pip3 install grpcio-tools mistune==0.8.4 apispec apispec_webframeworks \
-      Sphinx sphinx_rtd_theme sphinxcontrib-openapi \
-      apispec-webframeworks myst-parser marshmallow \
-      prometheus-client flask flask_httpauth
-
-RUN apt-get remove -y libpciaccess-dev libpciaccess0 && \
-  apt-get autoremove -y
 
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -66,7 +41,7 @@ RUN find . -name "easy_install*" -exec rm -rf {} \; ;exit 0
 RUN find . -name "setuptools*" -exec rm -rf {} \; ;exit 0
 RUN find . -name "__pycache__" -exec rm -rf {} \; ;exit 0
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ENV HOME=/home/nobody
 ENV no_proxy=localhost,127.0.0.1
@@ -81,23 +56,33 @@ COPY third-party-programs.txt .
 WORKDIR /tmp/work
 
 RUN apt-get update && \
-  apt-get install -y --no-install-recommends wget gnupg2 ca-certificates && \
-  wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | apt-key add - && \
-  echo "deb [trusted=yes arch=amd64] https://repositories.intel.com/graphics/ubuntu focal main" > /etc/apt/sources.list.d/intel-graphics.list && \
-  apt-get update && \
   apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
     dmidecode \
+    gnupg2 \
     python3 \
-    libnl-genl-3-200 \
-    libgrpc++1 \
+    libnl-genl-3-200 && \
+  rm -rf /var/lib/apt/lists/*
+
+ARG AGAMA_REPO=untested/main/agama/devel-pvc-prq/jammy
+ARG AGAMA_BUILD=agama-ci-devel-pvc-prq-66
+
+# Add AGAMA repo
+RUN curl --noproxy '*' -fsSL \
+    https://gfx-assets-build.intel.com/artifactory/api/gpg/key/public | gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg && \
+    echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://gfx-assets-build.intel.com/artifactory/gfx-debs-per-build $AGAMA_REPO $AGAMA_BUILD" | \
+    tee /etc/apt/sources.list.d/intel.gpu.jammy.list
+
+RUN no_proxy=.intel.com apt-get update && \
+  no_proxy=.intel.com apt install -y --no-install-recommends \
     intel-gsc \
     intel-level-zero-gpu \
+    intel-metrics-discovery \
+    intel-metrics-library \
+    libmfx-tools \
     level-zero \
-    libdrm2 \
-    libmd1 \
-    libigdml1 && \
-  apt-get remove -y wget gnupg2 ca-certificates && \
-  apt-get autoremove -y && \
+    libdrm2 && \
   rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/venv /opt/venv

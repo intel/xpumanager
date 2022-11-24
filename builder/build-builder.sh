@@ -8,7 +8,7 @@
 
 set -ex
 
-level_zero_version=1.8.1
+level_zero_version=1.8.5
 registry=ccr-registry.caas.intel.com/dms-pub
 image_tag=lz-$level_zero_version-`TZ=PRC date +%Y%m%d`
 

@@ -152,6 +152,9 @@ void RawDataManager::init() {
         std::make_shared<FrequencyThrottleTimeDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE, p_persistency);
     data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE]->init();
 
+    data_handlers[MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU] =
+        std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_FREQUENCY_THROTTLE_REASON_GPU, p_persistency);
+
     data_handlers[MeasurementType::METRIC_PCIE_READ_THROUGHPUT] =
         std::make_shared<MetricStatisticsDataHandler>(MeasurementType::METRIC_PCIE_READ_THROUGHPUT, p_persistency);
     data_handlers[MeasurementType::METRIC_PCIE_READ_THROUGHPUT]->init();

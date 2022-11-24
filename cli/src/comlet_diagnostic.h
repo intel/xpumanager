@@ -15,13 +15,15 @@
 namespace xpum::cli {
 
 struct ComletDiagnosticOptions {
-    std::string deviceId = "-1";
+    std::vector<std::string> deviceIds = {"-1"};
 #ifndef DAEMONLESS
     uint32_t groupId = UINT_MAX;
 #endif
     int level = INT_MIN;
     bool rawComponentTypeStr = true;
     bool preCheck = false;
+    uint32_t stressTime = 0;
+    bool stress = false;
 };
 
 class ComletDiagnostic : public ComletBase {
@@ -37,7 +39,7 @@ class ComletDiagnostic : public ComletBase {
     virtual void getTableResult(std::ostream &out) override;
 
     inline const bool isDeviceOperation() const {
-        return opts->deviceId != "-1";
+        return opts->deviceIds[0] != "-1";
     }
 
 #ifndef DAEMONLESS

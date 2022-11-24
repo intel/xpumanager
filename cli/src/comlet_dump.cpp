@@ -53,6 +53,70 @@ bool ComletDump::dumpEUMetrics() {
     return false;
 }
 
+static std::string getFileValue(std::string file_name) {
+    std::ifstream ifs(file_name);
+    std::string content((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+    return content;
+}
+
+// For PVC idle power
+static std::map<int, std::string> gpu_id_to_bdfs;
+static std::map<std::string, int> gpu_bdf_to_ids;
+static std::map<std::string, int> gpu_bdf_to_tile_num;
+bool ComletDump::dumpIdlePowerOnly() { 
+    std::set<std::string> gpu_bdfs;
+    DIR *pdir = NULL;
+    struct dirent *pdirent = NULL;
+    pdir = opendir("/sys/class/drm");
+    if (pdir != NULL) {
+        while ((pdirent = readdir(pdir)) != NULL) {
+            if (pdirent->d_name[0] == '.') {
+                continue;
+            }
+            if (strncmp(pdirent->d_name, "render", 6) == 0) {
+                continue;
+            }
+            if (strncmp(pdirent->d_name, "card", 4) != 0) {
+                continue;
+            }
+            if (strstr(pdirent->d_name, "-") != NULL) {
+                continue;
+            }
+            std::string uevent = getFileValue("/sys/class/drm/" + std::string(pdirent->d_name) +"/device/uevent");
+            std::string key = "PCI_ID=8086:";
+            auto pos = uevent.find(key); 
+            if (pos != std::string::npos) {
+                std::string bdf_key = "PCI_SLOT_NAME=";
+                auto bdf_pos = uevent.find(bdf_key); 
+                if (bdf_pos != std::string::npos) {
+                    auto device_id = uevent.substr(pos + key.length(), 4);
+                    if (device_id.compare(0, 3, "0BD") == 0 || device_id.compare(0, 3, "0BE") == 0) {
+                        auto bdf = uevent.substr(bdf_pos + bdf_key.length(), 12);
+                        gpu_bdfs.insert(bdf);
+                        if (device_id.compare("0BD9") == 0 || device_id.compare("0BDA") == 0 || device_id.compare("0BDB") == 0) {
+                            gpu_bdf_to_tile_num[bdf] = 1;
+                        } else {
+                            gpu_bdf_to_tile_num[bdf] = 2;
+                        }
+                    }
+                }
+            }
+        }
+        closedir(pdir);
+    }
+    if (gpu_bdfs.size() == 0)
+        return false;
+    int id = 0;
+    for(auto& gpu_bdf : gpu_bdfs) {
+        gpu_id_to_bdfs[id] = gpu_bdf;
+        gpu_bdf_to_ids[gpu_bdf] = id;
+        id++;
+    }
+    if (this->opts->metricsIdList.size() == 1 && this->opts->metricsIdList[0] == XPUM_DUMP_POWER)
+        return true;
+    return false;
+}
+
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device IDs or PCI BDF addresses to query. The value of \"-1\" means all devices.");
@@ -158,6 +222,10 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
             json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
             (*json)["error"] = "Unknow operation";
         }
+#ifdef DAEMONLESS
+    } else if (gpu_id_to_bdfs.size() > 0 && this->opts->metricsIdList.size() == 1 && this->opts->metricsIdList[0] == XPUM_DUMP_POWER) {
+        json = getMetricsFromSysfs();
+#endif
     } else {
         json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
         for (auto deviceId : this->opts->deviceIds) {
@@ -283,7 +351,15 @@ void ComletDump::getTableResult(std::ostream &out) {
     if (this->opts->rawData) {
         dumpRawDataToFile(out);
     } else {
-        printByLine(out);
+#ifdef DAEMONLESS
+        if (gpu_id_to_bdfs.size() > 0 && this->opts->metricsIdList.size() == 1 && this->opts->metricsIdList[0] == XPUM_DUMP_POWER) {
+            printByLineWithoutInitializeCore(out);
+        } else {
+            printByLine(out);
+        }
+#else
+        printByLine(out); 
+#endif
     }
 }
 
@@ -326,6 +402,210 @@ std::string getJsonValue(nlohmann::json obj, int scale) {
     }
 }
 
+std::unique_ptr<nlohmann::json> ComletDump::getMetricsFromSysfs() {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    std::vector<std::string> bdfs;
+    for (auto& gpu_bdf_to_id : gpu_bdf_to_ids) {
+        bdfs.push_back(gpu_bdf_to_id.first);
+    }
+
+    std::vector<std::unique_ptr<nlohmann::json>> datas = this->coreStub->getMetricsFromSysfs(bdfs);
+    if (datas.size() == 0) {
+        (*json)["error"] = "Device not found";
+        (*json)["errno"] = XPUM_CLI_ERROR_DEVICE_NOT_FOUND;
+        return json;
+    }
+
+    std::set<int> visited;
+    for (auto deviceId : this->opts->deviceIds) {
+        int targetId = -1;
+        if (isNumber(deviceId)) {
+            targetId = std::stoi(deviceId);
+        } else {
+            targetId = gpu_bdf_to_ids[deviceId];
+        }
+        if (visited.count(targetId) == 0) {
+            if (targetId >= 0 && targetId < (int)datas.size()) {
+                deviceJsons[deviceId] = std::move(datas[targetId]);
+            }
+        } else {
+            auto data = this->coreStub->getMetricsFromSysfs({gpu_id_to_bdfs[targetId]});
+            if (!data.empty())
+                deviceJsons[deviceId] = std::move(data.front());
+        }
+        visited.insert(targetId);
+    }
+    return json;
+}
+
+void ComletDump::printByLineWithoutInitializeCore(std::ostream &out) {
+    // out << std::left << std::setw(25) << std::setfill(' ') << "Timestamp, ";
+    int tileId = this->opts->deviceTileId;
+
+    if (this->opts->deviceIds.size() == 0) {
+        out << "Device id should be provided" << std::endl;
+        exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
+        return;
+    }
+    if (this->opts->metricsIdList.size() == 0) {
+        out << "Metrics types should be provided" << std::endl;
+        exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
+        return;
+    }
+
+    // convert deviceIds if deviceId equals -1
+    if(this->opts->deviceIds.size()==1 && this->opts->deviceIds[0]=="-1"){
+        std::vector<std::string> deviceIds;
+        for (auto& gpu_id_to_bdf : gpu_id_to_bdfs)
+            deviceIds.push_back(std::to_string(gpu_id_to_bdf.first));
+        this->opts->deviceIds = deviceIds;
+    }
+
+    for (auto deviceIdStr : this->opts->deviceIds) {
+        if (gpu_id_to_bdfs.count(std::stoi(deviceIdStr)) == 0 && gpu_bdf_to_ids.count(deviceIdStr) == 0) {
+            out << "Error: Device not found" << std::endl;
+            exit_code = XPUM_CLI_ERROR_DEVICE_NOT_FOUND;
+            return;
+        }
+    }
+
+    // check deviceId and tileId is valid
+    for (auto deviceId : this->opts->deviceIds) {
+        std::string deviceBDF = deviceId;
+        if (isNumber(deviceId)) {
+            deviceBDF = gpu_id_to_bdfs[std::stoi(deviceId)];
+        }
+        if (this->opts->deviceTileId != -1) {
+            if (this->opts->deviceTileId >= gpu_bdf_to_tile_num[deviceBDF]) {
+                out << "Error: Tile not found" << std::endl;
+                exit_code = XPUM_CLI_ERROR_TILE_NOT_FOUND;
+                return;
+            }
+        }
+    }
+
+    if (this->opts->deviceIds.size() > 1) {
+        std::vector<std::string> ids = this->opts->deviceIds;
+        sort(ids.begin(),ids.end());
+        if (std::adjacent_find(ids.begin(), ids.end()) != ids.end()) {
+            out << "Error: Duplicated device ids" << std::endl;
+            return;
+        }
+    }
+
+    // try run
+    auto res = run();
+
+    // construct column schema
+    std::vector<DumpColumn> columnSchemaList;
+
+    // timestamp column
+    columnSchemaList.push_back({"Timestamp",
+                                []() {
+                                    return CoreStub::isotimestamp(time(nullptr) * 1000, true);
+                                }});
+
+    // device id column
+    columnSchemaList.push_back({"DeviceId",
+                                [this]() {
+                                    return this->curDeviceId;
+                                }});
+
+    // tile id
+    if (tileId != -1) {
+        DumpColumn tileColumn{"TileId",
+                              [tileId]() {
+                                  return std::to_string(tileId);
+                              }};
+        columnSchemaList.push_back(tileColumn);
+    }
+
+    // other columns
+    for (std::size_t i = 0; i < this->opts->metricsIdList.size(); i++) {
+        int metric = this->opts->metricsIdList[i];
+        auto config = dumpTypeOptions[metric];
+        if (config.optionType == xpum::dump::DUMP_OPTION_STATS) {
+            DumpColumn dc{
+                std::string(config.name),
+                [config, this]() {
+                    std::string metricKey = config.key;
+                    if (statsJson != nullptr) {
+                        for (auto metricObj : (*statsJson)) {
+                            if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
+                                if (metricObj.contains("avg")) {
+                                    return getJsonValue(metricObj["avg"], config.scale);
+                                } else {
+                                    // counter type
+                                    return getJsonValue(metricObj["value"], config.scale);
+                                }
+                            }
+                        }
+                    }
+                    return std::string();
+                }};
+            columnSchemaList.push_back(dc);
+        }
+    }
+
+    // print table header
+    for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
+        auto dc = columnSchemaList[i];
+        out << dc.header;
+        if (i < columnSchemaList.size() - 1) {
+            out << ", ";
+        }
+    }
+
+    out << std::endl;
+
+    int iter = 0;
+
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(this->opts->timeInterval * 900));
+        res = run();
+        if (res->contains("error")) {
+            out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+            return;
+        }
+        for (auto deviceId : this->opts->deviceIds) {
+            curDeviceId = deviceId;
+            statsJson = nullptr;
+
+            if (tileId == -1) {
+                if (deviceJsons[deviceId]->contains("device_level")) {
+                    statsJson = std::make_shared<nlohmann::json>((*deviceJsons[deviceId])["device_level"]);
+                }
+            } else {
+                if (deviceJsons[deviceId]->contains("tile_level")) {
+                    auto tiles = (*deviceJsons[deviceId])["tile_level"].get<std::vector<nlohmann::json>>();
+                    for (auto tile : tiles) {
+                        if (tile.contains("tile_id") && tile["tile_id"].get<int>() == tileId && tile.contains("data_list")) {
+                            statsJson = std::make_shared<nlohmann::json>(tile["data_list"]);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
+                auto dc = columnSchemaList[i];
+                auto value = dc.getValue();
+                if (value.size() < 4) {
+                    out << std::string(4 - value.size(), ' ');
+                }
+                out << value;
+                if (i < columnSchemaList.size() - 1) {
+                    out << ", ";
+                }
+            }
+            out << std::endl;
+        }
+        if (this->opts->dumpTimes != -1 && ++iter >= this->opts->dumpTimes) {
+            break;
+        }
+    }
+}
+
 void ComletDump::printByLine(std::ostream &out) {
     // out << std::left << std::setw(25) << std::setfill(' ') << "Timestamp, ";
     int tileId = this->opts->deviceTileId;
@@ -336,7 +616,7 @@ void ComletDump::printByLine(std::ostream &out) {
         return;
     }
     if (this->opts->metricsIdList.size() == 0) {
-        out << "Metics types should be provided" << std::endl;
+        out << "Metrics types should be provided" << std::endl;
         exit_code = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return;
     }
@@ -642,6 +922,47 @@ void ComletDump::printByLine(std::ostream &out) {
                                 return std::string();
                             }});
             }
+        } else if (config.optionType == xpum::dump::DUMP_OPTION_THROTTLE_REASON) {
+            DumpColumn dc{
+                std::string(config.name),
+                [config, this]() {
+                    std::string metricKey = config.key;
+                    if (statsJson != nullptr) {
+                        for (auto metricObj : (*statsJson)) {
+                            if (metricObj["metrics_type"].get<std::string>().compare(metricKey) == 0) {
+                                const uint64_t flags = metricObj["value"].get<uint64_t>();
+                                std::string ss;
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP) {
+                                    ss += "Average Power Excursion | ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP) {
+                                    ss += "Burst Power Excursion | ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT) {
+                                    ss += "Current Excursion | ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT) {
+                                    ss += "Thermal Excursion | ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT) {
+                                    ss += "Power Supply Assertion | ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE) {
+                                    ss += "Software Supplied Frequency Range | ";
+                                }
+                                if (flags & xpum::dump::ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE) {
+                                    ss += "Sub Block that has a Lower Frequency | ";
+                                }
+                                if (flags == 0) {
+                                    ss = "Not Throttled | ";
+                                }
+                                return ss.substr(0, ss.size() - 3);
+                            }
+                        }
+                    }
+                    return std::string();
+                }};
+            columnSchemaList.push_back(dc);
         }
     }
 

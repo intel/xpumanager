@@ -20,8 +20,10 @@ namespace xpum::cli {
 
 class LibCoreStub : public CoreStub {
    public:
-    LibCoreStub();
+    LibCoreStub(bool initCore = true);
     ~LibCoreStub();
+
+    bool initCore;
 
     bool isChannelReady();
 
@@ -51,6 +53,8 @@ class LibCoreStub : public CoreStub {
     std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr);
     std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime);
+    std::unique_ptr<nlohmann::json> checkStress(int deviceId);
 
     std::unique_ptr<nlohmann::json> getAllHealth();
     std::unique_ptr<nlohmann::json> getHealth(int deviceId, int componentType);
@@ -107,6 +111,8 @@ class LibCoreStub : public CoreStub {
     std::shared_ptr<nlohmann::json> getFabricCount(int deviceId);
 
     std::unique_ptr<nlohmann::json> getSensorReading();
+
+    std::vector<std::unique_ptr<nlohmann::json>> getMetricsFromSysfs(std::vector<std::string> bdfs);
 
 };
 } // end namespace xpum::cli

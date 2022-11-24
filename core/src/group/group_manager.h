@@ -41,7 +41,7 @@ class GroupManager : public GroupManagerInterface,
 
     xpum_result_t getGroupInfo(xpum_group_id_t groupId, xpum_group_info_t *pGroupInfo) override;
 
-    xpum_result_t getAllGroupIds(xpum_group_id_t groupIds[XPUM_MAX_NUM_GROUPS], int *count) override;
+    xpum_result_t getAllGroupIds(xpum_group_id_t groupIds[], int *count) override;
 
     void init() override;
 
