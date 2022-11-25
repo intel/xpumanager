@@ -548,15 +548,15 @@ bool ComletStatistics::hasEUMetrics() {
 void ComletStatistics::setupOptions() {
     this->opts = std::unique_ptr<ComletStatisticsOptions>(new ComletStatisticsOptions());
 #ifndef DAEMONLESS
-    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device id to query");
-    addOption("-g,--group", this->opts->groupId, "The group id to query");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID to query");
+    addOption("-g,--group", this->opts->groupId, "The group ID to query");
 #else
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address to query");
     addFlag("-e,--eu", this->opts->showEuMetrics, "Show EU metrics");
 #endif
 
     deviceIdOpt->check([this](const std::string &str) {
-    std::string errStr = "Device id should be a non-negative integer or a BDF string";
+    std::string errStr = "Device ID should be a non-negative integer or a BDF string";
     if (isValidDeviceId(str)) {
         return std::string();        
     } else if (isBDF(str)) {
