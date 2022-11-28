@@ -928,6 +928,15 @@ message GetDeviceSerialNumberResponse {
     string amcFwVersion = 2;
 }
 
+message FileName {
+    string fileName = 1;
+}
+
+message GenDebugLogResponse {
+    int32 errorNo = 1;
+    string errorMsg = 2;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -995,4 +1004,5 @@ service XpumCoreService {
     rpc getFabricCount( GetFabricCountRequest ) returns ( GetFabricCountResponse );
     rpc getAMCSensorReading( google.protobuf.Empty ) returns ( GetAMCSensorReadingResponse );
     rpc getDeviceSerialNumberAndAmcFwVersion( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );
+    rpc genDebugLog ( FileName ) returns ( GenDebugLogResponse );
 }

@@ -1569,4 +1569,16 @@ std::unique_ptr<nlohmann::json> LibCoreStub::checkStress(int deviceId) {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> LibCoreStub::genDebugLog(const std::string &fileName) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res = xpumGenerateDebugLog(fileName.c_str());
+    if (res == XPUM_OK) {
+        (*json)["status"] = "OK";
+    } else {
+        (*json)["error"] = "Error";
+        (*json)["error"] = errorNumTranslate(res);
+    }
+    return json;
+}
+
 } // end namespace xpum::cli

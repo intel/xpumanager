@@ -76,6 +76,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/dump_raw_data
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/firmware FIRMWARE_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/amc AMC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/redfish REDFISH_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/log LOG_SRC)
 
 add_library(xpum SHARED)
 
@@ -153,7 +154,8 @@ target_sources(
           ${DUMP_RAW_DATA_SRC}
           ${FIRMWARE_SRC}
           ${AMC_SRC}
-          ${REDFISH_SRC})
+          ${REDFISH_SRC}
+          ${LOG_SRC})
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   target_sources(
@@ -176,7 +178,8 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${DUMP_RAW_DATA_SRC}
             ${FIRMWARE_SRC}
             ${AMC_SRC}
-            ${REDFISH_SRC})
+            ${REDFISH_SRC}
+            ${LOG_SRC})
 endif()
 
 target_link_libraries(xpum PRIVATE amcfw)

@@ -114,5 +114,7 @@ class LibCoreStub : public CoreStub {
 
     std::vector<std::unique_ptr<nlohmann::json>> getMetricsFromSysfs(std::vector<std::string> bdfs);
 
+    std::unique_ptr<nlohmann::json> genDebugLog(const std::string &fileName);
+
 };
 } // end namespace xpum::cli

@@ -33,6 +33,7 @@
 #include "infrastructure/perf_measurement_data.h"
 #include "internal_api.h"
 #include "ext-include/igsc_lib.h"
+#include "log/dbg_log.h"
 
 namespace xpum {
 
@@ -3145,6 +3146,15 @@ xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t r
         return res;
     }
     return Core::instance().getDiagnosticManager()->checkStress(deviceId, resultList, count);
+}
+
+xpum_result_t xpumGenerateDebugLog(const char *fileName) {
+    int ret = genDebugLog(fileName);
+    if (ret == 0) {
+        return XPUM_OK;
+    } else {
+        return XPUM_GENERIC_ERROR;
+    }
 }
 
 } // end namespace xpum

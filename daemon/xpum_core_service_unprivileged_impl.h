@@ -92,6 +92,9 @@ public:
     virtual ::grpc::Status setAgentConfig(::grpc::ServerContext* context, const ::SetAgentConfigRequest* request, ::SetAgentConfigResponse* response) override {
         return PD;
     }
+    virtual ::grpc::Status genDebugLog(::grpc::ServerContext* context, const ::FileName* request, ::GenDebugLogResponse *response) override {
+        return PD;
+    }
 
 private:
     static const grpc::Status PD;

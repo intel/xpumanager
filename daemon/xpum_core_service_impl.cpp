@@ -2459,6 +2459,15 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::genDebugLog(::grpc::ServerContext* context, const ::FileName* request, ::GenDebugLogResponse *response) {
+    xpum_result_t res = xpumGenerateDebugLog(request->filename().c_str());
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    }
+    response->set_errorno(res);
+    return grpc::Status::OK;
+}
+
 void XpumCoreServiceImpl::close() {
     this->stop = true;
     condtionForCallBackDataList.notify_all();

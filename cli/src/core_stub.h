@@ -106,6 +106,7 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> metricsTypeList)=0;
     virtual std::unique_ptr<nlohmann::json> stopDumpRawDataTask(int taskId)=0;
     virtual std::unique_ptr<nlohmann::json> listDumpRawDataTasks()=0;
+    virtual std::unique_ptr<nlohmann::json> genDebugLog(const std::string &fileName) = 0;
 
     static std::string isotimestamp(uint64_t t, bool withoutDate = false);
 

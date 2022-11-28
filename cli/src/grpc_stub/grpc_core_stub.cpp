@@ -2120,4 +2120,24 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::checkStress(int deviceId) {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> GrpcCoreStub::genDebugLog(
+        const std::string &fileName) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    FileName request;
+    request.set_filename(fileName);
+    GenDebugLogResponse response;
+    grpc::Status status = stub->genDebugLog(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+    return json;
+}
+
 } // end namespace xpum::cli
