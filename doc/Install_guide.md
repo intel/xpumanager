@@ -5,7 +5,7 @@
 * Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
 * Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in repositories)
 * Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in repositories)
-* Intel(R) Metrics Library for MDAPI (intel-metrics-library or intellibigdml1 in repositories) 
+* Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories) 
 * Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)
 
 ## DEB install
