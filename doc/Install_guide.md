@@ -7,6 +7,8 @@
 * Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in repositories)
 * Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories) 
 * Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)
+ 
+intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like "--force-all" to ignore them when installing Intel XPU Manager
 
 ## DEB install
 sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
