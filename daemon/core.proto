@@ -150,6 +150,7 @@ message DiagnosticsComponentInfo{
     DIAG_PERFORMANCE_POWER = 8;
     DIAG_PERFORMANCE_MEMORY_BANDWIDTH = 9;
     DIAG_PERFORMANCE_MEMORY_ALLOCATION = 10;
+    DIAG_MEMORY_ERROR = 11;
   }
   Type type = 1;
   bool finished = 2;

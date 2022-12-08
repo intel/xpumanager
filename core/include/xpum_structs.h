@@ -400,7 +400,7 @@ typedef enum xpum_diag_task_type_enum {
     XPUM_DIAG_PERFORMANCE_POWER,
     XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH,
     XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION,
-
+    XPUM_DIAG_MEMORY_ERROR,
     XPUM_DIAG_MAX
 } xpum_diag_task_type_t;
 
