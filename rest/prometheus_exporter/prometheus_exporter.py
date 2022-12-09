@@ -34,11 +34,69 @@ def get_metrics(core, pod_resources):
         resp_fabric_throughput = process_fabric_stats(
             core, pod_resources, devices)
 
-        return tidy_response(resp_devices + resp_cards + resp_per_engine + resp_fabric_throughput)
+        resp_topology_link = process_topology_link(
+            core, pod_resources, devices)
+
+        resp_xelink_port_status = process_xelink_port_stats(
+            core, pod_resources, devices)
+
+        return tidy_response(resp_devices + resp_cards + resp_per_engine + resp_fabric_throughput + resp_topology_link + resp_xelink_port_status)
     except Exception as e:
         traceback.print_exc()
         return "#nodata: due to unexpected failure", 500
 
+def process_xelink_port_stats(core, pod_resources, devices):
+
+    resp = b''
+
+    for dev in devices:
+
+        device_id = dev.get('device_id')
+
+        stat_code, _, stat_data = core.getXelinkPortHealth(
+            device_id, session_id=1)
+
+        if stat_code != 0:
+            continue
+
+        data_list = []
+
+        stat_data['metrics_type'] = 'XPUM_STATS_XELINK_PORT_STATUS'
+        data_list.append(stat_data)
+
+        r = convert_to_prometheus_metrics(
+            pod_resources, dev, data_list, device_id, None)
+
+        resp = resp + r
+
+    return resp
+
+def process_topology_link(core, pod_resources, devices):
+
+    resp = b''
+
+    stat_code, _, stat_data = core.getTopologyLink()
+
+    if stat_code != 0 or 'topology_link' not in stat_data:
+        return resp
+
+    for dev in devices:
+
+        device_id = dev.get('device_id')
+        data_list = []
+
+        for link in stat_data['topology_link']:
+            if link.get('local_device_id') != device_id:
+                continue
+            link['metrics_type'] = 'XPUM_STATS_TOPOLOGY_LINK'
+            data_list.append(link)
+
+        r = convert_to_prometheus_metrics(
+            pod_resources, dev, data_list, device_id, None)
+
+        resp = resp + r
+
+    return resp
 
 def process_fabric_stats(core, pod_resources, devices):
 
@@ -55,26 +113,38 @@ def process_fabric_stats(core, pod_resources, devices):
             continue
 
         data_list = []
+        throughput_data_list = []
 
         for link in stat_data['fabric_throughput']:
             # type 3 is XPUM_FABRIC_THROUGHPUT_TYPE_TRANSMITTED_COUNTER
-            if link.get('src_device_id') != device_id or link.get('type') != 3:
-                continue
-            link['metrics_type'] = 'XPUM_STATS_FABRIC_THROUGHPUT'
-            dst_device = next((x for x in devices if x.get(
-                'device_id') == link.get('dst_device_id')), None)
-            if dst_device is None:
-                logger.warn(
-                    'Cannot find information for fabric link destination device %s', device_id)
-                continue
+            if link.get('src_device_id') == device_id and link.get('type') == 3:
 
-            link['dst_pci_bdf'] = dst_device.get('pci_bdf_address', 'N/A')
-            link['dst_dev_file'] = get_dev_shortname(dst_device.get('drm_device'))
-            data_list.append(link)
+                link['metrics_type'] = 'XPUM_STATS_FABRIC_THROUGHPUT'
+                dst_device = next((x for x in devices if x.get(
+                    'device_id') == link.get('dst_device_id')), None)
+                if dst_device is None:
+                    logger.warn(
+                        'Cannot find information for fabric link destination device %s', device_id)
+                    continue
+
+                link['dst_pci_bdf'] = dst_device.get('pci_bdf_address', 'N/A')
+                link['dst_dev_file'] = get_dev_shortname(dst_device.get('drm_device'))
+                data_list.append(link)
+            elif link.get('src_device_id') == device_id and (link.get('type') == 0 or link.get('type') == 1):
+                link['metrics_type'] = 'XPUM_STATS_XELINK_THROUGHPUT'
+                link['local_device_id'] = link['src_device_id']
+                link['local_subdevice_id'] = link['src_tile_id']
+                link['remote_device_id'] = link['dst_device_id']
+                link['remote_subdevice_id'] = link['dst_tile_id']
+                throughput_data_list.append(link)
 
         r = convert_to_prometheus_metrics(
             pod_resources, dev, data_list, device_id, None)
-        resp = resp + r
+
+        s = convert_to_prometheus_metrics(
+            pod_resources, dev, throughput_data_list, device_id, None)
+
+        resp = resp + r + s
 
     return resp
 
@@ -278,6 +348,7 @@ def convert_to_prometheus_metrics(pod_resources, dev, datalist, device_id=None, 
 
         for metric in metrics_list:
             metric_name = metric.prom_metric.name
+
             val = stat.get(metric.xpum_field) * metric.scale
 
             all_labelnames, all_labelvalues, ext_labelvalues = attach_ext_labels(
