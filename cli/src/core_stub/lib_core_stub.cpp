@@ -1578,8 +1578,12 @@ std::unique_ptr<nlohmann::json> LibCoreStub::genDebugLog(const std::string &file
     if (res == XPUM_OK) {
         (*json)["status"] = "OK";
     } else {
-        (*json)["error"] = "Error";
-        (*json)["error"] = errorNumTranslate(res);
+        if (res == XPUM_RESULT_FILE_DUP) {
+            (*json)["error"] = "Duplicated File Name Error";
+        } else {
+            (*json)["error"] = "Error";
+        }
+        (*json)["errno"] = errorNumTranslate(res);
     }
     return json;
 }

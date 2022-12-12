@@ -203,7 +203,7 @@ int genCmdOut(const string &uuid) {
 }
 
 int tarBall(const string &uuid, const char *fileName) {
-    string cmd = "tar -C /var/tmp/ -cvzf " + string(fileName) + " xpum-" + uuid;
+    string cmd = "tar -C /var/tmp/ -czf " + string(fileName) + " xpum-" + uuid;
     SystemCommandResult scr = execCommand(cmd.c_str()) ;
     return scr.exitStatus();
 }

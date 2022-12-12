@@ -144,6 +144,7 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC, ///< The device doesn't support PSCBIN firmware update
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC, ///< Installed igsc doesn't support PSCBIN firmware update
     XPUM_INTERVAL_INVALID,
+    XPUM_RESULT_FILE_DUP,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

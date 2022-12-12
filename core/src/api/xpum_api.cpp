@@ -3149,6 +3149,9 @@ xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t r
 }
 
 xpum_result_t xpumGenerateDebugLog(const char *fileName) {
+    if (access(fileName, F_OK) == 0) {
+        return XPUM_RESULT_FILE_DUP;
+    }
     int ret = genDebugLog(fileName);
     if (ret == 0) {
         return XPUM_OK;
