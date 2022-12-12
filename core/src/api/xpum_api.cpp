@@ -17,6 +17,7 @@
 #include <dlfcn.h>
 #include <math.h>
 #include <regex>
+#include <unistd.h>
 
 #include "api_types.h"
 #include "core/core.h"
