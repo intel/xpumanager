@@ -2464,6 +2464,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     if (res != XPUM_OK) {
         if (res == XPUM_RESULT_FILE_DUP) {
             response->set_errormsg("Duplicated File Name Error");
+        } else if (res == XPUM_RESULT_INVALID_DIR) {
+            response->set_errormsg("Invalid Directory Error");
         } else {
             response->set_errormsg("Error");
         }

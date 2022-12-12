@@ -1580,6 +1580,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::genDebugLog(const std::string &file
     } else {
         if (res == XPUM_RESULT_FILE_DUP) {
             (*json)["error"] = "Duplicated File Name Error";
+        } else if (res == XPUM_RESULT_INVALID_DIR) {
+            (*json)["error"] = "Invalid Directory Error";
         } else {
             (*json)["error"] = "Error";
         }

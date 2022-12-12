@@ -17,6 +17,8 @@
 #include <dlfcn.h>
 #include <math.h>
 #include <regex>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "api_types.h"
@@ -3153,6 +3155,20 @@ xpum_result_t xpumGenerateDebugLog(const char *fileName) {
     if (access(fileName, F_OK) == 0) {
         return XPUM_RESULT_FILE_DUP;
     }
+    //Check if the dir exists
+    std::string s(fileName);
+    size_t pos = s.rfind('/');
+    if (pos != std::string::npos) {
+        if (pos == s.length() - 1) {
+            return XPUM_RESULT_INVALID_DIR;
+        }
+        s = s.substr(0, pos + 1);
+        struct stat st;
+        if (stat(s.c_str(), &st) != 0) {
+            return XPUM_RESULT_INVALID_DIR;
+        }
+    }
+
     int ret = genDebugLog(fileName);
     if (ret == 0) {
         return XPUM_OK;

@@ -2135,6 +2135,8 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::genDebugLog(
         if (response.errormsg().length() > 0) {
             (*json)["error"] = response.errormsg();
             (*json)["errno"] = errorNumTranslate(response.errorno());
+        } else {
+            (*json)["status"] = "OK";
         }
     } else {
         (*json)["error"] = status.error_message();
