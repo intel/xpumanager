@@ -35,6 +35,9 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceList() {
                 deviceJson["pci_bdf_address"] = deviceInfo.pcibdfaddress();
                 deviceJson["vendor_name"] = deviceInfo.vendorname();
                 deviceJson["drm_device"] = deviceInfo.drmdevice();
+                deviceJson["device_function_type"] = deviceFunctionTypeEnumToString(
+                    static_cast<xpum_device_function_type_t>(deviceInfo.devicefunctiontype())
+                );
                 deviceJsonList.push_back(deviceJson);
             }
             (*json)["device_list"] = deviceJsonList;

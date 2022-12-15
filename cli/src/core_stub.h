@@ -90,6 +90,7 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> resetDevice(int deviceId, bool force)=0;
     std::string schedulerModeToString(int mode);
     std::string standbyModeToString(int mode);
+    std::string deviceFunctionTypeEnumToString(xpum_device_function_type_t type);
 
     virtual std::unique_ptr<nlohmann::json> getAllPolicyType()=0;
     virtual std::unique_ptr<nlohmann::json> getAllPolicyConditionType()=0;

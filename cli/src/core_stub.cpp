@@ -140,6 +140,17 @@ std::string CoreStub::standbyModeToString(int mode) {
     return ret;
 }
 
+std::string CoreStub::deviceFunctionTypeEnumToString(xpum_device_function_type_t type) {
+    switch (type) {
+        case DEVICE_FUNCTION_TYPE_VIRTUAL:
+            return "virtual";
+        case DEVICE_FUNCTION_TYPE_PHYSICAL:
+            return "physical";
+        default:
+            return "unknown";
+    }
+}
+
 static std::string dmesg_log_file_name = "/var/log/dmesg";
 static std::string syslog_file_name = "/var/log/syslog";
 static std::string messages_file_name = "/var/log/messages";

@@ -70,6 +70,7 @@ grpc::Status XpumCoreServiceImpl::getDeviceList(grpc::ServerContext* context, co
             device->set_pcibdfaddress(devices[i].PCIBDFAddress);
             device->set_vendorname(devices[i].VendorName);
             device->set_drmdevice(devices[i].drmDevice);
+            device->set_devicefunctiontype(static_cast<XpumDeviceFunctionType>(devices[i].functionType));
         }
     } else {
         switch (res) {

@@ -42,7 +42,8 @@ static nlohmann::json discoveryBasicJson = R"({
                 { "label": "Vendor Name", "value": "vendor_name" },
                 { "label": "UUID", "value": "uuid" },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address" },
-                { "label": "DRM Device", "value": "drm_device" }
+                { "label": "DRM Device", "value": "drm_device" },
+                { "label": "Function Type", "value": "device_function_type" }
             ]
         ]
     }]
@@ -180,6 +181,11 @@ void ComletDiscovery::setupOptions() {
     initDumpPropConfig();
     this->opts = std::unique_ptr<ComletDiscoveryOptions>(new ComletDiscoveryOptions());
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "Device ID or PCI BDF address to query. It will show more detailed info.");
+    auto pfOpt = addFlag("--pf, --physicalfunction", this->opts->showPfOnly, "Display the physical functions only.");
+    auto vfOpt = addFlag("--vf, --virtualfunction", this->opts->showVfOnly, "Display the virtual functions only.");
+    deviceIdOpt->excludes(pfOpt);
+    deviceIdOpt->excludes(vfOpt);
+    pfOpt->excludes(vfOpt);
     deviceIdOpt->check([](const std::string &str) {
         std::string errStr = "Device id should be a non-negative integer or a BDF string";
         if (isValidDeviceId(str)) {
@@ -261,7 +267,17 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     }
 
     auto json = this->coreStub->getDeviceList();
-    return json;
+    auto filtered = std::make_unique<nlohmann::json>();
+    std::copy_if((*json)["device_list"].begin(), (*json)["device_list"].end(), std::back_inserter((*filtered)["device_list"]), [this](const nlohmann::json& item) {
+        if (this->opts->showPfOnly) {
+            return item.contains("device_function_type") && item["device_function_type"] == "physical";
+        } else if (this->opts->showVfOnly) {
+            return item.contains("device_function_type") && item["device_function_type"] == "virtual";
+        } else {
+            return true;
+        }
+    });
+    return filtered;
 }
 
 static void showBasicInfo(std::ostream &out, std::shared_ptr<nlohmann::json> json) {

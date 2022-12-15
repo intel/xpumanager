@@ -376,6 +376,9 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
                     value.copy(info.drmDevice, value.size());
                     info.drmDevice[value.size()] = 0;
                     break;
+                case XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE:
+                    info.functionType = static_cast<xpum_device_function_type_t>(prop.getValueInt());
+                    break;
                 default:
                     break;
             }

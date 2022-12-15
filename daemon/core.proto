@@ -38,6 +38,7 @@ message XpumDeviceBasicInfoArray {
         string pciBdfAddress = 6;
         string vendorName = 7;
         string drmDevice = 8;
+        XpumDeviceFunctionType deviceFunctionType = 9;
     }
     repeated XpumDeviceBasicInfo info = 1;
     string errorMsg = 2;
@@ -392,6 +393,12 @@ enum XpumSchedulerMode {
     SCHEDULER_TIMESLICE=1;
     SCHEDULER_EXCLUSIVE=2;
     SCHEDULER_DEBUG=3;
+}
+
+enum XpumDeviceFunctionType {
+    VIRTUAL = 0;
+    PHYSICAL = 1;
+    UNKNOWN = 2;
 }
 
 message XpumPolicyAction {

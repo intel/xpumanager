@@ -143,6 +143,7 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME,                    ///< Device name
     XPUM_DEVICE_PROPERTY_INTERNAL_VENDOR_NAME,                    ///< Vendor name
     XPUM_DEVICE_PROPERTY_INTERNAL_UUID,                           ///< Device uuid
+    XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE,           ///< Device function type, PF or VF
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID,                  ///< The PCI device id of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_VENDOR_ID,                  ///< The PCI vendor id of device
     XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS,                ///< The PCI bdf address of device

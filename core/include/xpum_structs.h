@@ -152,6 +152,12 @@ typedef enum xpum_device_type_enum {
     GPU = 0, ///< GPU
 } xpum_device_type_t;
 
+typedef enum xpum_device_function_type_enum {
+    DEVICE_FUNCTION_TYPE_VIRTUAL = 0,
+    DEVICE_FUNCTION_TYPE_PHYSICAL = 1,
+    DEVICE_FUNCTION_TYPE_UNKNOWN = 0x7fffffff,
+} xpum_device_function_type_t;
+
 /**
  * XPUM version types
  */
@@ -175,6 +181,7 @@ typedef struct xpum_version_info {
 typedef struct xpum_device_basic_info {
     xpum_device_id_t deviceId;               ///< Device id
     xpum_device_type_t type;                 ///< Device type
+    xpum_device_function_type_t functionType;   ///< Device function type, PF or VF
     char uuid[XPUM_MAX_STR_LENGTH];          ///< Device uuid
     char deviceName[XPUM_MAX_STR_LENGTH];    ///< Device name
     char PCIDeviceId[XPUM_MAX_STR_LENGTH];   ///< Device PCI device id
