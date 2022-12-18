@@ -35,6 +35,7 @@ Subcommands:
   config                      Get and change the GPU settings.
   stats                       List the GPU statistics.
   dump                        Dump device statistics data.
+  log                         Collect GPU debug logs.
 ```
   
 Show Intel XPU System Management Interface version and Level Zero version. 
@@ -70,6 +71,8 @@ Options:
   --debug                     Print debug info
 
   -d,--device                 Device ID or PCI BDF address to query. It will show more detailed info.
+  --pf,--physicalfunction     Display the physical functions only.
+  --vf,--virtualfunction      Display the virtual functions only.
   --dump                      Property ID to dump device properties in CSV format. Separated by the comma.
                               1. Device ID
                               2. Device Name
@@ -107,6 +110,7 @@ xpu-smi discovery
 |           | Vendor Name: Intel(R) Corporation                                                    |
 |           | UUID: 00000000-0000-0000-0000-020a00008086                                           |
 |           | PCI BDF Address: 0000:4d:00.0                                                        |
+|           | Function Type: physical                                                              |
 +-----------+--------------------------------------------------------------------------------------+
 ```
 
@@ -648,4 +652,26 @@ Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz)
 06:14:48.000,    0, 0.00, 14.61,    0
 06:14:49.000,    0, 0.00, 14.61,    0
 06:14:50.000,    0, 0.00, 14.61,    0
+```
+ 
+## Collect the GPU debug log files
+Help info of collecting GPU log files.  
+```
+xpu-smi log -h
+Collect GPU debug logs.
+
+Usage: xpu-smi log [Options]
+ xpu-smi log -f [tarGzipFileName]
+
+Options:
+  -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
+  -f,--file                   The file (a tar.gz) to archive all the debug logs
+```
+ 
+Collect the GPU log files.
+```
+xpu-smi log -f 1217.tar.gz
+Done
 ```
