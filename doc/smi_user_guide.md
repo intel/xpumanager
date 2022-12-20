@@ -88,12 +88,13 @@ Options:
                               12. PCI Slot
                               13. PCIe Generation
                               14. PCIe Max Link Width
-                              15. Memory Physical Size
-                              16. Number of Memory Channels
-                              17. Memory Bus Width
-                              18. Number of EUs
-                              19. Number of Media Engines
-                              20. Number of Media Enhancement Engines
+                              15. OAM Socket ID
+                              16. Memory Physical Size
+                              17. Number of Memory Channels
+                              18. Memory Bus Width
+                              19. Number of EUs
+                              20. Number of Media Engines
+                              21. Number of Media Enhancement Engines
 
 
 ```

@@ -1082,8 +1082,8 @@ Help info of collecting GPU log files.
 xpumcli log -h
 Collect GPU debug logs.
 
-Usage: xpu-smi log [Options]
- xpu-smi log -f [tarGzipFileName]
+Usage: xpumcli log [Options]
+ xpumcli log -f [tarGzipFileName]
 
 Options:
   -h,--help                   Print this help message and exit
@@ -1092,7 +1092,7 @@ Options:
   -f,--file                   The file (a tar.gz) to archive all the debug logs
 ```
  
-Collect the GPU log files.
+Collect the GPU log files. If the filename is specified with the relative filepath, the log file is generated under the XPU Manager daemon working folder (under "/" by default). You may use the absolute filepath for easy to find. 
 ```
 xpumcli log -f 1217.tar.gz
 Done
