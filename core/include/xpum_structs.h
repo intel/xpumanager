@@ -144,11 +144,19 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC, ///< The device doesn't support PSCBIN firmware update
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC, ///< Installed igsc doesn't support PSCBIN firmware update
     XPUM_INTERVAL_INVALID,
+    XPUM_RESULT_FILE_DUP,
+    XPUM_RESULT_INVALID_DIR,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
     GPU = 0, ///< GPU
 } xpum_device_type_t;
+
+typedef enum xpum_device_function_type_enum {
+    DEVICE_FUNCTION_TYPE_VIRTUAL = 0,
+    DEVICE_FUNCTION_TYPE_PHYSICAL = 1,
+    DEVICE_FUNCTION_TYPE_UNKNOWN = 0x7fffffff,
+} xpum_device_function_type_t;
 
 /**
  * XPUM version types
@@ -173,6 +181,7 @@ typedef struct xpum_version_info {
 typedef struct xpum_device_basic_info {
     xpum_device_id_t deviceId;               ///< Device id
     xpum_device_type_t type;                 ///< Device type
+    xpum_device_function_type_t functionType;   ///< Device function type, PF or VF
     char uuid[XPUM_MAX_STR_LENGTH];          ///< Device uuid
     char deviceName[XPUM_MAX_STR_LENGTH];    ///< Device name
     char PCIDeviceId[XPUM_MAX_STR_LENGTH];   ///< Device PCI device id
@@ -400,7 +409,7 @@ typedef enum xpum_diag_task_type_enum {
     XPUM_DIAG_PERFORMANCE_POWER,
     XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH,
     XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION,
-
+    XPUM_DIAG_MEMORY_ERROR,
     XPUM_DIAG_MAX
 } xpum_diag_task_type_t;
 

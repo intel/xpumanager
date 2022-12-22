@@ -21,7 +21,7 @@ for i = 1, #compound.structArray do
 	local targetFileName = getItemFileName(item)
 	generateFile(targetFileName, "class.rst.in", item, "table")
 }
-	:ref:`$(item.name)<doxid-$(item.id)>`
+	:ref:`$(item.name)<$(DOXID_PREFIX)-$(item.id)>`
 %{
 end -- for
 }

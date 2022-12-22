@@ -63,6 +63,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -180,7 +181,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-topology-t">
-<span id="doxid-structxpum-topology-t"></span><span id="index-0"></span><h1>struct xpum_topology_t<a class="headerlink" href="#struct-xpum-topology-t" title="Permalink to this headline"></a></h1>
+<span id="xpum-doxid-structxpum-topology-t"></span><span id="index-0"></span><h1>struct xpum_topology_t<a class="headerlink" href="#struct-xpum-topology-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -192,12 +193,12 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-topology-t-1a1bbeeaaae8088dd73968e938f87db98b"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
-    <span class="kt">char</span> <a class="reference internal" href="#doxid-structxpum-topology-t-1a7267b02842bd26f625c6a69a9294ecb5"><span class="std std-ref">localCPUList</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_CPU_LIST_LEN</span><span class="p">];</span>
-    <span class="kt">char</span> <a class="reference internal" href="#doxid-structxpum-topology-t-1aa9fd33b44d17bdc3a53b0c9cd0a0fa6d"><span class="std std-ref">localCPUs</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_CPU_S_LEN</span><span class="p">];</span>
-    <span class="k">struct</span> <span class="n">xpum_topology_t</span><span class="o">::</span><span class="err">@</span><span class="mi">0</span> <span class="doxyrest-code-target target" id="doxid-structxpum-topology-t-1ad3e4693dcb1b899de918055a34599040"><span></span><span class="n">cpuAffinity</span></span><span></span><span class="p">;</span>
-    <span class="kt">int</span> <a class="reference internal" href="#doxid-structxpum-topology-t-1afd55bc70b683bb97fe6c3dc39b27892f"><span class="std std-ref">switchCount</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="struct_parent_switch.html#doxid-structparent-switch"><span class="std std-ref">parent_switch</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-topology-t-1a740827b6e4ded2f91acd257b3c2c82ad"><span class="std std-ref">switches</span></a><span></span><span class="p">[];</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-topology-t-1a1bbeeaaae8088dd73968e938f87db98b"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+    <span class="kt">char</span> <a class="reference internal" href="#xpum-doxid-structxpum-topology-t-1a7267b02842bd26f625c6a69a9294ecb5"><span class="std std-ref">localCPUList</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_CPU_LIST_LEN</span><span class="p">];</span>
+    <span class="kt">char</span> <a class="reference internal" href="#xpum-doxid-structxpum-topology-t-1aa9fd33b44d17bdc3a53b0c9cd0a0fa6d"><span class="std std-ref">localCPUs</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_CPU_S_LEN</span><span class="p">];</span>
+    <span class="k">struct</span> <span class="n">xpum_topology_t</span><span class="o">::</span><span class="err">@</span><span class="mi">0</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-topology-t-1ad3e4693dcb1b899de918055a34599040"><span></span><span class="n">cpuAffinity</span></span><span></span><span class="p">;</span>
+    <span class="kt">int</span> <a class="reference internal" href="#xpum-doxid-structxpum-topology-t-1afd55bc70b683bb97fe6c3dc39b27892f"><span class="std std-ref">switchCount</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="struct_parent_switch.html#xpum-doxid-structparent-switch"><span class="std std-ref">parent_switch</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-topology-t-1a740827b6e4ded2f91acd257b3c2c82ad"><span class="std std-ref">switches</span></a><span></span><span class="p">[];</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -205,15 +206,15 @@
 <p>Struct to store topology data.</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-topology-t-1a1bbeeaaae8088dd73968e938f87db98b"><span id="index-1"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-topology-t-1a1bbeeaaae8088dd73968e938f87db98b"><span id="index-1"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
 <p>Device id.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-topology-t-1a7267b02842bd26f625c6a69a9294ecb5"><span id="index-2"></span><span></span><span class="kt">char</span> <span class="n">localCPUList</span><span class="p">[</span><span class="n">XPUM_MAX_CPU_LIST_LEN</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-topology-t-1a7267b02842bd26f625c6a69a9294ecb5"><span id="index-2"></span><span></span><span class="kt">char</span> <span class="n">localCPUList</span><span class="p">[</span><span class="n">XPUM_MAX_CPU_LIST_LEN</span><span class="p">]</span></pre>
 <p>CPU affinity, local CPU list.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-topology-t-1aa9fd33b44d17bdc3a53b0c9cd0a0fa6d"><span id="index-3"></span><span></span><span class="kt">char</span> <span class="n">localCPUs</span><span class="p">[</span><span class="n">XPUM_MAX_CPU_S_LEN</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-topology-t-1aa9fd33b44d17bdc3a53b0c9cd0a0fa6d"><span id="index-3"></span><span></span><span class="kt">char</span> <span class="n">localCPUs</span><span class="p">[</span><span class="n">XPUM_MAX_CPU_S_LEN</span><span class="p">]</span></pre>
 <p>CPU affinity, local CPUs.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-topology-t-1afd55bc70b683bb97fe6c3dc39b27892f"><span id="index-4"></span><span></span><span class="kt">int</span> <span class="n">switchCount</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-topology-t-1afd55bc70b683bb97fe6c3dc39b27892f"><span id="index-4"></span><span></span><span class="kt">int</span> <span class="n">switchCount</span></pre>
 <p>the count of parent switch</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-topology-t-1a740827b6e4ded2f91acd257b3c2c82ad"><span id="index-5"></span><a class="reference internal" href="struct_parent_switch.html#doxid-structparent-switch"><span class="std std-ref">parent_switch</span></a><span></span> <span class="n">switches</span><span class="p">[]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-topology-t-1a740827b6e4ded2f91acd257b3c2c82ad"><span id="index-5"></span><a class="reference internal" href="struct_parent_switch.html#xpum-doxid-structparent-switch"><span class="std std-ref">parent_switch</span></a><span></span> <span class="n">switches</span><span class="p">[]</span></pre>
 <p>device path of parent switch</p>
 </section>
 </section>

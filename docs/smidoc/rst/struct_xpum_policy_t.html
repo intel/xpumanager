@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-policy-t">
-<span id="doxid-structxpum-policy-t"></span><span id="index-0"></span><h1>struct xpum_policy_t<a class="headerlink" href="#struct-xpum-policy-t" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-policy-t"></span><span id="index-0"></span><h1>struct xpum_policy_t<a class="headerlink" href="#struct-xpum-policy-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
@@ -182,13 +183,13 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1aca031e62fa7b6894babe9f88fed99923"><span class="std std-ref">xpum_policy_type_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-policy-t-1a89be09e60db3ca0069fe70207c6585fd"><span></span><span class="n">type</span></span><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_policy_condition_t.html#doxid-structxpum-policy-condition-t"><span class="std std-ref">xpum_policy_condition_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-policy-t-1a7970c32da36082784dd509e5727a626e"><span></span><span class="n">condition</span></span><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_policy_action_t.html#doxid-structxpum-policy-action-t"><span class="std std-ref">xpum_policy_action_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-policy-t-1a71f8fd74efaefa83baa97264470cdf42"><span></span><span class="n">action</span></span><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a77a0a01c6fcad4dd8bdec162f311168e"><span class="std std-ref">xpum_notify_callback_ptr_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-policy-t-1aaab02865ec845212494d04ead1a735d3"><span></span><span class="n">notifyCallBack</span></span><span></span><span class="p">;</span>
-    <span class="kt">char</span> <span class="doxyrest-code-target target" id="doxid-structxpum-policy-t-1a7092190eea4ef4b3be0258573281777d"><span></span><span class="n">notifyCallBackUrl</span></span><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-policy-t-1a354a88a8580b28e79f4cbc10f46b99a9"><span></span><span class="n">deviceId</span></span><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-policy-t-1acac4021ea31ac9504a76b3ed059306e1"><span></span><span class="n">isDeletePolicy</span></span><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1aca031e62fa7b6894babe9f88fed99923"><span class="std std-ref">xpum_policy_type_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-policy-t-1a89be09e60db3ca0069fe70207c6585fd"><span></span><span class="n">type</span></span><span></span><span class="p">;</span>
+    <a class="reference internal" href="struct_xpum_policy_condition_t.html#smi-doxid-structxpum-policy-condition-t"><span class="std std-ref">xpum_policy_condition_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-policy-t-1a7970c32da36082784dd509e5727a626e"><span></span><span class="n">condition</span></span><span></span><span class="p">;</span>
+    <a class="reference internal" href="struct_xpum_policy_action_t.html#smi-doxid-structxpum-policy-action-t"><span class="std std-ref">xpum_policy_action_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-policy-t-1a71f8fd74efaefa83baa97264470cdf42"><span></span><span class="n">action</span></span><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a77a0a01c6fcad4dd8bdec162f311168e"><span class="std std-ref">xpum_notify_callback_ptr_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-policy-t-1aaab02865ec845212494d04ead1a735d3"><span></span><span class="n">notifyCallBack</span></span><span></span><span class="p">;</span>
+    <span class="kt">char</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-policy-t-1a7092190eea4ef4b3be0258573281777d"><span></span><span class="n">notifyCallBackUrl</span></span><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-policy-t-1a354a88a8580b28e79f4cbc10f46b99a9"><span></span><span class="n">deviceId</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-policy-t-1acac4021ea31ac9504a76b3ed059306e1"><span></span><span class="n">isDeletePolicy</span></span><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 

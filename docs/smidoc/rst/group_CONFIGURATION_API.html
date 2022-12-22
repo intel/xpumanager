@@ -91,7 +91,7 @@
            <div itemprop="articleBody">
              
   <section id="device-configurations">
-<span id="doxid-group-configuration-api"></span><span id="index-0"></span><h1>Device configurations<a class="headerlink" href="#device-configurations" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-group-configuration-api"></span><span id="index-0"></span><h1>Device configurations<a class="headerlink" href="#device-configurations" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -99,140 +99,140 @@
 <p>These APIs are for configuration. <a class="reference internal" href="../../xpumdoc/rst/group_CONFIGURATION_API.html#details-group-configuration-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceStandbys<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_standby_data_t.html#doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceStandbys<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_standby_data_t.html#smi-doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceStandby<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_standby_data_t.html#doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">standby</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceStandby<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_standby_data_t.html#smi-doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">standby</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDevicePowerLimits<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDevicePowerLimits<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">int32_t</span> <span class="n">tileId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_limits_t.html#doxid-structxpum-power-limits-t"><span class="std std-ref">xpum_power_limits_t</span></a><span></span><span class="o">*</span> <span class="n">pPowerLimits</span>
+    <a class="reference internal" href="struct_xpum_power_limits_t.html#smi-doxid-structxpum-power-limits-t"><span class="std std-ref">xpum_power_limits_t</span></a><span></span><span class="o">*</span> <span class="n">pPowerLimits</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDevicePowerSustainedLimits<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDevicePowerSustainedLimits<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">int32_t</span> <span class="n">tileId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_sustained_limit_t.html#doxid-structxpum-power-sustained-limit-t"><span class="std std-ref">xpum_power_sustained_limit_t</span></a><span></span> <span class="n">sustained_limit</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_power_sustained_limit_t.html#smi-doxid-structxpum-power-sustained-limit-t"><span class="std std-ref">xpum_power_sustained_limit_t</span></a><span></span> <span class="n">sustained_limit</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceFrequencyRanges<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_frequency_range_t.html#doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceFrequencyRanges<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_frequency_range_t.html#smi-doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceFrequencyRange<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_frequency_range_t.html#doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">frequency</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceFrequencyRange<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_frequency_range_t.html#smi-doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">frequency</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceSchedulers<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_data_t.html#doxid-structxpum-scheduler-data-t"><span class="std std-ref">xpum_scheduler_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceSchedulers<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_scheduler_data_t.html#smi-doxid-structxpum-scheduler-data-t"><span class="std std-ref">xpum_scheduler_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerTimeoutMode<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_timeout_t.html#doxid-structxpum-scheduler-timeout-t"><span class="std std-ref">xpum_scheduler_timeout_t</span></a><span></span> <span class="n">sched_timeout</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerTimeoutMode<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_scheduler_timeout_t.html#smi-doxid-structxpum-scheduler-timeout-t"><span class="std std-ref">xpum_scheduler_timeout_t</span></a><span></span> <span class="n">sched_timeout</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDevicePowerProps<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_prop_data_t.html#doxid-structxpum-power-prop-data-t"><span class="std std-ref">xpum_power_prop_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDevicePowerProps<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_power_prop_data_t.html#smi-doxid-structxpum-power-prop-data-t"><span class="std std-ref">xpum_power_prop_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerTimesliceMode<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_timeslice_t.html#doxid-structxpum-scheduler-timeslice-t"><span class="std std-ref">xpum_scheduler_timeslice_t</span></a><span></span> <span class="n">sched_timeslice</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerTimesliceMode<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_scheduler_timeslice_t.html#smi-doxid-structxpum-scheduler-timeslice-t"><span class="std std-ref">xpum_scheduler_timeslice_t</span></a><span></span> <span class="n">sched_timeslice</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerExclusiveMode<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_exclusive_t.html#doxid-structxpum-scheduler-exclusive-t"><span class="std std-ref">xpum_scheduler_exclusive_t</span></a><span></span> <span class="n">sched_exclusive</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerExclusiveMode<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_scheduler_exclusive_t.html#smi-doxid-structxpum-scheduler-exclusive-t"><span class="std std-ref">xpum_scheduler_exclusive_t</span></a><span></span> <span class="n">sched_exclusive</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFreqAvailableClocks<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFreqAvailableClocks<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">uint32_t</span> <span class="n">tileId</span><span class="p">,</span>
     <span class="kt">double</span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceProcessState<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_process_t.html#doxid-structxpum-device-process-t"><span class="std std-ref">xpum_device_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceProcessState<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_process_t.html#smi-doxid-structxpum-device-process-t"><span class="std std-ref">xpum_device_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceComponentOccupancyRatio<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a1eee847f85cc684bcb2d0b34c12a4bbb"><span class="std std-ref">xpum_sampling_interval_t</span></a><span></span> <span class="n">samplingInterval</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_components_ratio_t.html#doxid-structxpum-device-components-ratio-t"><span class="std std-ref">xpum_device_components_ratio_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceComponentOccupancyRatio<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a1eee847f85cc684bcb2d0b34c12a4bbb"><span class="std std-ref">xpum_sampling_interval_t</span></a><span></span> <span class="n">samplingInterval</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_components_ratio_t.html#smi-doxid-structxpum-device-components-ratio-t"><span class="std std-ref">xpum_device_components_ratio_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceUtilizationByProcess<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceUtilizationByProcess<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">uint32_t</span> <span class="n">utilInterval</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_util_by_process_t.html#doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <a class="reference internal" href="struct_xpum_device_util_by_process_t.html#smi-doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAllDeviceUtilizationByProcess<span></span><span class="p">(</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAllDeviceUtilizationByProcess<span></span><span class="p">(</span>
     <span class="kt">uint32_t</span> <span class="n">utilInterval</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_util_by_process_t.html#doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <a class="reference internal" href="struct_xpum_device_util_by_process_t.html#smi-doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPerformanceFactor<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_performancefactor_t.html#doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPerformanceFactor<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_performancefactor_t.html#smi-doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetPerformanceFactor<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_performancefactor_t.html#doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">performanceFactor</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetPerformanceFactor<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_performancefactor_t.html#smi-doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">performanceFactor</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFabricPortConfig<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_fabric_port_config_t.html#doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFabricPortConfig<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_fabric_port_config_t.html#smi-doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetFabricPortConfig<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_fabric_port_config_t.html#doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">fabricPortConfig</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetFabricPortConfig<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_fabric_port_config_t.html#smi-doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">fabricPortConfig</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetEccState<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetEccState<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">bool</span><span class="o">*</span> <span class="n">available</span><span class="p">,</span>
     <span class="kt">bool</span><span class="o">*</span> <span class="n">configurable</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_action_t.html#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_action_t.html#smi-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetEccState<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span> <span class="n">newState</span><span class="p">,</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetEccState<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span> <span class="n">newState</span><span class="p">,</span>
     <span class="kt">bool</span><span class="o">*</span> <span class="n">available</span><span class="p">,</span>
     <span class="kt">bool</span><span class="o">*</span> <span class="n">configurable</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_action_t.html#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_action_t.html#smi-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
     <span class="p">);</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -240,9 +240,9 @@
 <p>These APIs are for configuration.</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gac6ae76779e5713c8488a7ba90f3f516e"><span id="index-1"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceStandbys</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_standby_data_t.html#doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gac6ae76779e5713c8488a7ba90f3f516e"><span id="index-1"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceStandbys</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_standby_data_t.html#smi-doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get device standby mode.</p>
@@ -268,12 +268,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gac6683453bc5cc98ef8a40086e987f4c4"><span id="index-2"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceStandby</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_standby_data_t.html#doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">standby</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gac6683453bc5cc98ef8a40086e987f4c4"><span id="index-2"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceStandby</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_standby_data_t.html#smi-doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span> <span class="n">standby</span>
     <span class="p">)</span></pre>
 <p>Set device standby mode.</p>
 <p>This function is used to set the standby mode of device</p>
@@ -295,13 +295,13 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if set successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if set successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gacbf931ada737e1fb4c67b95e72425db1"><span id="index-3"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDevicePowerLimits</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gacbf931ada737e1fb4c67b95e72425db1"><span id="index-3"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDevicePowerLimits</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">int32_t</span> <span class="n">tileId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_limits_t.html#doxid-structxpum-power-limits-t"><span class="std std-ref">xpum_power_limits_t</span></a><span></span><span class="o">*</span> <span class="n">pPowerLimits</span>
+    <a class="reference internal" href="struct_xpum_power_limits_t.html#smi-doxid-structxpum-power-limits-t"><span class="std std-ref">xpum_power_limits_t</span></a><span></span><span class="o">*</span> <span class="n">pPowerLimits</span>
     <span class="p">)</span></pre>
 <p>Get device power limit.</p>
 <p>This function is used to get the power limit of device</p>
@@ -326,13 +326,13 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga5851eed871d742f91d556827e23e7f22"><span id="index-4"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDevicePowerSustainedLimits</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga5851eed871d742f91d556827e23e7f22"><span id="index-4"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDevicePowerSustainedLimits</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">int32_t</span> <span class="n">tileId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_sustained_limit_t.html#doxid-structxpum-power-sustained-limit-t"><span class="std std-ref">xpum_power_sustained_limit_t</span></a><span></span> <span class="n">sustained_limit</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_power_sustained_limit_t.html#smi-doxid-structxpum-power-sustained-limit-t"><span class="std std-ref">xpum_power_sustained_limit_t</span></a><span></span> <span class="n">sustained_limit</span>
     <span class="p">)</span></pre>
 <p>Set device sustained power limit.</p>
 <p>This function is used to set the sustained power limit of device</p>
@@ -357,12 +357,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga4c4431ad60b3c8d542b3a5abc76ca76c"><span id="index-5"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceFrequencyRanges</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_frequency_range_t.html#doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga4c4431ad60b3c8d542b3a5abc76ca76c"><span id="index-5"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceFrequencyRanges</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_frequency_range_t.html#smi-doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get device frequency ranges.</p>
@@ -388,12 +388,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga1f23a1c087e41ab942ea17c67fda253b"><span id="index-6"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceFrequencyRange</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_frequency_range_t.html#doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">frequency</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga1f23a1c087e41ab942ea17c67fda253b"><span id="index-6"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceFrequencyRange</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_frequency_range_t.html#smi-doxid-structxpum-frequency-range-t"><span class="std std-ref">xpum_frequency_range_t</span></a><span></span> <span class="n">frequency</span>
     <span class="p">)</span></pre>
 <p>Set device frequency ranges.</p>
 <p>This function is used to set the frequency ranges</p>
@@ -415,12 +415,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gad4520d1a9e9fe3a181e349cd00162967"><span id="index-7"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceSchedulers</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_data_t.html#doxid-structxpum-scheduler-data-t"><span class="std std-ref">xpum_scheduler_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gad4520d1a9e9fe3a181e349cd00162967"><span id="index-7"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceSchedulers</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_scheduler_data_t.html#smi-doxid-structxpum-scheduler-data-t"><span class="std std-ref">xpum_scheduler_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get device scheduler mode.</p>
@@ -446,12 +446,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga432bbb7cf45ca86f294d452a555bd4f6"><span id="index-8"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceSchedulerTimeoutMode</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_timeout_t.html#doxid-structxpum-scheduler-timeout-t"><span class="std std-ref">xpum_scheduler_timeout_t</span></a><span></span> <span class="n">sched_timeout</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga432bbb7cf45ca86f294d452a555bd4f6"><span id="index-8"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceSchedulerTimeoutMode</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_scheduler_timeout_t.html#smi-doxid-structxpum-scheduler-timeout-t"><span class="std std-ref">xpum_scheduler_timeout_t</span></a><span></span> <span class="n">sched_timeout</span>
     <span class="p">)</span></pre>
 <p>Set device the scheduler(timeout) mode.</p>
 <p>This function is used to set the scheduler (timeout) mode</p>
@@ -473,12 +473,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga5d18ed15772e8d8ac907639a0b3c92e3"><span id="index-9"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDevicePowerProps</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_power_prop_data_t.html#doxid-structxpum-power-prop-data-t"><span class="std std-ref">xpum_power_prop_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga5d18ed15772e8d8ac907639a0b3c92e3"><span id="index-9"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDevicePowerProps</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_power_prop_data_t.html#smi-doxid-structxpum-power-prop-data-t"><span class="std std-ref">xpum_power_prop_data_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get device the power props mode.</p>
@@ -504,12 +504,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga9897c88db8b6945415aa0356e2f20fb3"><span id="index-10"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceSchedulerTimesliceMode</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_timeslice_t.html#doxid-structxpum-scheduler-timeslice-t"><span class="std std-ref">xpum_scheduler_timeslice_t</span></a><span></span> <span class="n">sched_timeslice</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga9897c88db8b6945415aa0356e2f20fb3"><span id="index-10"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceSchedulerTimesliceMode</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_scheduler_timeslice_t.html#smi-doxid-structxpum-scheduler-timeslice-t"><span class="std std-ref">xpum_scheduler_timeslice_t</span></a><span></span> <span class="n">sched_timeslice</span>
     <span class="p">)</span></pre>
 <p>Set device the scheduler(time slice) mode.</p>
 <p>This function is used to set the scheduler (time slice) mode</p>
@@ -531,12 +531,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga6bd7d63b7ea3fc5b359be397f3ca23de"><span id="index-11"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceSchedulerExclusiveMode</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <span class="k">const</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_scheduler_exclusive_t.html#doxid-structxpum-scheduler-exclusive-t"><span class="std std-ref">xpum_scheduler_exclusive_t</span></a><span></span> <span class="n">sched_exclusive</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga6bd7d63b7ea3fc5b359be397f3ca23de"><span id="index-11"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetDeviceSchedulerExclusiveMode</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_scheduler_exclusive_t.html#smi-doxid-structxpum-scheduler-exclusive-t"><span class="std std-ref">xpum_scheduler_exclusive_t</span></a><span></span> <span class="n">sched_exclusive</span>
     <span class="p">)</span></pre>
 <p>Set device the scheduler(exclusive) mode.</p>
 <p>This function is used to set the scheduler (exclusive) mode</p>
@@ -558,11 +558,11 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gaa8c4f840c61070da41fe5b1f7a796224"><span id="index-12"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFreqAvailableClocks</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gaa8c4f840c61070da41fe5b1f7a796224"><span id="index-12"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFreqAvailableClocks</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">uint32_t</span> <span class="n">tileId</span><span class="p">,</span>
     <span class="kt">double</span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
@@ -593,12 +593,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga2aeb8855b07f63551ea23f21b0c3b3f8"><span id="index-13"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceProcessState</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_process_t.html#doxid-structxpum-device-process-t"><span class="std std-ref">xpum_device_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga2aeb8855b07f63551ea23f21b0c3b3f8"><span id="index-13"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceProcessState</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_process_t.html#smi-doxid-structxpum-device-process-t"><span class="std std-ref">xpum_device_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get the client processes of the device.</p>
@@ -624,14 +624,14 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gac1fb0644f749e9b45069cc07b8d914e6"><span id="index-14"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceComponentOccupancyRatio</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a1eee847f85cc684bcb2d0b34c12a4bbb"><span class="std std-ref">xpum_sampling_interval_t</span></a><span></span> <span class="n">samplingInterval</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_components_ratio_t.html#doxid-structxpum-device-components-ratio-t"><span class="std std-ref">xpum_device_components_ratio_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gac1fb0644f749e9b45069cc07b8d914e6"><span id="index-14"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceComponentOccupancyRatio</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span><span class="p">,</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a1eee847f85cc684bcb2d0b34c12a4bbb"><span class="std std-ref">xpum_sampling_interval_t</span></a><span></span> <span class="n">samplingInterval</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_components_ratio_t.html#smi-doxid-structxpum-device-components-ratio-t"><span class="std std-ref">xpum_device_components_ratio_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get the GPU function component occupancy ratio of the device.</p>
@@ -663,13 +663,13 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga1edcdea17b2b4227a6661743f154cb21"><span id="index-15"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceUtilizationByProcess</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga1edcdea17b2b4227a6661743f154cb21"><span id="index-15"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceUtilizationByProcess</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">uint32_t</span> <span class="n">utilInterval</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_util_by_process_t.html#doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <a class="reference internal" href="struct_xpum_device_util_by_process_t.html#smi-doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get the device utiliztions by processes.</p>
@@ -698,13 +698,13 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867ace0ea2e30a1370b71dfa3f2212eedb7a"><span class="std std-ref">XPUM_INTERVAL_INVALID</span></a> if <em>interval</em> is not in (0, 1000 * 1000]</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867ace0ea2e30a1370b71dfa3f2212eedb7a"><span class="std std-ref">XPUM_INTERVAL_INVALID</span></a> if <em>interval</em> is not in (0, 1000 * 1000]</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gab82654548dab20b8679dac2329a1a065"><span id="index-16"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAllDeviceUtilizationByProcess</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gab82654548dab20b8679dac2329a1a065"><span id="index-16"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetAllDeviceUtilizationByProcess</span><span class="p">(</span>
     <span class="kt">uint32_t</span> <span class="n">utilInterval</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_util_by_process_t.html#doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+    <a class="reference internal" href="struct_xpum_device_util_by_process_t.html#smi-doxid-structxpum-device-util-by-process-t"><span class="std std-ref">xpum_device_util_by_process_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get the device (all) utiliztions by processes.</p>
@@ -730,13 +730,13 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867ace0ea2e30a1370b71dfa3f2212eedb7a"><span class="std std-ref">XPUM_INTERVAL_INVALID</span></a> if <em>interval</em> is not in (0, 1000 * 1000]</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867ace0ea2e30a1370b71dfa3f2212eedb7a"><span class="std std-ref">XPUM_INTERVAL_INVALID</span></a> if <em>interval</em> is not in (0, 1000 * 1000]</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gac983196f8e7264db0408f158612e0784"><span id="index-17"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetPerformanceFactor</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_performancefactor_t.html#doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gac983196f8e7264db0408f158612e0784"><span id="index-17"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetPerformanceFactor</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_performancefactor_t.html#smi-doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get the performance factor of the device.</p>
@@ -762,12 +762,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gaafbf1b58adebf0f92bcb0077bc39867e"><span id="index-18"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetPerformanceFactor</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_performancefactor_t.html#doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">performanceFactor</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gaafbf1b58adebf0f92bcb0077bc39867e"><span id="index-18"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetPerformanceFactor</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_performancefactor_t.html#smi-doxid-structxpum-device-performancefactor-t"><span class="std std-ref">xpum_device_performancefactor_t</span></a><span></span> <span class="n">performanceFactor</span>
     <span class="p">)</span></pre>
 <p>Set the performance factor of the device.</p>
 <p>This function is used to set the performance factor of device</p>
@@ -789,12 +789,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga5ebc97aa5a17a87b2e58f3c157cf23e6"><span id="index-19"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFabricPortConfig</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_fabric_port_config_t.html#doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga5ebc97aa5a17a87b2e58f3c157cf23e6"><span id="index-19"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetFabricPortConfig</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_fabric_port_config_t.html#smi-doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">dataArray</span><span class="p">[],</span>
     <span class="kt">uint32_t</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get the fabric port configuration of the device.</p>
@@ -820,12 +820,12 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a976d8f936c89913a5d13df638efa2206"><span class="std std-ref">XPUM_BUFFER_TOO_SMALL</span></a> if <em>count</em> is smaller than needed</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga3af030392402dc7014b54d86765c0846"><span id="index-20"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetFabricPortConfig</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_fabric_port_config_t.html#doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">fabricPortConfig</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga3af030392402dc7014b54d86765c0846"><span id="index-20"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetFabricPortConfig</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_fabric_port_config_t.html#smi-doxid-structxpum-fabric-port-config-t"><span class="std std-ref">xpum_fabric_port_config_t</span></a><span></span> <span class="n">fabricPortConfig</span>
     <span class="p">)</span></pre>
 <p>Set the fabric port configuration of the device.</p>
 <p>This function is used to set the fabric port configuration of the device</p>
@@ -847,16 +847,16 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1ga078af1ea0fdebaf8736a9ef85f8810fd"><span id="index-21"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetEccState</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1ga078af1ea0fdebaf8736a9ef85f8810fd"><span id="index-21"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetEccState</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="kt">bool</span><span class="o">*</span> <span class="n">available</span><span class="p">,</span>
     <span class="kt">bool</span><span class="o">*</span> <span class="n">configurable</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_action_t.html#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_action_t.html#smi-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
     <span class="p">)</span></pre>
 <p>Get the memory ECC state of the device.</p>
 <p>This function is used to get the memory ECC state of the device</p>
@@ -890,17 +890,17 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-configuration-api-1gad3a6fef3ec11b1fb514d1d27e0b76c83"><span id="index-22"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetEccState</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span> <span class="n">newState</span><span class="p">,</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-configuration-api-1gad3a6fef3ec11b1fb514d1d27e0b76c83"><span id="index-22"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetEccState</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span> <span class="n">newState</span><span class="p">,</span>
     <span class="kt">bool</span><span class="o">*</span> <span class="n">available</span><span class="p">,</span>
     <span class="kt">bool</span><span class="o">*</span> <span class="n">configurable</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_state_t.html#doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_ecc_action_t.html#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">current</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_state_t.html#smi-doxid-xpum-structs-8h-1ab0680f657625405fb1dc383a172ce902"><span class="std std-ref">xpum_ecc_state_t</span></a><span></span><span class="o">*</span> <span class="n">pending</span><span class="p">,</span>
+    <a class="reference internal" href="enum_xpum_ecc_action_t.html#smi-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"><span class="std std-ref">xpum_ecc_action_t</span></a><span></span><span class="o">*</span> <span class="n">action</span>
     <span class="p">)</span></pre>
 <p>Set the memory ECC state of the device.</p>
 <p>This function is used to set the memory ECC state of the device</p>
@@ -937,8 +937,8 @@
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
-<li><p><a class="reference internal" href="../../xpumdoc/rst/enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#smi-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867acef464c3b76a3b9e74dbfde5ae82e90f"><span class="std std-ref">XPUM_GENERIC_ERROR</span></a> if set failure</p></li>
 </ul>
 </section>
 </section>

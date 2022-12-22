@@ -90,6 +90,7 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> resetDevice(int deviceId, bool force)=0;
     std::string schedulerModeToString(int mode);
     std::string standbyModeToString(int mode);
+    std::string deviceFunctionTypeEnumToString(xpum_device_function_type_t type);
 
     virtual std::unique_ptr<nlohmann::json> getAllPolicyType()=0;
     virtual std::unique_ptr<nlohmann::json> getAllPolicyConditionType()=0;
@@ -106,6 +107,7 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> metricsTypeList)=0;
     virtual std::unique_ptr<nlohmann::json> stopDumpRawDataTask(int taskId)=0;
     virtual std::unique_ptr<nlohmann::json> listDumpRawDataTasks()=0;
+    virtual std::unique_ptr<nlohmann::json> genDebugLog(const std::string &fileName) = 0;
 
     static std::string isotimestamp(uint64_t t, bool withoutDate = false);
 

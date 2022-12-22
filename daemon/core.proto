@@ -38,6 +38,7 @@ message XpumDeviceBasicInfoArray {
         string pciBdfAddress = 6;
         string vendorName = 7;
         string drmDevice = 8;
+        XpumDeviceFunctionType deviceFunctionType = 9;
     }
     repeated XpumDeviceBasicInfo info = 1;
     string errorMsg = 2;
@@ -150,6 +151,7 @@ message DiagnosticsComponentInfo{
     DIAG_PERFORMANCE_POWER = 8;
     DIAG_PERFORMANCE_MEMORY_BANDWIDTH = 9;
     DIAG_PERFORMANCE_MEMORY_ALLOCATION = 10;
+    DIAG_MEMORY_ERROR = 11;
   }
   Type type = 1;
   bool finished = 2;
@@ -391,6 +393,12 @@ enum XpumSchedulerMode {
     SCHEDULER_TIMESLICE=1;
     SCHEDULER_EXCLUSIVE=2;
     SCHEDULER_DEBUG=3;
+}
+
+enum XpumDeviceFunctionType {
+    VIRTUAL = 0;
+    PHYSICAL = 1;
+    UNKNOWN = 2;
 }
 
 message XpumPolicyAction {
@@ -928,6 +936,15 @@ message GetDeviceSerialNumberResponse {
     string amcFwVersion = 2;
 }
 
+message FileName {
+    string fileName = 1;
+}
+
+message GenDebugLogResponse {
+    int32 errorNo = 1;
+    string errorMsg = 2;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -995,4 +1012,5 @@ service XpumCoreService {
     rpc getFabricCount( GetFabricCountRequest ) returns ( GetFabricCountResponse );
     rpc getAMCSensorReading( google.protobuf.Empty ) returns ( GetAMCSensorReadingResponse );
     rpc getDeviceSerialNumberAndAmcFwVersion( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );
+    rpc genDebugLog ( FileName ) returns ( GenDebugLogResponse );
 }

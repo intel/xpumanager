@@ -22,7 +22,7 @@ if FORCE_INCLUDE_FILE then
 end -- if
 }
 .. index:: pair: enum; $(enum.name)
-.. _doxid-$(enum.id):
+.. _$(DOXID_PREFIX)-$(enum.id):
 
 $(getTitle("enumeration " .. enum.name, 1))
 

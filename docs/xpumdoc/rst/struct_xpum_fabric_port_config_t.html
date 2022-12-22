@@ -63,6 +63,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -180,7 +181,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-fabric-port-config-t">
-<span id="doxid-structxpum-fabric-port-config-t"></span><span id="index-0"></span><h1>struct xpum_fabric_port_config_t<a class="headerlink" href="#struct-xpum-fabric-port-config-t" title="Permalink to this headline"></a></h1>
+<span id="xpum-doxid-structxpum-fabric-port-config-t"></span><span id="index-0"></span><h1>struct xpum_fabric_port_config_t<a class="headerlink" href="#struct-xpum-fabric-port-config-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
@@ -189,15 +190,15 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-fabric-port-config-t-1aa25486611a416daa446d320d7cc3c676"><span></span><span class="n">onSubdevice</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-fabric-port-config-t-1a7d423d98926ffd5aa9f13d5e4d2e47d1"><span></span><span class="n">subdeviceId</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-fabric-port-config-t-1a76892ce7662291b7733df637a00b921d"><span></span><span class="n">fabricId</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-fabric-port-config-t-1aed6927d0900b98b592b784ebb565736f"><span></span><span class="n">attachId</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint8_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-fabric-port-config-t-1ad746fd2e77d86866b1ec5dd9955d2a57"><span></span><span class="n">portNumber</span></span><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-fabric-port-config-t-1a3817f4426366673132dec6bbfa313a0e"><span></span><span class="n">enabled</span></span><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-fabric-port-config-t-1a94a970500cbeda6bc63c15a415acc542"><span></span><span class="n">beaconing</span></span><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-fabric-port-config-t-1a26a81860a9b0354c989ee15526d8045d"><span></span><span class="n">setting_enabled</span></span><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-fabric-port-config-t-1af03d33f61c32eb66c6bb0917372badf3"><span></span><span class="n">setting_beaconing</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-fabric-port-config-t-1aa25486611a416daa446d320d7cc3c676"><span></span><span class="n">onSubdevice</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-fabric-port-config-t-1a7d423d98926ffd5aa9f13d5e4d2e47d1"><span></span><span class="n">subdeviceId</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-fabric-port-config-t-1a76892ce7662291b7733df637a00b921d"><span></span><span class="n">fabricId</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-fabric-port-config-t-1aed6927d0900b98b592b784ebb565736f"><span></span><span class="n">attachId</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint8_t</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-fabric-port-config-t-1ad746fd2e77d86866b1ec5dd9955d2a57"><span></span><span class="n">portNumber</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-fabric-port-config-t-1a3817f4426366673132dec6bbfa313a0e"><span></span><span class="n">enabled</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-fabric-port-config-t-1a94a970500cbeda6bc63c15a415acc542"><span></span><span class="n">beaconing</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-fabric-port-config-t-1a26a81860a9b0354c989ee15526d8045d"><span></span><span class="n">setting_enabled</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-fabric-port-config-t-1af03d33f61c32eb66c6bb0917372badf3"><span></span><span class="n">setting_beaconing</span></span><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 

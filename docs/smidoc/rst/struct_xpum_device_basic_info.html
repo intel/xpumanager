@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-device-basic-info">
-<span id="doxid-structxpum-device-basic-info"></span><span id="index-0"></span><h1>struct xpum_device_basic_info<a class="headerlink" href="#struct-xpum-device-basic-info" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-device-basic-info"></span><span id="index-0"></span><h1>struct xpum_device_basic_info<a class="headerlink" href="#struct-xpum-device-basic-info" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -185,14 +186,15 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info-1a13e1ec34fb2f8d729cd32ddb5d322f8f"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ca55052421c7b8a0050fdbd51f4d7b9"><span class="std std-ref">xpum_device_type_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info-1a0f8bf9790ce35c7bae4dc51c137a0436"><span class="std std-ref">type</span></a><span></span><span class="p">;</span>
-    <span class="kt">char</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info-1a6c5eb0faf38532a342045d0cf9703c51"><span class="std std-ref">uuid</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <span class="kt">char</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info-1a634188ef73f98192987ce0a2c7442346"><span class="std std-ref">deviceName</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <span class="kt">char</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info-1a51c7b4ecbab5761a7c402617cb2a9e84"><span class="std std-ref">PCIDeviceId</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <span class="kt">char</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info-1aac5fd4bea27ad5e8b76ada42baf11586"><span class="std std-ref">PCIBDFAddress</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <span class="kt">char</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info-1a99ed0194c34d39784bbf2ed24b166aa1"><span class="std std-ref">VendorName</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <span class="kt">char</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info-1a21197663a964cd2d4d746ee5cba50c6b"><span class="std std-ref">drmDevice</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-device-basic-info-1a13e1ec34fb2f8d729cd32ddb5d322f8f"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ca55052421c7b8a0050fdbd51f4d7b9"><span class="std std-ref">xpum_device_type_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-device-basic-info-1a0f8bf9790ce35c7bae4dc51c137a0436"><span class="std std-ref">type</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1aaa8966e1fb01d7fb9024eedb05c7caa8"><span class="std std-ref">xpum_device_function_type_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-device-basic-info-1ae66449a8eb291e16afeb1e486f90075d"><span class="std std-ref">functionType</span></a><span></span><span class="p">;</span>
+    <span class="kt">char</span> <a class="reference internal" href="#smi-doxid-structxpum-device-basic-info-1a6c5eb0faf38532a342045d0cf9703c51"><span class="std std-ref">uuid</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">char</span> <a class="reference internal" href="#smi-doxid-structxpum-device-basic-info-1a634188ef73f98192987ce0a2c7442346"><span class="std std-ref">deviceName</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">char</span> <a class="reference internal" href="#smi-doxid-structxpum-device-basic-info-1a51c7b4ecbab5761a7c402617cb2a9e84"><span class="std std-ref">PCIDeviceId</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">char</span> <a class="reference internal" href="#smi-doxid-structxpum-device-basic-info-1aac5fd4bea27ad5e8b76ada42baf11586"><span class="std std-ref">PCIBDFAddress</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">char</span> <a class="reference internal" href="#smi-doxid-structxpum-device-basic-info-1a99ed0194c34d39784bbf2ed24b166aa1"><span class="std std-ref">VendorName</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">char</span> <a class="reference internal" href="#smi-doxid-structxpum-device-basic-info-1a21197663a964cd2d4d746ee5cba50c6b"><span class="std std-ref">drmDevice</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -200,21 +202,23 @@
 <p>Device basic info</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-basic-info-1a13e1ec34fb2f8d729cd32ddb5d322f8f"><span id="index-1"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-basic-info-1a13e1ec34fb2f8d729cd32ddb5d322f8f"><span id="index-1"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
 <p>Device id.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-basic-info-1a0f8bf9790ce35c7bae4dc51c137a0436"><span id="index-2"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ca55052421c7b8a0050fdbd51f4d7b9"><span class="std std-ref">xpum_device_type_t</span></a><span></span> <span class="n">type</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-basic-info-1a0f8bf9790ce35c7bae4dc51c137a0436"><span id="index-2"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ca55052421c7b8a0050fdbd51f4d7b9"><span class="std std-ref">xpum_device_type_t</span></a><span></span> <span class="n">type</span></pre>
 <p>Device type.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-basic-info-1a6c5eb0faf38532a342045d0cf9703c51"><span id="index-3"></span><span></span><span class="kt">char</span> <span class="n">uuid</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-basic-info-1ae66449a8eb291e16afeb1e486f90075d"><span id="index-3"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1aaa8966e1fb01d7fb9024eedb05c7caa8"><span class="std std-ref">xpum_device_function_type_t</span></a><span></span> <span class="n">functionType</span></pre>
+<p>Device function type, PF or VF.</p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-basic-info-1a6c5eb0faf38532a342045d0cf9703c51"><span id="index-4"></span><span></span><span class="kt">char</span> <span class="n">uuid</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>Device uuid.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-basic-info-1a634188ef73f98192987ce0a2c7442346"><span id="index-4"></span><span></span><span class="kt">char</span> <span class="n">deviceName</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-basic-info-1a634188ef73f98192987ce0a2c7442346"><span id="index-5"></span><span></span><span class="kt">char</span> <span class="n">deviceName</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>Device name.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-basic-info-1a51c7b4ecbab5761a7c402617cb2a9e84"><span id="index-5"></span><span></span><span class="kt">char</span> <span class="n">PCIDeviceId</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-basic-info-1a51c7b4ecbab5761a7c402617cb2a9e84"><span id="index-6"></span><span></span><span class="kt">char</span> <span class="n">PCIDeviceId</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>Device PCI device id.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-basic-info-1aac5fd4bea27ad5e8b76ada42baf11586"><span id="index-6"></span><span></span><span class="kt">char</span> <span class="n">PCIBDFAddress</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-basic-info-1aac5fd4bea27ad5e8b76ada42baf11586"><span id="index-7"></span><span></span><span class="kt">char</span> <span class="n">PCIBDFAddress</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>Device PCI bdf address.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-basic-info-1a99ed0194c34d39784bbf2ed24b166aa1"><span id="index-7"></span><span></span><span class="kt">char</span> <span class="n">VendorName</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-basic-info-1a99ed0194c34d39784bbf2ed24b166aa1"><span id="index-8"></span><span></span><span class="kt">char</span> <span class="n">VendorName</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>Device vendor name.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-basic-info-1a21197663a964cd2d4d746ee5cba50c6b"><span id="index-8"></span><span></span><span class="kt">char</span> <span class="n">drmDevice</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-basic-info-1a21197663a964cd2d4d746ee5cba50c6b"><span id="index-9"></span><span></span><span class="kt">char</span> <span class="n">drmDevice</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>DRM Device.</p>
 </section>
 </section>

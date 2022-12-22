@@ -70,6 +70,7 @@ grpc::Status XpumCoreServiceImpl::getDeviceList(grpc::ServerContext* context, co
             device->set_pcibdfaddress(devices[i].PCIBDFAddress);
             device->set_vendorname(devices[i].VendorName);
             device->set_drmdevice(devices[i].drmDevice);
+            device->set_devicefunctiontype(static_cast<XpumDeviceFunctionType>(devices[i].functionType));
         }
     } else {
         switch (res) {
@@ -2453,6 +2454,21 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             default:
                 response->set_errormsg("Error");
                 break;
+        }
+    }
+    response->set_errorno(res);
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::genDebugLog(::grpc::ServerContext* context, const ::FileName* request, ::GenDebugLogResponse *response) {
+    xpum_result_t res = xpumGenerateDebugLog(request->filename().c_str());
+    if (res != XPUM_OK) {
+        if (res == XPUM_RESULT_FILE_DUP) {
+            response->set_errormsg("Duplicated File Name Error");
+        } else if (res == XPUM_RESULT_INVALID_DIR) {
+            response->set_errormsg("Invalid Directory Error");
+        } else {
+            response->set_errormsg("Error");
         }
     }
     response->set_errorno(res);

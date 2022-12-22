@@ -22,7 +22,7 @@ end -- if
 local name = getItemQualifiedName(namespace)
 }
 .. index:: pair: namespace; $name
-.. _doxid-$(namespace.id):
+.. _$(DOXID_PREFIX)-$(namespace.id):
 
 $(getTitle("namespace " .. name, 1))
 

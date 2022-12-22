@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,22 +174,22 @@
            <div itemprop="articleBody">
              
   <section id="enum-xpum-policy-type-enum">
-<span id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5"></span><span id="index-0"></span><h1>enum xpum_policy_type_enum<a class="headerlink" href="#enum-xpum-policy-type-enum" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5"></span><span id="index-0"></span><h1>enum xpum_policy_type_enum<a class="headerlink" href="#enum-xpum-policy-type-enum" title="Permalink to this headline"></a></h1>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
 
 <span class="k">enum</span> <span class="n">xpum_policy_type_enum</span>
 <span class="p">{</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a1a327c6945005fb4b3c7af2b6bae11b0"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_TEMPERATURE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a187a59d8c6e5bb016d9180412bc2a5b1"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a2676e710b6a107c2ca13e93a9cd2f5c4"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_POWER</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5ab68bfef2bc847f4c66b450c1accb4db7"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5aa73bd8801307cc607e663249f8677c2b"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a0ae4bc0130b4f396006a9d41554a3285"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5aed60fc58b4fad60fc4fed136a0d8f519"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a0fdb094971210a9445beca8b455d6952"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a84777f3d460b106e352d41d74db26b9c"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_MISSING</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a2c61433e77a7055da3579c74191f169a"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_THROTTLE</span></span><span></span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5ae6c99f73e1f1814ac9b55796348acfaa"><span></span><span class="n">XPUM_POLICY_TYPE_MAX</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a1a327c6945005fb4b3c7af2b6bae11b0"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_TEMPERATURE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a187a59d8c6e5bb016d9180412bc2a5b1"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_MEMORY_TEMPERATURE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a2676e710b6a107c2ca13e93a9cd2f5c4"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_POWER</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5ab68bfef2bc847f4c66b450c1accb4db7"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_RESET</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5aa73bd8801307cc607e663249f8677c2b"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_PROGRAMMING_ERRORS</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a0ae4bc0130b4f396006a9d41554a3285"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_DRIVER_ERRORS</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5aed60fc58b4fad60fc4fed136a0d8f519"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a0fdb094971210a9445beca8b455d6952"><span></span><span class="n">XPUM_POLICY_TYPE_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a84777f3d460b106e352d41d74db26b9c"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_MISSING</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5a2c61433e77a7055da3579c74191f169a"><span></span><span class="n">XPUM_POLICY_TYPE_GPU_THROTTLE</span></span><span></span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="smi-doxid-xpum-structs-8h-1a641372eac0d90ddc9d14b05d3daad3f5ae6c99f73e1f1814ac9b55796348acfaa"><span></span><span class="n">XPUM_POLICY_TYPE_MAX</span></span><span></span><span class="p">,</span>
 <span class="p">};</span></pre>
 </section>
 

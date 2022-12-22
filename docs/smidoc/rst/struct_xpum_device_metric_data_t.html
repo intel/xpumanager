@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-device-metric-data-t">
-<span id="doxid-structxpum-device-metric-data-t"></span><span id="index-0"></span><h1>struct xpum_device_metric_data_t<a class="headerlink" href="#struct-xpum-device-metric-data-t" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-device-metric-data-t"></span><span id="index-0"></span><h1>struct xpum_device_metric_data_t<a class="headerlink" href="#struct-xpum-device-metric-data-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -185,11 +186,11 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span class="std std-ref">xpum_stats_type_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metric_data_t.html#doxid-structxpum-device-metric-data-t-1a175efa9612df2d7576da4ebb94ec30d4"><span class="std std-ref">metricsType</span></a><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metric_data_t.html#doxid-structxpum-device-metric-data-t-1a079fa968184e85f6aa5875bcdb22fcfa"><span class="std std-ref">isCounter</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metric_data_t.html#doxid-structxpum-device-metric-data-t-1a3aa553c07e9b3ff176ebc602316c50e7"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metric_data_t.html#doxid-structxpum-device-metric-data-t-1ae37ad2c2ddc46a7f9d7a9c372abea139"><span class="std std-ref">timestamp</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_metric_data_t.html#doxid-structxpum-device-metric-data-t-1a2768b8272194f5e23929308513ef3aec"><span class="std std-ref">scale</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span class="std std-ref">xpum_stats_type_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-device-metric-data-t-1a175efa9612df2d7576da4ebb94ec30d4"><span class="std std-ref">metricsType</span></a><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <a class="reference internal" href="#smi-doxid-structxpum-device-metric-data-t-1a079fa968184e85f6aa5875bcdb22fcfa"><span class="std std-ref">isCounter</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-metric-data-t-1a3aa553c07e9b3ff176ebc602316c50e7"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-metric-data-t-1ae37ad2c2ddc46a7f9d7a9c372abea139"><span class="std std-ref">timestamp</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-metric-data-t-1a2768b8272194f5e23929308513ef3aec"><span class="std std-ref">scale</span></a><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -197,15 +198,15 @@
 <p>Struct to store metric data for different metric types.</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-metric-data-t-1a175efa9612df2d7576da4ebb94ec30d4"><span id="index-1"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span class="std std-ref">xpum_stats_type_t</span></a><span></span> <span class="n">metricsType</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-metric-data-t-1a175efa9612df2d7576da4ebb94ec30d4"><span id="index-1"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span class="std std-ref">xpum_stats_type_t</span></a><span></span> <span class="n">metricsType</span></pre>
 <p>Metric type.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-metric-data-t-1a079fa968184e85f6aa5875bcdb22fcfa"><span id="index-2"></span><span></span><span class="kt">bool</span> <span class="n">isCounter</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-metric-data-t-1a079fa968184e85f6aa5875bcdb22fcfa"><span id="index-2"></span><span></span><span class="kt">bool</span> <span class="n">isCounter</span></pre>
 <p>If this metric is a counter.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-metric-data-t-1a3aa553c07e9b3ff176ebc602316c50e7"><span id="index-3"></span><span></span><span class="kt">uint64_t</span> <span class="n">value</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-metric-data-t-1a3aa553c07e9b3ff176ebc602316c50e7"><span id="index-3"></span><span></span><span class="kt">uint64_t</span> <span class="n">value</span></pre>
 <p>The value of this metric type.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-metric-data-t-1ae37ad2c2ddc46a7f9d7a9c372abea139"><span id="index-4"></span><span></span><span class="kt">uint64_t</span> <span class="n">timestamp</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-metric-data-t-1ae37ad2c2ddc46a7f9d7a9c372abea139"><span id="index-4"></span><span></span><span class="kt">uint64_t</span> <span class="n">timestamp</span></pre>
 <p>The timestamp of this data.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-metric-data-t-1a2768b8272194f5e23929308513ef3aec"><span id="index-5"></span><span></span><span class="kt">uint32_t</span> <span class="n">scale</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-metric-data-t-1a2768b8272194f5e23929308513ef3aec"><span id="index-5"></span><span></span><span class="kt">uint32_t</span> <span class="n">scale</span></pre>
 <p>The magnification of the value field.</p>
 </section>
 </section>

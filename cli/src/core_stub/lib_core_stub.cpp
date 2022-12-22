@@ -264,6 +264,9 @@ static std::string diagnosticTypeEnumToString(xpum_diag_task_type_t type, bool r
         case xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH" : "Performance Memory Bandwidth");
             break;
+        case xpum_diag_task_type_t::XPUM_DIAG_MEMORY_ERROR:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_MEMORY_ERROR" : "Memory Error");
+            break;
         default:
             break;
     }
@@ -1566,6 +1569,24 @@ std::unique_ptr<nlohmann::json> LibCoreStub::checkStress(int deviceId) {
         tasks.push_back(taskJson);
     }
     (*json)["task_list"] = tasks;
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::genDebugLog(const std::string &fileName) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res = xpumGenerateDebugLog(fileName.c_str());
+    if (res == XPUM_OK) {
+        (*json)["status"] = "OK";
+    } else {
+        if (res == XPUM_RESULT_FILE_DUP) {
+            (*json)["error"] = "Duplicated File Name Error";
+        } else if (res == XPUM_RESULT_INVALID_DIR) {
+            (*json)["error"] = "Invalid Directory Error";
+        } else {
+            (*json)["error"] = "Error";
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    }
     return json;
 }
 

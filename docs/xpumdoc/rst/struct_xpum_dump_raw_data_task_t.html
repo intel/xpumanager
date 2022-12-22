@@ -63,6 +63,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -180,7 +181,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-dump-raw-data-task-t">
-<span id="doxid-structxpum-dump-raw-data-task-t"></span><span id="index-0"></span><h1>struct xpum_dump_raw_data_task_t<a class="headerlink" href="#struct-xpum-dump-raw-data-task-t" title="Permalink to this headline"></a></h1>
+<span id="xpum-doxid-structxpum-dump-raw-data-task-t"></span><span id="index-0"></span><h1>struct xpum_dump_raw_data_task_t<a class="headerlink" href="#struct-xpum-dump-raw-data-task-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -192,13 +193,13 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span class="std std-ref">xpum_dump_task_id_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-dump-raw-data-task-t-1a99ba61eaaeb393b677c3d8bfb1fa761d"><span class="std std-ref">taskId</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-dump-raw-data-task-t-1a09e7fbd5b5876e4b836ef3ef57e660da"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-dump-raw-data-task-t-1a2b9848f2b8699c9f4e9413d9f76b1eac"><span class="std std-ref">tileId</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-dump-raw-data-task-t-1ae1afce7e1be793bb8c61a35006d81c6d"><span class="std std-ref">dumpTypeList</span></a><span></span><span class="p">[</span><span class="n">XPUM_DUMP_MAX</span><span class="p">];</span>
-    <span class="kt">int</span> <a class="reference internal" href="#doxid-structxpum-dump-raw-data-task-t-1ae96eb40a4db01b99c8e08e79e78bb30e"><span class="std std-ref">count</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="#doxid-structxpum-dump-raw-data-task-t-1ae165182d1dd54364e31841351404ba45"><span class="std std-ref">beginTime</span></a><span></span><span class="p">;</span>
-    <span class="kt">char</span> <a class="reference internal" href="#doxid-structxpum-dump-raw-data-task-t-1ae783ac00f7c395a40f3a17207198559f"><span class="std std-ref">dumpFilePath</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span class="std std-ref">xpum_dump_task_id_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-dump-raw-data-task-t-1a99ba61eaaeb393b677c3d8bfb1fa761d"><span class="std std-ref">taskId</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-dump-raw-data-task-t-1a09e7fbd5b5876e4b836ef3ef57e660da"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-dump-raw-data-task-t-1a2b9848f2b8699c9f4e9413d9f76b1eac"><span class="std std-ref">tileId</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-dump-raw-data-task-t-1ae1afce7e1be793bb8c61a35006d81c6d"><span class="std std-ref">dumpTypeList</span></a><span></span><span class="p">[</span><span class="n">XPUM_DUMP_MAX</span><span class="p">];</span>
+    <span class="kt">int</span> <a class="reference internal" href="#xpum-doxid-structxpum-dump-raw-data-task-t-1ae96eb40a4db01b99c8e08e79e78bb30e"><span class="std std-ref">count</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-dump-raw-data-task-t-1ae165182d1dd54364e31841351404ba45"><span class="std std-ref">beginTime</span></a><span></span><span class="p">;</span>
+    <span class="kt">char</span> <a class="reference internal" href="#xpum-doxid-structxpum-dump-raw-data-task-t-1ae783ac00f7c395a40f3a17207198559f"><span class="std std-ref">dumpFilePath</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -206,19 +207,19 @@
 <p>dump raw data task structure</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-dump-raw-data-task-t-1a99ba61eaaeb393b677c3d8bfb1fa761d"><span id="index-1"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span class="std std-ref">xpum_dump_task_id_t</span></a><span></span> <span class="n">taskId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-dump-raw-data-task-t-1a99ba61eaaeb393b677c3d8bfb1fa761d"><span id="index-1"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1ae7bc9794abbbe1230c2d5a201f381165"><span class="std std-ref">xpum_dump_task_id_t</span></a><span></span> <span class="n">taskId</span></pre>
 <p>Task id of the task.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-dump-raw-data-task-t-1a09e7fbd5b5876e4b836ef3ef57e660da"><span id="index-2"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-dump-raw-data-task-t-1a09e7fbd5b5876e4b836ef3ef57e660da"><span id="index-2"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
 <p>device id</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-dump-raw-data-task-t-1a2b9848f2b8699c9f4e9413d9f76b1eac"><span id="index-3"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-dump-raw-data-task-t-1a2b9848f2b8699c9f4e9413d9f76b1eac"><span id="index-3"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1acc5145aae3686a197a13588a1b4b342d"><span class="std std-ref">xpum_device_tile_id_t</span></a><span></span> <span class="n">tileId</span></pre>
 <p>tile id, when it is -1, means dumping device level data</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-dump-raw-data-task-t-1ae1afce7e1be793bb8c61a35006d81c6d"><span id="index-4"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <span class="n">dumpTypeList</span><span class="p">[</span><span class="n">XPUM_DUMP_MAX</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-dump-raw-data-task-t-1ae1afce7e1be793bb8c61a35006d81c6d"><span id="index-4"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a385c16147f4b976d858427a4b777faa5"><span class="std std-ref">xpum_dump_type_t</span></a><span></span> <span class="n">dumpTypeList</span><span class="p">[</span><span class="n">XPUM_DUMP_MAX</span><span class="p">]</span></pre>
 <p>data types to dump</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-dump-raw-data-task-t-1ae96eb40a4db01b99c8e08e79e78bb30e"><span id="index-5"></span><span></span><span class="kt">int</span> <span class="n">count</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-dump-raw-data-task-t-1ae96eb40a4db01b99c8e08e79e78bb30e"><span id="index-5"></span><span></span><span class="kt">int</span> <span class="n">count</span></pre>
 <p>The count of entries in metricsTypeList.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-dump-raw-data-task-t-1ae165182d1dd54364e31841351404ba45"><span id="index-6"></span><span></span><span class="kt">uint64_t</span> <span class="n">beginTime</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-dump-raw-data-task-t-1ae165182d1dd54364e31841351404ba45"><span id="index-6"></span><span></span><span class="kt">uint64_t</span> <span class="n">beginTime</span></pre>
 <p>The begin time of the task.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-dump-raw-data-task-t-1ae783ac00f7c395a40f3a17207198559f"><span id="index-7"></span><span></span><span class="kt">char</span> <span class="n">dumpFilePath</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-dump-raw-data-task-t-1ae783ac00f7c395a40f3a17207198559f"><span id="index-7"></span><span></span><span class="kt">char</span> <span class="n">dumpFilePath</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>The dump file path.</p>
 </section>
 </section>

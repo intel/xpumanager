@@ -64,6 +64,7 @@ std::string DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE = "test_stream_1080p
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE = "test_stream_4K.265";
 int DiagnosticManager::ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = 600;
 std::string DiagnosticManager::XPUM_DAEMON_INSTALL_PATH;
+float DiagnosticManager::MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = 0.9;
 
 void DiagnosticManager::readConfigFile() {
     thresholds.clear();
@@ -102,6 +103,12 @@ void DiagnosticManager::readConfigFile() {
                     int val = std::stoi(value);
                     if (val > 0)
                         ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = val;
+                } catch(...) { }
+            } else if (name == "MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST") {
+                try {
+                    float val = std::stof(value);
+                    if (val > 0 && val < 1)
+                        MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = val;
                 } catch(...) { }
             } else if (name == "NAME") {
                 current_device = value;
@@ -289,6 +296,9 @@ void DiagnosticManager::doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t 
         case XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION:
             type_str = "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION";
             break;
+        case XPUM_DIAG_MEMORY_ERROR:
+            type_str = "XPUM_DIAG_MEMORY_ERROR";
+            break;
         default:
             break;
     }
@@ -387,6 +397,12 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
                 doDeviceDiagnosticPeformanceMemoryAllocation(ze_device, ze_driver, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION, e.what(), p_task_info);
+            }
+            XPUM_LOG_INFO("start memory error diagnostic ");
+            try {
+                doDeviceDiagnosticMemoryError(ze_device, ze_driver, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_MEMORY_ERROR, e.what(), p_task_info);
             }
         }
     } catch (std::exception &e) {
@@ -1123,19 +1139,14 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
     uint32_t workgroup_size_x_ = 8;
     uint32_t number_of_kernel_args_ = 2;
     uint32_t number_of_kernels_in_module_ = 10;
-    uint8_t init_value_1_ = 0;
-    uint8_t init_value_2_ = 0xAA; // 1010 1010
 
     std::vector<float> memory_uses = {0.1}; // {0.1, 0.5, 0.9, 1}
     std::vector<uint64_t> allocate_sizes = {one_MB, one_GB};
     std::vector<std::string> memory_types = {"DEVICE", "SHARED"};
 
-    bool pass_test = true;
     for (auto &memory_use : memory_uses)
         for (auto &allocate_size : allocate_sizes)
             for (auto &memory_type : memory_types) {
-                if (!pass_test)
-                    continue;
                 ze_device_properties_t device_properties;
                 device_properties.pNext = nullptr;
                 device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
@@ -1162,10 +1173,6 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
 
                 std::size_t one_case_allocation_count = one_case_requested_allocation_size / (number_of_kernel_args_ * sizeof(uint8_t));
                 std::uint64_t number_of_dispatch = max_allocation_size / one_case_requested_allocation_size;
-                if (allocate_size == one_GB) {
-                    continue;
-                }
-                number_of_dispatch = std::min((int)number_of_dispatch, 100);
                 std::vector<uint8_t *> input_allocations;
                 std::vector<uint8_t *> output_allocations;
                 std::vector<std::vector<uint8_t>> data_out_vector;
@@ -1258,7 +1265,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
                     }
                     input_allocations.push_back(input_allocation);
                     output_allocations.push_back(output_allocation);
-                    std::vector<uint8_t> data_out(one_case_allocation_count, init_value_1_);
+                    std::vector<uint8_t> data_out(one_case_allocation_count, 0);
                     data_out_vector.push_back(data_out);
                     std::string kernel_name;
                     kernel_name = "test_device_memory" + std::to_string((dispatch_id % number_of_kernels_in_module_) + 1);
@@ -1302,22 +1309,10 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeContextDestroy()");
                 }
-                for (auto each_data_out : data_out_vector) {
-                    for (uint32_t i = 0; i < one_case_allocation_count; i++) {
-                        if (init_value_2_ != each_data_out[i]) {
-                            pass_test = false;
-                            break;
-                        }
-                    }
-                }
             }
-    if (pass_test) {
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        updateMessage(component.message, std::string("Pass to check memory allocation."));
-    } else {
-        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
-        updateMessage(component.message, std::string("Fail to check memory allocation."));
-    }
+    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+    updateMessage(component.message, std::string("Pass to check memory allocation."));
+    XPUM_LOG_INFO("Pass to check memory allocation.");
     component.finished = true;
 }
 
@@ -1346,6 +1341,208 @@ std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_p
     stream.read(reinterpret_cast<char *>(binary_file.data()), length);
 
     return binary_file;
+}
+
+void DiagnosticManager::doDeviceDiagnosticMemoryError(const ze_device_handle_t &ze_device,
+                                                                     const ze_driver_handle_t &ze_driver,
+                                                                     std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
+    xpum_diag_component_info_t &component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_MEMORY_ERROR];
+    p_task_info->count += 1;
+    updateMessage(component.message, std::string("Running"));
+    component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
+    ze_result_t ret;
+    uint64_t one_MB = 1024UL * 1024UL;
+    uint32_t workgroup_size_x_ = 8;
+    uint32_t number_of_kernel_args_ = 2;
+    uint32_t number_of_kernels_in_module_ = 10;
+    uint8_t init_value_1_ = 0;
+    uint8_t init_value_2_ = 0xAA; // 1010 1010
+    float memory_use_percentage_for_error_test = MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST;
+
+    XPUM_LOG_DEBUG("memory use_percentage for memory error test: {}", MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST);
+    uint32_t error_count = 0;
+    ze_device_properties_t device_properties;
+    device_properties.pNext = nullptr;
+    device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeDeviceGetProperties(ze_device, &device_properties));
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw BaseException("zeDeviceGetProperties()");
+    }
+
+    uint64_t physical_size = 0;
+    uint32_t mem_module_count = 0;
+    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zesDeviceEnumMemoryModules(ze_device, &mem_module_count, nullptr));
+    std::vector<zes_mem_handle_t> mems(mem_module_count);
+    XPUM_ZE_HANDLE_LOCK(ze_device, ret = zesDeviceEnumMemoryModules(ze_device, &mem_module_count, mems.data()));
+    if (ret == ZE_RESULT_SUCCESS) {
+        for (auto& mem : mems) {
+            uint64_t mem_module_physical_size = 0;
+            zes_mem_properties_t props;
+            props.pNext = nullptr;
+            props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+            XPUM_ZE_HANDLE_LOCK(mem, ret = zesMemoryGetProperties(mem, &props));
+            if (ret == ZE_RESULT_SUCCESS) {
+                mem_module_physical_size = props.physicalSize;
+            }
+
+            zes_mem_state_t sysman_memory_state = {};
+            sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+            sysman_memory_state.pNext = nullptr;
+            XPUM_ZE_HANDLE_LOCK(mem, ret = zesMemoryGetState(mem, &sysman_memory_state));
+            if (ret == ZE_RESULT_SUCCESS) {
+                if (props.physicalSize == 0) {
+                    mem_module_physical_size = sysman_memory_state.size;
+                }
+                physical_size = mem_module_physical_size;
+            }
+        }
+    }
+
+    uint64_t target_test_memory_size = (std::min(physical_size, std::max(physical_size, device_properties.maxMemAllocSize)) * 1.0 * memory_use_percentage_for_error_test);
+    XPUM_LOG_DEBUG("memory physical size: {}, max mem alloc size: {}, target test size: {}", physical_size, device_properties.maxMemAllocSize, target_test_memory_size);
+    ze_context_desc_t context_desc = {ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0};
+    ze_context_handle_t context;
+    XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw BaseException("zeContextCreate()");
+    }
+    uint64_t max_allocation_size = workgroup_size_x_ * (target_test_memory_size / workgroup_size_x_);
+    uint64_t one_case_requested_allocation_size = one_MB * number_of_kernel_args_;
+
+    if (one_case_requested_allocation_size > max_allocation_size) {
+        one_case_requested_allocation_size = max_allocation_size;
+    }
+    
+    std::size_t one_case_allocation_count = one_case_requested_allocation_size / (number_of_kernel_args_ * sizeof(uint8_t));
+    std::uint64_t number_of_dispatch = max_allocation_size / one_case_requested_allocation_size;
+
+    std::vector<ze_device_handle_t> device_handles;
+    uint32_t subdevice_count = 0;
+    ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, nullptr);
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw BaseException("zeDeviceGetSubDevices()");
+    }
+
+    if (subdevice_count == 0) {
+        device_handles.push_back(ze_device);
+    } else {
+        std::vector<ze_device_handle_t> subdevices(subdevice_count);
+        ret = zeDeviceGetSubDevices(ze_device, &subdevice_count, subdevices.data());
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeDeviceGetSubDevices()");
+        }
+        for (auto &subdevice : subdevices) {
+            device_handles.push_back(subdevice);
+        }
+    }
+
+    for (auto& device : device_handles) {
+        std::vector<uint8_t *> input_allocations;
+        std::vector<uint8_t *> output_allocations;
+        std::vector<std::vector<uint8_t>> data_out_vector;
+        std::vector<std::string> test_kernel_names;
+
+        for (uint64_t dispatch_id = 0; dispatch_id < number_of_dispatch; dispatch_id++) {
+            uint8_t *input_allocation;
+            uint8_t *output_allocation;
+            void *memory_input = nullptr;
+            ze_device_mem_alloc_desc_t device_desc_input = {};
+            device_desc_input.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+            device_desc_input.ordinal = 0;
+            device_desc_input.flags = 0;
+            device_desc_input.pNext = nullptr;
+            XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeMemAllocDevice(context, &device_desc_input, one_case_allocation_count, 8, device, &memory_input));
+            if (ret != ZE_RESULT_SUCCESS) {
+                throw BaseException("zeMemAllocDevice()");
+            }
+            input_allocation = (uint8_t *)memory_input;
+
+            void *memory_output = nullptr;
+            ze_device_mem_alloc_desc_t device_desc_output = {};
+            device_desc_output.stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC;
+            device_desc_output.ordinal = 0;
+            device_desc_output.flags = 0;
+            device_desc_output.pNext = nullptr;
+            XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeMemAllocDevice(context, &device_desc_output, one_case_allocation_count, 8, device, &memory_output));
+            if (ret != ZE_RESULT_SUCCESS) {
+                throw BaseException("zeMemAllocDevice()");
+            }
+            output_allocation = (uint8_t *)memory_output;
+            
+            input_allocations.push_back(input_allocation);
+            output_allocations.push_back(output_allocation);
+            std::vector<uint8_t> data_out(one_case_allocation_count, init_value_1_);
+            data_out_vector.push_back(data_out);
+            std::string kernel_name;
+            kernel_name = "test_device_memory" + std::to_string((dispatch_id % number_of_kernels_in_module_) + 1);
+            test_kernel_names.push_back(kernel_name);
+        }
+
+        const std::vector<uint8_t> binary_file = loadBinaryFile("test_multiple_memory_allocations.spv");
+        ze_module_desc_t module_description = {};
+        module_description.stype = ZE_STRUCTURE_TYPE_MODULE_DESC;
+        module_description.pNext = nullptr;
+        module_description.format = ZE_MODULE_FORMAT_IL_SPIRV;
+        module_description.inputSize = static_cast<uint32_t>(binary_file.size());
+        module_description.pInputModule = binary_file.data();
+        module_description.pBuildFlags = nullptr;
+
+        ze_module_handle_t module_handle = nullptr;
+        XPUM_ZE_HANDLE_LOCK(ze_device, ret = zeModuleCreate(context, device, &module_description, &module_handle, nullptr));
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeModuleCreate()");
+        }
+        dispatchKernelsForMemoryTest(device, module_handle, input_allocations, output_allocations,
+                                        data_out_vector, test_kernel_names, number_of_dispatch, one_case_allocation_count, context);
+        for (auto each_allocation : input_allocations) {
+            ret = zeMemFree(context, each_allocation);
+            if (ret != ZE_RESULT_SUCCESS) {
+                throw BaseException("zeMemFree()");
+            }
+        }
+        for (auto each_allocation : output_allocations) {
+            ret = zeMemFree(context, each_allocation);
+            if (ret != ZE_RESULT_SUCCESS) {
+                throw BaseException("zeMemFree()");
+            }
+        }
+
+        ret = zeModuleDestroy(module_handle);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeModuleDestroy()");
+        }
+        int tile_level_error_count = 0;
+        for (auto each_data_out : data_out_vector) {
+            for (uint32_t i = 0; i < one_case_allocation_count; i++) {
+                if (init_value_2_ != each_data_out[i]) {
+                    tile_level_error_count += 1;
+                }
+            }
+        }
+        if (tile_level_error_count <= 1)
+            XPUM_LOG_INFO("{} error was found", tile_level_error_count);
+        else
+            XPUM_LOG_INFO("{} errors were found", tile_level_error_count);
+        error_count += tile_level_error_count;
+    }
+    ret = zeContextDestroy(context);
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw BaseException("zeContextDestroy()");
+    }
+    if (error_count == 0) {
+        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
+        updateMessage(component.message, std::string("Pass to check memory error."));
+    } else {
+        component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        std::string desc = "Fail to check memory error. ";
+        if (error_count == 1) {
+            desc += std::to_string(error_count) + " error was found.";
+        } else  {
+            desc += std::to_string(error_count) + " errors were found.";
+        }
+        updateMessage(component.message, desc);
+    }
+    component.finished = true;
 }
 
 void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t device,
@@ -1416,14 +1613,6 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
                                             nullptr, 0, nullptr);
         if (ret != ZE_RESULT_SUCCESS) {
             throw BaseException("zeCommandListAppendMemoryFill()");
-        }
-        ret = zeCommandListAppendLaunchKernel(command_list, test_function, &thread_group_dimensions, nullptr, 0, nullptr);
-        if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("zeCommandListAppendLaunchKernel()");
-        }
-        ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
-        if (ret != ZE_RESULT_SUCCESS) {
-            throw BaseException("zeCommandListAppendBarrier()");
         }
         ret = zeCommandListAppendLaunchKernel(command_list, test_function, &thread_group_dimensions, nullptr, 0, nullptr);
         if (ret != ZE_RESULT_SUCCESS) {

@@ -10,6 +10,12 @@ import core_pb2
 from .grpc_stub import stub, exit_on_disconnect
 
 
+DeviceFunctionTypeToString = {
+    core_pb2.PHYSICAL: "physical",
+    core_pb2.VIRTUAL: "virtual",
+    core_pb2.UNKNOWN: "unknown",
+}
+
 @exit_on_disconnect
 def getDeviceList():
     resp = stub.getDeviceList(empty_pb2.Empty())
@@ -26,6 +32,7 @@ def getDeviceList():
         device['pci_bdf_address'] = d.pciBdfAddress
         device['vendor_name'] = d.vendorName
         device['drm_device'] = d.drmDevice
+        device['device_function_type'] = DeviceFunctionTypeToString[d.deviceFunctionType]
         device['@odata.id'] = "/rest/v1/devices/{}".format(d.id.id)
         data.append(device)
     return 0, "OK", data

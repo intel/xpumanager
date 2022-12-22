@@ -8,7 +8,7 @@ from .versions import getVersion
 from .devices import getDeviceList, getDeviceProperties, getAMCFirmwareVersions
 from .health import getHealth, getHealthByGroup, setHealthConfig, setHealthConfigByGroup
 from .diagnostics import runDiagnostics, runDiagnosticsByGroup, getDiagnosticsResult, getDiagnosticsResultByGroup
-from .statistics import getStatistics, getStatisticsByGroup, getStatisticsNotForPrometheus, getStatisticsByGroupNotForPrometheus, getEngineStatistics, getFabricStatistics
+from .statistics import getStatistics, getStatisticsByGroup, getStatisticsNotForPrometheus, getStatisticsByGroupNotForPrometheus, getEngineStatistics, getFabricStatistics, getTopologyLink, getXelinkPortHealth
 from .groups import createGroup, getAllGroups, getGroupInfo, destroyGroup, addDeviceToGroup, removeDeviceFromGroup
 from .firmwares import runFirmwareFlash, getFirmwareFlashResult
 from .top import getDeviceUtilByProc, getAllDeviceUtilByProc

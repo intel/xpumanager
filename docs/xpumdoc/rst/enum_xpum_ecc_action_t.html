@@ -63,6 +63,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -180,31 +181,31 @@
            <div itemprop="articleBody">
              
   <section id="enum-xpum-ecc-action-t">
-<span id="doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"></span><span id="index-0"></span><h1>enum xpum_ecc_action_t<a class="headerlink" href="#enum-xpum-ecc-action-t" title="Permalink to this headline"></a></h1>
+<span id="xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"></span><span id="index-0"></span><h1>enum xpum_ecc_action_t<a class="headerlink" href="#enum-xpum-ecc-action-t" title="Permalink to this headline"></a></h1>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
 
 <span class="k">enum</span> <span class="n">xpum_ecc_action_t</span>
 <span class="p">{</span>
-    <a class="reference internal" href="#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0a2a4358532e1df3204fee6b55ffbc299e"><span class="std std-ref">XPUM_ECC_ACTION_NONE</span></a><span></span>               <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <a class="reference internal" href="#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ab2c1e26a5edb29d60e33372e22a566a7"><span class="std std-ref">XPUM_ECC_ACTION_WARM_CARD_RESET</span></a><span></span>    <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-    <a class="reference internal" href="#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0a50da2bec55a856e6615ffe8240294374"><span class="std std-ref">XPUM_ECC_ACTION_COLD_CARD_RESET</span></a><span></span>    <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-    <a class="reference internal" href="#doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ab999501953d250060791aeea9a01eb86"><span class="std std-ref">XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT</span></a><span></span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-    <span class="doxyrest-code-target target" id="doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ace93720e51f108a1759cdecf3c62adf3"><span></span><span class="n">XPUM_ECC_ACTION_FORCE_UINT32</span></span><span></span>       <span class="o">=</span> <span class="mh">0x7fffffff</span><span class="p">,</span>
+    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0a2a4358532e1df3204fee6b55ffbc299e"><span class="std std-ref">XPUM_ECC_ACTION_NONE</span></a><span></span>               <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ab2c1e26a5edb29d60e33372e22a566a7"><span class="std std-ref">XPUM_ECC_ACTION_WARM_CARD_RESET</span></a><span></span>    <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0a50da2bec55a856e6615ffe8240294374"><span class="std std-ref">XPUM_ECC_ACTION_COLD_CARD_RESET</span></a><span></span>    <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ab999501953d250060791aeea9a01eb86"><span class="std std-ref">XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT</span></a><span></span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ace93720e51f108a1759cdecf3c62adf3"><span></span><span class="n">XPUM_ECC_ACTION_FORCE_UINT32</span></span><span></span>       <span class="o">=</span> <span class="mh">0x7fffffff</span><span class="p">,</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
 <span id="details-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
 <section id="enum-values">
 <h3>Enum Values<a class="headerlink" href="#enum-values" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0a2a4358532e1df3204fee6b55ffbc299e"><span id="index-1"></span><span></span><span class="n">XPUM_ECC_ACTION_NONE</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0a2a4358532e1df3204fee6b55ffbc299e"><span id="index-1"></span><span></span><span class="n">XPUM_ECC_ACTION_NONE</span></pre>
 <p>No action.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ab2c1e26a5edb29d60e33372e22a566a7"><span id="index-2"></span><span></span><span class="n">XPUM_ECC_ACTION_WARM_CARD_RESET</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ab2c1e26a5edb29d60e33372e22a566a7"><span id="index-2"></span><span></span><span class="n">XPUM_ECC_ACTION_WARM_CARD_RESET</span></pre>
 <p>Warm reset of the card.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0a50da2bec55a856e6615ffe8240294374"><span id="index-3"></span><span></span><span class="n">XPUM_ECC_ACTION_COLD_CARD_RESET</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0a50da2bec55a856e6615ffe8240294374"><span id="index-3"></span><span></span><span class="n">XPUM_ECC_ACTION_COLD_CARD_RESET</span></pre>
 <p>Cold reset of the card.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ab999501953d250060791aeea9a01eb86"><span id="index-4"></span><span></span><span class="n">XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-xpum-structs-8h-1a8d23dd0821f766725953d675369d68a0ab999501953d250060791aeea9a01eb86"><span id="index-4"></span><span></span><span class="n">XPUM_ECC_ACTION_COLD_SYSTEM_REBOOT</span></pre>
 <p>Cold reboot of the system.</p>
 </section>
 </section>

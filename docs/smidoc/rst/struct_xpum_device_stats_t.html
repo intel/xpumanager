@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-device-stats-t">
-<span id="doxid-structxpum-device-stats-t"></span><span id="index-0"></span><h1>struct xpum_device_stats_t<a class="headerlink" href="#struct-xpum-device-stats-t" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-device-stats-t"></span><span id="index-0"></span><h1>struct xpum_device_stats_t<a class="headerlink" href="#struct-xpum-device-stats-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -185,11 +186,11 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t-1a80ffa70950821fa80ffa2fc9fc058bb2"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t-1a9068ab0884b9fadcbb8c126496e020bf"><span class="std std-ref">isTileData</span></a><span></span><span class="p">;</span>
-    <span class="kt">int32_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t-1a945372308e04f585e48a9cb5747e900c"><span class="std std-ref">tileId</span></a><span></span><span class="p">;</span>
-    <span class="kt">int32_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_t.html#doxid-structxpum-device-stats-t-1a3286130d16e2985133f4b811da68d628"><span class="std std-ref">count</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_stats_data_t.html#doxid-structxpum-device-stats-data-t"><span class="std std-ref">xpum_device_stats_data_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-stats-t-1a7b2b0cc8470a0cc8d55084db6e835007"><span></span><span class="n">dataList</span></span><span></span><span class="p">[</span><span class="n">XPUM_STATS_MAX</span><span class="p">];</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-device-stats-t-1a80ffa70950821fa80ffa2fc9fc058bb2"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <a class="reference internal" href="#smi-doxid-structxpum-device-stats-t-1a9068ab0884b9fadcbb8c126496e020bf"><span class="std std-ref">isTileData</span></a><span></span><span class="p">;</span>
+    <span class="kt">int32_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-stats-t-1a945372308e04f585e48a9cb5747e900c"><span class="std std-ref">tileId</span></a><span></span><span class="p">;</span>
+    <span class="kt">int32_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-stats-t-1a3286130d16e2985133f4b811da68d628"><span class="std std-ref">count</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="struct_xpum_device_stats_data_t.html#smi-doxid-structxpum-device-stats-data-t"><span class="std std-ref">xpum_device_stats_data_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-stats-t-1a7b2b0cc8470a0cc8d55084db6e835007"><span></span><span class="n">dataList</span></span><span></span><span class="p">[</span><span class="n">XPUM_STATS_MAX</span><span class="p">];</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -197,13 +198,13 @@
 <p>Struct to store device statistics data.</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-stats-t-1a80ffa70950821fa80ffa2fc9fc058bb2"><span id="index-1"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-stats-t-1a80ffa70950821fa80ffa2fc9fc058bb2"><span id="index-1"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
 <p>Device id.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-stats-t-1a9068ab0884b9fadcbb8c126496e020bf"><span id="index-2"></span><span></span><span class="kt">bool</span> <span class="n">isTileData</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-stats-t-1a9068ab0884b9fadcbb8c126496e020bf"><span id="index-2"></span><span></span><span class="kt">bool</span> <span class="n">isTileData</span></pre>
 <p>If this statistics data is tile level.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-stats-t-1a945372308e04f585e48a9cb5747e900c"><span id="index-3"></span><span></span><span class="kt">int32_t</span> <span class="n">tileId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-stats-t-1a945372308e04f585e48a9cb5747e900c"><span id="index-3"></span><span></span><span class="kt">int32_t</span> <span class="n">tileId</span></pre>
 <p>The tile id, only valid if isTileData is true.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-stats-t-1a3286130d16e2985133f4b811da68d628"><span id="index-4"></span><span></span><span class="kt">int32_t</span> <span class="n">count</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-stats-t-1a3286130d16e2985133f4b811da68d628"><span id="index-4"></span><span></span><span class="kt">int32_t</span> <span class="n">count</span></pre>
 <p>The count of data stored in dataList array.</p>
 </section>
 </section>

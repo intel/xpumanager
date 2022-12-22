@@ -693,6 +693,31 @@ static std::string getKernelVersion() {
     return version;
 }
 
+static xpum_device_function_type_t getGPUFunctionType(std::string pci_addr) {
+    DIR *dir;
+    struct dirent *ent;
+    std::stringstream ss;
+    ss << "/sys/bus/pci/devices/" << pci_addr;
+    dir = opendir(ss.str().c_str());
+    
+    if (dir == NULL) {
+        XPUM_LOG_ERROR("Path {} doesn't exist.", ss.str());
+        return DEVICE_FUNCTION_TYPE_UNKNOWN;
+    }
+    while ((ent = readdir(dir)) != NULL) {
+        /*
+            Containing `physfn` which links to the PF it belongs to
+            means it's a VF, otherwise it's a PF.
+        */
+        if (strstr(ent->d_name, "physfn") != NULL) {
+            closedir(dir);
+            return DEVICE_FUNCTION_TYPE_VIRTUAL;
+        }
+    }
+    closedir(dir);
+    return DEVICE_FUNCTION_TYPE_PHYSICAL;
+}
+
 void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device_properties_t& props, std::vector<DeviceCapability>& capabilities) {
     zes_pci_properties_t pci_props;
     ze_result_t res;
@@ -968,6 +993,12 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(pci_props.address)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
+                    p_gpu->addProperty(
+                        Property(
+                            XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE,
+                            getGPUFunctionType(to_string(pci_props.address))
+                        )
+                    );
                 }
 
                 uint64_t physical_size = 0;

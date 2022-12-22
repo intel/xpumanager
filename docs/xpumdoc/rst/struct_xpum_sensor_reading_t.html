@@ -63,6 +63,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -180,7 +181,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-sensor-reading-t">
-<span id="doxid-structxpum-sensor-reading-t"></span><span id="index-0"></span><h1>struct xpum_sensor_reading_t<a class="headerlink" href="#struct-xpum-sensor-reading-t" title="Permalink to this headline"></a></h1>
+<span id="xpum-doxid-structxpum-sensor-reading-t"></span><span id="index-0"></span><h1>struct xpum_sensor_reading_t<a class="headerlink" href="#struct-xpum-sensor-reading-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -191,29 +192,29 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">int</span> <a class="reference internal" href="#doxid-structxpum-sensor-reading-t-1ab136826dc2308c28cbe4150fef8ef820"><span class="std std-ref">amcIndex</span></a><span></span><span class="p">;</span>
-    <span class="kt">double</span> <a class="reference internal" href="#doxid-structxpum-sensor-reading-t-1ab7df09cef25f3cf0760850f60eecad43"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
-    <span class="kt">double</span> <a class="reference internal" href="#doxid-structxpum-sensor-reading-t-1abb087d5b8d0f1a3084baf8aea75d9a4c"><span class="std std-ref">sensorLow</span></a><span></span><span class="p">;</span>
-    <span class="kt">double</span> <a class="reference internal" href="#doxid-structxpum-sensor-reading-t-1a8c45519301edb8e93c83c4e0f7db84e2"><span class="std std-ref">sensorHigh</span></a><span></span><span class="p">;</span>
-    <span class="kt">char</span> <a class="reference internal" href="#doxid-structxpum-sensor-reading-t-1a89fbe40a1efb81e43b3c48613f0f7c0a"><span class="std std-ref">sensorName</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <span class="kt">char</span> <a class="reference internal" href="#doxid-structxpum-sensor-reading-t-1a099fe633c1eb986a01b3dcf6e7f1a622"><span class="std std-ref">sensorUnit</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">int</span> <a class="reference internal" href="#xpum-doxid-structxpum-sensor-reading-t-1ab136826dc2308c28cbe4150fef8ef820"><span class="std std-ref">amcIndex</span></a><span></span><span class="p">;</span>
+    <span class="kt">double</span> <a class="reference internal" href="#xpum-doxid-structxpum-sensor-reading-t-1ab7df09cef25f3cf0760850f60eecad43"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
+    <span class="kt">double</span> <a class="reference internal" href="#xpum-doxid-structxpum-sensor-reading-t-1abb087d5b8d0f1a3084baf8aea75d9a4c"><span class="std std-ref">sensorLow</span></a><span></span><span class="p">;</span>
+    <span class="kt">double</span> <a class="reference internal" href="#xpum-doxid-structxpum-sensor-reading-t-1a8c45519301edb8e93c83c4e0f7db84e2"><span class="std std-ref">sensorHigh</span></a><span></span><span class="p">;</span>
+    <span class="kt">char</span> <a class="reference internal" href="#xpum-doxid-structxpum-sensor-reading-t-1a89fbe40a1efb81e43b3c48613f0f7c0a"><span class="std std-ref">sensorName</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">char</span> <a class="reference internal" href="#xpum-doxid-structxpum-sensor-reading-t-1a099fe633c1eb986a01b3dcf6e7f1a622"><span class="std std-ref">sensorUnit</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
 <span id="details-structxpum-sensor-reading-t"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-sensor-reading-t-1ab136826dc2308c28cbe4150fef8ef820"><span id="index-1"></span><span></span><span class="kt">int</span> <span class="n">amcIndex</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-sensor-reading-t-1ab136826dc2308c28cbe4150fef8ef820"><span id="index-1"></span><span></span><span class="kt">int</span> <span class="n">amcIndex</span></pre>
 <p>Device index.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-sensor-reading-t-1ab7df09cef25f3cf0760850f60eecad43"><span id="index-2"></span><span></span><span class="kt">double</span> <span class="n">value</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-sensor-reading-t-1ab7df09cef25f3cf0760850f60eecad43"><span id="index-2"></span><span></span><span class="kt">double</span> <span class="n">value</span></pre>
 <p>Sensor reading value.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-sensor-reading-t-1abb087d5b8d0f1a3084baf8aea75d9a4c"><span id="index-3"></span><span></span><span class="kt">double</span> <span class="n">sensorLow</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-sensor-reading-t-1abb087d5b8d0f1a3084baf8aea75d9a4c"><span id="index-3"></span><span></span><span class="kt">double</span> <span class="n">sensorLow</span></pre>
 <p>Sensor low bound.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-sensor-reading-t-1a8c45519301edb8e93c83c4e0f7db84e2"><span id="index-4"></span><span></span><span class="kt">double</span> <span class="n">sensorHigh</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-sensor-reading-t-1a8c45519301edb8e93c83c4e0f7db84e2"><span id="index-4"></span><span></span><span class="kt">double</span> <span class="n">sensorHigh</span></pre>
 <p>Sensor high bound.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-sensor-reading-t-1a89fbe40a1efb81e43b3c48613f0f7c0a"><span id="index-5"></span><span></span><span class="kt">char</span> <span class="n">sensorName</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-sensor-reading-t-1a89fbe40a1efb81e43b3c48613f0f7c0a"><span id="index-5"></span><span></span><span class="kt">char</span> <span class="n">sensorName</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>Sensor name.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-sensor-reading-t-1a099fe633c1eb986a01b3dcf6e7f1a622"><span id="index-6"></span><span></span><span class="kt">char</span> <span class="n">sensorUnit</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-sensor-reading-t-1a099fe633c1eb986a01b3dcf6e7f1a622"><span id="index-6"></span><span></span><span class="kt">char</span> <span class="n">sensorUnit</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>Sensor reading unit.</p>
 </section>
 </section>

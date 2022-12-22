@@ -460,4 +460,6 @@ EXTERNAL_CREF_DB = {}
 
 EXCLUDE_LUA_LOCALS = true
 
+DOXID_PREFIX = "doxid"
+
 --! @}

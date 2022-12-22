@@ -290,6 +290,14 @@ static void showAddDevicToGroupResult(std::ostream &out, std::shared_ptr<nlohman
             first = false;
         }
         out << "] to group " << (*json)["group_info"]["group_id"].get<int>() << std::endl;
+    } else {
+        out << "Failed to add device:" << std::endl;
+        auto ids = (*json)["failed"];
+        for (size_t i = 0; i < ids.size(); i++) {
+            out << "Device ID = " << ids[i]["device_id"] << 
+                " Error: " << ids[i]["error"] << std::endl;
+        }
+
     }
     CharTable table(ComletConfigAddDeviceToGroup, *json);
     table.show(out);
@@ -310,6 +318,13 @@ static void showRemoveDeviceFromGroupResult(std::ostream &out, std::shared_ptr<n
             first = false;
         }
         out << "] from group " << (*json)["group_info"]["group_id"].get<int>() << std::endl;
+    } else {
+        out << "Failed to remove device:" << std::endl;
+        auto ids = (*json)["failed"];
+        for (size_t i = 0; i < ids.size(); i++) {
+            out << "Device ID = " << ids[i]["device_id"] << 
+                " Error: " << ids[i]["error"] << std::endl;
+        }
     }
     CharTable table(ComletConfigRemoveDeviceFromGroup, *json);
     table.show(out);

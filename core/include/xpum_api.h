@@ -1202,6 +1202,15 @@ xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t result
  */
 xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count);
 
+/**
+ * @brief Generate a debug log file
+ * 
+ * @param fileName   IN: The file name (a .tar.gz) of debug log.
+ * @return xpum_result_t 
+ *      - \ref XPUM_OK                  if log file is generated successfully
+ */
+xpum_result_t xpumGenerateDebugLog(const char *fileName);
+
 /** @} */ // Closing for SENSOR_READING_API
 /// @endcond
 

@@ -99,6 +99,10 @@ class DiagnosticManager : public DiagnosticManagerInterface {
                                                             const ze_driver_handle_t &ze_driver,
                                                             std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
+    static void doDeviceDiagnosticMemoryError(const ze_device_handle_t &ze_device,
+                                                            const ze_driver_handle_t &ze_driver,
+                                                            std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+
     static void doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t type, std::string error, std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
    private:
@@ -160,6 +164,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     static int ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
 
     static std::string XPUM_DAEMON_INSTALL_PATH;
+
+    static float MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST;
 
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
 

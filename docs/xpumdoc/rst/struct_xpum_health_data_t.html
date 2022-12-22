@@ -63,6 +63,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -180,7 +181,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-health-data-t">
-<span id="doxid-structxpum-health-data-t"></span><span id="index-0"></span><h1>struct xpum_health_data_t<a class="headerlink" href="#struct-xpum-health-data-t" title="Permalink to this headline"></a></h1>
+<span id="xpum-doxid-structxpum-health-data-t"></span><span id="index-0"></span><h1>struct xpum_health_data_t<a class="headerlink" href="#struct-xpum-health-data-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -191,29 +192,29 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-health-data-t-1a739e04d15dbc690207af2b040af5f03d"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-health-data-t-1ad1006fe98357cda1b7858a9b5cb6668a"><span class="std std-ref">type</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1ad8029da8c5aecb11f7a855a5ff36b62d"><span class="std std-ref">xpum_health_status_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-health-data-t-1a33b63dded1313b29f366e84126802751"><span class="std std-ref">status</span></a><span></span><span class="p">;</span>
-    <span class="kt">char</span> <a class="reference internal" href="#doxid-structxpum-health-data-t-1acbe43100b871fb60a8e9584d39468542"><span class="std std-ref">description</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="#doxid-structxpum-health-data-t-1a0d869a6b03817098316baf45f0190247"><span class="std std-ref">throttleThreshold</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="#doxid-structxpum-health-data-t-1a5368028f31bea8b025f17affbededd6c"><span class="std std-ref">shutdownThreshold</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-health-data-t-1a739e04d15dbc690207af2b040af5f03d"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-health-data-t-1ad1006fe98357cda1b7858a9b5cb6668a"><span class="std std-ref">type</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1ad8029da8c5aecb11f7a855a5ff36b62d"><span class="std std-ref">xpum_health_status_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-health-data-t-1a33b63dded1313b29f366e84126802751"><span class="std std-ref">status</span></a><span></span><span class="p">;</span>
+    <span class="kt">char</span> <a class="reference internal" href="#xpum-doxid-structxpum-health-data-t-1acbe43100b871fb60a8e9584d39468542"><span class="std std-ref">description</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-health-data-t-1a0d869a6b03817098316baf45f0190247"><span class="std std-ref">throttleThreshold</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-health-data-t-1a5368028f31bea8b025f17affbededd6c"><span class="std std-ref">shutdownThreshold</span></a><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
 <span id="details-structxpum-health-data-t"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-health-data-t-1a739e04d15dbc690207af2b040af5f03d"><span id="index-1"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-health-data-t-1a739e04d15dbc690207af2b040af5f03d"><span id="index-1"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
 <p>Device ID.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-health-data-t-1ad1006fe98357cda1b7858a9b5cb6668a"><span id="index-2"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-health-data-t-1ad1006fe98357cda1b7858a9b5cb6668a"><span id="index-2"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a9f8b35df7371151ce404df7c2d1ac8e8"><span class="std std-ref">xpum_health_type_t</span></a><span></span> <span class="n">type</span></pre>
 <p>Health type.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-health-data-t-1a33b63dded1313b29f366e84126802751"><span id="index-3"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1ad8029da8c5aecb11f7a855a5ff36b62d"><span class="std std-ref">xpum_health_status_t</span></a><span></span> <span class="n">status</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-health-data-t-1a33b63dded1313b29f366e84126802751"><span id="index-3"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1ad8029da8c5aecb11f7a855a5ff36b62d"><span class="std std-ref">xpum_health_status_t</span></a><span></span> <span class="n">status</span></pre>
 <p>Health status.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-health-data-t-1acbe43100b871fb60a8e9584d39468542"><span id="index-4"></span><span></span><span class="kt">char</span> <span class="n">description</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-health-data-t-1acbe43100b871fb60a8e9584d39468542"><span id="index-4"></span><span></span><span class="kt">char</span> <span class="n">description</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>Description for health.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-health-data-t-1a0d869a6b03817098316baf45f0190247"><span id="index-5"></span><span></span><span class="kt">uint64_t</span> <span class="n">throttleThreshold</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-health-data-t-1a0d869a6b03817098316baf45f0190247"><span id="index-5"></span><span></span><span class="kt">uint64_t</span> <span class="n">throttleThreshold</span></pre>
 <p>Throttle threshold, temperature in celsius degree and power in watts.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-health-data-t-1a5368028f31bea8b025f17affbededd6c"><span id="index-6"></span><span></span><span class="kt">uint64_t</span> <span class="n">shutdownThreshold</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-health-data-t-1a5368028f31bea8b025f17affbededd6c"><span id="index-6"></span><span></span><span class="kt">uint64_t</span> <span class="n">shutdownThreshold</span></pre>
 <p>Shutdown threshold, temperature in celsius degree and power in watts.</p>
 </section>
 </section>

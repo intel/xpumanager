@@ -40,6 +40,7 @@ add_custom_target(
             -o ${CMAKE_CURRENT_BINARY_DIR}/rst/index.rst 
             -D SORT_GROUPS_BY="originalIdx"
             -D INDEX_TITLE=${LIB_CORE_API_DOC_TITLE}
+            -D DOXID_PREFIX="xpum-doxid"
             ${CMAKE_CURRENT_BINARY_DIR}/doxygen-output/xml/index.xml
   DEPENDS XPUM_LIB_CORE_XML)
 

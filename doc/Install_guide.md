@@ -7,8 +7,6 @@
 * Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in repositories)
 * Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories) 
 * Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)
- 
-intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like "--force-all" to ignore them when installing Intel XPU Manager
 
 ## DEB install
 sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
@@ -97,4 +95,27 @@ Metric types:
     * 28. Memory Errors Uncorrectable, per tile
  
 ## GPU memory ECC on/off
-XPU Manager provides the GPU memory ECC on/off feature based on [IGSC](https://github.com/intel/igsc). GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer version.
+XPU Manager provides the GPU memory ECC on/off feature based on [IGSC](https://github.com/intel/igsc). GPU memory ECC on/off starts to work since IGSC 0.8.4. If you want to use this feature, please make sure that you install IGSC 0.8.4 or newer version.
+
+
+## How to install the latest version of libcurl on CentOS 7
+CentOS 7 still has the old version of libcurl. If you need update the AMC firmware through Redfish host interface, please follow the steps below to build and install libcurl.
+```
+yum update -y
+
+yum install wget gcc openssl-devel make -y
+
+wget https://curl.se/download/curl-7.56.1.tar.gz
+
+tar xzf curl-7.56.1.tar.gz
+
+cd curl-7.56.1
+
+./configure --with-openssl --prefix=/usr
+
+make 
+
+sudo make install
+
+curl --version
+```

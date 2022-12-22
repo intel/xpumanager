@@ -63,6 +63,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -180,7 +181,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-device-engine-metric-t">
-<span id="doxid-structxpum-device-engine-metric-t"></span><span id="index-0"></span><h1>struct xpum_device_engine_metric_t<a class="headerlink" href="#struct-xpum-device-engine-metric-t" title="Permalink to this headline"></a></h1>
+<span id="xpum-doxid-structxpum-device-engine-metric-t"></span><span id="index-0"></span><h1>struct xpum_device_engine_metric_t<a class="headerlink" href="#struct-xpum-device-engine-metric-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -192,12 +193,12 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">bool</span> <a class="reference internal" href="#doxid-structxpum-device-engine-metric-t-1ae14170dc52f62382e91b67e078acd42c"><span class="std std-ref">isTileData</span></a><span></span><span class="p">;</span>
-    <span class="kt">int32_t</span> <a class="reference internal" href="#doxid-structxpum-device-engine-metric-t-1ac40536f6d3765e153cab2945eba6f165"><span class="std std-ref">tileId</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="#doxid-structxpum-device-engine-metric-t-1a7155c65da505c580fa4d7d85eea6e509"><span class="std std-ref">index</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a000951b2de34e96f70caa2188b84b628"><span class="std std-ref">xpum_engine_type_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-device-engine-metric-t-1ae015f8b78939dfe6dcf47cf21114054b"><span class="std std-ref">type</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="#doxid-structxpum-device-engine-metric-t-1a1e6de53058269055c9e071df5fc365bd"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <a class="reference internal" href="#doxid-structxpum-device-engine-metric-t-1a307c9a8da011022cc770e22c45dd9ec3"><span class="std std-ref">scale</span></a><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <a class="reference internal" href="#xpum-doxid-structxpum-device-engine-metric-t-1ae14170dc52f62382e91b67e078acd42c"><span class="std std-ref">isTileData</span></a><span></span><span class="p">;</span>
+    <span class="kt">int32_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-device-engine-metric-t-1ac40536f6d3765e153cab2945eba6f165"><span class="std std-ref">tileId</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-device-engine-metric-t-1a7155c65da505c580fa4d7d85eea6e509"><span class="std std-ref">index</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a000951b2de34e96f70caa2188b84b628"><span class="std std-ref">xpum_engine_type_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-device-engine-metric-t-1ae015f8b78939dfe6dcf47cf21114054b"><span class="std std-ref">type</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-device-engine-metric-t-1a1e6de53058269055c9e071df5fc365bd"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-device-engine-metric-t-1a307c9a8da011022cc770e22c45dd9ec3"><span class="std std-ref">scale</span></a><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -205,17 +206,17 @@
 <p>Struct to store device engine metric data.</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-engine-metric-t-1ae14170dc52f62382e91b67e078acd42c"><span id="index-1"></span><span></span><span class="kt">bool</span> <span class="n">isTileData</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-device-engine-metric-t-1ae14170dc52f62382e91b67e078acd42c"><span id="index-1"></span><span></span><span class="kt">bool</span> <span class="n">isTileData</span></pre>
 <p>If this statistics data is tile level.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-engine-metric-t-1ac40536f6d3765e153cab2945eba6f165"><span id="index-2"></span><span></span><span class="kt">int32_t</span> <span class="n">tileId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-device-engine-metric-t-1ac40536f6d3765e153cab2945eba6f165"><span id="index-2"></span><span></span><span class="kt">int32_t</span> <span class="n">tileId</span></pre>
 <p>The tile id, only valid if isTileData is true.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-engine-metric-t-1a7155c65da505c580fa4d7d85eea6e509"><span id="index-3"></span><span></span><span class="kt">uint64_t</span> <span class="n">index</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-device-engine-metric-t-1a7155c65da505c580fa4d7d85eea6e509"><span id="index-3"></span><span></span><span class="kt">uint64_t</span> <span class="n">index</span></pre>
 <p>The index of the engine in the same type on the device or sub-device.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-engine-metric-t-1ae015f8b78939dfe6dcf47cf21114054b"><span id="index-4"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a000951b2de34e96f70caa2188b84b628"><span class="std std-ref">xpum_engine_type_t</span></a><span></span> <span class="n">type</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-device-engine-metric-t-1ae015f8b78939dfe6dcf47cf21114054b"><span id="index-4"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a000951b2de34e96f70caa2188b84b628"><span class="std std-ref">xpum_engine_type_t</span></a><span></span> <span class="n">type</span></pre>
 <p>The type of the engine.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-engine-metric-t-1a1e6de53058269055c9e071df5fc365bd"><span id="index-5"></span><span></span><span class="kt">uint64_t</span> <span class="n">value</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-device-engine-metric-t-1a1e6de53058269055c9e071df5fc365bd"><span id="index-5"></span><span></span><span class="kt">uint64_t</span> <span class="n">value</span></pre>
 <p>The value of engine utilization.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-engine-metric-t-1a307c9a8da011022cc770e22c45dd9ec3"><span id="index-6"></span><span></span><span class="kt">uint32_t</span> <span class="n">scale</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-device-engine-metric-t-1a307c9a8da011022cc770e22c45dd9ec3"><span id="index-6"></span><span></span><span class="kt">uint32_t</span> <span class="n">scale</span></pre>
 <p>The magnification of the value field.</p>
 </section>
 </section>

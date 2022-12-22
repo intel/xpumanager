@@ -42,5 +42,7 @@ if [ -f ~/password.sys_dcm ]; then
     CSUser="ccr\\sys_dcm"
     CSPwd=$(cat ~/password.sys_dcm)
     echo "SignFile:${PackageName}" 
-    "${WORK_DIR}"/install/tools/signfile/SignFile -vv -u "${CSUser}" -p "${CSPwd}" ${PackageName}
+    pushd "${WORK_DIR}"/install/tools/signfile
+    ./SignFile -vv -u "${CSUser}" -p "${CSPwd}" "${WORK_DIR}"/build/${PackageName}
+    popd
 fi

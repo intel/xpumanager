@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-scheduler-data-t">
-<span id="doxid-structxpum-scheduler-data-t"></span><span id="index-0"></span><h1>struct xpum_scheduler_data_t<a class="headerlink" href="#struct-xpum-scheduler-data-t" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-scheduler-data-t"></span><span id="index-0"></span><h1>struct xpum_scheduler_data_t<a class="headerlink" href="#struct-xpum-scheduler-data-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
@@ -182,14 +183,14 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-scheduler-data-t-1a9a043018d4f582609a12b5b65c9c4f87"><span></span><span class="n">on_subdevice</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-scheduler-data-t-1aa3fe3f4e9b19421432cc36162ab02cb5"><span></span><span class="n">subdevice_Id</span></span><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-scheduler-data-t-1a397a8e0d7183c0557dfa363143419105"><span></span><span class="n">can_control</span></span><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_scheduler_mode_t.html#doxid-xpum-structs-8h-1a33c91392c46e4ed645476cea0d15ecfa"><span class="std std-ref">xpum_scheduler_mode_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-scheduler-data-t-1a3dc8480f3653e661d2399e7cdde00a73"><span></span><span class="n">mode</span></span><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_engine_type_flags_t.html#doxid-xpum-structs-8h-1a72dafa75f567022365f0232689cfdb77"><span class="std std-ref">xpum_engine_type_flags_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-scheduler-data-t-1a34920e02ec40166c3aeae836d75580da"><span></span><span class="n">engine_types</span></span><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/enum_xpum_scheduler_mode_t.html#doxid-xpum-structs-8h-1a33c91392c46e4ed645476cea0d15ecfa"><span class="std std-ref">xpum_scheduler_mode_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-scheduler-data-t-1a8c1da6413b984ac550857147f888e081"><span></span><span class="n">supported_modes</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-scheduler-data-t-1a654791e4e48368cd68bff6c1f95b7a8e"><span></span><span class="n">val1</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-scheduler-data-t-1aebf385475ca532050d424556e09a66b5"><span></span><span class="n">val2</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-scheduler-data-t-1a9a043018d4f582609a12b5b65c9c4f87"><span></span><span class="n">on_subdevice</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-scheduler-data-t-1aa3fe3f4e9b19421432cc36162ab02cb5"><span></span><span class="n">subdevice_Id</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-scheduler-data-t-1a397a8e0d7183c0557dfa363143419105"><span></span><span class="n">can_control</span></span><span></span><span class="p">;</span>
+    <a class="reference internal" href="enum_xpum_scheduler_mode_t.html#smi-doxid-xpum-structs-8h-1a33c91392c46e4ed645476cea0d15ecfa"><span class="std std-ref">xpum_scheduler_mode_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-scheduler-data-t-1a3dc8480f3653e661d2399e7cdde00a73"><span></span><span class="n">mode</span></span><span></span><span class="p">;</span>
+    <a class="reference internal" href="enum_xpum_engine_type_flags_t.html#smi-doxid-xpum-structs-8h-1a72dafa75f567022365f0232689cfdb77"><span class="std std-ref">xpum_engine_type_flags_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-scheduler-data-t-1a34920e02ec40166c3aeae836d75580da"><span></span><span class="n">engine_types</span></span><span></span><span class="p">;</span>
+    <a class="reference internal" href="enum_xpum_scheduler_mode_t.html#smi-doxid-xpum-structs-8h-1a33c91392c46e4ed645476cea0d15ecfa"><span class="std std-ref">xpum_scheduler_mode_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-scheduler-data-t-1a8c1da6413b984ac550857147f888e081"><span></span><span class="n">supported_modes</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-scheduler-data-t-1a654791e4e48368cd68bff6c1f95b7a8e"><span></span><span class="n">val1</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-scheduler-data-t-1aebf385475ca532050d424556e09a66b5"><span></span><span class="n">val2</span></span><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 

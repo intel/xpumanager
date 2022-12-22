@@ -22,7 +22,7 @@ end -- if
 local name = getGroupName(group)
 }
 .. index:: pair: group; $(name)
-.. _doxid-$(group.id):
+.. _$(DOXID_PREFIX)-$(group.id):
 
 $(getTitle(name, 1))
 

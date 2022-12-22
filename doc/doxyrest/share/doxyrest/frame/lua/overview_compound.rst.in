@@ -59,7 +59,7 @@ if compound.compoundKind == "class" or compound.compoundKind == "struct" then
 				local baseType = compound.baseTypeArray[i]
 }
 
-		-- inherited from :ref:`$(baseType.name)<doxid-$(baseType.id)>`
+		-- inherited from :ref:`$(baseType.name)<$(DOXID_PREFIX)-$(baseType.id)>`
 
 %{
 				includeFileWithIndent("\t", "overview_variables.rst.in", baseType, null, ",")

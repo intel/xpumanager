@@ -17,7 +17,7 @@ local namePrefix = argArray[2]
 for i = 1, #itemArray do
 	local item = itemArray[i]
 }
-	'$namePrefix$(item.name)' : 'doxid-$(item.id)',
+	'$namePrefix$(item.name)' : '$(DOXID_PREFIX)-$(item.id)',
 %{
 end -- for
 }

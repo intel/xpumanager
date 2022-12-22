@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-group-info-t">
-<span id="doxid-structxpum-group-info-t"></span><span id="index-0"></span><h1>struct xpum_group_info_t<a class="headerlink" href="#struct-xpum-group-info-t" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-group-info-t"></span><span id="index-0"></span><h1>struct xpum_group_info_t<a class="headerlink" href="#struct-xpum-group-info-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -185,9 +186,9 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">int</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_group_info_t.html#doxid-structxpum-group-info-t-1af6a47f7622168edc94c222d4a920aff2"><span class="std std-ref">count</span></a><span></span><span class="p">;</span>
-    <span class="kt">char</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_group_info_t.html#doxid-structxpum-group-info-t-1aac28965811ebebb54ec3cec0b4c2a52b"><span class="std std-ref">groupName</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_group_info_t.html#doxid-structxpum-group-info-t-1ac86b6534c933e5c30aea5985107a884c"><span class="std std-ref">deviceList</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_NUM_DEVICES</span><span class="p">];</span>
+    <span class="kt">int</span> <a class="reference internal" href="#smi-doxid-structxpum-group-info-t-1af6a47f7622168edc94c222d4a920aff2"><span class="std std-ref">count</span></a><span></span><span class="p">;</span>
+    <span class="kt">char</span> <a class="reference internal" href="#smi-doxid-structxpum-group-info-t-1aac28965811ebebb54ec3cec0b4c2a52b"><span class="std std-ref">groupName</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-group-info-t-1ac86b6534c933e5c30aea5985107a884c"><span class="std std-ref">deviceList</span></a><span></span><span class="p">[</span><span class="n">XPUM_MAX_NUM_DEVICES</span><span class="p">];</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -195,11 +196,11 @@
 <p>Struct for group info.</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-group-info-t-1af6a47f7622168edc94c222d4a920aff2"><span id="index-1"></span><span></span><span class="kt">int</span> <span class="n">count</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-group-info-t-1af6a47f7622168edc94c222d4a920aff2"><span id="index-1"></span><span></span><span class="kt">int</span> <span class="n">count</span></pre>
 <p>The count of devices in this group.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-group-info-t-1aac28965811ebebb54ec3cec0b4c2a52b"><span id="index-2"></span><span></span><span class="kt">char</span> <span class="n">groupName</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-group-info-t-1aac28965811ebebb54ec3cec0b4c2a52b"><span id="index-2"></span><span></span><span class="kt">char</span> <span class="n">groupName</span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">]</span></pre>
 <p>The name of this group.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-group-info-t-1ac86b6534c933e5c30aea5985107a884c"><span id="index-3"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceList</span><span class="p">[</span><span class="n">XPUM_MAX_NUM_DEVICES</span><span class="p">]</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-group-info-t-1ac86b6534c933e5c30aea5985107a884c"><span id="index-3"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceList</span><span class="p">[</span><span class="n">XPUM_MAX_NUM_DEVICES</span><span class="p">]</span></pre>
 <p>The array of device id belongs to this group.</p>
 </section>
 </section>

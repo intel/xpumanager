@@ -42,6 +42,7 @@ Subcommands:
   updatefw                    Update GPU firmware.
   config                      Get and change the GPU settings.
   dump                        Dump device statistics data.
+  log                         Collect GPU debug logs.
   topology                    get the system topology
   policy                      Get and set the GPU policies.
   amcsensor                   List the AMC real-time sensor reading. 
@@ -78,6 +79,31 @@ Options:
   -j,--json                   Print result in JSON format
 
   -d,--device                 Device ID to query. It will show more detailed info.
+  --pf,--physicalfunction     Display the physical functions only.
+  --vf,--virtualfunction      Display the virtual functions only.
+  --dump                      Property ID to dump device properties in CSV format. Separated by the comma. "-1" means all properties.
+                              1. Device ID
+                              2. Device Name
+                              3. Vendor Name
+                              4. UUID
+                              5. Serial Number
+                              6. Core Clock Rate
+                              7. Stepping
+                              8. Driver Version
+                              9. GFX Firmware Version
+                              10. GFX Data Firmware Version
+                              11. PCI BDF Address
+                              12. PCI Slot
+                              13. PCIe Generation
+                              14. PCIe Max Link Width
+                              15. OAM Socket ID
+                              16. Memory Physical Size
+                              17. Number of Memory Channels
+                              18. Memory Bus Width
+                              19. Number of EUs
+                              20. Number of Media Engines
+                              21. Number of Media Enhancement Engines
+
   --listamcversions           Show all AMC firmware versions.
   -u,--username               Username used to get AMC version with Redfish Host interface
   -p,--password               Password used to get AMC version with Redfish Host interface
@@ -96,6 +122,7 @@ Discover the devices in this machine
 |           | Vendor Name: Intel(R) Corporation                                                    |
 |           | UUID: 00000000-0000-0000-0000-020a00008086                                           |
 |           | PCI BDF Address: 0000:4d:00.0                                                        |
+|           | Function Type: physical                                                              |
 +-----------+--------------------------------------------------------------------------------------+
 ```
 
@@ -111,6 +138,7 @@ Discover the devices in this machine and get the JSON format output
             "pci_bdf_address": "0000:4d:00.0",
             "pci_device_id": "0x20a",
             "uuid": "00000000-0000-0000-0000-020a00008086",
+            "device_function_type": "physical",
             "vendor_name": "Intel(R) Corporation"
         }
     ]
@@ -1048,3 +1076,24 @@ xpumcli amcsensor
 ```
 
 
+## Collect the GPU debug log files
+Help info of collecting GPU log files.  
+```
+xpumcli log -h
+Collect GPU debug logs.
+
+Usage: xpumcli log [Options]
+ xpumcli log -f [tarGzipFileName]
+
+Options:
+  -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
+  -f,--file                   The file (a tar.gz) to archive all the debug logs
+```
+ 
+Collect the GPU log files. If the filename is specified with the relative filepath, the log file is generated under the XPU Manager daemon working folder (under "/" by default). You may use the absolute filepath for easy to find. 
+```
+xpumcli log -f 1217.tar.gz
+Done
+```

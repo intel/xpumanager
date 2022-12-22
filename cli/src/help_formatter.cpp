@@ -218,6 +218,9 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
         return "\nUsage: " + appName + " amcsensor [Options]\n"
                " " + appName + " amcsensor\n"
                " " + appName + " amcsensor -j\n";
+    } else if (app->get_name().compare("log") == 0) {
+        return "\nUsage: " + appName + " log [Options]\n"
+               " " + appName + " log -f [tarGzipFileName]\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }

@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-power-prop-data-t">
-<span id="doxid-structxpum-power-prop-data-t"></span><span id="index-0"></span><h1>struct xpum_power_prop_data_t<a class="headerlink" href="#struct-xpum-power-prop-data-t" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-power-prop-data-t"></span><span id="index-0"></span><h1>struct xpum_power_prop_data_t<a class="headerlink" href="#struct-xpum-power-prop-data-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
@@ -182,13 +183,13 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-power-prop-data-t-1aad51e8edfe0f0ab86204f2666c11b909"><span></span><span class="n">on_subdevice</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-power-prop-data-t-1a2cf53a6c8240f61e3dd8a3e5f5bf0467"><span></span><span class="n">subdevice_Id</span></span><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-power-prop-data-t-1a6523f2cfa39e27b8c04d23b48790f0e7"><span></span><span class="n">can_control</span></span><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="doxid-structxpum-power-prop-data-t-1a8f2cab7f8c71db9a9a83496e7a007148"><span></span><span class="n">is_energy_threshold_supported</span></span><span></span><span class="p">;</span>
-    <span class="kt">int32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-power-prop-data-t-1a47edbef96057673fac24017524a560a9"><span></span><span class="n">default_limit</span></span><span></span><span class="p">;</span>
-    <span class="kt">int32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-power-prop-data-t-1a95dd0119a6934dcada6eb2ee3cfb6581"><span></span><span class="n">min_limit</span></span><span></span><span class="p">;</span>
-    <span class="kt">int32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-power-prop-data-t-1aa72d28937d4adc18050946f2f62296dd"><span></span><span class="n">max_limit</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-power-prop-data-t-1aad51e8edfe0f0ab86204f2666c11b909"><span></span><span class="n">on_subdevice</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-power-prop-data-t-1a2cf53a6c8240f61e3dd8a3e5f5bf0467"><span></span><span class="n">subdevice_Id</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-power-prop-data-t-1a6523f2cfa39e27b8c04d23b48790f0e7"><span></span><span class="n">can_control</span></span><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-power-prop-data-t-1a8f2cab7f8c71db9a9a83496e7a007148"><span></span><span class="n">is_energy_threshold_supported</span></span><span></span><span class="p">;</span>
+    <span class="kt">int32_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-power-prop-data-t-1a47edbef96057673fac24017524a560a9"><span></span><span class="n">default_limit</span></span><span></span><span class="p">;</span>
+    <span class="kt">int32_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-power-prop-data-t-1a95dd0119a6934dcada6eb2ee3cfb6581"><span></span><span class="n">min_limit</span></span><span></span><span class="p">;</span>
+    <span class="kt">int32_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-power-prop-data-t-1aa72d28937d4adc18050946f2f62296dd"><span></span><span class="n">max_limit</span></span><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 

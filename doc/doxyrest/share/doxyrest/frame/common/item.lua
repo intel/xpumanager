@@ -71,12 +71,12 @@ end
 
 function getItemRefTargetString(item)
 	if string.match(item.name, ":$") then -- Objective C methods (simple handling for now)
-		return ".. _doxid-" .. item.id .. ":\n"
+		return ".. _" .. DOXID_PREFIX .. "-" .. item.id .. ":\n"
 	end
 
 	local s =
 		".. index:: pair: " .. item.memberKind .. "; " .. item.name .. "\n" ..
-		".. _doxid-" .. item.id .. ":\n"
+		".. _" .. DOXID_PREFIX .. "-" .. item.id .. ":\n"
 
 	if item.isSubGroupHead then
 		for j = 1, #item.subGroupSlaveArray do
@@ -84,7 +84,7 @@ function getItemRefTargetString(item)
 
 			s = s ..
 				".. index:: pair: " .. slaveItem.memberKind .. "; " .. slaveItem.name .. "\n" ..
-				".. _doxid-" .. slaveItem.id .. ":\n"
+				".. _" .. DOXID_PREFIX .. "-" .. slaveItem.id .. ":\n"
 		end
 	end
 
@@ -96,8 +96,8 @@ function hasItemDocumentation(item)
 end
 
 g_simpleItemNameTemplate = "$n"
-g_refItemNameTemplate = ":ref:`$n<doxid-$i>`"
-g_targetItemNameTemplate = ":target:`$n<doxid-$i>`"
+g_refItemNameTemplate = ":ref:`$n<" .. DOXID_PREFIX .. "-$i>`"
+g_targetItemNameTemplate = ":target:`$n<" .. DOXID_PREFIX .. "-$i>`"
 
 function getItemNameTemplate(item)
 	if hasItemDocumentation(item) then

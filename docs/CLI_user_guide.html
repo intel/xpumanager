@@ -59,6 +59,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#get-and-set-the-policy-automatic-action-triggered-by-the-condition">Get and set the policy, automatic action triggered by the condition</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#diagnose-gpu-with-different-test-suites">Diagnose GPU with different test suites</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#show-amc-real-time-sensor-readings">Show AMC real-time sensor readings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#collect-the-gpu-debug-log-files">Collect the GPU debug log files</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="restful.html">Restful API</a></li>
@@ -137,6 +138,7 @@
   <span class="n">updatefw</span>                    <span class="n">Update</span> <span class="n">GPU</span> <span class="n">firmware</span><span class="o">.</span>
   <span class="n">config</span>                      <span class="n">Get</span> <span class="ow">and</span> <span class="n">change</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">settings</span><span class="o">.</span>
   <span class="n">dump</span>                        <span class="n">Dump</span> <span class="n">device</span> <span class="n">statistics</span> <span class="n">data</span><span class="o">.</span>
+  <span class="n">log</span>                         <span class="n">Collect</span> <span class="n">GPU</span> <span class="n">debug</span> <span class="n">logs</span><span class="o">.</span>
   <span class="n">topology</span>                    <span class="n">get</span> <span class="n">the</span> <span class="n">system</span> <span class="n">topology</span>
   <span class="n">policy</span>                      <span class="n">Get</span> <span class="ow">and</span> <span class="nb">set</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">policies</span><span class="o">.</span>
   <span class="n">amcsensor</span>                   <span class="n">List</span> <span class="n">the</span> <span class="n">AMC</span> <span class="n">real</span><span class="o">-</span><span class="n">time</span> <span class="n">sensor</span> <span class="n">reading</span><span class="o">.</span> 
@@ -173,6 +175,31 @@
   <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
 
   <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">Device</span> <span class="n">ID</span> <span class="n">to</span> <span class="n">query</span><span class="o">.</span> <span class="n">It</span> <span class="n">will</span> <span class="n">show</span> <span class="n">more</span> <span class="n">detailed</span> <span class="n">info</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">pf</span><span class="p">,</span><span class="o">--</span><span class="n">physicalfunction</span>     <span class="n">Display</span> <span class="n">the</span> <span class="n">physical</span> <span class="n">functions</span> <span class="n">only</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">vf</span><span class="p">,</span><span class="o">--</span><span class="n">virtualfunction</span>      <span class="n">Display</span> <span class="n">the</span> <span class="n">virtual</span> <span class="n">functions</span> <span class="n">only</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">dump</span>                      <span class="n">Property</span> <span class="n">ID</span> <span class="n">to</span> <span class="n">dump</span> <span class="n">device</span> <span class="n">properties</span> <span class="ow">in</span> <span class="n">CSV</span> <span class="nb">format</span><span class="o">.</span> <span class="n">Separated</span> <span class="n">by</span> <span class="n">the</span> <span class="n">comma</span><span class="o">.</span> <span class="s2">&quot;-1&quot;</span> <span class="n">means</span> <span class="nb">all</span> <span class="n">properties</span><span class="o">.</span>
+                              <span class="mf">1.</span> <span class="n">Device</span> <span class="n">ID</span>
+                              <span class="mf">2.</span> <span class="n">Device</span> <span class="n">Name</span>
+                              <span class="mf">3.</span> <span class="n">Vendor</span> <span class="n">Name</span>
+                              <span class="mf">4.</span> <span class="n">UUID</span>
+                              <span class="mf">5.</span> <span class="n">Serial</span> <span class="n">Number</span>
+                              <span class="mf">6.</span> <span class="n">Core</span> <span class="n">Clock</span> <span class="n">Rate</span>
+                              <span class="mf">7.</span> <span class="n">Stepping</span>
+                              <span class="mf">8.</span> <span class="n">Driver</span> <span class="n">Version</span>
+                              <span class="mf">9.</span> <span class="n">GFX</span> <span class="n">Firmware</span> <span class="n">Version</span>
+                              <span class="mf">10.</span> <span class="n">GFX</span> <span class="n">Data</span> <span class="n">Firmware</span> <span class="n">Version</span>
+                              <span class="mf">11.</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span>
+                              <span class="mf">12.</span> <span class="n">PCI</span> <span class="n">Slot</span>
+                              <span class="mf">13.</span> <span class="n">PCIe</span> <span class="n">Generation</span>
+                              <span class="mf">14.</span> <span class="n">PCIe</span> <span class="n">Max</span> <span class="n">Link</span> <span class="n">Width</span>
+                              <span class="mf">15.</span> <span class="n">OAM</span> <span class="n">Socket</span> <span class="n">ID</span>
+                              <span class="mf">16.</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span>
+                              <span class="mf">17.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Memory</span> <span class="n">Channels</span>
+                              <span class="mf">18.</span> <span class="n">Memory</span> <span class="n">Bus</span> <span class="n">Width</span>
+                              <span class="mf">19.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">EUs</span>
+                              <span class="mf">20.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Media</span> <span class="n">Engines</span>
+                              <span class="mf">21.</span> <span class="n">Number</span> <span class="n">of</span> <span class="n">Media</span> <span class="n">Enhancement</span> <span class="n">Engines</span>
+
   <span class="o">--</span><span class="n">listamcversions</span>           <span class="n">Show</span> <span class="nb">all</span> <span class="n">AMC</span> <span class="n">firmware</span> <span class="n">versions</span><span class="o">.</span>
   <span class="o">-</span><span class="n">u</span><span class="p">,</span><span class="o">--</span><span class="n">username</span>               <span class="n">Username</span> <span class="n">used</span> <span class="n">to</span> <span class="n">get</span> <span class="n">AMC</span> <span class="n">version</span> <span class="k">with</span> <span class="n">Redfish</span> <span class="n">Host</span> <span class="n">interface</span>
   <span class="o">-</span><span class="n">p</span><span class="p">,</span><span class="o">--</span><span class="n">password</span>               <span class="n">Password</span> <span class="n">used</span> <span class="n">to</span> <span class="n">get</span> <span class="n">AMC</span> <span class="n">version</span> <span class="k">with</span> <span class="n">Redfish</span> <span class="n">Host</span> <span class="n">interface</span>
@@ -188,6 +215,7 @@
 <span class="o">|</span>           <span class="o">|</span> <span class="n">Vendor</span> <span class="n">Name</span><span class="p">:</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">Corporation</span>                                                    <span class="o">|</span>
 <span class="o">|</span>           <span class="o">|</span> <span class="n">UUID</span><span class="p">:</span> <span class="mi">00000000</span><span class="o">-</span><span class="mi">0000</span><span class="o">-</span><span class="mi">0000</span><span class="o">-</span><span class="mi">0000</span><span class="o">-</span><span class="mi">020</span><span class="n">a00008086</span>                                           <span class="o">|</span>
 <span class="o">|</span>           <span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.0</span>                                                        <span class="o">|</span>
+<span class="o">|</span>           <span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">physical</span>                                                              <span class="o">|</span>
 <span class="o">+-----------+--------------------------------------------------------------------------------------+</span>
 </pre></div>
 </div>
@@ -202,6 +230,7 @@
             <span class="s2">&quot;pci_bdf_address&quot;</span><span class="p">:</span> <span class="s2">&quot;0000:4d:00.0&quot;</span><span class="p">,</span>
             <span class="s2">&quot;pci_device_id&quot;</span><span class="p">:</span> <span class="s2">&quot;0x20a&quot;</span><span class="p">,</span>
             <span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="s2">&quot;00000000-0000-0000-0000-020a00008086&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;device_function_type&quot;</span><span class="p">:</span> <span class="s2">&quot;physical&quot;</span><span class="p">,</span>
             <span class="s2">&quot;vendor_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Intel(R) Corporation&quot;</span>
         <span class="p">}</span>
     <span class="p">]</span>
@@ -1112,6 +1141,28 @@ Image path: /home/dcm/ats_m_amc_v_3_6_3_0.bin
 <span class="o">|</span>        <span class="o">|</span> <span class="n">soc_die_temp_1</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">46</span>                                                          <span class="o">|</span>
 <span class="o">|</span>        <span class="o">|</span> <span class="n">soc_die_temp_2</span> <span class="p">(</span><span class="n">degrees</span> <span class="n">C</span><span class="p">):</span> <span class="mi">45</span>                                                          <span class="o">|</span>
 <span class="o">+--------+-----------------------------------------------------------------------------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="collect-the-gpu-debug-log-files">
+<h2>Collect the GPU debug log files<a class="headerlink" href="#collect-the-gpu-debug-log-files" title="Permalink to this headline"></a></h2>
+<p>Help info of collecting GPU log files.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">log</span> <span class="o">-</span><span class="n">h</span>
+<span class="n">Collect</span> <span class="n">GPU</span> <span class="n">debug</span> <span class="n">logs</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpumcli</span> <span class="n">log</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+ <span class="n">xpumcli</span> <span class="n">log</span> <span class="o">-</span><span class="n">f</span> <span class="p">[</span><span class="n">tarGzipFileName</span><span class="p">]</span>
+
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+
+  <span class="o">-</span><span class="n">f</span><span class="p">,</span><span class="o">--</span><span class="n">file</span>                   <span class="n">The</span> <span class="n">file</span> <span class="p">(</span><span class="n">a</span> <span class="n">tar</span><span class="o">.</span><span class="n">gz</span><span class="p">)</span> <span class="n">to</span> <span class="n">archive</span> <span class="nb">all</span> <span class="n">the</span> <span class="n">debug</span> <span class="n">logs</span>
+</pre></div>
+</div>
+<p>Collect the GPU log files. If the filename is specified with the relative filepath, the log file is generated under the XPU Manager daemon working folder (under “/” by default). You may use the absolute filepath for easy to find.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpumcli</span> <span class="n">log</span> <span class="o">-</span><span class="n">f</span> <span class="mf">1217.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+<span class="n">Done</span>
 </pre></div>
 </div>
 </section>

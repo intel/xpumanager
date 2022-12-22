@@ -63,6 +63,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -180,7 +181,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-metrics-raw-data-t">
-<span id="doxid-structxpum-metrics-raw-data-t"></span><span id="index-0"></span><h1>struct xpum_metrics_raw_data_t<a class="headerlink" href="#struct-xpum-metrics-raw-data-t" title="Permalink to this headline"></a></h1>
+<span id="xpum-doxid-structxpum-metrics-raw-data-t"></span><span id="index-0"></span><h1>struct xpum_metrics_raw_data_t<a class="headerlink" href="#struct-xpum-metrics-raw-data-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -192,12 +193,12 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-metrics-raw-data-t-1a201616aed86da23f6ab50d090c851e64"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
-    <span class="kt">bool</span> <a class="reference internal" href="#doxid-structxpum-metrics-raw-data-t-1aa237ef420e4120e1e1a69d49ffe2723f"><span class="std std-ref">isTileData</span></a><span></span><span class="p">;</span>
-    <span class="kt">int32_t</span> <a class="reference internal" href="#doxid-structxpum-metrics-raw-data-t-1ac66d474397a207173a79f8224f951636"><span class="std std-ref">tileId</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="#doxid-structxpum-metrics-raw-data-t-1a897af359a64f3a01128d1a034bbcb099"><span class="std std-ref">timestamp</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span class="std std-ref">xpum_stats_type_t</span></a><span></span> <a class="reference internal" href="#doxid-structxpum-metrics-raw-data-t-1a0ee588e1633f163deafaf82c39331811"><span class="std std-ref">metricsType</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="#doxid-structxpum-metrics-raw-data-t-1aefc0f8cd600da7ec1bc54ca206dd0fba"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-metrics-raw-data-t-1a201616aed86da23f6ab50d090c851e64"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+    <span class="kt">bool</span> <a class="reference internal" href="#xpum-doxid-structxpum-metrics-raw-data-t-1aa237ef420e4120e1e1a69d49ffe2723f"><span class="std std-ref">isTileData</span></a><span></span><span class="p">;</span>
+    <span class="kt">int32_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-metrics-raw-data-t-1ac66d474397a207173a79f8224f951636"><span class="std std-ref">tileId</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-metrics-raw-data-t-1a897af359a64f3a01128d1a034bbcb099"><span class="std std-ref">timestamp</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span class="std std-ref">xpum_stats_type_t</span></a><span></span> <a class="reference internal" href="#xpum-doxid-structxpum-metrics-raw-data-t-1a0ee588e1633f163deafaf82c39331811"><span class="std std-ref">metricsType</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#xpum-doxid-structxpum-metrics-raw-data-t-1aefc0f8cd600da7ec1bc54ca206dd0fba"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -205,17 +206,17 @@
 <p>Struct to store raw statistics data, not aggregated yet.</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-metrics-raw-data-t-1a201616aed86da23f6ab50d090c851e64"><span id="index-1"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-metrics-raw-data-t-1a201616aed86da23f6ab50d090c851e64"><span id="index-1"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
 <p>Device id.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-metrics-raw-data-t-1aa237ef420e4120e1e1a69d49ffe2723f"><span id="index-2"></span><span></span><span class="kt">bool</span> <span class="n">isTileData</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-metrics-raw-data-t-1aa237ef420e4120e1e1a69d49ffe2723f"><span id="index-2"></span><span></span><span class="kt">bool</span> <span class="n">isTileData</span></pre>
 <p>If this statistics data is tile level.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-metrics-raw-data-t-1ac66d474397a207173a79f8224f951636"><span id="index-3"></span><span></span><span class="kt">int32_t</span> <span class="n">tileId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-metrics-raw-data-t-1ac66d474397a207173a79f8224f951636"><span id="index-3"></span><span></span><span class="kt">int32_t</span> <span class="n">tileId</span></pre>
 <p>The tile id, only valid if isTileData is true.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-metrics-raw-data-t-1a897af359a64f3a01128d1a034bbcb099"><span id="index-4"></span><span></span><span class="kt">uint64_t</span> <span class="n">timestamp</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-metrics-raw-data-t-1a897af359a64f3a01128d1a034bbcb099"><span id="index-4"></span><span></span><span class="kt">uint64_t</span> <span class="n">timestamp</span></pre>
 <p>The timestamp this value is telemetried.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-metrics-raw-data-t-1a0ee588e1633f163deafaf82c39331811"><span id="index-5"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span class="std std-ref">xpum_stats_type_t</span></a><span></span> <span class="n">metricsType</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-metrics-raw-data-t-1a0ee588e1633f163deafaf82c39331811"><span id="index-5"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a8676a4a4a21fd8987b9082db2ee039bd"><span class="std std-ref">xpum_stats_type_t</span></a><span></span> <span class="n">metricsType</span></pre>
 <p>Metric type.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-metrics-raw-data-t-1aefc0f8cd600da7ec1bc54ca206dd0fba"><span id="index-6"></span><span></span><span class="kt">uint64_t</span> <span class="n">value</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-structxpum-metrics-raw-data-t-1aefc0f8cd600da7ec1bc54ca206dd0fba"><span id="index-6"></span><span></span><span class="kt">uint64_t</span> <span class="n">value</span></pre>
 <p>The instant value of the metricsType at the timestamp.</p>
 </section>
 </section>

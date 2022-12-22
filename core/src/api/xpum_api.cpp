@@ -17,6 +17,9 @@
 #include <dlfcn.h>
 #include <math.h>
 #include <regex>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "api_types.h"
 #include "core/core.h"
@@ -33,6 +36,7 @@
 #include "infrastructure/perf_measurement_data.h"
 #include "internal_api.h"
 #include "ext-include/igsc_lib.h"
+#include "log/dbg_log.h"
 
 namespace xpum {
 
@@ -371,6 +375,9 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
                 case XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE:
                     value.copy(info.drmDevice, value.size());
                     info.drmDevice[value.size()] = 0;
+                    break;
+                case XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE:
+                    info.functionType = static_cast<xpum_device_function_type_t>(prop.getValueInt());
                     break;
                 default:
                     break;
@@ -3145,6 +3152,32 @@ xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t r
         return res;
     }
     return Core::instance().getDiagnosticManager()->checkStress(deviceId, resultList, count);
+}
+
+xpum_result_t xpumGenerateDebugLog(const char *fileName) {
+    if (access(fileName, F_OK) == 0) {
+        return XPUM_RESULT_FILE_DUP;
+    }
+    //Check if the dir exists
+    std::string s(fileName);
+    size_t pos = s.rfind('/');
+    if (pos != std::string::npos) {
+        if (pos == s.length() - 1) {
+            return XPUM_RESULT_INVALID_DIR;
+        }
+        s = s.substr(0, pos + 1);
+        struct stat st;
+        if (stat(s.c_str(), &st) != 0) {
+            return XPUM_RESULT_INVALID_DIR;
+        }
+    }
+
+    int ret = genDebugLog(fileName);
+    if (ret == 0) {
+        return XPUM_OK;
+    } else {
+        return XPUM_GENERIC_ERROR;
+    }
 }
 
 } // end namespace xpum

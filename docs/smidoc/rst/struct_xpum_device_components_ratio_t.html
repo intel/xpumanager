@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-device-components-ratio-t">
-<span id="doxid-structxpum-device-components-ratio-t"></span><span id="index-0"></span><h1>struct xpum_device_components_ratio_t<a class="headerlink" href="#struct-xpum-device-components-ratio-t" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-device-components-ratio-t"></span><span id="index-0"></span><h1>struct xpum_device_components_ratio_t<a class="headerlink" href="#struct-xpum-device-components-ratio-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -185,9 +186,9 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_components_ratio_t.html#doxid-structxpum-device-components-ratio-t-1a7addb77838a059895ea791fefc41e7e1"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_component_ratio_t.html#doxid-structxpum-device-component-ratio-t"><span class="std std-ref">xpum_device_component_ratio_t</span></a><span></span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-components-ratio-t-1adaae37cf7c8bc3a5b71fa2ec00c82949"><span></span><span class="n">ratios</span></span><span></span><span class="p">[</span><span class="n">XPUM_MAX_COMPONENT_OCCUPANCY_NUM</span><span class="p">];</span>
-    <span class="kt">int</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_components_ratio_t.html#doxid-structxpum-device-components-ratio-t-1ac198cee45ca8cc504fee0ba7059c4045"><span class="std std-ref">componentNum</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-device-components-ratio-t-1a7addb77838a059895ea791fefc41e7e1"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="struct_xpum_device_component_ratio_t.html#smi-doxid-structxpum-device-component-ratio-t"><span class="std std-ref">xpum_device_component_ratio_t</span></a><span></span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-components-ratio-t-1adaae37cf7c8bc3a5b71fa2ec00c82949"><span></span><span class="n">ratios</span></span><span></span><span class="p">[</span><span class="n">XPUM_MAX_COMPONENT_OCCUPANCY_NUM</span><span class="p">];</span>
+    <span class="kt">int</span> <a class="reference internal" href="#smi-doxid-structxpum-device-components-ratio-t-1ac198cee45ca8cc504fee0ba7059c4045"><span class="std std-ref">componentNum</span></a><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -195,9 +196,9 @@
 <p>Struct to store all component occupancy ratio.</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-components-ratio-t-1a7addb77838a059895ea791fefc41e7e1"><span id="index-1"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-components-ratio-t-1a7addb77838a059895ea791fefc41e7e1"><span id="index-1"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
 <p>Device id.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-components-ratio-t-1ac198cee45ca8cc504fee0ba7059c4045"><span id="index-2"></span><span></span><span class="kt">int</span> <span class="n">componentNum</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-components-ratio-t-1ac198cee45ca8cc504fee0ba7059c4045"><span id="index-2"></span><span></span><span class="kt">int</span> <span class="n">componentNum</span></pre>
 <p>The number of component to monitor.</p>
 </section>
 </section>

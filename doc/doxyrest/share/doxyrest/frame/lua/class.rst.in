@@ -21,7 +21,7 @@ if FORCE_INCLUDE_FILE then
 end -- if
 }
 .. index:: pair: $compoundKind; $(compound.name)
-.. _doxid-$(compound.id):
+.. _$(DOXID_PREFIX)-$(compound.id):
 
 $(getTitle(compoundKind .. " " .. compound.name, 1))
 

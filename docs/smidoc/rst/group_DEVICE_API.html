@@ -91,7 +91,7 @@
            <div itemprop="articleBody">
              
   <section id="device-api">
-<span id="doxid-group-device-api"></span><span id="index-0"></span><h1>Device API<a class="headerlink" href="#device-api" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-group-device-api"></span><span id="index-0"></span><h1>Device API<a class="headerlink" href="#device-api" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -99,21 +99,21 @@
 <p>These APIs are for device. <a class="reference internal" href="../../xpumdoc/rst/group_DEVICE_API.html#details-group-device-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceList<span></span><span class="p">(</span><a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">deviceList</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceList<span></span><span class="p">(</span><a class="reference internal" href="struct_xpum_device_basic_info.html#smi-doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">deviceList</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceProperties<span></span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_properties_t.html#doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span><span class="o">*</span> <span class="n">pXpumProperties</span>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceProperties<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_properties_t.html#smi-doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span><span class="o">*</span> <span class="n">pXpumProperties</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceIdByBDF<span></span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span><span class="p">);</span></pre>
+<a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceIdByBDF<span></span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span><span class="p">);</span></pre>
 </section>
 <section id="detailed-documentation">
 <span id="details-group-device-api"></span><h2>Detailed Documentation<a class="headerlink" href="#detailed-documentation" title="Permalink to this headline"></a></h2>
 <p>These APIs are for device.</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-device-api-1gae1c339201d7bc5d9e5ccf7ef313f86b7"><span id="index-1"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceList</span><span class="p">(</span><a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_basic_info.html#doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">deviceList</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">)</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-device-api-1gae1c339201d7bc5d9e5ccf7ef313f86b7"><span id="index-1"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceList</span><span class="p">(</span><a class="reference internal" href="struct_xpum_device_basic_info.html#smi-doxid-structxpum-device-basic-info"><span class="std std-ref">xpum_device_basic_info</span></a><span></span> <span class="n">deviceList</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">)</span></pre>
 <p>Get all device basic info.</p>
 <p>This method is used to get identifiers corresponding to all the devices on the system. The identifier represents device id corresponding to each device on the system and is immutable during the lifespan of the engine. The list should be queried again if the engine is restarted.</p>
 <p class="rubric">Parameters:</p>
@@ -138,10 +138,10 @@
 </tbody>
 </table>
 <p class="rubric">Returns:</p>
-<p><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-device-api-1ga1c973faf038592614d98dce1ec550862"><span id="index-2"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceProperties</span><span class="p">(</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_properties_t.html#doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span><span class="o">*</span> <span class="n">pXpumProperties</span>
+<p><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-device-api-1ga1c973faf038592614d98dce1ec550862"><span id="index-2"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceProperties</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_device_properties_t.html#smi-doxid-structxpum-device-properties-t"><span class="std std-ref">xpum_device_properties_t</span></a><span></span><span class="o">*</span> <span class="n">pXpumProperties</span>
     <span class="p">)</span></pre>
 <p>Get device properties corresponding to the <em>deviceId</em>.</p>
 <p class="rubric">Parameters:</p>
@@ -160,8 +160,8 @@
 </tbody>
 </table>
 <p class="rubric">Returns:</p>
-<p><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-device-api-1ga52cd385be81ee641e20e66fa5ad83636"><span id="index-3"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceIdByBDF</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span> <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span><span class="p">)</span></pre>
+<p><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-group-device-api-1ga52cd385be81ee641e20e66fa5ad83636"><span id="index-3"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetDeviceIdByBDF</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">bdf</span><span class="p">,</span> <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span><span class="o">*</span> <span class="n">deviceId</span><span class="p">)</span></pre>
 <p>Get device id corresponding to the <em>PCI</em> BDF address.</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
@@ -179,7 +179,7 @@
 </tbody>
 </table>
 <p class="rubric">Returns:</p>
-<p><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
+<p><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a></p>
 </section>
 </section>
 </section>

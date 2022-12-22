@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-device-fabric-throughput-stats-t">
-<span id="doxid-structxpum-device-fabric-throughput-stats-t"></span><span id="index-0"></span><h1>struct xpum_device_fabric_throughput_stats_t<a class="headerlink" href="#struct-xpum-device-fabric-throughput-stats-t" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-device-fabric-throughput-stats-t"></span><span id="index-0"></span><h1>struct xpum_device_fabric_throughput_stats_t<a class="headerlink" href="#struct-xpum-device-fabric-throughput-stats-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -185,17 +186,17 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">uint32_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1afe98cfeab3dde97518092526b4d0f262"><span class="std std-ref">tile_id</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1a8d0006dd2eb046dbbbf591d75a09811d"><span class="std std-ref">remote_device_id</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1acba1d0345065076481222c897a70f2ac"><span class="std std-ref">remote_device_tile_id</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a2b2f2366e1e55a34e41017b4d0ee0f28"><span class="std std-ref">xpum_fabric_throughput_type_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1a1a3e9a26055ceb3c081a865932b95049"><span class="std std-ref">type</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1a4d5a6dc19e052c1797196aae3080e207"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1ace6660907fff59f328c9f52982df3f3c"><span class="std std-ref">accumulated</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1a0f8e2ab7d043b7c62c372d87aaf5fa73"><span class="std std-ref">min</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1a97160b8bb8535b03aa701b5a2220e43e"><span class="std std-ref">avg</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1abb8005511e969a23821d415f49b3ccb2"><span class="std std-ref">max</span></a><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1a5df94b63a67ce5442d3cb77d9a0a1f1a"><span class="std std-ref">scale</span></a><span></span><span class="p">;</span>
-    <a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="../../xpumdoc/rst/struct_xpum_device_fabric_throughput_stats_t.html#doxid-structxpum-device-fabric-throughput-stats-t-1a19647320aeb018fa175cfeef520ce00e"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1afe98cfeab3dde97518092526b4d0f262"><span class="std std-ref">tile_id</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1a8d0006dd2eb046dbbbf591d75a09811d"><span class="std std-ref">remote_device_id</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1acba1d0345065076481222c897a70f2ac"><span class="std std-ref">remote_device_tile_id</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a2b2f2366e1e55a34e41017b4d0ee0f28"><span class="std std-ref">xpum_fabric_throughput_type_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1a1a3e9a26055ceb3c081a865932b95049"><span class="std std-ref">type</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1a4d5a6dc19e052c1797196aae3080e207"><span class="std std-ref">value</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1ace6660907fff59f328c9f52982df3f3c"><span class="std std-ref">accumulated</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1a0f8e2ab7d043b7c62c372d87aaf5fa73"><span class="std std-ref">min</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1a97160b8bb8535b03aa701b5a2220e43e"><span class="std std-ref">avg</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1abb8005511e969a23821d415f49b3ccb2"><span class="std std-ref">max</span></a><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1a5df94b63a67ce5442d3cb77d9a0a1f1a"><span class="std std-ref">scale</span></a><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <a class="reference internal" href="#smi-doxid-structxpum-device-fabric-throughput-stats-t-1a19647320aeb018fa175cfeef520ce00e"><span class="std std-ref">deviceId</span></a><span></span><span class="p">;</span>
 <span class="p">};</span></pre>
 </section>
 <section id="detailed-documentation">
@@ -203,27 +204,27 @@
 <p>Struct to store device fabric throughput statistics data.</p>
 <section id="fields">
 <h3>Fields<a class="headerlink" href="#fields" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1afe98cfeab3dde97518092526b4d0f262"><span id="index-1"></span><span></span><span class="kt">uint32_t</span> <span class="n">tile_id</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1afe98cfeab3dde97518092526b4d0f262"><span id="index-1"></span><span></span><span class="kt">uint32_t</span> <span class="n">tile_id</span></pre>
 <p>tile id</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1a8d0006dd2eb046dbbbf591d75a09811d"><span id="index-2"></span><span></span><span class="kt">uint32_t</span> <span class="n">remote_device_id</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1a8d0006dd2eb046dbbbf591d75a09811d"><span id="index-2"></span><span></span><span class="kt">uint32_t</span> <span class="n">remote_device_id</span></pre>
 <p>remote device id</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1acba1d0345065076481222c897a70f2ac"><span id="index-3"></span><span></span><span class="kt">uint32_t</span> <span class="n">remote_device_tile_id</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1acba1d0345065076481222c897a70f2ac"><span id="index-3"></span><span></span><span class="kt">uint32_t</span> <span class="n">remote_device_tile_id</span></pre>
 <p>remote tile id</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1a1a3e9a26055ceb3c081a865932b95049"><span id="index-4"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a2b2f2366e1e55a34e41017b4d0ee0f28"><span class="std std-ref">xpum_fabric_throughput_type_t</span></a><span></span> <span class="n">type</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1a1a3e9a26055ceb3c081a865932b95049"><span id="index-4"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a2b2f2366e1e55a34e41017b4d0ee0f28"><span class="std std-ref">xpum_fabric_throughput_type_t</span></a><span></span> <span class="n">type</span></pre>
 <p>fabric throughput type</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1a4d5a6dc19e052c1797196aae3080e207"><span id="index-5"></span><span></span><span class="kt">uint64_t</span> <span class="n">value</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1a4d5a6dc19e052c1797196aae3080e207"><span id="index-5"></span><span></span><span class="kt">uint64_t</span> <span class="n">value</span></pre>
 <p>The value.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1ace6660907fff59f328c9f52982df3f3c"><span id="index-6"></span><span></span><span class="kt">uint64_t</span> <span class="n">accumulated</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1ace6660907fff59f328c9f52982df3f3c"><span id="index-6"></span><span></span><span class="kt">uint64_t</span> <span class="n">accumulated</span></pre>
 <p>The accumulated value for counter type.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1a0f8e2ab7d043b7c62c372d87aaf5fa73"><span id="index-7"></span><span></span><span class="kt">uint64_t</span> <span class="n">min</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1a0f8e2ab7d043b7c62c372d87aaf5fa73"><span id="index-7"></span><span></span><span class="kt">uint64_t</span> <span class="n">min</span></pre>
 <p>The min value since last call.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1a97160b8bb8535b03aa701b5a2220e43e"><span id="index-8"></span><span></span><span class="kt">uint64_t</span> <span class="n">avg</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1a97160b8bb8535b03aa701b5a2220e43e"><span id="index-8"></span><span></span><span class="kt">uint64_t</span> <span class="n">avg</span></pre>
 <p>The average value since last call.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1abb8005511e969a23821d415f49b3ccb2"><span id="index-9"></span><span></span><span class="kt">uint64_t</span> <span class="n">max</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1abb8005511e969a23821d415f49b3ccb2"><span id="index-9"></span><span></span><span class="kt">uint64_t</span> <span class="n">max</span></pre>
 <p>The max value since last call.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1a5df94b63a67ce5442d3cb77d9a0a1f1a"><span id="index-10"></span><span></span><span class="kt">uint32_t</span> <span class="n">scale</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1a5df94b63a67ce5442d3cb77d9a0a1f1a"><span id="index-10"></span><span></span><span class="kt">uint32_t</span> <span class="n">scale</span></pre>
 <p>The magnification of the value, accumulated, min, avg, and max fields.</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-structxpum-device-fabric-throughput-stats-t-1a19647320aeb018fa175cfeef520ce00e"><span id="index-11"></span><a class="reference internal" href="../../xpumdoc/rst/global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="smi-doxid-structxpum-device-fabric-throughput-stats-t-1a19647320aeb018fa175cfeef520ce00e"><span id="index-11"></span><a class="reference internal" href="global.html#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span></pre>
 <p>Device id.</p>
 </section>
 </section>

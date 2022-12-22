@@ -17,7 +17,7 @@ for i = 1, #itemArray do
 	local item = itemArray[i]
 	if not isUnnamedItem(item) then
 }
-	'$(getItemQualifiedName(item))' : 'doxid-$(item.id)',
+	'$(getItemQualifiedName(item))' : ''.. DOXID_PREFIX ..'-$(item.id)',
 %{
 	end
 

@@ -54,6 +54,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#rpm-uninstall">RPM uninstall</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#how-to-enable-or-disable-some-daemon-monitor-metrics">How to enable or disable some daemon monitor metrics</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#gpu-memory-ecc-on-off">GPU memory ECC on/off</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#how-to-install-the-latest-version-of-libcurl-on-centos-7">How to install the latest version of libcurl on CentOS 7</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="REST_README.html">XPUM REST API Setup Guide</a></li>
@@ -98,10 +99,10 @@
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p>Intel GPU driver (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
-<li><p>oneAPI Level Zero</p></li>
-<li><p>Intel(R) Graphics System Controller Firmware Update Library</p></li>
-<li><p>Intel(R) Metrics Library for MDAPI</p></li>
-<li><p>Intel(R) Metrics Discovery Application Programming Interface</p></li>
+<li><p>Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in repositories)</p></li>
+<li><p>Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in repositories)</p></li>
+<li><p>Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories)</p></li>
+<li><p>Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)</p></li>
 </ul>
 </section>
 <section id="deb-install">
@@ -236,7 +237,30 @@ ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-3
 </section>
 <section id="gpu-memory-ecc-on-off">
 <h2>GPU memory ECC on/off<a class="headerlink" href="#gpu-memory-ecc-on-off" title="Permalink to this headline"></a></h2>
-<p>XPU Manager provides the GPU memory ECC on/off feature based on <a class="reference external" href="https://github.com/intel/igsc">IGSC</a>. GPU memory ECC on/off starts to work since IGSC 0.8.3. If you want to use this feature, please make sure that you install IGSC 0.8.3 or newer version.</p>
+<p>XPU Manager provides the GPU memory ECC on/off feature based on <a class="reference external" href="https://github.com/intel/igsc">IGSC</a>. GPU memory ECC on/off starts to work since IGSC 0.8.4. If you want to use this feature, please make sure that you install IGSC 0.8.4 or newer version.</p>
+</section>
+<section id="how-to-install-the-latest-version-of-libcurl-on-centos-7">
+<h2>How to install the latest version of libcurl on CentOS 7<a class="headerlink" href="#how-to-install-the-latest-version-of-libcurl-on-centos-7" title="Permalink to this headline"></a></h2>
+<p>CentOS 7 still has the old version of libcurl. If you need update the AMC firmware through Redfish host interface, please follow the steps below to build and install libcurl.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">yum</span> <span class="n">update</span> <span class="o">-</span><span class="n">y</span>
+
+<span class="n">yum</span> <span class="n">install</span> <span class="n">wget</span> <span class="n">gcc</span> <span class="n">openssl</span><span class="o">-</span><span class="n">devel</span> <span class="n">make</span> <span class="o">-</span><span class="n">y</span>
+
+<span class="n">wget</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">curl</span><span class="o">.</span><span class="n">se</span><span class="o">/</span><span class="n">download</span><span class="o">/</span><span class="n">curl</span><span class="o">-</span><span class="mf">7.56.1</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+
+<span class="n">tar</span> <span class="n">xzf</span> <span class="n">curl</span><span class="o">-</span><span class="mf">7.56.1</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+
+<span class="n">cd</span> <span class="n">curl</span><span class="o">-</span><span class="mf">7.56.1</span>
+
+<span class="o">./</span><span class="n">configure</span> <span class="o">--</span><span class="k">with</span><span class="o">-</span><span class="n">openssl</span> <span class="o">--</span><span class="n">prefix</span><span class="o">=/</span><span class="n">usr</span>
+
+<span class="n">make</span> 
+
+<span class="n">sudo</span> <span class="n">make</span> <span class="n">install</span>
+
+<span class="n">curl</span> <span class="o">--</span><span class="n">version</span>
+</pre></div>
+</div>
 </section>
 </section>
 

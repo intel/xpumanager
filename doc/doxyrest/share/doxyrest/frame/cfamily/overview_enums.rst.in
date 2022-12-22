@@ -60,7 +60,7 @@ for i = 1, #compound.enumArray do
 			isLastUnnamed = false
 		end
 }
-	$enumKind :ref:`$(getItemName(item))<doxid-$(item.id)>`;
+	$enumKind :ref:`$(getItemName(item))<$(DOXID_PREFIX)-$(item.id)>`;
 %{
 	end -- if
 end -- for

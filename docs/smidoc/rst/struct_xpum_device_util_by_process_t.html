@@ -57,6 +57,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="global.html">Global Namespace</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_agent_config_enum.html">enum xpum_agent_config_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_config_type_enum.html">enum xpum_device_config_type_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_function_type_enum.html">enum xpum_device_function_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_mode_enum.html">enum xpum_device_mode_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_property_name_enum.html">enum xpum_device_property_name_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_device_type_enum.html">enum xpum_device_type_enum</a></li>
@@ -173,7 +174,7 @@
            <div itemprop="articleBody">
              
   <section id="struct-xpum-device-util-by-process-t">
-<span id="doxid-structxpum-device-util-by-process-t"></span><span id="index-0"></span><h1>struct xpum_device_util_by_process_t<a class="headerlink" href="#struct-xpum-device-util-by-process-t" title="Permalink to this headline"></a></h1>
+<span id="smi-doxid-structxpum-device-util-by-process-t"></span><span id="index-0"></span><h1>struct xpum_device_util_by_process_t<a class="headerlink" href="#struct-xpum-device-util-by-process-t" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="cp">#include</span> <span class="cpf">&lt;xpum_structs.h&gt;</span><span class="cp"></span>
@@ -182,16 +183,16 @@
 <span class="p">{</span>
     <span class="c1">// fields</span>
 
-    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1a1d8e71f9f55ca0f6f2aec98c3de0eafb"><span></span><span class="n">deviceId</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1a6565c6ff5c454f43ea5d100ab4eae250"><span></span><span class="n">processId</span></span><span></span><span class="p">;</span>
-    <span class="kt">double</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1a6d2f81b74a9c7c1e53624494b210d41e"><span></span><span class="n">renderingEngineUtil</span></span><span></span><span class="p">;</span>
-    <span class="kt">double</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1acd44b801827e966379a5c412cec959a9"><span></span><span class="n">computeEngineUtil</span></span><span></span><span class="p">;</span>
-    <span class="kt">double</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1a25c19ba8b77fbb6f8d94142749200c1d"><span></span><span class="n">copyEngineUtil</span></span><span></span><span class="p">;</span>
-    <span class="kt">double</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1a2beec83fb6bfb8d6c05532dda88b02e7"><span></span><span class="n">mediaEngineUtil</span></span><span></span><span class="p">;</span>
-    <span class="kt">double</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1a988517b2df88662aa0f78ca2b748e190"><span></span><span class="n">mediaEnhancementUtil</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1ad01cc2c4d030b9d45ff39b44fca57ee3"><span></span><span class="n">memSize</span></span><span></span><span class="p">;</span>
-    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1a4ce031ff6bedbe5175ed92bda21ec113"><span></span><span class="n">sharedMemSize</span></span><span></span><span class="p">;</span>
-    <span class="kt">char</span> <span class="doxyrest-code-target target" id="doxid-structxpum-device-util-by-process-t-1a34dc73e74e84d4dda105b7b7f789298d"><span></span><span class="n">processName</span></span><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
+    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1a1d8e71f9f55ca0f6f2aec98c3de0eafb"><span></span><span class="n">deviceId</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1a6565c6ff5c454f43ea5d100ab4eae250"><span></span><span class="n">processId</span></span><span></span><span class="p">;</span>
+    <span class="kt">double</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1a6d2f81b74a9c7c1e53624494b210d41e"><span></span><span class="n">renderingEngineUtil</span></span><span></span><span class="p">;</span>
+    <span class="kt">double</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1acd44b801827e966379a5c412cec959a9"><span></span><span class="n">computeEngineUtil</span></span><span></span><span class="p">;</span>
+    <span class="kt">double</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1a25c19ba8b77fbb6f8d94142749200c1d"><span></span><span class="n">copyEngineUtil</span></span><span></span><span class="p">;</span>
+    <span class="kt">double</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1a2beec83fb6bfb8d6c05532dda88b02e7"><span></span><span class="n">mediaEngineUtil</span></span><span></span><span class="p">;</span>
+    <span class="kt">double</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1a988517b2df88662aa0f78ca2b748e190"><span></span><span class="n">mediaEnhancementUtil</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1ad01cc2c4d030b9d45ff39b44fca57ee3"><span></span><span class="n">memSize</span></span><span></span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1a4ce031ff6bedbe5175ed92bda21ec113"><span></span><span class="n">sharedMemSize</span></span><span></span><span class="p">;</span>
+    <span class="kt">char</span> <span class="doxyrest-code-target target" id="smi-doxid-structxpum-device-util-by-process-t-1a34dc73e74e84d4dda105b7b7f789298d"><span></span><span class="n">processName</span></span><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
 <span class="p">};</span></pre>
 </section>
 

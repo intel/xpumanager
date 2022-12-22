@@ -98,7 +98,7 @@
            <div itemprop="articleBody">
              
   <section id="policy-management">
-<span id="doxid-group-policy-api"></span><span id="index-0"></span><h1>Policy management<a class="headerlink" href="#policy-management" title="Permalink to this headline"></a></h1>
+<span id="xpum-doxid-group-policy-api"></span><span id="index-0"></span><h1>Policy management<a class="headerlink" href="#policy-management" title="Permalink to this headline"></a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <section id="overview">
@@ -106,22 +106,22 @@
 <p>These APIs are for policy management. <a class="reference internal" href="#details-group-policy-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetPolicy<span></span><span class="p">(</span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <a class="reference internal" href="struct_xpum_policy_t.html#doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">policy</span><span class="p">);</span>
+<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetPolicy<span></span><span class="p">(</span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <a class="reference internal" href="struct_xpum_policy_t.html#xpum-doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">policy</span><span class="p">);</span>
 
-<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetPolicyByGroup<span></span><span class="p">(</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_policy_t.html#doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">policy</span>
+<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetPolicyByGroup<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_policy_t.html#xpum-doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">policy</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPolicy<span></span><span class="p">(</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_policy_t.html#doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPolicy<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_policy_t.html#xpum-doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPolicyByGroup<span></span><span class="p">(</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_policy_t.html#doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetPolicyByGroup<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_policy_t.html#xpum-doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">);</span></pre>
 </section>
@@ -130,7 +130,7 @@
 <p>These APIs are for policy management.</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this headline"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-policy-api-1ga6d2e198720cc25b2d76652f31e8464e3"><span id="index-1"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetPolicy</span><span class="p">(</span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <a class="reference internal" href="struct_xpum_policy_t.html#doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">policy</span><span class="p">)</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-policy-api-1ga6d2e198720cc25b2d76652f31e8464e3"><span id="index-1"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetPolicy</span><span class="p">(</span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <a class="reference internal" href="struct_xpum_policy_t.html#xpum-doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">policy</span><span class="p">)</span></pre>
 <p>Set a policy on a device. One device only have one policy for one policy type. So if set a policy with same policy type on a devcie, the old policy will be overwritten.</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
@@ -149,9 +149,9 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-policy-api-1gaf469d0396516c44e834af6c2c7e60c5a"><span id="index-2"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetPolicyByGroup</span><span class="p">(</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_policy_t.html#doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">policy</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-policy-api-1gaf469d0396516c44e834af6c2c7e60c5a"><span id="index-2"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumSetPolicyByGroup</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_policy_t.html#xpum-doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">policy</span>
     <span class="p">)</span></pre>
 <p>Set a policy on device in specified group. One device only have one policy for one policy type. So if set a policy with same policy type on a devcie, the old policy will be overwritten.</p>
 <p class="rubric">Parameters:</p>
@@ -171,9 +171,9 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t Not Support</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-policy-api-1ga201c7cef45d90bc0d8f9fa61703dafcc"><span id="index-3"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetPolicy</span><span class="p">(</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_policy_t.html#doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-policy-api-1ga201c7cef45d90bc0d8f9fa61703dafcc"><span id="index-3"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetPolicy</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_policy_t.html#xpum-doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get policy list by device.</p>
@@ -197,11 +197,11 @@
 </table>
 <p class="rubric">Returns:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 </ul>
-<pre class="highlight doxyrest-title-code-block literal-block" id="doxid-group-policy-api-1gaa4f9f5e2405f958fed9fd1b805a03bf4"><span id="index-4"></span><a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetPolicyByGroup</span><span class="p">(</span>
-    <a class="reference internal" href="global.html#doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="struct_xpum_policy_t.html#doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-policy-api-1gaa4f9f5e2405f958fed9fd1b805a03bf4"><span id="index-4"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumGetPolicyByGroup</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_policy_t.html#xpum-doxid-structxpum-policy-t"><span class="std std-ref">xpum_policy_t</span></a><span></span> <span class="n">resultList</span><span class="p">[],</span>
     <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
     <span class="p">)</span></pre>
 <p>Get policy list by group.</p>
@@ -225,7 +225,7 @@
 </table>
 <p class="rubric">Returns:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="enum_xpum_result_enum.html#doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if query successfully</p></li>
 </ul>
 </section>
 </section>

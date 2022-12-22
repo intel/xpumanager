@@ -90,6 +90,8 @@ int errorNumTranslate(int coreErrNo) {
             return XPUM_CLI_ERROR_UNSUPPORTED_SESSIONID;
         case XPUM_RESULT_MEMORY_ECC_LIB_NOT_SUPPORT:
             return XPUM_CLI_ERROR_MEMORY_ECC_LIB_NOT_SUPPORT;
+        case XPUM_RESULT_FILE_DUP:
+            return XPUM_CLI_ERROR_BAD_ARGUMENT;
         default:
             return XPUM_CLI_ERROR_GENERIC_ERROR;
     }

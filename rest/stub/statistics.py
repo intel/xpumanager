@@ -38,7 +38,7 @@ def getStatistics(device_id, session_id=0, get_accumulated=False):
             try:
                 metricsType = XpumStatsType(stats_data.metricsType.value).name
             except:
-                metricsType = stats_data.metricsType.value
+                metricsType = str(stats_data.metricsType.value)
             tmp["metrics_type"] = metricsType
             scale = stats_data.scale
             if scale == 1:
@@ -257,6 +257,84 @@ def getFabricStatistics(device_id, session_id=0, get_accumulated=False):
 
     return 0, "OK", data
 
+@exit_on_disconnect
+def getXelinkPortHealth(deviceId, session_id=0):
+
+    data = dict()
+    data['device_id'] = deviceId
+
+    resp = stub.getHealth(
+        core_pb2.HealthDataRequest(deviceId=deviceId, type=4))
+    if len(resp.errorMsg) != 0:
+        return resp.errorNo, resp.errorMsg, None
+
+    # healthy(0), degraded(1), failed(2), disabled(3)
+    if resp.statusType == 1:
+        data['value'] = 0
+    elif resp.statusType == 3:
+        data['value'] = 2
+    elif resp.statusType == 2 and isinstance(resp.description, str) and 'are configured down' in resp.description:
+        data['value'] = 3
+    elif resp.statusType == 2 and isinstance(resp.description, str) and 'speed degradation' in resp.description:
+        data['value'] = 1
+    else:
+        data['value'] = -1
+
+    data["avg"] = data['value']
+    data['description'] = resp.description
+
+    return 0, "OK", data
+
+@exit_on_disconnect
+def getTopologyLink():
+
+    resp = stub.getXelinkTopology(empty_pb2.Empty())
+    if len(resp.errorMsg) != 0:
+        return resp.errorNo, resp.errorMsg, None
+
+    data = dict()
+    xelink_stats = []
+    for xelink in resp.topoInfo:
+        t = dict()
+        t["local_device_id"] = xelink.localDevice.deviceId
+        t["local_subdevice_id"] = xelink.localDevice.subdeviceId
+        t["local_numa_index"] = xelink.localDevice.numaIndex
+        t["local_cpu_affinity"] = xelink.localDevice.cpuAffinity
+        t["remote_device_id"] = xelink.remoteDevice.deviceId
+        t["remote_subdevice_id"] = xelink.remoteDevice.subdeviceId
+
+        if xelink.localDevice.onSubdevice:
+            t["local_on_subdevice"] = 'true'
+        else:
+            t["local_on_subdevice"] = 'false'
+
+        t["lan_count"] = 0
+        if(isinstance(xelink.linkType, str)):
+            if xelink.linkType == 'S':
+                t["value"] = 0
+            elif xelink.linkType == 'XL*':
+                t["value"] = 2
+            elif xelink.linkType == 'SYS':
+                t["value"] = 3
+            elif xelink.linkType == 'NODE':
+                t["value"] = 4
+            elif xelink.linkType == 'MDF':
+                t["value"] = 5
+            elif xelink.linkType.startswith('XL'):
+                t["value"] = 1
+                for port in xelink.linkPortList:
+                    t["lan_count"] += port
+            else:
+                t["value"] = -1
+        else:
+            t["value"] = -1
+
+        t["avg"] = t["value"]
+        xelink_stats.append(t)
+
+    data["topology_link"] = xelink_stats
+    return 0, "OK", data
+
 
 def getStatisticsNotForPrometheus(device_id, session_id=0, get_accumulated=False):
     resp = stub.getStatisticsNotForPrometheus(
@@ -284,7 +362,7 @@ def getStatisticsNotForPrometheus(device_id, session_id=0, get_accumulated=False
             try:
                 metricsType = XpumStatsType(stats_data.metricsType.value).name
             except:
-                metricsType = stats_data.metricsType.value
+                metricsType = str(stats_data.metricsType.value)
             tmp["metrics_type"] = metricsType
             scale = stats_data.scale
             if scale == 1:
