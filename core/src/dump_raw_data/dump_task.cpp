@@ -89,7 +89,7 @@ void DumpRawDataTask::buildColumns() {
 
     // timestamp column
     columnList.push_back({"Timestamp",
-                          []() { return Utility::getCurrentUTCTimeString(); }});
+                          []() { return Utility::getCurrentLocalTimeString(); }});
 
     // device id column
     auto deviceId = p_this->deviceId;

@@ -28,14 +28,14 @@ std::string Utility::getCurrentTimeString() {
     return getTimeString(getCurrentMillisecond());
 }
 
-std::string Utility::getCurrentUTCTimeString() {
-    return getUTCTimeString(getCurrentMillisecond());
+std::string Utility::getCurrentLocalTimeString() {
+    return getLocalTimeString(getCurrentMillisecond());
 }
 
-std::string Utility::getUTCTimeString(uint64_t t) {
+std::string Utility::getLocalTimeString(uint64_t t) {
     time_t seconds = (long)t / 1000;
     int milli_seconds = t % 1000;
-    tm* tm_p = gmtime(&seconds);
+    tm* tm_p = localtime(&seconds);
     if (!tm_p) return "";
     char buf[50];
     strftime(buf, sizeof(buf), "%T", tm_p);
