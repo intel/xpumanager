@@ -26,7 +26,7 @@ static std::string getFirmwareName(unsigned int firmwareType) {
     }
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password, bool force) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -37,6 +37,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runFirmwareFlash(int deviceId, uns
     request.set_path(filePath);
     request.set_username(username);
     request.set_password(password);
+    request.set_force(force);
 
     std::string fwName = getFirmwareName(type);
     XPUM_LOG_AUDIT("Try to update %s FW on device %d with image %s", fwName.c_str(), deviceId, filePath.c_str());
@@ -146,6 +147,9 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getFirmwareFlashResult(int deviceI
             break;
         case XPUM_DEVICE_FIRMWARE_FLASH_ERROR:
             (*json)["result"] = "FAILED";
+            if (!res.errormsg().empty()) {
+                (*json)["error"] = res.errormsg();
+            }
             break;
         case XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED:
             (*json)["result"] = "UNSUPPORTED";

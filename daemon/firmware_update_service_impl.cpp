@@ -25,13 +25,15 @@ static std::string getFlashFwErrMsg() {
     xpum_firmware_flash_job job;
     job.type = (xpum_firmware_type_enum)request->type().value();
     job.filePath = request->path().c_str();
-    xpum_result_t result = xpumRunFirmwareFlash(request->id().id(),
+    xpum_result_t result = xpumRunFirmwareFlashEx(request->id().id(),
                              &job,
                              request->username().c_str(),
-                             request->password().c_str());
-    if(job.type==XPUM_DEVICE_FIRMWARE_AMC){
-        response->set_errormsg(getFlashFwErrMsg());
-    } 
+                             request->password().c_str(),
+                             request->force());
+    auto errMsg = getFlashFwErrMsg();
+    if (errMsg.length()) {
+        response->set_errormsg(errMsg);
+    }
     response->set_errorno(result);
     return grpc::Status::OK;
 }
@@ -52,12 +54,12 @@ static std::string getFlashFwErrMsg() {
         response->set_version("");
         response->set_percentage(result.percentage);
         auto errMsg = getFlashFwErrMsg();
-        if (errMsg.length() && request->type().value() == XPUM_DEVICE_FIRMWARE_AMC) {
+        if (errMsg.length()) {
             response->set_errormsg(errMsg);
         }
     } else {
         auto errMsg = getFlashFwErrMsg();
-        if (errMsg.length() && request->type().value() == XPUM_DEVICE_FIRMWARE_AMC) {
+        if (errMsg.length()) {
             response->set_errormsg(errMsg);
         } else {
             switch (res) {

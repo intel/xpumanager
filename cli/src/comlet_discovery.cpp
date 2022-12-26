@@ -71,6 +71,7 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "Kernel Version", "value": "kernel_version" },
                 { "label": "GFX Firmware Name", "value": "gfx_firmware_name" },
                 { "label": "GFX Firmware Version", "value": "gfx_firmware_version", "dumpId": 9 },
+                { "label": "GFX Firmware Status", "value": "gfx_firmware_status"},
                 { "label": "GFX Data Firmware Name", "value": "gfx_data_firmware_name" },
                 { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },
                 { "label": "GFX PSC Firmware Name", "value": "gfx_pscbin_firmware_name" },

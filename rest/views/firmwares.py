@@ -34,6 +34,9 @@ class FirmwareFlashJobOnSingleDeviceSchema(Schema):
         validate=validate.OneOf(["GFX","GFX_DATA", "GFX_PSCBIN"]),
         metadata={"description": "Firmware name, options are: GFX, GFX_DATA, GFX_PSCBIN"}
     )
+    force = fields.Bool(
+        metadata={"description": "Force GFX firmware update. This parameter only works for GFX firmware."}
+    )
 
 
 class RunFirmwareFlashJobResultSchema(Schema):
@@ -121,7 +124,7 @@ def run_firmware_flash_single(deviceId):
     return runFirmwareFlash(deviceId)
 
 
-def runFirmwareFlash(deviceId, username="", password=""):
+def runFirmwareFlash(deviceId, username="", password="", force=False):
     req = request.get_json()
     # validate file path
     filePath = req.get('file')
@@ -143,7 +146,8 @@ def runFirmwareFlash(deviceId, username="", password=""):
     if fwType == 'AMC' and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'}), 400
 
-    code, msg, data = stub.runFirmwareFlash(deviceId, fwType, filePath, username, password)
+    code, msg, data = stub.runFirmwareFlash(
+        deviceId, fwType, filePath, username, password, force)
     if code == stub.XpumResult['XPUM_UPDATE_FIRMWARE_IGSC_NOT_FOUND'].value:
         return jsonify({'error': msg}), 500
     elif code != 0:

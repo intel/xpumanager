@@ -15,6 +15,7 @@
 #include "infrastructure/logger.h"
 #include "system_cmd.h"
 #include "firmware_manager.h"
+#include "igsc_err_msg.h"
 
 namespace xpum {
 
@@ -72,8 +73,9 @@ static void progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
     p->percent.store(percent);
 }
 
-xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
+xpum_result_t FwDataMgmt::flashFwData(FlashFwDataParam &param) {
     std::lock_guard<std::mutex> lck(mtx);
+    std::string filePath = param.filePath;
     if (taskFwData.valid()) {
         // task already running
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
@@ -105,7 +107,8 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
 
             ret = igsc_device_init_by_device(&handle, devicePath.c_str());
             if (ret != IGSC_SUCCESS) {
-                XPUM_LOG_ERROR("Cannot initialize device: {}", devicePath);
+                flashFwErrMsg = "Cannot initialize device: " + devicePath + ", error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}, error message: {}", devicePath, ret, transIgscErrCodeToMsg(ret));
                 igsc_device_close(&handle);
                 pDevice->unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
@@ -113,6 +116,7 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
 
             ret = igsc_image_fwdata_init(&oimg, (const uint8_t*)buffer.data(), buffer.size());
             if (ret == IGSC_ERROR_BAD_IMAGE) {
+                flashFwErrMsg = "Invalid image format: " + filePath;
                 XPUM_LOG_ERROR("Invalid image format: {}", filePath);
                 igsc_image_fwdata_release(oimg);
                 igsc_device_close(&handle);
@@ -123,7 +127,8 @@ xpum_result_t FwDataMgmt::flashFwData(std::string filePath) {
             ret = igsc_device_fwdata_image_update(&handle, oimg, progress_func, this);
 
             if (ret) {
-                XPUM_LOG_ERROR("GSC FW-DATA update failed on device {}", devicePath);
+                flashFwErrMsg = "GFX_DATA update failed, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+                XPUM_LOG_ERROR("GFX_DATA update failed on device {}, error code: {}, error message: {}", devicePath, ret, transIgscErrCodeToMsg(ret));
                 igsc_image_fwdata_release(oimg);
                 igsc_device_close(&handle);
                 pDevice->unlock();
@@ -199,8 +204,9 @@ void FwDataMgmt::getFwDataVersion() {
     pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION, version));
 }
 
-xpum_firmware_flash_result_t FwDataMgmt::getFlashFwDataResult(){
+xpum_firmware_flash_result_t FwDataMgmt::getFlashFwDataResult(GetFlashFwDataResultParam &param){
     std::future<xpum_firmware_flash_result_t>* task=&taskFwData;
+    param.errMsg = flashFwErrMsg;
 
     if (task->valid()) {
         auto status = task->wait_for(0ms);

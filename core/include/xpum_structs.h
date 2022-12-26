@@ -239,6 +239,7 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_NAME,       ///< The GFX_PSCBIN firmware name of device
     XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_VERSION,    ///< The GFX_PSCBIN firmware version of device
     XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE,               ///< The memory ECC state of device
+    XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS,            ///< The GFX firmware status
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 

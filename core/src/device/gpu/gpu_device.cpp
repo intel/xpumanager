@@ -18,6 +18,7 @@
 #include "infrastructure/logger.h"
 #include "stdio.h"
 #include "unistd.h"
+#include "firmware/igsc_err_msg.h"
 
 namespace xpum {
 using namespace std::chrono_literals;
@@ -196,17 +197,22 @@ static std::string print_fw_version(const struct igsc_fw_version* fw_version) {
 }
 
 
-xpum_result_t GPUDevice::runFirmwareFlash(std::vector<char> img) noexcept {
+xpum_result_t GPUDevice::runFirmwareFlash(RunGSCFirmwareFlashParam &param) noexcept {
+    auto& img = param.img;
+    auto& force = param.force;
     std::lock_guard<std::mutex> lck(mtx);
     if (taskGSC.valid()) {
         // task already running
+        // param.errMsg = "Task already running";
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     } else {
         gscFwFlashPercent.store(0);
-        taskGSC = std::async(std::launch::async, [this, img] {
+        flashFwErrMsg.clear();
+        taskGSC = std::async(std::launch::async, [this, img, force] {
             std::string meiPath = getMeiDevicePath();
 
             if(meiPath.empty()){
+                flashFwErrMsg = "Can not find MEI device path";
                 unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
@@ -221,13 +227,15 @@ xpum_result_t GPUDevice::runFirmwareFlash(std::vector<char> img) noexcept {
             int ret;
             // uint8_t cmp;
             struct igsc_fw_update_flags flags = {0};
+            flags.force_update = force;
 
             memset(&handle, 0, sizeof(handle));
 
             ret = igsc_device_init_by_device(&handle, meiPath.c_str());
             if (ret)
             {
-                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}", meiPath, ret);
+                flashFwErrMsg = "Cannot initialize device: " + meiPath + ", error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}, error message: {}", meiPath, ret, transIgscErrCodeToMsg(ret));
                 (void)igsc_device_close(&handle);
                 unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
@@ -238,7 +246,8 @@ xpum_result_t GPUDevice::runFirmwareFlash(std::vector<char> img) noexcept {
                                            progress_func, this, flags);
 
             if (ret){
-                XPUM_LOG_ERROR("Update process failed, error code: {}", ret);
+                flashFwErrMsg = "Update process failed, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+                XPUM_LOG_ERROR("Update process failed, error code: {}, error message: {}", ret, transIgscErrCodeToMsg(ret));
                 (void)igsc_device_close(&handle);
                 unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
@@ -276,14 +285,10 @@ void GPUDevice::dumpFirmwareFlashLog() noexcept {
     logFile.close();
 }
 
-xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(xpum_firmware_type_t type) noexcept {
+xpum_firmware_flash_result_t GPUDevice::getFirmwareFlashResult(GetGSCFirmwareFlashResultParam &param) noexcept {
     std::future<xpum_firmware_flash_result_t>* task;
-    if (type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX) {
-        task = &taskGSC;
-    }
-    else {
-        return XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
-    }
+    task = &taskGSC;
+    param.errMsg = flashFwErrMsg;
 
     if (task->valid()) {
         auto status = task->wait_for(0ms);

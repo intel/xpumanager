@@ -345,6 +345,7 @@ message XpumFirmwareFlashJob {
     string path = 3;
     string username = 4;
     string password = 5;
+    bool force = 6;
 }
 
 message XpumFirmwareFlashJobResponse {

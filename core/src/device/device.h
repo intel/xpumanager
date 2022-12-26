@@ -29,6 +29,9 @@ namespace xpum {
 class FwDataMgmt;
 class PscMgmt;
 
+struct RunGSCFirmwareFlashParam;
+struct GetGSCFirmwareFlashResultParam;
+
 /*
   Device class defines various interfaces for communication with devices.
 */
@@ -130,8 +133,8 @@ class Device {
 
     zes_device_handle_t getDeviceHandle();
 
-    virtual xpum_result_t runFirmwareFlash(std::vector<char> img) noexcept; //GSC
-    virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept;
+    virtual xpum_result_t runFirmwareFlash(RunGSCFirmwareFlashParam &param) noexcept; // GSC
+    virtual xpum_firmware_flash_result_t getFirmwareFlashResult(GetGSCFirmwareFlashResultParam &param) noexcept;
 
     ze_device_handle_t getDeviceZeHandle();
 

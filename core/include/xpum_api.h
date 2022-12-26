@@ -689,6 +689,19 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
 xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password);
 
 /**
+ * @brief Run firmware flashing by device
+ * @details This function will return immediately. To query the firmware flash job status, call \ref xpumGetFirmwareFlashResult
+ * 
+ * @param deviceId      IN: Device id
+ * @param job           IN: The job description for firmware flash
+ * @param username      IN: Username used for authentication
+ * @param password      IN: Password used for authentication
+ * @param force         IN: Force to flash firmware or not
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password, bool force);
+
+/**
  * @brief Get the status of firmware flash job
  * @details This function will return immediately. Caller may have to call this function multiple times until \a result indicates
  * firmware flash job is finished.

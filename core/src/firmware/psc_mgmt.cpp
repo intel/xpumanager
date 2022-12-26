@@ -16,6 +16,7 @@
 #include "firmware_manager.h"
 #include "infrastructure/logger.h"
 #include "load_igsc.h"
+#include "igsc_err_msg.h"
 
 namespace xpum {
 
@@ -41,7 +42,7 @@ static void progress_percentage_func(uint32_t done, uint32_t total, void* ctx) {
     p->percent.store(percent);
 }
 
-xpum_result_t PscMgmt::flashPscFw(std::string filePath) {
+xpum_result_t PscMgmt::flashPscFw(FlashPscFwParam &param) {
     auto deviceModel = pDevice->getDeviceModel();
     if (deviceModel != XPUM_DEVICE_MODEL_PVC) {
         pDevice->unlock();
@@ -52,6 +53,7 @@ xpum_result_t PscMgmt::flashPscFw(std::string filePath) {
         return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC;
     }
     std::lock_guard<std::mutex> lck(mtx);
+    std::string filePath = param.filePath;
     if (task.valid()) {
         // task already running
         pDevice->unlock();
@@ -72,7 +74,8 @@ xpum_result_t PscMgmt::flashPscFw(std::string filePath) {
 
             ret = igsc_device_init_by_device(&handle, devicePath.c_str());
             if (ret != IGSC_SUCCESS) {
-                XPUM_LOG_ERROR("Cannot initialize device: {}", devicePath);
+                flashFwErrMsg = "Cannot initialize device: " + devicePath + ", error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+                XPUM_LOG_ERROR("Cannot initialize device: {}, error code: {}, error message: {}", devicePath, ret, transIgscErrCodeToMsg(ret));
                 igsc_device_close(&handle);
                 pDevice->unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
@@ -82,7 +85,8 @@ xpum_result_t PscMgmt::flashPscFw(std::string filePath) {
                                       progress_func, this);
 
             if (ret) {
-                XPUM_LOG_ERROR("GSC_PSCBIN update failed on device {}", devicePath);
+                flashFwErrMsg = "GSC_PSCBIN update failed, error code: " + std::to_string(ret) + " error message: " + transIgscErrCodeToMsg(ret);
+                XPUM_LOG_ERROR("GSC_PSCBIN update failed on device {}, error code: {}, error message: {}", devicePath, ret, transIgscErrCodeToMsg(ret));
                 igsc_device_close(&handle);
                 pDevice->unlock();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
@@ -108,7 +112,7 @@ xpum_result_t PscMgmt::flashPscFw(std::string filePath) {
     }
 }
 
-xpum_firmware_flash_result_t PscMgmt::getFlashPscFwResult() {
+xpum_firmware_flash_result_t PscMgmt::getFlashPscFwResult(GetFlashPscFwResultParam &param) {
     auto deviceModel = pDevice->getDeviceModel();
     if (deviceModel != XPUM_DEVICE_MODEL_PVC) {
         return XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
@@ -117,6 +121,7 @@ xpum_firmware_flash_result_t PscMgmt::getFlashPscFwResult() {
         return XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
     }
     using namespace std::chrono_literals;
+    param.errMsg = flashFwErrMsg;
     if (task.valid()) {
         auto status = task.wait_for(0ms);
         if (status == std::future_status::ready) {

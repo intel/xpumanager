@@ -15,13 +15,22 @@
 
 namespace xpum {
 
+struct FlashFwDataParam {
+    std::string filePath;
+    std::string errMsg;
+};
+
+struct GetFlashFwDataResultParam {
+    std::string errMsg;
+};
+
 class FwDataMgmt {
    public:
     FwDataMgmt(std::string devicePath, std::shared_ptr<Device> pDevice) : devicePath(devicePath), pDevice(pDevice){};
 
-    xpum_result_t flashFwData(std::string filePath);
+    xpum_result_t flashFwData(FlashFwDataParam &param);
 
-    xpum_firmware_flash_result_t getFlashFwDataResult();
+    xpum_firmware_flash_result_t getFlashFwDataResult(GetFlashFwDataResultParam &param);
 
     void getFwDataVersion();
 
@@ -38,6 +47,8 @@ class FwDataMgmt {
     std::future<xpum_firmware_flash_result_t> taskFwData;
 
     std::shared_ptr<Device> pDevice;
+
+    std::string flashFwErrMsg;
 };
 
 } // namespace xpum

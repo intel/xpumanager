@@ -15,13 +15,22 @@
 
 namespace xpum {
 
+struct FlashPscFwParam{
+    std::string filePath;
+    std::string errMsg;
+};
+
+struct GetFlashPscFwResultParam{
+    std::string errMsg;
+};
+
 class PscMgmt {
    public:
     PscMgmt(std::string devicePath, std::shared_ptr<Device> pDevice) : devicePath(devicePath), pDevice(pDevice){};
 
-    xpum_result_t flashPscFw(std::string filePath);
+    xpum_result_t flashPscFw(FlashPscFwParam &param);
 
-    xpum_firmware_flash_result_t getFlashPscFwResult();
+    xpum_firmware_flash_result_t getFlashPscFwResult(GetFlashPscFwResultParam &param);
 
     void getPscFwVersion();
     std::atomic<int> percent;
@@ -33,6 +42,8 @@ class PscMgmt {
     std::future<xpum_firmware_flash_result_t> task;
 
     std::shared_ptr<Device> pDevice;
+
+    std::string flashFwErrMsg;
 };
 
 } // namespace xpum

@@ -24,17 +24,8 @@ struct FlashFirmwareOptions {
 
     bool assumeyes;
 
-    /*
-        FlashFirmwareOptions( unsigned int id, const std::string& type, const std::string& path )
-            : deviceId( id ), firmwarePath( path ) {
-            if ( type == "GSC" ) {
-                firmwareType = 0;
-            }
-            else {
-                firmwareType = 0;
-            }
-        }
-        */
+    bool forceUpdate = false;
+
 };
 
 class ComletFirmware : public ComletBase {

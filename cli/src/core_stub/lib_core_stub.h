@@ -93,7 +93,7 @@ class LibCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> setPolicy(bool isDevcie, uint32_t id, PolicyData& policy);
 
     std::string getRedfishAmcWarnMsg();
-    std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password);
+    std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password, bool force=false);
     std::unique_ptr<nlohmann::json> getFirmwareFlashResult(int deviceId, unsigned int type);
 
     std::unique_ptr<nlohmann::json> startDumpRawDataTask(uint32_t deviceId, int tileId, std::vector<xpum_dump_type_t> metricsTypeList);
