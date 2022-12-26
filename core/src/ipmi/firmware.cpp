@@ -403,7 +403,7 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
             offset += req.data_len;
         }
 
-        if (percentCallback && amcManager) {
+        if (percentCallback) {
             int percent = (fw_update_device_index * 100 + (offset * 100) / data_size) / fw_update_device_count;
             percentCallback(percent, amcManager);
         }
@@ -589,7 +589,7 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
     bool reset_failed = false;
     fw_update_device_index = 0;
     fw_update_device_count = cards.count;
-    if (percentCallback && amcManager) {
+    if (percentCallback) {
         percentCallback(0, amcManager);
     }
 

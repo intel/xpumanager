@@ -4,15 +4,21 @@
  *  @file main.cpp
  */
 
+#include <stdlib.h>
+
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 #include "CLI/App.hpp"
-#include <CLI/CLI.hpp>
+#include "CLI/CLI.hpp"
+#include "CLI/Formatter.hpp"
 #include "amc/ipmi_amc_manager.h"
+#include "spdlog/cfg/env.h"
+#include "spdlog/spdlog.h"
 
 std::string filePath;
+bool assumeyes;
 
 namespace xpum {
 
@@ -53,17 +59,78 @@ int listAmcFwVersions() {
     return 0;
 }
 
-int updateAmcFw() {
-    std::cout << "Updating" << std::endl;
-    return 0;
+static void printProgress(int percentage) {
+    int barWidth = 60;
+
+    std::cout << "[";
+    int pos = barWidth * (percentage / 100.0);
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos)
+            std::cout << "=";
+        else if (i == pos)
+            std::cout << ">";
+        else
+            std::cout << " ";
+    }
+    std::cout << "] " << percentage << " %\r";
+    std::cout.flush();
 }
 
+static void percent_callback(uint32_t percent, void* pAmcManager) {
+    printProgress(percent);
+}
+
+int updateAmcFw() {
+    xpum::setPercentCallbackAndContext(percent_callback, nullptr);
+
+    int rc = xpum::cmd_firmware(filePath.c_str(), nullptr);
+
+    if (rc == 0) {
+        printProgress(100);
+        std::cout << std::endl;
+        std::cout << "Update firmware successfully." << std::endl;
+    } else {
+        std::cout << std::endl;
+        std::cout << "Update firmware failed." << std::endl;
+    }
+    return rc;
+}
+
+class HelpFormatter : public CLI::Formatter {
+   public:
+    std::string make_option_opts(const CLI::Option*) const override {
+        return "";
+    }
+};
+
 int main(int argc, char** argv) {
+
+    putenv(const_cast<char*>("SPDLOG_LEVEL=OFF"));
+
+    spdlog::cfg::load_env_levels();
+
     CLI::App app{};
 
-    CLI::App* fwversion = app.add_subcommand("fwversion", "list all AMC firmware versions");
-    CLI::App* updatefw = app.add_subcommand("updatefw", "update all ATSM AMC firmware to the specified version");
-    updatefw->add_option("-f", filePath, "AMC firmware filename");
+    CLI::App* fwversion = app.add_subcommand("fwversion", "List all AMC firmware versions");
+
+    CLI::App* updatefw = app.add_subcommand("updatefw", "Update all ATSM AMC firmware to the specified version");
+    updatefw->formatter(std::make_shared<HelpFormatter>());
+
+    updatefw->add_flag("-y, --assumeyes", assumeyes, "Assume that the answer to any question which would be asked is yes");
+
+    auto filePathOption = updatefw->add_option("-f", filePath, "AMC firmware filename");
+    filePathOption->required();
+    filePathOption->transform([](const std::string& str) {
+        if (FILE* file = fopen(str.c_str(), "r")) {
+            fclose(file);
+            // get full path of firmware image path
+            char resolved_path[PATH_MAX];
+            char* fullpath = realpath(str.c_str(), resolved_path);
+            return std::string(fullpath);
+        } else {
+            throw CLI::ValidationError("Invalid file path.");
+        }
+    });
 
     app.require_subcommand(0, 1);
 
@@ -72,6 +139,23 @@ int main(int argc, char** argv) {
     if (fwversion->parsed()) {
         return listAmcFwVersions();
     } else if (updatefw->parsed()) {
+        std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model." << std::endl;
+        std::cout << "Please confirm to proceed (y/n) ";
+        if (!assumeyes) {
+            std::string confirm;
+            std::cin >> confirm;
+            if (confirm != "Y" && confirm != "y") {
+                std::cout << "update aborted" << std::endl;
+                return 1;
+            }
+        } else {
+            std::cout << std::endl;
+        }
+        std::cout << "Start to update firmware" << std::endl;
+        std::cout << "Firmware Name: AMC" << std::endl;
+        std::cout << "Image path: " << filePath << std::endl;
         return updateAmcFw();
+    } else {
+        std::cout << app.help();
     }
 }

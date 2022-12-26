@@ -19,6 +19,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -s")
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/CLI11/include)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/src)
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/../core/src/ipmi)
