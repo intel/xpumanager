@@ -508,6 +508,27 @@ xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
                 }
             }
         }
+    } else {
+        std::regex pattern("Riser\\s\\d", std::regex_constants::icase);
+        std::smatch sm;
+        /*
+            "Riser" and "Slot" read from dmidecode corresponding to 
+            slot number in baseboard and slot number in riser card respectively
+        */
+        uint8_t baseboardSlot = 0, riserSlot = 0;
+        if (std::regex_search(pciSlot, sm, pattern)) {
+            baseboardSlot = sm[0].str()[6];
+        }
+        pattern = std::regex("Slot\\s\\d", std::regex_constants::icase);
+        if (std::regex_search(pciSlot, sm, pattern)) {
+            riserSlot = sm[0].str()[5];
+        }
+        std::string sn;
+        Core::instance().getFirmwareManager()->getAMCSerialNumbersByRiserSlot(baseboardSlot, riserSlot, sn);
+        std::size_t length = sn.copy(serialNumber, sn.length());
+        serialNumber[length] = '\0';
+        if (sn.length() > 0)
+            return XPUM_OK;
     }
 
     for (auto slotSN : serialNumberList) {

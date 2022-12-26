@@ -648,6 +648,19 @@ xpum_result_t FirmwareManager::getAMCSlotSerialNumbers(AmcCredential credential,
     return XPUM_OK;
 }
 
+xpum_result_t FirmwareManager::getAMCSerialNumbersByRiserSlot(uint8_t baseboardSlot, uint8_t riserSlot, std::string &serialNumber) {
+    if (!initAmcManager()) {
+        return xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
+    }
+    if (!p_amc_manager->getProtocol().compare("ipmi")) {
+        std::static_pointer_cast<xpum::IpmiAmcManager>(p_amc_manager)->getAMCSerialNumberByRiserSlot(baseboardSlot, riserSlot, serialNumber);
+        return XPUM_OK;
+    } else {
+        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC;
+    }
+
+}
+
 xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const char* filePath) {
     std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (pDevice == nullptr) {

@@ -90,6 +90,15 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(int deviceId, s
         (*json)["errno"] = errorNumTranslate(res);
         return json;
     }
+
+    char serialNumber[XPUM_MAX_STR_LENGTH];
+    char amcFwVersion[XPUM_MAX_STR_LENGTH];
+    res = xpumGetSerialNumberAndAmcFwVersion(deviceId, "", "", serialNumber, amcFwVersion);
+    if (res == XPUM_OK) {
+        if (serialNumber[0] != '\0' || true) {
+            (*json)["serial_number"] = serialNumber;
+        }
+    }
     (*json)["device_id"] = deviceId;
 
     return json;

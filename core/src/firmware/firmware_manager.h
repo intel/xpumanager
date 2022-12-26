@@ -100,6 +100,8 @@ class FirmwareManager {
     gfx_fw_status::GfxFwStatus getGfxFwStatus(xpum_device_id_t deviceId);
 
     static std::string transGfxFwStatusToString(gfx_fw_status::GfxFwStatus status);
+    
+    xpum_result_t getAMCSerialNumbersByRiserSlot(uint8_t riser, uint8_t slot, std::string &serialNumber);
 };
 
 std::vector<char> readImageContent(const char* filePath);

@@ -38,6 +38,7 @@ class IpmiAmcManager : public AmcManager {
     virtual void getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& param) override;
     virtual void getAMCSensorReading(GetAmcSensorReadingParam& param) override;
     virtual void getAMCSlotSerialNumbers(GetAmcSlotSerialNumbersParam& param) override;
+    void getAMCSerialNumberByRiserSlot(uint8_t riser, uint8_t slot, std::string &serialNumber);
 };
 
 typedef void (*percent_callback_func_t)(uint32_t percent, void *pAmcManager);
