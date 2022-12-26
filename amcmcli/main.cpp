@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "CLI/App.hpp"
+#include <CLI/CLI.hpp>
 #include "amc/ipmi_amc_manager.h"
 
 std::string filePath;
