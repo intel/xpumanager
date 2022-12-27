@@ -10,19 +10,9 @@ namespace xpum {
 
     device_util_by_proc::device_util_by_proc(uint32_t processId) {
         this->processId = processId;
-        //The init value is also a flag to remove invalid process (e.g., 
-        //stopped after the first round of data reading)
-        elapsed = 0;
         this->memSize = 0;
         this->sharedMemSize = 0;
-        for (int i = 0; i < 2; i++) {
-            this->ceData[i] = 0;
-            this->cpyData[i] = 0;
-            this->reData[i] = 0;
-            this->meData[i] = 0;
-            this->meeData[i] = 0;
-        }
-    }
+   }
 
     void device_util_by_proc::setval(device_util_by_proc *putil) {
         this->processId = putil->getProcessId();
@@ -30,26 +20,12 @@ namespace xpum {
         this->processName = putil->getProcessName();
         this->memSize = putil->getMemSize();
         this->sharedMemSize = putil->getSharedMemSize();
-        for (int i = 0; i < 2; i++) {
-            this->ceData[i] = putil->ceData[i];
-            this->cpyData[i] = putil->cpyData[i];
-            this->reData[i] = putil->reData[i];
-            this->meData[i] = putil->meData[i];
-            this->meeData[i] = putil->meeData[i];
-        }
-    }
+   }
 
     void device_util_by_proc::merge(device_util_by_proc *putil) {
         this->memSize += putil->getMemSize();
         this->sharedMemSize += putil->getSharedMemSize();
-        for (int i = 0; i < 2; i++) {
-            this->ceData[i] += putil->ceData[i];
-            this->cpyData[i] += putil->cpyData[i];
-            this->reData[i] += putil->reData[i];
-            this->meData[i] += putil->meData[i];
-            this->meeData[i] += putil->meeData[i];
-        }
-    }
+   }
 
     device_util_by_proc::~device_util_by_proc() {}
 
@@ -90,23 +66,23 @@ namespace xpum {
     }
 
     double device_util_by_proc::getComputeEngineUtil() {
-        return (ceData[1] - ceData[0]) * 1.0 * 100 / elapsed;
+        return 0;
     }
 
     double device_util_by_proc::getRenderingEngineUtil() {
-        return (reData[1] - reData[0]) * 1.0 * 100 / elapsed;
+        return 0;
     }
 
     double device_util_by_proc::getCopyEngineUtil() {
-        return (cpyData[1] - cpyData[0]) * 1.0 * 100 / elapsed;
+        return 0;
     }   
 
     double device_util_by_proc::getMediaEnigineUtil() {
-        return (meData[1] - meData[0]) * 1.0 * 100 / (elapsed * 2);
+        return 0;
     }
 
     double device_util_by_proc::getMediaEnhancementUtil() {
-        return (meeData[1]- meeData[0]) * 1.0 * 100 / elapsed; 
+        return 0;
     }
 
 } // end namespace xpum

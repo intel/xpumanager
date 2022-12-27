@@ -1,7 +1,7 @@
 #
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: MIT
-# @file top.py
+# @file ps.py
 #
 
 from flask import request, jsonify
@@ -13,11 +13,6 @@ class DeviceUtilByProcSchema(Schema):
     process_id = fields.Int(metadata={"description": "Process ID"})
     process_name = fields.String(metadata={"description": "Process Name"})
     device_id = fields.Int(metadata={"description": "Device ID"})
-    rendering_engine_util = fields.Float(metadata={"description": "Rendering engine utilization"}) 
-    compute_engine_util = fields.Float(metadata={"description": "Comute engine utilization"})
-    copy_engine_util = fields.Float(metadata={"description": "Copy engine utilization"})
-    media_engine_util = fields.Float(metadata={"description": "Media engine utilization"})
-    media_enhancement_util = fields.Float(metadata={'description': 'Media enhancement engine utilization'})
     mem_size = fields.Int(metadata={"description": "Memory size"})
     shared_mem_size = fields.Int(metadata={"description": "Shared memory size"})
    
@@ -30,7 +25,7 @@ def get_device_util_by_proc(deviceId):
     ---
     get:
         tags:
-            - "Top"
+            - "ps"
         description: Get per process device utilization.
         parameters: 
             -
@@ -57,7 +52,7 @@ def get_all_device_util_by_proc():
     ---
     get:
         tags:
-            - "Top"
+            - "ps"
         description: Get per process device utilization.
         responses:
             200:

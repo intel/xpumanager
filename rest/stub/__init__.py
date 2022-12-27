@@ -11,7 +11,7 @@ from .diagnostics import runDiagnostics, runDiagnosticsByGroup, getDiagnosticsRe
 from .statistics import getStatistics, getStatisticsByGroup, getStatisticsNotForPrometheus, getStatisticsByGroupNotForPrometheus, getEngineStatistics, getFabricStatistics, getTopologyLink, getXelinkPortHealth
 from .groups import createGroup, getAllGroups, getGroupInfo, destroyGroup, addDeviceToGroup, removeDeviceFromGroup
 from .firmwares import runFirmwareFlash, getFirmwareFlashResult
-from .top import getDeviceUtilByProc, getAllDeviceUtilByProc
+from .ps import getDeviceUtilByProc, getAllDeviceUtilByProc
 from .topology import getTopology, exportTopology, getTopoXelink
 from .policy import getPolicy, setPolicy, readPolicyNotifyData
 from .config import setStandby, setPowerLimit, setFrequencyRange, setScheduler, runReset, getConfig, setPortEnabled, setPortBeaconing, setPerformanceFactor, setMemoryecc

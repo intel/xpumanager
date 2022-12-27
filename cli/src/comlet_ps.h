@@ -1,7 +1,7 @@
 /* 
  *  Copyright (C) 2022 Intel Corporation
  *  SPDX-License-Identifier: MIT
- *  @file comlet_top.h
+ *  @file comlet_ps.h
  */
 
 #pragma once
@@ -14,21 +14,21 @@
 
 namespace xpum::cli {
 
-struct ComletTopOptions {
+struct ComletPsOptions {
     std::string deviceId = "-1";
 };
 
-class ComletTop: public ComletBase {
+class ComletPs: public ComletBase {
     public:
-        ComletTop();
-        virtual ~ComletTop() {}
+        ComletPs();
+        virtual ~ComletPs() {}
 
         virtual void setupOptions() override;
         virtual std::unique_ptr<nlohmann::json> run() override;
         virtual void getTableResult(std::ostream &out) override;
        
     private:
-        std::unique_ptr<ComletTopOptions> opts;
+        std::unique_ptr<ComletPsOptions> opts;
         inline static double rnd_2(double val) {
             return round(val * 100) / 100;
         }
