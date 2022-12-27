@@ -508,7 +508,8 @@ xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
                 }
             }
         }
-    } else {
+    } 
+    if (serialNumberList.size() == 0) {
         std::regex pattern("Riser\\s\\d", std::regex_constants::icase);
         std::smatch sm;
         /*
@@ -527,6 +528,7 @@ xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
         Core::instance().getFirmwareManager()->getAMCSerialNumbersByRiserSlot(baseboardSlot, riserSlot, sn);
         std::size_t length = sn.copy(serialNumber, sn.length());
         serialNumber[length] = '\0';
+        amcFwVersion[0] = '\0';
         if (sn.length() > 0)
             return XPUM_OK;
     }
