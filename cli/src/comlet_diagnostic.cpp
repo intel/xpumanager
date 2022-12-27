@@ -133,6 +133,10 @@ void ComletDiagnostic::setupOptions() {
 #endif
 }
 
+bool ComletDiagnostic::isPreCheck() {
+    return this->opts->preCheck;
+}
+
 std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
 #ifndef DAEMONLESS

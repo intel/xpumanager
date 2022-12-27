@@ -52,6 +52,8 @@ class ComletDiagnostic : public ComletBase {
         return opts->level;
     }
 
+    bool isPreCheck();
+
    private:
     std::unique_ptr<ComletDiagnosticOptions> opts;
 };
