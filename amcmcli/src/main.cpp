@@ -14,6 +14,7 @@
 #include "CLI/CLI.hpp"
 #include "CLI/Formatter.hpp"
 #include "amc/ipmi_amc_manager.h"
+#include "config.h"
 #include "spdlog/cfg/env.h"
 #include "spdlog/spdlog.h"
 
@@ -111,6 +112,13 @@ int main(int argc, char** argv) {
 
     CLI::App app{};
 
+    CLI::Option* versionFlag = app.add_flag_callback(
+        "-v, --version", []() {
+            std::cout<<"Version: "<< AMCMCLI_VERSION << std::endl;
+            std::cout<<"Build ID: "<< AMCMCLI_BUILD_ID << std::endl;
+        },
+        "List version info");
+
     CLI::App* fwversion = app.add_subcommand("fwversion", "List all AMC firmware versions");
 
     CLI::App* updatefw = app.add_subcommand("updatefw", "Update all ATSM AMC firmware to the specified version");
@@ -155,6 +163,8 @@ int main(int argc, char** argv) {
         std::cout << "Firmware Name: AMC" << std::endl;
         std::cout << "Image path: " << filePath << std::endl;
         return updateAmcFw();
+    } else if (!versionFlag->empty()) {
+        return 0;
     } else {
         std::cout << app.help();
     }

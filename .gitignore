@@ -34,3 +34,4 @@ third_party/hwloc/install/*
 daemon/xpum.service.template
 rest/xpum_rest.service.template
 .ccache/
+amcmcli/src/config.h
