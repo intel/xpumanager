@@ -1443,8 +1443,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceUtilizationByProcess(
             util["process_id"] = dataArray[i].processId;
             util["process_name"] = dataArray[i].processName;
             util["device_id"] = dataArray[i].deviceId;
-            util["mem_size"] = dataArray[i].memSize;
-            util["shared_mem_size"] = dataArray[i].sharedMemSize;
+            util["mem_size"] = dataArray[i].memSize / 1000;
+            util["shared_mem_size"] = dataArray[i].sharedMemSize / 1000;
             utils.push_back(util);
         }
         (*json)["device_util_by_proc_list"] = utils;
@@ -1481,8 +1481,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getAllDeviceUtilizationByProcess(
             util["process_id"] = dataArray[i].processId;
             util["process_name"] = dataArray[i].processName;
             util["device_id"] = dataArray[i].deviceId;
-            util["mem_size"] = dataArray[i].memSize;
-            util["shared_mem_size"] = dataArray[i].sharedMemSize;
+            util["mem_size"] = dataArray[i].memSize / 1000;
+            util["shared_mem_size"] = dataArray[i].sharedMemSize / 1000;
             utils.push_back(util);
         }
         (*json)["device_util_by_proc_list"] = utils;
