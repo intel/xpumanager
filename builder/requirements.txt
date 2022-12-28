@@ -31,7 +31,6 @@ myst-parser==0.16.1
 packaging==21.3
 prometheus-client==0.14.1
 protobuf==4.21.10
-pycrypto==2.6.1
 Pygments==2.12.0
 pyparsing==3.0.9
 pyrsistent==0.18.0
