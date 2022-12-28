@@ -1450,6 +1450,9 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceUtilizationByProcess(
         (*json)["device_util_by_proc_list"] = utils;
     } else {
         switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "Device not found";
+                break;
             case XPUM_BUFFER_TOO_SMALL:
                 (*json)["error"] = "Buffer is too small";
                 break;
