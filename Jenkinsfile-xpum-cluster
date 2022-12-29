@@ -353,7 +353,7 @@ spec:
                 cd ../ws_centos7 && \
                 export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
-                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                ./build.sh -DBUILD_AMCMCLI=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 mkdir $MAIN_WORKSPACE/build-centos7 && \
                 cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos7'''
               }
