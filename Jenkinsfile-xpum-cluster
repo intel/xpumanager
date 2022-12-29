@@ -36,7 +36,7 @@ pipeline {
     }
     options {
         buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '20'))
-        timeout(time: 60, unit: 'MINUTES')
+        timeout(time: 180, unit: 'MINUTES')
         skipStagesAfterUnstable()
         disableConcurrentBuilds()
         timestamps()
@@ -75,6 +75,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -97,6 +100,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -119,6 +125,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -139,6 +148,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -159,6 +171,9 @@ spec:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
           readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
         - mountPath: "/home/jenkins/jenkins-shared-pvc"
           name: "jenkins-shared-pvc"
           readOnly: false
@@ -251,6 +266,12 @@ spec:
             items:
               - key: .dockerconfigjson
                 path: config.json
+    - name: sign-secret
+      secret:
+        secretName: sign-secret
+        items:
+          - key: password
+            path: password.sys_dcm
 '''
         defaultContainer 'shell'
       }
