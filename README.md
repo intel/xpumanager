@@ -1,4 +1,4 @@
-# Intel XPU Manager
+# Intel XPU Manager and XPU System Management Interface
 Intel XPU Manager is a free and open-source tool for monitoring and managing Intel data center GPUs.
 
 It is designed to simplify administration, maximize reliability and uptime, and improve utilization.
@@ -25,7 +25,7 @@ Intel XPU Manager can be used standalone through its command line interface (CLI
 * Supported Frameworks:
 	* Prometheus exporter, Docker container support, Icinga plugin
  
-## Intel XPU Manager GPU device info, telemetries and firmware update CLI Output
+## CLI output of GPU device info, telemetries and firmware update
 ```
 xpumcli discovery -d 0
 +-----------+--------------------------------------------------------------------------------------+
@@ -72,7 +72,7 @@ Update firmware successfully.
 ```
 
  
-## Intel XPU Manager, XPU-SMI and Windows CLI tool features
+## Feature set of Intel XPU Manager, XPU-SMI and Windows CLI tool
 |                           | XPU Manager            | XPU-SMI              | Windows CLI tool             |
 | :------------------------ | :--------------------: | :------------------: | :--------------------------: |
 | Device Info and Topology  | Yes                    | Yes                  | Yes                          |
@@ -103,7 +103,7 @@ Update firmware successfully.
 	* CentOS 8 Stream
 	* SLES 15 SP3/SP4
   
-## Intel XPU Manager ane XPU-SMI Documentation
+## Documentation
 * Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) and for how to install/uninstall Intel XPU Manager.
 * Refer to the [XPU-SMI Installation Guide](doc/smi_install_guide.md) and for how to install/uninstall Intel XPU-SMI.
 * Refer to the [XPU Manager CLI User Guide](doc/CLI_user_guide.md) to start using Intel XPU Manager.
@@ -111,8 +111,8 @@ Update firmware successfully.
 * Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.
 * Refer to [Building XPU Manager Installer](BUILDING.md) to build XPU Manager installer packages. 
  
-## Intel XPU Manager Architecture
+## Architecture
 ![Intel XPU Manager Architecture](doc/img/architecture.PNG)
   
-## GPU telemetry exported from Intel XPU Manager to Grafana
+## GPU telemetry exported to Grafana
 ![GPU telemetry exported from Intel XPU Manager to Grafana](doc/img/Grafana.PNG)
