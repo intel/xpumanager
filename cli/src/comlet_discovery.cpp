@@ -372,7 +372,7 @@ static void dumpAllDeviceInfo(std::ostream &out, std::shared_ptr<nlohmann::json>
 static void showAmcFwVersion(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
     auto versions = (*json)["amc_fw_version"];
     out << versions.size() << " AMC are found" << std::endl;
-    int i = 1;
+    int i = 0;
     for (auto version : versions) {
         out << "AMC " << i++ << " firmware version: " << version.get<std::string>() << std::endl;
     }
