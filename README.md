@@ -3,7 +3,7 @@ Intel XPU Manager is a free and open-source tool for monitoring and managing Int
 
 It is designed to simplify administration, maximize reliability and uptime, and improve utilization.
 
-Intel XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely. Intel XPU-SMI (XPU Sysmtem Management Interface) is the daemon-less version of XPU Manager and it only provides the local interface.
+Intel XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely. Intel XPU-SMI (XPU System Management Interface) is the daemon-less version of XPU Manager and it only provides the local interface. XPU-SMI feature scope is the subset of XPU Manager. Their features are listed in the table below. 
 
 3rd party open-source and commercial workload and cluster managers, job schedulers, and monitoring solutions can also integrate the Intel XPU Manager or XPU-SMI to manage Intel data center GPUs.
 
