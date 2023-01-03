@@ -21,7 +21,7 @@ struct ComletDumpOptions {
     uint32_t timeInterval = 1;
     int dumpTimes = -1;
     // for dump raw data to file
-    bool rawData;
+    std::string dumpFilePath;
     bool startDumpTask;
     // bool stopDumpTask;
     bool listDumpTask;
@@ -38,8 +38,10 @@ struct MetricsOption {
 
 class ComletDump : public ComletBase {
 private:
-    std::unique_ptr<ComletDumpOptions> opts;
-
+    std::unique_ptr<ComletDumpOptions> opts; 
+    std::atomic<bool> keepDumping;
+    std::ofstream dumpFile;
+    //std::streambuf *stdCoutBackup;
     uint64_t next_dump_time = 0;
 
     std::vector<MetricsOption> metricsOptions{
@@ -83,6 +85,8 @@ public:
     }
     virtual ~ComletDump() {}
 
+    void waitForEsc();
+
     virtual void setupOptions() override;
     virtual std::unique_ptr<nlohmann::json> run() override;
 
@@ -91,6 +95,8 @@ public:
     virtual void getTableResult(std::ostream& out) override;
 
     void printByLine(std::ostream& out);
+
+    bool printByLinePrepare(std::ostream& out);
 
     void dumpRawDataToFile(std::ostream& out);
 };
