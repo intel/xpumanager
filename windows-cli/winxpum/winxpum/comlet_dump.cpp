@@ -40,7 +40,7 @@ void ComletDump::setupOptions() {
     auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.\n");
     dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
 
-    auto dumpRawDataFlag = addFlag("--file", this->opts->dumpFilePath, "Dump the required raw statistics to a file in background.");
+    auto dumpRawDataFlag = addOption("--file", this->opts->dumpFilePath, "Dump the required raw statistics to a file in background.");
 
     dumpRawDataFlag->excludes(timeIntervalOpt);
     dumpRawDataFlag->excludes(dumpTimesOpt);
