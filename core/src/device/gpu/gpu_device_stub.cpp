@@ -1929,10 +1929,12 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
             if (std::strcmp(metricProperties.name, "EuStall") == 0) {
                 currentEuStall = data.value.fp32;
             }
-            if (strcmp(metricProperties.name, "XveActive") == 0) {
+            if (strcmp(metricProperties.name, "XveActive") == 0 ||
+                    strcmp(metricProperties.name, "XVE_ACTIVE") == 0) {
                 currentXueActive = data.value.fp32;
-            }
-            if (strcmp(metricProperties.name, "XveStall") == 0) {
+            } 
+            if (strcmp(metricProperties.name, "XveStall") == 0 ||
+                    strcmp(metricProperties.name, "XVE_STALL") == 0) {
                 currentXveStall = data.value.fp32;
             }
             if (std::strcmp(metricProperties.name, "GpuTime") == 0) {
