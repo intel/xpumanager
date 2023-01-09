@@ -671,6 +671,7 @@ xpum_result_t FirmwareManager::runPscFwFlash(xpum_device_id_t deviceId, const ch
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     flashFwErrMsg.clear();
     FlashPscFwParam param;
+    param.filePath = filePath;
     auto res = pDevice->getPscMgmt()->flashPscFw(param);
     flashFwErrMsg = param.errMsg;
     return res;
