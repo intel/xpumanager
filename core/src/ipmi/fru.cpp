@@ -31,13 +31,11 @@
  *
  *  Governing law.  All disputes will be governed by the laws of the United States of America and the State of Delaware without reference to conflict of law principles and subject to the exclusive jurisdiction of the state or federal courts sitting in the State of Delaware, and each party agrees that it submits to the personal jurisdiction and venue of those courts and waives any objections. The United Nations Convention on Contracts for the International Sale of Goods (1980) is specifically excluded and will not apply to the Software.
  *
- *  @file fru.h
+ *  @file fru.cpp
  */
 
-#pragma once
 
 #include "bsmc_interface.h"
-// #include 
 #include "tool.h"
 #include "fru.h"
 #include <bitset>

@@ -37,6 +37,7 @@
 #pragma once
 
 #include "tool.h"
+#include <string>
 
 namespace xpum {
 
