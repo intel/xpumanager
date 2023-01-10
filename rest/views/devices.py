@@ -132,6 +132,8 @@ class DevicePropertiesSchema(Schema):
         metadata={"description": "The PSC firmware version of device"})
     gfx_pscbin_firmware_name = fields.Str(
         metadata={"description": "The PSC firmware name of device"})
+    gfx_firmware_status = fields.Str(
+        metadata={"description": "The GFX firmware status"})
     health = fields.Nested(DevicePropertiesLinkSchema)
     topology = fields.Nested(DevicePropertiesLinkSchema)
 

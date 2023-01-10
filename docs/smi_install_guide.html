@@ -97,10 +97,11 @@
 <li><p>Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories)</p></li>
 <li><p>Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)</p></li>
 </ul>
+<p>intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like “–force-all” to ignore them when installing Intel XPU-SMI.</p>
 </section>
 <section id="deb-install">
 <h2>DEB install<a class="headerlink" href="#deb-install" title="Permalink to this headline"></a></h2>
-<p>sudo dpkg -i xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb</p>
+<p>sudo dpkg -i xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.deb</p>
 </section>
 <section id="deb-uninstall">
 <h2>DEB uninstall<a class="headerlink" href="#deb-uninstall" title="Permalink to this headline"></a></h2>
@@ -108,11 +109,11 @@
 </section>
 <section id="rpm-install">
 <h2>RPM install<a class="headerlink" href="#rpm-install" title="Permalink to this headline"></a></h2>
-<p>sudo rpm -i xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+<p>sudo rpm -i xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
 </section>
 <section id="rpm-relocation-install">
 <h2>RPM relocation install<a class="headerlink" href="#rpm-relocation-install" title="Permalink to this headline"></a></h2>
-<p>rpm -i –prefix=/opt/abc xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+<p>rpm -i –prefix=/opt/abc xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
 </section>
 <section id="start-to-user-intel-xpu-smi">
 <h2>Start to user Intel XPU-SMI<a class="headerlink" href="#start-to-user-intel-xpu-smi" title="Permalink to this headline"></a></h2>
@@ -124,7 +125,7 @@
 </section>
 <section id="rpm-upgrade">
 <h2>RPM upgrade<a class="headerlink" href="#rpm-upgrade" title="Permalink to this headline"></a></h2>
-<p>sudo rpm -Uxh xpu-smi.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+<p>sudo rpm -Uxh xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
 </section>
 <section id="gpu-memory-ecc-on-off">
 <h2>GPU memory ECC on/off<a class="headerlink" href="#gpu-memory-ecc-on-off" title="Permalink to this headline"></a></h2>

@@ -26,7 +26,16 @@ static std::string getFirmwareName(unsigned int firmwareType) {
     }
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password) {
+static std::string getFlashFwErrMsg() {
+    // get error message
+    int count;
+    xpumGetFirmwareFlashErrorMsg(nullptr, &count);
+    char buffer[count];
+    xpumGetFirmwareFlashErrorMsg(buffer, &count);
+    return std::string(buffer);
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, std::string username, std::string password, bool force) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_firmware_flash_job job;
     job.type = (xpum_firmware_type_t)type;
@@ -35,7 +44,16 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsi
     std::string fwName = getFirmwareName(type);
     XPUM_LOG_AUDIT("Try to update %s FW on device %d with image %s", fwName.c_str(), deviceId, filePath.c_str());
 
-    auto res = xpumRunFirmwareFlash(deviceId, &job, username.c_str(), password.c_str());
+    auto res = xpumRunFirmwareFlashEx(deviceId, &job, username.c_str(), password.c_str(), force);
+
+    std::string errorMsg = getFlashFwErrMsg();
+
+    if (errorMsg.size()) {
+        (*json)["error"] = errorMsg;
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+
     if (res == xpum_result_t::XPUM_OK) {
         (*json)["result"] = "OK";
     } else {
@@ -100,6 +118,14 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getFirmwareFlashResult(int deviceId
     xpum_firmware_flash_task_result_t result;
 
     xpum_result_t res = xpumGetFirmwareFlashResult(deviceId, (xpum_firmware_type_t)type, &result);
+
+    std::string errorMsg = getFlashFwErrMsg();
+
+    if (errorMsg.size()) {
+        (*json)["error"] = errorMsg;
+        (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
 
     if (res != XPUM_OK) {
         switch (res) {

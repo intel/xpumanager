@@ -9,7 +9,7 @@
 #include <map>
 #include <nlohmann/json.hpp>
 #include <sstream>
-
+#include <conio.h>
 #include "core_stub.h"
 #include "pretty_table.h"
 
@@ -40,33 +40,14 @@ void ComletDump::setupOptions() {
     auto dumpTimesOpt = addOption("-n", this->opts->dumpTimes, "Number of the device statistics dump to screen. The dump will never be ended if this parameter is not specified.\n");
     dumpTimesOpt->check(CLI::Range(1, std::numeric_limits<int>::max()));
 
-    /*
-    auto dumpRawDataFlag = addFlag("--rawdata", this->opts->rawData, "Dump the required raw statistics to a file in background.");
-    auto startDumpFlag = addFlag("--start", this->opts->startDumpTask, "Start a new background task to dump the raw statistics to a file. The task ID and the generated file path are returned.");
-    auto stopDumpOpt = addOption("--stop", this->opts->dumpTaskId, "Stop one active dump task.");
-    auto listDumpFlag = addFlag("--list", this->opts->listDumpTask, "List all the active dump tasks.");
+    auto dumpRawDataFlag = addOption("--file", this->opts->dumpFilePath, "Dump the required raw statistics to a file in background.");
 
     dumpRawDataFlag->excludes(timeIntervalOpt);
     dumpRawDataFlag->excludes(dumpTimesOpt);
 
-    startDumpFlag->needs(deviceIdOpt);
-    startDumpFlag->needs(metricsListOpt);
-    startDumpFlag->needs(dumpRawDataFlag);
-
-    stopDumpOpt->needs(dumpRawDataFlag);
-    stopDumpOpt->excludes(deviceIdOpt);
-    stopDumpOpt->excludes(tileIdOpt);
-    stopDumpOpt->excludes(metricsListOpt);
-    stopDumpOpt->excludes(timeIntervalOpt);
-    stopDumpOpt->excludes(dumpTimesOpt);
-
-    listDumpFlag->needs(dumpRawDataFlag);
-    listDumpFlag->excludes(deviceIdOpt);
-    listDumpFlag->excludes(tileIdOpt);
-    listDumpFlag->excludes(metricsListOpt);
-    listDumpFlag->excludes(timeIntervalOpt);
-    listDumpFlag->excludes(dumpTimesOpt);
-    */
+    dumpRawDataFlag->needs(deviceIdOpt);
+    dumpRawDataFlag->needs(metricsListOpt);
+    dumpRawDataFlag->needs(dumpRawDataFlag);
 }
 
 std::unique_ptr<nlohmann::json> ComletDump::run() {
@@ -79,76 +60,54 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
         return json;
     }
 
-    if (this->opts->rawData) {
-        if (this->opts->startDumpTask && this->opts->deviceId != -1) {
-            int deviceId = this->opts->deviceId;
-            int tileId = this->opts->deviceTileId;
-            std::vector<xpum_stats_type_t> metricsTypeList;
-            for (auto i : this->opts->metricsIdList) {
-                auto& m = metricsOptions[i];
-                metricsTypeList.push_back(m.metricsType);
-            }
-            //json = this->coreStub->startDumpRawDataTask(deviceId, tileId, metricsTypeList);
-        }
-        else if (this->opts->listDumpTask) {
-            //json = this->coreStub->listDumpRawDataTasks();
-        }
-        else if (this->opts->dumpTaskId != -1) {
-            //json = this->coreStub->stopDumpRawDataTask(this->opts->dumpTaskId);
-        }
-        else {
-            json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-            (*json)["error"] = "Unknow operation";
-        }
-    }
-    else {
-        json = this->coreStub->getStatistics(this->opts->deviceId);
-    }
+    json = this->coreStub->getStatistics(this->opts->deviceId);
+
     return json;
 }
 
 void ComletDump::getJsonResult(std::ostream& out, bool raw) {
-    if (!this->opts->rawData) {
-        out << "Not supported" << std::endl;
-        return;
-    }
-    else {
-        ComletBase::getJsonResult(out, raw);
-    }
+    out << "Not supported" << std::endl;
+    return;
 };
 
 void ComletDump::dumpRawDataToFile(std::ostream& out) {
-    auto json = run();
-    if (json->contains("error")) {
-        out << "Error: " << json->value("error", "") << std::endl;
-        return;
-    }
-    if (this->opts->startDumpTask) {
-        if (!json->contains("task_id") || !json->contains("dump_file_path")) {
-            out << "Error occurs" << std::endl;
-            return;
-        }
-        out << "Task " << (*json)["task_id"] << " is started." << std::endl;
-        out << "Dump file path: " << json->value("dump_file_path", "") << std::endl;
-    }
-    else if (this->opts->listDumpTask) {
-        for (auto taskId : (*json)["dump_task_ids"]) {
-            out << "Task " << taskId.get<int>() << " is running." << std::endl;
-        }
-    }
-    else if (this->opts->dumpTaskId != -1) {
-        if (!json->contains("task_id") || !json->contains("dump_file_path")) {
-            out << "Error occurs" << std::endl;
-            return;
-        }
-        out << "Task " << (*json)["task_id"] << " is stopped." << std::endl;
-        out << "Dump file path: " << json->value("dump_file_path", "") << std::endl;
-    }
+ //
 }
 
+void ComletDump::waitForEsc()
+{
+    int key;
+    std::cout << "Dump stats to file " <<  this->opts->dumpFilePath <<". Press the key ESC to stop dumping." << std::endl;
+    while (true) {
+        key = getch();
+        //std::cout << key << std::endl;
+        if (key == 3 || key == 27) {
+            keepDumping = false;
+            std::cout << "ESC is pressed. Dumping is stopped." << std::endl;
+            break;
+        }
+    }
+}
 void ComletDump::getTableResult(std::ostream& out) {
-    if (this->opts->rawData) {
-        dumpRawDataToFile(out);
+    keepDumping = true;
+
+    if (!printByLinePrepare(out)) {
+        return;
+    }
+    
+    if (!this->opts->dumpFilePath.empty()) {
+        dumpFile.open(this->opts->dumpFilePath);
+        if (!dumpFile) {
+            std::cout << "Error: " << "open file failed" << std::endl;
+            return;
+        }        
+        std::thread guard = std::thread([this] {this->waitForEsc();});
+        //stdCoutBackup = std::cout.rdbuf();
+        //std::cout.rdbuf(dumpFile.rdbuf());
+        printByLine(dumpFile);
+        dumpFile.close();
+        guard.join();
+        //std::cout.rdbuf(stdCoutBackup);
     }
     else {
         printByLine(out);
@@ -183,25 +142,25 @@ std::string getJsonValue(nlohmann::json obj, int scale) {
     }
 }
 
-void ComletDump::printByLine(std::ostream& out) {
+bool ComletDump::printByLinePrepare(std::ostream& out) {
     // out << std::left << std::setw(25) << std::setfill(' ') << "Timestamp, ";
     int deviceId = this->opts->deviceId;
     int tileId = this->opts->deviceTileId;
 
     if (deviceId == -1) {
         out << "Device id should be provided" << std::endl;
-        return;
+        return false;
     }
     if (this->opts->metricsIdList.size() == 0) {
         out << "Metics types should be provided" << std::endl;
-        return;
+        return false;
     }
 
     // check deviceId and tileId is valid
     auto res = this->coreStub->getDeviceProperties(this->opts->deviceId);
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
-        return;
+        return false;
     }
     if (this->opts->deviceTileId != -1) {
         //std::stringstream number_of_tiles((*res)["number_of_tiles"].get<std::string>());
@@ -209,7 +168,7 @@ void ComletDump::printByLine(std::ostream& out) {
         //number_of_tiles >> num_tiles;
         if (this->opts->deviceTileId >= num_tiles) {
             out << "Error: Tile not found" << std::endl;
-            return;
+            return false;
         }
     }
 
@@ -218,8 +177,15 @@ void ComletDump::printByLine(std::ostream& out) {
 
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
-        return;
+        return false;
     }
+
+    return true;
+}
+
+void ComletDump::printByLine(std::ostream& out) {
+    int deviceId = this->opts->deviceId;
+    int tileId = this->opts->deviceTileId;
 
     out << "Timestamp, DeviceId, ";
     if (tileId != -1) {
@@ -235,10 +201,10 @@ void ComletDump::printByLine(std::ostream& out) {
 
     int iter = 0;
 
-    while (true) {
+    while (keepDumping) {
         std::this_thread::sleep_for(std::chrono::milliseconds(this->opts->timeInterval * 1000));
 
-        res = run();
+        auto res = run();
 
         if (res->contains("error")) {
             out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
@@ -308,4 +274,5 @@ void ComletDump::printByLine(std::ostream& out) {
             break;
         }
     }
+    std::cout << "Dumping cycle end" << std::endl;
 }

@@ -24,7 +24,8 @@ std::string HelpFormatter::make_usage(const CLI::App* app, std::string name) con
     }
     else if (app->get_name().compare("dump") == 0) {
         return "\nUsage: xpumcli dump [Options]\n"
-            "  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n";
+            "  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
+            "  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] --file [filename]\n";
     }
     else if (app->get_name().compare("stats") == 0) {
         return "\nUsage: xpumcli stats [Options]\n"

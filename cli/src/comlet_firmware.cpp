@@ -115,6 +115,11 @@ void ComletFirmware::setupOptions() {
 #endif
 
     addFlag("-y, --assumeyes", opts->assumeyes, "Assume that the answer to any question which would be asked is yes");
+
+    auto forceFlag = addFlag("--force", opts->forceUpdate, "Force GFX firmware update. This parameter only works for GFX firmware.");
+
+    forceFlag->needs(fwTypeOpt);
+
 }
 
 nlohmann::json ComletFirmware::validateArguments() {
@@ -137,6 +142,12 @@ nlohmann::json ComletFirmware::validateArguments() {
     if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX") == 0) {
         result["error"] = "Updating GFX firmware on all devices is not supported";
         result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
+        return result;
+    }
+
+    if (opts->forceUpdate && opts->firmwareType.compare("GFX") != 0) {
+        result["error"] = "Force flag only works for GFX firmware";
+        result["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return result;
     }
 
@@ -198,7 +209,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     }
 
     int type = getIntFirmwareType(opts->firmwareType);
-    auto uniqueJson = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->username, opts->password);
+    auto uniqueJson = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->username, opts->password, opts->forceUpdate);
     std::shared_ptr<nlohmann::json> json = std::move(uniqueJson);
     if (json->contains("error")) {
         printJson(json, out, raw);
@@ -477,7 +488,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     }
 
     // start run
-    auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->username, opts->password);
+    auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->username, opts->password, opts->forceUpdate);
 
     auto status = (*json)["error"];
     if (!status.is_null()) {
@@ -516,8 +527,14 @@ void ComletFirmware::getTableResult(std::ostream &out) {
             out << "Update firmware successfully." << std::endl;
             return;
         } else if (flashStatus.compare("FAILED") == 0) {
+            std::string errormsg;
+            if (json->contains("error")) {
+                errormsg = (*json)["error"];
+            } else {
+                errormsg = "Update firmware failed";
+            }
             out << std::endl;
-            out << "Update firmware failed" << std::endl;
+            out << errormsg << std::endl;
             exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_FAIL;
             return;
         } else {

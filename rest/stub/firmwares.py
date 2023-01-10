@@ -9,7 +9,7 @@ import core_pb2
 from .xpum_enums import XpumResult, XpumFirmwareType, XpumFirmwareFlashResultType
 
 
-def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password=""):
+def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password="", force=False):
     job = core_pb2.XpumFirmwareFlashJob()
     job.id.id = deviceId
     if firmwareType == 'GFX':
@@ -25,6 +25,7 @@ def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password="")
     else:
         return 1, "Unknown firmware type", None
     job.path = filePath
+    job.force = force
     resp = stub.runFirmwareFlash(job)
     err_code = resp.errorNo
     err_msg = resp.errorMsg

@@ -20,6 +20,7 @@
 #include <regex>
 #include <fstream>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "xpum_structs.h"
 
@@ -28,7 +29,7 @@ namespace xpum::cli {
 std::string CoreStub::isotimestamp(uint64_t t, bool withoutDate) {
     time_t seconds = (long)t / 1000;
     int milli_seconds = t % 1000;
-    tm* tm_p = gmtime(&seconds);
+    tm* tm_p = localtime(&seconds);
     char buf[50];
     char milli_buf[10];
     sprintf(milli_buf, "%03d", milli_seconds);
@@ -38,7 +39,7 @@ std::string CoreStub::isotimestamp(uint64_t t, bool withoutDate) {
     }
     else {
         strftime(buf, sizeof(buf), "%FT%T", tm_p);
-        return std::string(buf) + "." + std::string(milli_buf) + "Z";
+        return std::string(buf) + "." + std::string(milli_buf);
     }
 }
 
@@ -212,7 +213,7 @@ static void getErrorLogLinesByFile(std::string print_log_cmd, std::map<std::stri
         std::vector<std::string> targeted_words = {"i915", "drm", "mce", "mca", "caterr", "GUC",
                                             "initialized", "blocked", "Hardware", "perf",
                                             "memory", "HANG", "segfault", "panic",  "terminated",
-                                            "traps", "catastrophic", "PCIe"};
+                                            "traps", "catastrophic", "PCIe", "uc failed"};
         bool target_found = false;
         for (auto tw : targeted_words)
             if (findCaseInsensitive(line, tw) != std::string::npos) {
@@ -273,9 +274,9 @@ static std::string zeInitResultToString(const int result) {
         return "ZE_RESULT_SUCCESS";
     } else if (result == 1) {
         return "ZE_RESULT_NOT_READY";
-    } else if (result == 0x78000001) {
+    } else if (result == 2) {
         return "[0x78000001] ZE_RESULT_ERROR_UNINITIALIZED.\nPlease check if you have root privileges.";
-    } else if (result == 0x70020000) {
+    } else if (result == 3) {
         return "[0x70020000] ZE_RESULT_ERROR_DEPENDENCY_UNAVAILABLE.\nMaybe the metrics libraries aren't ready.";
     } else {
         throw std::runtime_error("Generic error with ze_result_t value: " +
@@ -369,7 +370,6 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
 
     // GPU level-zero driver
     std::string level0_driver_error_info;
-    putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
     const std::string level_zero_loader_lib_path{"libze_loader.so.1"};
     void *handle = dlopen(level_zero_loader_lib_path.c_str(), RTLD_LAZY);
     if (!handle) {
@@ -380,11 +380,32 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
     if (!ze_init) {
         level0_driver_error_info  = "Not found zeInit in libze_loader";
     }
-    putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
-    int init_res = ze_init(0);
-    if (init_res != 0) {
-        level0_driver_error_info = "Failed to init level zero: " + zeInitResultToString(init_res);
-    } 
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        putenv(const_cast<char*>("ZES_ENABLE_SYSMAN=1"));
+        putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
+        int init_status = ze_init(0);
+        if (init_status == 0 || init_status == 1)
+            exit(init_status);
+        else if (init_status == 0x78000001)
+            exit(2);
+        else if (init_status == 0x70020000)
+            exit(3);
+        else
+            exit(255);
+    }
+ 
+    int status;
+    waitpid(pid, &status, 0);
+    if (WIFEXITED(status)) {
+        int init_res = WEXITSTATUS(status);
+        if (init_res != 0) {
+            level0_driver_error_info = "Failed to init level zero: " + zeInitResultToString(init_res);
+        } 
+    } else {
+        level0_driver_error_info = "Failed to init level zero due to GPU driver";
+    }
     dlclose(handle);
 
     // GPU i915 driver
@@ -431,6 +452,8 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
         // gpu error
         {".*ERROR.*drm.*", "i915"},
         {".*ERROR.*GUC.*", ""},
+        {".*(GuC initialization failed).*", ""},
+        {".*(Enabling uc failed).*", ""},
         {".*(LMEM not initialized by firmware).*", ""},
         {".*(task).*(blocked for more than).*(seconds).*", ""},
         {".*([Hardware Error]).*(Hardware error from APEI Generic Hardware Error Source).*", ""},

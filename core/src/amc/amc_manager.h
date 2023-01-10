@@ -50,6 +50,8 @@ struct GetAmcSensorReadingParam{
 };
 
 struct SlotSerialNumberAndFwVersion{
+    uint8_t baseboardSlot;
+    uint8_t riserSlot;
     int slotId;
     std::string serialNumber;
     std::string firmwareVersion;

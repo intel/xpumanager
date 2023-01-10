@@ -42,7 +42,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="README.html">Intel XPU Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="README.html">Intel XPU Manager and XPU System Management Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel XPU Manager Command Line Interface User Guide</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Restful API</a><ul>
@@ -55,6 +55,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#group-management">Group Management</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sensor">Sensor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dump-raw-data">Dump Raw Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ps">ps</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#config">Config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#diagnostics">Diagnostics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#health">Health</a></li>
@@ -263,6 +264,7 @@
 <li><p><strong>firmware_version</strong> (<em>string</em>) – The GFX firmware version of device</p></li>
 <li><p><strong>gfx_data_firmware_name</strong> (<em>string</em>) – The GFX_DATA firmware name of device</p></li>
 <li><p><strong>gfx_data_firmware_version</strong> (<em>string</em>) – The GFX_DATA firmware version of device</p></li>
+<li><p><strong>gfx_firmware_status</strong> (<em>string</em>) – The GFX firmware status</p></li>
 <li><p><strong>gfx_pscbin_firmware_name</strong> (<em>string</em>) – The PSC firmware name of device</p></li>
 <li><p><strong>gfx_pscbin_firmware_version</strong> (<em>string</em>) – The PSC firmware version of device</p></li>
 <li><p><strong>health.&#64;odata.id</strong> (<em>string</em>) – Link to detail info</p></li>
@@ -373,6 +375,7 @@
 <dd class="field-even"><ul class="simple">
 <li><p><strong>file</strong> (<em>string</em>) – The path of firmware binary file to flash (required)</p></li>
 <li><p><strong>firmware_name</strong> (<em>string</em>) – Firmware name, options are: GFX, GFX_DATA, GFX_PSCBIN</p></li>
+<li><p><strong>force</strong> (<em>boolean</em>) – Force GFX firmware update. This parameter only works for GFX firmware.</p></li>
 </ul>
 </dd>
 <dt class="field-odd">Status Codes</dt>
@@ -1000,6 +1003,60 @@ XPUM_DUMP_FREQUENCY_THROTTLE_REASON_GPU</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dump_file_path</strong> (<em>string</em>) – The path to file of dumped data</p></li>
 <li><p><strong>task_id</strong> (<em>integer</em>) – The task id</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="ps">
+<h2>ps<a class="headerlink" href="#ps" title="Permalink to this headline"></a></h2>
+<dl class="http get">
+<dt class="sig sig-object http" id="get--rest-v1-ps">
+<span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/ps</span></span><a class="headerlink" href="#get--rest-v1-ps" title="Permalink to this definition"></a></dt>
+<dd><p>Get per process device utilization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Status Codes</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
+<li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
+</ul>
+</dd>
+<dt class="field-even">Response JSON Object</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>utils[].device_id</strong> (<em>integer</em>) – Device ID</p></li>
+<li><p><strong>utils[].mem_size</strong> (<em>integer</em>) – Memory size</p></li>
+<li><p><strong>utils[].process_id</strong> (<em>integer</em>) – Process ID</p></li>
+<li><p><strong>utils[].process_name</strong> (<em>string</em>) – Process Name</p></li>
+<li><p><strong>utils[].shared_mem_size</strong> (<em>integer</em>) – Shared memory size</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="http get">
+<dt class="sig sig-object http" id="get--rest-v1-devices-deviceId-ps">
+<span class="sig-name descname"><span class="pre">GET</span> </span><span class="sig-name descname"><span class="pre">/rest/v1/devices/{deviceId}/ps</span></span><a class="headerlink" href="#get--rest-v1-devices-deviceId-ps" title="Permalink to this definition"></a></dt>
+<dd><p>Get per process device utilization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>deviceId</strong> (<em>integer</em>) – Device id</p></li>
+</ul>
+</dd>
+<dt class="field-even">Status Codes</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a></span> – OK</p></li>
+<li><p><span><a class="reference external" href="https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">500 Internal Server Error</a></span> – Error</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Response JSON Object</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>utils[].device_id</strong> (<em>integer</em>) – Device ID</p></li>
+<li><p><strong>utils[].mem_size</strong> (<em>integer</em>) – Memory size</p></li>
+<li><p><strong>utils[].process_id</strong> (<em>integer</em>) – Process ID</p></li>
+<li><p><strong>utils[].process_name</strong> (<em>string</em>) – Process Name</p></li>
+<li><p><strong>utils[].shared_mem_size</strong> (<em>integer</em>) – Shared memory size</p></li>
 </ul>
 </dd>
 </dl>

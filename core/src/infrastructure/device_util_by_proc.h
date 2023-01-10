@@ -38,13 +38,6 @@ public:
     void setSharedMemSize(uint64_t sharedMemSize);
     void setProcessName(std::string processName);
 
-    // To caculate the utilizations, the data[0] is active time 1 and the data[1] is the active time 2 for each engine
-    uint64_t reData[2];
-    uint64_t ceData[2];
-    uint64_t cpyData[2];
-    uint64_t meData[2];
-    uint64_t meeData[2]; 
-    uint64_t elapsed;
     char d_name[32];
 };
 

@@ -55,7 +55,7 @@ class PromMetric(Enum):
     xpum_fabric_tx_bytes = ('xpum_fabric_tx_bytes', 'Data transmitted through fabric link (in bytes)', ['sub_dev', 'dst_dev_file', 'dst_pci_bdf', 'dst_sub_dev'])  # nopep8
 
     # Topology Link
-    xpum_topology_link = ('xpum_topology_link', 'Connection type fo two GPU tiles', ['local_cpu_affinity', 'local_device_id', 'local_numa_index', 'local_on_subdevice', 'local_subdevice_id', 'remote_device_id', 'remote_subdevice_id', 'lan_count'])  # nopep8
+    xpum_topology_link = ('xpum_topology_link', 'Connection type fo two GPU tiles', ['local_cpu_affinity', 'local_device_id', 'local_numa_index', 'local_on_subdevice', 'local_subdevice_id', 'remote_device_id', 'remote_subdevice_id', 'lane_count'])  # nopep8
 
     # Xelink Throughput
     xpum_xelink_throughput = ('xpum_xelink_throughput', 'The Xelink throughput (in KB/s)', ['local_device_id', 'local_subdevice_id', 'remote_device_id', 'remote_subdevice_id'])  # nopep8
@@ -137,7 +137,7 @@ metrics_map = {
     'XPUM_STATS_FABRIC_THROUGHPUT': Metric(PromMetric.xpum_fabric_tx_bytes, is_counter=True, ext_labels={'sub_dev': '$src_tile_id', 'dst_dev_file': '$dst_dev_file', 'dst_pci_bdf': '$dst_pci_bdf', 'dst_sub_dev': '$dst_tile_id'}),  # nopep8
 
     # Topology Xelink
-    'XPUM_STATS_TOPOLOGY_LINK': Metric(PromMetric.xpum_topology_link, ext_labels={'local_cpu_affinity': '$local_cpu_affinity', 'local_device_id': '$local_device_id', 'local_numa_index': '$local_numa_index', 'local_on_subdevice': '$local_on_subdevice', 'local_subdevice_id': '$local_subdevice_id', 'remote_device_id': '$remote_device_id', 'remote_subdevice_id': '$remote_subdevice_id', 'lan_count': '$lan_count'}),  # nopep8
+    'XPUM_STATS_TOPOLOGY_LINK': Metric(PromMetric.xpum_topology_link, ext_labels={'local_cpu_affinity': '$local_cpu_affinity', 'local_device_id': '$local_device_id', 'local_numa_index': '$local_numa_index', 'local_on_subdevice': '$local_on_subdevice', 'local_subdevice_id': '$local_subdevice_id', 'remote_device_id': '$remote_device_id', 'remote_subdevice_id': '$remote_subdevice_id', 'lane_count': '$lane_count'}),  # nopep8
 
     # Xelink Throughput
     'XPUM_STATS_XELINK_THROUGHPUT': Metric(PromMetric.xpum_xelink_throughput, ext_labels={'local_device_id': '$local_device_id', 'local_subdevice_id': '$local_subdevice_id', 'remote_device_id': '$remote_device_id', 'remote_subdevice_id': '$remote_subdevice_id'}),  # nopep8

@@ -1,7 +1,7 @@
 #
 # Copyright (C) 2022 Intel Corporation
 # SPDX-License-Identifier: MIT
-# @file top.py
+# @file ps.py
 #
 
 from .grpc_stub import stub
@@ -22,11 +22,6 @@ def getDeviceUtilByProc(deviceId):
         util['process_id'] = d.processId
         util['process_name'] = d.processName
         util['device_id'] = d.deviceId
-        util['rendering_engine_util'] = d.renderingEngineUtil
-        util['compute_engine_util'] = d.computeEngineUtil
-        util['copy_engine_util'] = d.copyEngineUtil
-        util['media_engine_util'] = d.mediaEngineUtil
-        util['media_enhancement_util'] = d.mediaEnhancementUtil
         util['mem_size'] = d.memSize
         util['shared_mem_size'] = d.sharedMemSize
         data.append(util)
@@ -44,11 +39,6 @@ def getAllDeviceUtilByProc():
         util['process_id'] = d.processId
         util['process_name'] = d.processName
         util['device_id'] = d.deviceId
-        util['rendering_engine_util'] = d.renderingEngineUtil
-        util['compute_engine_util'] = d.computeEngineUtil
-        util['copy_engine_util'] = d.copyEngineUtil
-        util['media_engine_util'] = d.mediaEngineUtil
-        util['media_enhancement_util'] = d.mediaEnhancementUtil
         util['mem_size'] = d.memSize
         util['shared_mem_size'] = d.sharedMemSize
         data.append(util)

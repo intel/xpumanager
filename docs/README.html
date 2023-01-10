@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Intel XPU Manager &mdash; XPU Manager  documentation</title>
+  <title>Intel XPU Manager and XPU System Management Interface &mdash; XPU Manager  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
@@ -42,13 +42,15 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Intel XPU Manager</a><ul>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Intel XPU Manager and XPU System Management Interface</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#intel-xpu-manager-features">Intel XPU Manager features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cli-output-of-gpu-device-info-telemetries-and-firmware-update">CLI output of GPU device info, telemetries and firmware update</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#feature-set-of-intel-xpu-manager-xpu-smi-and-windows-cli-tool">Feature set of Intel XPU Manager, XPU-SMI and Windows CLI tool</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#supported-devices">Supported Devices</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#supported-oses">Supported OSes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#intel-xpu-manager-architecture">Intel XPU Manager Architecture</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#gpu-telemetry-exported-from-intel-xpu-manager-to-grafana">GPU telemetry exported from Intel XPU Manager to Grafana</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#intel-xpu-manager-documentation">Intel XPU Manager Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#documentation">Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#architecture">Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gpu-telemetry-exported-to-grafana">GPU telemetry exported to Grafana</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
@@ -75,7 +77,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="xpum_index.html">XPUM Documentation</a> &raquo;</li>
-      <li>Intel XPU Manager</li>
+      <li>Intel XPU Manager and XPU System Management Interface</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -84,12 +86,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-manager">
-<h1>Intel XPU Manager<a class="headerlink" href="#intel-xpu-manager" title="Permalink to this headline"></a></h1>
-<p>Intel XPU Manager is a free and open-source solution for monitoring and managing Intel data center GPUs.</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-manager-and-xpu-system-management-interface">
+<h1>Intel XPU Manager and XPU System Management Interface<a class="headerlink" href="#intel-xpu-manager-and-xpu-system-management-interface" title="Permalink to this headline"></a></h1>
+<p>Intel XPU Manager is a free and open-source tool for monitoring and managing Intel data center GPUs.</p>
 <p>It is designed to simplify administration, maximize reliability and uptime, and improve utilization.</p>
-<p>Intel XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely.</p>
-<p>3rd party open-source and commercial workload and cluster managers, job schedulers, and monitoring solutions can also integrate the Intel XPU Manager to support Intel data center GPUs.</p>
+<p>Intel XPU Manager can be used standalone through its command line interface (CLI) to manage GPUs locally, or through its RESTful APIs to manage GPUs remotely. Intel XPU-SMI (XPU System Management Interface) is the daemon-less version of XPU Manager and it only provides the local interface. XPU-SMI feature scope is the subset of XPU Manager. Their features are listed in the table below.</p>
+<p>3rd party open-source and commercial workload and cluster managers, job schedulers, and monitoring solutions can also integrate the Intel XPU Manager or XPU-SMI to manage Intel data center GPUs.</p>
 <section id="intel-xpu-manager-features">
 <h2>Intel XPU Manager features<a class="headerlink" href="#intel-xpu-manager-features" title="Permalink to this headline"></a></h2>
 <ul class="simple">
@@ -97,18 +99,20 @@
 <ul>
 <li><p>GPU discovery and information - name, model, serial, stepping, location, frequency, memory capacity, firmware version</p></li>
 <li><p>GPU topology and grouping</p></li>
-<li><p>GPU Firmware updating</p></li>
+<li><p>GPU Firmware updating, including GPU GFX firmware and AMC (Add-in card Management Controller) firmware updating.</p></li>
 </ul>
 </li>
 <li><p>Monitoring:</p>
 <ul>
-<li><p>GPU health – memory, power, temperature, fabric port, etc.</p></li>
 <li><p>GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory throughput, errors</p></li>
+<li><p>GPU health – memory, power, temperature, fabric port, etc.</p></li>
 </ul>
 </li>
 <li><p>Diagnostics:</p>
 <ul>
 <li><p>3 levels of GPU diagnostic tests</p></li>
+<li><p>Pre-check GPU hardware and driver critical issues</p></li>
+<li><p>GPU log collection for the issue investigation</p></li>
 </ul>
 </li>
 <li><p>Configuration:</p>
@@ -124,6 +128,117 @@
 </li>
 </ul>
 </section>
+<section id="cli-output-of-gpu-device-info-telemetries-and-firmware-update">
+<h2>CLI output of GPU device info, telemetries and firmware update<a class="headerlink" href="#cli-output-of-gpu-device-info-telemetries-and-firmware-update" title="Permalink to this headline"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>xpumcli discovery -d 0
++-----------+--------------------------------------------------------------------------------------+
+| Device ID | Device Information                                                                   |
++-----------+--------------------------------------------------------------------------------------+
+| 0         | Device Type: GPU                                                                     |
+|           | Device Name: Intel(R) Graphics [0x56c0]                                              |
+|           | Vendor Name: Intel(R) Corporation                                                    |
+|           | UUID: 01000000-0000-0000-0000-0000004d0000                                           |
+|           | Serial Number: LQAC20305316                                                          |
+|           | Core Clock Rate: 2050 MHz                                                            |
+|           | Stepping: C0                                                                         |
+|           |                                                                                      |
+|           | Driver Version:                                                                      |
+|           | Kernel Version: 5.15.47+prerelease3762                                               |
+|           | GFX Firmware Name: GFX                                                               |
+|           | GFX Firmware Version: DG02_1.3170                                                    |
+|           | GFX Data Firmware Name: GFX_DATA                                                     |
+|           | GFX Data Firmware Version: 0x12d                                                     |
+|           |                                                                                      |
+|           | PCI BDF Address: 0000:4d:00.0                                                        |
+|           | PCI Slot: J37 - Riser 1, Slot 1                                                      |
+|           | PCIe Generation: 4                                                                   |
+|           | PCIe Max Link Width: 16                                                              |
++-----------+--------------------------------------------------------------------------------------+
+
+xpumcli dump -d 0 -m 0,1,2,3
+Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz), GPU Core Temperature (Celsius Degree)
+21:23:00.000,    0, 99.55, 119.61, 1800, 49.00
+21:23:01.000,    0, 99.45, 119.36, 1800, 50.00
+21:23:02.000,    0, 99.48, 119.55, 1750, 50.50
+21:23:03.000,    0, 99.65, 119.24, 1700, 51.00
+
+
+sudo xpumcli updatefw -d 0 -t GFX -f ATS_M150_512_C0_PVT_ES_032_gfx_fwupdate_SOC1.bin
+Device 0 FW version: DG02_1.3170
+Image FW version: DG02_1.3172
+Do you want to continue? (y/n) y
+Start to update firmware
+Firmware Name: GFX
+Image path: /home/dcm/ATS_M150_512_C0_PVT_ES_032_gfx_fwupdate_SOC1.bin
+[============================================================] 100 %
+Update firmware successfully.
+</pre></div>
+</div>
+</section>
+<section id="feature-set-of-intel-xpu-manager-xpu-smi-and-windows-cli-tool">
+<h2>Feature set of Intel XPU Manager, XPU-SMI and Windows CLI tool<a class="headerlink" href="#feature-set-of-intel-xpu-manager-xpu-smi-and-windows-cli-tool" title="Permalink to this headline"></a></h2>
+<table class="colwidths-auto docutils align-default">
+<thead>
+<tr class="row-odd"><th class="text-left head"><p></p></th>
+<th class="text-center head"><p>XPU Manager</p></th>
+<th class="text-center head"><p>XPU-SMI</p></th>
+<th class="text-center head"><p>Windows CLI tool</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p>Device Info and Topology</p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p>GPU Telemetries</p></td>
+<td class="text-center"><p>Yes (aggregated data)</p></td>
+<td class="text-center"><p>Yes (real-time data)</p></td>
+<td class="text-center"><p>Yes (real-time data)</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p>GPU Firmware Update</p></td>
+<td class="text-center"><p>GFX, GFX_Data, AMC</p></td>
+<td class="text-center"><p>GFX, GFX_Data</p></td>
+<td class="text-center"><p>GFX, GFX_Data</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p>GPU Configuration</p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p>GPU Diagnostics</p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p>GPU Health</p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>No</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p>GPU Grouping</p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>No</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p>GPU policy</p></td>
+<td class="text-center"><p>Yes</p></td>
+<td class="text-center"><p>No</p></td>
+<td class="text-center"><p>No</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p>Architecture</p></td>
+<td class="text-center"><p>Daemon based</p></td>
+<td class="text-center"><p>Daemon-less</p></td>
+<td class="text-center"><p>Daemon-less</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p>Interfaces</p></td>
+<td class="text-center"><p>CLI, RESTFul, Library</p></td>
+<td class="text-center"><p>CLI, Library</p></td>
+<td class="text-center"><p>CLI</p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="supported-devices">
 <h2>Supported Devices<a class="headerlink" href="#supported-devices" title="Permalink to this headline"></a></h2>
 <ul class="simple">
@@ -133,30 +248,44 @@
 <section id="supported-oses">
 <h2>Supported OSes<a class="headerlink" href="#supported-oses" title="Permalink to this headline"></a></h2>
 <ul class="simple">
+<li><p>Intel XPU Manager</p>
+<ul>
 <li><p>Ubuntu 20.04.3/22.04</p></li>
 <li><p>RHEL 8.5/8.6</p></li>
 <li><p>CentOS 8 Stream</p></li>
 <li><p>CentOS 7.4/7.9</p></li>
-<li><p>SLES 15 SP3</p></li>
-<li><p>Windows Server 2022 (limited features including: GPU device info, GPU telemetry and GPU settings)</p></li>
+<li><p>SLES 15 SP3/SP4</p></li>
+<li><p>Windows Server 2022 (limited features including: GPU device info, GPU telemetry, GPU firmware update and GPU configuration)</p></li>
+</ul>
+</li>
+<li><p>Intel XPU-SMI</p>
+<ul>
+<li><p>Ubuntu 20.04.3/22.04</p></li>
+<li><p>RHEL 8.5/8.6</p></li>
+<li><p>CentOS 8 Stream</p></li>
+<li><p>SLES 15 SP3/SP4</p></li>
+</ul>
+</li>
 </ul>
 </section>
-<section id="intel-xpu-manager-architecture">
-<h2>Intel XPU Manager Architecture<a class="headerlink" href="#intel-xpu-manager-architecture" title="Permalink to this headline"></a></h2>
-<p><img alt="Intel XPU Manager Architecture" src="_images/architecture.PNG" /></p>
-</section>
-<section id="gpu-telemetry-exported-from-intel-xpu-manager-to-grafana">
-<h2>GPU telemetry exported from Intel XPU Manager to Grafana<a class="headerlink" href="#gpu-telemetry-exported-from-intel-xpu-manager-to-grafana" title="Permalink to this headline"></a></h2>
-<p><img alt="GPU telemetry exported from Intel XPU Manager to Grafana" src="_images/Grafana.PNG" /></p>
-</section>
-<section id="intel-xpu-manager-documentation">
-<h2>Intel XPU Manager Documentation<a class="headerlink" href="#intel-xpu-manager-documentation" title="Permalink to this headline"></a></h2>
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline"></a></h2>
 <ul class="simple">
-<li><p>Refer to the <span class="xref myst">XPU Manager Installation Guide</span> for how to install/uninstall Intel XPU Manager.</p></li>
+<li><p>Refer to the <span class="xref myst">XPU Manager Installation Guide</span> and for how to install/uninstall Intel XPU Manager.</p></li>
+<li><p>Refer to the <span class="xref myst">XPU-SMI Installation Guide</span> and for how to install/uninstall Intel XPU-SMI.</p></li>
 <li><p>Refer to the <span class="xref myst">XPU Manager CLI User Guide</span> to start using Intel XPU Manager.</p></li>
+<li><p>Refer to the <span class="xref myst">XPU-SMI CLI User Guide</span> to start using Intel XPU-SMI.</p></li>
 <li><p>Refer to <a class="reference external" href="https://hub.docker.com/r/intel/xpumanager">DockerHub</a> for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.</p></li>
 <li><p>Refer to <span class="xref myst">Building XPU Manager Installer</span> to build XPU Manager installer packages.</p></li>
 </ul>
+</section>
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline"></a></h2>
+<p><img alt="Intel XPU Manager Architecture" src="_images/architecture.PNG" /></p>
+</section>
+<section id="gpu-telemetry-exported-to-grafana">
+<h2>GPU telemetry exported to Grafana<a class="headerlink" href="#gpu-telemetry-exported-to-grafana" title="Permalink to this headline"></a></h2>
+<p><img alt="GPU telemetry exported from Intel XPU Manager to Grafana" src="_images/Grafana.PNG" /></p>
 </section>
 </section>
 

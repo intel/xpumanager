@@ -21,6 +21,31 @@ struct AmcCredential {
     std::string password;
 };
 
+namespace gfx_fw_status {
+enum GfxFwStatus {
+    RESET,
+    INIT,
+    RECOVERY,
+    TEST,
+    FW_DISABLED,
+    NORMAL,
+    DISABLE_WAIT,
+    OP_STATE_TRANS,
+    INVALID_CPU_PLUGGED_IN,
+    UNKNOWN
+};
+}
+
+struct RunGSCFirmwareFlashParam {
+    std::vector<char> img;
+    bool force;
+    std::string errMsg;
+};
+
+struct GetGSCFirmwareFlashResultParam{
+    std::string errMsg;
+};
+
 class FirmwareManager {
    private:
     std::mutex mtx;
@@ -34,6 +59,10 @@ class FirmwareManager {
     void preInitAmcManager();
 
     bool initAmcManager();
+
+    xpum_result_t atsmHwConfigCompatibleCheck(std::string meiPath, std::vector<char>& buffer);
+
+    xpum_result_t isPVCFwImageAndDeviceCompatible(std::string meiPath, std::vector<char>& buffer);
 
     std::string getAmcFwErrMsg;
     std::string flashFwErrMsg;
@@ -49,7 +78,7 @@ class FirmwareManager {
     std::string getAmcWarnMsg();
     xpum_result_t getAMCSensorReading(xpum_sensor_reading_t data[], int *count);
 
-    xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath);
+    xpum_result_t runGSCFirmwareFlash(xpum_device_id_t deviceId, const char* filePath, bool force = false);
     void getGSCFirmwareFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 
     xpum_result_t runFwDataFlash(xpum_device_id_t deviceId, const char* filePath);
@@ -67,6 +96,12 @@ class FirmwareManager {
     }
 
     xpum_result_t getAMCSlotSerialNumbers(AmcCredential credential, std::vector<SlotSerialNumberAndFwVersion>& serialNumberList);
+
+    gfx_fw_status::GfxFwStatus getGfxFwStatus(xpum_device_id_t deviceId);
+
+    static std::string transGfxFwStatusToString(gfx_fw_status::GfxFwStatus status);
+    
+    xpum_result_t getAMCSerialNumbersByRiserSlot(uint8_t riser, uint8_t slot, std::string &serialNumber);
 };
 
 std::vector<char> readImageContent(const char* filePath);

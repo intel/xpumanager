@@ -1729,6 +1729,9 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
             request->utilizationinterval(), dataArray, &count);
     if (res != XPUM_OK) {
         switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("Device not found");
+                break;
             case XPUM_BUFFER_TOO_SMALL:
                 response->set_errormsg("Buffer is too small");
                 break;

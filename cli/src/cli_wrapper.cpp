@@ -18,6 +18,7 @@
 #include "exit_code.h"
 #include "comlet_dump.h"
 #include "comlet_statistics.h"
+#include "comlet_diagnostic.h"
 #ifndef DAEMONLESS
 #include "grpc_core_stub.h"
 #else
@@ -80,14 +81,10 @@ int CLIWrapper::printResult(std::ostream &out) {
             if (comlet->getCommand().compare("discovery") == 0) {
                 if (comlet->isEmpty()) {
                     putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
-                } else {
-                    putenv(const_cast<char *>("_XPUM_INIT_SKIP=AMC"));
                 }
             } else if (comlet->getCommand().compare("updatefw") != 0 &&
                     comlet->getCommand().compare("config") != 0) {
                 putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
-            } else {
-                putenv(const_cast<char *>("_XPUM_INIT_SKIP=AMC"));
             }
 
             if (comlet->getCommand().compare("stats") == 0) {
@@ -111,6 +108,8 @@ int CLIWrapper::printResult(std::ostream &out) {
             }
             if (comlet->getCommand().compare("dump") == 0 && std::dynamic_pointer_cast<ComletDump>(comlet)->dumpIdlePowerOnly()) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);
+            } else if (comlet->getCommand().compare("diag") == 0 && std::dynamic_pointer_cast<ComletDiagnostic>(comlet)->isPreCheck()) {
+                this->coreStub = std::make_shared<LibCoreStub>(false);  
             } else {
                 this->coreStub = std::make_shared<LibCoreStub>();  
             }

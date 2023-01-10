@@ -21,6 +21,8 @@ extern void setPercentCallbackAndContext(percent_callback_func_t callback, void 
 
 extern std::vector<xpum_sensor_reading_t> read_sensor();
 
+extern int get_sn_number(uint8_t baseboardSlot, uint8_t riserSlot, std::string &sn_number);
+
 static void percent_callback(uint32_t percent, void* pAmcManager) {
     IpmiAmcManager* p = (IpmiAmcManager*)pAmcManager;
     if (p->percent.load() < (int)percent)
@@ -151,6 +153,12 @@ void IpmiAmcManager::getAMCSensorReading(GetAmcSensorReadingParam& param){
 }
 
 void IpmiAmcManager::getAMCSlotSerialNumbers(GetAmcSlotSerialNumbersParam& param) {
+}
+
+void IpmiAmcManager::getAMCSerialNumberByRiserSlot(uint8_t baseboardSlot, uint8_t riserSlot, std::string &serialNumber) {
+    if (int err = get_sn_number(baseboardSlot, riserSlot, serialNumber)) {
+        XPUM_LOG_ERROR("Get AMC Serial Number failed, NRV error code: {}", err);
+    }
 }
 
 } // namespace xpum

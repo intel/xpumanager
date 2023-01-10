@@ -1432,14 +1432,76 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceComponentOccupancyRatio(in
 std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceUtilizationByProcess(
         int deviceId, int utilizationInterval) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    uint32_t count = 1024;
+    xpum_device_util_by_process_t dataArray[count];
+    xpum_result_t res = xpumGetDeviceUtilizationByProcess(
+            deviceId, utilizationInterval, dataArray, &count);
+    if (res == XPUM_OK) {
+        std::vector<nlohmann::json> utils;
+        for (uint32_t i = 0; i < count; i++) {
+            auto util = nlohmann::json();
+            util["process_id"] = dataArray[i].processId;
+            util["process_name"] = dataArray[i].processName;
+            util["device_id"] = dataArray[i].deviceId;
+            util["mem_size"] = dataArray[i].memSize / 1000;
+            util["shared_mem_size"] = dataArray[i].sharedMemSize / 1000;
+            utils.push_back(util);
+        }
+        (*json)["device_util_by_proc_list"] = utils;
+    } else {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                (*json)["error"] = "Device not found";
+                break;
+            case XPUM_BUFFER_TOO_SMALL:
+                (*json)["error"] = "Buffer is too small";
+                break;
+            case XPUM_INTERVAL_INVALID:
+                (*json)["error"] = "Interval must be (0, 1000*1000]";
+                break;
+            default:
+                (*json)["error"] = "Error";
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    }
     return json;
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getAllDeviceUtilizationByProcess(
         int utilizationInterval) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    uint32_t count = 1024 * 4;
+    xpum_device_util_by_process_t dataArray[count];
+    xpum_result_t res = xpumGetAllDeviceUtilizationByProcess(
+            utilizationInterval, dataArray, &count);
+    if (res == XPUM_OK) {
+        std::vector<nlohmann::json> utils;
+        for (uint32_t i = 0; i < count; i++) {
+            auto util = nlohmann::json();
+            util["process_id"] = dataArray[i].processId;
+            util["process_name"] = dataArray[i].processName;
+            util["device_id"] = dataArray[i].deviceId;
+            util["mem_size"] = dataArray[i].memSize / 1000;
+            util["shared_mem_size"] = dataArray[i].sharedMemSize / 1000;
+            utils.push_back(util);
+        }
+        (*json)["device_util_by_proc_list"] = utils;
+    } else {
+        switch (res) {
+            case XPUM_BUFFER_TOO_SMALL:
+                (*json)["error"] = "Buffer is too small";
+                break;
+            case XPUM_INTERVAL_INVALID:
+                (*json)["error"] = "Interval must be (0, 1000*1000]";
+                break;
+            default:
+                (*json)["error"] = "Error";
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    }
     return json;
 }
+
 std::string LibCoreStub::getTopoXMLBuffer() {
     int size = 0;
     std::string result;

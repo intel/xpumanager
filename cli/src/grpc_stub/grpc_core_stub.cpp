@@ -1939,16 +1939,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceUtilizationByProcess(
                 response.processlist(i).memsize() / 1000;
             util["shared_mem_size"] = 
                 response.processlist(i).sharedmemsize() / 1000;
-            util["rendering_engine_util"] =
-                response.processlist(i).renderingengineutil();
-            util["copy_engine_util"] = response.processlist(i).copyengineutil();
-            util["media_engine_util"] =
-                response.processlist(i).mediaengineutil();
-            util["media_enhancement_util"] =
-                response.processlist(i).mediaenhancementutil();
-            util["compute_engine_util"] =
-                response.processlist(i).computeengineutil();
-            utilByProcessList.push_back(util);
+           utilByProcessList.push_back(util);
         }
         (*json)["device_util_by_proc_list"] = utilByProcessList;
     } else {
@@ -1985,15 +1976,6 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getAllDeviceUtilizationByProcess(
                 response.processlist(i).memsize() / 1000;
             util["shared_mem_size"] = 
                 response.processlist(i).sharedmemsize() / 1000;
-            util["rendering_engine_util"] =
-                response.processlist(i).renderingengineutil();
-            util["copy_engine_util"] = response.processlist(i).copyengineutil();
-            util["media_engine_util"] =
-                response.processlist(i).mediaengineutil();
-            util["media_enhancement_util"] =
-                response.processlist(i).mediaenhancementutil();
-            util["compute_engine_util"] =
-                response.processlist(i).computeengineutil();
             utilByProcessList.push_back(util);
         }
         (*json)["device_util_by_proc_list"] = utilByProcessList;

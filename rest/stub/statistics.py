@@ -308,7 +308,7 @@ def getTopologyLink():
         else:
             t["local_on_subdevice"] = 'false'
 
-        t["lan_count"] = 0
+        t["lane_count"] = 0
         if(isinstance(xelink.linkType, str)):
             if xelink.linkType == 'S':
                 t["value"] = 0
@@ -323,7 +323,7 @@ def getTopologyLink():
             elif xelink.linkType.startswith('XL'):
                 t["value"] = 1
                 for port in xelink.linkPortList:
-                    t["lan_count"] += port
+                    t["lane_count"] += port
             else:
                 t["value"] = -1
         else:

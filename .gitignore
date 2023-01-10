@@ -31,3 +31,4 @@ rest/cert.pem
 third_party/hwloc/install/*
 *.log
 .ccache/
+amcmcli/src/config.h

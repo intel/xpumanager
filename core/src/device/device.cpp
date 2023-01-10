@@ -107,11 +107,11 @@ zes_device_handle_t Device::getDeviceHandle() {
     return zes_device_handle;
 }
 
-xpum_result_t Device::runFirmwareFlash(std::vector<char> img) noexcept {
+xpum_result_t Device::runFirmwareFlash(RunGSCFirmwareFlashParam &param) noexcept {
     return xpum_result_t::XPUM_GENERIC_ERROR;
 }
 
-xpum_firmware_flash_result_t Device::getFirmwareFlashResult(xpum_firmware_type_t type) noexcept {
+xpum_firmware_flash_result_t Device::getFirmwareFlashResult(GetGSCFirmwareFlashResultParam &param) noexcept {
     return XPUM_DEVICE_FIRMWARE_FLASH_OK;
 }
 

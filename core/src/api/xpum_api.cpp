@@ -132,6 +132,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "GFX_PSCBIN_FIRMWARE_VERSION";
         case XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE:
             return "MEMORY_ECC_STATE";
+        case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS:
+            return "GFX_FIRMWARE_STATUS";
         default:
             return "";
     }
@@ -506,6 +508,29 @@ xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
                 }
             }
         }
+    } 
+    if (serialNumberList.size() == 0) {
+        std::regex pattern("Riser\\s\\d", std::regex_constants::icase);
+        std::smatch sm;
+        /*
+            "Riser" and "Slot" read from dmidecode corresponding to 
+            slot number in baseboard and slot number in riser card respectively
+        */
+        uint8_t baseboardSlot = 0, riserSlot = 0;
+        if (std::regex_search(pciSlot, sm, pattern)) {
+            baseboardSlot = sm[0].str()[6];
+        }
+        pattern = std::regex("Slot\\s\\d", std::regex_constants::icase);
+        if (std::regex_search(pciSlot, sm, pattern)) {
+            riserSlot = sm[0].str()[5];
+        }
+        std::string sn;
+        Core::instance().getFirmwareManager()->getAMCSerialNumbersByRiserSlot(baseboardSlot, riserSlot, sn);
+        std::size_t length = sn.copy(serialNumber, sn.length());
+        serialNumber[length] = '\0';
+        amcFwVersion[0] = '\0';
+        if (sn.length() > 0)
+            return XPUM_OK;
     }
 
     for (auto slotSN : serialNumberList) {
@@ -539,6 +564,10 @@ static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
 }
 
 xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password) {
+    return xpumRunFirmwareFlashEx(deviceId, job, username, password, false);
+}
+
+xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password, bool force) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
@@ -586,7 +615,7 @@ xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flas
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
                 return res;
-            return Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath);
+            return Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, job->filePath, force);
         } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_DATA) {
             res = validateDeviceId(deviceId);
             if (res != XPUM_OK)
@@ -811,15 +840,25 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 copy.name = propName;
                 strcpy(copy.value, value.c_str());
             }
-            bool available;
-            bool configurable;
-            xpum_ecc_state_t current, pending;
-            xpum_ecc_action_t action;
-            res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
-            auto &copy = pXpumProperties->properties[propertyLen++];
-            copy.name = XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE;
-            std::string value = eccStateToString(current);
-            strcpy(copy.value, value.c_str());
+            {
+                bool available;
+                bool configurable;
+                xpum_ecc_state_t current, pending;
+                xpum_ecc_action_t action;
+                res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
+                auto &copy = pXpumProperties->properties[propertyLen++];
+                copy.name = XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE;
+                std::string value = eccStateToString(current);
+                strcpy(copy.value, value.c_str());
+            }
+
+            {
+                auto &copy = pXpumProperties->properties[propertyLen++];
+                copy.name = XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS;
+                auto fw_status = Core::instance().getFirmwareManager()->getGfxFwStatus(deviceId);
+                auto fw_status_str = FirmwareManager::transGfxFwStatusToString(fw_status);
+                strcpy(copy.value, fw_status_str.c_str());
+            }
 
             pXpumProperties->propertyLen = propertyLen;
 

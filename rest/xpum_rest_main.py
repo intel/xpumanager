@@ -25,7 +25,7 @@ from views import agent_settings
 from views import statistics
 from views import device_config
 from views import topology
-from views import top
+from views import ps
 from views import dump_raw_data
 from views import sensor
 
@@ -177,12 +177,11 @@ def main(*args, **kwargs):
     app.add_url_rule('/rest/v1/topology/xelink', methods=['GET'],
                      view_func=auth.login_required(topology.get_topo_xelink))
 
-    # Temporarily hide the top feature 
-    # top
-    # app.add_url_rule('/rest/v1/devices/<int:deviceId>/top', methods=['GET'],
-    #                 view_func=auth.login_required(top.get_device_util_by_proc))
-    # app.add_url_rule('/rest/v1/top', methods=['GET'],
-    #                 view_func=auth.login_required(top.get_all_device_util_by_proc))
+    # ps
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/ps', methods=['GET'],
+                     view_func=auth.login_required(ps.get_device_util_by_proc))
+    app.add_url_rule('/rest/v1/ps', methods=['GET'],
+                     view_func=auth.login_required(ps.get_all_device_util_by_proc))
 
     # dump raw data
     app.add_url_rule('/rest/v1/dump', methods=['POST'],

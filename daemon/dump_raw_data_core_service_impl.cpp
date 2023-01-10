@@ -23,12 +23,12 @@ namespace xpum::daemon {
 static std::string isotimestamp(uint64_t t) {
     time_t seconds = (long)t / 1000;
     int milli_seconds = t % 1000;
-    tm* tm_p = gmtime(&seconds);
+    tm* tm_p = localtime(&seconds);
     char buf[50];
     strftime(buf, sizeof(buf), "%FT%T", tm_p);
     char milli_buf[10];
     sprintf(milli_buf, "%03d", milli_seconds);
-    return std::string(buf) + "." + std::string(milli_buf) + "Z";
+    return std::string(buf) + "." + std::string(milli_buf);
 }
 
 static void createEmptyFile(std::string filePath) {

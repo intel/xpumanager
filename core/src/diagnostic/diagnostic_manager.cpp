@@ -1606,6 +1606,10 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
         if (ret != ZE_RESULT_SUCCESS) {
             throw BaseException("zeCommandListAppendMemoryFill()");
         }
+        ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeCommandListAppendBarrier()");
+        }
         ret = zeCommandListAppendMemoryFill(command_list, dst_allocation,
                                             &init_value_3_, sizeof(uint8_t),
                                             one_case_allocation_count *
@@ -1613,6 +1617,10 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
                                             nullptr, 0, nullptr);
         if (ret != ZE_RESULT_SUCCESS) {
             throw BaseException("zeCommandListAppendMemoryFill()");
+        }
+        ret = zeCommandListAppendBarrier(command_list, nullptr, 0, nullptr);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeCommandListAppendBarrier()");
         }
         ret = zeCommandListAppendLaunchKernel(command_list, test_function, &thread_group_dimensions, nullptr, 0, nullptr);
         if (ret != ZE_RESULT_SUCCESS) {

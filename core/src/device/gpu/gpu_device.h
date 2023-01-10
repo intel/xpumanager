@@ -49,8 +49,8 @@ class GPUDevice : public Device {
     void getFabricThroughput(Callback_t callback) noexcept override;
     void getPerfMetrics(Callback_t callback) noexcept override;
 
-    virtual xpum_result_t runFirmwareFlash(std::vector<char> img) noexcept override; //GSC
-    virtual xpum_firmware_flash_result_t getFirmwareFlashResult(xpum_firmware_type_t type) noexcept override;
+    virtual xpum_result_t runFirmwareFlash(RunGSCFirmwareFlashParam &param) noexcept override; // GSC
+    virtual xpum_firmware_flash_result_t getFirmwareFlashResult(GetGSCFirmwareFlashResultParam &param) noexcept override;
 
     virtual bool isUpgradingFw(void) noexcept override;
     virtual bool isUpgradingFwResultReady(void) noexcept override;
@@ -66,6 +66,8 @@ class GPUDevice : public Device {
 
     static const unsigned int BUFFERSIZE = 4 * 1024;
     static const std::string logFilePath;
+
+    std::string flashFwErrMsg;
 };
 
 } // end namespace xpum
