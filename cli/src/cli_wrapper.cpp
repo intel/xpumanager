@@ -85,6 +85,8 @@ int CLIWrapper::printResult(std::ostream &out) {
             } else if (comlet->getCommand().compare("updatefw") != 0 &&
                     comlet->getCommand().compare("config") != 0) {
                 putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
+            } else {
+                putenv(const_cast<char *>("_XPUM_INIT_SKIP=AMC"));
             }
 
             if (comlet->getCommand().compare("stats") == 0) {
