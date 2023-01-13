@@ -9,9 +9,9 @@ RemainAfterExit=yes
 
 RuntimeDirectory=xpum
 
-WorkingDirectory=@CPACK_PACKAGING_INSTALL_PREFIX@/rest/
+WorkingDirectory=@CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/rest/
 
-ExecStart=gunicorn --certfile conf/cert.pem --keyfile conf/key.pem --bind 0.0.0.0:30000 --worker-class gthread --threads 10 --worker-connections 1000 -w 1 --ciphers "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256" -p @CPACK_PACKAGING_INSTALL_PREFIX@/rest/gunicorn.pid 'xpum_rest_main:main(dump_folder="@CPACK_PACKAGING_INSTALL_PREFIX@/dump",gunicorn_pid_file="@CPACK_PACKAGING_INSTALL_PREFIX@/rest/gunicorn.pid")'
+ExecStart=gunicorn --certfile conf/cert.pem --keyfile conf/key.pem --bind 0.0.0.0:30000 --worker-class gthread --threads 10 --worker-connections 1000 -w 1 --ciphers "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256" -p @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/rest/gunicorn.pid 'xpum_rest_main:main(dump_folder="@CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/dump",gunicorn_pid_file="@CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/rest/gunicorn.pid")'
 ExecStop=/bin/kill -s TERM $MAINPID
 ExecReload=/bin/kill -s HUP $MAINPID
 

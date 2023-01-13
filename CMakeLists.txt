@@ -48,14 +48,16 @@ set(CPACK_RPM_PACKAGE_RELOCATABLE ON)
 
 include(GNUInstallDirs)
 
-set(CPACK_XPUM_LIB_INSTALL_DIR "/usr/${CMAKE_INSTALL_LIBDIR}")
-set(CPACK_XPUM_INCLUDE_INSTALL_DIR "/usr/include")
-set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/xpum")
+set(CPACK_XPUM_LIB_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}")
+set(CPACK_XPUM_BIN_INSTALL_DIR "bin")
+set(CPACK_XPUM_INCLUDE_INSTALL_DIR "include")
+set(CPACK_PACKAGING_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 if(NOT DAEMONLESS)
   set(SYSTEMD_UNIT_NAME "${CMAKE_CURRENT_LIST_DIR}/daemon/xpum.service.template")
 endif()
 
-set(XPUM_CONFIG_DIR "${CPACK_PACKAGING_INSTALL_PREFIX}/config")
+set(XPUM_CONFIG_DIR "${CPACK_PACKAGING_INSTALL_PREFIX}/lib/xpum/config")
+set(XPUM_RESOURCES_DIR "${CPACK_PACKAGING_INSTALL_PREFIX}/lib/xpum/resources")
 
 set(CMAKE_PROJECT_VERSION "${PROJECT_VERSION}")
 add_definitions(-DLOADER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR})
@@ -149,15 +151,16 @@ if(CPACK_GENERATOR MATCHES "RPM")
     "/usr/local/lib")
 
   if(NOT DAEMONLESS)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/postin.in" 
+                  "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/postin" @ONLY)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/posttrans.in" 
+                  "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/posttrans" @ONLY)
+    set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
+        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/postin")
     set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
         "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/preun")
     set(CPACK_RPM_POST_TRANS_SCRIPT_FILE
         "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/posttrans")
-  else()
-    set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/smi/preun")
-    set(CPACK_RPM_POST_TRANS_SCRIPT_FILE
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/smi/posttrans")
   endif()
 endif()
 
@@ -176,12 +179,10 @@ if(CPACK_GENERATOR MATCHES "DEB")
   set(CPACK_DEB_COMPONENT_INSTALL ON)
   set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
   if(NOT DAEMONLESS)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst.in" 
+                  "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst" @ONLY)
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
         "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/deb/prerm;"
-    )
-  else()
-    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
-        "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/smi/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/deb/smi/prerm;"
     )
   endif()
 
@@ -192,27 +193,26 @@ endif()
 install(DIRECTORY core/include/ DESTINATION ${CPACK_XPUM_INCLUDE_INSTALL_DIR})
 
 if(NOT DAEMONLESS)
-  install(DIRECTORY install/tools/rest/ DESTINATION .)
+  install(DIRECTORY install/tools/rest/ DESTINATION lib/xpum)
 endif()
 
 if(DAEMONLESS)
   install(
     TARGETS xpum xpumanager
     LIBRARY DESTINATION ${CPACK_XPUM_LIB_INSTALL_DIR}
-    RUNTIME DESTINATION bin
+    RUNTIME DESTINATION ${CPACK_XPUM_BIN_INSTALL_DIR}
     ARCHIVE DESTINATION .)
 else()
-install(
-  TARGETS xpum xpumcli xpumd
-  LIBRARY DESTINATION ${CPACK_XPUM_LIB_INSTALL_DIR}
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION .)
+  install(
+    TARGETS xpum xpumcli xpumd
+    LIBRARY DESTINATION ${CPACK_XPUM_LIB_INSTALL_DIR}
+    RUNTIME DESTINATION ${CPACK_XPUM_BIN_INSTALL_DIR}
+    ARCHIVE DESTINATION .)
 endif()
 
 if(NOT DAEMONLESS)
 install(FILES "${SYSTEMD_UNIT_NAME}"
               "${CMAKE_CURRENT_LIST_DIR}/rest/xpum_rest.service.template"
-        DESTINATION ".")
-
+        DESTINATION lib/xpum)
 endif()
 include(CPack)

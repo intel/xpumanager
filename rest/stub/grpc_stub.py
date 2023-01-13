@@ -15,7 +15,7 @@ logger.info('using socket file: %s', unixSockName)
 channel = grpc.insecure_channel('unix://' + unixSockName)
 stub = core_pb2_grpc.XpumCoreServiceStub(channel)
 
-gunicorn_pid_file = "/opt/xpum/rest/gunicorn.pid"
+gunicorn_pid_file = os.path.dirname(os.path.realpath(__file__)) + "/../gunicorn.pid"
 
 
 def exit_on_disconnect(func):

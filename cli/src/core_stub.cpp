@@ -21,7 +21,9 @@
 #include <fstream>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
+#include "config.h"
 #include "xpum_structs.h"
 
 namespace xpum::cli {
@@ -285,12 +287,18 @@ static std::string zeInitResultToString(const int result) {
 }
 
 static void readConfigFile() {
-    char exe_path[PATH_MAX];
-    ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
-    exe_path[len] = '\0';
-    std::string current_file(exe_path);
-    std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../config/";
-    std::string file_name = config_folder + std::string("diagnostics.conf");
+    std::string file_name = std::string(XPUM_CONFIG_DIR) + std::string("diagnostics.conf");
+    struct stat buffer;
+    if (stat(file_name.c_str(), &buffer) != 0) {
+        char exe_path[PATH_MAX];
+        ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+        exe_path[len] = '\0';
+        std::string current_file = exe_path;
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/config/" + std::string("diagnostics.conf");
+        if (stat(file_name.c_str(), &buffer) != 0)
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/config/" + std::string("diagnostics.conf");
+    }
+
     std::ifstream conf_file(file_name);
     if (conf_file.is_open()) {
         std::string line;

@@ -13,7 +13,7 @@ add_custom_command(
 
 install(
   DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  DESTINATION .
+  DESTINATION lib/xpum
   PATTERN "*.py"
   PATTERN "*.txt"
   PATTERN "*.md"

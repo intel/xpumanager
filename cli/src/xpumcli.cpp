@@ -76,7 +76,13 @@ bool privilegeCheck() {
 }
 
 bool levelZeroLoaderCheck() {
-    FILE* f = popen("ldd /opt/xpum/bin/xpumd", "r");
+    char exe_path[PATH_MAX];
+    ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+    exe_path[len] = '\0';
+    std::string current_file = exe_path;
+    std::string xpumd_path = current_file.substr(0, current_file.find_last_of('/')) + "/xpumd";
+    std::string command = "ldd " + xpumd_path;
+    FILE* f = popen(command.c_str(), "r");
     char c_line[1024];
     while (fgets(c_line, 1024, f) != NULL) {
         std::string line(c_line);

@@ -14,21 +14,18 @@ function CreateUser()
 CreateUser xpum
 
 if [ -d /lib/systemd/system ]; then
-  export LIB_PATH=/usr/lib
   export SERVICE_PATH=/lib/systemd/system
 else
-  export LIB_PATH=/usr/lib64
   export SERVICE_PATH=/etc/systemd/system
 fi
 
-cp -f /opt/xpum/xpum.service.template ${SERVICE_PATH}/xpum.service
-cp -f /opt/xpum/xpum_rest.service.template ${SERVICE_PATH}/xpum_rest.service
-chown -R xpum /opt/xpum
-chmod g+x /opt/xpum/keytool.sh
-ln -s /opt/xpum/bin/xpumcli /usr/bin/xpumcli
+cp -f @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/xpum.service.template ${SERVICE_PATH}/xpum.service
+cp -f @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/xpum_rest.service.template ${SERVICE_PATH}/xpum_rest.service
+chown -R xpum @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum
+chmod g+x @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/keytool.sh
 
-sed -e "s:@CPACK_XPUM_LIB_INSTALL_DIR@:${LIB_PATH}:g" ${SERVICE_PATH}/xpum.service > ${SERVICE_PATH}/xpum.service.n
-mv -f ${SERVICE_PATH}/xpum.service.n ${SERVICE_PATH}/xpum.service
+# sed -e "s:@CPACK_XPUM_LIB_INSTALL_DIR@:${LIB_PATH}:g" ${SERVICE_PATH}/xpum.service > ${SERVICE_PATH}/xpum.service.n
+# mv -f ${SERVICE_PATH}/xpum.service.n ${SERVICE_PATH}/xpum.service
 # Start xpum service when systemctl is available
 if [ -x "$(command -v systemctl)" ]; then
   systemctl daemon-reload >> ${LOG_FILE} 2>&1

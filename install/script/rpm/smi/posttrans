@@ -1,5 +1,0 @@
-if [ -n "${RPM_INSTALL_PREFIX}" ]; then
-  ln -sf ${RPM_INSTALL_PREFIX}/bin/xpu-smi /usr/bin/xpu-smi  
-else
-  ln -sf /opt/xpum/bin/xpu-smi /usr/bin/xpu-smi
-fi

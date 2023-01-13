@@ -1,0 +1,66 @@
+#!/bin/bash
+
+LOG_FILE="/dev/null"
+
+function CreateUser()
+{
+  groupadd "$1"
+  useradd "$1" -s /bin/sh -g "$1" >> ${LOG_FILE} 2>&1
+  if [ $? -ne 0 ]; then
+   	echo "CreateUser $1 failed!"
+  fi
+}
+
+CreateUser xpum
+
+if [ -d /lib/systemd/system ]; then
+  export SERVICE_PATH=/lib/systemd/system
+else
+  export SERVICE_PATH=/etc/systemd/system
+fi
+
+if [ -n "${RPM_INSTALL_PREFIX}" ]; then
+  cp -f ${RPM_INSTALL_PREFIX}/lib/xpum/xpum.service.template ${SERVICE_PATH}/xpum.service
+  cp -f ${RPM_INSTALL_PREFIX}/lib/xpum/xpum_rest.service.template ${SERVICE_PATH}/xpum_rest.service
+
+  sed -e "s:@@Workaround@CPACK_PACKAGING_INSTALL_PREFIX@Workaround@@:${RPM_INSTALL_PREFIX}:g" ${SERVICE_PATH}/xpum.service > ${SERVICE_PATH}/xpum.service.n
+  mv -f ${SERVICE_PATH}/xpum.service.n ${SERVICE_PATH}/xpum.service
+
+  sed -e "s:@@Workaround@CPACK_PACKAGING_INSTALL_PREFIX@Workaround@@:${RPM_INSTALL_PREFIX}:g" ${SERVICE_PATH}/xpum_rest.service > ${SERVICE_PATH}/xpum_rest.service.n
+  mv -f ${SERVICE_PATH}/xpum_rest.service.n ${SERVICE_PATH}/xpum_rest.service 
+
+  chown -R xpum ${RPM_INSTALL_PREFIX}/lib/xpum
+  chmod g+x ${RPM_INSTALL_PREFIX}/lib/xpum/keytool.sh
+
+  if [ ! -f ${RPM_INSTALL_PREFIX}/bin/xpumcli ]; then
+    cp -f ${RPM_INSTALL_PREFIX}/lib/xpum/xpumcli ${RPM_INSTALL_PREFIX}/bin/xpumcli
+  fi
+  rm -rf ${RPM_INSTALL_PREFIX}/lib/xpum/xpumcli
+  
+else
+  cp -f @CMAKE_INSTALL_PREFIX@/lib/xpum/xpum.service.template ${SERVICE_PATH}/xpum.service
+  cp -f @CMAKE_INSTALL_PREFIX@/lib/xpum/xpum_rest.service.template ${SERVICE_PATH}/xpum_rest.service
+
+  sed -e "s:@@Workaround@CPACK_PACKAGING_INSTALL_PREFIX@Workaround@@:@CMAKE_INSTALL_PREFIX@:g" ${SERVICE_PATH}/xpum.service > ${SERVICE_PATH}/xpum.service.n
+  mv -f ${SERVICE_PATH}/xpum.service.n ${SERVICE_PATH}/xpum.service
+
+  sed -e "s:@@Workaround@CPACK_PACKAGING_INSTALL_PREFIX@Workaround@@:@CMAKE_INSTALL_PREFIX@:g" ${SERVICE_PATH}/xpum_rest.service > ${SERVICE_PATH}/xpum_rest.service.n
+  mv -f ${SERVICE_PATH}/xpum_rest.service.n ${SERVICE_PATH}/xpum_rest.service
+
+  chown -R xpum @CMAKE_INSTALL_PREFIX@/lib/xpum
+  chmod g+x @CMAKE_INSTALL_PREFIX@/lib/xpum/keytool.sh
+
+  if [ ! -f @CMAKE_INSTALL_PREFIX@/bin/xpumcli ]; then
+    cp -f @CMAKE_INSTALL_PREFIX@/lib/xpum/xpumcli @CMAKE_INSTALL_PREFIX@/bin/xpumcli
+  fi
+  rm -rf @CMAKE_INSTALL_PREFIX@/lib/xpum/xpumcli
+fi
+
+sed -e "s:@@Workaround@CPACK_XPUM_LIB_INSTALL_DIR@Workaround@@:@CMAKE_INSTALL_LIBDIR@:g" ${SERVICE_PATH}/xpum.service > ${SERVICE_PATH}/xpum.service.n
+mv -f ${SERVICE_PATH}/xpum.service.n ${SERVICE_PATH}/xpum.service
+# Start xpum service when systemctl is available
+if [ -x "$(command -v systemctl)" ]; then
+  systemctl daemon-reload >> ${LOG_FILE} 2>&1
+  systemctl enable xpum >> ${LOG_FILE} 2>&1 
+  systemctl start xpum
+fi

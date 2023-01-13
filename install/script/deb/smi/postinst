@@ -1,3 +1,0 @@
-#!/bin/bash
-
-ln -s /opt/xpum/bin/xpu-smi /usr/bin/xpu-smi

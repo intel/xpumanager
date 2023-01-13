@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [ -n "${RPM_INSTALL_PREFIX}" ]; then
+    cp -f ${RPM_INSTALL_PREFIX}/bin/xpumcli ${RPM_INSTALL_PREFIX}/lib/xpum/xpumcli
+else
+    cp -f @CMAKE_INSTALL_PREFIX@/bin/xpumcli @CMAKE_INSTALL_PREFIX@/lib/xpum/xpumcli
+fi

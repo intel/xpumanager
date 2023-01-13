@@ -231,7 +231,7 @@ unset(BUILD_TEST CACHE)
 
 install(
   DIRECTORY resources
-  DESTINATION .
+  DESTINATION lib/xpum
   PATTERN "config" EXCLUDE)
-
-install(DIRECTORY resources/config DESTINATION .)
+  
+install(DIRECTORY resources/config DESTINATION lib/xpum)

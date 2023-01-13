@@ -35,3 +35,6 @@ daemon/xpum.service.template
 rest/xpum_rest.service.template
 .ccache/
 amcmcli/src/config.h
+install/script/deb/postinst
+install/script/rpm/postin
+install/script/rpm/posttrans
