@@ -182,6 +182,8 @@ void FirmwareManager::preInitAmcManager() {
 }
 
 bool FirmwareManager::initAmcManager() {
+    if (!p_amc_manager)
+        return false;
     InitParam param;
     if (p_amc_manager->init(param))
         return true;
