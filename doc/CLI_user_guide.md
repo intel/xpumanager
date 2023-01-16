@@ -594,7 +594,7 @@ Start to dump the device raw statistics to the CSV file.
 ```
 xpumcli dump --rawdata --start -d 0 -t 0 -m 0,1,2 
 Task 0 is started.
-Dump file path: /opt/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
+Dump file path: /usr/lib/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
 ```
 
 List all the active dump tasks.
@@ -608,7 +608,7 @@ Stop the dump task.
 ```
 xpumcli dump --rawdata --stop 0
 Task 0 is stopped. 
-Dump file path: /opt/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
+Dump file path: /usr/lib/xpum/dump/dump-output-e4439267203fb5277d347e6cd6e440b5.csv
 ```
 
 ## Get the system topology
