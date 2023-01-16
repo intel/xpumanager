@@ -20,10 +20,11 @@ sudo dpkg -r xpu-smi
 sudo rpm -i xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 
 ## RPM relocation install
-rpm -i --prefix=/opt/abc xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+rpm -i --prefix=/usr/local xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+You need set the environmental variable LD_LIBRARY_PATH if you change the installation folder. 
 
 ## Start to user Intel XPU-SMI
-By default, Intel XPU-SMI is installed the folder, /opt/xpum. The command line tool is xpu-smi. Please refer to "smi_user_guide.md" for how to use the command line tool. 
+By default, Intel XPU-SMI is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is xpu-smi. Please refer to "smi_user_guide.md" for how to use the command line tool. 
 
 ## RPM uninstall
 sudo rpm -e xpu-smi
