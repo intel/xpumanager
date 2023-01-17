@@ -91,14 +91,6 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(int deviceId, s
         return json;
     }
 
-    char serialNumber[XPUM_MAX_STR_LENGTH];
-    char amcFwVersion[XPUM_MAX_STR_LENGTH];
-    res = xpumGetSerialNumberAndAmcFwVersion(deviceId, "", "", serialNumber, amcFwVersion);
-    if (res == XPUM_OK) {
-        if (serialNumber[0] != '\0' || true) {
-            (*json)["serial_number"] = serialNumber;
-        }
-    }
     (*json)["device_id"] = deviceId;
 
     return json;
@@ -109,6 +101,17 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(const char *bdf
     // No need to check return value as "-1" covers the failure case
     xpumGetDeviceIdByBDF(bdf, &deviceId);
     return getDeviceProperties(deviceId, username, password);
+}
+
+std::string LibCoreStub::getSerailNumberIPMI(int deviceId) {
+    char serialNumber[XPUM_MAX_STR_LENGTH];
+    char amcFwVersion[XPUM_MAX_STR_LENGTH];
+    auto res = xpumGetSerialNumberAndAmcFwVersion(deviceId, "", "", serialNumber, amcFwVersion);
+    if (res == XPUM_OK) {
+        return std::string(serialNumber);
+    } else {
+        return std::string();
+    }
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getAMCFirmwareVersions(std::string username, std::string password) {

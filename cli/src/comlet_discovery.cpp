@@ -244,13 +244,19 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     }
 
     if (this->opts->deviceId.compare("-1") != 0) {
+        auto json = std::make_unique<nlohmann::json>();
         if (isNumber(this->opts->deviceId)) {
-            auto json = this->coreStub->getDeviceProperties(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
-            return json;
+            json = this->coreStub->getDeviceProperties(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
         } else {
-            auto json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str(), this->opts->username, this->opts->password);
-            return json;
+            json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str(), this->opts->username, this->opts->password);
         }
+        if (json->contains("serial_number") && (*json)["serial_number"].get<std::string>().compare("unknown") == 0) {
+            std::string sn = this->coreStub->getSerailNumberIPMI(std::stoi(this->opts->deviceId));
+            if (sn.size() > 0) {
+                (*json)["serial_number"] = sn;
+            }
+        }
+        return json;
     }
 
     if (this->opts->propIdList.size() > 0) {
