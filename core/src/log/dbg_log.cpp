@@ -72,7 +72,7 @@ copy_a_dir /sys/kernel/debug/dri gt0 $1\n\
 copy_a_dir /sys/kernel/debug/dri gt1 $1\n\
 ";
 
-const string PACKS = "\'intel-915\\|intel-gsc\\|libmetee\\|level-zero\\|intel-level-zero-gpu\\|intel-gmmlib\\|intel-igc-core\\|intel-igc-opencl\\|intel-mediasdk-utils\\|ocl-icd\\|intel-mediasdk\\|libX11-xcb\\|libXfixes\\|libXxf86vm\\|libdrm\\|libglvnd\\|libglvnd-glx\\|libpciaccess\\|libva\\|libwayland-client\\|libxshmfence\\|mesa-filesystem\\|mesa-libGL\\|mesa-libglapi\\|intel-media-driver\\|libmfxgen1\'";
+const string PACKS = "\'intel-915\\|intel-gsc\\|libmetee\\|level-zero\\|intel-level-zero-gpu\\|intel-gmmlib\\|intel-igc-core\\|intel-igc-opencl\\|intel-mediasdk-utils\\|ocl-icd\\|intel-mediasdk\\|libX11-xcb\\|libXfixes\\|libXxf86vm\\|libdrm\\|libglvnd\\|libglvnd-glx\\|libpciaccess\\|libva\\|libwayland-client\\|libxshmfence\\|mesa-filesystem\\|mesa-libGL\\|mesa-libglapi\\|intel-media-driver\\|libmfxgen1\\|libmfx1\\|libmfx-utils\\|libmfx-tools\\|intel-media-va-driver-non-free\'";
 
 int getUUID(std::string &uuid) {
     SystemCommandResult scr = execCommand("cat /proc/sys/kernel/random/uuid");
