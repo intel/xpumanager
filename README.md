@@ -1,3 +1,7 @@
+# DISCONTINUATION OF PROJECT #
+This project will no longer be maintained by Intel.
+Intel has ceased development and contributions including, but not limited to, maintenance, bug fixes, new releases, or updates, to this project.
+Intel no longer accepts patches to this project.
 # Intel XPU Manager and XPU System Management Interface
 Intel XPU Manager is a free and open-source tool for monitoring and managing Intel data center GPUs.
 
