@@ -276,12 +276,10 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     auto json = this->coreStub->getDeviceList();
     auto filtered = std::make_unique<nlohmann::json>();
     std::copy_if((*json)["device_list"].begin(), (*json)["device_list"].end(), std::back_inserter((*filtered)["device_list"]), [this](const nlohmann::json& item) {
-        if (this->opts->showPfOnly) {
-            return item.contains("device_function_type") && item["device_function_type"] == "physical";
-        } else if (this->opts->showVfOnly) {
+        if (this->opts->showVfOnly) {
             return item.contains("device_function_type") && item["device_function_type"] == "virtual";
         } else {
-            return true;
+            return item.contains("device_function_type") && item["device_function_type"] == "physical";
         }
     });
     return filtered;
