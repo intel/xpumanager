@@ -1,5 +1,5 @@
 
-# Intel XPU-SMI Installation Guide
+# Intel(R) XPU-SMI Installation Guide
 
 ## Requirements
 * Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
@@ -8,7 +8,7 @@
 * Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories) 
 * Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)
  
-intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like "--force-all" to ignore them when installing Intel XPU-SMI.
+intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like "--force-all" to ignore them when installing XPU-SMI.
 
 ## DEB install
 sudo dpkg -i xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.deb
@@ -23,8 +23,8 @@ sudo rpm -i xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 rpm -i --prefix=/usr/local xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 You need set the environmental variable LD_LIBRARY_PATH if you change the installation folder. 
 
-## Start to user Intel XPU-SMI
-By default, Intel XPU-SMI is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is xpu-smi. Please refer to "smi_user_guide.md" for how to use the command line tool. 
+## Start to user XPU-SMI
+By default, XPU-SMI is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is xpu-smi. Please refer to "smi_user_guide.md" for how to use the command line tool. 
 
 ## RPM uninstall
 sudo rpm -e xpu-smi

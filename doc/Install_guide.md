@@ -1,5 +1,5 @@
 
-# Intel XPU Manager Installation Guide
+# Intel(R) XPU Manager Installation Guide
 
 ## Requirements
 * Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
@@ -7,7 +7,8 @@
 * Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in repositories)
 * Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories) 
 * Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)
-intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like "--force-all" to ignore them when installing Intel XPU Manager.
+ 
+intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like "--force-all" to ignore them when installing Intel(R) XPU Manager.
 
 ## DEB install
 sudo dpkg -i xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.deb
@@ -18,8 +19,8 @@ sudo dpkg -r xpumanager
 ## RPM install
 sudo rpm -i xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 
-## Start to use Intel XPU Manager
-By default, Intel XPU Manager is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is /usr/bin/xpumcli. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
+## Start to use  XPU Manager
+By default, XPU Manager is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is /usr/bin/xpumcli. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
 
 ## RPM relocation install
 rpm -i --prefix=/usr/local xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
@@ -29,7 +30,7 @@ You need set the environmental variable LD_LIBRARY_PATH if you change the instal
 sudo rpm -e xpumanager
 
 ## How to enable or disable some daemon monitor metrics
-By default, Intel XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics. 
+By default, XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics. 
   
 1. edit file "/lib/systemd/system/xpum.service" or "/etc/systemd/system/xpum.service" in some system.
    add "-m metric-indexes" to ExecStart. 

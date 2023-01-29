@@ -1,9 +1,9 @@
 
-# Intel XPU Manager Command Line Interface User Guide
-This guide describes how to use Intel XPU Manager Command Line Interface to manage Intel GPU devices. 
+# Intel(R) XPU Manager Command Line Interface User Guide
+This guide describes how to use XPU Manager Command Line Interface to manage Intel GPU devices. 
   
 
-## Intel XPU Manager Command Line Interface main features 
+## Intel(R) XPU Manager Command Line Interface main features 
 * Show the device info. 
 * Manage multiple devices by the group-level. 
 * Get lots of raw and aggregated device statistics. 
@@ -16,9 +16,9 @@ This guide describes how to use Intel XPU Manager Command Line Interface to mana
 Show the XPU Manager CLI help info. 
 ```
 ./xpumcli 
-Intel XPU Manager Command Line Interface -- v1.0 
-Intel XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities. It can also be used to change the Intel data center GPU settings and update the firmware.  
-Intel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
+Intel(R) XPU Manager Command Line Interface -- v1.0 
+Intel(R) XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities. It can also be used to change the Intel data center GPU settings and update the firmware.  
+Intel(R) XPU Manager is based on Intel(R) oneAPI Level Zero. Before using Intel(R) XPU Manager, the GPU driver and Intel(R) oneAPI Level Zero should be installed rightly.  
  
 Supported devices: 
   - Intel Data Center GPU 
@@ -48,7 +48,7 @@ Subcommands:
   amcsensor                   List the AMC real-time sensor reading. 
 ```
   
-Show Intel XPU Manager version and Level Zero version. 
+Show XPU Manager version and Level Zero version. 
 ```
 ./xpumcli -v
 CLI:
@@ -282,7 +282,7 @@ Remove a group
 Successfully remove the group
 ```
  
-## Get and change the Intel XPU Manager settings
+## Get and change XPU Manager settings
 Help message of the "agentset" subcommand.
 ```
 ./xpumcli agentset

@@ -1,9 +1,8 @@
-
-# Intel XPU System Management Interface User Guide
-This guide describes how to use Intel XPU System Management Interface to manage Intel GPU devices. 
+# Intel(R) XPU System Management Interface User Guide
+This guide describes how to use Intel(R) XPU System Management Interface to manage Intel GPU devices. 
   
 
-## Intel XPU System Management Interface main features 
+## Intel(R) XPU System Management Interface main features 
 * Show the device info. 
 * Update the device firmware. 
 
@@ -11,9 +10,9 @@ This guide describes how to use Intel XPU System Management Interface to manage 
 Show the XPU System Management Interface help info. 
 ```
 xpu-smi 
-Intel XPU System Management Interface -- v1.0 
-Intel XPU System Management Interface provides the Intel data center GPU device info. It can also be used to update the firmware.  
-Intel XPU System Management Interface is based on Intel oneAPI Level Zero. Before using Intel XPU System Management Interface, the GPU driver and Intel oneAPI Level Zero should be installed rightly.  
+Intel(R) XPU System Management Interface -- v1.0 
+Intel(R) XPU System Management Interface provides the Intel data center GPU device info. It can also be used to update the firmware.  
+Intel(R) XPU System Management Interface is based on Intel(R) oneAPI Level Zero. Before using XPU System Management Interface, the GPU driver and Intel(R) oneAPI Level Zero should be installed rightly.  
  
 Supported devices: 
   - Intel Data Center GPU 
@@ -38,7 +37,7 @@ Subcommands:
   log                         Collect GPU debug logs.
 ```
   
-Show Intel XPU System Management Interface version and Level Zero version. 
+Show XPU System Management Interface version and Level Zero version. 
 ```
 xpu-smi -v
 CLI:
