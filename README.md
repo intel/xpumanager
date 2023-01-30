@@ -89,7 +89,7 @@ Update firmware successfully.
 | Interfaces                | CLI, RESTFul, Library  | CLI, Library         | CLI                          | CLI             |
 
 ## How to get XPU Manager, XPU-SMI, Windows CLI and amcmcli binaries. 
-You may get the latest installers or binaries in the [XPU Manager Releases](releases).
+You may get the latest installers or binaries in [Releases](https://github.com/intel/xpumanager/releases).
 
 ## Supported Devices
 * Intel(R) Data Center Flex Series GPU ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
