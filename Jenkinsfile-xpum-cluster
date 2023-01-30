@@ -35,6 +35,7 @@ pipeline {
       string(name: 'PUBLISH_DOCKER_REGISTRY', defaultValue: 'ccr-registry.caas.intel.com/xpum', description: 'the docker registry for publishing the xpum image') 
     }
     options {
+        copyArtifactPermission('*')
         buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '20'))
         timeout(time: 180, unit: 'MINUTES')
         skipStagesAfterUnstable()
