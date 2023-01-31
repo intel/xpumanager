@@ -126,9 +126,15 @@ void Configuration::initPerfMetrics() {
         ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
         exePath[len] = '\0';
         std::string current_file = exePath;
+#ifndef DAEMONLESS
         file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/config/" + std::string("perf_metrics.conf");
         if (stat(file_name.c_str(), &buffer) != 0)
             file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/config/" + std::string("perf_metrics.conf");
+#else
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/config/" + std::string("perf_metrics.conf");
+        if (stat(file_name.c_str(), &buffer) != 0)
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/config/" + std::string("perf_metrics.conf");
+#endif
     }
     
     std::ifstream conf_file(file_name);

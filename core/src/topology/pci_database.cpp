@@ -60,11 +60,17 @@ bool PciDatabase::init() {
         ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
         exePath[len] = '\0';
         std::string currentFile = exePath;
-
+#ifndef DAEMONLESS
         folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../lib/xpum/config/";
         struct stat buffer;
         if (stat(folder.c_str(), &buffer) != 0)
             folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../lib64/xpum/config/";
+#else
+        folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../lib/xpu-smi/config/";
+        struct stat buffer;
+        if (stat(folder.c_str(), &buffer) != 0)
+            folder = currentFile.substr(0, currentFile.find_last_of('/')) + "/../lib64/xpu-smi/config/";
+#endif
         fileName = folder + std::string(PCI_IDS_FILE);
         infile.open(fileName.data());
         if (!infile.is_open()) {
