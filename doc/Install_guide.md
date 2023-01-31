@@ -3,10 +3,13 @@
 
 ## Requirements
 * Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
-* Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in repositories)
-* Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in repositories)
-* Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories) 
-* Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)
+* Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in package repositories)
+* Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in package repositories)
+* Intel(R) Media Driver (intel-media-va-driver-non-free or intel-media in package repositories) 
+* Intel(R) Media SDK Utilities (libmfx-tools or intel-mediasdk-utils in package repositories)
+* Intel(R) oneVPL GPU Runtime (libmfxgen1 in package repositories)
+* Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in package repositories) 
+* Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in package repositories)
  
 intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like "--force-all" to ignore them when installing Intel(R) XPU Manager.
 
