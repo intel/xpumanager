@@ -1,44 +1,12 @@
-/*
+/* 
  *  Copyright (C) 2021-2022 Intel Corporation
- *
- *  Intel Simplified Software License (Version August 2021)
- *
- *  Use and Redistribution.  You may use and redistribute the software (the “Software”), without modification, provided the following conditions are met:
- *
- *  * Redistributions must reproduce the above copyright notice and the
- *    following terms of use in the Software and in the documentation and/or other materials provided with the distribution.
- *  * Neither the name of Intel nor the names of its suppliers may be used to
- *    endorse or promote products derived from this Software without specific
- *    prior written permission.
- *  * No reverse engineering, decompilation, or disassembly of this Software
- *    is permitted.
- *
- *  No other licenses.  Except as provided in the preceding section, Intel grants no licenses or other rights by implication, estoppel or otherwise to, patent, copyright, trademark, trade name, service mark or other intellectual property licenses or rights of Intel.
- *
- *  Third party software.  The Software may contain Third Party Software. “Third Party Software” is open source software, third party software, or other Intel software that may be identified in the Software itself or in the files (if any) listed in the “third-party-software.txt” or similarly named text file included with the Software. Third Party Software, even if included with the distribution of the Software, may be governed by separate license terms, including without limitation, open source software license terms, third party software license terms, and other Intel software license terms. Those separate license terms solely govern your use of the Third Party Software, and nothing in this license limits any rights under, or grants rights that supersede, the terms of the applicable license terms.
- *
- *  DISCLAIMER.  THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT ARE DISCLAIMED. THIS SOFTWARE IS NOT INTENDED FOR USE IN SYSTEMS OR APPLICATIONS WHERE FAILURE OF THE SOFTWARE MAY CAUSE PERSONAL INJURY OR DEATH AND YOU AGREE THAT YOU ARE FULLY RESPONSIBLE FOR ANY CLAIMS, COSTS, DAMAGES, EXPENSES, AND ATTORNEYS’ FEES ARISING OUT OF ANY SUCH USE, EVEN IF ANY CLAIM ALLEGES THAT INTEL WAS NEGLIGENT REGARDING THE DESIGN OR MANUFACTURE OF THE SOFTWARE.
- *
- *  LIMITATION OF LIABILITY. IN NO EVENT WILL INTEL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *  No support.  Intel may make changes to the Software, at any time without notice, and is not obligated to support, update or provide training for the Software.
- *
- *  Termination. Your right to use the Software is terminated in the event of your breach of this license.
- *
- *  Feedback.  Should you provide Intel with comments, modifications, corrections, enhancements or other input (“Feedback”) related to the Software, Intel will be free to use, disclose, reproduce, license or otherwise distribute or exploit the Feedback in its sole discretion without any obligations or restrictions of any kind, including without limitation, intellectual property rights or licensing obligations.
- *
- *  Compliance with laws.  You agree to comply with all relevant laws and regulations governing your use, transfer, import or export (or prohibition thereof) of the Software.
- *
- *  Governing law.  All disputes will be governed by the laws of the United States of America and the State of Delaware without reference to conflict of law principles and subject to the exclusive jurisdiction of the state or federal courts sitting in the State of Delaware, and each party agrees that it submits to the personal jurisdiction and venue of those courts and waives any objections. The United Nations Convention on Contracts for the International Sale of Goods (1980) is specifically excluded and will not apply to the Software.
- *
+ *  SPDX-License-Identifier: MIT
  *  @file bsmc_ipmi_storage_cmd.h
  */
 
 #pragma once
 
 #include <stdint.h>
-
-#include "compiler_specific.h"
 
 namespace xpum {
 
@@ -199,7 +167,7 @@ typedef struct
 #define IPMI_SEL_SET_TIME 0x49
 
 /* IPMI_SEL_GET_INFO response */
-typedef struct ALIGNAS(16) {
+typedef struct __attribute__ ((aligned(16))) {
     uint8_t completion_code;
     uint8_t sel_version;
     uint8_t lsb_entries;
@@ -214,9 +182,9 @@ typedef struct ALIGNAS(16) {
     uint8_t b1_last_deletion_timestamp;
     uint8_t b2_last_deletion_timestamp;
     uint8_t b3_last_deletion_timestamp;
-    union ALIGNAS(16) {
+    union __attribute__ ((aligned(16))) {
         uint8_t all;
-        struct ALIGNAS(16) {
+        struct __attribute__ ((aligned(16))) {
             uint8_t bCmdSupportGetSELAlloc : 1;
             uint8_t bCmdSupportReserveSEL : 1;
             uint8_t bCmdSupportPartialAdd : 1;
@@ -228,7 +196,7 @@ typedef struct ALIGNAS(16) {
 } sel_get_info_resp_t;
 
 /* IPMI_SEL_GET_ENTRY request */
-typedef struct ALIGNAS(16) {
+typedef struct __attribute__ ((aligned(16))) {
     uint8_t lsb_reservation_id;
     uint8_t msb_reservation_id;
     uint8_t lsb_record_id;
@@ -242,7 +210,7 @@ typedef struct ALIGNAS(16) {
 #define SEL_RECORD_SIZE 16
 
 /* IPMI_SEL_GET_ENTRY response */
-typedef struct ALIGNAS(16) {
+typedef struct __attribute__ ((aligned(16))) {
     uint8_t completion_code;
     uint8_t lsb_next_record_id;
     uint8_t msb_next_record_id;
@@ -253,7 +221,7 @@ typedef struct ALIGNAS(16) {
 #define SEL_ERASE_IS_IN_PROGRESS_COMPCODE 0x81
 
 /* SEL record structure */
-typedef struct ALIGNAS(16) {
+typedef struct __attribute__ ((aligned(16))) {
     uint8_t b0_record_id;
     uint8_t b1_record_id;
     uint8_t record_type;
@@ -277,7 +245,7 @@ typedef struct ALIGNAS(16) {
 #define SEL_CLEAR_GET_STATUS 0x0
 
 /* IPMI_SEL_CLEAR request */
-typedef struct ALIGNAS(16) {
+typedef struct __attribute__ ((aligned(16))) {
     uint8_t lsb_reservation_id;
     uint8_t msb_reservation_id;
     uint8_t c;
