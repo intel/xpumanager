@@ -112,6 +112,8 @@ int CLIWrapper::printResult(std::ostream &out) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);
             } else if (comlet->getCommand().compare("diag") == 0 && std::dynamic_pointer_cast<ComletDiagnostic>(comlet)->isPreCheck()) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);  
+            } else if (comlet->getCommand().compare("log") == 0) {
+                this->coreStub = std::make_shared<LibCoreStub>(false); 
             } else {
                 this->coreStub = std::make_shared<LibCoreStub>();  
             }
