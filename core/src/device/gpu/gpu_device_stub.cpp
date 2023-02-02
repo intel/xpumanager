@@ -558,7 +558,22 @@ static std::string getCardFullPath(std::string& bdf_address) {
     closedir(pdir);
     return ret;
 }
-static bool readStrSysFsFile(char *buf, char *fileName);
+
+
+#define BUF_SIZE 128
+static bool readStrSysFsFile(char *buf, const char *fileName) {
+    int fd = open(fileName, O_RDONLY);
+    if (fd < 0) {
+        return false;
+    }
+    int szRead = read(fd, buf, BUF_SIZE);
+    close(fd);
+    if (szRead < 0 || szRead >= BUF_SIZE) {
+        return false;
+    }
+    buf[szRead] = 0;
+    return true;
+}
 
 std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
     std::string bdf_address = to_string(address);
@@ -648,8 +663,33 @@ std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     return res;
 }
 
+static std::string getI915Version() {
+    std::string ret = "";
+    char buf[BUF_SIZE];
+
+    if (readStrSysFsFile(buf, "/sys/module/i915/version") != true) {
+        return ret;
+    }
+    std::string str(buf);
+    if (str.at(str.length() - 1) == '\n') {
+        str.pop_back();
+    }
+    size_t pos = str.rfind(' ');
+    if (pos == std::string::npos || pos == str.length() - 1) {
+        return ret;
+    }
+    ret = str.substr(pos + 1);
+    return ret;
+}
+
 static std::string getDriverVersion() {
     std::string version;
+    // Try to get i915 backported version from sysfs first
+    version = getI915Version();
+    if (version.length() > 0) {
+        return version;
+    }
+
     std::string release;
     std::string name = "intel-i915-dkms";
     std::string rpm_cmd = "rpm -qa 2>/dev/null| grep " + name + " 2>/dev/null";
@@ -2592,20 +2632,6 @@ static bool strToUInt64(uint64_t *val, char *buf) {
     return true;
 }
 
-#define BUF_SIZE 128
-static bool readStrSysFsFile(char *buf, char *fileName) {
-    int fd = open(fileName, O_RDONLY);
-    if (fd < 0) {
-        return false;
-    }
-    int szRead = read(fd, buf, BUF_SIZE);
-    close(fd);
-    if (szRead < 0 || szRead >= BUF_SIZE) {
-        return false;
-    }
-    buf[szRead] = 0;
-    return true;
-}
 
 static bool getProcNameAndMem(device_util_by_proc &util,uint32_t card_idx,
         char *client) {
