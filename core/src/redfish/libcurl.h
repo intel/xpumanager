@@ -29,7 +29,9 @@ typedef enum {
     CINIT(TIMEOUT, LONG, 13),
     CINIT(VERBOSE, LONG, 41),
     CINIT(WRITEDATA, OBJECTPOINT, 1),
+    CINIT(HEADERDATA, OBJECTPOINT, 29),
     CINIT(URL, STRINGPOINT, 2),
+    CINIT(POSTFIELDS, OBJECTPOINT, 15),
     CINIT(HTTPHEADER, SLISTPOINT, 23),
     CINIT(CUSTOMREQUEST, STRINGPOINT, 36),
     CINIT(NOPROXY, STRINGPOINT, 177),
@@ -37,11 +39,19 @@ typedef enum {
     CINIT(SSL_VERIFYPEER, LONG, 64),
     CINIT(SSL_VERIFYHOST, LONG, 81),
     CINIT(WRITEFUNCTION, FUNCTIONPOINT, 11),
+    CINIT(HEADERFUNCTION, FUNCTIONPOINT, 79),
     CINIT(HTTPAUTH, LONG, 107),
     CINIT(USERNAME, STRINGPOINT, 173),
     CINIT(PASSWORD, STRINGPOINT, 174),
     CINIT(MIMEPOST, OBJECTPOINT, 269),
 } CURLoption;
+
+#define CURLINFO_LONG 0x200000
+
+typedef enum {
+    CURLINFO_NONE, /* first, never use this */
+    CURLINFO_RESPONSE_CODE = CURLINFO_LONG + 2,
+} CURLINFO;
 
 typedef enum {
   CURLE_OK = 0,
@@ -273,6 +283,7 @@ typedef CURLcode (*curl_mime_data_t)(curl_mimepart *part, const char *data, size
 typedef CURLcode (*curl_mime_filedata_t)(curl_mimepart *part, const char *filename);
 typedef struct curl_slist *(*curl_slist_append_t)(struct curl_slist *, const char *);
 typedef curl_version_info_data *(*curl_version_info_t)(CURLversion age);
+typedef CURLcode (*curl_easy_getinfo_t)(CURL *curl, CURLINFO info, ...);
 
 struct CurlLibVersion {
     std::string name;
@@ -331,41 +342,7 @@ struct CurlLibVersion {
     }
 };
 
-std::string getLibCurlPath() {
-    std::string cmd = "ldconfig -p 2>&1";
-    FILE *f = popen(cmd.c_str(), "r");
-    char c_line[1024];
-
-    std::vector<CurlLibVersion> libList;
-
-    while (fgets(c_line, 1024, f) != NULL) {
-        std::string line(c_line);
-        auto idx = line.find("libcurl.so");
-        if (idx != line.npos) {
-            line = line.substr(idx);
-            auto endIdx = line.find(' ');
-            if (endIdx != line.npos) {
-                std::string name = line.substr(0, endIdx);
-                if (name.length() > 0) {
-                    CurlLibVersion lib(name);
-                    if (lib.valid)
-                        libList.push_back(lib);
-                }
-            }
-        }
-    }
-    pclose(f);
-    if (libList.size() > 0) {
-        auto &lib = libList.at(0);
-        for (size_t i = 1; i < libList.size(); i++) {
-            if (lib < libList.at(i)) {
-                lib = libList.at(i);
-            }
-        }
-        return lib.name;
-    }
-    return "libcurl.so";
-}
+std::string getLibCurlPath();
 
 class LibCurlApi {
    private:
@@ -386,6 +363,7 @@ class LibCurlApi {
     curl_mime_filedata_t curl_mime_filedata;
     curl_slist_append_t curl_slist_append;
     curl_version_info_t curl_version_info;
+    curl_easy_getinfo_t curl_easy_getinfo;
 
    public:
     LibCurlApi() {
@@ -416,6 +394,7 @@ class LibCurlApi {
         curl_mime_filedata = reinterpret_cast<curl_mime_filedata_t>(dlsym(handle, "curl_mime_filedata"));
         curl_slist_append = reinterpret_cast<curl_slist_append_t>(dlsym(handle, "curl_slist_append"));
         curl_version_info = reinterpret_cast<curl_version_info_t>(dlsym(handle, "curl_version_info"));
+        curl_easy_getinfo = reinterpret_cast<curl_easy_getinfo_t>(dlsym(handle, "curl_easy_getinfo"));
         
         if (!initialized()) {
             if (!libPath.compare("Unknown")) {

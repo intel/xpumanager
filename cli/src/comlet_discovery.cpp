@@ -76,10 +76,8 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },
                 { "label": "GFX PSC Firmware Name", "value": "gfx_pscbin_firmware_name" },
                 { "label": "GFX PSC Firmware Version", "value": "gfx_pscbin_firmware_version"},)"
-#ifndef DAEMONLESS
                 R"({ "label": "AMC Firmware Name", "value": "amc_firmware_name"},)"
                 R"({ "label": "AMC Firmware Version", "value": "amc_firmware_version"},)"
-#endif
                 R"({ "rowTitle": " " },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address", "dumpId": 11 },
                 { "label": "PCI Slot", "value": "pci_slot", "dumpId": 12 },
@@ -228,13 +226,11 @@ void ComletDiscovery::setupOptions() {
         }
         return std::string();
     });
-#ifndef DAEMONLESS
     auto listamcversionsOpt = addFlag("--listamcversions", this->opts->listamcversions, "Show all AMC firmware versions.");
     deviceIdOpt->excludes(listamcversionsOpt);
 
     addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
-#endif
 }
 
 std::unique_ptr<nlohmann::json> ComletDiscovery::run() {

@@ -114,23 +114,36 @@ std::string LibCoreStub::getSerailNumberIPMI(int deviceId) {
     }
 }
 
+static std::string getAmcFwErrMsg() {
+    // get error message
+    int count = 0;
+    xpumGetAMCFirmwareVersionsErrorMsg(nullptr, &count);
+    char buffer[count];
+    xpumGetAMCFirmwareVersionsErrorMsg(buffer, &count);
+    return std::string(buffer);
+}
+
 std::unique_ptr<nlohmann::json> LibCoreStub::getAMCFirmwareVersions(std::string username, std::string password) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     int count;
     auto res = xpumGetAMCFirmwareVersions(nullptr, &count, username.c_str(), password.c_str());
-    if (res != XPUM_OK) {
-        switch (res) {
-            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
-                (*json)["error"] = "Level Zero Initialization Error";
-                break;
-            default:
-                (*json)["error"] = "Fail to get AMC firmware version count";
-        }
+    if (res == XPUM_LEVEL_ZERO_INITIALIZATION_ERROR) {
+        (*json)["error"] = "Level Zero Initialization Error";
+        return json;
+    } else if (res != XPUM_OK) {
+        auto errMsg = getAmcFwErrMsg();
+        if (errMsg.length())
+            (*json)["error"] = errMsg;
+        else
+            (*json)["error"] = "Fail to get AMC firmware version count";
         return json;
     }
     std::vector<xpum_amc_fw_version_t> versions(count);
     res = xpumGetAMCFirmwareVersions(versions.data(), &count, username.c_str(), password.c_str());
     if (res != XPUM_OK) {
+        auto errMsg = getAmcFwErrMsg();
+        if (errMsg.length())
+            (*json)["error"] = errMsg;
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
                 (*json)["error"] = "Level Zero Initialization Error";

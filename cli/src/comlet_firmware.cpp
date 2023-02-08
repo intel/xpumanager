@@ -59,8 +59,6 @@ void ComletFirmware::setupOptions() {
         return errStr;
     });
 
-#ifndef DAEMONLESS
-
     auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_PSCBIN, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).");
 
     fwTypeOpt->check([](const std::string &str) {
@@ -71,21 +69,6 @@ void ComletFirmware::setupOptions() {
             return errStr;
         }
     });
-#else
-
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_PSCBIN.");
-
-    fwTypeOpt->check([](const std::string &str) {
-        std::string errStr = "Invalid firmware type";
-        if (str.compare("GFX") == 0 || str.compare("GFX_DATA") == 0 || str.compare("GFX_PSCBIN") == 0) {
-            return std::string();
-        } else {
-            return errStr;
-        }
-    });
-
-
-#endif
 
     auto fwPathOpt = addOption("-f, --file", opts->firmwarePath, "The firmware image file path on this server");
     // fwPathOpt->required();
@@ -109,10 +92,8 @@ void ComletFirmware::setupOptions() {
 
     opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
 
-#ifndef DAEMONLESS
     addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
-#endif
 
     addFlag("-y, --assumeyes", opts->assumeyes, "Assume that the answer to any question which would be asked is yes");
 
