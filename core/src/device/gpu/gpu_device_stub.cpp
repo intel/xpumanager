@@ -27,6 +27,7 @@
 #include <string>
 
 #include "api/api_types.h"
+#include "api/device_model.h"
 #include "device/frequency.h"
 #include "device/memoryEcc.h"
 #include "device/performancefactor.h"
@@ -788,8 +789,20 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
         capabilities.push_back(DeviceCapability::METRIC_ENGINE_UTILIZATION);
     if (checkCapability(props.core.name, bdf_address, "Energy", toGetEnergy, device))
         capabilities.push_back(DeviceCapability::METRIC_ENERGY);
+
+#ifdef DAEMONLESS
+    if(getDeviceModelByPciDeviceId(props.core.deviceId) == XPUM_DEVICE_MODEL_PVC){
+        // Just PVC is affected
+        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
+    }else {
+        if (checkCapability(props.core.name, bdf_address, "Ras Error", toGetRasErrorOnSubdevice, device))
+            capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
+    }
+#else
     if (checkCapability(props.core.name, bdf_address, "Ras Error", toGetRasErrorOnSubdevice, device))
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
+#endif
+
     if (checkCapability(props.core.name, bdf_address, "Frequency Throttle", toGetFrequencyThrottle, device))
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
     if (checkCapability(props.core.name, bdf_address, "Frequency Throttle Reason(GPU)", toGetFrequencyThrottleReason, device))

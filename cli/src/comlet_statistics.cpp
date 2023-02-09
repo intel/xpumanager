@@ -545,6 +545,10 @@ bool ComletStatistics::hasEUMetrics() {
     return this->opts->showEuMetrics;
 }
 
+bool ComletStatistics::hasRASMetrics() {
+    return this->opts->showRASMetrics;
+}
+
 void ComletStatistics::setupOptions() {
     this->opts = std::unique_ptr<ComletStatisticsOptions>(new ComletStatisticsOptions());
 #ifndef DAEMONLESS
@@ -553,6 +557,7 @@ void ComletStatistics::setupOptions() {
 #else
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "The device ID or PCI BDF address to query");
     addFlag("-e,--eu", this->opts->showEuMetrics, "Show EU metrics");
+    addFlag("-r,--ras", this->opts->showRASMetrics, "Show RAS error metrics");
 #endif
 
     deviceIdOpt->check([this](const std::string &str) {

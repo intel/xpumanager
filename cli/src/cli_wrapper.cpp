@@ -89,10 +89,18 @@ int CLIWrapper::printResult(std::ostream &out) {
 
             if (comlet->getCommand().compare("stats") == 0) {
                 std::shared_ptr<ComletStatistics> stats_comlet = std::dynamic_pointer_cast<ComletStatistics>(comlet);
-                if (stats_comlet->hasEUMetrics())
-                    setenv("XPUM_METRICS", "0-31,36-38", 1);
-                else
-                    setenv("XPUM_METRICS", "0,4-31,36-38", 1);
+                if (stats_comlet->hasEUMetrics()){
+                    if(stats_comlet->hasRASMetrics())
+                        setenv("XPUM_METRICS", "0-31,36-38", 1);
+                    else
+                        setenv("XPUM_METRICS", "0-19,29-31,36-38", 1);
+                }
+                else{
+                    if(stats_comlet->hasRASMetrics())
+                        setenv("XPUM_METRICS", "0,4-31,36-38", 1);
+                    else
+                        setenv("XPUM_METRICS", "0,4-19,29-31,36-38", 1);
+                }
             }
             if (comlet->getCommand().compare("dump") == 0) {
                 putenv(const_cast<char *>("XPUM_DISABLE_PERIODIC_METRIC_MONITOR=0"));

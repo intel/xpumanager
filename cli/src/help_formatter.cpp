@@ -156,7 +156,11 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " stats -d [deviceId] -e\n"
                "  " + appName + " stats -d [pciBdfAddress] -e\n"
                "  " + appName + " stats -d [deviceId] -e -j\n"
-               "  " + appName + " stats -d [pciBdfAddress] -e -j\n";
+               "  " + appName + " stats -d [pciBdfAddress] -e -j\n"
+               "  " + appName + " stats -d [deviceId] -r\n"
+               "  " + appName + " stats -d [pciBdfAddress] -r\n"
+               "  " + appName + " stats -d [deviceId] -r -j\n"
+               "  " + appName + " stats -d [pciBdfAddress] -r -j\n";
 #endif
     } else if (app->get_name().compare("agentset") == 0) {
         return "\nUsage: " + appName + " agentset [Options]\n"
