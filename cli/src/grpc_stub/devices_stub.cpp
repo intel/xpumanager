@@ -134,6 +134,10 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(const char *bd
     return getDeviceProperties(deviceId, username, password);
 }
 
+std::string GrpcCoreStub::getSerailNumberIPMI(int deviceId) {
+    return std::string();
+}
+
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getAMCFirmwareVersions(std::string username, std::string password) {
     assert(this->stub != nullptr);
 

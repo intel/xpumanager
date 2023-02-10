@@ -9,7 +9,7 @@
 set -ex
 
 level_zero_version=1.8.5
-registry=ccr-registry.caas.intel.com/dms-pub
+registry=ccr-registry.caas.intel.com/xpum
 image_tag=lz-$level_zero_version-`TZ=PRC date +%Y%m%d`
 
 if [ "$EUID" -ne 0 ]

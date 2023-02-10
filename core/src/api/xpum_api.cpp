@@ -415,7 +415,7 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
 }
 
 xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char *buffer, int *count) {
-    auto errMsg = Core::instance().getFirmwareManager()->getGetAmcFwErrMsg();
+    auto errMsg = Core::instance().getFirmwareManager()->getAmcFwErrMsg();
     if (buffer == nullptr) {
         *count = errMsg.length() + 1;
         return XPUM_OK;

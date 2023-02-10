@@ -1,39 +1,45 @@
 
-# Intel XPU Manager Installation Guide
+# Intel(R) XPU Manager Installation Guide
 
 ## Requirements
 * Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html))
-* Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in repositories)
-* Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in repositories)
-* Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories) 
-* Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)
+* Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in package repositories)
+* Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in package repositories)
+* Intel(R) Media Driver (intel-media-va-driver-non-free or intel-media in package repositories) 
+* Intel(R) Media SDK Utilities (libmfx-tools or intel-mediasdk-utils in package repositories)
+* Intel(R) oneVPL GPU Runtime (libmfxgen1 in package repositories)
+* Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in package repositories) 
+* Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in package repositories)
+ 
+intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like "--force-all" to ignore them when installing Intel(R) XPU Manager.
 
 ## DEB install
-sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb
+sudo dpkg -i xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.deb
 
 ## DEB uninstall
 sudo dpkg -r xpumanager
 
 ## RPM install
-sudo rpm -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+sudo rpm -i xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 
-## Start to use Intel XPU Manager
-By default, Intel XPU Manager is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
+## Start to use  XPU Manager
+By default, XPU Manager is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is /usr/bin/xpumcli. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
 
 ## RPM relocation install
-rpm -i --prefix=/opt/abc xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+rpm -i --prefix=/usr/local xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+You need set the environmental variable LD_LIBRARY_PATH if you change the installation folder. 
 
 ## RPM uninstall
 sudo rpm -e xpumanager
 
 ## How to enable or disable some daemon monitor metrics
-By default, Intel XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics. 
+By default, XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics. 
   
 1. edit file "/lib/systemd/system/xpum.service" or "/etc/systemd/system/xpum.service" in some system.
    add "-m metric-indexes" to ExecStart. 
-   Use "/opt/xpum/bin/xpumd -h" to get detailed info.  
+   Use "/usr/bin/xpumd -h" to get detailed info.  
    Sample:
-   ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-38
+   ExecStart=/usr/bin/xpumd  -p /var/xpum_daemon.pid -d /usr/lib/xpum/dump -m 0,4-38
 2. Run command "sudo systemctl daemon-reload"
 3. Run command "sudo systemctl restart xpum"
   

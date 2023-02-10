@@ -30,7 +30,7 @@ It supports local command line interface and local library call interface.
   
   
 ## Intel XPU System Management Interface Installation
-Please follow [XPU System Management Interface Installation Guide](doc/Install_guide.md) to install/uninstall Intel XPU System Management Interface. 
+Please follow [XPU System Management Interface Installation Guide](doc/smi_install_guide.md) to install/uninstall Intel XPU System Management Interface. 
 
 ### Start to use Intel XPU System Management Interface
-By default, Intel XPU System Management Interface is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to [XPU System Management Interface CLI User Guide](doc/CLI_user_guide.md) for how to use the command line tool. 
+By default, Intel XPU System Management Interface is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is /usr/bin/xpu-smi. Please refer to [XPU System Management Interface CLI User Guide](doc/smi_user_guide.md) for how to use the command line tool. 

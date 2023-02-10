@@ -163,8 +163,6 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static int ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
 
-    static std::string XPUM_DAEMON_INSTALL_PATH;
-
     static float MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST;
 
     std::shared_ptr<DeviceManagerInterface> p_device_manager;

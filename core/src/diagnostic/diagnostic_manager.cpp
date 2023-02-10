@@ -14,6 +14,7 @@
 #include "infrastructure/handle_lock.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/xpum_config.h"
+#include <sys/stat.h>
 
 namespace xpum {
 
@@ -28,30 +29,6 @@ DiagnosticManager::~DiagnosticManager() {
 }
 
 void DiagnosticManager::init() {
-    std::vector<std::string> service_file_names = {"/lib/systemd/system/xpum.service",
-                                                "/etc/systemd/system/xpum.service"};
-    for (auto service_file_name : service_file_names) {
-        std::ifstream service_file(service_file_name);
-        if (service_file.is_open()) {
-            std::string line;
-            while (getline(service_file, line)) {
-                if (line.find("ExecStart=") != std::string::npos) {
-                    auto lpos = line.find("=");
-                    auto rpos = line.find(" ");
-                    if (rpos == std::string::npos) {
-                        XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1);
-                    } else {
-                        XPUM_DAEMON_INSTALL_PATH = line.substr(lpos + 1, rpos - lpos - 1);
-                    }
-                    break;
-                }
-            }
-        }
-    }
-    if (XPUM_DAEMON_INSTALL_PATH.empty()) {
-        XPUM_LOG_TRACE("couldn't find xpum install path in service file: {} and {}",
-                    service_file_names.front(), service_file_names.back());
-    }
 }
 
 void DiagnosticManager::close() {
@@ -63,20 +40,31 @@ std::string DiagnosticManager::MEDIA_CODER_TOOLS_PATH = "/usr/share/mfx/samples/
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE = "test_stream_1080p.265";
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE = "test_stream_4K.265";
 int DiagnosticManager::ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = 600;
-std::string DiagnosticManager::XPUM_DAEMON_INSTALL_PATH;
 float DiagnosticManager::MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = 0.9;
+
+static bool is_path_exist(const std::string &s) {
+  struct stat buffer;
+  return (stat(s.c_str(), &buffer) == 0);
+}
 
 void DiagnosticManager::readConfigFile() {
     thresholds.clear();
-    std::string current_file = XPUM_DAEMON_INSTALL_PATH;
-    if (current_file.empty()) {
+    std::string file_name = std::string(XPUM_CONFIG_DIR) + std::string("diagnostics.conf");
+    if (!is_path_exist(file_name)) {
         char exe_path[XPUM_MAX_PATH_LEN];
         ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
         exe_path[len] = '\0';
-        current_file = exe_path;
+        std::string current_file = exe_path;
+#ifndef DAEMONLESS
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/config/" + std::string("diagnostics.conf");
+        if (!is_path_exist(file_name))
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/config/" + std::string("diagnostics.conf");
+#else
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/config/" + std::string("diagnostics.conf");
+        if (!is_path_exist(file_name))
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/config/" + std::string("diagnostics.conf");
+#endif
     }
-    std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../config/";
-    std::string file_name = config_folder + std::string("diagnostics.conf");
     std::ifstream conf_file(file_name);
     if (conf_file.is_open()) {
         std::string line;
@@ -116,7 +104,7 @@ void DiagnosticManager::readConfigFile() {
                 thresholds[current_device][name] = atoi(value.c_str());
             }
         }
-
+        conf_file.close();
     } else {
         XPUM_LOG_ERROR("couldn't open config file for diagnostics: {}", file_name);
     }
@@ -714,20 +702,27 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
     std::string device_path = getDevicePath(pci_props);
     XPUM_LOG_DEBUG("device path for media codec : {}", device_path);
     if (device_path.size() > 0) {
-        std::string current_file = XPUM_DAEMON_INSTALL_PATH;
-        if (current_file.empty()) {
+        std::string mediadata_folder = std::string(XPUM_RESOURCES_DIR) + std::string("mediadata/");
+        if (!is_path_exist(mediadata_folder)) {
             char exe_path[XPUM_MAX_PATH_LEN];
             ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
             exe_path[len] = '\0';
-            current_file = exe_path;
+            std::string  current_file = exe_path;
+#ifndef DAEMONLESS
+            mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/resources/mediadata/";
+            if (!is_path_exist(mediadata_folder))
+                mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/resources/mediadata/";
+#else
+            mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/resources/mediadata/";
+            if (!is_path_exist(mediadata_folder))
+                mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/resources/mediadata/";
+#endif
         }
         bool sample_multi_transcode_tool_exist = true;
         std::ifstream file_transcode(DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode");
         if (!file_transcode.good()) {
             sample_multi_transcode_tool_exist = false;
         }
-
-        std::string mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/mediadata/";
 
         bool h265_1080p_file_exist = true;
         std::ifstream file_h265_1080p(mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE);
@@ -1317,14 +1312,22 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
 }
 
 std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_path) {
-    std::string current_file = XPUM_DAEMON_INSTALL_PATH;
-    if (current_file.empty()) {
+    std::string folder = std::string(XPUM_RESOURCES_DIR) + std::string("kernels/");
+    if (!is_path_exist(folder)) {
         char exe_path[XPUM_MAX_PATH_LEN];
         ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
         exe_path[len] = '\0';
-        current_file = exe_path;
+        std::string current_file = exe_path;
+#ifndef DAEMONLESS
+        folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/resources/kernels/";
+        if (!is_path_exist(folder))
+            folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/resources/kernels/";
+#else
+        folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/resources/kernels/";
+        if (!is_path_exist(folder))
+            folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/resources/kernels/";
+#endif
     }
-    std::string folder = current_file.substr(0, current_file.find_last_of('/')) + "/../resources/kernels/";
     std::string absolute_file_path = folder + file_path;
     std::ifstream stream(absolute_file_path, std::ios::in | std::ios::binary);
     std::vector<uint8_t> binary_file;

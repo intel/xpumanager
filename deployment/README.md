@@ -22,7 +22,7 @@ xpum_image=...
 docker run --rm --cap-drop ALL --cap-add=SYS_ADMIN \
 --publish 29999:29999 \
 --device /dev/dri:/dev/dri \
--v $(pwd)/rest/conf:/opt/xpum/rest/conf:ro \
+-v $(pwd)/rest/conf:/usr/lib/xpum/rest/conf:ro \
 ${xpum_image}
 ```
 
@@ -39,7 +39,7 @@ xpum_image=...
 docker run --rm --cap-drop ALL --cap-add=SYS_ADMIN \
 --publish 29999:29999 \
 --device /dev/dri:/dev/dri \
--v $(pwd)/rest/conf:/opt/xpum/rest/conf:ro \
+-v $(pwd)/rest/conf:/usr/lib/xpum/rest/conf:ro \
 -e XPUM_REST_NO_TLS=1 \
 ${xpum_image}
 ```
@@ -53,7 +53,7 @@ To avoid port conflict with host network port assignment, you can pass environme
 docker run --rm --cap-drop ALL --cap-add=SYS_ADMIN \
 --network host \
 --device /dev/dri:/dev/dri \
--v $(pwd)/rest/conf:/opt/xpum/rest/conf:ro \
+-v $(pwd)/rest/conf:/usr/lib/xpum/rest/conf:ro \
 -e XPUM_REST_NO_TLS=1 \
 -e XPUM_REST_PORT=12345 \
 ${xpum_image}
@@ -66,7 +66,7 @@ And this metrics collection is not started in XPUM by default. To make XPUM star
 
 This example shows how to get the list of metrics index from XPUM daemon help text:
 ```sh
-docker run --rm --entrypoint /opt/xpum/bin/xpumd ${xpum_image} -h
+docker run --rm --entrypoint /usr/bin/xpumd ${xpum_image} -h
 ```
 This example shows how to make XPUM in container start to collect PCIe throughput metrics by passing the environment variable ***XPUM_METRICS***:
 ```sh
@@ -78,7 +78,7 @@ docker run --rm --cap-drop ALL --cap-add=SYS_ADMIN \
 -v /sys/firmware/acpi/tables/MCFG:/pcm/sys/firmware/acpi/tables/MCFG:ro \
 -v /proc/bus/pci/:/pcm/proc/bus/pci/ \
 -v /proc/sys/kernel/nmi_watchdog:/pcm/proc/sys/kernel/nmi_watchdog \
--v $(pwd)/rest/conf:/opt/xpum/rest/conf:ro \
+-v $(pwd)/rest/conf:/usr/lib/xpum/rest/conf:ro \
 -e XPUM_REST_NO_TLS=1 \
 -e XPUM_METRICS=0-38 \
 ${xpum_image}

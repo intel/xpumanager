@@ -16,6 +16,8 @@
 
 #include "infrastructure/logger.h"
 #include "infrastructure/utility.h"
+#include "infrastructure/xpum_config.h"
+#include <sys/stat.h>
 
 namespace xpum {
 
@@ -117,13 +119,24 @@ void Configuration::initEnabledMetrics() {
 void Configuration::initPerfMetrics() {
     perf_metrics.clear();
 
-    char exePath[PATH_MAX];
-    ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
-    exePath[len] = '\0';
-    std::string current_file = exePath;
-
-    std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../config/";
-    std::string file_name = config_folder + std::string("perf_metrics.conf");
+    std::string file_name = std::string(XPUM_CONFIG_DIR) + std::string("perf_metrics.conf");
+    struct stat buffer;
+    if (stat(file_name.c_str(), &buffer) != 0) {
+        char exePath[PATH_MAX];
+        ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+        exePath[len] = '\0';
+        std::string current_file = exePath;
+#ifndef DAEMONLESS
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/config/" + std::string("perf_metrics.conf");
+        if (stat(file_name.c_str(), &buffer) != 0)
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/config/" + std::string("perf_metrics.conf");
+#else
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/config/" + std::string("perf_metrics.conf");
+        if (stat(file_name.c_str(), &buffer) != 0)
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/config/" + std::string("perf_metrics.conf");
+#endif
+    }
+    
     std::ifstream conf_file(file_name);
     
     if (!conf_file.is_open()) { 

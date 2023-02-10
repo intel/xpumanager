@@ -58,7 +58,7 @@ WORKDIR /tmp/work
 RUN apt-get update && \
   apt-get install -y --no-install-recommends wget gnupg2 ca-certificates && \
   wget -qO - https://repositories.intel.com/graphics/intel-graphics.key | gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg && \
-  echo 'deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/graphics/ubuntu jammy arc' | \
+  echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/graphics/ubuntu jammy flex' | \
   tee /etc/apt/sources.list.d/intel.gpu.jammy.list && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
@@ -68,13 +68,22 @@ RUN apt-get update && \
     libmfx-tools \
     intel-gsc \
     intel-level-zero-gpu \
-    intel-metrics-discovery \
-    intel-metrics-library \
     level-zero \
     libdrm2 && \
   apt-get remove -y wget gnupg2 ca-certificates && \
   apt-get autoremove -y && \
   rm -rf /var/lib/apt/lists/*
+
+RUN if [ "$(apt-cache search --names-only 'intel-metrics-discovery')" ] ; then \
+      apt-get install -y --no-install-recommends intel-metrics-discovery ; \
+    else \
+      apt-get install -y --no-install-recommends libmd1 ; \
+    fi
+RUN if [ "$(apt-cache search --names-only 'intel-metrics-library')" ] ; then \
+      apt-get install -y --no-install-recommends intel-metrics-library ; \
+    else \
+      apt-get install -y --no-install-recommends libigdml1 ; \
+    fi
 
 COPY --from=builder /opt/venv /opt/venv
 
@@ -92,13 +101,13 @@ socket_folder=\${XPUM_SOCKET_FOLDER:-/tmp}\n\
 rest_host=\${XPUM_REST_HOST:-0.0.0.0}\n\
 rest_port=\${XPUM_REST_PORT:-29999}\n\
 rest_no_tls=\${XPUM_REST_NO_TLS:-0}\n\
-/opt/xpum/bin/xpumd -s \${socket_folder} &\n\
+/usr/bin/xpumd -s \${socket_folder} &\n\
 until [ -e \${socket_folder}/xpum_p.sock ]; do sleep 0.1; done\n\
 if [ \"\${rest_no_tls}\" != \"1\" ]\n\
 then\n\
   rest_tls_param=\"--certfile conf/cert.pem --keyfile conf/key.pem\"\n\
 fi\n\
-(cd /opt/xpum/rest && exec gunicorn \${rest_tls_param} --bind \${rest_host}:\${rest_port} --worker-class gthread --threads 10 --worker-connections 1000 -w 1 'xpum_rest_main:main()')\n\
+(cd /usr/lib/xpum/rest && exec gunicorn \${rest_tls_param} --bind \${rest_host}:\${rest_port} --worker-class gthread --threads 10 --worker-connections 1000 -w 1 'xpum_rest_main:main()')\n\
 " >> /entry_point.sh && chmod +x /entry_point.sh
 
 ENTRYPOINT ["/entry_point.sh"]

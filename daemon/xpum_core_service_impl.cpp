@@ -136,7 +136,7 @@ grpc::Status XpumCoreServiceImpl::getDeviceIdByBDF(grpc::ServerContext* context,
     return grpc::Status::OK;
 }
 
-static std::string getGetAmcFwErrMsg() {
+static std::string getAmcFwErrMsg() {
     // get error message
     int count = 0;
     xpumGetAMCFirmwareVersionsErrorMsg(nullptr, &count);
@@ -156,7 +156,7 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
         return grpc::Status::OK;
     } else if (res != XPUM_OK) {
         response->set_status(res);
-        auto errMsg = getGetAmcFwErrMsg();
+        auto errMsg = getAmcFwErrMsg();
         if (errMsg.length())
             response->set_errormsg(errMsg);
         else
@@ -171,7 +171,7 @@ grpc::Status XpumCoreServiceImpl::getAMCFirmwareVersions(::grpc::ServerContext* 
         return grpc::Status::OK;
     } else if (res != XPUM_OK) {
         response->set_status(res);
-        auto errMsg = getGetAmcFwErrMsg();
+        auto errMsg = getAmcFwErrMsg();
         if (errMsg.length())
             response->set_errormsg(errMsg);
         else

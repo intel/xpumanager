@@ -1,3 +1,0 @@
-if [ $1 -eq 0 ] ; then
-    rm -rf /usr/bin/xpu-smi
-fi

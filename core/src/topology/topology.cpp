@@ -451,19 +451,24 @@ xpum_result_t Topology::getXelinkTopo(std::vector<std::shared_ptr<Device>>& devi
         bool bResult = xpum::Core::instance().getDeviceManager()->getFabricPorts(
             info->getId(), portInfo);
         if (!bResult) {
-            XPUM_LOG_DEBUG("getFabricPorts is not existing");
-            xpum_fabric_port_pair portPair;
-            portPair.healthy = true;
-            portPair.deviceId = stoi(info->getId());
-            portPair.numaIdx = numa_os_idx;
-            portPair.cpuAffinity = cpuAffinity;
-            portPair.localPortProp.onSubdevice = false;
-            portPair.localPortProp.subdeviceId = 0;
-            portPair.localPortProp.model[0]='\0';
-            portPair.enabled = false;
-            portPair.remotePortId.fabricId = (uint32_t)-1;
-            portPair.fabric_existing = false;
-            fabricPorts.push_back(portPair);
+            XPUM_LOG_WARN("getFabricPorts result {}",bResult);
+            Property prop;
+            info->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
+            uint32_t tileCount = prop.getValueInt();
+            for (uint32_t tileId = 0; tileId < tileCount; tileId++) {
+                xpum_fabric_port_pair portPair;
+                portPair.healthy = true;
+                portPair.deviceId = stoi(info->getId());
+                portPair.numaIdx = numa_os_idx;
+                portPair.cpuAffinity = cpuAffinity;
+                portPair.localPortProp.onSubdevice = true;
+                portPair.localPortProp.subdeviceId = tileId;
+                portPair.localPortProp.model[0]='\0';
+                portPair.enabled = false;
+                portPair.remotePortId.fabricId = (uint32_t)-1;
+                portPair.fabric_existing = false;
+                fabricPorts.push_back(portPair);
+            }
         } else {        
             for (unsigned long i = 0; i < portInfo.size(); i++) {
                 std::string model(portInfo[i].portProps.model);

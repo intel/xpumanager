@@ -64,7 +64,7 @@ class FirmwareManager {
 
     xpum_result_t isPVCFwImageAndDeviceCompatible(std::string meiPath, std::vector<char>& buffer);
 
-    std::string getAmcFwErrMsg;
+    std::string amcFwErrMsg;
     std::string flashFwErrMsg;
 
    public:
@@ -87,8 +87,8 @@ class FirmwareManager {
     xpum_result_t runPscFwFlash(xpum_device_id_t deviceId, const char* filePath);
     void getPscFwFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 
-    std::string getGetAmcFwErrMsg() {
-        return getAmcFwErrMsg;
+    std::string getAmcFwErrMsg() {
+        return amcFwErrMsg;
     }
 
     std::string getFlashFwErrMsg() {

@@ -99,12 +99,28 @@ if(NOT DEFINED WORK_PATH)
     PRE_BUILD
     COMMAND
       /bin/sh -c
-      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources/config ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum ] \; then mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum\; fi\;"
     COMMAND
       /bin/sh -c
-      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum/config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources/config ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum\; fi\;"
+    COMMAND
+      /bin/sh -c
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum/resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum\; fi\;"
   )
 else()
   target_link_libraries(xpumd PRIVATE xpum ${LibSpd} ${_GRPC_GRPCPP}
                                       ${_PROTOBUF_LIBPROTOBUF})
+  add_custom_command(
+    TARGET xpumd
+    PRE_BUILD
+    COMMAND
+      /bin/sh -c
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum ] \; then mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum\; fi\;"
+    COMMAND
+      /bin/sh -c
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum/config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources/config ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum\; fi\;"
+    COMMAND
+      /bin/sh -c
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum/resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpum\; fi\;"
+  )
 endif()

@@ -31,7 +31,8 @@ if command -v ccache &> /dev/null
 then
     ccache_opts="-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
 fi
-cmake .. $ccache_opts $@
+prefix_default="-DCMAKE_INSTALL_PREFIX=/usr"
+cmake .. $ccache_opts $prefix_default $@
 make -j4
 
 echo "---------Create installation package-----------"

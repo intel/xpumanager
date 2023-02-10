@@ -21,7 +21,9 @@
 #include <fstream>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
+#include "config.h"
 #include "xpum_structs.h"
 
 namespace xpum::cli {
@@ -285,12 +287,24 @@ static std::string zeInitResultToString(const int result) {
 }
 
 static void readConfigFile() {
-    char exe_path[PATH_MAX];
-    ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
-    exe_path[len] = '\0';
-    std::string current_file(exe_path);
-    std::string config_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../config/";
-    std::string file_name = config_folder + std::string("diagnostics.conf");
+    std::string file_name = std::string(XPUM_CONFIG_DIR) + std::string("diagnostics.conf");
+    struct stat buffer;
+    if (stat(file_name.c_str(), &buffer) != 0) {
+        char exe_path[PATH_MAX];
+        ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
+        exe_path[len] = '\0';
+        std::string current_file = exe_path;
+#ifndef DAEMONLESS
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/config/" + std::string("diagnostics.conf");
+        if (stat(file_name.c_str(), &buffer) != 0)
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/config/" + std::string("diagnostics.conf");
+#else
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/config/" + std::string("diagnostics.conf");
+        if (stat(file_name.c_str(), &buffer) != 0)
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/config/" + std::string("diagnostics.conf");
+#endif
+    }
+
     std::ifstream conf_file(file_name);
     if (conf_file.is_open()) {
         std::string line;
@@ -358,14 +372,31 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
             if (pos != std::string::npos) {
                 gpu_ids.push_back(std::string(pdirent->d_name).substr(4));
                 gpu_counts[str.substr(pos + key.length(), 4)] += 1;
-                std::string bdf_key = "PCI_SLOT_NAME=0000:";
+                std::string bdf_key = "PCI_SLOT_NAME=";
                 auto bdf_pos = str.find(bdf_key); 
                 if (bdf_pos != std::string::npos) {
-                    gpu_bdfs.push_back(str.substr(bdf_pos + bdf_key.length(), 7));
+                    gpu_bdfs.push_back(str.substr(bdf_pos + bdf_key.length(), 12));
                 }
             }
         }
         closedir(pdir);
+        sort(gpu_ids.begin(), gpu_ids.end());
+        sort(gpu_bdfs.begin(), gpu_bdfs.end());
+    }
+
+    if (gpu_counts.empty()) {
+        std::string cmd = "lspci | grep 'Display controller: Intel Corporation Device' | cut -d ' ' -f 1,7";
+        FILE* f = popen(cmd.c_str(), "r");
+        char c_line[1024];
+        int gpu_id = 0;
+        while (fgets(c_line, 1024, f) != NULL) {
+            std::string line(c_line);
+            gpu_ids.push_back(std::to_string(gpu_id));
+            gpu_bdfs.push_back(line.substr(0, 7));
+            gpu_counts[line.substr(8, 4)] += 1;
+            gpu_id++;
+        }
+        pclose(f);
     }
 
     // GPU level-zero driver
@@ -451,6 +482,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
         {".*caterr.*", ""},
         // gpu error
         {".*ERROR.*drm.*", "i915"},
+        {".*i915.*drm.*ERROR.*", ""},
         {".*ERROR.*GUC.*", ""},
         {".*(GuC initialization failed).*", ""},
         {".*(Enabling uc failed).*", ""},
@@ -484,6 +516,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
     std::string huc_status_infos;
     std::string i915_wedged_infos;
 
+    int gpu_id_index = 0;
     for (auto gpu_id : gpu_ids) {
         std::string line;
         snprintf(path, PATH_MAX, "/sys/kernel/debug/dri/%s/gt0/uc/guc_info", gpu_id.c_str());
@@ -501,7 +534,7 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
             if (!is_guc_running) {
                 if (guc_status_infos.size() > 0)
                     guc_status_infos += "\n";
-                guc_status_infos += "GPU card" + gpu_id + " GuC is disabled";
+                guc_status_infos += "GPU card" + gpu_id + "[" + gpu_bdfs[gpu_id_index] + "] GuC is disabled";
             }
         }
         guc_info_file.close();
@@ -526,9 +559,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
                 if (huc_status_infos.size() > 0)
                     huc_status_infos += "\n";
                 if (is_huc_disabled)
-                    huc_status_infos += "GPU card" + gpu_id + " HuC is disabled";
+                    huc_status_infos += "GPU card" + gpu_id + "[" + gpu_bdfs[gpu_id_index] + "] HuC is disabled";
                 else
-                    huc_status_infos += "GPU card" + gpu_id + " HuC is not running";
+                    huc_status_infos += "GPU card" + gpu_id + "[" + gpu_bdfs[gpu_id_index] + "] HuC is not running";
             }
         }
         huc_info_file.close();
@@ -546,16 +579,19 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
             if (is_i915_wedged) {
                 if (i915_wedged_infos.size() > 0)
                     i915_wedged_infos += "\n";
-                i915_wedged_infos += "GPU card" + gpu_id + " i915 wedged";
+                i915_wedged_infos += "GPU card" + gpu_id + "[" + gpu_bdfs[gpu_id_index] + "] i915 wedged";
             }
         }
         i915_wedged_file.close();
+
+        gpu_id_index += 1;
     }
 
     // PCIe error
     std::string pcie_error_infos;
     std::vector<std::string> pci_erros = {"TAbort+", "<TAbort+", "<MAbort+", ">SERR+", "<PERR+",
                                             "CorrErr+", "NonFatalErr+", "FatalErr+"};
+    gpu_id_index = 0;
     for (auto bdf : gpu_bdfs) {
         bool is_pcie_ok = true;
         std::string cmd = "lspci -vvvvv -s " + bdf + " 2>/dev/null";
@@ -578,8 +614,10 @@ std::unique_ptr<nlohmann::json> CoreStub::getPreCheckInfo() {
         if (!is_pcie_ok) {
             if (pcie_error_infos.size() > 0) 
                 pcie_error_infos += "\n";
-            pcie_error_infos += "GPU " + bdf + " pcie error  detected: \n   ." + std::string(c_line);
+            pcie_error_infos += "GPU card" + gpu_ids[gpu_id_index] + "[" + bdf + "] pcie error  detected: \n" + std::string(c_line);
         }
+
+        gpu_id_index += 1;
     }
 
     if (guc_status_infos.empty() && huc_status_infos.empty() 

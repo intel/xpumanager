@@ -176,7 +176,7 @@ void FirmwareManager::preInitAmcManager() {
     p_amc_manager = std::make_shared<IpmiAmcManager>();
     auto ipmi_enabled = p_amc_manager->preInit();
     if (!ipmi_enabled) {
-        p_amc_manager = std::make_shared<RedfishAmcManager>();
+        p_amc_manager = RedfishAmcManager::instance();
         p_amc_manager->preInit();
     }
 }
@@ -187,14 +187,14 @@ bool FirmwareManager::initAmcManager() {
     InitParam param;
     if (p_amc_manager->init(param))
         return true;
-    getAmcFwErrMsg = flashFwErrMsg = param.errMsg;
+    amcFwErrMsg = flashFwErrMsg = param.errMsg;
     return false;
 }
 
 xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& versions, AmcCredential credential) {
-    getAmcFwErrMsg.clear();
+    amcFwErrMsg.clear();
     if (!initAmcManager()) {
-        // getAmcFwErrMsg = "Fail to get AMC firmware versions";
+        // amcFwErrMsg = "Fail to get AMC firmware versions";
         return XPUM_GENERIC_ERROR;
         // return XPUM_OK;
     }
@@ -203,7 +203,7 @@ xpum_result_t FirmwareManager::getAMCFirmwareVersions(std::vector<std::string>& 
     param.password = credential.password;
     
     p_amc_manager->getAmcFirmwareVersions(param);
-    getAmcFwErrMsg = param.errMsg;
+    amcFwErrMsg = param.errMsg;
     if (param.errCode != xpum_result_t::XPUM_OK) {
         return param.errCode;
     }

@@ -25,7 +25,7 @@ spec:
       - name: xpumd
         image: intel/xpumanager
         imagePullPolicy: IfNotPresent
-        command: [ "/opt/xpum/bin/xpumd" ]
+        command: [ "/usr/bin/xpumd" ]
         env:
         - name: SPDLOG_LEVEL
           value: info
@@ -106,7 +106,7 @@ spec:
           #- name: XPUM_METRICS
           #  value: 0-29
         # so that Gunicorn finds the Python files
-        workingDir: /opt/xpum/rest
+        workingDir: /usr/lib/xpum/rest
         # There should be only single outstanding Prometheus request
         # being handled at the time + manual debugging calls as this
         # is cluster internal, so it does not need to scale as much

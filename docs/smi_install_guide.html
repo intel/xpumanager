@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Intel XPU-SMI Installation Guide &mdash; XPU Manager  documentation</title>
+  <title>Intel(R) XPU-SMI Installation Guide &mdash; XPU Manager  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
@@ -21,7 +21,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Intel XPU System Management Interface User Guide" href="smi_user_guide.html" />
+    <link rel="next" title="Intel(R) XPU System Management Interface User Guide" href="smi_user_guide.html" />
     <link rel="prev" title="Intel XPU System Management Interface" href="SMI_README.html" /> 
 </head>
 
@@ -44,19 +44,19 @@
 <li class="toctree-l1"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="SMI_README.html">Intel XPU System Management Interface</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Intel XPU-SMI Installation Guide</a><ul>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Intel(R) XPU-SMI Installation Guide</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#deb-install">DEB install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#deb-uninstall">DEB uninstall</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rpm-install">RPM install</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rpm-relocation-install">RPM relocation install</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#start-to-user-intel-xpu-smi">Start to user Intel XPU-SMI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#start-to-user-xpu-smi">Start to user XPU-SMI</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rpm-uninstall">RPM uninstall</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#rpm-upgrade">RPM upgrade</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#gpu-memory-ecc-on-off">GPU memory ECC on/off</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="smi_user_guide.html">Intel XPU System Management Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="smi_user_guide.html">Intel(R) XPU System Management Interface User Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="smidoc/rst/index.html">Core Library API</a></li>
 </ul>
 </li>
@@ -77,7 +77,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
-      <li>Intel XPU-SMI Installation Guide</li>
+      <li>Intel(R) XPU-SMI Installation Guide</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -86,18 +86,21 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-smi-installation-guide">
-<h1>Intel XPU-SMI Installation Guide<a class="headerlink" href="#intel-xpu-smi-installation-guide" title="Permalink to this headline"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="intel-r-xpu-smi-installation-guide">
+<h1>Intel(R) XPU-SMI Installation Guide<a class="headerlink" href="#intel-r-xpu-smi-installation-guide" title="Permalink to this headline"></a></h1>
 <section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p>Intel GPU driver (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
-<li><p>Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in repositories)</p></li>
-<li><p>Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in repositories)</p></li>
-<li><p>Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories)</p></li>
-<li><p>Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)</p></li>
+<li><p>Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in package repositories)</p></li>
+<li><p>Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in package repositories)</p></li>
+<li><p>Intel(R) Media Driver (intel-media-va-driver-non-free or intel-media in package repositories)</p></li>
+<li><p>Intel(R) Media SDK Utilities (libmfx-tools or intel-mediasdk-utils in package repositories)</p></li>
+<li><p>Intel(R) oneVPL GPU Runtime (libmfxgen1 in package repositories)</p></li>
+<li><p>Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in package repositories)</p></li>
+<li><p>Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in package repositories)</p></li>
 </ul>
-<p>intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like “–force-all” to ignore them when installing Intel XPU-SMI.</p>
+<p>intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like “–force-all” to ignore them when installing XPU-SMI.</p>
 </section>
 <section id="deb-install">
 <h2>DEB install<a class="headerlink" href="#deb-install" title="Permalink to this headline"></a></h2>
@@ -113,11 +116,12 @@
 </section>
 <section id="rpm-relocation-install">
 <h2>RPM relocation install<a class="headerlink" href="#rpm-relocation-install" title="Permalink to this headline"></a></h2>
-<p>rpm -i –prefix=/opt/abc xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+<p>rpm -i –prefix=/usr/local xpu-smi.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+You need set the environmental variable LD_LIBRARY_PATH if you change the installation folder.</p>
 </section>
-<section id="start-to-user-intel-xpu-smi">
-<h2>Start to user Intel XPU-SMI<a class="headerlink" href="#start-to-user-intel-xpu-smi" title="Permalink to this headline"></a></h2>
-<p>By default, Intel XPU-SMI is installed the folder, /opt/xpum. The command line tool is xpu-smi. Please refer to “smi_user_guide.md” for how to use the command line tool.</p>
+<section id="start-to-user-xpu-smi">
+<h2>Start to user XPU-SMI<a class="headerlink" href="#start-to-user-xpu-smi" title="Permalink to this headline"></a></h2>
+<p>By default, XPU-SMI is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is xpu-smi. Please refer to “smi_user_guide.md” for how to use the command line tool.</p>
 </section>
 <section id="rpm-uninstall">
 <h2>RPM uninstall<a class="headerlink" href="#rpm-uninstall" title="Permalink to this headline"></a></h2>
@@ -138,7 +142,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="SMI_README.html" class="btn btn-neutral float-left" title="Intel XPU System Management Interface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="smi_user_guide.html" class="btn btn-neutral float-right" title="Intel XPU System Management Interface User Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="smi_user_guide.html" class="btn btn-neutral float-right" title="Intel(R) XPU System Management Interface User Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

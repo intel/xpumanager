@@ -29,5 +29,11 @@ add_custom_target(
   COMMAND sphinx-build -c ${CMAKE_CURRENT_LIST_DIR}/sphinxconf/ ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
   DEPENDS SMI_LIB_CORE_RST XPUM_LIB_CORE_RST)
 
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ DESTINATION doc # PATTERN ".buildinfo" EXCLUDE
-)
+if(NOT DAEMONLESS)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ DESTINATION lib/xpum/doc # PATTERN ".buildinfo" EXCLUDE
+  )
+else()
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ DESTINATION lib/xpu-smi/doc # PATTERN ".buildinfo" EXCLUDE
+  )
+endif()
+

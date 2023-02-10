@@ -17,6 +17,7 @@ namespace xpum::cli {
 struct ComletStatisticsOptions {
     std::string deviceId = "-1";
     bool showEuMetrics = false;
+    bool showRASMetrics = false;
     uint32_t groupId = 0;
 };
 
@@ -51,6 +52,7 @@ class ComletStatistics : public ComletBase {
     }
 
     bool hasEUMetrics();
+    bool hasRASMetrics();
 
    private:
     std::unique_ptr<ComletStatisticsOptions> opts;

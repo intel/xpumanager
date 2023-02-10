@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Intel XPU System Management Interface User Guide &mdash; XPU Manager  documentation</title>
+  <title>Intel(R) XPU System Management Interface User Guide &mdash; XPU Manager  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Core Library API" href="smidoc/rst/index.html" />
-    <link rel="prev" title="Intel XPU-SMI Installation Guide" href="smi_install_guide.html" /> 
+    <link rel="prev" title="Intel(R) XPU-SMI Installation Guide" href="smi_install_guide.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -44,9 +44,9 @@
 <li class="toctree-l1"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="smi_index.html">XPU-SMI Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="SMI_README.html">Intel XPU System Management Interface</a></li>
-<li class="toctree-l2"><a class="reference internal" href="smi_install_guide.html">Intel XPU-SMI Installation Guide</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Intel XPU System Management Interface User Guide</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#intel-xpu-system-management-interface-main-features">Intel XPU System Management Interface main features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="smi_install_guide.html">Intel(R) XPU-SMI Installation Guide</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Intel(R) XPU System Management Interface User Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#intel-r-xpu-system-management-interface-main-features">Intel(R) XPU System Management Interface main features</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#help-info">Help info</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#discover-the-devices-in-this-machine">Discover the devices in this machine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#get-the-system-topology">Get the system topology</a></li>
@@ -78,7 +78,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="smi_index.html">XPU-SMI Documentation</a> &raquo;</li>
-      <li>Intel XPU System Management Interface User Guide</li>
+      <li>Intel(R) XPU System Management Interface User Guide</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -87,11 +87,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-system-management-interface-user-guide">
-<h1>Intel XPU System Management Interface User Guide<a class="headerlink" href="#intel-xpu-system-management-interface-user-guide" title="Permalink to this headline"></a></h1>
-<p>This guide describes how to use Intel XPU System Management Interface to manage Intel GPU devices.</p>
-<section id="intel-xpu-system-management-interface-main-features">
-<h2>Intel XPU System Management Interface main features<a class="headerlink" href="#intel-xpu-system-management-interface-main-features" title="Permalink to this headline"></a></h2>
+  <section class="tex2jax_ignore mathjax_ignore" id="intel-r-xpu-system-management-interface-user-guide">
+<h1>Intel(R) XPU System Management Interface User Guide<a class="headerlink" href="#intel-r-xpu-system-management-interface-user-guide" title="Permalink to this headline"></a></h1>
+<p>This guide describes how to use Intel(R) XPU System Management Interface to manage Intel GPU devices.</p>
+<section id="intel-r-xpu-system-management-interface-main-features">
+<h2>Intel(R) XPU System Management Interface main features<a class="headerlink" href="#intel-r-xpu-system-management-interface-main-features" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p>Show the device info.</p></li>
 <li><p>Update the device firmware.</p></li>
@@ -101,9 +101,9 @@
 <h2>Help info<a class="headerlink" href="#help-info" title="Permalink to this headline"></a></h2>
 <p>Show the XPU System Management Interface help info.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> 
-<span class="n">Intel</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span> <span class="o">--</span> <span class="n">v1</span><span class="mf">.0</span> 
-<span class="n">Intel</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span> <span class="n">provides</span> <span class="n">the</span> <span class="n">Intel</span> <span class="n">data</span> <span class="n">center</span> <span class="n">GPU</span> <span class="n">device</span> <span class="n">info</span><span class="o">.</span> <span class="n">It</span> <span class="n">can</span> <span class="n">also</span> <span class="n">be</span> <span class="n">used</span> <span class="n">to</span> <span class="n">update</span> <span class="n">the</span> <span class="n">firmware</span><span class="o">.</span>  
-<span class="n">Intel</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span> <span class="ow">is</span> <span class="n">based</span> <span class="n">on</span> <span class="n">Intel</span> <span class="n">oneAPI</span> <span class="n">Level</span> <span class="n">Zero</span><span class="o">.</span> <span class="n">Before</span> <span class="n">using</span> <span class="n">Intel</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span><span class="p">,</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">driver</span> <span class="ow">and</span> <span class="n">Intel</span> <span class="n">oneAPI</span> <span class="n">Level</span> <span class="n">Zero</span> <span class="n">should</span> <span class="n">be</span> <span class="n">installed</span> <span class="n">rightly</span><span class="o">.</span>  
+<span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span> <span class="o">--</span> <span class="n">v1</span><span class="mf">.0</span> 
+<span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span> <span class="n">provides</span> <span class="n">the</span> <span class="n">Intel</span> <span class="n">data</span> <span class="n">center</span> <span class="n">GPU</span> <span class="n">device</span> <span class="n">info</span><span class="o">.</span> <span class="n">It</span> <span class="n">can</span> <span class="n">also</span> <span class="n">be</span> <span class="n">used</span> <span class="n">to</span> <span class="n">update</span> <span class="n">the</span> <span class="n">firmware</span><span class="o">.</span>  
+<span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span> <span class="ow">is</span> <span class="n">based</span> <span class="n">on</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">oneAPI</span> <span class="n">Level</span> <span class="n">Zero</span><span class="o">.</span> <span class="n">Before</span> <span class="n">using</span> <span class="n">XPU</span> <span class="n">System</span> <span class="n">Management</span> <span class="n">Interface</span><span class="p">,</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">driver</span> <span class="ow">and</span> <span class="n">Intel</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="n">oneAPI</span> <span class="n">Level</span> <span class="n">Zero</span> <span class="n">should</span> <span class="n">be</span> <span class="n">installed</span> <span class="n">rightly</span><span class="o">.</span>  
  
 <span class="n">Supported</span> <span class="n">devices</span><span class="p">:</span> 
   <span class="o">-</span> <span class="n">Intel</span> <span class="n">Data</span> <span class="n">Center</span> <span class="n">GPU</span> 
@@ -128,7 +128,7 @@
   <span class="n">log</span>                         <span class="n">Collect</span> <span class="n">GPU</span> <span class="n">debug</span> <span class="n">logs</span><span class="o">.</span>
 </pre></div>
 </div>
-<p>Show Intel XPU System Management Interface version and Level Zero version.</p>
+<p>Show XPU System Management Interface version and Level Zero version.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="o">-</span><span class="n">v</span>
 <span class="n">CLI</span><span class="p">:</span>
     <span class="n">Version</span><span class="p">:</span> <span class="mf">1.0.0.20211217</span>
@@ -753,7 +753,7 @@ Update firmware successfully. Please reboot OS to take effect.
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="smi_install_guide.html" class="btn btn-neutral float-left" title="Intel XPU-SMI Installation Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="smi_install_guide.html" class="btn btn-neutral float-left" title="Intel(R) XPU-SMI Installation Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="smidoc/rst/index.html" class="btn btn-neutral float-right" title="Core Library API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

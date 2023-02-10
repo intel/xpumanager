@@ -10,7 +10,7 @@ docutils==0.17.1
 Flask==2.0.3
 Flask-HTTPAuth==4.6.0
 grpcio==1.51.1
-grpcio-tools==1.46.1
+grpcio-tools==1.51.1
 idna==3.4
 imagesize==1.4.1
 importlib-metadata==5.0.0

@@ -134,6 +134,10 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 endif()
 
+if(DAEMONLESS)
+  target_compile_definitions(xpum PRIVATE DAEMONLESS)
+endif()
+
 target_sources(
   xpum
   PRIVATE ${API_SRC}
@@ -229,9 +233,16 @@ endif()
 
 unset(BUILD_TEST CACHE)
 
-install(
-  DIRECTORY resources
-  DESTINATION .
-  PATTERN "config" EXCLUDE)
-
-install(DIRECTORY resources/config DESTINATION .)
+if(NOT DAEMONLESS)
+  install(
+    DIRECTORY resources
+    DESTINATION lib/xpum
+    PATTERN "config" EXCLUDE)
+  install(DIRECTORY resources/config DESTINATION lib/xpum)
+else()
+  install(
+    DIRECTORY resources
+    DESTINATION lib/xpu-smi
+    PATTERN "config" EXCLUDE)
+  install(DIRECTORY resources/config DESTINATION lib/xpu-smi)
+endif()

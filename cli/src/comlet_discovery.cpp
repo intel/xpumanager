@@ -76,10 +76,8 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },
                 { "label": "GFX PSC Firmware Name", "value": "gfx_pscbin_firmware_name" },
                 { "label": "GFX PSC Firmware Version", "value": "gfx_pscbin_firmware_version"},)"
-#ifndef DAEMONLESS
                 R"({ "label": "AMC Firmware Name", "value": "amc_firmware_name"},)"
                 R"({ "label": "AMC Firmware Version", "value": "amc_firmware_version"},)"
-#endif
                 R"({ "rowTitle": " " },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address", "dumpId": 11 },
                 { "label": "PCI Slot", "value": "pci_slot", "dumpId": 12 },
@@ -228,13 +226,11 @@ void ComletDiscovery::setupOptions() {
         }
         return std::string();
     });
-#ifndef DAEMONLESS
     auto listamcversionsOpt = addFlag("--listamcversions", this->opts->listamcversions, "Show all AMC firmware versions.");
     deviceIdOpt->excludes(listamcversionsOpt);
 
     addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
-#endif
 }
 
 std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
@@ -244,13 +240,19 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     }
 
     if (this->opts->deviceId.compare("-1") != 0) {
+        auto json = std::make_unique<nlohmann::json>();
         if (isNumber(this->opts->deviceId)) {
-            auto json = this->coreStub->getDeviceProperties(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
-            return json;
+            json = this->coreStub->getDeviceProperties(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
         } else {
-            auto json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str(), this->opts->username, this->opts->password);
-            return json;
+            json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str(), this->opts->username, this->opts->password);
         }
+        if (json->contains("serial_number") && (*json)["serial_number"].get<std::string>().compare("unknown") == 0) {
+            std::string sn = this->coreStub->getSerailNumberIPMI(std::stoi(this->opts->deviceId));
+            if (sn.size() > 0) {
+                (*json)["serial_number"] = sn;
+            }
+        }
+        return json;
     }
 
     if (this->opts->propIdList.size() > 0) {
@@ -270,12 +272,10 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
     auto json = this->coreStub->getDeviceList();
     auto filtered = std::make_unique<nlohmann::json>();
     std::copy_if((*json)["device_list"].begin(), (*json)["device_list"].end(), std::back_inserter((*filtered)["device_list"]), [this](const nlohmann::json& item) {
-        if (this->opts->showPfOnly) {
-            return item.contains("device_function_type") && item["device_function_type"] == "physical";
-        } else if (this->opts->showVfOnly) {
+        if (this->opts->showVfOnly) {
             return item.contains("device_function_type") && item["device_function_type"] == "virtual";
         } else {
-            return true;
+            return item.contains("device_function_type") && item["device_function_type"] == "physical";
         }
     });
     return filtered;

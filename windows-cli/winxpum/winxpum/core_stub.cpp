@@ -257,6 +257,9 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     (*deviceJson)["core_clock_rate_mhz"] = zes_device_properties.core.coreClockRate;
     (*deviceJson)["device_stepping"] = "unknown";
     (*deviceJson)["driver_version"] = driver_version;
+    std::stringstream ss;
+    ss << "0x" << std::hex << zes_device_properties.core.deviceId;
+    (*deviceJson)["pci_device_id"] = ss.str();
     (*deviceJson)["pci_bdf_address"] = getBdfAddress(zes_device);
     (*deviceJson)["gfx_firmware_name"] = "GFX";
     (*deviceJson)["gfx_firmware_version"] = igsc_instance.getDeviceGSCVersion((*deviceJson)["pci_bdf_address"]);

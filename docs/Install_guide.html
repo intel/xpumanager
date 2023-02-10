@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Intel XPU Manager Installation Guide &mdash; XPU Manager  documentation</title>
+  <title>Intel(R) XPU Manager Installation Guide &mdash; XPU Manager  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/doxyrest-pygments.css" type="text/css" />
@@ -42,14 +42,14 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="README.html">Intel XPU Manager and XPU System Management Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="README.html">Intel(R) XPU Manager and XPU System Management Interface</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Intel XPU Manager Installation Guide</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Intel(R) XPU Manager Installation Guide</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#requirements">Requirements</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deb-install">DEB install</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deb-uninstall">DEB uninstall</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#rpm-install">RPM install</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#start-to-use-intel-xpu-manager">Start to use Intel XPU Manager</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#start-to-use-xpu-manager">Start to use  XPU Manager</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#rpm-relocation-install">RPM relocation install</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#rpm-uninstall">RPM uninstall</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#how-to-enable-or-disable-some-daemon-monitor-metrics">How to enable or disable some daemon monitor metrics</a></li>
@@ -60,7 +60,7 @@
 <li class="toctree-l3"><a class="reference internal" href="REST_README.html">XPUM REST API Setup Guide</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel(R) XPU Manager Command Line Interface User Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="restful.html">Restful API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xpumdoc/rst/index.html">Core Library API</a></li>
 </ul>
@@ -84,7 +84,7 @@
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="xpum_index.html">XPUM Documentation</a> &raquo;</li>
           <li><a href="installation.html">Installation</a> &raquo;</li>
-      <li>Intel XPU Manager Installation Guide</li>
+      <li>Intel(R) XPU Manager Installation Guide</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -93,21 +93,25 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="intel-xpu-manager-installation-guide">
-<h1>Intel XPU Manager Installation Guide<a class="headerlink" href="#intel-xpu-manager-installation-guide" title="Permalink to this headline"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="intel-r-xpu-manager-installation-guide">
+<h1>Intel(R) XPU Manager Installation Guide<a class="headerlink" href="#intel-r-xpu-manager-installation-guide" title="Permalink to this headline"></a></h1>
 <section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline"></a></h2>
 <ul class="simple">
 <li><p>Intel GPU driver (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
-<li><p>Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in repositories)</p></li>
-<li><p>Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in repositories)</p></li>
-<li><p>Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in repositories)</p></li>
-<li><p>Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in repositories)</p></li>
+<li><p>Intel(R) Graphics Compute Runtime for oneAPI Level Zero (intel-level-zero-gpu and level-zero in package repositories)</p></li>
+<li><p>Intel(R) Graphics System Controller Firmware Update Library (intel-gsc in package repositories)</p></li>
+<li><p>Intel(R) Media Driver (intel-media-va-driver-non-free or intel-media in package repositories)</p></li>
+<li><p>Intel(R) Media SDK Utilities (libmfx-tools or intel-mediasdk-utils in package repositories)</p></li>
+<li><p>Intel(R) oneVPL GPU Runtime (libmfxgen1 in package repositories)</p></li>
+<li><p>Intel(R) Metrics Library for MDAPI (intel-metrics-library or libigdml1 in package repositories)</p></li>
+<li><p>Intel(R) Metrics Discovery Application Programming Interface (intel-metrics-discovery or libmd1 in package repositories)</p></li>
 </ul>
+<p>intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like “–force-all” to ignore them when installing Intel(R) XPU Manager.</p>
 </section>
 <section id="deb-install">
 <h2>DEB install<a class="headerlink" href="#deb-install" title="Permalink to this headline"></a></h2>
-<p>sudo dpkg -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.deb</p>
+<p>sudo dpkg -i xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.deb</p>
 </section>
 <section id="deb-uninstall">
 <h2>DEB uninstall<a class="headerlink" href="#deb-uninstall" title="Permalink to this headline"></a></h2>
@@ -115,15 +119,16 @@
 </section>
 <section id="rpm-install">
 <h2>RPM install<a class="headerlink" href="#rpm-install" title="Permalink to this headline"></a></h2>
-<p>sudo rpm -i xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+<p>sudo rpm -i xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
 </section>
-<section id="start-to-use-intel-xpu-manager">
-<h2>Start to use Intel XPU Manager<a class="headerlink" href="#start-to-use-intel-xpu-manager" title="Permalink to this headline"></a></h2>
-<p>By default, Intel XPU Manager is installed the folder, /opt/xpum. The command line tool is /opt/xpum/bin/xpumcli. Please refer to “CLI_user_guide.md” for how to use the command line tool.</p>
+<section id="start-to-use-xpu-manager">
+<h2>Start to use  XPU Manager<a class="headerlink" href="#start-to-use-xpu-manager" title="Permalink to this headline"></a></h2>
+<p>By default, XPU Manager is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is /usr/bin/xpumcli. Please refer to “CLI_user_guide.md” for how to use the command line tool.</p>
 </section>
 <section id="rpm-relocation-install">
 <h2>RPM relocation install<a class="headerlink" href="#rpm-relocation-install" title="Permalink to this headline"></a></h2>
-<p>rpm -i –prefix=/opt/abc xpumanager.1.0.0.xxxxxxxx.xxxxxx.xxxxxxxx.rpm</p>
+<p>rpm -i –prefix=/usr/local xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+You need set the environmental variable LD_LIBRARY_PATH if you change the installation folder.</p>
 </section>
 <section id="rpm-uninstall">
 <h2>RPM uninstall<a class="headerlink" href="#rpm-uninstall" title="Permalink to this headline"></a></h2>
@@ -131,13 +136,13 @@
 </section>
 <section id="how-to-enable-or-disable-some-daemon-monitor-metrics">
 <h2>How to enable or disable some daemon monitor metrics<a class="headerlink" href="#how-to-enable-or-disable-some-daemon-monitor-metrics" title="Permalink to this headline"></a></h2>
-<p>By default, Intel XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics.</p>
+<p>By default, XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics.</p>
 <ol class="arabic simple">
 <li><p>edit file “/lib/systemd/system/xpum.service” or “/etc/systemd/system/xpum.service” in some system.
 add “-m metric-indexes” to ExecStart.
-Use “/opt/xpum/bin/xpumd -h” to get detailed info.<br />
+Use “/usr/bin/xpumd -h” to get detailed info.<br />
 Sample:
-ExecStart=/opt/xpum/bin/xpumd -p /var/xpum_daemon.pid -d /opt/xpum/dump -m 0,4-38</p></li>
+ExecStart=/usr/bin/xpumd  -p /var/xpum_daemon.pid -d /usr/lib/xpum/dump -m 0,4-38</p></li>
 <li><p>Run command “sudo systemctl daemon-reload”</p></li>
 <li><p>Run command “sudo systemctl restart xpum”</p></li>
 </ol>

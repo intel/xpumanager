@@ -116,10 +116,13 @@ else() # Build xpu-smi
     PRE_BUILD
     COMMAND
       /bin/sh -c
-      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources/config ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpu-smi ] \; then mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpu-smi\; fi\;"
     COMMAND
       /bin/sh -c
-      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../\; fi\;"
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpu-smi/config ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources/config ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpu-smi\; fi\;"
+    COMMAND
+      /bin/sh -c
+      "if [ ! -d ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpu-smi/resources ] \; then cp -r ${CMAKE_CURRENT_LIST_DIR}/../core/resources ${CMAKE_CURRENT_BINARY_DIR}/../lib/xpu-smi\; fi\;"
   )
 
   if(NOT DEFINED WORK_PATH)
