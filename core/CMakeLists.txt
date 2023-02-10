@@ -134,10 +134,6 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 endif()
 
-if(DAEMONLESS)
-  target_compile_definitions(xpum PRIVATE DAEMONLESS)
-endif()
-
 target_sources(
   xpum
   PRIVATE ${API_SRC}

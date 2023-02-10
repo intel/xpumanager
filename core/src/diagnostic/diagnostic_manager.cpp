@@ -55,15 +55,9 @@ void DiagnosticManager::readConfigFile() {
         ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
         exe_path[len] = '\0';
         std::string current_file = exe_path;
-#ifndef DAEMONLESS
-        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/config/" + std::string("diagnostics.conf");
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/config/" + std::string("diagnostics.conf");
         if (!is_path_exist(file_name))
-            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/config/" + std::string("diagnostics.conf");
-#else
-        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/config/" + std::string("diagnostics.conf");
-        if (!is_path_exist(file_name))
-            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/config/" + std::string("diagnostics.conf");
-#endif
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/" + Configuration::getXPUMMode() + "/config/" + std::string("diagnostics.conf");
     }
     std::ifstream conf_file(file_name);
     if (conf_file.is_open()) {
@@ -708,15 +702,9 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
             ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
             exe_path[len] = '\0';
             std::string  current_file = exe_path;
-#ifndef DAEMONLESS
-            mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/resources/mediadata/";
+            mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/resources/mediadata/";
             if (!is_path_exist(mediadata_folder))
-                mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/resources/mediadata/";
-#else
-            mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/resources/mediadata/";
-            if (!is_path_exist(mediadata_folder))
-                mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/resources/mediadata/";
-#endif
+                mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/" + Configuration::getXPUMMode() + "/resources/mediadata/";
         }
         bool sample_multi_transcode_tool_exist = true;
         std::ifstream file_transcode(DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode");
@@ -1318,15 +1306,9 @@ std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_p
         ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
         exe_path[len] = '\0';
         std::string current_file = exe_path;
-#ifndef DAEMONLESS
-        folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/resources/kernels/";
+        folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/resources/kernels/";
         if (!is_path_exist(folder))
-            folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/resources/kernels/";
-#else
-        folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/resources/kernels/";
-        if (!is_path_exist(folder))
-            folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/resources/kernels/";
-#endif
+            folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/" + Configuration::getXPUMMode() + "/resources/kernels/";
     }
     std::string absolute_file_path = folder + file_path;
     std::ifstream stream(absolute_file_path, std::ios::in | std::ios::binary);

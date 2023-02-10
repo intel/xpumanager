@@ -8,7 +8,10 @@
 #include <set>
 #include <vector>
 #include <string>
+#include <unistd.h>
+#include <limits.h>
 
+#include "infrastructure/logger.h"
 #include "measurement_type.h"
 
 namespace xpum {
@@ -37,9 +40,20 @@ class Configuration {
     static uint32_t DEFAULT_MEASUREMENT_DATA_SCALE;
     static uint32_t MAX_STATISTICS_SESSION_NUM;
     static bool INITIALIZE_PERF_METRIC;
+    static std::string XPUM_MODE;
 
    public:
     static void init() {
+        char exePath[PATH_MAX];
+        ssize_t len = ::readlink("/proc/self/exe", exePath, sizeof(exePath));
+        exePath[len] = '\0';
+        std::string commandLine = exePath;
+        if (commandLine.find_last_of('/') != std::string::npos)
+            XPUM_MODE = commandLine.substr(commandLine.find_last_of('/') + 1);
+        if (XPUM_MODE != "xpu-smi")
+            XPUM_MODE = "xpum";
+        XPUM_LOG_INFO("xpum mode: {}", XPUM_MODE);
+
         initEnabledMetrics();
         initPerfMetrics();
     }
@@ -53,6 +67,10 @@ class Configuration {
     
     static std::vector<PerfMetric_t>& getPerfMetrics() {
         return perf_metrics;
+    }
+
+    static std::string getXPUMMode() {
+        return XPUM_MODE;
     }
 
    private:
