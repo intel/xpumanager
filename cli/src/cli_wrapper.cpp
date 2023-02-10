@@ -111,8 +111,10 @@ int CLIWrapper::printResult(std::ostream &out) {
                     setenv("XPUM_METRICS", "0,4-38", 1);
                 else if (dump_comlet->dumpEUMetrics())
                     setenv("XPUM_METRICS", "0-31,36-38", 1);
-                else
+                else if(dump_comlet->dumpRASMetrics())
                     setenv("XPUM_METRICS", "0,4-31,36-38", 1);
+                else
+                    setenv("XPUM_METRICS", "0,4-19,29-31,36-38", 1);
             }
             if (comlet->getCommand().compare("dump") == 0 && std::dynamic_pointer_cast<ComletDump>(comlet)->dumpIdlePowerOnly()) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);

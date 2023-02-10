@@ -81,6 +81,8 @@ class ComletDump : public ComletBase {
 
     bool dumpEUMetrics();
 
+    bool dumpRASMetrics();
+
     bool dumpIdlePowerOnly();
 
     std::unique_ptr<nlohmann::json> combineTileAndDeviceLevel(nlohmann::json rawJson);
