@@ -148,10 +148,17 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
     this->p_device_manager->getDeviceList(devices);
     for (auto device : devices) {
         Property property;
-        if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, property)) {
-            std::string device_name = property.getValue();
-            device_name.erase(std::remove_if(device_name.begin(), device_name.end(), isspace), device_name.end());
-            device_names.insert(std::pair<ze_device_handle_t, std::string>(device->getDeviceHandle(), device_name));
+        if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, property)) {
+            std::string value = property.getValue();
+            std::string device_pci_id = value;
+            if (value.substr(0, 2) == "0x")
+                device_pci_id = value.substr(2);
+
+            if (device_pci_id.size() < 4)
+                device_pci_id = std::string(4 - device_pci_id.size(), '0') + device_pci_id;
+
+            // Format for device name is "Intel(R)Graphics[0xXXXX]" which is consistent with diagnostics.conf after removing spaces. 
+            device_names.insert(std::pair<ze_device_handle_t, std::string>(device->getDeviceHandle(), "Intel(R)Graphics[0x" + device_pci_id + "]"));
         }
     }
     try {
