@@ -108,12 +108,11 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         }
     }
 
-#ifdef DAEMONLESS
-    int hasRAS = 0;
-    int PVC = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel() == XPUM_DEVICE_MODEL_PVC;
-    if(!PVC){
-        hasRAS = 1;
-    }else{
+    int hasRAS = 1;
+    if (Configuration::XPUM_MODE == "xpu-smi" &&
+    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel() == XPUM_DEVICE_MODEL_PVC){
+        // Just xpu-smi on PVC is affected
+        hasRAS = 0;
         char* xpum_metrics_env;
         xpum_metrics_env = std::getenv("XPUM_METRICS");
         if (xpum_metrics_env != NULL) {
@@ -143,9 +142,6 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
             }
         }
     }
-#else
-    int hasRAS = 0;
-#endif
 
     auto metric_types_iter = metric_types.begin();
     bool hasDataOnDevice = false;

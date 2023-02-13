@@ -790,18 +790,13 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
     if (checkCapability(props.core.name, bdf_address, "Energy", toGetEnergy, device))
         capabilities.push_back(DeviceCapability::METRIC_ENERGY);
 
-#ifdef DAEMONLESS
-    if(getDeviceModelByPciDeviceId(props.core.deviceId) == XPUM_DEVICE_MODEL_PVC){
-        // Just PVC is affected
+    if (Configuration::XPUM_MODE == "xpu-smi" && getDeviceModelByPciDeviceId(props.core.deviceId) == XPUM_DEVICE_MODEL_PVC){
+        // Just xpu-smi on PVC is affected
         capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
     }else {
         if (checkCapability(props.core.name, bdf_address, "Ras Error", toGetRasErrorOnSubdevice, device))
             capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
     }
-#else
-    if (checkCapability(props.core.name, bdf_address, "Ras Error", toGetRasErrorOnSubdevice, device))
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
-#endif
 
     if (checkCapability(props.core.name, bdf_address, "Frequency Throttle", toGetFrequencyThrottle, device))
         capabilities.push_back(DeviceCapability::METRIC_FREQUENCY_THROTTLE);
