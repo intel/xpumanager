@@ -2,7 +2,9 @@
 
 You need driver module "cdc_eem" to support the Virtual NIC. 
 Enter the following command to check if cdc_eem is loaded:
+```
 lsmod | grep cdc_eem
+```
 
 # 2.Enable Virtual NIC from BMC
 
@@ -90,7 +92,7 @@ usb0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
 ```
 
-4.References:
+# 4.References:
 - https://hewlettpackard.github.io/ilo-rest-api-docs/ilo5/#using-the-virtual-nic
 - https://support.hpe.com/hpesc/public/docDisplay?docId=a00105236en_us&page=GUID-434DFBDD-42E7-445C-B9DA-C9BE6512FB0A.html
 - https://support.hpe.com/hpesc/public/docDisplay?docId=a00105236en_us&page=GUID-8128AE32-EBD7-49D2-83B4-4F74B5CE5D83.html
