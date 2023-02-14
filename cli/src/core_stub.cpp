@@ -241,16 +241,10 @@ static void getErrorLogLines(std::map<std::string, std::string> patterns) {
     cpu_error_log_lines.clear();
     gpu_error_log_lines.clear();
 
-    std::string print_log_cmd = "cat " + dmesg_log_file_name;
+    std::string print_log_cmd = "journalctl -b 0 --dmesg";
     if (detect_number_of_last_logs > 0)
-        print_log_cmd += " | tail -n " + std::to_string(detect_number_of_last_logs);
-    std::ifstream dmesg_log_file(dmesg_log_file_name);
-    if (!dmesg_log_file.good()) {
-        print_log_cmd = "dmesg | tail -n 500";
-    }
-
-    getErrorLogLinesByFile(print_log_cmd, patterns, "dmesg");
-    dmesg_log_file.close();
+        print_log_cmd += " -n " + std::to_string(detect_number_of_last_logs);
+    getErrorLogLinesByFile(print_log_cmd, patterns, "journalctl -b 0 --dmesg");
 
     std::ifstream syslog_file(syslog_file_name);
     if (syslog_file.good()) {
