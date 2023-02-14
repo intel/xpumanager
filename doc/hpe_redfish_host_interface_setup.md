@@ -41,12 +41,12 @@ Management Controller Host Interface
                 idVendor: 0x03f0
                 idProduct: 0x2927
                 Protocol ID: 04 (Redfish over IP)
-                        Service UUID: b9e53e9f-0478-5d29-b3e7-c0c0c1679a03
+                        Service UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
                         Host IP Assignment Type: DHCP
                         Host IP Address Format: IPv4
                         Redfish Service IP Discovery Type: DHCP
                         Redfish Service IP Address Format: IPv4
-                        Redfish Service Hostname: ILOCNX1370BFY.
+                        Redfish Service Hostname: XXXXXXXXXXXX.
 ```
 
 3.2 To identify the device in /sys/bus/usb/devices, run below commands:
