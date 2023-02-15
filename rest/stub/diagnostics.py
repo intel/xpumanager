@@ -14,6 +14,7 @@ diagnosticTypeEnumToString = {
     core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_LIBRARY: "XPUM_DIAG_SOFTWARE_LIBRARY",
     core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_PERMISSION: "XPUM_DIAG_SOFTWARE_PERMISSION",
     core_pb2.DiagnosticsComponentInfo.DIAG_SOFTWARE_EXCLUSIVE: "XPUM_DIAG_SOFTWARE_EXCLUSIVE",
+    core_pb2.DiagnosticsComponentInfo.DIAG_COMPUTATION: "XPUM_DIAG_COMPUTATION",
     core_pb2.DiagnosticsComponentInfo.DIAG_HARDWARE_SYSMAN: "XPUM_DIAG_HARDWARE_SYSMAN",
     core_pb2.DiagnosticsComponentInfo.DIAG_INTEGRATION_PCIE: "XPUM_DIAG_INTEGRATION_PCIE",
     core_pb2.DiagnosticsComponentInfo.DIAG_MEDIA_CODEC: "XPUM_DIAG_MEDIA_CODEC",

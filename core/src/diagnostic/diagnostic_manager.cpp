@@ -329,7 +329,13 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_EXCLUSIVE, e.what(), p_task_info);
             }
-        }
+            XPUM_LOG_INFO("start computation check diagnostic");
+            try {
+                doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info, true);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
+            }
+       }
 
         /*
         if (p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
@@ -365,7 +371,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
         if (p_task_info->level == xpum_diag_level_t::XPUM_DIAG_LEVEL_3) {
             XPUM_LOG_INFO("start computation diagnostic");
             try {
-                doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info);
+                doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info, false);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
             }
@@ -1670,8 +1676,14 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
     }
 }
 
-void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
-    xpum_diag_component_info_t &compute_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTATION];
+void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info, bool checkOnly) {
+    int comp_index = 0;
+    if (checkOnly == true) {
+        comp_index = xpum_diag_task_type_t::XPUM_DIAG_COMPUTATION;
+    } else {
+        comp_index = xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTATION;
+    }
+    xpum_diag_component_info_t &compute_component = p_task_info->componentList[comp_index];
     p_task_info->count += 1;
     updateMessage(compute_component.message, std::string("Running"));
     compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
@@ -1705,7 +1717,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
     }
 
     for (std::size_t i = 0; i < device_handles.size(); i++) {
-        compute_threads.push_back(std::thread([&all_gflops, &error_messages, i, &device_handles, &ze_driver]() {
+        compute_threads.push_back(std::thread([&all_gflops, &error_messages, i, &device_handles, &ze_driver, checkOnly]() {
             try {
                 ze_result_t ret;
                 long double timed;
@@ -1841,7 +1853,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
                 timed = 0;
                 long double current;
                 // Vector width 1
-                timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, XPUM_DIAG_PERFORMANCE_COMPUTATION);
+                timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, XPUM_DIAG_PERFORMANCE_COMPUTATION, checkOnly);
                 current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
                 all_gflops[i] = std::max(all_gflops[i], current);
                 XPUM_LOG_INFO("compute sp vector width 1 done");
@@ -1959,9 +1971,14 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
         updateMessage(compute_component.message, desc);
     } else {
         compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        std::string desc = "Pass to check computation performance.";
-        desc += " " + compute_detail;
-        updateMessage(compute_component.message, desc);
+        if (checkOnly == true) {
+            updateMessage(compute_component.message, 
+                    "Pass to check computation");
+        } else {
+            std::string desc = "Pass to check computation performance.";
+            desc += " " + compute_detail;
+            updateMessage(compute_component.message, desc);
+        }
     }
     compute_component.finished = true;
 }
@@ -2308,7 +2325,7 @@ void DiagnosticManager::setupFunction(ze_module_handle_t &module_handle, ze_kern
 
 long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue, ze_command_list_handle_t command_list,
                                          ze_kernel_handle_t &function,
-                                         struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type) {
+                                         struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type, bool checkOnly) {
     ze_result_t ret;
     long double timed = 0;
 
@@ -2327,6 +2344,16 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
     ret = zeCommandListClose(command_list);
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zeCommandListClose()");
+    }
+
+    // 1 round is good enough if it is not perf diag
+    if (checkOnly == true) {
+        ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeCommandQueueExecuteCommandLists()");
+        }
+        waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
+        return 0;
     }
 
     for (uint32_t i = 0; i < 10; i++) {

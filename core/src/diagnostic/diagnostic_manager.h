@@ -85,7 +85,7 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static void doDeviceDiagnosticPeformanceComputation(const ze_device_handle_t &ze_device,
                                                                 const ze_driver_handle_t &ze_driver,
-                                                                std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+                                                                std::shared_ptr<xpum_diag_task_info_t> p_task_info, bool checkOnly);
     
     static void doDeviceDiagnosticPeformancePower(const ze_device_handle_t &ze_device,
                                                                 const ze_driver_handle_t &ze_driver,
@@ -134,7 +134,7 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static long double runKernel(ze_command_queue_handle_t command_queue, ze_command_list_handle_t command_list,
                                  ze_kernel_handle_t &function,
-                                 struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type);
+                                 struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type, bool checkOnly = false);
 
     static long double calculateGbps(long double period, long double buffer_size);
 

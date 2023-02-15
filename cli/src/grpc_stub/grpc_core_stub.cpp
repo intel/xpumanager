@@ -388,6 +388,9 @@ static std::string diagnosticTypeEnumToString(DiagnosticsComponentInfo_Type type
         case DiagnosticsComponentInfo_Type_DIAG_HARDWARE_SYSMAN:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_HARDWARE_SYSMAN" : "Hardware Sysman");
             break;
+        case DiagnosticsComponentInfo_Type_DIAG_COMPUTATION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_COMPUTATION" : "Computation Check");
+            break;
         case DiagnosticsComponentInfo_Type_DIAG_INTEGRATION_PCIE:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_INTEGRATION_PCIE" : "Integration PCIe");
             break;

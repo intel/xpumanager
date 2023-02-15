@@ -246,6 +246,9 @@ static std::string diagnosticTypeEnumToString(xpum_diag_task_type_t type, bool r
         case xpum_diag_task_type_t::XPUM_DIAG_HARDWARE_SYSMAN:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_HARDWARE_SYSMAN" : "Hardware Sysman");
             break;
+        case xpum_diag_task_type_t::XPUM_DIAG_COMPUTATION:
+            ret = (rawComponentTypeStr ? "XPUM_DIAG_COMPUTATION" : "Computation Check");
+            break;
         case xpum_diag_task_type_t::XPUM_DIAG_INTEGRATION_PCIE:
             ret = (rawComponentTypeStr ? "XPUM_DIAG_INTEGRATION_PCIE" : "Integration PCIe");
             break;
