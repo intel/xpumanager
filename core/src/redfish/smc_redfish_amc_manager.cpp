@@ -7,7 +7,6 @@
 
 #include <future>
 #include <nlohmann/json.hpp>
-#include <regex>
 #include <sstream>
 
 #include "core/core.h"
@@ -354,13 +353,6 @@ Management Controller Host Interface
 
 */
 
-static std::string search_by_regex(std::string content, std::regex pattern) {
-    std::smatch sm;
-    if (std::regex_search(content, sm, pattern)) {
-        return sm[1];
-    }
-    return "";
-}
 
 static RedfishHostInterface parseInterface(std::string dmiDecodeOutput) {
     RedfishHostInterface res;
@@ -405,11 +397,8 @@ static std::vector<std::string> splitInterfaces(std::string output) {
     return interfaces;
 }
 
-static bool ipBinded = false;
 
 std::string SMCRedfishAmcManager::getRedfishAmcWarn() {
-    if(ipBinded)
-        return "";
     // check if redfish amc supported
     auto output = getDmiDecodeOutput();
 
@@ -419,6 +408,13 @@ std::string SMCRedfishAmcManager::getRedfishAmcWarn() {
         auto info = parseInterface(itf);
         if (!info.valid())
             continue;
+        // if already configured, don't show warn
+        std::string output;
+        int ret = doCmd("ip addr show " + info.interface_name, output);
+        if (ret == 0 && output.find(info.interface_name) != output.npos && output.find(info.ipv4_addr) != output.npos) {
+            return "";
+        }
+
         // warning string
         std::stringstream ss;
         ss << "XPUM will config the address ";
@@ -457,7 +453,6 @@ bool SMCRedfishAmcManager::bindIpToInterface() {
                              hostInterface.interface_name;
     ret = doCmd(ip_add_cmd, output);
     XPUM_LOG_INFO("interface config: {}", ip_add_cmd);
-    ipBinded = true;
     return ret == 0;
 }
 

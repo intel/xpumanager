@@ -43,8 +43,10 @@ std::string getRedfishAmcWarn() {
     }
     if (manufacturer == "HPE") {
         return HEPRedfishAmcManager::getRedfishAmcWarn();
-    } else {
+    } else if (manufacturer == "Supermicro") {
         return SMCRedfishAmcManager::getRedfishAmcWarn();
+    } else {
+        return "";
     }
 }
 

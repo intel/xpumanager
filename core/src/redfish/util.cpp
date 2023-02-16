@@ -88,4 +88,12 @@ unsigned short toCidr(const char* ipAddress) {
     return netmask_cidr;
 }
 
+std::string search_by_regex(std::string content, std::regex pattern) {
+    std::smatch sm;
+    if (std::regex_search(content, sm, pattern)) {
+        return sm[1];
+    }
+    return "";
+}
+
 } // namespace xpum

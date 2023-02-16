@@ -24,6 +24,105 @@ using namespace nlohmann;
 
 namespace xpum {
 
+bool static checkPrerequisiteTool() {
+    std::string output;
+    int ret = doCmd("which ifconfig", output);
+    if (ret)
+        return false;
+    ret = doCmd("which dhclient", output);
+    if (ret)
+        return false;
+    return true;
+}
+
+static bool parseInterface(std::string dmiDecodeOutput, std::string& interface_name) {
+    // only search for device type usb
+    if (dmiDecodeOutput.find("Device Type: USB") == dmiDecodeOutput.npos)
+        return false;
+
+    std::regex id_vendor_pattern(R"(idVendor: 0x(.*)\n)");
+    std::string idVendor = search_by_regex(dmiDecodeOutput, id_vendor_pattern);
+    if (idVendor.length() == 0)
+        return false;
+
+    std::regex id_product_pattern(R"(idProduct: 0x(.*)\n)");
+    std::string idProduct = search_by_regex(dmiDecodeOutput, id_product_pattern);
+    if (idProduct.length() == 0)
+        return false;
+
+    // find interface name
+    interface_name = getUsbInterfaceName(idVendor, idProduct);
+    if (interface_name.length() == 0)
+        return false;
+
+    return true;
+}
+
+static std::vector<std::string> splitInterfaces(std::string output) {
+    std::vector<std::string> interfaces;
+    size_t pos = 0;
+    std::string delimiter("Management Controller Host Interface");
+    while ((pos = output.find(delimiter)) != std::string::npos) {
+        std::string token = output.substr(0, pos);
+        interfaces.push_back(token);
+        output.erase(0, pos + delimiter.length());
+    }
+    interfaces.push_back(output);
+    return interfaces;
+}
+
+std::string HEPRedfishAmcManager::getRedfishAmcWarn() {
+    if (!checkPrerequisiteTool()) {
+        return "Can't find ifconfig and dhclient, fail to check Redfish Host Interface is configured properly or not";
+    }
+    auto output = getDmiDecodeOutput();
+
+    auto interfaces = splitInterfaces(output);
+
+    for (auto& itf : interfaces) {
+        std::string name;
+        if (parseInterface(itf, name)) {
+            std::string output;
+            doCmd("ifconfig", output);
+            std::string warnStr = "XPUM will active and enable DHCP on interface " + name;
+            if (output.find(name) == output.npos) {
+                return warnStr;
+            }
+            if (output.find("inet 16.1.15.2") == output.npos)
+                return warnStr;
+            return "";
+        }
+    }
+    return "";
+}
+
+bool HEPRedfishAmcManager::redfishHostInterfaceInit(){
+    auto output = getDmiDecodeOutput();
+
+    auto interfaces = splitInterfaces(output);
+
+    for (auto& itf : interfaces) {
+        if (parseInterface(itf, interfaceName)){
+            return true;
+        }
+    }
+    return false;
+}
+
+bool HEPRedfishAmcManager::activeInterfaceAndConfigDHCP() {
+    if (interfaceName.length() == 0)
+        return false;
+    std::string output;
+    int ret = doCmd("ifconfig " + interfaceName + " up", output);
+    if (ret)
+        return false;
+    output.clear();
+    ret = doCmd("dhclient " + interfaceName, output);
+    if (ret)
+        return false;
+    return true;
+}
+
 static LibCurlApi libcurl;
 
 static size_t curlWriteToStringCallback(char* contents, size_t size, size_t nmemb, std::string* s) {
@@ -120,6 +219,15 @@ static std::string initErrMsg;
 bool HEPRedfishAmcManager::preInit(){
     XPUM_LOG_INFO("HEPRedfishAmcManager preInit");
 
+    // check interface
+    if (interfaceName.length() == 0) {
+        if (!redfishHostInterfaceInit()) {
+            XPUM_LOG_INFO("fail to parse redfish host interface");
+            initErrMsg = "No AMC are found";
+            return false;
+        }
+    }
+
     // load libcurl.so
     if (!libcurl.initialized()) {
         // if fail to initialize libcurl, try to re-initialize, so that no need to restart xpum
@@ -141,6 +249,9 @@ bool HEPRedfishAmcManager::preInit(){
 bool HEPRedfishAmcManager::init(InitParam& param) {
     if (initialized) {
         XPUM_LOG_INFO("HEPRedfishAmcManager already initialized");
+        if (!activeInterfaceAndConfigDHCP()) {
+            XPUM_LOG_INFO("HEPRedfishAmcManager fail to active interface and config dhcp");
+        }
         return true;
     }
     XPUM_LOG_INFO("HEPRedfishAmcManager init");
@@ -150,6 +261,14 @@ bool HEPRedfishAmcManager::init(InitParam& param) {
         XPUM_LOG_INFO("HEPRedfishAmcManager fail to preInit");
         param.errMsg = initErrMsg;
         return false;
+    }
+    // check prerequisite tool
+    if (!checkPrerequisiteTool()) {
+        XPUM_LOG_INFO("Can't find ifconfig and dhclient, fail to configure Redfish Host Interface");
+    }
+    // configure interface
+    if (!activeInterfaceAndConfigDHCP()) {
+        XPUM_LOG_INFO("HEPRedfishAmcManager fail to active interface and config dhcp");
     }
     // try to get /redfish/v1
     if (!getBasePage()) {
@@ -185,9 +304,9 @@ void HEPRedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& p
                 break;
             default:
                 param.errMsg = "Fail to request " + url;
-                param.errCode = XPUM_GENERIC_ERROR;
-                return;
         }
+        param.errCode = XPUM_GENERIC_ERROR;
+        return;
     }
     json fwInventoryJson;
     try {
@@ -218,10 +337,6 @@ void HEPRedfishAmcManager::getAmcFirmwareVersions(GetAmcFirmwareVersionsParam& p
     parseErrorMsg(fwInventoryJson, param.errMsg);
     param.errCode = XPUM_GENERIC_ERROR;
     return;
-}
-
-std::string HEPRedfishAmcManager::getRedfishAmcWarn() {
-    return "";
 }
 
 xpum_result_t getUpdateService(std::string username,
