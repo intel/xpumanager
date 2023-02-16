@@ -62,20 +62,15 @@ static CharTableConfig ComletConfigDiagnosticPreCheck(R"({
         "title": "Component",
         "size": 16
     }, {
-        "title": "Status"
+        "title": "Details"
     }],
     "rows": [{
-        "instance": "",
-        "cells": [[
-            { "rowTitle": "GPU" },
-            { "rowTitle": "Driver" },
-            { "rowTitle": "GPU Status" },
-            { "rowTitle": "CPU Status" }
-        ], [
-            { "value": "gpu_basic_info" },
-            { "value": "gpu_driver_info" },
-            { "value": "gpu_status_info" },
-            { "value": "cpu_status_info" }
+        "instance": "component_list[]",
+        "cells": [
+            { "value": "type" }, [
+            { "value": "error_details[]", "subrow": true, "subs": [
+                { "value": "field_value" }
+            ]}
         ]]
     }]
 })"_json);
@@ -109,6 +104,7 @@ void ComletDiagnostic::setupOptions() {
     auto stressFlag = addFlag("-s,--stress", this->opts->stress, "Stress the GPU(s) for the specified time");
     auto stressTimeOpt = addOption("--stresstime", this->opts->stressTime, "Stress time (in minutes)");
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver");
+    auto onlyGPUOpt = addFlag("--gpu", this->opts->onlyGPU, "Show the GPU status only");
 
     preCheckOpt->excludes(deviceIdOpt);
     preCheckOpt->excludes(level);
@@ -122,6 +118,8 @@ void ComletDiagnostic::setupOptions() {
         deviceIdOpt->needs(level);
     }
     stressTimeOpt->needs(stressFlag);
+
+    onlyGPUOpt->needs(preCheckOpt);
 
 #ifndef DAEMONLESS
     preCheckOpt->excludes(groupIdOpt);
@@ -163,19 +161,19 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
                     return convertResult;
                 }
             }
-            json = this->coreStub->runDiagnostics(targetId, this->opts->level, this->opts->rawComponentTypeStr);
+            json = this->coreStub->runDiagnostics(targetId, this->opts->level, this->opts->rawJson);
             return json;
         } 
 #ifndef DAEMONLESS
         else if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
-            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level, this->opts->rawComponentTypeStr);
+            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level, this->opts->rawJson);
             return json;
         }
 #endif
     }
 
     if (this->opts->preCheck) {
-        json = this->coreStub->getPreCheckInfo();
+        json = this->coreStub->getPreCheckInfo(this->opts->onlyGPU, this->opts->rawJson);
         return json;
     }
 
@@ -232,9 +230,9 @@ static void showStreesedDevices(std::ostream &out, const std::vector<std::string
 }
 
 void ComletDiagnostic::getTableResult(std::ostream &out) {
-    this->opts->rawComponentTypeStr = false;
+    this->opts->rawJson = false;
     auto res = run();
-    this->opts->rawComponentTypeStr = true;
+    this->opts->rawJson = true;
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         setExitCodeByJson(*res);

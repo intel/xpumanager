@@ -20,8 +20,9 @@ struct ComletDiagnosticOptions {
     uint32_t groupId = UINT_MAX;
 #endif
     int level = INT_MIN;
-    bool rawComponentTypeStr = true;
+    bool rawJson = true;
     bool preCheck = false;
+    bool onlyGPU = false;
     uint32_t stressTime = 0;
     bool stress = false;
 };
