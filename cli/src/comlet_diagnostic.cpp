@@ -12,6 +12,7 @@
 #include "core_stub.h"
 #include "utility.h"
 #include "exit_code.h"
+#include <unordered_map>
 
 namespace xpum::cli {
 
@@ -39,6 +40,36 @@ static CharTableConfig ComletConfigDiagnosticDevice(R"({
             { "value": "result" },
             { "value": "component_count" }
         ]]
+    }, {
+        "instance": "component_list[]",
+        "cells": [
+            { "value": "component_type" }, [
+            { "label": "Result", "value": "result" },
+            { "label": "Message", "value": "message" },
+            { "value": "process_list[]", "subrow": true, "subs": [
+                { "label": "  PID", "value": "process_id" },
+                { "label": "Command", "value": "process_name" }
+            ]},
+            { "value": "media_codec_list[]", "subrow": true, "subs": [
+                { "label": "", "value": "fps" }
+            ]}
+        ]]
+    }]
+})"_json);
+
+static CharTableConfig ComletConfigSpecificDiagnosticDevice(R"({
+    "showTitleRow": false,
+    "columns": [{
+        "title": "none"
+    }, {
+        "title": "none"
+    }],
+    "rows": [{
+        "instance": "",
+        "cells": [
+            { "rowTitle": "Device ID" },
+            "device_id"
+        ]
     }, {
         "instance": "component_list[]",
         "cells": [
@@ -106,6 +137,15 @@ void ComletDiagnostic::setupOptions() {
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver");
     auto onlyGPUOpt = addFlag("--gpu", this->opts->onlyGPU, "Show the GPU status only");
 
+    auto singleTestId = addOption("--singletest", this->opts->singleTestId,
+              "Selectively run a particular test\n\
+      1. Computation\n\
+      2. Memory Error\n\
+      3. Memory Bandwidth\n\
+      4. Media Codec\n\
+      5. PCIe Bandwidth\n\
+      6. Power");
+
     preCheckOpt->excludes(deviceIdOpt);
     preCheckOpt->excludes(level);
     preCheckOpt->excludes(stressFlag);
@@ -113,6 +153,9 @@ void ComletDiagnostic::setupOptions() {
     level->excludes(preCheckOpt);
     level->excludes(stressFlag);
     level->excludes(stressTimeOpt);
+    level->excludes(singleTestId);
+    singleTestId->excludes(level);
+    
     deviceIdOpt->excludes(preCheckOpt);
     if (stressFlag == nullptr) {
         deviceIdOpt->needs(level);
@@ -126,7 +169,6 @@ void ComletDiagnostic::setupOptions() {
     groupIdOpt->excludes(preCheckOpt);
     groupIdOpt->excludes(stressFlag);
     groupIdOpt->excludes(stressTimeOpt);
-    groupIdOpt->needs(level);
     stressFlag->needs(stressTimeOpt);
 #endif
 }
@@ -150,6 +192,13 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
         (*json)["errno"] = XPUM_CLI_ERROR_DIAGNOSTIC_INVALID_LEVEL;
         return json;
     }
+
+    if (this->opts->singleTestId != INT_MIN && (this->opts->singleTestId < 1 || this->opts->singleTestId > 6)) {
+        (*json)["error"] = "invalid single test";
+        (*json)["errno"] = XPUM_CLI_ERROR_DIAGNOSTIC_INVALID_SINGLE_TEST;
+        return json;
+    }
+
     if (this->opts->level >= 1 && this->opts->level <= 3) {
         if (this->opts->deviceIds[0] != "-1") {
             int targetId = -1;
@@ -161,12 +210,41 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
                     return convertResult;
                 }
             }
-            json = this->coreStub->runDiagnostics(targetId, this->opts->level, this->opts->rawJson);
+            json = this->coreStub->runDiagnostics(targetId, this->opts->level, -1, this->opts->rawJson);
             return json;
         } 
 #ifndef DAEMONLESS
         else if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
-            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level, this->opts->rawJson);
+            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level, -1, this->opts->rawJson);
+            return json;
+        }
+#endif
+    }
+
+    std::unordered_map<int, int> testIdToType = {{1, XPUM_DIAG_PERFORMANCE_COMPUTATION}, 
+                                                 {2, XPUM_DIAG_MEMORY_ERROR}, 
+                                                 {3, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH}, 
+                                                 {4, XPUM_DIAG_MEDIA_CODEC}, 
+                                                 {5, XPUM_DIAG_INTEGRATION_PCIE}, 
+                                                 {6, XPUM_DIAG_PERFORMANCE_POWER}};
+
+    if (this->opts->singleTestId >= 1 && this->opts->singleTestId <= 6) {
+        if (this->opts->deviceIds[0] != "-1") {
+            int targetId = -1;
+            if (isNumber(this->opts->deviceIds[0])) {
+                targetId = std::stoi(this->opts->deviceIds[0]);
+            } else {
+                auto convertResult = this->coreStub->getDeivceIdByBDF(this->opts->deviceIds[0].c_str(), &targetId);
+                if (convertResult->contains("error")) {
+                    return convertResult;
+                }
+            }
+            json = this->coreStub->runDiagnostics(targetId, -1, testIdToType[this->opts->singleTestId], this->opts->rawJson);
+            return json;
+        } 
+#ifndef DAEMONLESS
+        else if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
+            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, -1, testIdToType[this->opts->singleTestId], this->opts->rawJson);
             return json;
         }
 #endif
@@ -202,9 +280,12 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     return json;
 }
 
-static void showDeviceDiagnostic(std::ostream &out, std::shared_ptr<nlohmann::json> json, bool precheck = false, const bool cont = false) {
-    if (precheck) {
+static void showDeviceDiagnostic(std::ostream &out, std::shared_ptr<nlohmann::json> json, ShowMode mode, const bool cont = false) {
+    if (mode == PRE_CHECK) {
         CharTable table(ComletConfigDiagnosticPreCheck, *json, cont);
+        table.show(out);
+    } else if (mode == SINGLE_TEST) {
+        CharTable table(ComletConfigSpecificDiagnosticDevice, *json, cont);
         table.show(out);
     } else {
         CharTable table(ComletConfigDiagnosticDevice, *json, cont);
@@ -246,7 +327,10 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
         auto devices = (*json)["device_list"].get<std::vector<nlohmann::json>>();
         bool cont = false;
         for (auto device : devices) {
-            showDeviceDiagnostic(out, std::make_shared<nlohmann::json>(device), false, cont);
+            if (this->opts->level >= 1 && this->opts->level <= 3)
+                showDeviceDiagnostic(out, std::make_shared<nlohmann::json>(device), LEVEL_TEST, cont);
+            else
+                showDeviceDiagnostic(out, std::make_shared<nlohmann::json>(device), SINGLE_TEST, cont);
             cont = true;
         }
         return;
@@ -290,12 +374,15 @@ void ComletDiagnostic::getTableResult(std::ostream &out) {
     }
 
     if (isDeviceOperation()) {
-        showDeviceDiagnostic(out, json);
+        if (this->opts->level >= 1 && this->opts->level <= 3)
+            showDeviceDiagnostic(out, json, LEVEL_TEST);
+        else
+            showDeviceDiagnostic(out, json, SINGLE_TEST);
         return;
     }
 
     if (this->opts->preCheck) {
-        showDeviceDiagnostic(out, json, true);
+        showDeviceDiagnostic(out, json, PRE_CHECK);
         return;
     }
 }

@@ -525,6 +525,58 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::runSpecificDiagnostics(::grpc::ServerContext* context, const ::RunSpecificDiagnosticsRequest* request,
+                                                   ::DiagnosticsTaskInfo* response) {
+    xpum_result_t res = xpumRunSpecificDiagnostics(request->deviceid(), static_cast<xpum_diag_task_type_t>(request->type()));
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE:
+                response->set_errormsg("last diagnostic task on the device is not completed");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
+    }
+
+    response->set_errorno(res);
+
+    return grpc::Status::OK;
+}
+::grpc::Status XpumCoreServiceImpl::runSpecificDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunSpecificDiagnosticsByGroupRequest* request,
+                                                          ::DiagnosticsGroupTaskInfo* response) {
+    xpum_result_t res = xpumRunSpecificDiagnosticsByGroup(request->groupid(), static_cast<xpum_diag_task_type_t>(request->type()));
+    if (res != XPUM_OK) {
+        switch (res) {
+            case XPUM_RESULT_GROUP_NOT_FOUND:
+                response->set_errormsg("group not found");
+                break;
+            case XPUM_RESULT_DEVICE_NOT_FOUND:
+                response->set_errormsg("device not found");
+                break;
+            case XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE:
+                response->set_errormsg("last diagnostic task on the device is not completed");
+                break;
+            case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
+                response->set_errormsg("Level Zero Initialization Error");
+                break;
+            default:
+                response->set_errormsg("Error");
+                break;
+        }
+    }
+
+    response->set_errorno(res);
+
+    return grpc::Status::OK;
+}
+
 ::grpc::Status XpumCoreServiceImpl::getDiagnosticsResult(::grpc::ServerContext* context, const ::DeviceId* request,
                                                          ::DiagnosticsTaskInfo* response) {
     xpum_diag_task_info_t task_info;

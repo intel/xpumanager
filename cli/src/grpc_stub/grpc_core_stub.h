@@ -50,10 +50,10 @@ class GrpcCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> groupAddDevice(int groupId, int deviceId);
     std::unique_ptr<nlohmann::json> groupRemoveDevice(int groupId, int deviceId);
 
-    std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, int targetType, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr);
     std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr);
-    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, int targetType, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr);
 
     std::unique_ptr<nlohmann::json> getAllHealth();

@@ -309,9 +309,15 @@ static std::string diagnosticsMediaCodecFormatEnumToString(xpum_media_format_t f
     return ret;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnostics(int deviceId, int level, bool rawComponentTypeStr) {
+std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnostics(int deviceId, int level, int targetType, bool rawComponentTypeStr) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    xpum_result_t res = xpumRunDiagnostics(deviceId, static_cast<xpum_diag_level_t>(level));
+    xpum_result_t res;
+    if (level > 0)
+        res = xpumRunDiagnostics(deviceId, static_cast<xpum_diag_level_t>(level));
+    else if (targetType >= 0)
+        res = xpumRunSpecificDiagnostics(deviceId, static_cast<xpum_diag_task_type_t>(targetType));
+    else
+        res = XPUM_GENERIC_ERROR;
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_RESULT_DEVICE_NOT_FOUND:
@@ -368,7 +374,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, 
     xpum_result_t res = xpumGetDiagnosticsResult(deviceId, &task_info);
     if (res == XPUM_OK) {
         (*json)["device_id"] = task_info.deviceId;
-        (*json)["level"] = task_info.level;
+        if (task_info.level >= 1 && task_info.level <= 3)
+            (*json)["level"] = task_info.level;
         (*json)["finished"] = task_info.finished;
         (*json)["message"] = task_info.message;
         (*json)["component_count"] = task_info.count;
@@ -497,7 +504,7 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getDiagnosticsMediaCodecResult(int 
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr) {
+std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnosticsByGroup(uint32_t groupId, int level, int targetType, bool rawComponentTypeStr) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     return json;
 }
