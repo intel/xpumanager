@@ -58,5 +58,8 @@ if [ -f ~/password.sys_dcm ]; then
     echo "SignFile:${PackageName}" 
     pushd "${WORK_DIR}"/install/tools/signfile
     ./SignFile -vv -u "${CSUser}" -p "${CSPwd}" "${WORK_DIR}"/build/${PackageName}
+    if [ -f "${WORK_DIR}"/build/amcmcli/amcmcli ]; then
+        ./SignFile -vv -u "${CSUser}" -p "${CSPwd}" -s cl -cf "${WORK_DIR}"/build/amcmcli/amcmcli.sig "${WORK_DIR}"/build/amcmcli/amcmcli
+    fi
     popd
 fi

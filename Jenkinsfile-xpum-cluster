@@ -278,7 +278,7 @@ spec:
       }
     }
     environment {
-      ARCHIVE_FILES = 'build-deb-*/*.deb,build-centos*/*.rpm,build-sles/*.rpm,XPUM_PGP_KEY.pem,build-centos7/amcmcli'
+      ARCHIVE_FILES = 'build-deb-*/*.deb,build-centos*/*.rpm,build-sles/*.rpm,XPUM_PGP_KEY.pem,build-centos7/amcmcli,build-centos7/amcmcli.sig'
       PUBLISH_DOCKER_REGISTRY = "${params.PUBLISH_DOCKER_REGISTRY}"
     }
     stages {
@@ -356,8 +356,9 @@ spec:
                 export CCACHE_BASEDIR=$PWD && \
                 ./build.sh -DBUILD_AMCMCLI=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 mkdir $MAIN_WORKSPACE/build-centos7 && \
-                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos7
-                cp ./build/amcmcli/amcmcli $MAIN_WORKSPACE/build-centos7'''
+                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos7 && \
+                cp ./build/amcmcli/amcmcli $MAIN_WORKSPACE/build-centos7 && \
+                cp ./build/amcmcli/amcmcli.sig $MAIN_WORKSPACE/build-centos7'''
               }
             }
           }
@@ -518,6 +519,11 @@ spec:
                         },
                         {
                           "pattern": "build-centos7/amcmcli",
+                          "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                          "props": "retention.days=720;mytest=true"
+                        },
+                        {
+                          "pattern": "build-centos7/amcmcli.sig",
                           "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
                           "props": "retention.days=720;mytest=true"
                         }
