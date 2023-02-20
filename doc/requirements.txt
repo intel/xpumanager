@@ -49,5 +49,5 @@ sphinxcontrib-openapi==0.7.0
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
 urllib3==1.26.12
-Werkzeug==2.2.2
+Werkzeug==2.2.3
 zipp==3.10.0
