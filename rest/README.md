@@ -1,53 +1,24 @@
-# XPUManager Python Client
+# XPUM REST API Setup Guide
 
-## Environment Set Up
+## Installation
+ 1. install python3, may need to soft link python if your python package doesn't auto generate one.
+ 2. install python3-devel ( Redhat or CentOS only )
+ 3. install pip3.
+ 4. install python packages as root for all user.  
+    `umask 022`  
+    `pip3 install -r INSTALLDIR/rest/requirements.txt`
+ 
+## Run Script
+ 1. Run rest_config.py to setup password for REST API user xpumadmin.  
+ 2. Run keytool.sh to generate self-signed certificate and keys.  
 
-### http proxy
-if network requests is blocked, you can try to set up http proxy
-```
-$ export http_proxy="http://child-prc.intel.com:913"
-$ export https_proxy="http://child-prc.intel.com:913"
-```
+## Start Service
+ 1. systemctl start xpum_rest.service
+ 2. systemctl enable xpum_rest.service
 
-### steps
+## Change rest service binding address & port
+ 1. change service file xpum_rest.service "--bind" parameters in "ExecStart"
 
-1. install python and python-dev
-```    
-$ sudo apt install python3.8
-$ sudo apt install python3-dev
-```
-
-2. install pip
-```
-$ sudo apt install python3-pip
-```
-
-3. upgrade pip
-```
-$ sudo python3 -m pip install -U pip \
-    -i https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-4. install python dependencis
-```
-$ sudo python3 -m pip install -r requirements.txt \
-    -i https://pypi.tuna.tsinghua.edu.cn/simple
-```
-
-## Run Python code
-
-XPUManager consists of two parts:
-- service
-- CLI
-
-### start service
-
-Service should run in sudo mode
-```
-$ sudo DGM.py
-```
-
-### try CLI
-```
-$ cd client
-$ dgmcli -l
+## Replace rest service certificate & private key
+ 1. Replace certificate file cert.pem under INSTALLDIR/rest/conf
+ 2. Replace private key file key.pem under INSTALLDIR/rest/conf
