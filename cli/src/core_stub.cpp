@@ -601,7 +601,7 @@ static void doPreCheck(bool onlyGPU) {
                 int cnt = read(fd, thermal_type, 1024);
                 close(fd);
                 thermal_type[cnt] = 0;
-                if (strncmp(thermal_type, "x86_pkg_temp", sizeof("x86_pkg_temp"))) {
+                if (strncmp(thermal_type, "x86_pkg_temp", 12) == 0) {
                     snprintf(path, PATH_MAX, "/sys/class/thermal/%s/temp",
                             pdirent->d_name);
                     fd = open(path, O_RDONLY);
