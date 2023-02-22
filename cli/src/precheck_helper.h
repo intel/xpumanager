@@ -87,6 +87,24 @@ void updateErrorComponentInfo(ComponentInfo& cinfo, std::string status, int cate
 
 std::string zeInitResultToString(const int result);
 
+#define MAP_SIZE 4096UL
+#define MAP_MASK (MAP_SIZE - 1)
+
+struct FirmwareVersion {
+    std::string gfx_fw_version;
+    std::string gfx_data_fw_version;
+}; 
+
+std::string to_hex_string(uint64_t val, int width = 0);
+
+std::string add_two_hex_string(std::string str1, std::string str2);
+
+std::string to_firmware_hex_version(std::string hex_str);
+
+uint32_t access_device_memory(std::string hex_base, std::string hex_val = "");
+
+bool getFirmwareVersion(FirmwareVersion& firmware_version, std::string bdf);   
+
 } // end namespace xpum::cli
 
 #endif
