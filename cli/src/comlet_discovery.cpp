@@ -15,6 +15,7 @@
 #include "core_stub.h"
 #include "utility.h"
 #include "exit_code.h"
+#include "local_functions.h"
 
 namespace xpum::cli {
 
@@ -71,7 +72,7 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "Kernel Version", "value": "kernel_version" },
                 { "label": "GFX Firmware Name", "value": "gfx_firmware_name" },
                 { "label": "GFX Firmware Version", "value": "gfx_firmware_version", "dumpId": 9 },
-                { "label": "GFX Firmware Status", "value": "gfx_firmware_status"},
+                { "label": "GFX Firmware Status", "value": "gfx_firmware_status", "dumpId": 22 },
                 { "label": "GFX Data Firmware Name", "value": "gfx_data_firmware_name" },
                 { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },
                 { "label": "GFX PSC Firmware Name", "value": "gfx_pscbin_firmware_name" },
@@ -153,6 +154,10 @@ static void readDumpPropConfig(nlohmann::json &conf, std::stack<std::string> &ke
     }
 }
 
+bool compareDumpConfig(dump_prop_config dpc1, dump_prop_config dpc2) {
+    return dpc1.dumpId < dpc2.dumpId;
+}
+
 static void initDumpPropConfig() {
     std::stack<std::string> keys;
     
@@ -163,6 +168,8 @@ static void initDumpPropConfig() {
     dumpFieldConfig.push_back(dump_prop_config{"Device ID", "device_id", 1, "", 0});
 
     readDumpPropConfig(discoveryDetailedJson, keys, dumpFieldConfig);
+    std::sort(dumpFieldConfig.begin(), dumpFieldConfig.end(), 
+            compareDumpConfig);
 }
 
 static std::unique_ptr<dump_prop_config> getDumpPropConfig(int dumpId) {
@@ -226,11 +233,45 @@ void ComletDiscovery::setupOptions() {
         }
         return std::string();
     });
+    dumpOpt->excludes(deviceIdOpt);
     auto listamcversionsOpt = addFlag("--listamcversions", this->opts->listamcversions, "Show all AMC firmware versions.");
     deviceIdOpt->excludes(listamcversionsOpt);
 
     addOption("-u,--username", this->opts->username, "Username used to authenticate for host redfish access");
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
+}
+
+static void checkBadDevices(nlohmann::json &deviceJsonList) {
+    std::vector<std::string> list;
+    if (getBdfListFromLspci(list) == false) {
+        return;
+    }
+    for (auto bdf : list) {
+        bool found = false;
+        for (auto device : deviceJsonList) {
+            std::string val = device["pci_bdf_address"];
+            if (val.find(bdf) != std::string::npos) {
+                found = true;
+                break;
+            }
+        }
+        if (found == false) {
+            auto deviceJson = nlohmann::json();
+            if (isShortBDF(bdf) == true) {
+                bdf = "0000:" + bdf;
+            }
+            deviceJson["pci_bdf_address"] = bdf;
+            deviceJson["gfx_firmware_status"] = "GPU in bad state";
+            FirmwareVersion fwVer;
+            if (getFirmwareVersion(fwVer, bdf) == true) {
+                deviceJson["gfx_firmware_version"] = fwVer.gfx_fw_version;
+                deviceJson["gfx_data_firmware_version"] = 
+                    fwVer.gfx_data_fw_version;
+            }
+            deviceJsonList.push_back(deviceJson);
+        }
+    }
+    return;
 }
 
 std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
@@ -265,6 +306,7 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
             auto deviceJson = nlohmann::json::parse(deviceDetailedJson->dump());
             deviceJsonList.push_back(deviceJson);
         }
+        checkBadDevices(deviceJsonList);
         (*json)["device_list"] = deviceJsonList;
         return json;
     }
@@ -338,33 +380,44 @@ static void dumpAllDeviceInfo(std::ostream &out, std::shared_ptr<nlohmann::json>
             }
 
             auto value = device[prop->value];
-            if (prop->scale > 0) {
-                if (prop->suffix != "") {
-                   out << "\""; 
-                }
-                if (value.is_number()) {
-                   out << scale_double_value(std::to_string(static_cast<double>(value)),
-                                             prop->scale);
-                } else if (value.is_string()) {
-                    out << scale_double_value(value, prop->scale);
+            if (value == nullptr) {
+                // No need to fill "" for the Device ID (number) column
+                if (prop->dumpId == 1) {
+                    out << "";
                 } else {
-                    out << value;
+                    out << "\"\"";
                 }
-                if (prop->suffix != "") {
-                   out << prop->suffix << "\""; 
-                }
-                continue;
-            } else if (value.is_string() && prop->suffix != "") {
-                out << "\"" << (std::string(device[prop->value]) + prop->suffix) << "\"";
-                continue;
             } else {
-                out << device[prop->value];
-            }
+                if (prop->scale > 0) {
+                    if (prop->suffix != "") {
+                       out << "\"";
+                    }
+                    if (value.is_number()) {
+                       out << scale_double_value(
+                               std::to_string(static_cast<double>(value)),
+                                                 prop->scale);
+                    } else if (value.is_string()) {
+                        out << scale_double_value(value, prop->scale);
+                    } else {
+                        out << value;
+                    }
+                    if (prop->suffix != "") {
+                       out << prop->suffix << "\"";
+                    }
+                    continue;
+                } else if (value.is_string() && prop->suffix != "") {
+                    out << "\"" << (std::string(device[prop->value]) + 
+                            prop->suffix) << "\"";
+                    continue;
+                } else {
+                    out << device[prop->value];
+                }
 
-            if (prop->suffix != "") {
-                out << prop->suffix;
+                if (prop->suffix != "") {
+                    out << prop->suffix;
+                }
             }
-        }
+       }
         out << std::endl;
     }
 }

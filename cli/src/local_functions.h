@@ -1,11 +1,11 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
- *  @file precheck_helper.h
+ *  @file local_functions.h
  */
 
-#ifndef _XPUM_PRECHECK_HELPER_H_
-#define _XPUM_PRECHECK_HELPER_H_
+
+#pragma once
 
 #include <string>
 #include <thread>
@@ -95,16 +95,8 @@ struct FirmwareVersion {
     std::string gfx_data_fw_version;
 }; 
 
-std::string to_hex_string(uint64_t val, int width = 0);
+bool getFirmwareVersion(FirmwareVersion& firmware_version, std::string bdf);  
+bool getBdfListFromLspci(std::vector<std::string> &list);
 
-std::string add_two_hex_string(std::string str1, std::string str2);
+}
 
-std::string to_firmware_hex_version(std::string hex_str);
-
-uint32_t access_device_memory(std::string hex_base, std::string hex_val = "");
-
-bool getFirmwareVersion(FirmwareVersion& firmware_version, std::string bdf);   
-
-} // end namespace xpum::cli
-
-#endif

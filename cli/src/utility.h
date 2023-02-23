@@ -18,4 +18,12 @@ bool isValidDeviceId(const std::string &str);
 
 bool isBDF(const std::string &str);
 
+bool isShortBDF(const std::string &str);
+
+std::string to_hex_string(uint64_t val, int width = 0);
+
+std::string add_two_hex_string(std::string str1, std::string str2);
+
+
+
 } // end namespace xpum::cli

@@ -24,9 +24,9 @@
 #include <sys/stat.h>
 #include <unordered_set>
 
-#include "precheck_helper.h"
 #include "config.h"
 #include "xpum_structs.h"
+#include "local_functions.h"
 
 namespace xpum::cli {
 

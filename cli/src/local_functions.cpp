@@ -1,11 +1,13 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
- *  @file precheck_helper.cpp
+ *  @file local_functions.cpp
  */
 
 
-#include "precheck_helper.h"
+#include <string>
+#include <vector>
+#include <stdio.h>
 #include <algorithm>
 #include <regex>
 #include <iomanip>
@@ -13,6 +15,11 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+#include "local_functions.h"
+#include "utility.h"
+
+using namespace std;
 
 namespace xpum::cli {
 
@@ -97,22 +104,6 @@ std::string zeInitResultToString(const int result) {
     }
 }
 
-std::string to_hex_string(uint64_t val, int width) {
-    std::stringstream s;
-    if (width == 0)
-        s << std::string("0x") << std::hex << val;
-    else
-        s << std::string("0x") << std::setfill('0') << std::setw(width) << std::hex << val;
-    return s.str();
-}
-
-std::string add_two_hex_string(std::string str1, std::string str2) {
-    uint64_t u1 = std::stoul(str1.c_str(), 0, 16);
-    uint64_t u2 = std::stoul(str2.c_str(), 0, 16);
-
-    return to_hex_string(u1 + u2);
-}
-
 std::string to_firmware_hex_version(std::string hex_str) {
     std::string version;
     if (hex_str.size() < 16) {
@@ -130,7 +121,7 @@ std::string to_firmware_hex_version(std::string hex_str) {
     return version;
 }
 
-uint32_t access_device_memory(std::string hex_base, std::string hex_val) {
+uint32_t access_device_memory(std::string hex_base, std::string hex_val = "") {
     int fd = -1;
     void *map_base, *virt_addr; 
 	uint32_t read_result = 0, writeval = 0;
@@ -164,7 +155,6 @@ uint32_t access_device_memory(std::string hex_base, std::string hex_val) {
 bool getFirmwareVersion(FirmwareVersion& fw_version, std::string bdf) {
     std::string cmd = "lspci -vvv -s " + bdf + " | egrep \"size=[0-9]{1,2}M\" 2>/dev/null";
     std::string region_base;
-
     FILE* f = popen(cmd.c_str(), "r");
     char c_line[1024];
     while (fgets(c_line, 1024, f) != NULL) {
@@ -257,4 +247,31 @@ bool getFirmwareVersion(FirmwareVersion& fw_version, std::string bdf) {
         return true;
 }
 
-} // end namespace xpum::cli
+#define BUF_SIZE 128
+bool getBdfListFromLspci(std::vector<std::string> &list) {
+    const char *cmd = 
+        "lspci|grep -i Display|grep -i Intel|cut -d ' ' -f 1";
+    char buf[BUF_SIZE];
+    FILE *pf = popen(cmd, "r");
+    if (pf == NULL) {
+        return false;
+    }
+    while (fgets(buf, BUF_SIZE, pf) != NULL) {
+        buf[BUF_SIZE - 1] = 0;
+        string bdf(buf);
+        if (bdf.length() > 0) {
+            if (bdf.at(bdf.length() - 1) == '\n') {
+                bdf.pop_back();
+            }
+            list.push_back(bdf);
+        }
+    }
+    int ret = pclose(pf);
+    if (ret != -1 && WEXITSTATUS(ret) == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+}
