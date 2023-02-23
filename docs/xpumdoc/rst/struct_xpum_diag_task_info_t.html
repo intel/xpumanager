@@ -192,9 +192,10 @@
 
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1aa93fbfe47384b258025172e33506c1de"><span></span><span class="n">deviceId</span></span><span></span><span class="p">;</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1aec43e5bdef773831b5579d2f315f7ab1"><span></span><span class="n">level</span></span><span></span><span class="p">;</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1ac1b537a2f62cddb9d28a70297836264c"><span></span><span class="n">targetType</span></span><span></span><span class="p">;</span>
     <span class="kt">bool</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1a81ce955fb0e40b6981d7ffe9dfa6eb0a"><span></span><span class="n">finished</span></span><span></span><span class="p">;</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1ad6664144568c8a26b44d9d828efb53b5"><span class="std std-ref">xpum_diag_task_result_t</span></a><span></span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1a811c6e75b70138006d078e45a90a9b0b"><span></span><span class="n">result</span></span><span></span><span class="p">;</span>
-    <a class="reference internal" href="struct_xpum_diag_component_info_t.html#xpum-doxid-structxpum-diag-component-info-t"><span class="std std-ref">xpum_diag_component_info_t</span></a><span></span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1ae2e804e70732bea1c5975ef325aade3a"><span></span><span class="n">componentList</span></span><span></span><span class="p">[</span><span class="n">XPUM_DIAG_MAX</span><span class="p">];</span>
+    <a class="reference internal" href="struct_xpum_diag_component_info_t.html#xpum-doxid-structxpum-diag-component-info-t"><span class="std std-ref">xpum_diag_component_info_t</span></a><span></span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1a8b23278783205282d0a8688003dad03f"><span></span><span class="n">componentList</span></span><span></span><span class="p">[</span><span class="n">XPUM_DIAG_TASK_TYPE_MAX</span><span class="p">];</span>
     <span class="kt">char</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1a8b95b8ba4d7c251fc7389c31989337c9"><span></span><span class="n">message</span></span><span></span><span class="p">[</span><span class="n">XPUM_MAX_STR_LENGTH</span><span class="p">];</span>
     <span class="kt">int</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1ad3041c8a30764eb31d6098cb0d1850c8"><span></span><span class="n">count</span></span><span></span><span class="p">;</span>
     <span class="kt">uint64_t</span> <span class="doxyrest-code-target target" id="xpum-doxid-structxpum-diag-task-info-t-1a91f77efff564622028fdaa1ededc9650"><span></span><span class="n">startTime</span></span><span></span><span class="p">;</span>
@@ -213,7 +214,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, Intel.</p>
+    <p>&#169; Copyright 2023, Intel.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

@@ -54,5 +54,6 @@
 #define XPUM_CLI_ERROR_DIAGNOSTIC_TASK_FAILED                               45
 #define XPUM_CLI_ERROR_FIRMWARE_VERSION_ERROR                               46
 #define XPUM_CLI_ERROR_MEMORY_ECC_LIB_NOT_SUPPORT                           47  
+#define XPUM_CLI_ERROR_DIAGNOSTIC_INVALID_SINGLE_TEST                       48
 
 int errorNumTranslate(int coreErrNo);

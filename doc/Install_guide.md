@@ -13,24 +13,42 @@
  
 intel-metrics-library (libigdml1) and intel-metrics-discovery (libmd1) are optional. You may use the parameter like "--force-all" to ignore them when installing Intel(R) XPU Manager.
 
-## DEB install
-sudo dpkg -i xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.deb
+## DEB install on Ubuntu
+After adding the repository and installing the required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may run apt command below to install XPU Manager and the required dependencies. 
+```
+sudo apt install ./xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.deb
+```
 
 ## DEB uninstall
+```
 sudo dpkg -r xpumanager
+```
 
-## RPM install
-sudo rpm -i xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+## RPM install on RHEL and CentOS Stream
+After importing the repository and required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may run dnf command below to install XPU Manager and the required dependencies. 
+```
+sudo dnf install xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+```
 
-## Start to use  XPU Manager
+## RPM install on SLES
+After importing the repository and required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may run zypper command below to install XPU Manager and the required dependencies. 
+```
+sudo zypper install xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+```
+
+## Start to use XPU Manager
 By default, XPU Manager is installed the folder, /usr/bin, /usr/lib and /usr/lib64. The command line tool is /usr/bin/xpumcli. Please refer to "CLI_user_guide.md" for how to use the command line tool. 
 
 ## RPM relocation install
+```
 rpm -i --prefix=/usr/local xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
+```
 You need set the environmental variable LD_LIBRARY_PATH if you change the installation folder. 
 
 ## RPM uninstall
+```
 sudo rpm -e xpumanager
+```
 
 ## How to enable or disable some daemon monitor metrics
 By default, XPU Manager has provided as many GPU metrics as possible without changing the system settings. You may follow the steps below to collect more metrics or disable some metrics. 

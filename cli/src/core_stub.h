@@ -54,10 +54,10 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> groupAddDevice(int groupId, int deviceId)=0;
     virtual std::unique_ptr<nlohmann::json> groupRemoveDevice(int groupId, int deviceId)=0;
 
-    virtual std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, bool rawComponentTypeStr)=0;
+    virtual std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, int targetType, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr)=0;
     virtual std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr)=0;
-    virtual std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, bool rawComponentTypeStr)=0;
+    virtual std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, int targetType, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime)=0;
     virtual std::unique_ptr<nlohmann::json> checkStress(int deviceId)=0;
@@ -129,7 +129,7 @@ class CoreStub {
 
     virtual std::vector<std::unique_ptr<nlohmann::json>> getMetricsFromSysfs(std::vector<std::string> bdfs)=0;
 
-    std::unique_ptr<nlohmann::json> getPreCheckInfo();
+    std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson);
 
    protected:
     std::string getCardUUID(const std::string& rawUUID);

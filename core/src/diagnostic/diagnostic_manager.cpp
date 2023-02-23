@@ -55,15 +55,9 @@ void DiagnosticManager::readConfigFile() {
         ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
         exe_path[len] = '\0';
         std::string current_file = exe_path;
-#ifndef DAEMONLESS
-        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/config/" + std::string("diagnostics.conf");
+        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/config/" + std::string("diagnostics.conf");
         if (!is_path_exist(file_name))
-            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/config/" + std::string("diagnostics.conf");
-#else
-        file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/config/" + std::string("diagnostics.conf");
-        if (!is_path_exist(file_name))
-            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/config/" + std::string("diagnostics.conf");
-#endif
+            file_name = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/" + Configuration::getXPUMMode() + "/config/" + std::string("diagnostics.conf");
     }
     std::ifstream conf_file(file_name);
     if (conf_file.is_open()) {
@@ -110,15 +104,7 @@ void DiagnosticManager::readConfigFile() {
     }
 }
 
-xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) {
-    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
-    }
-
-    if (level < xpum_diag_level_t::XPUM_DIAG_LEVEL_1 || level > xpum_diag_level_t::XPUM_DIAG_LEVEL_3) {
-        return XPUM_RESULT_DIAGNOSTIC_INVALID_LEVEL;
-    }
-
+xpum_result_t DiagnosticManager::runSpecificDiagnosticsCore(xpum_device_id_t deviceId, xpum_diag_level_t level, xpum_diag_task_type_t type) {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (diagnostic_task_infos.find(deviceId) != diagnostic_task_infos.end() && diagnostic_task_infos.at(deviceId)->finished == false) {
         return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
@@ -129,13 +115,14 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
     std::shared_ptr<xpum_diag_task_info_t> p_task_info = std::make_shared<xpum_diag_task_info_t>();
     p_task_info->deviceId = deviceId;
     p_task_info->level = level;
+    p_task_info->targetType = type;
     p_task_info->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
     p_task_info->finished = false;
     p_task_info->count = 0;
     p_task_info->startTime = Utility::getCurrentMillisecond();
 
     updateMessage(p_task_info->message, std::string("Doing diagnostics"));
-    for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_MAX; index++) {
+    for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX; index++) {
         xpum_diag_component_info_t &component = p_task_info->componentList[index];
         component.type = static_cast<xpum_diag_task_type_t>(index);
         component.finished = false;
@@ -167,12 +154,34 @@ xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_
         XPUM_LOG_DEBUG("fail to read diagnostics.conf");
     }
     int gpu_total_count = devices.size();
-    std::thread task(DiagnosticManager::doDeviceDiagnosticCore,
+    std::thread task(level != XPUM_DIAG_LEVEL_MAX ? DiagnosticManager::doDeviceDiagnosticCore : DiagnosticManager::doDeviceSpecificDiagnosticCore,
                      this->p_device_manager->getDevice(std::to_string(deviceId))->getDeviceZeHandle(),
                      this->p_device_manager->getDevice(std::to_string(deviceId))->getDriverHandle(),
                      p_task_info, gpu_total_count, std::ref(this->media_codec_perf_datas));
     task.detach();
     return XPUM_OK;
+}
+
+xpum_result_t DiagnosticManager::runDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) {
+    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    if (level < xpum_diag_level_t::XPUM_DIAG_LEVEL_1 || level > xpum_diag_level_t::XPUM_DIAG_LEVEL_3) {
+        return XPUM_RESULT_DIAGNOSTIC_INVALID_LEVEL;
+    }
+    return runSpecificDiagnosticsCore(deviceId, level, xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX);
+}
+
+xpum_result_t DiagnosticManager::runSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t type) {
+    if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+
+    if (type < xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES || type > xpum_diag_task_type_t::XPUM_DIAG_MEMORY_ERROR) {
+        return XPUM_RESULT_DIAGNOSTIC_INVALID_TASK_TYPE;
+    }
+    return runSpecificDiagnosticsCore(deviceId, xpum_diag_level_t::XPUM_DIAG_LEVEL_MAX, type);
 }
 
 bool DiagnosticManager::isDiagnosticsRunning(xpum_device_id_t deviceId) {
@@ -200,6 +209,7 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
 
     result->deviceId = deviceId;
     result->level = diagnostic_task_infos.at(deviceId)->level;
+    result->targetType = diagnostic_task_infos.at(deviceId)->targetType;
     result->finished = diagnostic_task_infos.at(deviceId)->finished;
     result->count = diagnostic_task_infos.at(deviceId)->count;
     result->startTime = diagnostic_task_infos.at(deviceId)->startTime;
@@ -207,15 +217,28 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
     result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
     updateMessage(result->message, std::string(diagnostic_task_infos.at(deviceId)->message));
 
-    for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_MAX; index++) {
-        xpum_diag_component_info_t &component = result->componentList[index];
-        component.type = diagnostic_task_infos.at(deviceId)->componentList[index].type;
-        component.finished = diagnostic_task_infos.at(deviceId)->componentList[index].finished;
-        component.result = diagnostic_task_infos.at(deviceId)->componentList[index].result;
-        if (diagnostic_task_infos.at(deviceId)->componentList[index].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL && diagnostic_task_infos.at(deviceId)->componentList[index].type != XPUM_DIAG_HARDWARE_SYSMAN) {
+    if (result->targetType != xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX) {
+        xpum_diag_component_info_t &component = result->componentList[0];
+        component.type = diagnostic_task_infos.at(deviceId)->componentList[result->targetType].type;
+        component.finished = diagnostic_task_infos.at(deviceId)->componentList[result->targetType].finished;
+        component.result = diagnostic_task_infos.at(deviceId)->componentList[result->targetType].result;
+        if (diagnostic_task_infos.at(deviceId)->componentList[result->targetType].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL 
+                && diagnostic_task_infos.at(deviceId)->componentList[result->targetType].type != XPUM_DIAG_HARDWARE_SYSMAN) {
             result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
         }
-        updateMessage(component.message, std::string(diagnostic_task_infos.at(deviceId)->componentList[index].message));
+        updateMessage(component.message, std::string(diagnostic_task_infos.at(deviceId)->componentList[result->targetType].message));
+    } else {
+        for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX; index++) {
+            xpum_diag_component_info_t &component = result->componentList[index];
+            component.type = diagnostic_task_infos.at(deviceId)->componentList[index].type;
+            component.finished = diagnostic_task_infos.at(deviceId)->componentList[index].finished;
+            component.result = diagnostic_task_infos.at(deviceId)->componentList[index].result;
+            if (diagnostic_task_infos.at(deviceId)->componentList[index].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL 
+                    && diagnostic_task_infos.at(deviceId)->componentList[index].type != XPUM_DIAG_HARDWARE_SYSMAN) {
+                result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+            }
+            updateMessage(component.message, std::string(diagnostic_task_infos.at(deviceId)->componentList[index].message));
+        }
     }
     if (result->finished && result->result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN) {
         result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
@@ -310,30 +333,40 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
     std::string error_details;
     try {
         zes_device_handle_t zes_device = (zes_device_handle_t)ze_device;
-        if (p_task_info->level >= xpum_diag_level_t::XPUM_DIAG_LEVEL_1) {
+        if (p_task_info->level >= XPUM_DIAG_LEVEL_1) {
             XPUM_LOG_INFO("start environment variables diagnostic");
             try {
                 doDeviceDiagnosticEnvironmentVariables(p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_ENV_VARIABLES, e.what(), p_task_info);
             }
+            
             XPUM_LOG_INFO("start libraries diagnostic");
             try {
                 doDeviceDiagnosticLibraries(p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_LIBRARY, e.what(), p_task_info);
             }
+
             XPUM_LOG_INFO("start permission diagnostic");
             try {
                 doDeviceDiagnosticPermission(gpu_total_count, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_PERMISSION, e.what(), p_task_info);
             }
+
             XPUM_LOG_INFO("start exclusive diagnostic");
             try {
                 doDeviceDiagnosticExclusive(zes_device, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_EXCLUSIVE, e.what(), p_task_info);
+            }
+
+            XPUM_LOG_INFO("start computation check diagnostic");
+            try {
+                doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info, true);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
             }
         }
 
@@ -347,19 +380,21 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
         }
         */
 
-        if (p_task_info->level >= xpum_diag_level_t::XPUM_DIAG_LEVEL_2) {
+        if (p_task_info->level >= XPUM_DIAG_LEVEL_2) {
             XPUM_LOG_INFO("start hardware sysmam diagnostic");
             try {
                 doDeviceDiagnosticHardwareSysman(zes_device, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_HARDWARE_SYSMAN, e.what(), p_task_info);
             }
+        
             XPUM_LOG_INFO("start integration diagnostic");
             try {
                 doDeviceDiagnosticIntegration(ze_device, ze_driver, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_INTEGRATION_PCIE, e.what(), p_task_info);
             }
+
             XPUM_LOG_INFO("start mediacodec diagnostic");
             try {
                 doDeviceDiagnosticMediaCodec(zes_device, p_task_info, media_codec_perf_datas);
@@ -368,31 +403,35 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             }
         }
 
-        if (p_task_info->level == xpum_diag_level_t::XPUM_DIAG_LEVEL_3) {
+        if (p_task_info->level >= XPUM_DIAG_LEVEL_3) {
             XPUM_LOG_INFO("start computation diagnostic");
             try {
-                doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info);
+                doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info, false);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
             }
+
             XPUM_LOG_INFO("start power diagnostic");
             try {
                 doDeviceDiagnosticPeformancePower(ze_device, ze_driver, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_POWER, e.what(), p_task_info);
             }
+
             XPUM_LOG_INFO("start memory bandwidth diagnostic");
             try {
                 doDeviceDiagnosticPeformanceMemoryBandwidth(ze_device, ze_driver, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH, e.what(), p_task_info);
             }
+
             XPUM_LOG_INFO("start memory allocation diagnostic ");
             try {
                 doDeviceDiagnosticPeformanceMemoryAllocation(ze_device, ze_driver, p_task_info);
             } catch (BaseException &e) {
                 doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION, e.what(), p_task_info);
             }
+
             XPUM_LOG_INFO("start memory error diagnostic ");
             try {
                 doDeviceDiagnosticMemoryError(ze_device, ze_driver, p_task_info);
@@ -410,7 +449,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
     if (!find_error) {
         updateMessage(p_task_info->message, std::string("All diagnostics done"));
     } else {
-        for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_MAX; index++) {
+        for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX; index++) {
             xpum_diag_component_info_t &component = p_task_info->componentList[index];
             if (component.finished == false) {
                 updateMessage(component.message, std::string(""));
@@ -419,6 +458,152 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
         updateMessage(p_task_info->message, error_details);
     }
     XPUM_LOG_INFO("all diagnostics done");
+}
+
+void DiagnosticManager::doDeviceSpecificDiagnosticCore(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver,
+                                               std::shared_ptr<xpum_diag_task_info_t> p_task_info, int gpu_total_count,
+                                               std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas) {
+    bool find_error = false;
+    std::string error_details;
+
+    try {
+        zes_device_handle_t zes_device = (zes_device_handle_t)ze_device;
+        if (p_task_info->targetType == XPUM_DIAG_SOFTWARE_ENV_VARIABLES) {
+            XPUM_LOG_INFO("start environment variables diagnostic");
+            try {
+                doDeviceDiagnosticEnvironmentVariables(p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_ENV_VARIABLES, e.what(), p_task_info);
+            }
+
+        }
+        if (p_task_info->targetType == XPUM_DIAG_SOFTWARE_LIBRARY) {
+            XPUM_LOG_INFO("start libraries diagnostic");
+            try {
+                doDeviceDiagnosticLibraries(p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_LIBRARY, e.what(), p_task_info);
+            }
+        }
+        if (p_task_info->targetType == XPUM_DIAG_SOFTWARE_PERMISSION) {
+            XPUM_LOG_INFO("start permission diagnostic");
+            try {
+                doDeviceDiagnosticPermission(gpu_total_count, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_PERMISSION, e.what(), p_task_info);
+            }
+        }
+        if (p_task_info->targetType == XPUM_DIAG_SOFTWARE_EXCLUSIVE) {
+            XPUM_LOG_INFO("start exclusive diagnostic");
+            try {
+                doDeviceDiagnosticExclusive(zes_device, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_EXCLUSIVE, e.what(), p_task_info);
+            }
+        }
+        if (p_task_info->targetType == XPUM_DIAG_COMPUTATION) {
+            XPUM_LOG_INFO("start computation check diagnostic");
+            try {
+                doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info, true);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
+            }
+       }
+
+        /*
+        if (p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_EXCLUSIVE].result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL) {
+            p_task_info->finished = true;
+            p_task_info->endTime = Utility::getCurrentMillisecond();
+            updateMessage(p_task_info->message, std::string("Aborted! Other GPU processes are running"));
+            XPUM_LOG_ERROR("aborted! other GPU processes are running");
+            return;
+        }
+        */
+
+        if (p_task_info->targetType == XPUM_DIAG_HARDWARE_SYSMAN) {
+            XPUM_LOG_INFO("start hardware sysmam diagnostic");
+            try {
+                doDeviceDiagnosticHardwareSysman(zes_device, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_HARDWARE_SYSMAN, e.what(), p_task_info);
+            }
+        }
+        if (p_task_info->targetType == XPUM_DIAG_INTEGRATION_PCIE) {
+            XPUM_LOG_INFO("start integration diagnostic");
+            try {
+                doDeviceDiagnosticIntegration(ze_device, ze_driver, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_INTEGRATION_PCIE, e.what(), p_task_info);
+            }
+        }
+        if (p_task_info->targetType == XPUM_DIAG_MEDIA_CODEC) {
+            XPUM_LOG_INFO("start mediacodec diagnostic");
+            try {
+                doDeviceDiagnosticMediaCodec(zes_device, p_task_info, media_codec_perf_datas);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_MEDIA_CODEC, e.what(), p_task_info);
+            }
+        }
+
+        if (p_task_info->targetType == XPUM_DIAG_PERFORMANCE_COMPUTATION) {
+            XPUM_LOG_INFO("start computation diagnostic");
+            try {
+                doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info, false);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
+            }
+        }
+        if (p_task_info->targetType == XPUM_DIAG_PERFORMANCE_POWER) {
+            XPUM_LOG_INFO("start power diagnostic");
+            try {
+                doDeviceDiagnosticPeformancePower(ze_device, ze_driver, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_POWER, e.what(), p_task_info);
+            }
+        }
+        if (p_task_info->targetType == XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH) {
+            XPUM_LOG_INFO("start memory bandwidth diagnostic");
+            try {
+                doDeviceDiagnosticPeformanceMemoryBandwidth(ze_device, ze_driver, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH, e.what(), p_task_info);
+            }
+        }
+        if (p_task_info->targetType == XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION) { 
+            XPUM_LOG_INFO("start memory allocation diagnostic ");
+            try {
+                doDeviceDiagnosticPeformanceMemoryAllocation(ze_device, ze_driver, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION, e.what(), p_task_info);
+            }
+        }
+        if (p_task_info->targetType == XPUM_DIAG_MEMORY_ERROR) {
+            XPUM_LOG_INFO("start memory error diagnostic ");
+            try {
+                doDeviceDiagnosticMemoryError(ze_device, ze_driver, p_task_info);
+            } catch (BaseException &e) {
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_MEMORY_ERROR, e.what(), p_task_info);
+            }
+        }
+    } catch (std::exception &e) {
+        find_error = true;
+        error_details = "Aborted! " + std::string(e.what());
+    }
+
+    p_task_info->endTime = Utility::getCurrentMillisecond();
+    p_task_info->finished = true;
+    if (!find_error) {
+        updateMessage(p_task_info->message, std::string("All diagnostics done"));
+    } else {
+        for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX; index++) {
+            xpum_diag_component_info_t &component = p_task_info->componentList[index];
+            if (component.finished == false) {
+                updateMessage(component.message, std::string(""));
+            }
+        }
+        updateMessage(p_task_info->message, error_details);
+    }
+    XPUM_LOG_INFO("specific diagnostic done");
 }
 
 void DiagnosticManager::doDeviceDiagnosticEnvironmentVariables(std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
@@ -715,15 +900,9 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
             ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
             exe_path[len] = '\0';
             std::string  current_file = exe_path;
-#ifndef DAEMONLESS
-            mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/resources/mediadata/";
+            mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/resources/mediadata/";
             if (!is_path_exist(mediadata_folder))
-                mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/resources/mediadata/";
-#else
-            mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/resources/mediadata/";
-            if (!is_path_exist(mediadata_folder))
-                mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/resources/mediadata/";
-#endif
+                mediadata_folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/" + Configuration::getXPUMMode() + "/resources/mediadata/";
         }
         bool sample_multi_transcode_tool_exist = true;
         std::ifstream file_transcode(DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode");
@@ -1325,15 +1504,9 @@ std::vector<uint8_t> DiagnosticManager::loadBinaryFile(const std::string &file_p
         ssize_t len = ::readlink("/proc/self/exe", exe_path, sizeof(exe_path));
         exe_path[len] = '\0';
         std::string current_file = exe_path;
-#ifndef DAEMONLESS
-        folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpum/resources/kernels/";
+        folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/" + Configuration::getXPUMMode() + "/resources/kernels/";
         if (!is_path_exist(folder))
-            folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpum/resources/kernels/";
-#else
-        folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib/xpu-smi/resources/kernels/";
-        if (!is_path_exist(folder))
-            folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/xpu-smi/resources/kernels/";
-#endif
+            folder = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/" + Configuration::getXPUMMode() + "/resources/kernels/";
     }
     std::string absolute_file_path = folder + file_path;
     std::ifstream stream(absolute_file_path, std::ios::in | std::ios::binary);
@@ -1688,8 +1861,14 @@ void DiagnosticManager::dispatchKernelsForMemoryTest(const ze_device_handle_t de
     }
 }
 
-void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
-    xpum_diag_component_info_t &compute_component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTATION];
+void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_handle_t &ze_device, const ze_driver_handle_t &ze_driver, std::shared_ptr<xpum_diag_task_info_t> p_task_info, bool checkOnly) {
+    int comp_index = 0;
+    if (checkOnly == true) {
+        comp_index = xpum_diag_task_type_t::XPUM_DIAG_COMPUTATION;
+    } else {
+        comp_index = xpum_diag_task_type_t::XPUM_DIAG_PERFORMANCE_COMPUTATION;
+    }
+    xpum_diag_component_info_t &compute_component = p_task_info->componentList[comp_index];
     p_task_info->count += 1;
     updateMessage(compute_component.message, std::string("Running"));
     compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
@@ -1723,7 +1902,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
     }
 
     for (std::size_t i = 0; i < device_handles.size(); i++) {
-        compute_threads.push_back(std::thread([&all_gflops, &error_messages, i, &device_handles, &ze_driver]() {
+        compute_threads.push_back(std::thread([&all_gflops, &error_messages, i, &device_handles, &ze_driver, checkOnly]() {
             try {
                 ze_result_t ret;
                 long double timed;
@@ -1859,7 +2038,7 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
                 timed = 0;
                 long double current;
                 // Vector width 1
-                timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, XPUM_DIAG_PERFORMANCE_COMPUTATION);
+                timed = runKernel(command_queue, command_list, compute_sp_v1, workgroup_info, XPUM_DIAG_PERFORMANCE_COMPUTATION, checkOnly);
                 current = calculateGbps(timed, number_of_work_items * flops_per_work_item);
                 all_gflops[i] = std::max(all_gflops[i], current);
                 XPUM_LOG_INFO("compute sp vector width 1 done");
@@ -1977,9 +2156,14 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
         updateMessage(compute_component.message, desc);
     } else {
         compute_component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
-        std::string desc = "Pass to check computation performance.";
-        desc += " " + compute_detail;
-        updateMessage(compute_component.message, desc);
+        if (checkOnly == true) {
+            updateMessage(compute_component.message, 
+                    "Pass to check computation");
+        } else {
+            std::string desc = "Pass to check computation performance.";
+            desc += " " + compute_detail;
+            updateMessage(compute_component.message, desc);
+        }
     }
     compute_component.finished = true;
 }
@@ -2326,7 +2510,7 @@ void DiagnosticManager::setupFunction(ze_module_handle_t &module_handle, ze_kern
 
 long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue, ze_command_list_handle_t command_list,
                                          ze_kernel_handle_t &function,
-                                         struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type) {
+                                         struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type, bool checkOnly) {
     ze_result_t ret;
     long double timed = 0;
 
@@ -2345,6 +2529,16 @@ long double DiagnosticManager::runKernel(ze_command_queue_handle_t command_queue
     ret = zeCommandListClose(command_list);
     if (ret != ZE_RESULT_SUCCESS) {
         throw BaseException("zeCommandListClose()");
+    }
+
+    // 1 round is good enough if it is not perf diag
+    if (checkOnly == true) {
+        ret = zeCommandQueueExecuteCommandLists(command_queue, 1, &command_list, nullptr);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw BaseException("zeCommandQueueExecuteCommandLists()");
+        }
+        waitForCommandQueueSynchronize(command_queue, "zeCommandQueueSynchronize()");
+        return 0;
     }
 
     for (uint32_t i = 0; i < 10; i++) {

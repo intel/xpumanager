@@ -8,6 +8,7 @@
 #include "xpum_api.h"
 #include "exit_code.h"
 #include "logger.h"
+#include "redfish_amc_manager.h"
 
 namespace xpum::cli {
 
@@ -164,7 +165,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getFirmwareFlashResult(int deviceId
 }
 
 std::string LibCoreStub::getRedfishAmcWarnMsg(){
-    return "";
+    return getRedfishAmcWarn();
 }
 
 std::unique_ptr<nlohmann::json> LibCoreStub::getSensorReading() {

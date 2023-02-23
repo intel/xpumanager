@@ -11,9 +11,7 @@
 
 #include "bsmc_interface.h"
 #include "hal.h"
-#ifndef XPUM_AMCFW_LIB_BUILD
 #include "infrastructure/logger.h"
-#endif
 #include "ipmi_interface.h"
 #include "sdr.h"
 
@@ -110,12 +108,3 @@ void do_sleep(int sleep_time_in_ms);
 void clean_data();
 
 } // namespace xpum
-
-#ifdef XPUM_AMCFW_LIB_BUILD
-#define XPUM_LOG_INFO(...)
-#define XPUM_LOG_WARN(...)
-#define XPUM_LOG_ERROR(...)
-#define XPUM_LOG_DEBUG(...)
-#define XPUM_LOG_TRACE(...)
-#define XPUM_LOG_FATAL(...)
-#endif

@@ -71,10 +71,7 @@ RUN apt-get update && \
     level-zero \
     libdrm2 \
     intel-media-va-driver-non-free \
-    libmfxgen1 && \
-  apt-get remove -y wget gnupg2 ca-certificates && \
-  apt-get autoremove -y && \
-  rm -rf /var/lib/apt/lists/*
+    libmfxgen1 
 
 RUN if [ "$(apt-cache search --names-only 'intel-metrics-discovery')" ] ; then \
       apt-get install -y --no-install-recommends intel-metrics-discovery ; \
@@ -86,6 +83,10 @@ RUN if [ "$(apt-cache search --names-only 'intel-metrics-library')" ] ; then \
     else \
       apt-get install -y --no-install-recommends libigdml1 ; \
     fi
+
+RUN apt-get remove -y wget gnupg2 ca-certificates && \
+  apt-get autoremove -y && \
+  rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/venv /opt/venv
 

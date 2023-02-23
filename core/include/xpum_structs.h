@@ -136,6 +136,7 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_HEALTH_INVALID_CONIG_TYPE,
     XPUM_RESULT_HEALTH_INVALID_THRESHOLD,
     XPUM_RESULT_DIAGNOSTIC_INVALID_LEVEL,
+    XPUM_RESULT_DIAGNOSTIC_INVALID_TASK_TYPE,
     XPUM_RESULT_AGENT_SET_INVALID_VALUE,  /// Agent set value is invalid
     XPUM_LEVEL_ZERO_INITIALIZATION_ERROR, ///< Level Zero initialization error.
     XPUM_UNSUPPORTED_SESSIONID,           ///< Unsupported session id
@@ -401,6 +402,7 @@ typedef enum xpum_diag_task_type_enum {
     XPUM_DIAG_SOFTWARE_LIBRARY,
     XPUM_DIAG_SOFTWARE_PERMISSION,
     XPUM_DIAG_SOFTWARE_EXCLUSIVE,
+    XPUM_DIAG_COMPUTATION,
     // level 2
     XPUM_DIAG_HARDWARE_SYSMAN,
     XPUM_DIAG_INTEGRATION_PCIE,
@@ -411,7 +413,7 @@ typedef enum xpum_diag_task_type_enum {
     XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH,
     XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION,
     XPUM_DIAG_MEMORY_ERROR,
-    XPUM_DIAG_MAX
+    XPUM_DIAG_TASK_TYPE_MAX
 } xpum_diag_task_type_t;
 
 typedef enum xpum_diag_task_result_enum {
@@ -423,7 +425,8 @@ typedef enum xpum_diag_task_result_enum {
 typedef enum xpum_diag_level_enum {
     XPUM_DIAG_LEVEL_1 = 1,
     XPUM_DIAG_LEVEL_2,
-    XPUM_DIAG_LEVEL_3
+    XPUM_DIAG_LEVEL_3,
+    XPUM_DIAG_LEVEL_MAX
 } xpum_diag_level_t;
 
 typedef struct xpum_diag_component_info_t {
@@ -436,9 +439,10 @@ typedef struct xpum_diag_component_info_t {
 typedef struct xpum_diag_task_info_t {
     xpum_device_id_t deviceId;
     xpum_diag_level_t level;
+    xpum_diag_task_type_t targetType;
     bool finished;
     xpum_diag_task_result_t result;
-    xpum_diag_component_info_t componentList[XPUM_DIAG_MAX];
+    xpum_diag_component_info_t componentList[XPUM_DIAG_TASK_TYPE_MAX];
     char message[XPUM_MAX_STR_LENGTH];
     int count;
     uint64_t startTime;

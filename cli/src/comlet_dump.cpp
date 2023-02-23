@@ -53,6 +53,17 @@ bool ComletDump::dumpEUMetrics() {
     return false;
 }
 
+bool ComletDump::dumpRASMetrics() {
+    for (auto id : this->opts->metricsIdList) {
+        if ((id >= xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_RESET && id <= xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE)
+         || id == xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE
+         || id == xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static std::string getFileValue(std::string file_name) {
     std::ifstream ifs(file_name);
     std::string content((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));

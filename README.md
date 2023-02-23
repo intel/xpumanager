@@ -112,9 +112,10 @@ You may get the latest installers or binaries in [Releases](https://github.com/i
 ## Documentation
 * Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) and for how to install/uninstall XPU Manager.
 * Refer to the [XPU-SMI Installation Guide](doc/smi_install_guide.md) and for how to install/uninstall XPU-SMI.
-* Refer to the [XPU Manager CLI User Guide](doc/CLI_user_guide.md) to start using XPU Manager.
-* Refer to the [XPU-SMI CLI User Guide](doc/smi_user_guide.md) to start using XPU-SMI.
-* Refer to the [XPU Manager amcmcli User Guide](doc/amcmcli_user_guide.md) to start using XPU Manager amcmcli.
+* Refer to the [XPU Manager CLI User Guide](doc/CLI_user_guide.md) to start to use XPU Manager.
+* Refer to the [XPU-SMI CLI User Guide](doc/smi_user_guide.md) to start to use XPU-SMI.
+* Refer to the [XPU Manager Windows CLI User Guide](doc/xpum_win_user_guide.md) to start to use XPU Manager Windows CLI.
+* Refer to the [XPU Manager amcmcli User Guide](doc/amcmcli_user_guide.md) to start to use XPU Manager amcmcli.
 * Refer to [DockerHub](https://hub.docker.com/r/intel/xpumanager) for a Docker container image that can be used as a Prometheus exporter in a Kubernetes environment.
 * Refer to [Building XPU Manager Installer](BUILDING.md) to build XPU Manager installer packages. 
  

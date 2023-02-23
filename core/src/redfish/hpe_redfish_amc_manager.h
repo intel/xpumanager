@@ -35,5 +35,11 @@ class HEPRedfishAmcManager : public RedfishAmcManager {
     std::future<xpum_firmware_flash_result_t> task;
 
     std::string flashFwErrMsg;
+
+    bool redfishHostInterfaceInit();
+
+    bool activeInterfaceAndConfigDHCP();
+
+    std::string interfaceName = "";
 };
 } // namespace xpum

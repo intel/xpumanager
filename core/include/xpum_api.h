@@ -758,6 +758,16 @@ xpum_result_t xpumGetFirmwareFlashErrorMsg(char* buffer, int *count);
  */
 xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level);
 
+/**
+ * @brief Run specific diagnostics on single device
+ * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResult
+ * 
+ * @param deviceId          IN: Device id
+ * @param type              IN: The diagnostics type to run
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRunSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t type);
+
 /// @cond DAEMON_ONLY
 /**
  * @brief Run diagnostics on a group of devices
@@ -768,6 +778,18 @@ xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t le
  * @return xpum_result_t 
  */
 xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level);
+/// @endcond
+
+/// @cond DAEMON_ONLY
+/**
+ * @brief Run specific diagnostics on a group of devices
+ * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResultByGroup
+ * 
+ * @param groupId           IN: Group id
+ * @param type              IN: The diagnostics type to run
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRunSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_task_type_t type);
 /// @endcond
 
 /**

@@ -25,7 +25,7 @@ import sphinx_rtd_theme
 # -- Project information -----------------------------------------------------
 
 project = 'XPU Manager'
-copyright = '2022, Intel'
+copyright = '2023, Intel'
 author = 'yupengzh'
 
 

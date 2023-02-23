@@ -20,10 +20,18 @@ struct ComletDiagnosticOptions {
     uint32_t groupId = UINT_MAX;
 #endif
     int level = INT_MIN;
-    bool rawComponentTypeStr = true;
+    int singleTestId = INT_MIN;
+    bool rawJson = true;
     bool preCheck = false;
+    bool onlyGPU = false;
     uint32_t stressTime = 0;
     bool stress = false;
+};
+
+enum ShowMode {
+    LEVEL_TEST,
+    SINGLE_TEST,
+    PRE_CHECK
 };
 
 class ComletDiagnostic : public ComletBase {

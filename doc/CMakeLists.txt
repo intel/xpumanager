@@ -18,9 +18,11 @@ add_subdirectory(xpumdoc)
 file(COPY ${CMAKE_CURRENT_LIST_DIR}/img DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/doc)
 
 file(COPY index.rst 
-      xpum_index.rst restful.rst ../README.md installation.rst CLI_user_guide.md ../REST_README.md Install_guide.md 
+      xpum_index.rst restful.rst ../README.md installation.rst CLI_user_guide.md Install_guide.md 
       smi_index.rst smi_install_guide.md smi_user_guide.md ../SMI_README.md
       DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+configure_file(${CMAKE_CURRENT_LIST_DIR}/../rest/README.md ${CMAKE_CURRENT_BINARY_DIR}/REST_README.md COPYONLY)
 
 add_custom_target(
   XPUM_DOC ALL

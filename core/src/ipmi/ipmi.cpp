@@ -9,6 +9,8 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <unistd.h>
+#include <stdlib.h>
 
 #include "bsmc_ipmi_oem_cmd.h"
 #include "hal.h"

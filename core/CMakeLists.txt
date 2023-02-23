@@ -38,8 +38,6 @@ if(NOT DEFINED XPUM_VERSION_STRING)
   set(XPUM_VERSION_STRING 0.1.0)
 endif()
 
-option(XPUM_FIRMWARE_MOCK "Build amcfw with mock function" OFF)
-
 include(CheckIncludeFile)
 check_include_file(pciaccess.h HAVE_PCIACCESS_H)
 
@@ -77,33 +75,9 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/firmware FIRMWARE_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/amc AMC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/redfish REDFISH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/log LOG_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/ipmi IPMI_SRC)
 
 add_library(xpum SHARED)
-
-if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/src/ipmi)
-  message(STATUS "amcfw lib src found")
-  aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/ipmi IPMI_SRC)
-  add_library(amcfw STATIC ${IPMI_SRC} ${INFRAS_SRC} ${EXCEPTION_SRC})
-  if(XPUM_FIRMWARE_MOCK)
-    message(STATUS "build amcfw with XPUM_FIRMWARE_MOCK")
-    target_compile_definitions(amcfw PRIVATE XPUM_FIRMWARE_MOCK)
-    target_compile_definitions(xpum PRIVATE XPUM_FIRMWARE_MOCK)
-    target_compile_definitions(xpum PRIVATE XPUM_FIRMWARE_MOCK_IGSC_PATH="${CMAKE_CURRENT_LIST_DIR}/test/mock_igsc")
-  endif()
-
-  target_include_directories(
-    amcfw
-    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/include
-            ${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include
-            ${CMAKE_CURRENT_LIST_DIR}/src
-            ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
-
-else()
-  add_library(amcfw STATIC IMPORTED)
-  set_target_properties(
-    amcfw PROPERTIES IMPORTED_LOCATION
-                     ${CMAKE_CURRENT_LIST_DIR}/resources/amcfw/libamcfw.a)
-endif()
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   add_executable(test_xpum_api ${CMAKE_CURRENT_LIST_DIR}/test/test_xpum_api.cpp)
@@ -134,10 +108,6 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${CMAKE_CURRENT_LIST_DIR}/src/infrastructure)
 endif()
 
-if(DAEMONLESS)
-  target_compile_definitions(xpum PRIVATE DAEMONLESS)
-endif()
-
 target_sources(
   xpum
   PRIVATE ${API_SRC}
@@ -159,7 +129,8 @@ target_sources(
           ${FIRMWARE_SRC}
           ${AMC_SRC}
           ${REDFISH_SRC}
-          ${LOG_SRC})
+          ${LOG_SRC}
+          ${IPMI_SRC})
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
   target_sources(
@@ -183,12 +154,8 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${FIRMWARE_SRC}
             ${AMC_SRC}
             ${REDFISH_SRC}
-            ${LOG_SRC})
-endif()
-
-target_link_libraries(xpum PRIVATE amcfw)
-if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
-  target_link_libraries(test_xpum_api PRIVATE amcfw)
+            ${LOG_SRC}
+            ${IPMI_SRC})
 endif()
 
 message(STATUS "version ${PROJECT_VERSION}")

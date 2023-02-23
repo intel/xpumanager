@@ -47,6 +47,10 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     xpum_result_t runDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) override;
 
+    xpum_result_t runSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t type) override;
+
+    xpum_result_t runSpecificDiagnosticsCore(xpum_device_id_t deviceId, xpum_diag_level_t level, xpum_diag_task_type_t type);
+
     bool isDiagnosticsRunning(xpum_device_id_t deviceId) override;
 
     xpum_result_t getDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result) override;
@@ -58,6 +62,12 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     xpum_result_t checkStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count) override;
 
     static void doDeviceDiagnosticCore(const ze_device_handle_t &ze_device,
+                                       const ze_driver_handle_t &ze_driver,
+                                       std::shared_ptr<xpum_diag_task_info_t> p_task_info,
+                                       int gpu_total_count,
+                                       std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas);
+
+    static void doDeviceSpecificDiagnosticCore(const ze_device_handle_t &ze_device,
                                        const ze_driver_handle_t &ze_driver,
                                        std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                        int gpu_total_count,
@@ -85,7 +95,7 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static void doDeviceDiagnosticPeformanceComputation(const ze_device_handle_t &ze_device,
                                                                 const ze_driver_handle_t &ze_driver,
-                                                                std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+                                                                std::shared_ptr<xpum_diag_task_info_t> p_task_info, bool checkOnly);
     
     static void doDeviceDiagnosticPeformancePower(const ze_device_handle_t &ze_device,
                                                                 const ze_driver_handle_t &ze_driver,
@@ -134,7 +144,7 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static long double runKernel(ze_command_queue_handle_t command_queue, ze_command_list_handle_t command_list,
                                  ze_kernel_handle_t &function,
-                                 struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type);
+                                 struct ZeWorkGroups &workgroup_info, xpum_diag_task_type_t type, bool checkOnly = false);
 
     static long double calculateGbps(long double period, long double buffer_size);
 

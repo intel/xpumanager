@@ -1761,6 +1761,42 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
     return ret;
 }
 
+xpum_result_t xpumRunSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t type) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    return Core::instance().getDiagnosticManager()->runSpecificDiagnostics(deviceId, type);
+}
+
+xpum_result_t xpumRunSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_task_type_t type) {
+    xpum_result_t ret = Core::instance().apiAccessPreCheck();
+    if (ret != XPUM_OK) {
+        return ret;
+    }
+
+    xpum_group_info_t xpum_group_info;
+    ret = xpumGroupGetInfo(groupId, &xpum_group_info);
+    if (ret != XPUM_OK)
+        return ret;
+
+    for (int i = 0; i < xpum_group_info.count; i++) {
+        bool isRunning = Core::instance().getDiagnosticManager()->isDiagnosticsRunning(xpum_group_info.deviceList[i]);
+        if (isRunning) {
+            return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
+        }
+    }
+
+    for (int i = 0; i < xpum_group_info.count; i++) {
+        ret = Core::instance().getDiagnosticManager()->runSpecificDiagnostics(xpum_group_info.deviceList[i], type);
+        if (ret != XPUM_OK)
+            return ret;
+    }
+
+    return ret;
+}
+
 xpum_result_t xpumGetDiagnosticsResult(xpum_device_id_t deviceId, xpum_diag_task_info_t *result) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {

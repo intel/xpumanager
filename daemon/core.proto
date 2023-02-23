@@ -123,6 +123,16 @@ message RunDiagnosticsByGroupRequest{
     uint32 level = 2;
 }
 
+message RunSpecificDiagnosticsRequest{
+    uint32 deviceId = 1;
+    uint32 type = 2;
+}
+
+message RunSpecificDiagnosticsByGroupRequest{
+    uint32 groupId = 1;
+    uint32 type = 2;
+}
+
 message RunStressRequest {
     int32 deviceId = 1;
     uint32 stressTime = 2;
@@ -144,14 +154,15 @@ message DiagnosticsComponentInfo{
     DIAG_SOFTWARE_LIBRARY = 1;
     DIAG_SOFTWARE_PERMISSION = 2;
     DIAG_SOFTWARE_EXCLUSIVE = 3;
-    DIAG_HARDWARE_SYSMAN = 4;
-    DIAG_INTEGRATION_PCIE = 5;
-    DIAG_MEDIA_CODEC = 6;
-    DIAG_PERFORMANCE_COMPUTATION = 7;
-    DIAG_PERFORMANCE_POWER = 8;
-    DIAG_PERFORMANCE_MEMORY_BANDWIDTH = 9;
-    DIAG_PERFORMANCE_MEMORY_ALLOCATION = 10;
-    DIAG_MEMORY_ERROR = 11;
+    DIAG_COMPUTATION = 4;
+    DIAG_HARDWARE_SYSMAN = 5;
+    DIAG_INTEGRATION_PCIE = 6;
+    DIAG_MEDIA_CODEC = 7;
+    DIAG_PERFORMANCE_COMPUTATION = 8;
+    DIAG_PERFORMANCE_POWER = 9;
+    DIAG_PERFORMANCE_MEMORY_BANDWIDTH = 10;
+    DIAG_PERFORMANCE_MEMORY_ALLOCATION = 11;
+    DIAG_MEMORY_ERROR = 12;
   }
   Type type = 1;
   bool finished = 2;
@@ -162,15 +173,16 @@ message DiagnosticsComponentInfo{
 message DiagnosticsTaskInfo{
     uint32 deviceId = 1;
     uint32 level = 2;
-    bool finished = 3;
-    DiagnosticsTaskResult result = 4;
-    repeated DiagnosticsComponentInfo componentInfo = 5;
-    string message = 6;
-    uint32 count = 7;
-    uint64 startTime = 8;
-    uint64 endTime = 9;
-    string errorMsg = 10;
-    int32 errorNo = 11;
+    uint32 targetType = 3;
+    bool finished = 4;
+    DiagnosticsTaskResult result = 5;
+    repeated DiagnosticsComponentInfo componentInfo = 6;
+    string message = 7;
+    uint32 count = 8;
+    uint64 startTime = 9;
+    uint64 endTime = 10;
+    string errorMsg = 11;
+    int32 errorNo = 12;
 }
 
 enum DiagnosticsMediaCodecResolution {
@@ -963,6 +975,8 @@ service XpumCoreService {
     rpc getAllGroups( google.protobuf.Empty ) returns ( GroupArray );
     rpc runDiagnostics( RunDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
     rpc runDiagnosticsByGroup( RunDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
+    rpc runSpecificDiagnostics( RunSpecificDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
+    rpc runSpecificDiagnosticsByGroup( RunSpecificDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
     rpc runStress( RunStressRequest ) returns ( DiagnosticsTaskInfo );
     rpc getDiagnosticsResult ( DeviceId ) returns ( DiagnosticsTaskInfo );
     rpc getDiagnosticsMediaCodecResult ( DeviceId ) returns ( DiagnosticsMediaCodecInfoArray );
