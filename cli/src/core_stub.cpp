@@ -24,9 +24,9 @@
 #include <sys/stat.h>
 #include <unordered_set>
 
-#include "precheck_helper.h"
 #include "config.h"
 #include "xpum_structs.h"
+#include "local_functions.h"
 
 namespace xpum::cli {
 
@@ -566,7 +566,7 @@ static void doPreCheck(bool onlyGPU) {
     }
 
     if (gpu_bdfs.empty()) {
-        std::string cmd = "lspci | grep 'Display controller: Intel Corporation Device' | cut -d ' ' -f 1";
+        std::string cmd = "lspci|grep -i Display|grep -i Intel|cut -d ' ' -f 1";
         FILE* f = popen(cmd.c_str(), "r");
         char c_line[1024];
         int gpu_id = 0;
@@ -601,7 +601,7 @@ static void doPreCheck(bool onlyGPU) {
                 int cnt = read(fd, thermal_type, 1024);
                 close(fd);
                 thermal_type[cnt] = 0;
-                if (strncmp(thermal_type, "x86_pkg_temp", sizeof("x86_pkg_temp"))) {
+                if (strncmp(thermal_type, "x86_pkg_temp", 12) == 0) {
                     snprintf(path, PATH_MAX, "/sys/class/thermal/%s/temp",
                             pdirent->d_name);
                     fd = open(path, O_RDONLY);

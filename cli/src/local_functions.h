@@ -1,11 +1,11 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
- *  @file precheck_helper.h
+ *  @file local_functions.h
  */
 
-#ifndef _XPUM_PRECHECK_HELPER_H_
-#define _XPUM_PRECHECK_HELPER_H_
+
+#pragma once
 
 #include <string>
 #include <thread>
@@ -87,6 +87,16 @@ void updateErrorComponentInfo(ComponentInfo& cinfo, std::string status, int cate
 
 std::string zeInitResultToString(const int result);
 
-} // end namespace xpum::cli
+#define MAP_SIZE 4096UL
+#define MAP_MASK (MAP_SIZE - 1)
 
-#endif
+struct FirmwareVersion {
+    std::string gfx_fw_version;
+    std::string gfx_data_fw_version;
+}; 
+
+bool getFirmwareVersion(FirmwareVersion& firmware_version, std::string bdf);  
+bool getBdfListFromLspci(std::vector<std::string> &list);
+
+}
+
