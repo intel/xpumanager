@@ -175,6 +175,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static float MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST;
 
+    static const std::string COMPONENT_TYPE_NOT_SUPPORTED;
+
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
 
     std::shared_ptr<DataLogicInterface> p_data_logic;

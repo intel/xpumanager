@@ -14,6 +14,7 @@
 #include "infrastructure/handle_lock.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/xpum_config.h"
+#include "infrastructure/utility.h"
 #include <sys/stat.h>
 
 namespace xpum {
@@ -41,6 +42,7 @@ std::string DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE = "test_stream_1080p
 std::string DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE = "test_stream_4K.265";
 int DiagnosticManager::ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT = 600;
 float DiagnosticManager::MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = 0.9;
+const std::string DiagnosticManager::COMPONENT_TYPE_NOT_SUPPORTED = "Not supported";
 
 static bool is_path_exist(const std::string &s) {
   struct stat buffer;
@@ -228,8 +230,13 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
         }
         updateMessage(component.message, std::string(diagnostic_task_infos.at(deviceId)->componentList[result->targetType].message));
     } else {
+        int pos = 0;
         for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX; index++) {
-            xpum_diag_component_info_t &component = result->componentList[index];
+            if (strncmp(diagnostic_task_infos.at(deviceId)->componentList[index].message, COMPONENT_TYPE_NOT_SUPPORTED.c_str(), COMPONENT_TYPE_NOT_SUPPORTED.size()) == 0) {
+                result->count -= 1;
+                continue;
+            }
+            xpum_diag_component_info_t &component = result->componentList[pos];
             component.type = diagnostic_task_infos.at(deviceId)->componentList[index].type;
             component.finished = diagnostic_task_infos.at(deviceId)->componentList[index].finished;
             component.result = diagnostic_task_infos.at(deviceId)->componentList[index].result;
@@ -238,6 +245,7 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
                 result->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
             }
             updateMessage(component.message, std::string(diagnostic_task_infos.at(deviceId)->componentList[index].message));
+            pos += 1;
         }
     }
     if (result->finished && result->result == xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN) {
@@ -593,7 +601,7 @@ void DiagnosticManager::doDeviceSpecificDiagnosticCore(const ze_device_handle_t 
     p_task_info->endTime = Utility::getCurrentMillisecond();
     p_task_info->finished = true;
     if (!find_error) {
-        updateMessage(p_task_info->message, std::string("All diagnostics done"));
+        updateMessage(p_task_info->message, std::string("specific diagnostics done"));
     } else {
         for (int index = xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_ENV_VARIABLES; index < xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX; index++) {
             xpum_diag_component_info_t &component = p_task_info->componentList[index];
@@ -882,6 +890,12 @@ void DiagnosticManager::doDeviceDiagnosticMediaCodec(const zes_device_handle_t &
                                                     std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas) {
     xpum_diag_component_info_t &component = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_MEDIA_CODEC];
     p_task_info->count += 1;
+    if (!Utility::isATSMPlatform(device)) {
+        component.result = XPUM_DIAG_RESULT_FAIL;
+        component.finished = true;
+        updateMessage(component.message, COMPONENT_TYPE_NOT_SUPPORTED);
+        return;
+    }
     updateMessage(component.message, std::string("Running"));
     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
 
