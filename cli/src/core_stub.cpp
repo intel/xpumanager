@@ -566,7 +566,7 @@ static void doPreCheck(bool onlyGPU) {
     }
 
     if (gpu_bdfs.empty()) {
-        std::string cmd = "lspci | grep 'Display controller: Intel Corporation Device' | cut -d ' ' -f 1";
+        std::string cmd = "lspci|grep -i Display|grep -i Intel|cut -d ' ' -f 1";
         FILE* f = popen(cmd.c_str(), "r");
         char c_line[1024];
         int gpu_id = 0;
