@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (C) 2021-2022 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file utility.cpp
@@ -29,7 +29,7 @@ bool isInteger(const std::string &str) {
 bool isValidDeviceId(const std::string &str) {
     if (!isNumber(str)) {
         return false;
-    }        
+    }
 
     int value;
     try {
@@ -40,7 +40,25 @@ bool isValidDeviceId(const std::string &str) {
     if (value < 0) {
         return false;
     }
-    
+
+    return true;
+}
+
+bool isValidTileId(const std::string &str) {
+    if (!isNumber(str)) {
+        return false;
+    }
+
+    int value;
+    try {
+        value = std::stoi(str);
+    } catch (const std::out_of_range &oor) {
+        return false;
+    }
+    if (value < 0 || value > 1) {
+        return false;
+    }
+
     return true;
 }
 
