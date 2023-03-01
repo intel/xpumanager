@@ -301,6 +301,9 @@ void DiagnosticManager::doDeviceDiagnosticExceptionHandle(xpum_diag_task_type_t 
         case XPUM_DIAG_SOFTWARE_EXCLUSIVE:
             type_str = "XPUM_DIAG_SOFTWARE_EXCLUSIVE";
             break;
+        case XPUM_DIAG_COMPUTATION:
+            type_str = "XPUM_DIAG_COMPUTATION";
+            break;
         case XPUM_DIAG_HARDWARE_SYSMAN:
             type_str = "XPUM_DIAG_HARDWARE_SYSMAN";
             break;
@@ -374,7 +377,7 @@ void DiagnosticManager::doDeviceDiagnosticCore(const ze_device_handle_t &ze_devi
             try {
                 doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info, true);
             } catch (BaseException &e) {
-                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_COMPUTATION, e.what(), p_task_info);
             }
         }
 
@@ -514,7 +517,7 @@ void DiagnosticManager::doDeviceSpecificDiagnosticCore(const ze_device_handle_t 
             try {
                 doDeviceDiagnosticPeformanceComputation(ze_device, ze_driver, p_task_info, true);
             } catch (BaseException &e) {
-                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_PERFORMANCE_COMPUTATION, e.what(), p_task_info);
+                doDeviceDiagnosticExceptionHandle(XPUM_DIAG_COMPUTATION, e.what(), p_task_info);
             }
        }
 
@@ -1969,6 +1972,9 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceComputation(const ze_device_
 
                 uint64_t max_number_of_allocated_items = device_properties.maxMemAllocSize / sizeof(float);
                 uint64_t number_of_work_items = std::min(max_number_of_allocated_items, (max_work_items * sizeof(float)));
+                if (checkOnly) {
+                    number_of_work_items = 10000;
+                }
                 number_of_work_items = setWorkgroups(device_compute_properties, number_of_work_items, &workgroup_info);
 
                 void *device_input_value;
