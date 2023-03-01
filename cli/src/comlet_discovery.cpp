@@ -67,6 +67,7 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "Serial Number", "value": "serial_number", "dumpId": 5 },
                 { "label": "Core Clock Rate", "value": "core_clock_rate_mhz", "suffix": " MHz", "dumpId": 6 },
                 { "label": "Stepping", "value": "device_stepping", "dumpId": 7 },
+                { "label": "SKU Type", "value": "sku_type"},
                 { "rowTitle": " " },
                 { "label": "Driver Version", "value": "driver_version", "dumpId": 8 },
                 { "label": "Kernel Version", "value": "kernel_version" },

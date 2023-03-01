@@ -33,6 +33,7 @@
 #include "device/performancefactor.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
+#include "device/skuType.h"
 #include "gpu_device.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_property.h"
@@ -1146,6 +1147,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES, std::to_string(media_engine_count)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES, std::to_string(meida_enhancement_engine_count)));
                 addPCIeProperties(device, p_gpu);
+
+                toSetMeiDevicePath(p_gpu);
+                std::string sku_type = pchProdStateToSkuType(getDevicePchProdStateType(p_gpu->getMeiDevicePath()));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
 
                 p_devices->push_back(p_gpu);
             }

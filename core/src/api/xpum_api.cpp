@@ -134,6 +134,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "MEMORY_ECC_STATE";
         case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS:
             return "GFX_FIRMWARE_STATUS";
+        case XPUM_DEVICE_PROPERTY_SKU_TYPE:
+            return "SKU_TYPE";
         default:
             return "";
     }
@@ -775,6 +777,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_RX_LANES_NUMBER;
         case XPUM_DEVICE_PROPERTY_LINUX_KERNEL_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION;
+        case XPUM_DEVICE_PROPERTY_SKU_TYPE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE;
         default:
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX;
     }

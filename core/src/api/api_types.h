@@ -187,6 +187,7 @@ typedef enum xpum_device_internal_property_name_enum {
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_MAX_TX_SPEED,       ///< Maximum speed supported by the transmit side of the port (sum of all lanes)
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_RX_LANES_NUMBER,    ///< The number of lanes per the receive side of the port
     XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_TX_LANES_NUMBER,    ///< The number of lanes per the transmit side of the port
+    XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE,                       ///< The type of SKU
     XPUM_DEVICE_PROPERTY_INTERNAL_MAX
 } xpum_device_internal_property_name_t;
 
