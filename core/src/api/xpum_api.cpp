@@ -1735,7 +1735,7 @@ xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t le
         return res;
     }
 
-    return Core::instance().getDiagnosticManager()->runDiagnostics(deviceId, level);
+    return Core::instance().getDiagnosticManager()->runLevelDiagnostics(deviceId, level);
 }
 
 xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level) {
@@ -1757,7 +1757,7 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
     }
 
     for (int i = 0; i < xpum_group_info.count; i++) {
-        ret = Core::instance().getDiagnosticManager()->runDiagnostics(xpum_group_info.deviceList[i], level);
+        ret = Core::instance().getDiagnosticManager()->runLevelDiagnostics(xpum_group_info.deviceList[i], level);
         if (ret != XPUM_OK)
             return ret;
     }
@@ -1765,16 +1765,16 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
     return ret;
 }
 
-xpum_result_t xpumRunSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t type) {
+xpum_result_t xpumRunMultipleSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t types[], int count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
     }
 
-    return Core::instance().getDiagnosticManager()->runSpecificDiagnostics(deviceId, type);
+    return Core::instance().getDiagnosticManager()->runMultipleSpecificDiagnostics(deviceId, types, count);
 }
 
-xpum_result_t xpumRunSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_task_type_t type) {
+xpum_result_t xpumRunMultipleSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_task_type_t types[], int count) {
     xpum_result_t ret = Core::instance().apiAccessPreCheck();
     if (ret != XPUM_OK) {
         return ret;
@@ -1793,7 +1793,7 @@ xpum_result_t xpumRunSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_di
     }
 
     for (int i = 0; i < xpum_group_info.count; i++) {
-        ret = Core::instance().getDiagnosticManager()->runSpecificDiagnostics(xpum_group_info.deviceList[i], type);
+        ret = Core::instance().getDiagnosticManager()->runMultipleSpecificDiagnostics(xpum_group_info.deviceList[i], types, count);
         if (ret != XPUM_OK)
             return ret;
     }

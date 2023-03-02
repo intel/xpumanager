@@ -9,6 +9,7 @@
 #include <climits>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <vector>
 
 #include "comlet_base.h"
 
@@ -20,7 +21,7 @@ struct ComletDiagnosticOptions {
     uint32_t groupId = UINT_MAX;
 #endif
     int level = INT_MIN;
-    int singleTestId = INT_MIN;
+    std::vector<int> singleTestIdList;
     bool rawJson = true;
     bool preCheck = false;
     bool onlyGPU = false;

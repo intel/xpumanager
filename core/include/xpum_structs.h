@@ -448,6 +448,8 @@ typedef struct xpum_diag_task_info_t {
     int count;
     uint64_t startTime;
     uint64_t endTime;
+    xpum_diag_task_type_t targetTypes[XPUM_DIAG_TASK_TYPE_MAX];
+    int targetTypeCount;
 } xpum_diag_task_info_t;
 
 typedef enum xpum_media_format_enum {

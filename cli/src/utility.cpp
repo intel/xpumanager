@@ -88,5 +88,18 @@ std::string add_two_hex_string(std::string str1, std::string str2) {
     return to_hex_string(u1 + u2);
 }
 
+std::string toString(const std::vector<int> vec) {
+    if (vec.empty()) {
+        return "";
+    }
+    std::stringstream ss;
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (i != 0) {
+            ss << ", ";
+        }
+        ss << vec[i];
+    }
+    return ss.str();
+}
 
 }// end namespace xpum::cli

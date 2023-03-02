@@ -123,14 +123,14 @@ message RunDiagnosticsByGroupRequest{
     uint32 level = 2;
 }
 
-message RunSpecificDiagnosticsRequest{
+message RunMultipleSpecificDiagnosticsRequest{
     uint32 deviceId = 1;
-    uint32 type = 2;
+    repeated uint32 types = 2;
 }
 
-message RunSpecificDiagnosticsByGroupRequest{
+message RunMultipleSpecificDiagnosticsByGroupRequest{
     uint32 groupId = 1;
-    uint32 type = 2;
+    repeated uint32 types = 2;
 }
 
 message RunStressRequest {
@@ -975,8 +975,8 @@ service XpumCoreService {
     rpc getAllGroups( google.protobuf.Empty ) returns ( GroupArray );
     rpc runDiagnostics( RunDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
     rpc runDiagnosticsByGroup( RunDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
-    rpc runSpecificDiagnostics( RunSpecificDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
-    rpc runSpecificDiagnosticsByGroup( RunSpecificDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
+    rpc runMultipleSpecificDiagnostics( RunMultipleSpecificDiagnosticsRequest ) returns ( DiagnosticsTaskInfo );
+    rpc runMultipleSpecificDiagnosticsByGroup( RunMultipleSpecificDiagnosticsByGroupRequest ) returns ( DiagnosticsGroupTaskInfo );
     rpc runStress( RunStressRequest ) returns ( DiagnosticsTaskInfo );
     rpc getDiagnosticsResult ( DeviceId ) returns ( DiagnosticsTaskInfo );
     rpc getDiagnosticsMediaCodecResult ( DeviceId ) returns ( DiagnosticsMediaCodecInfoArray );

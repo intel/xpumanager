@@ -26,6 +26,6 @@ std::string to_hex_string(uint64_t val, int width = 0);
 
 std::string add_two_hex_string(std::string str1, std::string str2);
 
-
+std::string toString(const std::vector<int> vec);
 
 } // end namespace xpum::cli

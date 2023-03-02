@@ -309,14 +309,18 @@ static std::string diagnosticsMediaCodecFormatEnumToString(xpum_media_format_t f
     return ret;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnostics(int deviceId, int level, int targetType, bool rawComponentTypeStr) {
+std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnostics(int deviceId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_result_t res;
     if (level > 0)
         res = xpumRunDiagnostics(deviceId, static_cast<xpum_diag_level_t>(level));
-    else if (targetType >= 0)
-        res = xpumRunSpecificDiagnostics(deviceId, static_cast<xpum_diag_task_type_t>(targetType));
-    else
+    else if (targetTypes.size() > 0) {
+        int count = targetTypes.size();
+        xpum_diag_task_type_t types[count];
+        for (int i = 0; i < count; i++)
+            types[i] = static_cast<xpum_diag_task_type_t>(targetTypes[i]);
+        res = xpumRunMultipleSpecificDiagnostics(deviceId, types, count);
+    } else
         res = XPUM_GENERIC_ERROR;
     if (res != XPUM_OK) {
         switch (res) {
@@ -504,7 +508,7 @@ std::shared_ptr<nlohmann::json> LibCoreStub::getDiagnosticsMediaCodecResult(int 
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnosticsByGroup(uint32_t groupId, int level, int targetType, bool rawComponentTypeStr) {
+std::unique_ptr<nlohmann::json> LibCoreStub::runDiagnosticsByGroup(uint32_t groupId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     return json;
 }
