@@ -347,8 +347,8 @@ xpumcli.exe dump -h
 Dump device statistics data.
 
 Usage: xpumcli dump [Options]
-  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
-  xpumcli dump -d [deviceId] -t [deviceTileId] -m [metricsIds] --file [filename]
+  xpumcli dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
+  xpumcli dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] --file [filename]
 
 Options:
   -h,--help                   Print this help message and exit

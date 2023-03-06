@@ -144,15 +144,15 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
     } else if (app->get_name().compare("dump") == 0) {
 #ifndef DAEMONLESS
         return "\nUsage: " + appName + " dump [Options]\n"
-               "  " + appName + " dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
+               "  " + appName + " dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
                "\n"
                "  " + appName + " dump --rawdata --start -d [deviceId] -t [deviceTileId] -m [metricsIds]\n"
                "  " + appName + " dump --rawdata --list\n"
                "  " + appName + " dump --rawdata --stop [taskId]\n";
 #else
         return "\nUsage: " + appName + " dump [Options]\n"
-               "  " + appName + " dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
-               "  " + appName + " dump -d [pciBdfAddress] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n";
+               "  " + appName + " dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
+               "  " + appName + " dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n";
 #endif
     } else if (app->get_name().compare("stats") == 0) {
 #ifndef DAEMONLESS
