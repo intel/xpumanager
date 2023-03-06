@@ -1666,4 +1666,24 @@ std::unique_ptr<nlohmann::json> LibCoreStub::genDebugLog(const std::string &file
     return json;
 }
 
+
+std::string LibCoreStub::getPciSlotName(std::vector<std::string> &bdfs) {
+    uint32_t sizePciPath = bdfs.size();
+    char *pciPath[sizePciPath];
+    uint32_t sizeName = 2048;
+    char name[sizeName];
+
+    for (uint32_t i = 0; i < sizePciPath; i++) {
+        pciPath[i] = (char *)bdfs[i].c_str();
+    }
+
+    xpum_result_t res = ::getPciSlotName(
+            pciPath, sizePciPath, name, sizeName);
+    if (res == XPUM_OK) {
+        return std::string(name);
+    } else {
+        return "";
+    }
+}
+
 } // end namespace xpum::cli

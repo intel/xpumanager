@@ -35,6 +35,8 @@ class ComletDiscovery : public ComletBase {
 
     virtual void getTableResult(std::ostream &out) override;
 
+    void checkBadDevices(nlohmann::json &deviceJsonList);
+
     inline bool isDeviceList() {
         return opts->deviceId == "-1";
     }

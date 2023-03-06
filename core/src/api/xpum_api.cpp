@@ -3259,4 +3259,19 @@ xpum_result_t xpumGenerateDebugLog(const char *fileName) {
     }
 }
 
+xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath, 
+        char *slotName, uint32_t sizeSlotName) {
+    std::vector<std::string> pciPathVec;
+    for (uint32_t i = 0; i < sizePciPath; i++) {
+        pciPathVec.push_back(std::string(pciPath[i]));
+    }
+    std::string ret = GPUDeviceStub::getPciSlotByPath(pciPathVec);
+    if (ret.length() > 0 && ret.length() < sizeSlotName) {
+        strncpy(slotName, ret.c_str(), sizeSlotName);
+        return XPUM_OK;
+    } else {
+        return XPUM_GENERIC_ERROR;
+    }
+}
+
 } // end namespace xpum

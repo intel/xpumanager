@@ -129,6 +129,8 @@ class CoreStub {
 
     virtual std::vector<std::unique_ptr<nlohmann::json>> getMetricsFromSysfs(std::vector<std::string> bdfs)=0;
 
+    virtual std::string getPciSlotName(std::vector<std::string> &bdfs)=0;
+
     std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson);
 
    protected:

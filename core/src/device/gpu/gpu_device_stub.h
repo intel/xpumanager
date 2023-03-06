@@ -180,9 +180,10 @@ class GPUDeviceStub {
 
     static std::shared_ptr<MeasurementData> loadPVCIdlePowers(std::string bdf = "", bool fresh = true, int index = 0);
 
-   private:
-    GPUDeviceStub();
+    static std::string getPciSlotByPath(std::vector<std::string> pciPath); 
 
+private: 
+    GPUDeviceStub(); 
     ~GPUDeviceStub();
 
     GPUDeviceStub& operator=(const GPUDeviceStub&) = delete;

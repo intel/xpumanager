@@ -126,6 +126,10 @@ class GrpcCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime);
     std::unique_ptr<nlohmann::json> checkStress(int deviceId);
+    
+    std::string getPciSlotName(std::vector<std::string> &bdfs) {
+        return "";
+    }
 
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;

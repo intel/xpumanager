@@ -242,7 +242,7 @@ void ComletDiscovery::setupOptions() {
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
 }
 
-static void checkBadDevices(nlohmann::json &deviceJsonList) {
+void ComletDiscovery::checkBadDevices(nlohmann::json &deviceJsonList) {
     std::vector<std::string> list;
     if (getBdfListFromLspci(list) == false) {
         return;
@@ -268,6 +268,17 @@ static void checkBadDevices(nlohmann::json &deviceJsonList) {
                 deviceJson["gfx_firmware_version"] = fwVer.gfx_fw_version;
                 deviceJson["gfx_data_firmware_version"] = 
                     fwVer.gfx_data_fw_version;
+            }
+            std::string name;
+            if (getPciName(name, bdf) == true) {
+                deviceJson["device_name"] = name;
+            }
+            std::vector<std::string> pciPath;
+            if (getPciPath(pciPath, bdf) == true) {
+                name = this->coreStub->getPciSlotName(pciPath);
+                if (name.length() > 0) {
+                    deviceJson["pci_slot"] = name;
+                }
             }
             deviceJsonList.push_back(deviceJson);
         }

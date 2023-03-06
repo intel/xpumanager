@@ -505,6 +505,7 @@ class DMISystemSlot {
     }
 };
 
+
 static const std::string SYSTEM_SLOT_MARKER("System Slot Information");
 static std::vector<DMISystemSlot> getSystemSlotBlocks(const std::string& ssInfos) {
     std::vector<DMISystemSlot> res;
@@ -4469,6 +4470,20 @@ void GPUDeviceStub::readPerfMetricsData(std::shared_ptr<std::map<uint32_t, std::
         metric_group_data.name = it->second->group_name;
         p_metric_device_data->data.emplace_back(metric_group_data);
     }
+}
+
+std::string GPUDeviceStub::getPciSlotByPath(std::vector<std::string> pciPath) {
+    std::string ret;
+    SystemCommandResult res = execCommand("dmidecode -t 9 2>/dev/null");
+    std::vector<DMISystemSlot> slots = getSystemSlotBlocks(res.output());
+    for (auto &slot : slots) {
+        for (auto &node : pciPath) {
+            if (slot.inUse() && slot.busAddress() == node) {
+                return slot.name();
+            }
+        }
+    } 
+    return ret;
 }
 
 } // end namespace xpum

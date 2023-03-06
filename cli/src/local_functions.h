@@ -97,6 +97,8 @@ struct FirmwareVersion {
 
 bool getFirmwareVersion(FirmwareVersion& firmware_version, std::string bdf);  
 bool getBdfListFromLspci(std::vector<std::string> &list);
+bool getPciName(std::string &pciName, const std::string &bdf);
+bool getPciPath(std::vector<std::string> &pciPath, const std::string &bdf);
 
 }
 
