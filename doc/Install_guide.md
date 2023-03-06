@@ -143,3 +143,6 @@ sudo make install
 
 curl --version
 ```
+
+## XPU Manager Windows CLI tool
+The Windows GPU driver version should be 31.0.101.3902 or newer. 
