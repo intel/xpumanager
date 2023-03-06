@@ -522,7 +522,7 @@ Dump device statistics data.
 Usage: xpumcli dump [Options]
   xpumcli dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
   
-  xpumcli dump --rawdata --start -d [deviceIds] -t [deviceTileId] -m [metricsIds] 
+  xpumcli dump --rawdata --start -d [deviceId] -t [deviceTileId] -m [metricsIds] 
   xpumcli dump --rawdata --list
   xpumcli dump --rawdata --stop [taskId]
 
