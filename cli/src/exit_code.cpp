@@ -1,3 +1,9 @@
+/*
+ *  Copyright (C) 2021-2023 Intel Corporation
+ *  SPDX-License-Identifier: MIT
+ *  @file exit_code.cpp
+ */
+
 #include "exit_code.h"
 
 #include "xpum_structs.h"
