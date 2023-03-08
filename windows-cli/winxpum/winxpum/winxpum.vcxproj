@@ -120,6 +120,7 @@
     <ClCompile Include="help_formatter.cpp" />
     <ClCompile Include="igsc_manager.cpp" />
     <ClCompile Include="pretty_table.cpp" />
+    <ClCompile Include="win_native.cpp" />
     <ClCompile Include="xpumcli.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -138,6 +139,7 @@
     <ClInclude Include="igsc_manager.h" />
     <ClInclude Include="pretty_table.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="win_native.h" />
     <ClInclude Include="xpum_structs.h" />
     <ClInclude Include="ze_log.h" />
   </ItemGroup>

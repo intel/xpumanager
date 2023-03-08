@@ -57,6 +57,9 @@
     <ClCompile Include="comlet_firmware.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="win_native.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ze_log.h">
@@ -108,6 +111,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="comlet_firmware.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="win_native.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
