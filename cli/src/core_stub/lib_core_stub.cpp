@@ -1065,7 +1065,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceStandby(int deviceId, int 
                 (*json)["error"] = "Level Zero Initialization Error";
                 break;
             default:
-                (*json)["error"] = "Error";
+                (*json)["error"] = "Access denied due to permission level or operation unsupported.";
                 break;
         }
         (*json)["errno"] = errorNumTranslate(res);
