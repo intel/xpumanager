@@ -131,6 +131,8 @@ CoreStub::CoreStub() {
             }
         }
     }
+    p_amc_manager = std::make_shared<IpmiAmcManager>();
+    auto ipmi_enabled = p_amc_manager->preInit();
 }
 
 CoreStub::~CoreStub() {
@@ -361,6 +363,25 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     if (meida_enhancement_engine_count > 0)
         (*deviceJson)["number_of_media_enh_engines"] = meida_enhancement_engine_count;
     return deviceJson;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions(std::string username, std::string password) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    //p_amc_manager = std::make_shared<IpmiAmcManager>();
+    auto ipmi_enabled = p_amc_manager->preInit();
+    GetAmcFirmwareVersionsParam param;
+    param.username = "";
+    param.password = "";
+    p_amc_manager->getAmcFirmwareVersions(param);
+    if (param.errCode != XPUM_OK) {
+        (*json)["error"] = "Fail to get AMC firmware version";
+        return json;
+    }    
+    for (auto version : param.versions) {
+        (*json)["amc_fw_version"].push_back(std::string(version));
+    }
+    return json;
 }
 
 static std::string eccStateToString(uint8_t state) {
@@ -1104,7 +1125,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
 
 std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+    if (deviceId < 0 || (deviceId >= ze_device_handles.size() && deviceId != XPUM_DEVICE_ID_ALL_DEVICES)) {
         (*json)["error"] = "invalid device id";
         return json;
     }
@@ -1115,6 +1136,24 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
                             [invalidChars](unsigned char ch) { return invalidChars.find(ch) != invalidChars.npos; });
     if (itr != filePath.end()) {
         (*json)["error"] = "Illegal firmware image filename. Image filename should not contain following characters: {}()><&*'|=?;[]$-#~!\"%:+,`";
+        return json;
+    }
+    //p_amc_manager = std::make_shared<IpmiAmcManager>();
+    FlashAmcFirmwareParam param;
+    if (type == XPUM_DEVICE_FIRMWARE_AMC) {
+        // auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+        auto ipmi_enabled = p_amc_manager->preInit();
+        param.file = filePath;
+        param.username = "";
+        param.password = "";
+        param.callback = [this]() {
+            // unlock all device when update finish
+            // std::vector<std::shared_ptr<Device>> allDevices;
+            // Core::instance().getDeviceManager()->getDeviceList(allDevices);
+            // Core::instance().getDeviceManager()->unlockDevices(allDevices);
+        };
+        p_amc_manager->flashAMCFirmware(param);
+        (*json)["result"] = "OK";
         return json;
     }
     auto deviceList = getSiblingDevices(deviceId);
@@ -1138,8 +1177,10 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
             int res = 0;
             if (type == XPUM_DEVICE_FIRMWARE_GFX)
                 res = igsc_instance.runFlashGSC(bdf, image_file);
-            else
+            else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
                 res = igsc_instance.runFlashGSCData(bdf, image_file);
+            }
+
             if (res == 0)
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
             else
@@ -1153,9 +1194,29 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
 
 std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, unsigned int type) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+    if (deviceId < 0 || (deviceId >= ze_device_handles.size() && deviceId != XPUM_DEVICE_ID_ALL_DEVICES)) {
         (*json)["error"] = "invalid device id";
         return json;
+    }
+    if (type == XPUM_DEVICE_FIRMWARE_AMC) {
+        //p_amc_manager = std::make_shared<IpmiAmcManager>();
+        auto ipmi_enabled = p_amc_manager->preInit();
+        GetAmcFirmwareFlashResultParam param;
+        p_amc_manager->getAMCFirmwareFlashResult(param);
+
+        if (param.result.result == XPUM_DEVICE_FIRMWARE_FLASH_ONGOING) {
+            (*json)["result"] = "ONGOING";
+            (*json)["percentage"] = param.result.percentage;
+            return json;
+        }
+        if (param.result.result == XPUM_DEVICE_FIRMWARE_FLASH_ERROR || param.result.type == XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED) {
+            (*json)["result"] = "FAILED";
+            return json;
+        }
+        if (param.result.result == XPUM_DEVICE_FIRMWARE_FLASH_OK) {
+            (*json)["result"] = "OK";
+            return json;
+        }
     }
     for (int i = 0; i < flash_results.size(); i++) {
         std::future_status status = flash_results[i].wait_for(std::chrono::milliseconds(0));

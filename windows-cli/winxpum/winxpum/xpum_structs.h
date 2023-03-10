@@ -109,6 +109,7 @@ namespace xpum {
             XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE,
             XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GSC_ALL,
             XPUM_UPDATE_FIRMWARE_MODEL_INCONSISTENCE,
+            XPUM_UPDATE_FIRMWARE_TASK_RUNNING,
             XPUM_RESULT_DUMP_METRICS_TYPE_NOT_SUPPORT
         } xpum_result_t;
 
@@ -319,6 +320,7 @@ namespace xpum {
             xpum_firmware_flash_result_t result;   ///< Which state the firmware flash job is in
             char description[XPUM_MAX_STR_LENGTH]; ///< The description of this result
             char version[XPUM_MAX_STR_LENGTH];     ///< Current firmware version
+            int percentage;
         } xpum_firmware_flash_task_result_t;
 
         /**************************************************************************/
@@ -690,7 +692,7 @@ namespace xpum {
                 char localCPUs[XPUM_MAX_CPU_S_LEN]; ///< CPU affinity, local CPUs
             } cpuAffinity;
             int switchCount;   ///< the count of parent switch
-            parent_switch switches[]; ///< device path of parent switch
+    parent_switch switches[511]; ///< device path of parent switch
         } xpum_topology_t;
 
         typedef enum xpum_ras_type_enum {
@@ -778,6 +780,15 @@ namespace xpum {
             uint64_t beginTime;                                ///< The begin time of the task
             char dumpFilePath[XPUM_MAX_STR_LENGTH];            ///< The dump file path
         } xpum_dump_raw_data_task_t;
+
+typedef struct {
+    int amcIndex;                         ///< Device index
+    double value;                         ///< Sensor reading value
+    double sensorLow;                      ///< Sensor low bound
+    double sensorHigh;                    ///< Sensor high bound
+    char sensorName[XPUM_MAX_STR_LENGTH]; ///< Sensor name
+    char sensorUnit[XPUM_MAX_STR_LENGTH]; ///< Sensor reading unit
+} xpum_sensor_reading_t;
 
 #if defined(__cplusplus)
     } // extern "C"

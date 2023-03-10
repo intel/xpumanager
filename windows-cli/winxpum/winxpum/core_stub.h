@@ -22,6 +22,8 @@
 #include <zes_api.h>
 #include "xpum_structs.h"
 #include "igsc_manager.h"
+#include "amc/amc_manager.h"
+#include "amc/ipmi_amc_manager.h"
 using namespace xpum;
 
 class CoreStub {
@@ -35,6 +37,8 @@ public:
     std::unique_ptr<nlohmann::json> getDeviceList();
 
     std::unique_ptr<nlohmann::json> getDeviceProperties(int deviceId);
+
+    std::unique_ptr<nlohmann::json> getAMCFirmwareVersions(std::string username, std::string password);
 
     std::unique_ptr<nlohmann::json> getDeviceConfig(int deviceId, int tileId);
 
@@ -91,5 +95,7 @@ private:
     std::unordered_map<int, std::set<int>> sibling_devices;
 
     std::vector<std::future<xpum_firmware_flash_result_t>> flash_results;
+
+    std::shared_ptr<AmcManager> p_amc_manager;
 };
 

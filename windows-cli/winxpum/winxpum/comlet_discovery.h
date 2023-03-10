@@ -15,6 +15,9 @@
 struct ComletDiscoveryOptions {
     int deviceId = -1;
     int a = 0;
+    bool listamcversions = false;
+    std::string username = "";
+    std::string password = "";
 };
 
 class ComletDiscovery : public ComletBase {
