@@ -138,10 +138,13 @@ uint32_t getDevicePchProdStateType(std::string meiPath)
 
     status = teeWriteAndReadMsg(&cl, req, request_len, resp, response_len, 
                                 write_len, read_len, received_len);
-    if (status != TEE_SUCCESS)
+    if (status != TEE_SUCCESS){
+        TeeDisconnect(&cl);
         return pchProdState;
+    }
 
     status = validMkhiGetPchInfoMsg(resp, received_len, response_len, req->mkhi_header.command);
+    TeeDisconnect(&cl);
     if (status != TEE_SUCCESS)
         return pchProdState;
 
