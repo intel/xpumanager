@@ -139,9 +139,13 @@ grpc::Status XpumCoreServiceImpl::getDeviceIdByBDF(grpc::ServerContext* context,
 static std::string getAmcFwErrMsg() {
     // get error message
     int count = 0;
-    xpumGetAMCFirmwareVersionsErrorMsg(nullptr, &count);
+    auto res = xpumGetAMCFirmwareVersionsErrorMsg(nullptr, &count);
+    if (res != XPUM_OK)
+        return "";
     char buffer[count];
-    xpumGetAMCFirmwareVersionsErrorMsg(buffer, &count);
+    res = xpumGetAMCFirmwareVersionsErrorMsg(buffer, &count);
+    if (res != XPUM_OK)
+        return "";
     return std::string(buffer);
 }
 

@@ -147,6 +147,7 @@ typedef enum xpum_result_enum {
     XPUM_INTERVAL_INVALID,
     XPUM_RESULT_FILE_DUP,
     XPUM_RESULT_INVALID_DIR,
+    XPUM_RESULT_FW_MGMT_NOT_INIT, ///< The firmware management feature is not initialized
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

@@ -100,6 +100,8 @@ int errorNumTranslate(int coreErrNo) {
             return XPUM_CLI_ERROR_MEMORY_ECC_LIB_NOT_SUPPORT;
         case XPUM_RESULT_FILE_DUP:
             return XPUM_CLI_ERROR_BAD_ARGUMENT;
+        case XPUM_RESULT_FW_MGMT_NOT_INIT:
+            return XPUM_CLI_ERROR_FW_MGMT_NOT_INIT;
         default:
             return XPUM_CLI_ERROR_GENERIC_ERROR;
     }
