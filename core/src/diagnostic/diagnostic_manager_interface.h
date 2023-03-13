@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file diagnostic_manager_interface.h
  */
@@ -19,9 +19,9 @@ class DiagnosticManagerInterface : public InitCloseInterface {
    public:
     virtual ~DiagnosticManagerInterface() {}
 
-    virtual xpum_result_t runDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) = 0;
+    virtual xpum_result_t runLevelDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) = 0;
 
-    virtual xpum_result_t runSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t type) = 0;
+    virtual xpum_result_t runMultipleSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t types[], int count) = 0;
 
     virtual bool isDiagnosticsRunning(xpum_device_id_t deviceId) = 0;
 

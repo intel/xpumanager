@@ -1,5 +1,5 @@
-/* 
- *  Copyright (C) 2021-2022 Intel Corporation
+/*
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file utility.cpp
  */
@@ -29,7 +29,7 @@ bool isInteger(const std::string &str) {
 bool isValidDeviceId(const std::string &str) {
     if (!isNumber(str)) {
         return false;
-    }        
+    }
 
     int value;
     try {
@@ -40,7 +40,25 @@ bool isValidDeviceId(const std::string &str) {
     if (value < 0) {
         return false;
     }
-    
+
+    return true;
+}
+
+bool isValidTileId(const std::string &str) {
+    if (!isNumber(str)) {
+        return false;
+    }
+
+    int value;
+    try {
+        value = std::stoi(str);
+    } catch (const std::out_of_range &oor) {
+        return false;
+    }
+    if (value < 0 || value > 1) {
+        return false;
+    }
+
     return true;
 }
 
@@ -70,5 +88,18 @@ std::string add_two_hex_string(std::string str1, std::string str2) {
     return to_hex_string(u1 + u2);
 }
 
+std::string toString(const std::vector<int> vec) {
+    if (vec.empty()) {
+        return "";
+    }
+    std::stringstream ss;
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (i != 0) {
+            ss << ", ";
+        }
+        ss << vec[i];
+    }
+    return ss.str();
+}
 
 }// end namespace xpum::cli

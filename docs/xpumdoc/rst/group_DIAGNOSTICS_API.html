@@ -111,9 +111,10 @@
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="n">level</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunSpecificDiagnostics<span></span><span class="p">(</span>
+<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunMultipleSpecificDiagnostics<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">type</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">types</span><span class="p">[],</span>
+    <span class="kt">int</span> <span class="n">count</span>
     <span class="p">);</span>
 
 <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunDiagnosticsByGroup<span></span><span class="p">(</span>
@@ -121,9 +122,10 @@
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a64d470dfe41ec82ac2b50536184f9ce5"><span class="std std-ref">xpum_diag_level_t</span></a><span></span> <span class="n">level</span>
     <span class="p">);</span>
 
-<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunSpecificDiagnosticsByGroup<span></span><span class="p">(</span>
+<a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumRunMultipleSpecificDiagnosticsByGroup<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">type</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">types</span><span class="p">[],</span>
+    <span class="kt">int</span> <span class="n">count</span>
     <span class="p">);</span>
 
 <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDiagnosticsResult<span></span><span class="p">(</span>
@@ -178,11 +180,12 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1gaec34e19e7d99be7385adc2b55a9d1be6"><span id="index-2"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunSpecificDiagnostics</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1ga1194b5ba0f4155716cd4eee534e568b1"><span id="index-2"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunMultipleSpecificDiagnostics</span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">type</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">types</span><span class="p">[],</span>
+    <span class="kt">int</span> <span class="n">count</span>
     <span class="p">)</span></pre>
-<p>Run specific diagnostics on single device This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#xpum-doxid-group-diagnostics-api-1ga56a9d6b80e23dc7ba72cbd5f67bbd28a"><span class="std std-ref">xpumGetDiagnosticsResult</span></a>.</p>
+<p>Run multiple specific diagnostics on single device This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#xpum-doxid-group-diagnostics-api-1ga56a9d6b80e23dc7ba72cbd5f67bbd28a"><span class="std std-ref">xpumGetDiagnosticsResult</span></a>.</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -193,8 +196,11 @@
 <tr class="row-odd"><td><p>deviceId</p></td>
 <td><p>IN: Device id</p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
-<td><p>IN: The diagnostics type to run</p></td>
+<tr class="row-even"><td><p>types</p></td>
+<td><p>IN: The array to store diagnostics type</p></td>
+</tr>
+<tr class="row-odd"><td><p>count</p></td>
+<td><p>IN: The count of types</p></td>
 </tr>
 </tbody>
 </table>
@@ -222,11 +228,12 @@
 </table>
 <p class="rubric">Returns:</p>
 <p>xpum_result_t</p>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1ga571bfdddb439ff8f27d6e8df2210f470"><span id="index-4"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunSpecificDiagnosticsByGroup</span><span class="p">(</span>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-diagnostics-api-1gaf721dc84636ad2afbe136e2f79c62902"><span id="index-4"></span><a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumRunMultipleSpecificDiagnosticsByGroup</span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0a4b1e8aa0bca3f1f46db4a2b08d313e"><span class="std std-ref">xpum_group_id_t</span></a><span></span> <span class="n">groupId</span><span class="p">,</span>
-    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">type</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1af7b5de6d4546fd0a6b73a98de6820d5c"><span class="std std-ref">xpum_diag_task_type_t</span></a><span></span> <span class="n">types</span><span class="p">[],</span>
+    <span class="kt">int</span> <span class="n">count</span>
     <span class="p">)</span></pre>
-<p>Run specific diagnostics on a group of devices This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#xpum-doxid-group-diagnostics-api-1ga9759f43112a96ee1338f05193b6d1d60"><span class="std std-ref">xpumGetDiagnosticsResultByGroup</span></a>.</p>
+<p>Run multiple specific diagnostics on a group of devices This function will return immediately. To get detailed information about diagnostics task, call <a class="reference internal" href="#xpum-doxid-group-diagnostics-api-1ga9759f43112a96ee1338f05193b6d1d60"><span class="std std-ref">xpumGetDiagnosticsResultByGroup</span></a>.</p>
 <p class="rubric">Parameters:</p>
 <table class="colwidths-given docutils align-default">
 <colgroup>
@@ -237,8 +244,11 @@
 <tr class="row-odd"><td><p>groupId</p></td>
 <td><p>IN: Group id</p></td>
 </tr>
-<tr class="row-even"><td><p>type</p></td>
-<td><p>IN: The diagnostics type to run</p></td>
+<tr class="row-even"><td><p>types</p></td>
+<td><p>IN: The array to store diagnostics type</p></td>
+</tr>
+<tr class="row-odd"><td><p>count</p></td>
+<td><p>IN: The count of types</p></td>
 </tr>
 </tbody>
 </table>

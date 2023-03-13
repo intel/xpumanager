@@ -15,6 +15,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
 
 #include "local_functions.h"
 #include "utility.h"
@@ -273,5 +274,77 @@ bool getBdfListFromLspci(std::vector<std::string> &list) {
         return false;
     }
 }
+
+bool getPciName(std::string &pciName, const std::string &bdf) {
+    std::string cmd = "lspci -D -s " + bdf + "|cut -d ':' -f 4";
+    char buf[BUF_SIZE];
+    FILE *pf = popen(cmd.c_str(), "r");
+    if (pf == NULL) {
+        return false;
+    }
+    bool found = false;
+    if (fgets(buf, BUF_SIZE, pf) != NULL) {
+        buf[BUF_SIZE - 1] = 0;
+        string line(buf+1);
+        if (line.length() > 0) {
+            if (line.at(line.length() - 1) == '\n') {
+                line.pop_back();
+            }
+            pciName = line;
+            found = true;
+        }
+    }
+    int ret = pclose(pf);
+    if (ret != -1 && WEXITSTATUS(ret) == 0) {
+        return found;
+    } else {
+        return false;
+    }
+}
+
+bool getPciPath(std::vector<string> &pciPath, const std::string &bdf) {
+    //An example of the output of the cmd belew is:
+    //0000:4a:02.0/4b:00.0/4c:01.0/4d:00.0
+    //And the function would return a vector (pciPath) of full BDF
+    string cmd = "lspci -DPPs " + bdf + "|cut -d ' ' -f 1";
+    char path[PATH_MAX];
+    FILE *pf = popen(cmd.c_str(), "r");
+    if (pf == NULL) {
+        return false;
+    } 
+    bool found = false;
+    string domain;
+    string node;
+    if (fgets(path, PATH_MAX, pf) != NULL) {
+        path[PATH_MAX - 1] = 0;
+        int len = strnlen(path, PATH_MAX);
+        if (path[len - 1] == '\n') {
+            path[len - 1] = 0;
+        }
+        char *tok = strtok(path, "/");
+        while (tok != NULL) {
+            node = tok;
+            if (isBDF(node) == true) {
+                pciPath.push_back(node);
+                domain.assign(node, 0, 4);
+                found = true;
+            } else if (isShortBDF(node) == true) {
+                if (domain.length() == 4) {
+                    pciPath.push_back(domain + ":" + node);
+                } else {
+                    pciPath.push_back(node);
+                }
+            }
+            tok = strtok(NULL, "/");
+        }
+    }
+    int ret = pclose(pf);
+    if (ret != -1 && WEXITSTATUS(ret) == 0) {
+        return found;
+    } else {
+        return false;
+    }
+}
+
 
 }

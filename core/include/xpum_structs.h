@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file xpum_structs.h
  */
@@ -241,6 +241,7 @@ typedef enum xpum_device_property_name_enum {
     XPUM_DEVICE_PROPERTY_GFX_PSCBIN_FIRMWARE_VERSION,    ///< The GFX_PSCBIN firmware version of device
     XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE,               ///< The memory ECC state of device
     XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS,            ///< The GFX firmware status
+    XPUM_DEVICE_PROPERTY_SKU_TYPE,                       ///< The type of SKU
     XPUM_DEVICE_PROPERTY_MAX
 } xpum_device_property_name_t;
 
@@ -447,6 +448,8 @@ typedef struct xpum_diag_task_info_t {
     int count;
     uint64_t startTime;
     uint64_t endTime;
+    xpum_diag_task_type_t targetTypes[XPUM_DIAG_TASK_TYPE_MAX];
+    int targetTypeCount;
 } xpum_diag_task_info_t;
 
 typedef enum xpum_media_format_enum {

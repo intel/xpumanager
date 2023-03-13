@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file xpum_core_service_impl.h
  */
@@ -63,9 +63,9 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
                                           ::DiagnosticsTaskInfo* response) override;
     virtual ::grpc::Status runDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunDiagnosticsByGroupRequest* request,
                                                  ::DiagnosticsGroupTaskInfo* response) override;
-    virtual ::grpc::Status runSpecificDiagnostics(::grpc::ServerContext* context, const ::RunSpecificDiagnosticsRequest* request,
+    virtual ::grpc::Status runMultipleSpecificDiagnostics(::grpc::ServerContext* context, const ::RunMultipleSpecificDiagnosticsRequest* request,
                                           ::DiagnosticsTaskInfo* response) override;
-    virtual ::grpc::Status runSpecificDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunSpecificDiagnosticsByGroupRequest* request,
+    virtual ::grpc::Status runMultipleSpecificDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunMultipleSpecificDiagnosticsByGroupRequest* request,
                                                  ::DiagnosticsGroupTaskInfo* response) override;
     virtual ::grpc::Status runStress(::grpc::ServerContext* context, const ::RunStressRequest* request,
                                           ::DiagnosticsTaskInfo* response) override;

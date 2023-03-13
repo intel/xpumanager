@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file diagnostic_manager.h
  */
@@ -45,11 +45,11 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     void close() override;
 
-    xpum_result_t runDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) override;
+    xpum_result_t runLevelDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level) override;
 
-    xpum_result_t runSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t type) override;
+    xpum_result_t runMultipleSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t types[], int count) override;
 
-    xpum_result_t runSpecificDiagnosticsCore(xpum_device_id_t deviceId, xpum_diag_level_t level, xpum_diag_task_type_t type);
+    xpum_result_t runDiagnosticsCore(xpum_device_id_t deviceId, xpum_diag_level_t level, xpum_diag_task_type_t types[], int count);
 
     bool isDiagnosticsRunning(xpum_device_id_t deviceId) override;
 
@@ -61,13 +61,13 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     xpum_result_t checkStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count) override;
 
-    static void doDeviceDiagnosticCore(const ze_device_handle_t &ze_device,
+    static void doDeviceLevelDiagnosticCore(const ze_device_handle_t &ze_device,
                                        const ze_driver_handle_t &ze_driver,
                                        std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                        int gpu_total_count,
                                        std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas);
 
-    static void doDeviceSpecificDiagnosticCore(const ze_device_handle_t &ze_device,
+    static void doDeviceMultipleSpecificDiagnosticCore(const ze_device_handle_t &ze_device,
                                        const ze_driver_handle_t &ze_driver,
                                        std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                        int gpu_total_count,
@@ -174,6 +174,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     static int ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
 
     static float MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST;
+
+    static const std::string COMPONENT_TYPE_NOT_SUPPORTED;
 
     std::shared_ptr<DeviceManagerInterface> p_device_manager;
 

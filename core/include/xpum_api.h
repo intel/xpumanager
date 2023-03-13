@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file xpum_api.h
  */
@@ -759,14 +759,15 @@ xpum_result_t xpumGetFirmwareFlashErrorMsg(char* buffer, int *count);
 xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t level);
 
 /**
- * @brief Run specific diagnostics on single device
+ * @brief Run multiple specific diagnostics on single device
  * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResult
  * 
  * @param deviceId          IN: Device id
- * @param type              IN: The diagnostics type to run
+ * @param types             IN: The array to store diagnostics type
+ * @param count             IN: The count of types
  * @return xpum_result_t 
  */
-xpum_result_t xpumRunSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t type);
+xpum_result_t xpumRunMultipleSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t types[], int count);
 
 /// @cond DAEMON_ONLY
 /**
@@ -782,14 +783,15 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
 
 /// @cond DAEMON_ONLY
 /**
- * @brief Run specific diagnostics on a group of devices
+ * @brief Run multiple specific diagnostics on a group of devices
  * This function will return immediately. To get detailed information about diagnostics task, call \ref xpumGetDiagnosticsResultByGroup
  * 
  * @param groupId           IN: Group id
- * @param type              IN: The diagnostics type to run
+ * @param types             IN: The array to store diagnostics type
+ * @param count             IN: The count of types
  * @return xpum_result_t 
  */
-xpum_result_t xpumRunSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_task_type_t type);
+xpum_result_t xpumRunMultipleSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_task_type_t types[], int count);
 /// @endcond
 
 /**

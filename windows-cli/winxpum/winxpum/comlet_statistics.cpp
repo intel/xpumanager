@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_statistics.cpp
  */
@@ -226,6 +226,15 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "value": "data_list[metrics_type==XPUM_STATS_MEDIA_UTILIZATION].value", "fixer": "round" }
         ]}
     ]]
+}, {
+    "instance": "",
+    "cells": [[
+        { "rowTitle": "Copy Engine Util (%) " }
+    ], [
+        { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            { "value": "data_list[metrics_type==XPUM_STATS_COPY_UTILIZATION].value", "fixer": "round" }
+        ]}
+    ]]
 }]
 })"_json);
 
@@ -236,6 +245,7 @@ void ComletStatistics::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletStatistics::run() {
     if (isDeviceOp()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         auto json = this->coreStub->getStatistics(this->opts->deviceId, true);
         return json;
     }

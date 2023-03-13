@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2021-2023 Intel Corporation
 # SPDX-License-Identifier: MIT
 # @file devices.py
 #
@@ -78,6 +78,8 @@ class DevicePropertiesSchema(Schema):
     socket_id = fields.Str(metadata={"description": "socket id of OAM GPU"})
     device_stepping = fields.Str(
         metadata={"description": "The stepping of device"})
+    sku_type = fields.Str(
+        metadata={"description": "The type of SKU"})
     driver_version = fields.Str(metadata={"description": "The driver version"})
     kernel_version = fields.Str(metadata={"description": "Linux kernel version"})
     firmware_name = fields.Str(

@@ -1,5 +1,5 @@
 # Intel(R) XPU Manager Windows CLI User Guide
-This guide describes how to use Intel(R) XPU Manager Windows CLI tool to manage Intel GPU devices on Windows Server OS. 
+This guide describes how to use Intel(R) XPU Manager Windows CLI tool to manage Intel GPU devices on Windows Server OS. The GPU driver version on Windows should be 31.0.101.3902 or newer. 
   
 
 ## Intel(R) XPU Manager Windows CLI main features 

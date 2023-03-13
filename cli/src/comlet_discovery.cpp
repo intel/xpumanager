@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_discovery.cpp
  */
@@ -67,6 +67,7 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "Serial Number", "value": "serial_number", "dumpId": 5 },
                 { "label": "Core Clock Rate", "value": "core_clock_rate_mhz", "suffix": " MHz", "dumpId": 6 },
                 { "label": "Stepping", "value": "device_stepping", "dumpId": 7 },
+                { "label": "SKU Type", "value": "sku_type"},
                 { "rowTitle": " " },
                 { "label": "Driver Version", "value": "driver_version", "dumpId": 8 },
                 { "label": "Kernel Version", "value": "kernel_version" },
@@ -241,7 +242,7 @@ void ComletDiscovery::setupOptions() {
     addOption("-p,--password", this->opts->password, "Password used to authenticate for host redfish access");
 }
 
-static void checkBadDevices(nlohmann::json &deviceJsonList) {
+void ComletDiscovery::checkBadDevices(nlohmann::json &deviceJsonList) {
     std::vector<std::string> list;
     if (getBdfListFromLspci(list) == false) {
         return;
@@ -267,6 +268,17 @@ static void checkBadDevices(nlohmann::json &deviceJsonList) {
                 deviceJson["gfx_firmware_version"] = fwVer.gfx_fw_version;
                 deviceJson["gfx_data_firmware_version"] = 
                     fwVer.gfx_data_fw_version;
+            }
+            std::string name;
+            if (getPciName(name, bdf) == true) {
+                deviceJson["device_name"] = name;
+            }
+            std::vector<std::string> pciPath;
+            if (getPciPath(pciPath, bdf) == true) {
+                name = this->coreStub->getPciSlotName(pciPath);
+                if (name.length() > 0) {
+                    deviceJson["pci_slot"] = name;
+                }
             }
             deviceJsonList.push_back(deviceJson);
         }

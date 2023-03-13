@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file core_stub.cpp
  */
@@ -18,10 +18,12 @@
 #include <loader/ze_loader.h>
 #include <cstdlib>  
 #include "xpum_structs.h"
+#include "win_native.h"
 using namespace xpum;
 
 
 CoreStub::CoreStub() {
+    initPDHQuery();
     ze_result_t status = zeInit(0);
     if (status != ZE_RESULT_SUCCESS) {
         std::cout << "Driver not initialized: " << to_string(status) << std::endl;
@@ -137,6 +139,7 @@ CoreStub::~CoreStub() {
     conf_file << "memory_sampling_interval:" << memory_sampling_interval << "\n";
     conf_file.close();
     */
+    void closePDHQuery();
 }
 
 std::unique_ptr<nlohmann::json> CoreStub::getVersion() {
@@ -289,28 +292,32 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
         std::cout << "zesDeviceEnumMemoryModules Failed with return code: " << to_string(res) << std::endl;
         exit(-1);
     }
-    for (auto& mem : mems) {
-        uint64_t mem_module_physical_size = 0;
-        zes_mem_properties_t props;
-        props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-        res = zesMemoryGetProperties(mem, &props);
-        if (res == ZE_RESULT_SUCCESS) {
-            mem_module_physical_size = props.physicalSize;
-            int32_t mem_bus_width = props.busWidth;
-            int32_t mem_channel_num = props.numChannels;
-            (*deviceJson)["memory_bus_width"] = std::to_string(mem_bus_width);
-            (*deviceJson)["number_of_memory_channels"] = std::to_string(mem_channel_num);
-        }
-
-        zes_mem_state_t sysman_memory_state = {};
-        sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-        res = zesMemoryGetState(mem, &sysman_memory_state);
-        if (res == ZE_RESULT_SUCCESS) {
-            if (props.physicalSize == 0) {
-                mem_module_physical_size = sysman_memory_state.size;
+    if (mems.size() > 0) {
+        for (auto& mem : mems) {
+            uint64_t mem_module_physical_size = 0;
+            zes_mem_properties_t props;
+            props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+            res = zesMemoryGetProperties(mem, &props);
+            if (res == ZE_RESULT_SUCCESS) {
+                mem_module_physical_size = props.physicalSize;
+                int32_t mem_bus_width = props.busWidth;
+                int32_t mem_channel_num = props.numChannels;
+                (*deviceJson)["memory_bus_width"] = std::to_string(mem_bus_width);
+                (*deviceJson)["number_of_memory_channels"] = std::to_string(mem_channel_num);
             }
-            physical_size += mem_module_physical_size;
+
+            zes_mem_state_t sysman_memory_state = {};
+            sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+            res = zesMemoryGetState(mem, &sysman_memory_state);
+            if (res == ZE_RESULT_SUCCESS) {
+                if (props.physicalSize == 0) {
+                    mem_module_physical_size = sysman_memory_state.size;
+                }
+                physical_size += mem_module_physical_size;
+            }
         }
+    } else {
+        physical_size = (uint64_t)getMemSizeByNativeAPI();
     }
     (*deviceJson)["memory_physical_size_byte"] = std::to_string(physical_size);
 
@@ -665,6 +672,7 @@ struct MetricsTypeEntry {
 };
 
 static MetricsTypeEntry metricsTypeArray[]{
+    {XPUM_STATS_COPY_UTILIZATION, "XPUM_STATS_COPY_UTILIZATION"},
     {XPUM_STATS_COMPUTE_UTILIZATION, "XPUM_STATS_COMPUTE_UTILIZATION"},
     {XPUM_STATS_MEDIA_UTILIZATION, "XPUM_STATS_MEDIA_UTILIZATION"},
     {XPUM_STATS_GPU_UTILIZATION, "XPUM_STATS_GPU_UTILIZATION"},
@@ -845,7 +853,7 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
         uint32_t mem_module_count = 0;
         ze_result_t res;
         res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
-        if (res == ZE_RESULT_SUCCESS) {
+        if (res == ZE_RESULT_SUCCESS && mem_module_count > 0) {
             std::vector<zes_mem_handle_t> mems(mem_module_count);
             res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
             if (res == ZE_RESULT_SUCCESS) {
@@ -864,6 +872,8 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                     }
                 }
             }
+        } else {
+            data.max = data.min = data.avg = data.value = getMemUsedByNativeAPI() / 1024 / 1024;
         }
     }
 
@@ -911,7 +921,7 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
         }
     }
 
-    if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION || metricsType == XPUM_STATS_MEDIA_UTILIZATION || metricsType == XPUM_STATS_GPU_UTILIZATION) {
+    if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION || metricsType == XPUM_STATS_MEDIA_UTILIZATION || metricsType == XPUM_STATS_GPU_UTILIZATION || metricsType == XPUM_STATS_COPY_UTILIZATION) {
         static uint64_t compute_engine = 0;
         static uint64_t media_engine = 0;
 
@@ -923,7 +933,7 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
         uint32_t engine_count = 0;
         ze_result_t res;
         res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr);
-        if (res == ZE_RESULT_SUCCESS) {
+        if (res == ZE_RESULT_SUCCESS && engine_count>0) {
             std::vector<zes_engine_handle_t> engines(engine_count);
             res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data());
             if (res == ZE_RESULT_SUCCESS) {
@@ -940,6 +950,9 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                     if (metricsType == XPUM_STATS_MEDIA_UTILIZATION && props.type != ZES_ENGINE_GROUP_MEDIA_ALL)
                         continue;
 
+                    if (metricsType == XPUM_STATS_COPY_UTILIZATION && props.type != ZES_ENGINE_GROUP_COPY_ALL)
+                        continue;
+
                     zes_engine_stats_t snap1;
                     res = zesEngineGetActivity(engine, &snap1);
                     if (res == ZE_RESULT_SUCCESS) {
@@ -953,12 +966,22 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                                 val = measurement_data_scale * 100.0;
                             if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION) {
                                 data.max = data.min = data.avg = data.value = compute_engine = (uint64_t)val;
-                            } else {
+                            } else if (metricsType == XPUM_STATS_MEDIA_UTILIZATION) {
                                 data.max = data.min = data.avg = data.value = media_engine = (uint64_t)val;
+                            } else {
+                                data.max = data.min = data.avg = data.value = (uint64_t)val;
                             }
                         }
                     }
                 }
+            }
+        } else {
+            if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION) {
+                data.max = data.min = data.avg = data.value = (uint64_t)(getComputeEngineUtilByNativeAPI() * 100.0);
+            } else if (metricsType == XPUM_STATS_MEDIA_UTILIZATION) {
+                data.max = data.min = data.avg = data.value = (uint64_t)(getMediaEngineUtilByNativeAPI() * 100.0);
+            } else if (metricsType == XPUM_STATS_COPY_UTILIZATION) {
+                data.max = data.min = data.avg = data.value = (uint64_t)(getCopyEngineUtilByNativeAPI() * 100.0);
             }
         }
     }
@@ -967,6 +990,7 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
 
 std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enableFilter) 
 {
+    updatePDHQuery();
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
         (*json)["error"] = "invalid device id";
@@ -1013,13 +1037,13 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
                 || item.key == XPUM_STATS_MEMORY_BANDWIDTH || item.key == XPUM_STATS_MEMORY_USED 
                 || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
                 || item.key == XPUM_STATS_GPU_UTILIZATION
-                || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT
+                || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT || item.key == XPUM_STATS_COPY_UTILIZATION
             ) {
                 xpum_device_stats_data_t data = getMetricsByLevel0((zes_device_handle_t)sub_device_handles[i], item.key);
                 auto tmp = nlohmann::json();
                 if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE 
                     || item.key == XPUM_STATS_MEMORY_TEMPERATURE || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
-                    || item.key == XPUM_STATS_GPU_UTILIZATION) {
+                    || item.key == XPUM_STATS_GPU_UTILIZATION || item.key == XPUM_STATS_COPY_UTILIZATION) {
                     tmp["avg"] = data.avg * 1.0 / measurement_data_scale;
                     tmp["min"] = data.min * 1.0 / measurement_data_scale;
                     tmp["max"] = data.max * 1.0 / measurement_data_scale;

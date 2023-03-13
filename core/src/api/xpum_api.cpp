@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file xpum_api.cpp
  */
@@ -134,6 +134,8 @@ extern const char *getXpumDevicePropertyNameString(xpum_device_property_name_t n
             return "MEMORY_ECC_STATE";
         case XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS:
             return "GFX_FIRMWARE_STATUS";
+        case XPUM_DEVICE_PROPERTY_SKU_TYPE:
+            return "SKU_TYPE";
         default:
             return "";
     }
@@ -775,6 +777,8 @@ xpum_device_internal_property_name_t getDeviceInternalProperty(xpum_device_prope
             return XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_RX_LANES_NUMBER;
         case XPUM_DEVICE_PROPERTY_LINUX_KERNEL_VERSION:
             return XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION;
+        case XPUM_DEVICE_PROPERTY_SKU_TYPE:
+            return XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE;
         default:
             return XPUM_DEVICE_PROPERTY_INTERNAL_MAX;
     }
@@ -1731,7 +1735,7 @@ xpum_result_t xpumRunDiagnostics(xpum_device_id_t deviceId, xpum_diag_level_t le
         return res;
     }
 
-    return Core::instance().getDiagnosticManager()->runDiagnostics(deviceId, level);
+    return Core::instance().getDiagnosticManager()->runLevelDiagnostics(deviceId, level);
 }
 
 xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level_t level) {
@@ -1753,7 +1757,7 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
     }
 
     for (int i = 0; i < xpum_group_info.count; i++) {
-        ret = Core::instance().getDiagnosticManager()->runDiagnostics(xpum_group_info.deviceList[i], level);
+        ret = Core::instance().getDiagnosticManager()->runLevelDiagnostics(xpum_group_info.deviceList[i], level);
         if (ret != XPUM_OK)
             return ret;
     }
@@ -1761,16 +1765,16 @@ xpum_result_t xpumRunDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_level
     return ret;
 }
 
-xpum_result_t xpumRunSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t type) {
+xpum_result_t xpumRunMultipleSpecificDiagnostics(xpum_device_id_t deviceId, xpum_diag_task_type_t types[], int count) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
         return res;
     }
 
-    return Core::instance().getDiagnosticManager()->runSpecificDiagnostics(deviceId, type);
+    return Core::instance().getDiagnosticManager()->runMultipleSpecificDiagnostics(deviceId, types, count);
 }
 
-xpum_result_t xpumRunSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_task_type_t type) {
+xpum_result_t xpumRunMultipleSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_diag_task_type_t types[], int count) {
     xpum_result_t ret = Core::instance().apiAccessPreCheck();
     if (ret != XPUM_OK) {
         return ret;
@@ -1789,7 +1793,7 @@ xpum_result_t xpumRunSpecificDiagnosticsByGroup(xpum_group_id_t groupId, xpum_di
     }
 
     for (int i = 0; i < xpum_group_info.count; i++) {
-        ret = Core::instance().getDiagnosticManager()->runSpecificDiagnostics(xpum_group_info.deviceList[i], type);
+        ret = Core::instance().getDiagnosticManager()->runMultipleSpecificDiagnostics(xpum_group_info.deviceList[i], types, count);
         if (ret != XPUM_OK)
             return ret;
     }
@@ -3249,6 +3253,21 @@ xpum_result_t xpumGenerateDebugLog(const char *fileName) {
 
     int ret = genDebugLog(fileName);
     if (ret == 0) {
+        return XPUM_OK;
+    } else {
+        return XPUM_GENERIC_ERROR;
+    }
+}
+
+xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath, 
+        char *slotName, uint32_t sizeSlotName) {
+    std::vector<std::string> pciPathVec;
+    for (uint32_t i = 0; i < sizePciPath; i++) {
+        pciPathVec.push_back(std::string(pciPath[i]));
+    }
+    std::string ret = GPUDeviceStub::getPciSlotByPath(pciPathVec);
+    if (ret.length() > 0 && ret.length() < sizeSlotName) {
+        strncpy(slotName, ret.c_str(), sizeSlotName);
         return XPUM_OK;
     } else {
         return XPUM_GENERIC_ERROR;

@@ -20,13 +20,12 @@ Jinja2==3.0.3
 jsonschema==4.0.0
 keyring==10.6.0
 keyrings.alt==3.0
-m2r==0.2.1
-markdown-it-py==2.0.1
-MarkupSafe==2.0.1
+markdown-it-py==2.2.0
+MarkupSafe==2.1.1
 marshmallow==3.14.1
 mdit-py-plugins==0.3.0
 mdurl==0.1.0
-mistune==0.8.4
+mistune==2.0.0
 myst-parser==0.16.1
 packaging==21.3
 prometheus-client==0.14.1
@@ -48,7 +47,7 @@ sphinxcontrib-devhelp==1.0.2
 sphinxcontrib-htmlhelp==2.0.0
 sphinxcontrib-httpdomain==1.8.0
 sphinxcontrib-jsmath==1.0.1
-sphinxcontrib-openapi==0.7.0
+sphinxcontrib-openapi==0.8.0
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
 typing-extensions==4.1.1

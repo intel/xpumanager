@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file xpum_core_service_impl.cpp
  */
@@ -525,9 +525,15 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
     return grpc::Status::OK;
 }
 
-::grpc::Status XpumCoreServiceImpl::runSpecificDiagnostics(::grpc::ServerContext* context, const ::RunSpecificDiagnosticsRequest* request,
+::grpc::Status XpumCoreServiceImpl::runMultipleSpecificDiagnostics(::grpc::ServerContext* context, const ::RunMultipleSpecificDiagnosticsRequest* request,
                                                    ::DiagnosticsTaskInfo* response) {
-    xpum_result_t res = xpumRunSpecificDiagnostics(request->deviceid(), static_cast<xpum_diag_task_type_t>(request->type()));
+    
+    int count = request->types_size();
+    xpum_diag_task_type_t types[count];
+    for (int i = 0; i < count; i++)
+        types[i] = static_cast<xpum_diag_task_type_t>(request->types(i));
+    
+    xpum_result_t res = xpumRunMultipleSpecificDiagnostics(request->deviceid(), types, count);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_RESULT_DEVICE_NOT_FOUND:
@@ -549,9 +555,13 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 
     return grpc::Status::OK;
 }
-::grpc::Status XpumCoreServiceImpl::runSpecificDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunSpecificDiagnosticsByGroupRequest* request,
+::grpc::Status XpumCoreServiceImpl::runMultipleSpecificDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunMultipleSpecificDiagnosticsByGroupRequest* request,
                                                           ::DiagnosticsGroupTaskInfo* response) {
-    xpum_result_t res = xpumRunSpecificDiagnosticsByGroup(request->groupid(), static_cast<xpum_diag_task_type_t>(request->type()));
+    int count = request->types_size();
+    xpum_diag_task_type_t types[xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX];
+    for (int i = 0; i < count; i++)
+        types[i] = static_cast<xpum_diag_task_type_t>(request->types(i));
+    xpum_result_t res = xpumRunMultipleSpecificDiagnosticsByGroup(request->groupid(), types, count);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_RESULT_GROUP_NOT_FOUND:

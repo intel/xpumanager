@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file internal_api.h
  */
@@ -124,5 +124,21 @@ xpum_result_t xpumGetFabricThroughput(xpum_device_id_t deviceId,
 xpum_result_t xpumGetMetricsByGroup(xpum_group_id_t groupId,
                                     xpum_device_metrics_t dataList[],
                                     int *count);
+
+/**
+ * @brief Get PCI slot name by an array of BDF
+ * @details This function is used to get the PCI slot name (returned from SMBIOS/ dmidecode) by an array (by path through each PCI bridge) of BDF. Memory of all pointer type parameters should be allocated by caller.
+ *
+ * @param pciPath                  IN: The array of BDF for PCI path
+ * @param sizePciPath              IN: The size of array pciPath
+ * @param slotName                OUT: The PCI slot name
+ * @param sizeSlotName             IN: The size of PCI slot name
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ */
+xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath, 
+        char *slotName, uint32_t sizeSlotName);
+
 
 } // namespace xpum

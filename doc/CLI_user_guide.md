@@ -520,7 +520,7 @@ Help info of the device statistics dump. Please note that the metrics 'GPU Energ
 Dump device statistics data.
 
 Usage: xpumcli dump [Options]
-  xpumcli dump -d [deviceIds] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
+  xpumcli dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
   
   xpumcli dump --rawdata --start -d [deviceId] -t [deviceTileId] -m [metricsIds] 
   xpumcli dump --rawdata --list
@@ -530,7 +530,7 @@ optional arguments:
   -h,--help                   Print this help message and exit
 
   -d,--device                 The device id(s) to query
-  -t,--tile                   The device tile ID to query. If the device has only one tile, this parameter should not be specified. 
+  -t,--tile                   The device tile ID(s) to query. If the device has only one tile, this parameter should not be specified. 
   -m,--metrics                Metrics type to collect raw data, options. Separated by the comma.
                                 0. GPU Utilization (%), GPU active time of the elapsed time, per tile
                                 1. GPU Power (W), per GPU and per tile
@@ -966,11 +966,19 @@ Usage: xpumcli diag [Options]
   xpumcli diag -d [pciBdfAddress] -l [level]
   xpumcli diag -d [deviceId] -l [level] -j
   xpumcli diag -d [pciBdfAddress] -l [level] -j
+  xpumcli diag -d [deviceId] --singletest [testIds]
+  xpumcli diag -d [pciBdfAddress] --singletest [testIds]
+  xpumcli diag -d [deviceId] --singletest [testIds] -j
+  xpumcli diag -d [pciBdfAddress] --singletest [testIds] -j
   xpumcli diag -g [groupId] -l
   xpumcli diag -g [groupId] -l -j
+
   xpumcli diag -d [deviceIds] --stress --stresstime [time]
   xpumcli diag --precheck
   xpumcli diag --precheck -j
+  xpumcli diag --precheck --gpu
+  xpumcli diag --precheck --gpu -j
+
   xpumcli diag --stress --stresstime [time]
   
 Options:
@@ -983,9 +991,18 @@ Options:
                                 1. quick test
                                 2. medium test - this diagnostic level will have the significant performance impact on the specified GPUs
                                 3. long test - this diagnostic level will have the significant performance impact on the specified GPUs
-  --precheck                  Do the precheck on the GPU and GPU driver.
   -s,--stress                 Stress the GPU(s) for the specified time
   --stresstime                Stress time (in minutes)
+  --precheck                  Do the precheck on the GPU and GPU driver.
+  --gpu                       Show the GPU status only
+  --singletest                Selectively run some particular tests. Separated by the comma.
+                                    1. Computation
+                                    2. Memory Error
+                                    3. Memory Bandwidth
+                                    4. Media Codec
+                                    5. PCIe Bandwidth
+                                    6. Power
+
 
 ```
 
@@ -1040,6 +1057,25 @@ Device: 1 Finished:0 Time: 0 seconds
 Device: 0 Finished:0 Time: 5 seconds
 Device: 1 Finished:0 Time: 5 seconds
 
+```
+
+Run the particular tests on the specified GPU
+```
+xpumcli diag -d 0 --singletest 1,4
++-------------------------+------------------------------------------------------------------------+
+| Device ID               | 0                                                                      |
++-------------------------+------------------------------------------------------------------------+
+| Performance Computation | Result: Pass                                                           |
+|                         | Message: Pass to check computation performance. Its single-precision   |
+|                         |   GFLOPS is 10938.459.                                                 |
++-------------------------+------------------------------------------------------------------------+
+| Media Codec             | Result: Pass                                                           |
+|                         | Message: Pass to check Media transcode performance.                    |
+|                         |  1080p H.265 : 474 FPS                                                 |
+|                         |  1080p H.264 : 430 FPS                                                 |
+|                         |  4K H.265 : 139 FPS                                                    |
+|                         |  4K H.264 : 119 FPS                                                    |
++-------------------------+------------------------------------------------------------------------+
 ```
 
 ## Show AMC real-time sensor readings

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file help_formatter.cpp
  */
@@ -108,15 +108,15 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " diag -d [pciBdfAddress] -l [level] \n"
                "  " + appName + " diag -d [deviceId] -l [level] -j \n"
                "  " + appName + " diag -d [pciBdfAddress] -l [level] -j \n"
-               "  " + appName + " diag -d [deviceId] --singletest [testId] \n"
-               "  " + appName + " diag -d [pciBdfAddress] --singletest [testId] \n"
-               "  " + appName + " diag -d [deviceId] --singletest [testId] -j \n"
-               "  " + appName + " diag -d [pciBdfAddress] --singletest [testId] -j \n"
+               "  " + appName + " diag -d [deviceId] --singletest [testIds] \n"
+               "  " + appName + " diag -d [pciBdfAddress] --singletest [testIds] \n"
+               "  " + appName + " diag -d [deviceId] --singletest [testIds] -j \n"
+               "  " + appName + " diag -d [pciBdfAddress] --singletest [testIds] -j \n"
                "  " + appName + " diag -d [deviceIds] --stress --stresstime [time]\n"
                "  " + appName + " diag -g [groupId] -l [level] \n"
                "  " + appName + " diag -g [groupId] -l [level] -j \n"
-               "  " + appName + " diag -g [groupId] --singletest [testId] \n"
-               "  " + appName + " diag -g [groupId] --singletest [testId] -j \n"
+               "  " + appName + " diag -g [groupId] --singletest [testIds] \n"
+               "  " + appName + " diag -g [groupId] --singletest [testIds] -j \n"
                "  " + appName + " diag --precheck\n"
                "  " + appName + " diag --precheck -j\n"
                "  " + appName + " diag --precheck --gpu\n"
@@ -128,10 +128,10 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " diag -d [pciBdfAddress] -l [level] \n"
                "  " + appName + " diag -d [deviceId] -l [level] -j \n"
                "  " + appName + " diag -d [pciBdfAddress] -l [level] -j \n"
-               "  " + appName + " diag -d [deviceId] --singletest [testId] \n"
-               "  " + appName + " diag -d [pciBdfAddress] --singletest [testId] \n"
-               "  " + appName + " diag -d [deviceId] --singletest [testId] -j \n"
-               "  " + appName + " diag -d [pciBdfAddress] --singletest [testId] -j \n"
+               "  " + appName + " diag -d [deviceId] --singletest [testIds] \n"
+               "  " + appName + " diag -d [pciBdfAddress] --singletest [testIds] \n"
+               "  " + appName + " diag -d [deviceId] --singletest [testIds] -j \n"
+               "  " + appName + " diag -d [pciBdfAddress] --singletest [testIds] -j \n"
                "  " + appName + " diag -d [deviceIds] --stress \n"
                "  " + appName + " diag -d [deviceIds] --stress --stresstime [time] \n"
                "  " + appName + " diag --precheck\n"
@@ -144,15 +144,15 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
     } else if (app->get_name().compare("dump") == 0) {
 #ifndef DAEMONLESS
         return "\nUsage: " + appName + " dump [Options]\n"
-               "  " + appName + " dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
+               "  " + appName + " dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
                "\n"
                "  " + appName + " dump --rawdata --start -d [deviceId] -t [deviceTileId] -m [metricsIds]\n"
                "  " + appName + " dump --rawdata --list\n"
                "  " + appName + " dump --rawdata --stop [taskId]\n";
 #else
         return "\nUsage: " + appName + " dump [Options]\n"
-               "  " + appName + " dump -d [deviceId] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
-               "  " + appName + " dump -d [pciBdfAddress] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n";
+               "  " + appName + " dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n"
+               "  " + appName + " dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]\n";
 #endif
     } else if (app->get_name().compare("stats") == 0) {
 #ifndef DAEMONLESS

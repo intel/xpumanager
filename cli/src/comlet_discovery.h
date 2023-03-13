@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_discovery.h
  */
@@ -34,6 +34,8 @@ class ComletDiscovery : public ComletBase {
     virtual std::unique_ptr<nlohmann::json> run() override;
 
     virtual void getTableResult(std::ostream &out) override;
+
+    void checkBadDevices(nlohmann::json &deviceJsonList);
 
     inline bool isDeviceList() {
         return opts->deviceId == "-1";

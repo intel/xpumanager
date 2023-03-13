@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_dump.cpp
  */
@@ -131,11 +131,7 @@ bool ComletDump::dumpIdlePowerOnly() {
 void ComletDump::setupOptions() {
     this->opts = std::unique_ptr<ComletDumpOptions>(new ComletDumpOptions());
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device IDs or PCI BDF addresses to query. The value of \"-1\" means all devices.");
-#ifndef DAEMONLESS
-    auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
-#else
-    addOption("-t,--tile", this->opts->deviceTileId, "The device tile ID to query. If the device has only one tile, this parameter should not be specified.");
-#endif
+    auto tileIdOpt = addOption("-t,--tile", this->opts->deviceTileIds, "The device tile IDs to query. If the device has only one tile, this parameter should not be specified.");
 
     deviceIdOpt->check([this](const std::string &str) {
         std::string errStr = "Device id should be a non-negative integer or a BDF string. \"-1\" means all devices.";
@@ -147,7 +143,23 @@ void ComletDump::setupOptions() {
         }
         return std::string();
     });
+
+    tileIdOpt->check([this](const std::string &str) {
+        std::string errStr = "Tile id should be a non-negative integer. \"-1\" means all tiles.";
+        std::vector<std::string> tileIds = split(str, ',');
+        if(tileIds.size() == 1 && (tileIds[0] =="-1")){
+            return std::string();
+        }
+
+        for (auto id : tileIds) {
+            if (!isValidTileId(id)) {
+                return errStr;
+            }
+        }
+        return std::string();
+    });
     deviceIdOpt->delimiter(',');
+    tileIdOpt->delimiter(',');
     auto metricsListOpt = addOption("-m,--metrics", this->opts->metricsIdList, metricsHelpStr);
     metricsListOpt->delimiter(',');
     metricsListOpt->check(CLI::Range(0, (int)dumpTypeOptions.size() - 1));
@@ -215,9 +227,12 @@ std::unique_ptr<nlohmann::json> ComletDump::run() {
             if (this->opts->deviceIds.size() > 1) {
                 json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
                 (*json)["error"] = "Dumping to file is not supported for multiple devices";
-            } else {
+            } if(this->opts->deviceTileIds.size() > 1){
+                json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+                (*json)["error"] = "Dumping to file is not supported for multiple tiles";
+            }else {
                 int deviceId = std::stoi(this->opts->deviceIds[0]);
-                int tileId = this->opts->deviceTileId;
+                int tileId = std::stoi(this->opts->deviceTileIds[0]);
                 std::vector<xpum_dump_type_t> dumpTypeList;
                 for (auto i : this->opts->metricsIdList) {
                     auto &m = dumpTypeOptions[i];
@@ -451,7 +466,6 @@ std::unique_ptr<nlohmann::json> ComletDump::getMetricsFromSysfs() {
 
 void ComletDump::printByLineWithoutInitializeCore(std::ostream &out) {
     // out << std::left << std::setw(25) << std::setfill(' ') << "Timestamp, ";
-    int tileId = this->opts->deviceTileId;
 
     if (this->opts->deviceIds.size() == 0) {
         out << "Device id should be provided" << std::endl;
@@ -486,11 +500,13 @@ void ComletDump::printByLineWithoutInitializeCore(std::ostream &out) {
         if (isNumber(deviceId)) {
             deviceBDF = gpu_id_to_bdfs[std::stoi(deviceId)];
         }
-        if (this->opts->deviceTileId != -1) {
-            if (this->opts->deviceTileId >= gpu_bdf_to_tile_num[deviceBDF]) {
-                out << "Error: Tile not found" << std::endl;
-                exit_code = XPUM_CLI_ERROR_TILE_NOT_FOUND;
-                return;
+        if (!(this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1")) {
+            for(auto tile : this->opts->deviceTileIds){
+                if (std::stoi(tile) >= gpu_bdf_to_tile_num[deviceBDF]) {
+                    out << "Error: Tile not found" << std::endl;
+                    exit_code = XPUM_CLI_ERROR_TILE_NOT_FOUND;
+                    return;
+                }
             }
         }
     }
@@ -523,12 +539,11 @@ void ComletDump::printByLineWithoutInitializeCore(std::ostream &out) {
                                 }});
 
     // tile id
-    if (tileId != -1) {
-        DumpColumn tileColumn{"TileId",
-                              [tileId]() {
-                                  return std::to_string(tileId);
-                              }};
-        columnSchemaList.push_back(tileColumn);
+    if (!(this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1")) {
+        columnSchemaList.push_back({"TileId",
+                                    [this]() {
+                                        return this->curTileId;
+                                    }});
     }
 
     // other columns
@@ -582,34 +597,37 @@ void ComletDump::printByLineWithoutInitializeCore(std::ostream &out) {
             curDeviceId = deviceId;
             statsJson = nullptr;
 
-            if (tileId == -1) {
-                if (deviceJsons[deviceId]->contains("device_level")) {
-                    statsJson = std::make_shared<nlohmann::json>((*deviceJsons[deviceId])["device_level"]);
-                }
-            } else {
-                if (deviceJsons[deviceId]->contains("tile_level")) {
-                    auto tiles = (*deviceJsons[deviceId])["tile_level"].get<std::vector<nlohmann::json>>();
-                    for (auto tile : tiles) {
-                        if (tile.contains("tile_id") && tile["tile_id"].get<int>() == tileId && tile.contains("data_list")) {
-                            statsJson = std::make_shared<nlohmann::json>(tile["data_list"]);
-                            break;
+            for(auto tileId : this->opts->deviceTileIds){
+                curTileId = tileId;
+                if (this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1") {
+                    if (deviceJsons[deviceId]->contains("device_level")) {
+                        statsJson = std::make_shared<nlohmann::json>((*deviceJsons[deviceId])["device_level"]);
+                    }
+                } else {
+                    if (deviceJsons[deviceId]->contains("tile_level")) {
+                        auto tiles = (*deviceJsons[deviceId])["tile_level"].get<std::vector<nlohmann::json>>();
+                        for (auto tile : tiles) {
+                            if (tile.contains("tile_id") && tile["tile_id"].get<int>() == std::stoi(tileId) && tile.contains("data_list")) {
+                                statsJson = std::make_shared<nlohmann::json>(tile["data_list"]);
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
-                auto dc = columnSchemaList[i];
-                auto value = dc.getValue();
-                if (value.size() < 4) {
-                    out << std::string(4 - value.size(), ' ');
+                for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
+                    auto dc = columnSchemaList[i];
+                    auto value = dc.getValue();
+                    if (value.size() < 4) {
+                        out << std::string(4 - value.size(), ' ');
+                    }
+                    out << value;
+                    if (i < columnSchemaList.size() - 1) {
+                        out << ", ";
+                    }
                 }
-                out << value;
-                if (i < columnSchemaList.size() - 1) {
-                    out << ", ";
-                }
+                out << std::endl;
             }
-            out << std::endl;
         }
         if (this->opts->dumpTimes != -1 && ++iter >= this->opts->dumpTimes) {
             break;
@@ -619,7 +637,6 @@ void ComletDump::printByLineWithoutInitializeCore(std::ostream &out) {
 
 void ComletDump::printByLine(std::ostream &out) {
     // out << std::left << std::setw(25) << std::setfill(' ') << "Timestamp, ";
-    int tileId = this->opts->deviceTileId;
 
     if (this->opts->deviceIds.size() == 0) {
         out << "Device id should be provided" << std::endl;
@@ -663,13 +680,16 @@ void ComletDump::printByLine(std::ostream &out) {
             out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
             return;
         }
-        if (this->opts->deviceTileId != -1) {
+        if (!(this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1")) {
             std::stringstream number_of_tiles((*res)["number_of_tiles"].get<std::string>());
             int num_tiles = 0;
             number_of_tiles >> num_tiles;
-            if (this->opts->deviceTileId >= num_tiles) {
-                out << "Error: Tile not found" << std::endl;
-                return;
+
+            for(auto tile : this->opts->deviceTileIds){
+                if (std::stoi(tile) >= num_tiles) {
+                    out << "Error: Tile not found" << std::endl;
+                    return;
+                }
             }
         }
     }
@@ -765,12 +785,11 @@ void ComletDump::printByLine(std::ostream &out) {
                                 }});
 
     // tile id
-    if (tileId != -1) {
-        DumpColumn tileColumn{"TileId",
-                              [tileId]() {
-                                  return std::to_string(tileId);
-                              }};
-        columnSchemaList.push_back(tileColumn);
+    if (!(this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1")) {
+        columnSchemaList.push_back({"TileId",
+                                    [this]() {
+                                        return this->curTileId;
+                                    }});
     }
 
     // other columns
@@ -800,19 +819,22 @@ void ComletDump::printByLine(std::ostream &out) {
         } else if (config.optionType == xpum::dump::DUMP_OPTION_ENGINE) {
             std::map<int, int> tileIdsMap;
             bool deviceLevelHeader = false;
-            if(pEngineCountMap->find(tileId) != pEngineCountMap->end()){
-                int engineCount = (*pEngineCountMap)[tileId][config.engineType];
-                tileIdsMap.insert({tileId,engineCount});
-            }
-            else if(tileId == -1){
-                for(auto const &ent1 : (*pEngineCountMap)) {
-                    if (ent1.first != -1){
-                        int engineCount = (*pEngineCountMap)[ent1.first][config.engineType];
-                        tileIdsMap.insert({ent1.first,engineCount});
-                    }
+            for(auto tile : this->opts->deviceTileIds){
+                if(pEngineCountMap->find(std::stoi(tile)) != pEngineCountMap->end()){
+                    int engineCount = (*pEngineCountMap)[std::stoi(tile)][config.engineType];
+                    tileIdsMap.insert({std::stoi(tile),engineCount});
                 }
-                deviceLevelHeader = true;
+                else if(this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1"){
+                    for(auto const &ent1 : (*pEngineCountMap)) {
+                        if (ent1.first != -1){
+                            int engineCount = (*pEngineCountMap)[ent1.first][config.engineType];
+                            tileIdsMap.insert({ent1.first,engineCount});
+                        }
+                    }
+                    deviceLevelHeader = true;
+                }
             }
+
             if (tileIdsMap.size()==0){
                 tileIdsMap.insert({-1,0});
                 deviceLevelHeader = false;
@@ -869,13 +891,15 @@ void ComletDump::printByLine(std::ostream &out) {
             }
         } else if (config.optionType == xpum::dump::DUMP_OPTION_FABRIC) {
             std::vector<std::string> strTileIds;
-            if (tileId == -1){
+            if (this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1"){
                 for (auto& el : (*pFabricCountJson).items())
                     strTileIds.push_back(el.key());
             }
             else{
-                if (pFabricCountJson->contains(std::to_string(tileId))) 
-                    strTileIds.push_back(std::to_string(tileId));
+                for(auto tile : this->opts->deviceTileIds){
+                    if (pFabricCountJson->contains(tile))
+                        strTileIds.push_back(tile);
+                }
             }
             for (auto strTileId: strTileIds) {
                 for (auto obj : (*pFabricCountJson)[strTileId]) {
@@ -1003,40 +1027,43 @@ void ComletDump::printByLine(std::ostream &out) {
             engineUtilJson = nullptr;
             fabricThroughputJson = std::make_shared<nlohmann::json>((*deviceJsons[deviceId])["fabric_throughput"]);
 
-            if (tileId == -1) {
-                if (deviceJsons[deviceId]->contains("device_level")) {
-                    statsJson = std::make_shared<nlohmann::json>((*deviceJsons[deviceId])["device_level"]);
-                }
-                if (deviceJsons[deviceId]->contains("engine_util")) {
-                    engineUtilJson = std::make_shared<nlohmann::json>((*deviceJsons[deviceId])["engine_util"]);
-                }
-            } else {
-                if (deviceJsons[deviceId]->contains("tile_level")) {
-                    auto tiles = (*deviceJsons[deviceId])["tile_level"].get<std::vector<nlohmann::json>>();
-                    for (auto tile : tiles) {
-                        if (tile.contains("tile_id") && tile["tile_id"].get<int>() == tileId && tile.contains("data_list")) {
-                            statsJson = std::make_shared<nlohmann::json>(tile["data_list"]);
-                            if (tile.contains("engine_util")) {
-                                engineUtilJson = std::make_shared<nlohmann::json>(tile["engine_util"]);
+            for(auto tile : this->opts->deviceTileIds){
+                curTileId = tile;
+                if (this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1") {
+                    if (deviceJsons[deviceId]->contains("device_level")) {
+                        statsJson = std::make_shared<nlohmann::json>((*deviceJsons[deviceId])["device_level"]);
+                    }
+                    if (deviceJsons[deviceId]->contains("engine_util")) {
+                        engineUtilJson = std::make_shared<nlohmann::json>((*deviceJsons[deviceId])["engine_util"]);
+                    }
+                } else {
+                    if (deviceJsons[deviceId]->contains("tile_level")) {
+                        auto tiles = (*deviceJsons[deviceId])["tile_level"].get<std::vector<nlohmann::json>>();
+                        for (auto tile : tiles) {
+                            if (tile.contains("tile_id") && tile["tile_id"].get<int>() == std::stoi(curTileId) && tile.contains("data_list")) {
+                                statsJson = std::make_shared<nlohmann::json>(tile["data_list"]);
+                                if (tile.contains("engine_util")) {
+                                    engineUtilJson = std::make_shared<nlohmann::json>(tile["engine_util"]);
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
                 }
-            }
 
-            for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
-                auto dc = columnSchemaList[i];
-                auto value = dc.getValue();
-                if (value.size() < 4) {
-                    out << std::string(4 - value.size(), ' ');
+                for (std::size_t i = 0; i < columnSchemaList.size(); i++) {
+                    auto dc = columnSchemaList[i];
+                    auto value = dc.getValue();
+                    if (value.size() < 4) {
+                        out << std::string(4 - value.size(), ' ');
+                    }
+                    out << value;
+                    if (i < columnSchemaList.size() - 1) {
+                        out << ", ";
+                    }
                 }
-                out << value;
-                if (i < columnSchemaList.size() - 1) {
-                    out << ", ";
-                }
+                out << std::endl;
             }
-            out << std::endl;
         }
         if (this->opts->dumpTimes != -1 && ++iter >= this->opts->dumpTimes) {
             break;

@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_dump.h
  */
@@ -24,7 +24,7 @@ namespace xpum::cli {
 
 struct ComletDumpOptions {
     std::vector<std::string> deviceIds = {"-1"};
-    int deviceTileId = -1;
+    std::vector<std::string> deviceTileIds = {"-1"};
     std::vector<int> metricsIdList;
     uint32_t timeInterval = 1;
     int dumpTimes = -1;
@@ -45,6 +45,7 @@ class ComletDump : public ComletBase {
     std::shared_ptr<nlohmann::json> fabricThroughputJson;
     std::map<std::string, std::unique_ptr<nlohmann::json>> deviceJsons;
     std::string curDeviceId;
+    std::string curTileId;
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
     std::set<std::string> sumMetricsList{"XPUM_STATS_MEMORY_READ", "XPUM_STATS_MEMORY_WRITE", "XPUM_STATS_MEMORY_READ_THROUGHPUT", "XPUM_STATS_MEMORY_WRITE_THROUGHPUT", "XPUM_STATS_MEMORY_USED", "XPUM_STATS_PCIE_READ_THROUGHPUT", "XPUM_STATS_PCIE_WRITE_THROUGHPUT", "XPUM_STATS_RAS_ERROR_CAT_RESET", "XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS", "XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS", "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE", "XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE"};

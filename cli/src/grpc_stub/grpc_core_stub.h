@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file grpc_core_stub.h
  */
@@ -50,10 +50,10 @@ class GrpcCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> groupAddDevice(int groupId, int deviceId);
     std::unique_ptr<nlohmann::json> groupRemoveDevice(int groupId, int deviceId);
 
-    std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, int targetType, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr);
     std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr);
-    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, int targetType, bool rawComponentTypeStr);
+    std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr);
     std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr);
 
     std::unique_ptr<nlohmann::json> getAllHealth();
@@ -126,6 +126,10 @@ class GrpcCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime);
     std::unique_ptr<nlohmann::json> checkStress(int deviceId);
+    
+    std::string getPciSlotName(std::vector<std::string> &bdfs) {
+        return "";
+    }
 
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;

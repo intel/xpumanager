@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file firmware_stub.cpp
  */
@@ -9,6 +9,7 @@
 #include "exit_code.h"
 #include "logger.h"
 #include "redfish_amc_manager.h"
+#include <fstream>
 
 namespace xpum::cli {
 
@@ -164,7 +165,29 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getFirmwareFlashResult(int deviceId
     return json;
 }
 
-std::string LibCoreStub::getRedfishAmcWarnMsg(){
+static bool hasCdcEem() {
+    std::string cmd = "modinfo cdc_eem 2>&1";
+    FILE* f = popen(cmd.c_str(), "r");
+    if (f)
+        return pclose(f) == 0;
+    return false;
+}
+
+static bool isCentOS() {
+    std::string line;
+    std::ifstream f("/etc/centos-release");
+    if (f.is_open()) {
+        getline(f, line);
+        f.close();
+        if (line.find("CentOS Stream release 9") != line.npos || line.find("CentOS Stream release 8") != line.npos)
+            return true;
+    }
+    return false;
+}
+
+std::string LibCoreStub::getRedfishAmcWarnMsg() {
+    if (isCentOS() && !hasCdcEem())
+        return "";
     return getRedfishAmcWarn();
 }
 

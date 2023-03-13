@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file grpc_core_stub.cpp
  */
@@ -23,6 +23,7 @@
 #include "xpum_structs.h"
 #include "grpc_core_stub.h"
 #include "exit_code.h"
+#include "utility.h"
 
 namespace xpum::cli {
 
@@ -451,7 +452,7 @@ static std::string diagnosticsMediaCodecFormatEnumToString(DiagnosticsMediaCodec
     return ret;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnostics(int deviceId, int level, int targetType, bool rawComponentTypeStr) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnostics(int deviceId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -462,11 +463,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnostics(int deviceId, int l
         request.set_deviceid(deviceId);
         request.set_level(level);
         stub->runDiagnostics(&context, request, &response);
-    } else if (targetType >= 0) {
-        RunSpecificDiagnosticsRequest request;
+    } else if (targetTypes.size() >= 0) {
+        RunMultipleSpecificDiagnosticsRequest request;
         request.set_deviceid(deviceId);
-        request.set_type(targetType);
-        stub->runSpecificDiagnostics(&context, request, &response);      
+        for (auto& type : targetTypes)
+            request.add_types(type);
+        stub->runMultipleSpecificDiagnostics(&context, request, &response);      
     } else {
         (*json)["error"] = "Error";
         (*json)["errno"] = errorNumTranslate(XPUM_GENERIC_ERROR);
@@ -513,12 +515,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnostics(int deviceId, int l
         if (level > 0)
             XPUM_LOG_AUDIT("Succeed to run level-%d diagnostics on device %d", level, deviceId);
         else
-            XPUM_LOG_AUDIT("Succeed to run type-%d diagnostics on device %d", targetType, deviceId);
+            XPUM_LOG_AUDIT("Succeed to run type-%s diagnostics on device %d", toString(targetTypes).c_str(), deviceId);
     } else {
         if (level > 0)
             XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on device %d", level, deviceId);
         else
-            XPUM_LOG_AUDIT("Failed to run type-%d diagnostics on device %d", targetType, deviceId);
+            XPUM_LOG_AUDIT("Failed to run type-%s diagnostics on device %d", toString(targetTypes).c_str(), deviceId);
     }
     return json;
 }
@@ -614,7 +616,7 @@ std::shared_ptr<nlohmann::json> GrpcCoreStub::getDiagnosticsMediaCodecResult(int
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnosticsByGroup(uint32_t groupId, int level, int targetType, bool rawComponentTypeStr) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnosticsByGroup(uint32_t groupId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
@@ -625,11 +627,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnosticsByGroup(uint32_t gro
         request.set_groupid(groupId);
         request.set_level(level);
         status = stub->runDiagnosticsByGroup(&context, request, &response);
-    } else if (targetType >= 0) {
-        RunSpecificDiagnosticsByGroupRequest request;
+    } else if (targetTypes.size() >= 0) {
+        RunMultipleSpecificDiagnosticsByGroupRequest request;
         request.set_groupid(groupId);
-        request.set_type(targetType);
-        status = stub->runSpecificDiagnosticsByGroup(&context, request, &response);    
+        for (auto& type : targetTypes)
+            request.add_types(type);
+        stub->runMultipleSpecificDiagnosticsByGroup(&context, request, &response);  
     } else {
         (*json)["error"] = "Error";
         (*json)["errno"] = errorNumTranslate(XPUM_GENERIC_ERROR);
@@ -676,12 +679,12 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::runDiagnosticsByGroup(uint32_t gro
         if (level > 0)
             XPUM_LOG_AUDIT("Succeed to run level-%d diagnostics on group %d", level, groupId);
         else
-            XPUM_LOG_AUDIT("Succeed to run type-%d diagnostics on group %d", targetType, groupId);
+            XPUM_LOG_AUDIT("Succeed to run type-%s diagnostics on group %d", toString(targetTypes).c_str(), groupId);
     } else {
         if (level > 0)
             XPUM_LOG_AUDIT("Failed to run level-%d diagnostics on group %d", level, groupId);
         else
-            XPUM_LOG_AUDIT("Failed to run type-%d diagnostics on group %d", targetType, groupId); 
+            XPUM_LOG_AUDIT("Failed to run type-%s diagnostics on group %d", toString(targetTypes).c_str(), groupId); 
     }
     return json;
 }

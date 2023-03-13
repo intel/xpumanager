@@ -291,9 +291,16 @@ Usage: xpu-smi diag [Options]
   xpu-smi diag -d [deviceId] -l [level]
   xpu-smi diag -d [pciBdfAddress] -l [level]
   xpu-smi diag -d [deviceId] -l [level] -j
+  xpu-smi diag -d [deviceId] --singletest [testIds]
+  xpu-smi diag -d [pciBdfAddress] --singletest [testIds]
+  xpu-smi diag -d [deviceId] --singletest [testIds] -j
+  xpu-smi diag -d [pciBdfAddress] --singletest [testIds] -j
+  xpu-smi diag -d [deviceIds] --stress
   xpu-smi diag -d [deviceIds] --stress --stresstime [stress time]
   xpu-smi diag --precheck
   xpu-smi diag --precheck -j
+  xpu-smi diag --precheck --gpu
+  xpu-smi diag --precheck --gpu -j
   xpu-smi diag --stress
   xpu-smi diag --stress --stresstime [time]
 
@@ -363,6 +370,25 @@ Device: 1 Finished:0 Time: 0 seconds
 Device: 0 Finished:0 Time: 5 seconds
 Device: 1 Finished:0 Time: 5 seconds
 ^C
+```
+
+Run the particular tests on the specified GPU
+```
+xpu-smi diag -d 0 --singletest 1,4
++-------------------------+------------------------------------------------------------------------+
+| Device ID               | 0                                                                      |
++-------------------------+------------------------------------------------------------------------+
+| Performance Computation | Result: Pass                                                           |
+|                         | Message: Pass to check computation performance. Its single-precision   |
+|                         |   GFLOPS is 10938.459.                                                 |
++-------------------------+------------------------------------------------------------------------+
+| Media Codec             | Result: Pass                                                           |
+|                         | Message: Pass to check Media transcode performance.                    |
+|                         |  1080p H.265 : 474 FPS                                                 |
+|                         |  1080p H.264 : 430 FPS                                                 |
+|                         |  4K H.265 : 139 FPS                                                    |
+|                         |  4K H.264 : 119 FPS                                                    |
++-------------------------+------------------------------------------------------------------------+
 ```
 
 ## Get and change the GPU settings
@@ -589,8 +615,8 @@ Dump device statistics data.
 
 Usage: xpu-smi dump [Options]
   xpu-smi dump -d [deviceIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
-  xpu-smi dump -d [deviceIds] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
-  xpu-smi dump -d [pciBdfAddress] -t [deviceTileId] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
+  xpu-smi dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
+  xpu-smi dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]
 
 Options:
   -h,--help                   Print this help message and exit

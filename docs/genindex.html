@@ -481,6 +481,8 @@
 </li>
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-21">XPUM_DEVICE_PROPERTY_SERIAL_NUMBER</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-21">[1]</a>
 </li>
+        <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-47">XPUM_DEVICE_PROPERTY_SKU_TYPE</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-47">[1]</a>
+</li>
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-4">XPUM_DEVICE_PROPERTY_UUID</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-4">[1]</a>
 </li>
         <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-3">XPUM_DEVICE_PROPERTY_VENDOR_NAME</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-3">[1]</a>
@@ -748,9 +750,9 @@
 </li>
         <li><a href="smidoc/rst/group_FIRMWARE_UPDATE_API.html#index-2">xpumRunFirmwareFlashEx</a>, <a href="xpumdoc/rst/group_FIRMWARE_UPDATE_API.html#index-2">[1]</a>
 </li>
-        <li><a href="smidoc/rst/group_DIAGNOSTICS_API.html#index-2">xpumRunSpecificDiagnostics</a>, <a href="xpumdoc/rst/group_DIAGNOSTICS_API.html#index-2">[1]</a>
+        <li><a href="smidoc/rst/group_DIAGNOSTICS_API.html#index-2">xpumRunMultipleSpecificDiagnostics</a>, <a href="xpumdoc/rst/group_DIAGNOSTICS_API.html#index-2">[1]</a>
 </li>
-        <li><a href="xpumdoc/rst/group_DIAGNOSTICS_API.html#index-4">xpumRunSpecificDiagnosticsByGroup</a>
+        <li><a href="xpumdoc/rst/group_DIAGNOSTICS_API.html#index-4">xpumRunMultipleSpecificDiagnosticsByGroup</a>
 </li>
         <li><a href="smidoc/rst/group_DIAGNOSTICS_API.html#index-5">xpumRunStress</a>, <a href="xpumdoc/rst/group_DIAGNOSTICS_API.html#index-8">[1]</a>
 </li>
@@ -2082,6 +2084,13 @@
 </li>
       </ul></li>
       <li>
+    XPUM_DEVICE_PROPERTY_SKU_TYPE
+
+      <ul>
+        <li><a href="smidoc/rst/enum_xpum_device_property_name_enum.html#index-47">enumvalue</a>, <a href="xpumdoc/rst/enum_xpum_device_property_name_enum.html#index-47">[1]</a>
+</li>
+      </ul></li>
+      <li>
     xpum_device_property_t
 
       <ul>
@@ -2587,6 +2596,8 @@
         <li><a href="smidoc/rst/global.html#index-33">typedef</a>, <a href="xpumdoc/rst/global.html#index-33">[1]</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     XPUM_NOT_INITIALIZED
 
@@ -2594,8 +2605,6 @@
         <li><a href="smidoc/rst/enum_xpum_result_enum.html#index-6">enumvalue</a>, <a href="xpumdoc/rst/enum_xpum_result_enum.html#index-6">[1]</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     XPUM_OK
 
@@ -3546,14 +3555,14 @@
 </li>
       </ul></li>
       <li>
-    xpumRunSpecificDiagnostics
+    xpumRunMultipleSpecificDiagnostics
 
       <ul>
         <li><a href="smidoc/rst/group_DIAGNOSTICS_API.html#index-2">function</a>, <a href="xpumdoc/rst/group_DIAGNOSTICS_API.html#index-2">[1]</a>
 </li>
       </ul></li>
       <li>
-    xpumRunSpecificDiagnosticsByGroup
+    xpumRunMultipleSpecificDiagnosticsByGroup
 
       <ul>
         <li><a href="xpumdoc/rst/group_DIAGNOSTICS_API.html#index-4">function</a>

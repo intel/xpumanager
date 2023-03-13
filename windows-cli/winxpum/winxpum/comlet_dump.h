@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_dump.h
  */
@@ -68,6 +68,7 @@ private:
         {XPUM_STATS_PCIE_WRITE_THROUGHPUT, "XPUM_STATS_PCIE_WRITE_THROUGHPUT", "PCIe Write (kB/s)", "per GPU"},
         {XPUM_STATS_COMPUTE_UTILIZATION, "XPUM_STATS_COMPUTE_UTILIZATION", "Compute Engine (%)", "per tile"},
         {XPUM_STATS_MEDIA_UTILIZATION, "XPUM_STATS_MEDIA_UTILIZATION", "Media Engine (%)", "per tile"},
+        {XPUM_STATS_COPY_UTILIZATION, "XPUM_STATS_COPY_UTILIZATION", "Copy Engine (%)", "per tile"},
     };
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file exit_code.h
  */
@@ -55,5 +55,6 @@
 #define XPUM_CLI_ERROR_FIRMWARE_VERSION_ERROR                               46
 #define XPUM_CLI_ERROR_MEMORY_ECC_LIB_NOT_SUPPORT                           47  
 #define XPUM_CLI_ERROR_DIAGNOSTIC_INVALID_SINGLE_TEST                       48
+#define XPUM_CLI_ERROR_DIAGNOSTIC_DUPLICATED_SINGLE_TEST                    49
 
 int errorNumTranslate(int coreErrNo);

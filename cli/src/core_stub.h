@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file core_stub.h
  */
@@ -54,10 +54,10 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> groupAddDevice(int groupId, int deviceId)=0;
     virtual std::unique_ptr<nlohmann::json> groupRemoveDevice(int groupId, int deviceId)=0;
 
-    virtual std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, int targetType, bool rawComponentTypeStr)=0;
+    virtual std::unique_ptr<nlohmann::json> runDiagnostics(int deviceId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> getDiagnosticsResult(int deviceId, bool rawComponentTypeStr)=0;
     virtual std::shared_ptr<nlohmann::json> getDiagnosticsMediaCodecResult(int deviceId, bool rawFpsStr)=0;
-    virtual std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, int targetType, bool rawComponentTypeStr)=0;
+    virtual std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime)=0;
     virtual std::unique_ptr<nlohmann::json> checkStress(int deviceId)=0;
@@ -128,6 +128,8 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> getSensorReading()=0;
 
     virtual std::vector<std::unique_ptr<nlohmann::json>> getMetricsFromSysfs(std::vector<std::string> bdfs)=0;
+
+    virtual std::string getPciSlotName(std::vector<std::string> &bdfs)=0;
 
     std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson);
 

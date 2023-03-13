@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file gpu_device_stub.cpp
  */
@@ -33,6 +33,7 @@
 #include "device/performancefactor.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
+#include "device/skuType.h"
 #include "gpu_device.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_property.h"
@@ -503,6 +504,7 @@ class DMISystemSlot {
         return _currentUsage == SYSTEM_SLOT_IN_USE;
     }
 };
+
 
 static const std::string SYSTEM_SLOT_MARKER("System Slot Information");
 static std::vector<DMISystemSlot> getSystemSlotBlocks(const std::string& ssInfos) {
@@ -1146,6 +1148,10 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES, std::to_string(media_engine_count)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES, std::to_string(meida_enhancement_engine_count)));
                 addPCIeProperties(device, p_gpu);
+
+                toSetMeiDevicePath(p_gpu);
+                std::string sku_type = pchProdStateToSkuType(getDevicePchProdStateType(p_gpu->getMeiDevicePath()));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
 
                 p_devices->push_back(p_gpu);
             }
@@ -4464,6 +4470,20 @@ void GPUDeviceStub::readPerfMetricsData(std::shared_ptr<std::map<uint32_t, std::
         metric_group_data.name = it->second->group_name;
         p_metric_device_data->data.emplace_back(metric_group_data);
     }
+}
+
+std::string GPUDeviceStub::getPciSlotByPath(std::vector<std::string> pciPath) {
+    std::string ret;
+    SystemCommandResult res = execCommand("dmidecode -t 9 2>/dev/null");
+    std::vector<DMISystemSlot> slots = getSystemSlotBlocks(res.output());
+    for (auto &slot : slots) {
+        for (auto &node : pciPath) {
+            if (slot.inUse() && slot.busAddress() == node) {
+                return slot.name();
+            }
+        }
+    } 
+    return ret;
 }
 
 } // end namespace xpum

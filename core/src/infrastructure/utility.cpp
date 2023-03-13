@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file utility.cpp
  */
@@ -11,6 +11,7 @@
 
 #include "../include/xpum_structs.h"
 #include "device/device.h"
+#include "api/device_model.h"
 
 namespace xpum {
 
@@ -576,30 +577,16 @@ xpum_fabric_throughput_type_t Utility::toXPUMFabricThroughputType(FabricThroughp
     }
 }
 
-bool Utility::isATSPlatform(std::string device_name) {
-    return device_name == "Intel(R) Graphics [0x020a]" 
-    || device_name == "Intel(R) Graphics [0x56c0]" 
-    || device_name == "Intel(R) Graphics [0x56c1]"
-    || device_name == "Intel(R) Graphics [0x0207]";
-}
-bool Utility::isPVCPlatform(std::string device_name) {
-    return device_name == "Intel(R) Graphics [0x0BD0]"
-    || device_name == "Intel(R) Graphics [0x0BD5]"
-    || device_name == "Intel(R) Graphics [0x0BD6]"
-    || device_name == "Intel(R) Graphics [0x0BD7]"
-    || device_name == "Intel(R) Graphics [0x0BD8]"
-    || device_name == "Intel(R) Graphics [0x0BD9]"
-    || device_name == "Intel(R) Graphics [0x0BDA]"
-    || device_name == "Intel(R) Graphics [0x0BDB]"
-    || device_name == "Intel(R) Graphics [0x0BE5]";
-}
-
-bool Utility::isATSM1(std::string device_name) {
-    return device_name == "Intel(R) Graphics [0x56c0]";
-}
-
-bool Utility::isATSM3(std::string device_name) {
-    return device_name == "Intel(R) Graphics [0x56c1]";
+bool Utility::isATSMPlatform(const zes_device_handle_t &device) {
+    zes_device_properties_t props;
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    props.pNext = nullptr;
+    bool is_atsm = false;
+    if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        int device_model = getDeviceModelByPciDeviceId(props.core.deviceId);
+        is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3);
+    }
+    return is_atsm;
 }
 
 } // end namespace xpum

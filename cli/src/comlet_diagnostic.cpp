@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2021-2022 Intel Corporation
+ *  Copyright (C) 2021-2023 Intel Corporation
  *  SPDX-License-Identifier: MIT
  *  @file comlet_diagnostic.cpp
  */
@@ -12,6 +12,7 @@
 #include "core_stub.h"
 #include "utility.h"
 #include "exit_code.h"
+#include <set>
 #include <unordered_map>
 
 namespace xpum::cli {
@@ -106,6 +107,13 @@ static CharTableConfig ComletConfigDiagnosticPreCheck(R"({
     }]
 })"_json);
 
+std::unordered_map<int, int> testIdToType = {{1, XPUM_DIAG_PERFORMANCE_COMPUTATION}, 
+                                                {2, XPUM_DIAG_MEMORY_ERROR}, 
+                                                {3, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH}, 
+                                                {4, XPUM_DIAG_MEDIA_CODEC}, 
+                                                {5, XPUM_DIAG_INTEGRATION_PCIE}, 
+                                                {6, XPUM_DIAG_PERFORMANCE_POWER}};
+
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceIds, "The device ID or PCI BDF address");
@@ -137,14 +145,16 @@ void ComletDiagnostic::setupOptions() {
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver");
     auto onlyGPUOpt = addFlag("--gpu", this->opts->onlyGPU, "Show the GPU status only");
 
-    auto singleTestId = addOption("--singletest", this->opts->singleTestId,
-              "Selectively run a particular test\n\
+    auto singleTestIdList = addOption("--singletest", this->opts->singleTestIdList,
+              "Selectively run some particular tests. Separated by the comma.\n\
       1. Computation\n\
       2. Memory Error\n\
       3. Memory Bandwidth\n\
       4. Media Codec\n\
       5. PCIe Bandwidth\n\
       6. Power");
+    singleTestIdList->delimiter(',');
+    singleTestIdList->check(CLI::Range(1, 6));
 
     preCheckOpt->excludes(deviceIdOpt);
     preCheckOpt->excludes(level);
@@ -153,8 +163,8 @@ void ComletDiagnostic::setupOptions() {
     level->excludes(preCheckOpt);
     level->excludes(stressFlag);
     level->excludes(stressTimeOpt);
-    level->excludes(singleTestId);
-    singleTestId->excludes(level);
+    level->excludes(singleTestIdList);
+    singleTestIdList->excludes(level);
     
     deviceIdOpt->excludes(preCheckOpt);
     if (stressFlag == nullptr) {
@@ -193,10 +203,22 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
         return json;
     }
 
-    if (this->opts->singleTestId != INT_MIN && (this->opts->singleTestId < 1 || this->opts->singleTestId > 6)) {
-        (*json)["error"] = "invalid single test";
-        (*json)["errno"] = XPUM_CLI_ERROR_DIAGNOSTIC_INVALID_SINGLE_TEST;
-        return json;
+    if (this->opts->singleTestIdList.size() > 0) {
+        // check singletest is unique
+        std::set<int> idSet(this->opts->singleTestIdList.begin(), this->opts->singleTestIdList.end());
+        if (idSet.size() != this->opts->singleTestIdList.size()) {
+            json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+            (*json)["error"] = "Duplicated single test";
+            (*json)["errno"] = XPUM_CLI_ERROR_DIAGNOSTIC_DUPLICATED_SINGLE_TEST;
+            return json;
+        }
+        for (std::size_t i = 0; i < this->opts->singleTestIdList.size(); i++) {
+            if (this->opts->singleTestIdList[i] < 1 || this->opts->singleTestIdList[i] > (int)testIdToType.size()) {
+                (*json)["error"] = "invalid single test";
+                (*json)["errno"] = XPUM_CLI_ERROR_DIAGNOSTIC_INVALID_SINGLE_TEST;
+                return json;
+            }
+        }
     }
 
     if (this->opts->level >= 1 && this->opts->level <= 3) {
@@ -210,25 +232,21 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
                     return convertResult;
                 }
             }
-            json = this->coreStub->runDiagnostics(targetId, this->opts->level, -1, this->opts->rawJson);
+            json = this->coreStub->runDiagnostics(targetId, this->opts->level, {}, this->opts->rawJson);
             return json;
         } 
 #ifndef DAEMONLESS
         else if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
-            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level, -1, this->opts->rawJson);
+            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, this->opts->level, {}, this->opts->rawJson);
             return json;
         }
 #endif
     }
 
-    std::unordered_map<int, int> testIdToType = {{1, XPUM_DIAG_PERFORMANCE_COMPUTATION}, 
-                                                 {2, XPUM_DIAG_MEMORY_ERROR}, 
-                                                 {3, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH}, 
-                                                 {4, XPUM_DIAG_MEDIA_CODEC}, 
-                                                 {5, XPUM_DIAG_INTEGRATION_PCIE}, 
-                                                 {6, XPUM_DIAG_PERFORMANCE_POWER}};
-
-    if (this->opts->singleTestId >= 1 && this->opts->singleTestId <= 6) {
+    if (this->opts->singleTestIdList.size() > 0) {
+        std::vector<int> targetTypes;
+        for (auto testId : this->opts->singleTestIdList)
+            targetTypes.push_back(testIdToType[testId]);
         if (this->opts->deviceIds[0] != "-1") {
             int targetId = -1;
             if (isNumber(this->opts->deviceIds[0])) {
@@ -239,12 +257,12 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
                     return convertResult;
                 }
             }
-            json = this->coreStub->runDiagnostics(targetId, -1, testIdToType[this->opts->singleTestId], this->opts->rawJson);
+            json = this->coreStub->runDiagnostics(targetId, -1, targetTypes, this->opts->rawJson);
             return json;
         } 
 #ifndef DAEMONLESS
         else if (this->opts->groupId > 0 && this->opts->groupId != UINT_MAX) {
-            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, -1, testIdToType[this->opts->singleTestId], this->opts->rawJson);
+            json = this->coreStub->runDiagnosticsByGroup(this->opts->groupId, -1, targetTypes, this->opts->rawJson);
             return json;
         }
 #endif
