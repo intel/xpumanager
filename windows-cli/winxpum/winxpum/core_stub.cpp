@@ -945,16 +945,17 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
     if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION || metricsType == XPUM_STATS_MEDIA_UTILIZATION || metricsType == XPUM_STATS_GPU_UTILIZATION || metricsType == XPUM_STATS_COPY_UTILIZATION) {
         static uint64_t compute_engine = 0;
         static uint64_t media_engine = 0;
+        static uint64_t copy_engine = 0;
 
         if (metricsType == XPUM_STATS_GPU_UTILIZATION) {
-            data.max = data.min = data.avg = data.value = std::max(compute_engine, media_engine);
+            data.max = data.min = data.avg = data.value = std::max(std::max(compute_engine, media_engine), copy_engine);
             return data;
         }
 
         uint32_t engine_count = 0;
         ze_result_t res;
         res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr);
-        if (res == ZE_RESULT_SUCCESS && engine_count>0) {
+        if (res == ZE_RESULT_SUCCESS && engine_count > 0) {
             std::vector<zes_engine_handle_t> engines(engine_count);
             res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data());
             if (res == ZE_RESULT_SUCCESS) {
@@ -989,8 +990,8 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                                 data.max = data.min = data.avg = data.value = compute_engine = (uint64_t)val;
                             } else if (metricsType == XPUM_STATS_MEDIA_UTILIZATION) {
                                 data.max = data.min = data.avg = data.value = media_engine = (uint64_t)val;
-                            } else {
-                                data.max = data.min = data.avg = data.value = (uint64_t)val;
+                            } else if (metricsType == XPUM_STATS_COPY_UTILIZATION) {
+                                data.max = data.min = data.avg = data.value = copy_engine = (uint64_t)val;
                             }
                         }
                     }
@@ -998,11 +999,11 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
             }
         } else {
             if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION) {
-                data.max = data.min = data.avg = data.value = (uint64_t)(getComputeEngineUtilByNativeAPI() * 100.0);
+                data.max = data.min = data.avg = data.value = compute_engine = (uint64_t)(getComputeEngineUtilByNativeAPI() * 100.0);
             } else if (metricsType == XPUM_STATS_MEDIA_UTILIZATION) {
-                data.max = data.min = data.avg = data.value = (uint64_t)(getMediaEngineUtilByNativeAPI() * 100.0);
+                data.max = data.min = data.avg = data.value = media_engine = (uint64_t)(getMediaEngineUtilByNativeAPI() * 100.0);
             } else if (metricsType == XPUM_STATS_COPY_UTILIZATION) {
-                data.max = data.min = data.avg = data.value = (uint64_t)(getCopyEngineUtilByNativeAPI() * 100.0);
+                data.max = data.min = data.avg = data.value = copy_engine = (uint64_t)(getCopyEngineUtilByNativeAPI() * 100.0);
             }
         }
     }
