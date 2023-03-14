@@ -179,6 +179,29 @@ spec:
           name: "jenkins-shared-pvc"
           readOnly: false
       workingDir: "/home/jenkins/agent"
+    - args:
+        - "99d"
+      command:
+        - "sleep"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20230313"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-centos-stream9"
+      resources:
+        limits: 
+          memory: "6Gi"
+          cpu: "2"
+      tty: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+        - mountPath: "/home/jenkins/jenkins-shared-pvc"
+          name: "jenkins-shared-pvc"
+          readOnly: false
+      workingDir: "/home/jenkins/agent"
     - name: "kaniko-1"
       image: "gcr.io/kaniko-project/executor:debug"
       imagePullPolicy: Always
@@ -405,6 +428,29 @@ spec:
                 rm -fr build && \
                 ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 cp ./build/xpu*.rpm $MAIN_WORKSPACE/build-sles
+                '''
+              }
+            }
+          }
+
+          stage('build centos-stream-9 rpm') {
+            steps {
+              container(name: 'xpum-builder-centos-stream9', shell: 'bash') {
+                script {
+                  loadEnvironmentVariables()
+                }
+                sh '''env && MAIN_WORKSPACE=$PWD && \
+                mkdir ../ws_centos_stream9 && \
+                cp -rp . ../ws_centos_stream9 && \
+                cd ../ws_centos_stream9 && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
+                mkdir $MAIN_WORKSPACE/build-centos-stream9 && \
+                ./build.sh -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos-stream9 && \
+                rm -fr build && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.rpm $MAIN_WORKSPACE/build-centos-stream9
                 '''
               }
             }
