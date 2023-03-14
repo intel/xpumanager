@@ -15,6 +15,8 @@
 #include <set>
 #include <unordered_map>
 
+#include "local_functions.h"
+
 namespace xpum::cli {
 
 static CharTableConfig ComletConfigDiagnosticDevice(R"({
@@ -144,6 +146,10 @@ void ComletDiagnostic::setupOptions() {
     auto stressTimeOpt = addOption("--stresstime", this->opts->stressTime, "Stress time (in minutes)");
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver");
     auto onlyGPUOpt = addFlag("--gpu", this->opts->onlyGPU, "Show the GPU status only");
+    auto sinceTimeOpt = addOption("--since", this->opts->sinceTime, "Start time for log scanning. The generic format is \"YYYY-MM-DD HH:MM:SS\".\n\
+Alternatively the strings \"yesterday\", \"today\" are also understood.\n\
+Relative times also may be specified, prefixed with \"-\" referring to times before the current time.\n\
+Scanning will starts from the latest boot if it is not specified.");
 
     auto singleTestIdList = addOption("--singletest", this->opts->singleTestIdList,
               "Selectively run some particular tests. Separated by the comma.\n\
@@ -165,7 +171,8 @@ void ComletDiagnostic::setupOptions() {
     level->excludes(stressTimeOpt);
     level->excludes(singleTestIdList);
     singleTestIdList->excludes(level);
-    
+    sinceTimeOpt->needs(preCheckOpt);
+
     deviceIdOpt->excludes(preCheckOpt);
     if (stressFlag == nullptr) {
         deviceIdOpt->needs(level);
@@ -269,7 +276,7 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
 
     if (this->opts->preCheck) {
-        json = this->coreStub->getPreCheckInfo(this->opts->onlyGPU, this->opts->rawJson);
+        json = getPreCheckInfo(this->opts->onlyGPU, this->opts->rawJson, this->opts->sinceTime);
         return json;
     }
 
