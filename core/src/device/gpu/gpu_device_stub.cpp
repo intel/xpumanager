@@ -792,10 +792,21 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
     if (checkCapability(props.core.name, bdf_address, "Energy", toGetEnergy, device))
         capabilities.push_back(DeviceCapability::METRIC_ENERGY);
 
-    if (Configuration::XPUM_MODE == "xpu-smi" && getDeviceModelByPciDeviceId(props.core.deviceId) == XPUM_DEVICE_MODEL_PVC){
-        // Just xpu-smi on PVC is affected
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
-    }else {
+    if (Configuration::XPUM_MODE == "xpu-smi") {
+        /*
+           For SMI version, RAS capability won't be checked.
+           For PVC, the capability is added without a check to optimize
+           init time.
+           For ATS-M, the capability is not checked and added because 
+           it is not supported.
+           Todo: need to update the behavior if new GPU came or 
+           capability change happened.
+         */
+        if (getDeviceModelByPciDeviceId(props.core.deviceId) == 
+                XPUM_DEVICE_MODEL_PVC) {
+            capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
+        }
+    } else {
         if (checkCapability(props.core.name, bdf_address, "Ras Error", toGetRasErrorOnSubdevice, device))
             capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
     }
