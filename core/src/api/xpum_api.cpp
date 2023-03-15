@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "api/device_model.h"
 #include "api_types.h"
 #include "core/core.h"
 #include "device/device.h"
@@ -3048,6 +3049,18 @@ xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* 
     xpum_result_t res = validateDeviceId(deviceId);
     if (res != XPUM_OK) {
         return res;
+    }
+
+    if(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel() == XPUM_DEVICE_MODEL_PVC){
+        *available = true;
+        *configurable = false;
+
+        *current = XPUM_ECC_STATE_ENABLED;
+        *pending = XPUM_ECC_STATE_ENABLED;
+
+        *action = XPUM_ECC_ACTION_NONE;
+
+        return XPUM_OK;
     }
 
     std::string meiPath = device->getMeiDevicePath();
