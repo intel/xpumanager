@@ -121,18 +121,12 @@ xpum_result_t DiagnosticManager::runDiagnosticsCore(xpum_device_id_t deviceId, x
         p_task_info->targetTypeCount = 0;
         for(auto& item : p_task_info->targetTypes)
             item = XPUM_DIAG_TASK_TYPE_MAX;
-        p_task_info->targetType = XPUM_DIAG_TASK_TYPE_MAX;
     } else {
         p_task_info->targetTypeCount = count;
         for(auto& item : p_task_info->targetTypes)
             item = XPUM_DIAG_TASK_TYPE_MAX;
         for (int i = 0; i < count; i++)
             p_task_info->targetTypes[i] = types[i];
-        if (count == 1) {
-            p_task_info->targetType = types[0];
-        } else  {
-            p_task_info->targetType = XPUM_DIAG_TASK_TYPE_MAX;
-        }
     }
     p_task_info->result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_UNKNOWN;
     p_task_info->finished = false;
@@ -231,7 +225,6 @@ xpum_result_t DiagnosticManager::getDiagnosticsResult(xpum_device_id_t deviceId,
 
     result->deviceId = deviceId;
     result->level = diagnostic_task_infos.at(deviceId)->level;
-    result->targetType = diagnostic_task_infos.at(deviceId)->targetType;
     result->targetTypeCount = diagnostic_task_infos.at(deviceId)->targetTypeCount;
     result->finished = diagnostic_task_infos.at(deviceId)->finished;
     result->count = diagnostic_task_infos.at(deviceId)->count;
