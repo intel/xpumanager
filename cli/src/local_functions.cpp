@@ -256,7 +256,7 @@ bool getFirmwareVersion(FirmwareVersion& fw_version, std::string bdf) {
         return true;
 }
 
-#define BUF_SIZE 128
+#define BUF_SIZE 256
 bool getBdfListFromLspci(std::vector<std::string> &list) {
     const char *cmd = 
         "lspci|grep -i Display|grep -i Intel|cut -d ' ' -f 1";
@@ -266,7 +266,6 @@ bool getBdfListFromLspci(std::vector<std::string> &list) {
         return false;
     }
     while (fgets(buf, BUF_SIZE, pf) != NULL) {
-        buf[BUF_SIZE - 1] = 0;
         string bdf(buf);
         if (bdf.length() > 0) {
             if (bdf.at(bdf.length() - 1) == '\n') {
@@ -283,24 +282,49 @@ bool getBdfListFromLspci(std::vector<std::string> &list) {
     }
 }
 
-bool getPciName(std::string &pciName, const std::string &bdf) {
-    std::string cmd = "lspci -D -s " + bdf + "|cut -d ':' -f 4";
+bool getPciDeviceData(PciDeviceData &data, const std::string &bdf) {
+    std::string cmd = "lspci -Dx -s " + bdf;
     char buf[BUF_SIZE];
     FILE *pf = popen(cmd.c_str(), "r");
     if (pf == NULL) {
         return false;
     }
     bool found = false;
-    if (fgets(buf, BUF_SIZE, pf) != NULL) {
-        buf[BUF_SIZE - 1] = 0;
-        string line(buf+1);
-        if (line.length() > 0) {
+    int line_num = 1;
+    while (fgets(buf, BUF_SIZE, pf) != NULL) {
+        string line(buf);
+        if (line.length() < 15) {
+            break;
+        }
+        if (line_num == 1) {
             if (line.at(line.length() - 1) == '\n') {
                 line.pop_back();
             }
-            pciName = line;
+            size_t pos = line.rfind(':');
+            if (pos == std::string::npos || pos >= line.length() - 8) {
+                break;
+            }
+            data.name = line.substr(pos + 2);
+        } else {
+#define NUM_OF_BYTES 5
+            unsigned bytes[NUM_OF_BYTES];
+            if (std::sscanf(line.c_str(), "%x: %x %x %x %x", 
+                        &bytes[0], &bytes[1], &bytes[2], &bytes[3], 
+                        &bytes[4]) != NUM_OF_BYTES) {
+                break;
+            }
+            uint16_t vendor = bytes[2] << 8 | bytes[1];
+            uint16_t device = bytes[4] << 8 | bytes[3];
+            std::stringstream ss;
+            ss << std::string("0x") << std::hex << vendor; 
+            data.vendorId = ss.str();
+            ss.str("");
+            ss << std::string("0x") << std::hex << device;
+            data.pciDeviceId = ss.str();
             found = true;
+            break;
         }
+        line_num++;
     }
     int ret = pclose(pf);
     if (ret != -1 && WEXITSTATUS(ret) == 0) {
@@ -308,6 +332,7 @@ bool getPciName(std::string &pciName, const std::string &bdf) {
     } else {
         return false;
     }
+
 }
 
 bool getPciPath(std::vector<string> &pciPath, const std::string &bdf) {
@@ -324,7 +349,6 @@ bool getPciPath(std::vector<string> &pciPath, const std::string &bdf) {
     string domain;
     string node;
     if (fgets(path, PATH_MAX, pf) != NULL) {
-        path[PATH_MAX - 1] = 0;
         int len = strnlen(path, PATH_MAX);
         if (path[len - 1] == '\n') {
             path[len - 1] = 0;
@@ -342,7 +366,7 @@ bool getPciPath(std::vector<string> &pciPath, const std::string &bdf) {
                 } else {
                     pciPath.push_back(node);
                 }
-            }
+            } 
             tok = strtok(NULL, "/");
         }
     }

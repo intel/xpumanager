@@ -91,9 +91,15 @@ struct FirmwareVersion {
     std::string gfx_data_fw_version;
 }; 
 
+struct PciDeviceData {
+    std::string name;
+    std::string vendorId;
+    std::string pciDeviceId;
+};
+
 bool getFirmwareVersion(FirmwareVersion& firmware_version, std::string bdf);  
 bool getBdfListFromLspci(std::vector<std::string> &list);
-bool getPciName(std::string &pciName, const std::string &bdf);
+bool getPciDeviceData(PciDeviceData &data, const std::string &bdf);
 bool getPciPath(std::vector<std::string> &pciPath, const std::string &bdf);
 
 std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson, std::string sinceTime);

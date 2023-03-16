@@ -666,6 +666,30 @@ std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     return res;
 }
 
+static std::string getPciName(std::string bdf) {
+    std::string cmd = "lspci -D -s " + bdf + "|cut -d ':' -f 4";
+    std::string name;
+    char buf[BUF_SIZE];
+    FILE *pf = popen(cmd.c_str(), "r");
+    if (pf == NULL) {
+        return name;
+    }
+    if (fgets(buf, BUF_SIZE, pf) != NULL) {
+        if (strnlen(buf, BUF_SIZE) <= 0) {
+            return name;
+        } 
+        std::string line(buf+1);
+        if (line.length() > 0) {
+            if (line.at(line.length() - 1) == '\n') {
+                line.pop_back();
+            }
+            name = line;
+        }
+    }
+    pclose(pf);
+    return name;
+}
+
 static std::string getI915Version() {
     std::string ret = "";
     char buf[BUF_SIZE];
@@ -998,7 +1022,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_MEM_ALLOC_SIZE_BYTE, std::to_string(props.core.maxMemAllocSize)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_HARDWARE_CONTEXTS, std::to_string(props.core.maxHardwareContexts)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_COMMAND_QUEUE_PRIORITY, std::to_string(props.core.maxCommandQueuePriority)));
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS_PER_SUB_SLICE, std::to_string(props.core.numEUsPerSubslice)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUB_SLICES_PER_SLICE, std::to_string(props.core.numSubslicesPerSlice)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SLICES, std::to_string(props.core.numSlices)));
@@ -1026,6 +1049,12 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
                 if (res == ZE_RESULT_SUCCESS) {
+                    std::string pciName = getPciName(
+                            to_string(pci_props.address));
+                    if (pciName.length() == 0) {
+                        pciName = std::string(props.core.name);
+                    }
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, pciName));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, to_string(pci_props.address)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, getDRMDevice(pci_props)));
                     auto tmpAddr = pci_props.address;
@@ -1060,6 +1089,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             getGPUFunctionType(to_string(pci_props.address))
                         )
                     );
+                } else {
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
                 }
 
                 uint64_t physical_size = 0;
