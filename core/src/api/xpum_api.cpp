@@ -3133,6 +3133,18 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
         return res;
     }
 
+    if(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel() == XPUM_DEVICE_MODEL_PVC){
+        *available = true;
+        *configurable = false;
+
+        *current = XPUM_ECC_STATE_ENABLED;
+        *pending = XPUM_ECC_STATE_ENABLED;
+
+        *action = XPUM_ECC_ACTION_NONE;
+
+        return XPUM_GENERIC_ERROR;
+    }
+
     std::string meiPath = device->getMeiDevicePath();
 
     if(newState == XPUM_ECC_STATE_ENABLED) {
