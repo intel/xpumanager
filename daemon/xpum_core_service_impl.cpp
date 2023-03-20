@@ -2287,15 +2287,21 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
         tileData->set_standbyoption("default, never");
         //tileData->set_intervalscope ("1 to 124");
         //tileData->set_powerscope ("0 to 500");
-
-        for (uint32_t i = 0; i < standbyCount; i++) {
-            if (standbyArray[i].type == XPUM_GLOBAL /*&& standbyArray[i].on_subdevice == true */ && standbyArray[i].subdevice_Id == tileId) {
-                if (standbyArray[i].mode == XPUM_DEFAULT) {
-                    tileData->set_standby(STANDBY_DEFAULT);
-                } else {
-                    tileData->set_standby(STANDBY_NEVER);
+        if (standbyCount == 0) {
+            tileData->set_standby(STANDBY_NULL);
+        } else {
+            for (uint32_t i = 0; i < standbyCount; i++) {
+                if (standbyArray[i].type == XPUM_GLOBAL && standbyArray[i].subdevice_Id == tileId) {
+                    if (standbyArray[i].mode == XPUM_DEFAULT) {
+                        tileData->set_standby(STANDBY_DEFAULT);
+                    } else
+                        if (standbyArray[i].mode == XPUM_NEVER) {
+                            tileData->set_standby(STANDBY_NEVER);
+                        } else {
+                            tileData->set_standby(STANDBY_NULL);
+                        }
+                    break;
                 }
-                break;
             }
         }
         for (uint32_t i = 0; i < schedulerCount; i++) {

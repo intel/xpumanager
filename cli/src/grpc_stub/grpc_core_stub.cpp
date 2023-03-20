@@ -1613,7 +1613,7 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::setDeviceStandby(int deviceId, int
             (*json)["status"] = "OK";
             XPUM_LOG_AUDIT("Succeed to set standby mode %d", mode);
         } else {
-            (*json)["error"] = response.errormsg();
+            (*json)["error"] = "Access denied due to permission level or operation unsupported.";
             (*json)["errno"] = errorNumTranslate(response.errorno());
             XPUM_LOG_AUDIT("Fail to set standby mode %s", response.errormsg().c_str());
         }

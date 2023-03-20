@@ -117,7 +117,7 @@ std::string CoreStub::schedulerModeToString(int mode) {
     return ret;
 }
 std::string CoreStub::standbyModeToString(int mode) {
-    std::string ret = "null"; //"STANDBY_MODE_NULL";
+    std::string ret = ""; //"STANDBY_MODE_NULL";
     switch (mode) {
         case 0:
             ret = "default"; //"STANDBY_MODE_DEFAULT";
