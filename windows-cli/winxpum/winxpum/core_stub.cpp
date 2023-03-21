@@ -753,11 +753,13 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                 zes_power_energy_counter_t snap1, snap2;
                 res = zesPowerGetEnergyCounter(power, &snap1);
                 if (res == ZE_RESULT_SUCCESS) {
+                    uint64_t time1 = getCurrentMillisecond();
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     uint64_t power_val = 0;
                     res = zesPowerGetEnergyCounter(power, &snap2);
                     if (res == ZE_RESULT_SUCCESS) {
-                        power_val = measurement_data_scale * (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+                        uint64_t time2 = getCurrentMillisecond();
+                        power_val = measurement_data_scale * (snap2.energy - snap1.energy) * 1000 / (time2 - time1);
                         data.max = data.min = data.avg = data.value = (int)power_val;
                     }
                 }
