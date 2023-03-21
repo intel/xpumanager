@@ -87,7 +87,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
 
     static void doDeviceDiagnosticMediaCodec(const zes_device_handle_t &zes_device,
                                              std::shared_ptr<xpum_diag_task_info_t> p_task_info,
-                                             std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas);
+                                             std::map<xpum_device_id_t, std::vector<xpum_diag_media_codec_metrics_t>>& media_codec_perf_datas,
+                                             bool checkOnly);
 
     static void doDeviceDiagnosticIntegration(const ze_device_handle_t &ze_device,
                                               const ze_driver_handle_t &ze_driver,
@@ -170,6 +171,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     static std::string MEDIA_CODER_TOOLS_1080P_FILE;
 
     static std::string MEDIA_CODER_TOOLS_4K_FILE;
+
+    static std::string MEDIA_CODEC_TOOLS_LIGHT_FILE;
 
     static int ZE_COMMAND_QUEUE_SYNCHRONIZE_TIMEOUT;
 

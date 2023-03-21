@@ -163,6 +163,7 @@ message DiagnosticsComponentInfo{
     DIAG_PERFORMANCE_MEMORY_BANDWIDTH = 10;
     DIAG_PERFORMANCE_MEMORY_ALLOCATION = 11;
     DIAG_MEMORY_ERROR = 12;
+    DIAG_LIGHT_CODEC = 13;
   }
   Type type = 1;
   bool finished = 2;

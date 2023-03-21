@@ -22,7 +22,8 @@ diagnosticTypeEnumToString = {
     core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_POWER: "XPUM_DIAG_PERFORMANCE_POWER",
     core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_MEMORY_BANDWIDTH: "XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH",
     core_pb2.DiagnosticsComponentInfo.DIAG_PERFORMANCE_MEMORY_ALLOCATION: "XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION",
-    core_pb2.DiagnosticsComponentInfo.DIAG_MEMORY_ERROR: "XPUM_DIAG_MEMORY_ERROR"
+    core_pb2.DiagnosticsComponentInfo.DIAG_MEMORY_ERROR: "XPUM_DIAG_MEMORY_ERROR",
+    core_pb2.DiagnosticsComponentInfo.DIAG_LIGHT_CODEC: "XPUM_DIAG_LIGHT_CODEC",
 }
 
 diagnosticResultEnumToString = {

@@ -114,7 +114,9 @@ std::unordered_map<int, int> testIdToType = {{1, XPUM_DIAG_PERFORMANCE_COMPUTATI
                                                 {3, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH}, 
                                                 {4, XPUM_DIAG_MEDIA_CODEC}, 
                                                 {5, XPUM_DIAG_INTEGRATION_PCIE}, 
-                                                {6, XPUM_DIAG_PERFORMANCE_POWER}};
+                                                {6, XPUM_DIAG_PERFORMANCE_POWER},
+                                                {7, XPUM_DIAG_COMPUTATION},
+                                                {8, XPUM_DIAG_LIGHT_CODEC}};
 
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
@@ -158,9 +160,11 @@ Scanning will starts from the latest boot if it is not specified.");
       3. Memory Bandwidth\n\
       4. Media Codec\n\
       5. PCIe Bandwidth\n\
-      6. Power");
+      6. Power\n\
+      7. Computation functional test\n\
+      8. Media Codec functional test");
     singleTestIdList->delimiter(',');
-    singleTestIdList->check(CLI::Range(1, 6));
+    singleTestIdList->check(CLI::Range(1, (int)testIdToType.size()));
 
     preCheckOpt->excludes(deviceIdOpt);
     preCheckOpt->excludes(level);

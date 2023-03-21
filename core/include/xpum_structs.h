@@ -415,6 +415,10 @@ typedef enum xpum_diag_task_type_enum {
     XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH,
     XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION,
     XPUM_DIAG_MEMORY_ERROR,
+
+    // Not in level diagnostic
+    XPUM_DIAG_LIGHT_CODEC,
+    
     XPUM_DIAG_TASK_TYPE_MAX
 } xpum_diag_task_type_t;
 
