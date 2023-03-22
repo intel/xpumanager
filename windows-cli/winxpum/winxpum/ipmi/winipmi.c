@@ -11,7 +11,7 @@
 #include "wintypes.h"
 
 #include "winipmi.h"
-
+#include "..\include\xpum_log.h"
 
 VARIANT *variantList[MAX_VARIANT_LIST_SIZE];
 int varListIndex = 0;
@@ -39,7 +39,7 @@ int ipmi_open_win()
 		hres = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 		if (FAILED(hres))
 		{
-			printf("CoInitializeEx Failure: %d\n", hres);
+			XPUM_LOG_WARN("CoInitializeEx Failure: %0x\n", hres);
 			ipmi_clean_win();
 			break;
 		}
@@ -48,7 +48,7 @@ int ipmi_open_win()
 			&IID_IWbemLocator, (LPVOID*)&pLoc);
 		if (FAILED(hres))
 		{
-			printf("CoCreateInstance Failure: %d\n", hres);
+            XPUM_LOG_WARN("CoCreateInstance Failure: %0x\n", hres);
 			ipmi_clean_win();
 			break;
 		}
@@ -56,7 +56,7 @@ int ipmi_open_win()
 		hres = pLoc->lpVtbl->ConnectServer(pLoc, bstrWmi, NULL, NULL, 0, NULL, 0, 0, &pSvc);
 		if (FAILED(hres))
 		{
-			printf("ConnectServer Failure: %d\n", hres);
+            XPUM_LOG_WARN("ConnectServer Failure: %0x\n", hres);
 			ipmi_clean_win();
 			break;
 		}
@@ -65,7 +65,7 @@ int ipmi_open_win()
 			RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE);
 		if (FAILED(hres))
 		{
-			printf("CoSetProxyBlanket Failure: %d\n", hres);
+            XPUM_LOG_WARN("CoSetProxyBlanket Failure: %0x\n", hres);
 			ipmi_clean_win();
 			break;
 		}
@@ -74,7 +74,7 @@ int ipmi_open_win()
 			&pClass, NULL);
 		if (FAILED(hres))
 		{
-			printf("GetObject Failure: %d\n", hres);
+            XPUM_LOG_WARN("GetObject Failure: %0x\n", hres);
 			ipmi_clean_win();
 			break;
 		}
@@ -83,7 +83,7 @@ int ipmi_open_win()
 			WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &pEnum);
 		if (FAILED(hres))
 		{
-			printf("CreateInstanceEnum Failure: %d\n", hres);
+            XPUM_LOG_WARN("CreateInstanceEnum Failure: %0x\n", hres);
 			ipmi_clean_win();
 			break;
 		}
@@ -91,7 +91,7 @@ int ipmi_open_win()
 		hres = pEnum->lpVtbl->Next(pEnum, WBEM_INFINITE, 1, &pObject, &pReturned);
 		if (FAILED(hres))
 		{
-			printf("Next Enum Object Failure: %d\n", hres);
+            XPUM_LOG_WARN("Next Enum Object Failure: %0x\n", hres);
 			ipmi_clean_win();
 			break;
 		}
@@ -100,7 +100,7 @@ int ipmi_open_win()
 		hres = pObject->lpVtbl->Get(pObject, bstrClassProp, 0, &varPath, NULL, 0);
 		if (FAILED(hres))
 		{
-			printf("Get Property Value Failure: %d\n", hres);
+            XPUM_LOG_WARN("Get Property Value Failure: %0x\n", hres);
 			ipmi_clean_win();
 			break;
 		}
@@ -191,14 +191,14 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
     for (int i = 0; i < req->msg.data_len; ++i) {
      snprintf(ss + i*3, 1022,"%02x ", (int)req->msg.data[i]);
     }
-    //printf("ipmi_cmd_win req %d || %s\n", req->msg.data_len, ss);
+    XPUM_LOG_INFO("ipmi_cmd_win req %d, %s\n", req->msg.data_len, ss);
  
 	do
 	{
 		hres = pClass->lpVtbl->GetMethod(pClass, lpcwReqResp, 0, &pInReq, NULL);
 		if (FAILED(hres))
 		{
-			printf("GetMethod Failure: %d\n", hres);
+			XPUM_LOG_WARN("GetMethod Failure: %d\n", hres);
 			return retval;
 		}
 
@@ -208,7 +208,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 		hres = pInReq->lpVtbl->Put(pInReq, bstrCommand, 0, &varCmd, 0);
 		if (FAILED(hres))
 		{
-            printf("Put Command Failure: %d\n", hres);
+            XPUM_LOG_WARN("Put Command Failure: %d\n", hres);
 			break;
 		}
 
@@ -218,7 +218,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 		hres = pInReq->lpVtbl->Put(pInReq, bstrNetfn, 0, &varNetfn, 0);
 		if (FAILED(hres))
 		{
-            printf("Put NetworkFunction Failure: %d\n", hres);
+            XPUM_LOG_WARN("Put NetworkFunction Failure: %d\n", hres);
 			break;
 		}
 
@@ -228,7 +228,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 		hres = pInReq->lpVtbl->Put(pInReq, bstrLun, 0, &varLun, 0);
 		if (FAILED(hres))
 		{
-            printf("Put Lun Failure: %d\n", hres);
+            XPUM_LOG_WARN("Put Lun Failure: %d\n", hres);
 			break;
 		}
 
@@ -238,7 +238,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 		hres = pInReq->lpVtbl->Put(pInReq, bstrRespAddr, 0, &varSa, 0);
 		if (FAILED(hres))
 		{
-			printf("Put ResponderAddress Failure: %d\n", hres);
+			XPUM_LOG_WARN("Put ResponderAddress Failure: %d\n", hres);
 			break;
 		}
 
@@ -248,7 +248,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 		hres = pInReq->lpVtbl->Put(pInReq, bstrReqDataSize, 0, &varSize, 0);
 		if (FAILED(hres))
 		{
-			printf("Put RequestDataSize Failure: %d\n", hres);
+			XPUM_LOG_WARN("Put RequestDataSize Failure: %d\n", hres);
 			break;
 		}
 
@@ -258,7 +258,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 		psa = SafeArrayCreate(VT_UI1, 1, &saBound);
 		if (!psa)
 		{
-			printf("SafeArrayCreate Failure: %d\n", hres);
+            XPUM_LOG_WARN("SafeArrayCreate Failure: %d\n", hres);
 			break;
 		}
 
@@ -270,7 +270,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 		hres = pInReq->lpVtbl->Put(pInReq, bstrReqData, 0, &varData, 0);
 		if (FAILED(hres))
 		{
-			printf("Put RequestData Failure: %d\n", hres);
+			XPUM_LOG_WARN("Put RequestData Failure: %d\n", hres);
 			break;
 		}
 
@@ -278,7 +278,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 			pInReq, &pOutRecv, NULL);
 		if (FAILED(hres))
 		{
-			//printf("ExecMethod RequestResponse Failure: %d\n", hres);
+			XPUM_LOG_WARN("ExecMethod RequestResponse Failure: %d\n", hres);
 		}
 		else
 		{
@@ -292,7 +292,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 			hres = pOutRecv->lpVtbl->Get(pOutRecv, bstrCompCode, 0, &varByte, NULL, 0);
 			if (FAILED(hres))
 			{
-				printf("Get CompletionCode Failure: %d\n", hres);
+				XPUM_LOG_WARN("Get CompletionCode Failure: %d\n", hres);
 				break;
 			}
 
@@ -301,7 +301,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 			hres = pOutRecv->lpVtbl->Get(pOutRecv, bstrRespDataSize, 0, &varRespSize, NULL, 0);
 			if (FAILED(hres))
 			{
-				printf("Get ResponseDataSize Failure: %d\n", hres);
+				XPUM_LOG_WARN("Get ResponseDataSize Failure: %d\n", hres);
 				break;
 			}
 
@@ -321,7 +321,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
 			hres = pOutRecv->lpVtbl->Get(pOutRecv, bstrRespData, 0, &varRespData, NULL, 0);
 			if (FAILED(hres))
 			{
-				printf("Get ResponseData Failure: %d\n", hres);
+				XPUM_LOG_WARN("Get ResponseData Failure: %d\n", hres);
 			}
 			else
 			{
@@ -340,7 +340,7 @@ int ipmi_cmd_win(struct ipmi_req *req, struct ipmi_ipmb_addr *req_addr, struct i
             for (int i = 0; i < res->msg.data_len; ++i) {
                     snprintf(ss + i * 3, 1022,"%02x ", (int)res->msg.data[i]);
             }
-            //printf("ipmi_cmd_win res %d || %s\n", res->msg.data_len, ss);
+            XPUM_LOG_INFO("ipmi_cmd_win res %d || %s\n", res->msg.data_len, ss);
 		}
 	} while (n);
 

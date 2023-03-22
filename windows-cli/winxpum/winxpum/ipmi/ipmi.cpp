@@ -108,12 +108,12 @@ static int card_detect(nrv_card *card) {
            sizeof(card->project_codename));
 
     if (res.card_get_info.protocol > VERSION_PROTOCOL_1)
-        printf(
+        XPUM_LOG_WARN(
             "Unsupported protocol version. Please match "
             "XPUM version to actual firmware version");
 
     if (res.card_get_info.board_product >= NUM_BOARD_PRODUCTS) {
-        printf("Unknown card at Bus:%d, PCI Slot:%dd, I2C Addr:0x%x",
+        XPUM_LOG_WARN("Unknown card at Bus:%d, PCI Slot:%dd, I2C Addr:0x%x",
                       card->ipmi_address.bus, card->ipmi_address.slot,
                       card->ipmi_address.i2c_addr);
         return NRV_IPMI_ERROR;

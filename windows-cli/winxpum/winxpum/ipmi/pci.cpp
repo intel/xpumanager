@@ -41,7 +41,7 @@
 #include "pci.h"
 #include "pci_address.h"
 #include "tool.h"
-//#include "..\inc\log.h"
+
 using namespace std;
 namespace xpum {
 
@@ -105,8 +105,8 @@ bool check_pci_device(const pci_address_t *address) {
         return false;
 
     if (_access(path, F_OK)) {
-        //printf("PCI device %02x:%02x.%1x does not exist\n",
-        //            address->bus, address->device, address->function);
+        XPUM_LOG_WARN("PCI device %02x:%02x.%1x does not exist\n",
+                    address->bus, address->device, address->function);
         return false;
     }
 #else
@@ -149,7 +149,7 @@ bool check_pci_device(const pci_address_t *address) {
 
     buffer = (char *)read_file(path, &buffer_size);
     if (sscanf_s(buffer, "0x%x", &pci_id) != 1) {
-        printf("ERROR: Failed to parse device ID\n");
+        XPUM_LOG_ERROR("ERROR: Failed to parse device ID\n");
         free(buffer);
         return false;
     }

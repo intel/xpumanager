@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "bsmc_interface.h"
+#include "..\include\xpum_log.h"
 //#define XPUM_AMCFW_LIB_BUILD
 #ifndef XPUM_AMCFW_LIB_BUILD
 //#include "infrastructure/logger.h"
@@ -123,9 +124,4 @@ void clean_data();
 #ifdef XPUM_AMCFW_LIB_BUILD
 
 #endif
-#define XPUM_LOG_INFO(...) printf
-#define XPUM_LOG_WARN(...) printf
-#define XPUM_LOG_ERROR(...) printf
-#define XPUM_LOG_DEBUG(...) printf
-#define XPUM_LOG_TRACE(...) printf
-#define XPUM_LOG_FATAL(...) printf
+

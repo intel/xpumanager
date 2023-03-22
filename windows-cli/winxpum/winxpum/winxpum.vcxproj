@@ -150,6 +150,7 @@
     <ClInclude Include="core_stub.h" />
     <ClInclude Include="help_formatter.h" />
     <ClInclude Include="igsc_manager.h" />
+    <ClInclude Include="include\xpum_log.h" />
     <ClInclude Include="ipmi\bsmc_interface.h" />
     <ClInclude Include="ipmi\bsmc_ipmi_oem_cmd.h" />
     <ClInclude Include="ipmi\bsmc_ipmi_storage_cmd.h" />

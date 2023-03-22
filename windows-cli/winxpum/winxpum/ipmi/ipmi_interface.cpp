@@ -115,9 +115,8 @@ static int ipmi_init() {
 #elif (_WIN32) && (_MSC_VER >= 1910)
     g_ipmi_dev = ipmi_open_win();
     if (g_ipmi_dev < 0) {
-        char errMsg[ERRNO_SIZE_MAX];
-        printf("Unable to open %s. errno: %d(%s)\n",
-                  IPMI_DEV0, errno, strerror_s(errMsg, sizeof(errMsg), errno));
+        //char errMsg[ERRNO_SIZE_MAX];
+        XPUM_LOG_WARN("Unable to open %s. errno: %d(%s)\n", IPMI_DEV0, errno, strerror_s(errMsg, sizeof(errMsg), errno));
         return NRV_IPMI_ERROR;
     }
 #endif
@@ -411,8 +410,8 @@ retry:
 
 static int ipmi_validate_res(bsmc_res res, uint16_t res_size) {
     if (res.completion_code != IPMI_CC_SUCCESS) {
-        //printf("Non-zero completion code from BSMC: 0x%x\n",
-        //              res.completion_code);
+        XPUM_LOG_WARN("Non-zero completion code from BSMC: 0x%x\n",
+                      res.completion_code);
         return NRV_IPMI_ERROR;
     }
 

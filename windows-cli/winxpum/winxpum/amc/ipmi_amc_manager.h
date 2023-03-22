@@ -9,6 +9,7 @@
 #include <string>
 
 #include "amc_manager.h"
+#include "..\include\xpum_log.h"
 
 using namespace std;
 namespace xpum {

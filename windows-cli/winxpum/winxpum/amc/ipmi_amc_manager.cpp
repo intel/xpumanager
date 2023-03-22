@@ -12,10 +12,6 @@
 #include <sstream>
 #include <iostream>
 
-#define XPUM_LOG_INFO printf
-#define XPUM_LOG_ERROR printf
-#define XPUM_LOG_WARN printf
-
 using namespace std;
 namespace xpum {
 
@@ -68,7 +64,6 @@ static std::vector<std::string> getAMCFwVersionsInternal() {
     }
     int buf[/* count*/511][4];
     err = cmd_get_amc_firmware_versions(buf, &count);
-    //printf("cmd_get_amc_firmware_versions  %d,err %d\n",count,err);
     if (err != 0) {
         return versions;
     }
