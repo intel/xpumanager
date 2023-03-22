@@ -151,8 +151,10 @@ void FirmwareManager::initFwDataMgmt(){
             pDevice->setFwDataMgmt(std::make_shared<FwDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
             pDevice->getFwDataMgmt()->getFwDataVersion();
         }
-        pDevice->setPscMgmt(std::make_shared<PscMgmt>(pDevice->getMeiDevicePath(), pDevice));
-        pDevice->getPscMgmt()->getPscFwVersion();
+        if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
+            pDevice->setPscMgmt(std::make_shared<PscMgmt>(pDevice->getMeiDevicePath(), pDevice));
+            pDevice->getPscMgmt()->getPscFwVersion();
+        }
     }
 }
 
