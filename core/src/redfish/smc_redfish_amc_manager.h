@@ -9,6 +9,13 @@
 
 namespace xpum {
 
+enum SMCServerModel {
+    SMC_2U_SYS_620C_TN12R_RSC_D2_668G4,
+    SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4,
+    SMC_4U_SYS_420GP_TNR,
+    SMC_UNKNOWN
+};
+
 struct RedfishHostInterface {
     std::string ipv4_addr;
     std::string ipv4_mask;
@@ -46,6 +53,9 @@ class SMCRedfishAmcManager : public RedfishAmcManager {
     static std::string getRedfishAmcWarn();
 
    private:
+
+    SMCServerModel _model;
+
     bool initialized = false;
 
     RedfishHostInterface hostInterface;

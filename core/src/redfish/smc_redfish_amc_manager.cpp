@@ -15,13 +15,15 @@
 #include "libcurl.h"
 #include "util.h"
 
-#define XPUM_CURL_TIMEOUT 10L
+#define XPUM_CURL_TIMEOUT 20L
 
 using namespace nlohmann;
 
 namespace xpum {
 
 static LibCurlApi libcurl;
+
+static SMCServerModel server_model;
 
 static size_t curlWriteToStringCallback(void* contents, size_t size, size_t nmemb, std::string* s) {
     size_t newLength = size * nmemb;
@@ -277,6 +279,24 @@ bool SMCRedfishAmcManager::init(InitParam& param) {
     }
     XPUM_LOG_INFO("SMCRedfishAmcManager init");
     initErrMsg.clear();
+
+    auto systemInfo = Core::instance().getDeviceManager()->getSystemInfo();
+    std::string pciSlot;
+
+    if (systemInfo.productName.compare("SYS-420GP-TNR") == 0) {
+        _model = SMC_4U_SYS_420GP_TNR;
+    } else if (systemInfo.productName.compare("SYS-620C-TN12R") == 0) {
+        if (pciSlot.find("RSC-D2-668G4") != pciSlot.npos) {
+            _model = SMC_2U_SYS_620C_TN12R_RSC_D2_668G4;
+        } else if (pciSlot.find("RSC-D2R-668G4") != pciSlot.npos) {
+            _model = SMC_2U_SYS_620C_TN12R_RSC_D2R_668G4;
+        } else {
+            _model = SMC_UNKNOWN;
+        }
+    } else {
+        _model = SMC_UNKNOWN;
+    }
+    server_model = _model;
 
     if (!preInit()) {
         XPUM_LOG_INFO("SMCRedfishAmcManager fail to preInit");
@@ -578,13 +598,15 @@ static xpum_result_t getPushUriAndTriggerUri(RedfishHostInterface interface,
         return XPUM_GENERIC_ERROR;
     }
     pushUri = updateServiceJson["MultipartHttpPushUri"].get<std::string>();
-    if (!updateServiceJson.contains("Actions") ||
-        !updateServiceJson["Actions"].contains("#UpdateService.StartUpdate") ||
-        !updateServiceJson["Actions"]["#UpdateService.StartUpdate"].contains("target")) {
-        errMsg = "Can't find #UpdateService.StartUpdate from UpdateService json";
-        return XPUM_GENERIC_ERROR;
+    if (server_model != SMC_4U_SYS_420GP_TNR) {
+        if (!updateServiceJson.contains("Actions") ||
+            !updateServiceJson["Actions"].contains("#UpdateService.StartUpdate") ||
+            !updateServiceJson["Actions"]["#UpdateService.StartUpdate"].contains("target")) {
+            errMsg = "Can't find #UpdateService.StartUpdate from UpdateService json";
+            return XPUM_GENERIC_ERROR;
+        }
+        triggerUri = updateServiceJson["Actions"]["#UpdateService.StartUpdate"]["target"];
     }
-    triggerUri = updateServiceJson["Actions"]["#UpdateService.StartUpdate"]["target"];
     return XPUM_OK;
 }
 
@@ -631,7 +653,7 @@ static bool uploadImage(RedfishHostInterface interface,
         //     updateParams["Targets"].push_back(link);
         // }
         updateParams["Targets"].push_back(targetLink);
-        updateParams["@Redfish.OperationApplyTime"] = "OnStartUpdateRequest";
+        updateParams["@Redfish.OperationApplyTime"] = server_model != SMC_4U_SYS_420GP_TNR ? "OnStartUpdateRequest" : "Immediate";
         auto updateParamsStr = updateParams.dump();
 
         XPUM_LOG_INFO("UpdateParameters json: {}", updateParamsStr);
@@ -1099,12 +1121,22 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
 
-    XPUM_LOG_INFO("Get pushUri: {} and triggerUri: {}", pushUri, triggerUri);
-    if (!pushUri.length() || !triggerUri.length()) {
-        param.errCode = XPUM_GENERIC_ERROR;
-        param.errMsg = "pushUri or triggerUri is empty";
-        param.callback();
-        return;
+    if (server_model != SMC_4U_SYS_420GP_TNR) {
+        XPUM_LOG_INFO("Get pushUri: {} and triggerUri: {}", pushUri, triggerUri);
+        if (!pushUri.length() || !triggerUri.length()) {
+            param.errCode = XPUM_GENERIC_ERROR;
+            param.errMsg = "pushUri or triggerUri is empty";
+            param.callback();
+            return;
+        }
+    } else {
+        XPUM_LOG_INFO("Get pushUri: {}", pushUri);
+        if (!pushUri.length()) {
+            param.errCode = XPUM_GENERIC_ERROR;
+            param.errMsg = "pushUri is empty";
+            param.callback();
+            return;
+        }
     }
     // get gpu fw inventory list
     std::vector<std::string> odataIds;
@@ -1158,38 +1190,41 @@ void SMCRedfishAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
                 param.callback();
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
             }
+            std::vector<std::string> taskUriList;
+            if (server_model != SMC_4U_SYS_420GP_TNR) {
+                // check image verify result
+                while (true) {
+                    bool finished = false;
+                    bool success = false;
+                    bool querySuccessfully = imageVerifyResult(hostInterface,
+                                                               parameters,
+                                                               verifyTaskLink,
+                                                               finished,
+                                                               success);
+                    if (!querySuccessfully || (finished && !success)) {
+                        flashFwErrMsg = parameters.errMsg;
+                        param.callback();
+                        return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+                    }
+                    if (finished) {
+                        XPUM_LOG_INFO("GPU firmware was verified successfully");
+                        break;
+                    }
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
 
-            // check image verify result
-            while (true) {
-                bool finished = false;
-                bool success = false;
-                bool querySuccessfully = imageVerifyResult(hostInterface,
-                                                           parameters,
-                                                           verifyTaskLink,
-                                                           finished,
-                                                           success);
-                if (!querySuccessfully || (finished && !success)) {
+                // trigger update
+                if (!triggerUpdate(hostInterface,
+                                   parameters,
+                                   triggerUri,
+                                   taskUriList)) {
+                    XPUM_LOG_ERROR("Fail to trigger update");
                     flashFwErrMsg = parameters.errMsg;
                     param.callback();
                     return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
                 }
-                if (finished) {
-                    XPUM_LOG_INFO("GPU firmware was verified successfully");
-                    break;
-                }
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-            }
-
-            // trigger update
-            std::vector<std::string> taskUriList;
-            if (!triggerUpdate(hostInterface,
-                               parameters,
-                               triggerUri,
-                               taskUriList)) {
-                XPUM_LOG_ERROR("Fail to trigger update");
-                flashFwErrMsg = parameters.errMsg;
-                param.callback();
-                return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+            } else {
+                taskUriList.push_back(verifyTaskLink);
             }
 
             XPUM_LOG_INFO("Start flash amc fw successfully, task uri:");
