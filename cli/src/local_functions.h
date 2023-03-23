@@ -11,6 +11,7 @@
 #include <thread>
 #include <vector>
 #include <unordered_set>
+#include <nlohmann/json.hpp>
 
 namespace xpum::cli {
 
@@ -48,30 +49,25 @@ struct ComponentInfo {
 };
 
 const std::vector<ErrorPattern> error_patterns = {
-        // i915 error
-        {".*ERROR.*i915.*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_DRIVER},
-        {".*i915.*drm.*ERROR.*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_DRIVER},
-        // gpu error
-        {".*ERROR.*drm.*", "i915", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*ERROR.*GUC.*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(GuC initialization failed).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(LMEM not initialized by firmware).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(task).*(blocked for more than).*(seconds).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*([Hardware Error]).*(Hardware error from APEI Generic Hardware Error Source).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(kmemleak).*(new suspected memory leaks).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(perf: interrupt took too long).*(lowering kernel.perf_event_max_sample_rate).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(Out of memory).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
         {".*(GPU HANG).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(segfault).*(lib).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(Kernel panic).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(gdm-x-session).*(Server terminated with error).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(traps:).*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
+        {".*(GuC initialization failed).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
+        {".*ERROR.*GUC.*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
         {".*(IO: IOMMU catastrophic error).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
-        {".*(PCIe error).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
+        {".*(LMEM not initialized by firmware).*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
+    
+        // i915/drm error
+        {".*i915.*drm.*ERROR.*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_DRIVER},
+        {".*i915.*ERROR.*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_DRIVER},
+        {".*drm.*ERROR.*", "i915", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
         // cpu error
         {".*(mce|mca).*err.*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_CPU},
         {".*caterr.*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_CPU}
-        };
+};
+
+// The order of the vector impacts how error patterns are matched. It starts from special patterns to general patterns.
+const std::vector<std::string> targeted_words = {"hang", "guc", "iommu", "lmem", 
+                                "i915", "drm", 
+                                "mce", "mca", "caterr"};
 
 std::string componentTypeToStr(int component_type);
 
@@ -95,10 +91,18 @@ struct FirmwareVersion {
     std::string gfx_data_fw_version;
 }; 
 
+struct PciDeviceData {
+    std::string name;
+    std::string vendorId;
+    std::string pciDeviceId;
+};
+
 bool getFirmwareVersion(FirmwareVersion& firmware_version, std::string bdf);  
 bool getBdfListFromLspci(std::vector<std::string> &list);
-bool getPciName(std::string &pciName, const std::string &bdf);
+bool getPciDeviceData(PciDeviceData &data, const std::string &bdf);
 bool getPciPath(std::vector<std::string> &pciPath, const std::string &bdf);
+
+std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson, std::string sinceTime);
 
 }
 

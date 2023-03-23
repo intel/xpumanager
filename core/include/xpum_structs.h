@@ -147,6 +147,7 @@ typedef enum xpum_result_enum {
     XPUM_INTERVAL_INVALID,
     XPUM_RESULT_FILE_DUP,
     XPUM_RESULT_INVALID_DIR,
+    XPUM_RESULT_FW_MGMT_NOT_INIT, ///< The firmware management feature is not initialized
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -414,6 +415,10 @@ typedef enum xpum_diag_task_type_enum {
     XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH,
     XPUM_DIAG_PERFORMANCE_MEMORY_ALLOCATION,
     XPUM_DIAG_MEMORY_ERROR,
+
+    // Not in level diagnostic
+    XPUM_DIAG_LIGHT_CODEC,
+    
     XPUM_DIAG_TASK_TYPE_MAX
 } xpum_diag_task_type_t;
 
@@ -440,7 +445,6 @@ typedef struct xpum_diag_component_info_t {
 typedef struct xpum_diag_task_info_t {
     xpum_device_id_t deviceId;
     xpum_diag_level_t level;
-    xpum_diag_task_type_t targetType;
     bool finished;
     xpum_diag_task_result_t result;
     xpum_diag_component_info_t componentList[XPUM_DIAG_TASK_TYPE_MAX];

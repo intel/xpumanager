@@ -90,10 +90,18 @@ ComletDiscovery::ComletDiscovery() : ComletBase("discovery", "Discover the GPU d
 
 void ComletDiscovery::setupOptions() {
     this->opts = std::unique_ptr<ComletDiscoveryOptions>(new ComletDiscoveryOptions());
-    addOption("-d,--device", this->opts->deviceId, "Device ID to query. It will show more detailed info.");
+    auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "Device ID to query. It will show more detailed info.");
+
+    auto listamcversionsOpt = addFlag("--listamcversions", this->opts->listamcversions, "Show all AMC firmware versions.");
+    deviceIdOpt->excludes(listamcversionsOpt);
+
 }
 
 std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
+    if (this->opts->listamcversions) {
+        auto json = this->coreStub->getAMCFirmwareVersions(this->opts->username, this->opts->password);
+        return json;
+    }
     if (this->opts->deviceId != -1) {
         auto json = this->coreStub->getDeviceProperties(this->opts->deviceId);
         return json;
@@ -117,6 +125,14 @@ static void showDetailedInfo(std::ostream& out, std::shared_ptr<nlohmann::json> 
     CharTable table(ComletConfigDiscoveryDetailed, *json);
     table.show(out);
 }
+static void showAmcFwVersion(std::ostream& out, std::shared_ptr<nlohmann::json> json) {
+    auto versions = (*json)["amc_fw_version"];
+    out << versions.size() << " AMC are found" << std::endl;
+    int i = 0;
+    for (auto version : versions) {
+        out << "AMC " << i++ << " firmware version: " << version.get<std::string>() << std::endl;
+    }
+}
 
 void ComletDiscovery::getTableResult(std::ostream& out) {
     auto res = run();
@@ -126,6 +142,10 @@ void ComletDiscovery::getTableResult(std::ostream& out) {
     }
     std::shared_ptr<nlohmann::json> json = std::make_shared<nlohmann::json>();
     *json = *res;
+    if (this->opts->listamcversions) {
+        showAmcFwVersion(out, json);
+        return;
+    }
 
     if (this->opts->deviceId != -1) {
         showDetailedInfo(out, json);

@@ -40,9 +40,10 @@ std::string HelpFormatter::make_usage(const CLI::App* app, std::string name) con
     }
     else if (app->get_name().compare("discovery") == 0) {
         return "\nUsage: xpumcli discovery [Options]\n"
-            "  xpumcli discovery\n"
-            "  xpumcli discovery -d [deviceId]\n"
-            "  xpumcli discovery -d [deviceId] -j\n";
+               "  xpumcli discovery\n"
+               "  xpumcli discovery -d [deviceId]\n"
+               "  xpumcli discovery -d [deviceId] -j\n"
+               "  xpumcli discovery --listamcversions\n";
     }
     else if (app->get_name().compare("config") == 0) {
         return "\nUsage: xpumcli config [Options]\n"
@@ -58,7 +59,8 @@ std::string HelpFormatter::make_usage(const CLI::App* app, std::string name) con
     } else if (app->get_name().compare("updatefw") == 0) {
         return "\nUsage: xpumcli updatefw [Options]\n"
                "  xpumcli updatefw -d [deviceId] -t GFX -f [imageFilePath]\n"
-               "  xpumcli updatefw -d [deviceId] -t GFX_DATA -f [imageFilePath]\n";
+               "  xpumcli updatefw -d [deviceId] -t GFX_DATA -f [imageFilePath]\n"
+			   "  xpumcli updatefw -t AMC -f [imageFilePath]\n";
     }
     else {
         return CLI::Formatter::make_usage(app, name);

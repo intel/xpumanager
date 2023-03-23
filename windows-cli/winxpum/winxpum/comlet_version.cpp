@@ -8,8 +8,10 @@
 
 #include <map>
 #include <nlohmann/json.hpp>
+#include <string>
 
 #include "core_stub.h"
+#include "resource.h"
 
 void ComletVersion::setupOptions() {
     this->opts = std::unique_ptr<ComletVersionOptions>(new ComletVersionOptions());
@@ -17,8 +19,9 @@ void ComletVersion::setupOptions() {
 
 std::unique_ptr<nlohmann::json> ComletVersion::run() {
     auto json = this->coreStub->getVersion();
-    (*json)["cli_version"] = "1.2";
-    (*json)["cli_version_git"] = "1.2";
+    (*json)["cli_version"] = VER_VERSION_MAJORMINORPATCH_STR;
+    std:string cli_version_git = VER_COMMIT_VERSION;
+    (*json)["cli_version_git"] = cli_version_git.substr(0,8);
     return json;
 }
 

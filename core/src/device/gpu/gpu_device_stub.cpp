@@ -666,6 +666,30 @@ std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     return res;
 }
 
+static std::string getPciName(std::string bdf) {
+    std::string cmd = "lspci -D -s " + bdf + "|cut -d ':' -f 4";
+    std::string name;
+    char buf[BUF_SIZE];
+    FILE *pf = popen(cmd.c_str(), "r");
+    if (pf == NULL) {
+        return name;
+    }
+    if (fgets(buf, BUF_SIZE, pf) != NULL) {
+        if (strnlen(buf, BUF_SIZE) <= 0) {
+            return name;
+        } 
+        std::string line(buf+1);
+        if (line.length() > 0) {
+            if (line.at(line.length() - 1) == '\n') {
+                line.pop_back();
+            }
+            name = line;
+        }
+    }
+    pclose(pf);
+    return name;
+}
+
 static std::string getI915Version() {
     std::string ret = "";
     char buf[BUF_SIZE];
@@ -792,10 +816,21 @@ void GPUDeviceStub::addCapabilities(zes_device_handle_t device, const zes_device
     if (checkCapability(props.core.name, bdf_address, "Energy", toGetEnergy, device))
         capabilities.push_back(DeviceCapability::METRIC_ENERGY);
 
-    if (Configuration::XPUM_MODE == "xpu-smi" && getDeviceModelByPciDeviceId(props.core.deviceId) == XPUM_DEVICE_MODEL_PVC){
-        // Just xpu-smi on PVC is affected
-        capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
-    }else {
+    if (Configuration::XPUM_MODE == "xpu-smi") {
+        /*
+           For SMI version, RAS capability won't be checked.
+           For PVC, the capability is added without a check to optimize
+           init time.
+           For ATS-M, the capability is not checked and added because 
+           it is not supported.
+           Todo: need to update the behavior if new GPU came or 
+           capability change happened.
+         */
+        if (getDeviceModelByPciDeviceId(props.core.deviceId) == 
+                XPUM_DEVICE_MODEL_PVC) {
+            capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
+        }
+    } else {
         if (checkCapability(props.core.name, bdf_address, "Ras Error", toGetRasErrorOnSubdevice, device))
             capabilities.push_back(DeviceCapability::METRIC_RAS_ERROR);
     }
@@ -987,7 +1022,6 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_MEM_ALLOC_SIZE_BYTE, std::to_string(props.core.maxMemAllocSize)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_HARDWARE_CONTEXTS, std::to_string(props.core.maxHardwareContexts)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MAX_COMMAND_QUEUE_PRIORITY, std::to_string(props.core.maxCommandQueuePriority)));
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_EUS_PER_SUB_SLICE, std::to_string(props.core.numEUsPerSubslice)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SUB_SLICES_PER_SLICE, std::to_string(props.core.numSubslicesPerSlice)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_SLICES, std::to_string(props.core.numSlices)));
@@ -1015,6 +1049,12 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
 
                 XPUM_ZE_HANDLE_LOCK(device, res = zesDevicePciGetProperties(device, &pci_props));
                 if (res == ZE_RESULT_SUCCESS) {
+                    std::string pciName = getPciName(
+                            to_string(pci_props.address));
+                    if (pciName.length() == 0) {
+                        pciName = std::string(props.core.name);
+                    }
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, pciName));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, to_string(pci_props.address)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRM_DEVICE, getDRMDevice(pci_props)));
                     auto tmpAddr = pci_props.address;
@@ -1049,6 +1089,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             getGPUFunctionType(to_string(pci_props.address))
                         )
                     );
+                } else {
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.core.name)));
                 }
 
                 uint64_t physical_size = 0;
@@ -1749,7 +1791,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryBandwidth(const zes_d
                     std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetBandwidth(mem, &s2));
                     if (res == ZE_RESULT_SUCCESS && (s2.maxBandwidth * (s2.timestamp - s1.timestamp)) != 0) {
-                        uint64_t val = 1000000 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp));
+                        uint64_t val = 100 * 1000000 * ((s2.readCounter - s1.readCounter) + (s2.writeCounter - s1.writeCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp));
                         if (val > 100) {
                             val = 100;
                         }   

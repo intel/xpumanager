@@ -50,6 +50,9 @@ static nlohmann::json discoveryBasicJson = R"({
     }]
 })"_json;
 
+
+// To add a new data to dump, the dumpId should be max( 
+// dumpId in discoveryDetailedJson and function initDumpPropConfig) + 1
 static nlohmann::json discoveryDetailedJson = R"({
     "columns": [{
         "title": "Device ID"
@@ -62,6 +65,7 @@ static nlohmann::json discoveryDetailedJson = R"({
             "device_id", [
                 { "label": "Device Type", "value": "device_type" },
                 { "label": "Device Name", "value": "device_name", "dumpId": 2 },
+                { "label": "PCI Device ID", "value": "pci_device_id", "dumpId": 24},
                 { "label": "Vendor Name", "value": "vendor_name", "dumpId": 3 },
                 { "label": "UUID", "value": "uuid", "dumpId": 4 },
                 { "label": "Serial Number", "value": "serial_number", "dumpId": 5 },
@@ -166,7 +170,9 @@ static void initDumpPropConfig() {
     keys.push("rows");
 
     dumpFieldConfig.clear();
+    //Add "for dump only" data here
     dumpFieldConfig.push_back(dump_prop_config{"Device ID", "device_id", 1, "", 0});
+    dumpFieldConfig.push_back(dump_prop_config{"PCI Vendor ID", "pci_vendor_id", 23, "", 0});
 
     readDumpPropConfig(discoveryDetailedJson, keys, dumpFieldConfig);
     std::sort(dumpFieldConfig.begin(), dumpFieldConfig.end(), 
@@ -269,13 +275,15 @@ void ComletDiscovery::checkBadDevices(nlohmann::json &deviceJsonList) {
                 deviceJson["gfx_data_firmware_version"] = 
                     fwVer.gfx_data_fw_version;
             }
-            std::string name;
-            if (getPciName(name, bdf) == true) {
-                deviceJson["device_name"] = name;
+            PciDeviceData pdd;
+            if (getPciDeviceData(pdd, bdf) == true) {
+                deviceJson["device_name"] = pdd.name;
+                deviceJson["pci_device_id"] = pdd.pciDeviceId;
+                deviceJson["pci_vendor_id"] = pdd.vendorId;
             }
             std::vector<std::string> pciPath;
             if (getPciPath(pciPath, bdf) == true) {
-                name = this->coreStub->getPciSlotName(pciPath);
+                std::string name = this->coreStub->getPciSlotName(pciPath);
                 if (name.length() > 0) {
                     deviceJson["pci_slot"] = name;
                 }

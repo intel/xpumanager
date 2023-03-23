@@ -27,12 +27,14 @@ centos8_ver=8
 suse_ver=15.4
 ubuntu_ver_focal=20.04
 ubuntu_ver_jammy=22.04
+centos_stream9_ver=stream9
 
 docker pull centos:$centos7_ver
 docker pull centos:$centos8_ver
 docker pull opensuse/leap:$suse_ver
 docker pull ubuntu:$ubuntu_ver_focal
 docker pull ubuntu:$ubuntu_ver_jammy
+docker pull quay.io/centos/centos:$centos_stream9_ver
 
 docker build \
 --build-arg http_proxy=$http_proxy \
@@ -68,6 +70,13 @@ docker build \
 --build-arg BASE_VERSION=$ubuntu_ver_jammy \
 -t $registry/xpum-builder-ubuntu-jammy:$image_tag \
 -f Dockerfile.builder-ubuntu .. > ubuntu_jammy.log 2>&1 &
+
+docker build \
+--build-arg http_proxy=$http_proxy \
+--build-arg https_proxy=$https_proxy \
+--build-arg BASE_VERSION=$centos_stream9_ver \
+-t $registry/xpum-builder-centos-stream9:$image_tag \
+-f Dockerfile.builder-centos-stream9 .. > centos-stream9.log 2>&1 &
 
 wait
 

@@ -27,6 +27,7 @@ struct ComletDiagnosticOptions {
     bool onlyGPU = false;
     uint32_t stressTime = 0;
     bool stress = false;
+    std::string sinceTime;
 };
 
 enum ShowMode {

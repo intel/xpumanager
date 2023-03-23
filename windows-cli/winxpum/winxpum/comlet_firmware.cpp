@@ -18,6 +18,22 @@
 #include "xpum_structs.h"
 #include <excpt.h>
 
+static void printProgress(int percentage, std::ostream &out) {
+    int barWidth = 60;
+
+    out << "[";
+    int pos = barWidth * (percentage / 100.0);
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < pos)
+            std::cout << "=";
+        else if (i == pos)
+            std::cout << ">";
+        else
+            std::cout << " ";
+    }
+    out << "] " << percentage << " %\r";
+    out.flush();
+}
 
 static const std::string igscPath{"igsc"};
 static const std::string igscMissingErrorInfo{"This feature requires the igsc library. Please make sure it was installed correctly."};
@@ -52,11 +68,11 @@ void ComletFirmware::setupOptions() {
         return std::string();
     });
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA.");
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer).");
     // fwTypeOpt->required();
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
-        if (str.compare("GFX") == 0 || str.compare("GFX_DATA") == 0) {
+        if (str.compare("GFX") == 0 || str.compare("GFX_DATA") == 0 || str.compare("AMC") == 0) {
             return std::string();
         } else {
             return errStr;
@@ -99,6 +115,11 @@ nlohmann::json ComletFirmware::validateArguments() {
 
     if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX_DATA") == 0) {
         result["error"] = "Updating GFX_DATA firmware on all devices is not supported";
+        return result;
+    }
+
+    if (opts->deviceId != XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("AMC") == 0) {
+        result["error"] = "Updating AMC firmware on single device is not supported";
         return result;
     }
 
@@ -313,25 +334,9 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     readImageContent(opts->firmwarePath.c_str());
     // warn user
     int type = getIntFirmwareType(opts->firmwareType);
-        // GFX and GFX_DATA caution
-    if (type == XPUM_DEVICE_FIRMWARE_GFX) {
-        if (!checkImageValid()) {
-            out << "Error: The image file is not a right GFX firmware image file." << std::endl;
-            exit(1);
-        }
-    } else {
-        if (!validateFwDataImage()) {
-            out << "Error: The image file is not a right GFX_DATA firmware image file." << std::endl;
-            exit(1);
-        }
-    }
-    std::vector<int> deviceIdsToFlashFirmware;
-    // for ats-m3
-    deviceIdsToFlashFirmware = coreStub->getSiblingDevices(opts->deviceId);
-    if (deviceIdsToFlashFirmware.size() == 0) {
-        deviceIdsToFlashFirmware.push_back(opts->deviceId);
-    } else {
-        std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) " << std::endl;
+    if (type == XPUM_DEVICE_FIRMWARE_AMC) { // AMC caution
+        std::cout << "CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model." << std::endl;
+        std::cout << "Please confirm to proceed (y/n) ";
         if (!opts->assumeyes) {
             std::string confirm;
             std::cin >> confirm;
@@ -339,35 +344,65 @@ void ComletFirmware::getTableResult(std::ostream &out) {
                 out << "update aborted" << std::endl;
                 return;
             }
-        }
-        else {
+        } else {
             out << std::endl;
         }
-    }
-    // version confirmation
-    for (int deviceId : deviceIdsToFlashFirmware) {
-        auto json = getDeviceProperties(deviceId);
-        if (json.contains("error")) {
-            out << "Error: " << json["error"].get<std::string>() << std::endl;
-            exit(1);
-        }
-        out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(json) << std::endl;
-    }
-    if (type == XPUM_DEVICE_FIRMWARE_GFX) {
-        out << "Image FW version: " << getImageFwVersion() << std::endl;
     } else {
-        out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
-    }
-    out << "Do you want to continue? (y/n) " << std::endl;
-    if (!opts->assumeyes) {
-        std::string confirm;
-        std::cin >> confirm;
-        if (confirm != "Y" && confirm != "y") {
-            out << "update aborted" << std::endl;
-            return;
+        // GFX and GFX_DATA caution
+        if (type == XPUM_DEVICE_FIRMWARE_GFX) {
+            if (!checkImageValid()) {
+                out << "Error: The image file is not a right GFX firmware image file." << std::endl;
+                exit(1);
+            }
+        } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
+            if (!validateFwDataImage()) { //
+                out << "Error: The image file is not a right GFX_DATA firmware image file." << std::endl;
+                exit(1);
+            }
         }
-    } else {
-        out << std::endl;
+        std::vector<int> deviceIdsToFlashFirmware;
+        // for ats-m3
+        deviceIdsToFlashFirmware = coreStub->getSiblingDevices(opts->deviceId);
+        if (deviceIdsToFlashFirmware.size() == 0) {
+            deviceIdsToFlashFirmware.push_back(opts->deviceId);
+        } else {
+            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) " << std::endl;
+            if (!opts->assumeyes) {
+                std::string confirm;
+                std::cin >> confirm;
+                if (confirm != "Y" && confirm != "y") {
+                    out << "update aborted" << std::endl;
+                    return;
+                }
+            } else {
+                out << std::endl;
+            }
+        }
+        // version confirmation
+        for (int deviceId : deviceIdsToFlashFirmware) {
+            auto json = getDeviceProperties(deviceId);
+            if (json.contains("error")) {
+                out << "Error: " << json["error"].get<std::string>() << std::endl;
+                exit(1);
+            }
+            out << "Device " << deviceId << " FW version: " << getCurrentFwVersion(json) << std::endl;
+        }
+        if (type == XPUM_DEVICE_FIRMWARE_GFX) {
+            out << "Image FW version: " << getImageFwVersion() << std::endl;
+        } else {
+            out << "Image FW version: " << getFwDataImageFwVersion() << std::endl;
+        }
+        out << "Do you want to continue? (y/n) " << std::endl;
+        if (!opts->assumeyes) {
+            std::string confirm;
+            std::cin >> confirm;
+            if (confirm != "Y" && confirm != "y") {
+                out << "update aborted" << std::endl;
+                return;
+            }
+        } else {
+            out << std::endl;
+        }
     }
     // start run
     auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
@@ -381,10 +416,10 @@ void ComletFirmware::getTableResult(std::ostream &out) {
     out << "Firmware Name: " << opts->firmwareType << std::endl;
     out << "Image path: " << opts->firmwarePath << std::endl;
 
+    printProgress(0, out);
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(5));
-        out << "." << std::flush;
-
+        //out << "." << std::flush;
         json = coreStub->getFirmwareFlashResult(opts->deviceId, type);
         if (json->contains("error")) {
             out << std::endl;
@@ -400,15 +435,25 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         std::string flashStatus = (*json)["result"].get<std::string>();
 
         if (flashStatus.compare("OK") == 0) {
+            printProgress(100, out);
             out << std::endl;
             out << "Update firmware successfully." << std::endl;
             return;
         } else if (flashStatus.compare("FAILED") == 0) {
+            std::string errormsg;
+            if (json->contains("error")) {
+                errormsg = (*json)["error"];
+            } else {
+                errormsg = "Update firmware failed";
+            }
             out << std::endl;
-            out << "Update firmware failed" << std::endl;
+            out << errormsg << std::endl;
             return;
         } else {
-            // do nothing
+            // print progress bar
+            //out << "in progressing" << std::endl;
+            if (json->contains("percentage"))
+                printProgress((*json)["percentage"], out);
         }
     }
 

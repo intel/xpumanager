@@ -15,6 +15,8 @@
 #include <set>
 #include <unordered_map>
 
+#include "local_functions.h"
+
 namespace xpum::cli {
 
 static CharTableConfig ComletConfigDiagnosticDevice(R"({
@@ -112,7 +114,9 @@ std::unordered_map<int, int> testIdToType = {{1, XPUM_DIAG_PERFORMANCE_COMPUTATI
                                                 {3, XPUM_DIAG_PERFORMANCE_MEMORY_BANDWIDTH}, 
                                                 {4, XPUM_DIAG_MEDIA_CODEC}, 
                                                 {5, XPUM_DIAG_INTEGRATION_PCIE}, 
-                                                {6, XPUM_DIAG_PERFORMANCE_POWER}};
+                                                {6, XPUM_DIAG_PERFORMANCE_POWER},
+                                                {7, XPUM_DIAG_COMPUTATION},
+                                                {8, XPUM_DIAG_LIGHT_CODEC}};
 
 void ComletDiagnostic::setupOptions() {
     this->opts = std::unique_ptr<ComletDiagnosticOptions>(new ComletDiagnosticOptions());
@@ -144,6 +148,10 @@ void ComletDiagnostic::setupOptions() {
     auto stressTimeOpt = addOption("--stresstime", this->opts->stressTime, "Stress time (in minutes)");
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver");
     auto onlyGPUOpt = addFlag("--gpu", this->opts->onlyGPU, "Show the GPU status only");
+    auto sinceTimeOpt = addOption("--since", this->opts->sinceTime, "Start time for log scanning. The generic format is \"YYYY-MM-DD HH:MM:SS\".\n\
+Alternatively the strings \"yesterday\", \"today\" are also understood.\n\
+Relative times also may be specified, prefixed with \"-\" referring to times before the current time.\n\
+Scanning will starts from the latest boot if it is not specified.");
 
     auto singleTestIdList = addOption("--singletest", this->opts->singleTestIdList,
               "Selectively run some particular tests. Separated by the comma.\n\
@@ -152,9 +160,11 @@ void ComletDiagnostic::setupOptions() {
       3. Memory Bandwidth\n\
       4. Media Codec\n\
       5. PCIe Bandwidth\n\
-      6. Power");
+      6. Power\n\
+      7. Computation functional test\n\
+      8. Media Codec functional test");
     singleTestIdList->delimiter(',');
-    singleTestIdList->check(CLI::Range(1, 6));
+    singleTestIdList->check(CLI::Range(1, (int)testIdToType.size()));
 
     preCheckOpt->excludes(deviceIdOpt);
     preCheckOpt->excludes(level);
@@ -165,7 +175,8 @@ void ComletDiagnostic::setupOptions() {
     level->excludes(stressTimeOpt);
     level->excludes(singleTestIdList);
     singleTestIdList->excludes(level);
-    
+    sinceTimeOpt->needs(preCheckOpt);
+
     deviceIdOpt->excludes(preCheckOpt);
     if (stressFlag == nullptr) {
         deviceIdOpt->needs(level);
@@ -269,7 +280,7 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
 
     if (this->opts->preCheck) {
-        json = this->coreStub->getPreCheckInfo(this->opts->onlyGPU, this->opts->rawJson);
+        json = getPreCheckInfo(this->opts->onlyGPU, this->opts->rawJson, this->opts->sinceTime);
         return json;
     }
 

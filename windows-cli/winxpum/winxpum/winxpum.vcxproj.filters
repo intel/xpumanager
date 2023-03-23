@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\amc">
+      <UniqueIdentifier>{bdc43976-ef4a-4544-9b57-812bcc3eb2d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ipmi">
+      <UniqueIdentifier>{3500d7dd-b61d-4141-bd22-540c954c53e3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="xpumcli.cpp">
@@ -57,6 +63,38 @@
     <ClCompile Include="comlet_firmware.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="amc\ipmi_amc_manager.cpp">
+      <Filter>Source Files\amc</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\file_utils.cpp">
+      <Filter>Source Files\ipmi</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\firmware.cpp">
+      <Filter>Source Files\ipmi</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\ipmi_interface.cpp">
+      <Filter>Source Files\ipmi</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\pci.cpp">
+      <Filter>Source Files\ipmi</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\sdr.cpp">
+      <Filter>Source Files\ipmi</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\winipmi.c">
+      <Filter>Source Files\ipmi</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\bsmc_interface.cpp">
+      <Filter>Source Files\ipmi</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\ipmi.cpp">
+      <Filter>Source Files\ipmi</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\sensor_reading.cpp">
+      <Filter>Source Files\ipmi</Filter>
+    </ClCompile>
+    <ClCompile Include="ipmi\fru.cpp">
+      <Filter>Source Files\ipmi</Filter>
     <ClCompile Include="win_native.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -113,6 +151,65 @@
     <ClInclude Include="comlet_firmware.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="amc\amc_manager.h">
+      <Filter>Source Files\amc</Filter>
+    </ClInclude>
+    <ClInclude Include="amc\ipmi_amc_manager.h">
+      <Filter>Source Files\amc</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\bsmc_interface.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\bsmc_ipmi_oem_cmd.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\bsmc_ipmi_storage_cmd.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\build_config.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\file_util.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\ipmi.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\ipmi_interface.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\pci.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\tool.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\winopenssl.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\sdr.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\compiler_specific.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\sensor_reading.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\openipmi.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\pci_address.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\winipmi.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\wintypes.h">
+      <Filter>Source Files\ipmi</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmi\fru.h">
+      <Filter>Source Files\ipmi</Filter>
     <ClInclude Include="win_native.h">
       <Filter>Source Files</Filter>
     </ClInclude>

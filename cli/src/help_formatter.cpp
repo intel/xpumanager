@@ -102,7 +102,6 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " health -g [groupId] -c [componentTypeId] --threshold [threshold] \n"
                "  " + appName + " health -g [groupId] -c [componentTypeId] --threshold [threshold] -j \n";
     } else if (app->get_name().compare("diag") == 0) {
-#ifndef DAEMONLESS
         return "\nUsage: " + appName + " diag [Options] \n"
                "  " + appName + " diag -d [deviceId] -l [level] \n"
                "  " + appName + " diag -d [pciBdfAddress] -l [level] \n"
@@ -112,35 +111,28 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " diag -d [pciBdfAddress] --singletest [testIds] \n"
                "  " + appName + " diag -d [deviceId] --singletest [testIds] -j \n"
                "  " + appName + " diag -d [pciBdfAddress] --singletest [testIds] -j \n"
+#ifdef DAEMONLESS
+               "  " + appName + " diag -d [deviceIds] --stress \n"
+#endif
                "  " + appName + " diag -d [deviceIds] --stress --stresstime [time]\n"
+#ifndef DAEMONLESS
                "  " + appName + " diag -g [groupId] -l [level] \n"
                "  " + appName + " diag -g [groupId] -l [level] -j \n"
                "  " + appName + " diag -g [groupId] --singletest [testIds] \n"
                "  " + appName + " diag -g [groupId] --singletest [testIds] -j \n"
-               "  " + appName + " diag --precheck\n"
-               "  " + appName + " diag --precheck -j\n"
-               "  " + appName + " diag --precheck --gpu\n"
-               "  " + appName + " diag --precheck --gpu -j\n"
-               "  " + appName + " diag --stress --stresstime [time]\n";
-#else
-        return "\nUsage: " + appName + " diag [Options] \n"
-               "  " + appName + " diag -d [deviceId] -l [level] \n"
-               "  " + appName + " diag -d [pciBdfAddress] -l [level] \n"
-               "  " + appName + " diag -d [deviceId] -l [level] -j \n"
-               "  " + appName + " diag -d [pciBdfAddress] -l [level] -j \n"
-               "  " + appName + " diag -d [deviceId] --singletest [testIds] \n"
-               "  " + appName + " diag -d [pciBdfAddress] --singletest [testIds] \n"
-               "  " + appName + " diag -d [deviceId] --singletest [testIds] -j \n"
-               "  " + appName + " diag -d [pciBdfAddress] --singletest [testIds] -j \n"
-               "  " + appName + " diag -d [deviceIds] --stress \n"
-               "  " + appName + " diag -d [deviceIds] --stress --stresstime [time] \n"
-               "  " + appName + " diag --precheck\n"
-               "  " + appName + " diag --precheck -j\n"
-               "  " + appName + " diag --precheck --gpu\n"
-               "  " + appName + " diag --precheck --gpu -j\n"
-               "  " + appName + " diag --stress\n"
-               "  " + appName + " diag --stress --stresstime [time]\n";
 #endif
+               "  " + appName + " diag --precheck\n"
+               "  " + appName + " diag --precheck -j\n"
+               "  " + appName + " diag --precheck --gpu\n"
+               "  " + appName + " diag --precheck --gpu -j\n"
+               "  " + appName + " diag --precheck --since [startTime]\n"
+               "  " + appName + " diag --precheck --since [startTime] -j\n"
+               "  " + appName + " diag --precheck --gpu --since [startTime]\n"
+               "  " + appName + " diag --precheck --gpu --since [startTime] -j\n"
+#ifdef DAEMONLESS
+               "  " + appName + " diag --stress\n"
+#endif
+               "  " + appName + " diag --stress --stresstime [time]\n";
     } else if (app->get_name().compare("dump") == 0) {
 #ifndef DAEMONLESS
         return "\nUsage: " + appName + " dump [Options]\n"

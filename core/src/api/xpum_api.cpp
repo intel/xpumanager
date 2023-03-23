@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "api/device_model.h"
 #include "api_types.h"
 #include "core/core.h"
 #include "device/device.h"
@@ -394,10 +395,17 @@ xpum_result_t xpumGetDeviceList(xpum_device_basic_info deviceList[], int *count)
 }
 
 xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], int *count, const char *username, const char *password) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
     AmcCredential credential;
     credential.username = std::string(username);
     credential.password = std::string(password);
     std::vector<std::string> versions;
+    if (Core::instance().getFirmwareManager() == nullptr) {
+        return XPUM_RESULT_FW_MGMT_NOT_INIT;
+    }
     auto result = Core::instance().getFirmwareManager()->getAMCFirmwareVersions(versions, credential);
     if (result != XPUM_OK) 
         return result;
@@ -417,6 +425,13 @@ xpum_result_t xpumGetAMCFirmwareVersions(xpum_amc_fw_version_t versionList[], in
 }
 
 xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char *buffer, int *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (Core::instance().getFirmwareManager() == nullptr) {
+        return XPUM_RESULT_FW_MGMT_NOT_INIT;
+    }
     auto errMsg = Core::instance().getFirmwareManager()->getAmcFwErrMsg();
     if (buffer == nullptr) {
         *count = errMsg.length() + 1;
@@ -465,6 +480,10 @@ xpum_result_t xpumGetSerialNumberAndAmcFwVersion(xpum_device_id_t deviceId,
     }
 
     auto systemInfo = Core::instance().getDeviceManager()->getSystemInfo();
+
+    if (Core::instance().getFirmwareManager() == nullptr) {
+        return XPUM_RESULT_FW_MGMT_NOT_INIT;
+    }
 
     std::vector<SlotSerialNumberAndFwVersion> serialNumberList;
     Core::instance().getFirmwareManager()->getAMCSlotSerialNumbers({username, password}, serialNumberList);
@@ -575,6 +594,10 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
         return res;
     }
 
+    if (Core::instance().getFirmwareManager() == nullptr) {
+        return XPUM_RESULT_FW_MGMT_NOT_INIT;
+    }
+
     res = validateFwImagePath(job);
     if (res != XPUM_OK)
         return res;
@@ -641,6 +664,9 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
     if (ret != XPUM_OK) {
         return ret;
     }
+    if (Core::instance().getFirmwareManager() == nullptr) {
+        return XPUM_RESULT_FW_MGMT_NOT_INIT;
+    }
 
     if (deviceId == XPUM_DEVICE_ID_ALL_DEVICES) {
         if (firmwareType != XPUM_DEVICE_FIRMWARE_AMC)
@@ -670,6 +696,13 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
 }
 
 xpum_result_t xpumGetFirmwareFlashErrorMsg(char *buffer, int *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (Core::instance().getFirmwareManager() == nullptr) {
+        return XPUM_RESULT_FW_MGMT_NOT_INIT;
+    }
     auto errMsg = Core::instance().getFirmwareManager()->getFlashFwErrMsg();
     if (buffer == nullptr) {
         *count = errMsg.length() + 1;
@@ -859,8 +892,13 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
             {
                 auto &copy = pXpumProperties->properties[propertyLen++];
                 copy.name = XPUM_DEVICE_PROPERTY_GFX_FIRMWARE_STATUS;
-                auto fw_status = Core::instance().getFirmwareManager()->getGfxFwStatus(deviceId);
-                auto fw_status_str = FirmwareManager::transGfxFwStatusToString(fw_status);
+                std::string fw_status_str;
+                if (Core::instance().getFirmwareManager()) {
+                    auto fw_status = Core::instance().getFirmwareManager()->getGfxFwStatus(deviceId);
+                    fw_status_str = FirmwareManager::transGfxFwStatusToString(fw_status);
+                } else {
+                    fw_status_str = "";
+                }
                 strcpy(copy.value, fw_status_str.c_str());
             }
 
@@ -2317,7 +2355,8 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
     if (device->isUpgradingFw()) {
         return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
-    if (Core::instance().getFirmwareManager()->isUpgradingFw()) {
+    
+    if (Core::instance().getFirmwareManager() && Core::instance().getFirmwareManager()->isUpgradingFw()) {
         return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
 
@@ -3012,6 +3051,18 @@ xpum_result_t xpumGetEccState(xpum_device_id_t deviceId, bool* available, bool* 
         return res;
     }
 
+    if(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel() == XPUM_DEVICE_MODEL_PVC){
+        *available = true;
+        *configurable = false;
+
+        *current = XPUM_ECC_STATE_ENABLED;
+        *pending = XPUM_ECC_STATE_ENABLED;
+
+        *action = XPUM_ECC_ACTION_NONE;
+
+        return XPUM_OK;
+    }
+
     std::string meiPath = device->getMeiDevicePath();
     //XPUM_LOG_INFO("XPUM meiPath {}", meiPath);
 
@@ -3080,6 +3131,18 @@ xpum_result_t xpumSetEccState(xpum_device_id_t deviceId, xpum_ecc_state_t newSta
     xpum_result_t res = validateDeviceId(deviceId);
     if (res != XPUM_OK) {
         return res;
+    }
+
+    if(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel() == XPUM_DEVICE_MODEL_PVC){
+        *available = true;
+        *configurable = false;
+
+        *current = XPUM_ECC_STATE_ENABLED;
+        *pending = XPUM_ECC_STATE_ENABLED;
+
+        *action = XPUM_ECC_ACTION_NONE;
+
+        return XPUM_GENERIC_ERROR;
     }
 
     std::string meiPath = device->getMeiDevicePath();
@@ -3214,6 +3277,13 @@ xpum_result_t xpumListDumpRawDataTasks(xpum_dump_raw_data_task_t taskList[], int
 }
 
 xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (Core::instance().getFirmwareManager() == nullptr) {
+        return XPUM_RESULT_FW_MGMT_NOT_INIT;
+    }
     return Core::instance().getFirmwareManager()->getAMCSensorReading(data, count);
 }
 

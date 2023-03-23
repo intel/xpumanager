@@ -21,6 +21,8 @@
 #include "win_native.h"
 using namespace xpum;
 
+static uint64_t mem_used_byte = 0;
+
 
 CoreStub::CoreStub() {
     initPDHQuery();
@@ -131,6 +133,8 @@ CoreStub::CoreStub() {
             }
         }
     }
+    p_amc_manager = std::make_shared<IpmiAmcManager>();
+    auto ipmi_enabled = p_amc_manager->preInit();
 }
 
 CoreStub::~CoreStub() {
@@ -361,6 +365,25 @@ std::unique_ptr<nlohmann::json> CoreStub::getDeviceProperties(int deviceId) {
     if (meida_enhancement_engine_count > 0)
         (*deviceJson)["number_of_media_enh_engines"] = meida_enhancement_engine_count;
     return deviceJson;
+}
+
+std::unique_ptr<nlohmann::json> CoreStub::getAMCFirmwareVersions(std::string username, std::string password) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+
+    //p_amc_manager = std::make_shared<IpmiAmcManager>();
+    auto ipmi_enabled = p_amc_manager->preInit();
+    GetAmcFirmwareVersionsParam param;
+    param.username = "";
+    param.password = "";
+    p_amc_manager->getAmcFirmwareVersions(param);
+    if (param.errCode != XPUM_OK) {
+        (*json)["error"] = "Fail to get AMC firmware version";
+        return json;
+    }    
+    for (auto version : param.versions) {
+        (*json)["amc_fw_version"].push_back(std::string(version));
+    }
+    return json;
 }
 
 static std::string eccStateToString(uint8_t state) {
@@ -730,11 +753,13 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                 zes_power_energy_counter_t snap1, snap2;
                 res = zesPowerGetEnergyCounter(power, &snap1);
                 if (res == ZE_RESULT_SUCCESS) {
+                    uint64_t time1 = getCurrentMillisecond();
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     uint64_t power_val = 0;
                     res = zesPowerGetEnergyCounter(power, &snap2);
                     if (res == ZE_RESULT_SUCCESS) {
-                        power_val = measurement_data_scale * (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+                        uint64_t time2 = getCurrentMillisecond();
+                        power_val = measurement_data_scale * (snap2.energy - snap1.energy) * 1000 / (time2 - time1);
                         data.max = data.min = data.avg = data.value = (int)power_val;
                     }
                 }
@@ -867,13 +892,15 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                         res = zesMemoryGetState(mem, &sysman_memory_state);
                         if (res == ZE_RESULT_SUCCESS && sysman_memory_state.size != 0) {
                             uint64_t used = props.physicalSize == 0 ? sysman_memory_state.size - sysman_memory_state.free : props.physicalSize - sysman_memory_state.free;
+                            mem_used_byte = used;
                             data.max = data.min = data.avg = data.value = used / 1024 / 1024;
                         }
                     }
                 }
             }
         } else {
-            data.max = data.min = data.avg = data.value = getMemUsedByNativeAPI() / 1024 / 1024;
+            mem_used_byte = getMemUsedByNativeAPI();
+            data.max = data.min = data.avg = data.value = mem_used_byte / 1024 / 1024;
         }
     }
 
@@ -924,16 +951,17 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
     if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION || metricsType == XPUM_STATS_MEDIA_UTILIZATION || metricsType == XPUM_STATS_GPU_UTILIZATION || metricsType == XPUM_STATS_COPY_UTILIZATION) {
         static uint64_t compute_engine = 0;
         static uint64_t media_engine = 0;
+        static uint64_t copy_engine = 0;
 
         if (metricsType == XPUM_STATS_GPU_UTILIZATION) {
-            data.max = data.min = data.avg = data.value = std::max(compute_engine, media_engine);
+            data.max = data.min = data.avg = data.value = std::max(std::max(compute_engine, media_engine), copy_engine);
             return data;
         }
 
         uint32_t engine_count = 0;
         ze_result_t res;
         res = zesDeviceEnumEngineGroups(device, &engine_count, nullptr);
-        if (res == ZE_RESULT_SUCCESS && engine_count>0) {
+        if (res == ZE_RESULT_SUCCESS && engine_count > 0) {
             std::vector<zes_engine_handle_t> engines(engine_count);
             res = zesDeviceEnumEngineGroups(device, &engine_count, engines.data());
             if (res == ZE_RESULT_SUCCESS) {
@@ -968,8 +996,8 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                                 data.max = data.min = data.avg = data.value = compute_engine = (uint64_t)val;
                             } else if (metricsType == XPUM_STATS_MEDIA_UTILIZATION) {
                                 data.max = data.min = data.avg = data.value = media_engine = (uint64_t)val;
-                            } else {
-                                data.max = data.min = data.avg = data.value = (uint64_t)val;
+                            } else if (metricsType == XPUM_STATS_COPY_UTILIZATION) {
+                                data.max = data.min = data.avg = data.value = copy_engine = (uint64_t)val;
                             }
                         }
                     }
@@ -977,13 +1005,51 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
             }
         } else {
             if (metricsType == XPUM_STATS_COMPUTE_UTILIZATION) {
-                data.max = data.min = data.avg = data.value = (uint64_t)(getComputeEngineUtilByNativeAPI() * 100.0);
+                data.max = data.min = data.avg = data.value = compute_engine = (uint64_t)(getComputeEngineUtilByNativeAPI() * 100.0);
             } else if (metricsType == XPUM_STATS_MEDIA_UTILIZATION) {
-                data.max = data.min = data.avg = data.value = (uint64_t)(getMediaEngineUtilByNativeAPI() * 100.0);
+                data.max = data.min = data.avg = data.value = media_engine = (uint64_t)(getMediaEngineUtilByNativeAPI() * 100.0);
             } else if (metricsType == XPUM_STATS_COPY_UTILIZATION) {
-                data.max = data.min = data.avg = data.value = (uint64_t)(getCopyEngineUtilByNativeAPI() * 100.0);
+                data.max = data.min = data.avg = data.value = copy_engine = (uint64_t)(getCopyEngineUtilByNativeAPI() * 100.0);
             }
         }
+    }
+    if (metricsType == XPUM_STATS_MEMORY_UTILIZATION) {
+        uint64_t physical_size = 0;
+        uint32_t mem_module_count = 0;
+        ze_result_t res;
+        res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr);
+        if (res == ZE_RESULT_SUCCESS) {
+            std::vector<zes_mem_handle_t> mems(mem_module_count);
+            res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data());
+            if (res == ZE_RESULT_SUCCESS) {
+                if (mems.size() > 0) {
+                    for (auto& mem : mems) {
+                        uint64_t mem_module_physical_size = 0;
+                        zes_mem_properties_t props;
+                        props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+                        res = zesMemoryGetProperties(mem, &props);
+                        if (res == ZE_RESULT_SUCCESS) {
+                            mem_module_physical_size = props.physicalSize;
+                        }
+
+                        zes_mem_state_t sysman_memory_state = {};
+                        sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+                        res = zesMemoryGetState(mem, &sysman_memory_state);
+                        if (res == ZE_RESULT_SUCCESS) {
+                            if (props.physicalSize == 0) {
+                                mem_module_physical_size = sysman_memory_state.size;
+                            }
+                        }
+                        physical_size += mem_module_physical_size;
+                    }
+                }
+            }
+        }
+        if (physical_size == 0) {
+            physical_size = (uint64_t)getMemSizeByNativeAPI();
+        }
+        if (physical_size)
+            data.max = data.min = data.avg = data.value = mem_used_byte * 100.0 / physical_size * 100.0;
     }
     return data;
 }
@@ -1036,14 +1102,14 @@ std::unique_ptr<nlohmann::json>  CoreStub::getStatistics(int deviceId, bool enab
                 || item.key == XPUM_STATS_MEMORY_TEMPERATURE || item.key == XPUM_STATS_GPU_FREQUENCY
                 || item.key == XPUM_STATS_MEMORY_BANDWIDTH || item.key == XPUM_STATS_MEMORY_USED 
                 || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
-                || item.key == XPUM_STATS_GPU_UTILIZATION
-                || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT || item.key == XPUM_STATS_COPY_UTILIZATION
+                || item.key == XPUM_STATS_GPU_UTILIZATION || item.key == XPUM_STATS_MEMORY_READ_THROUGHPUT || item.key == XPUM_STATS_MEMORY_WRITE_THROUGHPUT || item.key == XPUM_STATS_COPY_UTILIZATION 
+                || item.key == XPUM_STATS_MEMORY_UTILIZATION
             ) {
                 xpum_device_stats_data_t data = getMetricsByLevel0((zes_device_handle_t)sub_device_handles[i], item.key);
                 auto tmp = nlohmann::json();
                 if (item.key == XPUM_STATS_POWER || item.key == XPUM_STATS_GPU_CORE_TEMPERATURE 
                     || item.key == XPUM_STATS_MEMORY_TEMPERATURE || item.key == XPUM_STATS_COMPUTE_UTILIZATION || item.key == XPUM_STATS_MEDIA_UTILIZATION 
-                    || item.key == XPUM_STATS_GPU_UTILIZATION || item.key == XPUM_STATS_COPY_UTILIZATION) {
+                    || item.key == XPUM_STATS_GPU_UTILIZATION || item.key == XPUM_STATS_COPY_UTILIZATION || item.key == XPUM_STATS_MEMORY_UTILIZATION) {
                     tmp["avg"] = data.avg * 1.0 / measurement_data_scale;
                     tmp["min"] = data.min * 1.0 / measurement_data_scale;
                     tmp["max"] = data.max * 1.0 / measurement_data_scale;
@@ -1104,7 +1170,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
 
 std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+    if (deviceId < 0 || (deviceId >= ze_device_handles.size() && deviceId != XPUM_DEVICE_ID_ALL_DEVICES)) {
         (*json)["error"] = "invalid device id";
         return json;
     }
@@ -1115,6 +1181,24 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
                             [invalidChars](unsigned char ch) { return invalidChars.find(ch) != invalidChars.npos; });
     if (itr != filePath.end()) {
         (*json)["error"] = "Illegal firmware image filename. Image filename should not contain following characters: {}()><&*'|=?;[]$-#~!\"%:+,`";
+        return json;
+    }
+    //p_amc_manager = std::make_shared<IpmiAmcManager>();
+    FlashAmcFirmwareParam param;
+    if (type == XPUM_DEVICE_FIRMWARE_AMC) {
+        // auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+        auto ipmi_enabled = p_amc_manager->preInit();
+        param.file = filePath;
+        param.username = "";
+        param.password = "";
+        param.callback = [this]() {
+            // unlock all device when update finish
+            // std::vector<std::shared_ptr<Device>> allDevices;
+            // Core::instance().getDeviceManager()->getDeviceList(allDevices);
+            // Core::instance().getDeviceManager()->unlockDevices(allDevices);
+        };
+        p_amc_manager->flashAMCFirmware(param);
+        (*json)["result"] = "OK";
         return json;
     }
     auto deviceList = getSiblingDevices(deviceId);
@@ -1138,8 +1222,10 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
             int res = 0;
             if (type == XPUM_DEVICE_FIRMWARE_GFX)
                 res = igsc_instance.runFlashGSC(bdf, image_file);
-            else
+            else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
                 res = igsc_instance.runFlashGSCData(bdf, image_file);
+            }
+
             if (res == 0)
                 return xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
             else
@@ -1153,9 +1239,29 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
 
 std::unique_ptr<nlohmann::json> CoreStub::getFirmwareFlashResult(int deviceId, unsigned int type) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    if (deviceId < 0 || deviceId >= ze_device_handles.size()) {
+    if (deviceId < 0 || (deviceId >= ze_device_handles.size() && deviceId != XPUM_DEVICE_ID_ALL_DEVICES)) {
         (*json)["error"] = "invalid device id";
         return json;
+    }
+    if (type == XPUM_DEVICE_FIRMWARE_AMC) {
+        //p_amc_manager = std::make_shared<IpmiAmcManager>();
+        auto ipmi_enabled = p_amc_manager->preInit();
+        GetAmcFirmwareFlashResultParam param;
+        p_amc_manager->getAMCFirmwareFlashResult(param);
+
+        if (param.result.result == XPUM_DEVICE_FIRMWARE_FLASH_ONGOING) {
+            (*json)["result"] = "ONGOING";
+            (*json)["percentage"] = param.result.percentage;
+            return json;
+        }
+        if (param.result.result == XPUM_DEVICE_FIRMWARE_FLASH_ERROR || param.result.type == XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED) {
+            (*json)["result"] = "FAILED";
+            return json;
+        }
+        if (param.result.result == XPUM_DEVICE_FIRMWARE_FLASH_OK) {
+            (*json)["result"] = "OK";
+            return json;
+        }
     }
     for (int i = 0; i < flash_results.size(); i++) {
         std::future_status status = flash_results[i].wait_for(std::chrono::milliseconds(0));

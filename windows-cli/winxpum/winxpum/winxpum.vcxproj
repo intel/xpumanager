@@ -107,6 +107,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="amc\ipmi_amc_manager.cpp" />
     <ClCompile Include="cli_resource.cpp" />
     <ClCompile Include="cli_table.cpp" />
     <ClCompile Include="cli_wrapper.cpp" />
@@ -119,11 +120,23 @@
     <ClCompile Include="core_stub.cpp" />
     <ClCompile Include="help_formatter.cpp" />
     <ClCompile Include="igsc_manager.cpp" />
+    <ClCompile Include="ipmi\bsmc_interface.cpp" />
+    <ClCompile Include="ipmi\file_utils.cpp" />
+    <ClCompile Include="ipmi\firmware.cpp" />
+    <ClCompile Include="ipmi\fru.cpp" />
+    <ClCompile Include="ipmi\ipmi.cpp" />
+    <ClCompile Include="ipmi\ipmi_interface.cpp" />
+    <ClCompile Include="ipmi\pci.cpp" />
+    <ClCompile Include="ipmi\sdr.cpp" />
+    <ClCompile Include="ipmi\sensor_reading.cpp" />
+    <ClCompile Include="ipmi\winipmi.c" />
     <ClCompile Include="pretty_table.cpp" />
     <ClCompile Include="win_native.cpp" />
     <ClCompile Include="xpumcli.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="amc\amc_manager.h" />
+    <ClInclude Include="amc\ipmi_amc_manager.h" />
     <ClInclude Include="cli_resource.h" />
     <ClInclude Include="cli_table.h" />
     <ClInclude Include="cli_wrapper.h" />
@@ -137,6 +150,25 @@
     <ClInclude Include="core_stub.h" />
     <ClInclude Include="help_formatter.h" />
     <ClInclude Include="igsc_manager.h" />
+    <ClInclude Include="include\xpum_log.h" />
+    <ClInclude Include="ipmi\bsmc_interface.h" />
+    <ClInclude Include="ipmi\bsmc_ipmi_oem_cmd.h" />
+    <ClInclude Include="ipmi\bsmc_ipmi_storage_cmd.h" />
+    <ClInclude Include="ipmi\build_config.h" />
+    <ClInclude Include="ipmi\compiler_specific.h" />
+    <ClInclude Include="ipmi\file_util.h" />
+    <ClInclude Include="ipmi\fru.h" />
+    <ClInclude Include="ipmi\ipmi.h" />
+    <ClInclude Include="ipmi\ipmi_interface.h" />
+    <ClInclude Include="ipmi\openipmi.h" />
+    <ClInclude Include="ipmi\pci.h" />
+    <ClInclude Include="ipmi\pci_address.h" />
+    <ClInclude Include="ipmi\sdr.h" />
+    <ClInclude Include="ipmi\sensor_reading.h" />
+    <ClInclude Include="ipmi\tool.h" />
+    <ClInclude Include="ipmi\winipmi.h" />
+    <ClInclude Include="ipmi\winopenssl.h" />
+    <ClInclude Include="ipmi\wintypes.h" />
     <ClInclude Include="pretty_table.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="win_native.h" />

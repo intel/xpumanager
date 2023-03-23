@@ -6,10 +6,11 @@
 
 #include <string>
 #include <unordered_map>
+#include "resource.h"
 
 namespace {
     std::unordered_map<std::string, std::string> string_table = {
-        {"CLI_APP_DESC", "Intel XPU Manager Command Line Interface -- v1.2 for Windows\nIntel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.\nIntel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.\n\nSupported devcies:\n- Intel Data Center GPU "} };
+        {"CLI_APP_DESC", "Intel XPU Manager Command Line Interface -- v" VER_VERSION_MAJORMINOR_STR " for Windows\nIntel XPU Manager Command Line Interface provides the Intel datacenter GPU model and monitoring capabilities. It can also be used to change the Intel datacenter GPU settings and update the firmware.\nIntel XPU Manager is based on Intel oneAPI Level Zero. Before using Intel XPU Manager, the GPU driver and Intel oneAPI Level Zero should be installed rightly.\n\nSupported devcies:\n- Intel Data Center GPU "} };
 
 } // namespace
 

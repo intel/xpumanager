@@ -139,9 +139,13 @@ grpc::Status XpumCoreServiceImpl::getDeviceIdByBDF(grpc::ServerContext* context,
 static std::string getAmcFwErrMsg() {
     // get error message
     int count = 0;
-    xpumGetAMCFirmwareVersionsErrorMsg(nullptr, &count);
+    auto res = xpumGetAMCFirmwareVersionsErrorMsg(nullptr, &count);
+    if (res != XPUM_OK)
+        return "";
     char buffer[count];
-    xpumGetAMCFirmwareVersionsErrorMsg(buffer, &count);
+    res = xpumGetAMCFirmwareVersionsErrorMsg(buffer, &count);
+    if (res != XPUM_OK)
+        return "";
     return std::string(buffer);
 }
 
@@ -2283,15 +2287,21 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
         tileData->set_standbyoption("default, never");
         //tileData->set_intervalscope ("1 to 124");
         //tileData->set_powerscope ("0 to 500");
-
-        for (uint32_t i = 0; i < standbyCount; i++) {
-            if (standbyArray[i].type == XPUM_GLOBAL /*&& standbyArray[i].on_subdevice == true */ && standbyArray[i].subdevice_Id == tileId) {
-                if (standbyArray[i].mode == XPUM_DEFAULT) {
-                    tileData->set_standby(STANDBY_DEFAULT);
-                } else {
-                    tileData->set_standby(STANDBY_NEVER);
+        if (standbyCount == 0) {
+            tileData->set_standby(STANDBY_NULL);
+        } else {
+            for (uint32_t i = 0; i < standbyCount; i++) {
+                if (standbyArray[i].type == XPUM_GLOBAL && standbyArray[i].subdevice_Id == tileId) {
+                    if (standbyArray[i].mode == XPUM_DEFAULT) {
+                        tileData->set_standby(STANDBY_DEFAULT);
+                    } else
+                        if (standbyArray[i].mode == XPUM_NEVER) {
+                            tileData->set_standby(STANDBY_NEVER);
+                        } else {
+                            tileData->set_standby(STANDBY_NULL);
+                        }
+                    break;
                 }
-                break;
             }
         }
         for (uint32_t i = 0; i < schedulerCount; i++) {

@@ -56,5 +56,7 @@
 #define XPUM_CLI_ERROR_MEMORY_ECC_LIB_NOT_SUPPORT                           47  
 #define XPUM_CLI_ERROR_DIAGNOSTIC_INVALID_SINGLE_TEST                       48
 #define XPUM_CLI_ERROR_DIAGNOSTIC_DUPLICATED_SINGLE_TEST                    49
+#define XPUM_CLI_ERROR_FW_MGMT_NOT_INIT                                     50  // The firmware management feature is not initialized
+#define XPUM_CLI_ERROR_DIAGNOSTIC_PRECHECK_SINCE_TIME                       51
 
 int errorNumTranslate(int coreErrNo);
