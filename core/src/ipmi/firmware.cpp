@@ -551,7 +551,54 @@ static int wait_for_bsmc(ipmi_address_t *addr, fw_get_info_res prev_ver) {
     return NRV_REBOOT_NEEDED;
 }
 
-static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_size) {
+static int check_fw_file_name(const char* name){
+    if(!name){
+        return false;
+    }
+    // 23 is the len of 'ats_m_amc_v_6_4_0_0.bin'
+    if(strlen(name) != 23 || strncmp(name, "ats_m_amc_v_", strlen("ats_m_amc_v_")) != 0 || 
+    strncmp(name + 19, ".bin", strlen(".bin")) != 0){
+        return false;
+    }
+    if(!isdigit(name[12]) || !isdigit(name[14]) || !isdigit(name[16]) || !isdigit(name[18])){
+        return false;
+    }
+    if(name[13] != '_' || name[15] != '_' || name[17] != '_'){
+        return false;
+    }
+    return true;
+}
+
+static bool parse_cur_fw_version(const char* file, struct firmware_versions *version){
+
+    if(!file || !version){
+        return false;
+    }
+
+    const char* name = basename(file);
+    if(!check_fw_file_name(name)){
+        return false;
+    }
+    version->bsmc.major = name[12] - '0';
+    version->bsmc.minor = name[14] - '0';
+    version->bsmc.build = name[16] - '0';
+    version->bsmc.patch = name[18] - '0';
+
+    return true;
+}
+
+static bool fw_match(struct firmware_versions *cur, struct firmware_versions *pre){
+    if(!cur || !pre){
+        return false;
+    }
+    if(cur->bsmc.major != pre->bsmc.major || cur->bsmc.minor != pre->bsmc.minor ||
+     cur->bsmc.build != pre->bsmc.build || cur->bsmc.patch != pre->bsmc.patch){
+        return false;
+    }
+    return true;
+}
+
+static int cmd_firmware_update(const char* file, nrv_list cards, uint8_t *bsmc_data, size_t bsmc_size) {
     int err = NRV_SUCCESS;
     struct firmware_versions prev_ver[MAX_CARD_NO] = {{{0}}};
     pci_address_t pci_address[MAX_CARD_NO];
@@ -578,6 +625,9 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
 		return err;
 #endif
 
+    firmware_versions cur_fw_version;
+    bool parse_success = parse_cur_fw_version(file, &cur_fw_version);
+
     /* BSMC firmware update */
     //TODO for all cards:
     for (int i = 0; i < cards.count; i++) {
@@ -590,6 +640,13 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
         if (err)
             goto exit;
 
+        if(parse_success && fw_match(&cur_fw_version, &prev_ver[i])){
+            if (percentCallback) {
+                int percent = (fw_update_device_index + 1) * 100  / fw_update_device_count;
+                percentCallback(percent, amcManager);
+            }
+            continue;
+        }
         card->max_transfer_len = detect_max_transfer_size(&card->ipmi_address);
 
         if (bsmc_data) {
@@ -642,6 +699,10 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
     if ( cards.count > 0 ) {
         int i = 0;
         */
+
+        if(parse_success && fw_match(&cur_fw_version, &prev_ver[i])){
+            continue;
+        }
         struct firmware_versions curr_ver = {{0}};
 
         XPUM_LOG_INFO("card {} i2c_addr is: 0x{:x}", i, cards.card[i].ipmi_address.i2c_addr);
@@ -839,7 +900,7 @@ int cmd_firmware(const char* file, unsigned int versions[4]) {
     }
 
     if (bsmc_data) {
-        err = cmd_firmware_update(cards, bsmc_data, bsmc_size);
+        err = cmd_firmware_update(file, cards, bsmc_data, bsmc_size);
     } else {
         err = cmd_firmware_info(cards, versions);
     }
