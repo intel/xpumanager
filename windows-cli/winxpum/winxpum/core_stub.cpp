@@ -672,6 +672,12 @@ long long  CoreStub::getCurrentMillisecond() {
         .count();
 }
 
+long long CoreStub::getCurrentMicroseconds() {
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
+}
+
 std::string CoreStub::isotimestamp(uint64_t t, bool withoutDate) {
     time_t seconds = t / 1000;
     int milli_seconds = t % 1000;
@@ -753,13 +759,13 @@ xpum_device_stats_data_t CoreStub::getMetricsByLevel0(zes_device_handle_t device
                 zes_power_energy_counter_t snap1, snap2;
                 res = zesPowerGetEnergyCounter(power, &snap1);
                 if (res == ZE_RESULT_SUCCESS) {
-                    uint64_t time1 = getCurrentMillisecond();
+                    uint64_t time1 = getCurrentMicroseconds();
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
                     uint64_t power_val = 0;
                     res = zesPowerGetEnergyCounter(power, &snap2);
                     if (res == ZE_RESULT_SUCCESS) {
-                        uint64_t time2 = getCurrentMillisecond();
-                        power_val = measurement_data_scale * (snap2.energy - snap1.energy) * 1000 / (time2 - time1);
+                        uint64_t time2 = getCurrentMicroseconds();
+                        power_val = measurement_data_scale * (snap2.energy - snap1.energy) / (time2 - time1);
                         data.max = data.min = data.avg = data.value = (int)power_val;
                     }
                 }
