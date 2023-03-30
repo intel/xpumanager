@@ -11,6 +11,7 @@
 #include "hpe_redfish_amc_manager.h"
 #include "infrastructure/logger.h"
 #include "smc_redfish_amc_manager.h"
+#include "dell_redfish_amc_manager.h"
 #include "util.h"
 
 namespace xpum {
@@ -26,6 +27,8 @@ std::shared_ptr<AmcManager> RedfishAmcManager::instance() {
     }
     if (manufacturer == "HPE") {
         return std::make_shared<HEPRedfishAmcManager>();
+    }else if (manufacturer == "Dell Inc.") {
+        return std::make_shared<DELLRedfishAmcManager>();
     }else{
         return std::make_shared<SMCRedfishAmcManager>();
     }
@@ -45,6 +48,8 @@ std::string getRedfishAmcWarn() {
         return HEPRedfishAmcManager::getRedfishAmcWarn();
     } else if (manufacturer == "Supermicro") {
         return SMCRedfishAmcManager::getRedfishAmcWarn();
+    }else if (manufacturer == "Dell Inc.") {
+        return DELLRedfishAmcManager::getRedfishAmcWarn();
     } else {
         return "";
     }
