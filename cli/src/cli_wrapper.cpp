@@ -19,6 +19,7 @@
 #include "comlet_dump.h"
 #include "comlet_statistics.h"
 #include "comlet_diagnostic.h"
+#include "comlet_discovery.h"
 #ifndef DAEMONLESS
 #include "grpc_core_stub.h"
 #else
@@ -81,6 +82,12 @@ int CLIWrapper::printResult(std::ostream &out) {
             if (comlet->getCommand().compare("discovery") == 0) {
                 if (comlet->isEmpty()) {
                     putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
+                } else {
+                    std::shared_ptr<ComletDiscovery> cd 
+                        = std::dynamic_pointer_cast<ComletDiscovery>(comlet);
+                    if (cd != nullptr && cd->isDumping() == true) {
+                        putenv(const_cast<char *>("_XPUM_INIT_SKIP=AMC"));
+                    }
                 }
             } else if (comlet->getCommand().compare("updatefw") != 0 &&
                     comlet->getCommand().compare("config") != 0) {
