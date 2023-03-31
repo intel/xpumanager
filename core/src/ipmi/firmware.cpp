@@ -133,50 +133,6 @@ const char *get_kernel_module_str(uint8_t prod) {
     }
 }
 
-/*
- * Send a buffer with bytes ordered from 0 to buffer size and check how many
- * ordered bytes were received by BSMC.
- */
-static uint16_t detect_max_transfer_size(ipmi_address_t *addr) {
-    unsigned short max_data_len = 30; /* works with BSMC v1.4.1.10+ */
-    bsmc_req req;
-    bsmc_res res;
-
-    bsmc_hal->oem_req_init(&req, addr, IPMI_TRANSFER_SIZE_DETECT);
-
-    /* Fill data with successive bytes starting from 0 */
-    for (unsigned i = 0; i < sizeof(req.data); i++) {
-        req.data[i] = i;
-        gData[i] = req.data[i];
-    }
-
-    for (req.data_len = 32; req.data_len <= sizeof(req.data); req.data_len += 8) {
-        gNetfn = IPMI_INTEL_OEM_NETFN;
-        gCmd = IPMI_TRANSFER_SIZE_DETECT;
-
-        if (bsmc_hal->cmd(&req, &res))
-            break;
-
-#if !(_WIN32) && !(__linux__)
-        if (bsmc_hal->validate_res(res, SIZE_DETECT_RES))
-#else
-        if (bsmc_hal->validate_res(res, sizeof(res.size_detect_res)))
-#endif
-            break;
-
-#if !(_WIN32) && !(__linux__)
-        if (gMaxDataLen != req.data_len)
-#else
-        if (res.size_detect_res.received_bytes != req.data_len)
-#endif
-            break;
-
-        max_data_len = req.data_len;
-    }
-
-    return max_data_len;
-}
-
 static int fw_get_info(ipmi_address_t *addr, fw_get_info_res *fw_info,
                        int chip_info_cmd) {
     bsmc_req req;
@@ -474,8 +430,12 @@ static int fw_update(nrv_card *card, const uint8_t *data, size_t data_size, fw_g
     XPUM_LOG_INFO("Updating {} on card {}", FW_UPDATE_TYPE_STR(fw_update_type), card->id);
 
     err = fw_update_transfer(&card->ipmi_address, card->max_transfer_len, data, data_size, &chip_status);
-    if (err)
-        return err;
+    if (err) {
+        XPUM_LOG_WARN("Fail to transfer with data length 0xf8, try with 0x1e");
+        err = fw_update_transfer(&card->ipmi_address, 0x1e, data, data_size, &chip_status);
+        if (err)
+            return err;
+    }
 
     switch (chip_status) {
         case IPMI_FW_UPDATE_COMPLETE:
@@ -647,7 +607,8 @@ static int cmd_firmware_update(const char* file, nrv_list cards, uint8_t *bsmc_d
             }
             continue;
         }
-        card->max_transfer_len = detect_max_transfer_size(&card->ipmi_address);
+        // 0xf8 is summarized from experience
+        card->max_transfer_len = 0xf8;
 
         if (bsmc_data) {
             err = fw_update(card, bsmc_data, bsmc_size, &prev_ver[i].bsmc,
