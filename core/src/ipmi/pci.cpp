@@ -25,6 +25,7 @@
 #include "pci.h"
 #include "pci_address.h"
 #include "tool.h"
+#include "ipmi.h"
 
 namespace xpum {
 

@@ -48,6 +48,7 @@ UINT32 gFwReqSize;
 #include <vector>
 #include <string>
 #include <sstream>
+#include "ipmi.h"
 
 namespace xpum {
 
@@ -282,6 +283,29 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
             continue;
         } else if (*status != IPMI_FW_UPDATE_READ) {
             XPUM_LOG_ERROR("go to exit, status {}", *status);
+            switch (*status) {
+                case IPMI_FW_UPDATE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_SIGNATURE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_SIGNATURE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_IMAGE_TO_LARGE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_IMAGE_TO_LARGE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_NO_IMAGE_SIZE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_NO_IMAGE_SIZE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_PACKET_TO_LARGE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_PACKET_TO_LARGE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_TO_MANY_RETRIES_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_TO_MANY_RETRIES_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_WRITE_TO_FLASH_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_WRITE_TO_FLASH_FAIL;
+                    break;
+            }
             goto exit;
         }
 

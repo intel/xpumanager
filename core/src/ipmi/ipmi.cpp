@@ -247,4 +247,25 @@ inline int get_total_ipmi_card_count() {
 void clean_data() {
     g_list.count = 0;
 }
+
+std::string getIpmiErrorString(int errorCode) {
+    switch (errorCode) {
+        case NRV_IPMI_ERROR_FW_UPDATE_FAIL:
+            return "Update firmware failed.";
+        case NRV_IPMI_ERROR_FW_UPDATE_SIGNATURE_FAIL:
+            return "Signature fail.";
+        case NRV_IPMI_ERROR_FW_UPDATE_IMAGE_TO_LARGE_FAIL:
+            return "Image too large.";
+        case NRV_IPMI_ERROR_FW_UPDATE_NO_IMAGE_SIZE_FAIL:
+            return "No image size.";
+        case NRV_IPMI_ERROR_FW_UPDATE_PACKET_TO_LARGE_FAIL:
+            return "Package too large.";
+        case NRV_IPMI_ERROR_FW_UPDATE_TO_MANY_RETRIES_FAIL:
+            return "Too many retries, please perform AC cycle and try again.";
+        case NRV_IPMI_ERROR_FW_UPDATE_WRITE_TO_FLASH_FAIL:
+            return "Fail to write to flash.";
+        default:
+            return "";
+    }
+}
 } // namespace xpum

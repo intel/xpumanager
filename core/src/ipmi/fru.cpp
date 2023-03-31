@@ -10,6 +10,7 @@
 #include "fru.h"
 #include <bitset>
 #include <iostream>
+#include "ipmi.h"
 
 namespace xpum {
 

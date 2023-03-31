@@ -29,6 +29,7 @@
 #include <time.h>
 
 #include "tool.h"
+#include "ipmi.h"
 
 namespace xpum {
 
