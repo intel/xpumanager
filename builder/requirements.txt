@@ -25,7 +25,7 @@ MarkupSafe==2.1.1
 marshmallow==3.14.1
 mdit-py-plugins==0.3.0
 mdurl==0.1.0
-mistune==2.0.0
+mistune==2.0.3
 myst-parser==0.16.1
 packaging==21.3
 prometheus-client==0.14.1
