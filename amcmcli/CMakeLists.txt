@@ -57,6 +57,7 @@ configure_file(${CMAKE_CURRENT_LIST_DIR}/src/config.h.in
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/CLI11/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../third_party/spdlog/include)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/src)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../core/include)
 
 if(NOT TARGET amcfw)
   if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/../core/src/ipmi)
