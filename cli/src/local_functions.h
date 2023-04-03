@@ -57,7 +57,7 @@ const std::vector<ErrorPattern> error_patterns = {
     
         // i915/drm error
         {".*i915.*drm.*ERROR.*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_DRIVER},
-        {".*i915.*ERROR.*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_DRIVER},
+        {".*i915.* ERROR .*", "", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_DRIVER},
         {".*drm.*ERROR.*", "i915", ERROR_CATEGORY_KMD, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_GPU},
         // cpu error
         {".*(mce|mca).*err.*", "", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_CIRTICAL, COMPONET_TYE_CPU},
