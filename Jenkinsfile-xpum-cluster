@@ -62,7 +62,7 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-sles:lz-1.8.5-20221121"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-sles:lz-1.8.5-20230331"
       imagePullPolicy: "Always"
       name: "xpum-builder-sles"
       resources:
@@ -87,7 +87,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-focal:lz-1.8.5-20221121"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-focal:lz-1.8.5-20230331"
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-focal"
       resources:
@@ -112,7 +112,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-jammy:lz-1.8.5-20221121"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-ubuntu-jammy:lz-1.8.5-20230331"
       imagePullPolicy: "Always"
       name: "xpum-builder-ubuntu-jammy"
       resources:
@@ -137,9 +137,9 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos7:lz-1.8.5-20221121"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos7-6:lz-1.8.5-20230331"
       imagePullPolicy: "Always"
-      name: "xpum-builder-centos7"
+      name: "xpum-builder-centos7-6"
       resources:
         limits: 
           memory: "6Gi"
@@ -160,7 +160,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos8:lz-1.8.5-20221121"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos8:lz-1.8.5-20230331"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos8"
       resources:
@@ -183,7 +183,7 @@ spec:
         - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20230313"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos-stream9:lz-1.8.5-20230331"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos-stream9"
       resources:
@@ -367,7 +367,7 @@ spec:
 
           stage('build redhat-7 rpm') {
             steps {
-              container(name: 'xpum-builder-centos7', shell: 'bash') {
+              container(name: 'xpum-builder-centos7-6', shell: 'bash') {
                 script {
                   loadEnvironmentVariables()
                 }
@@ -377,8 +377,11 @@ spec:
                 cd ../ws_centos7 && \
                 export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
-                ./build.sh -DBUILD_AMCMCLI=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 mkdir $MAIN_WORKSPACE/build-centos7 && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.rpm $MAIN_WORKSPACE/build-centos7 && \
+                rm -fr build && \
+                ./build.sh -DBUILD_AMCMCLI=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 cp ./build/xpum*.rpm $MAIN_WORKSPACE/build-centos7 && \
                 cp ./build/amcmcli/amcmcli $MAIN_WORKSPACE/build-centos7 && \
                 if [ -f ./build/amcmcli/amcmcli.sig ]; then cp ./build/amcmcli/amcmcli.sig $MAIN_WORKSPACE/build-centos7; fi

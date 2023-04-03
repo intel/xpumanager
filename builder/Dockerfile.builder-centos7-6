@@ -1,4 +1,4 @@
-ARG BASE_VERSION=7
+ARG BASE_VERSION=7.6.1810
 FROM centos:$BASE_VERSION
 
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.8.5.tar.gz
@@ -10,6 +10,11 @@ ARG ZLIB_VERSION=v1.2.13
 ARG GRPC_VERSION=v1.49.1
 ARG PROTOBUF_VERSION=v3.19.4
 ARG CARES_VERSION=cares-1_19_0
+
+RUN cd /etc/yum.repos.d/ && \
+    sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* &&\
+    sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* &&\
+    sed -i 's/$releasever/7.6.1810/g' /etc/yum.repos.d/CentOS-*
 
 RUN yum install -y epel-release https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm https://repo.ius.io/ius-release-el7.rpm && \
     yum update -y && \
