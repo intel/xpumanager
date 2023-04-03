@@ -1306,6 +1306,10 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
         xpum_scheduler_exclusive_t sch_exclusive;
         sch_exclusive.subdevice_Id = subdevice_Id;
         res = xpumSetDeviceSchedulerExclusiveMode(deviceId, sch_exclusive);
+    } else if (scheduler == SCHEDULER_DEBUG) {
+        xpum_scheduler_debug_t sch_debug;
+        sch_debug.subdevice_Id = subdevice_Id;
+        res = xpumSetDeviceSchedulerDebugMode(deviceId, sch_debug);
     } else {
         response->set_errormsg("Error");
     }
@@ -1319,7 +1323,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
                 response->set_errormsg("Level Zero Initialization Error");
                 break;
             default:
-                response->set_errormsg("Error");
+                response->set_errormsg("not support this scheduler mode");
                 break;
         }
     }
@@ -2315,6 +2319,8 @@ std::string XpumCoreServiceImpl::convertEngineId2Num(uint32_t engine) {
                     tileData->set_schedulertimesliceyieldtimeout(schedulerArray[i].val2);
                 } else if (schedulerArray[i].mode == XPUM_EXCLUSIVE) {
                     tileData->set_scheduler(SCHEDULER_EXCLUSIVE);
+                } else if (schedulerArray[i].mode == XPUM_COMPUTE_UNIT_DEBUG) {
+                    tileData->set_scheduler(SCHEDULER_DEBUG);
                 }
                 break;
             }

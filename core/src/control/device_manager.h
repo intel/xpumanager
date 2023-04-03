@@ -83,6 +83,9 @@ class DeviceManager : public DeviceManagerInterface,
     bool setDeviceSchedulerExclusiveMode(const std::string& id,
                                          const SchedulerExclusiveMode& mode);
 
+    bool setDeviceSchedulerDebugMode(const std::string& id,
+                                         const SchedulerDebugMode& mode);
+
     bool resetDevice(const std::string& id, bool force);
 
     void getDeviceProcessState(const std::string& id, std::vector<device_process>& processes);

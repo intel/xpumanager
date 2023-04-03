@@ -73,7 +73,7 @@ class SchedulerSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
     scheduler_mode = fields.String(
-        metadata={"description": "The scheduler mode: timeout, timeslice and exclusive"})
+        metadata={"description": "The scheduler mode: timeout, timeslice, exclusive and debug"})
     scheduler_watchdog_timeout = fields.Integer(
         metadata={"description": "The watchdog timeout for timeout mode"})
     scheduler_timeslice_interval = fields.Integer(
@@ -106,7 +106,7 @@ class TileConfigSchema(Schema):
     standby_mode_valid_options = fields.String(
         metadata={"description": "standby option"})
     scheduler_mode = fields.String(
-        metadata={"description": "The scheduler mode: timeout, timeslice and exclusive"})
+        metadata={"description": "The scheduler mode: timeout, timeslice, exclusive and debug"})
     scheduler_watchdog_timeout = fields.Integer(
         metadata={"description": "scheduler timeout's value"})
     scheduler_timeslice_interval = fields.Integer(
@@ -320,6 +320,9 @@ def set_scheduler(deviceId):
         val1 = req["scheduler_timeslice_interval"]
         val2 = req["scheduler_timeslice_yield_timeout"]
     elif mode.lower() == "exclusive":
+        val1 = 0
+        val2 = 0
+    elif mode.lower() == "debug":
         val1 = 0
         val2 = 0
     else:

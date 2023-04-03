@@ -332,6 +332,11 @@ bool DeviceManager::setDeviceSchedulerExclusiveMode(const std::string& id, const
     return GPUDeviceStub::instance().setSchedulerExclusiveMode(getDeviceHandle(id), mode);
 }
 
+bool DeviceManager::setDeviceSchedulerDebugMode(const std::string& id, const SchedulerDebugMode& mode) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return GPUDeviceStub::instance().setSchedulerDebugMode(getDeviceHandle(id), mode);
+}
+
 bool DeviceManager::resetDevice(const std::string& id, bool force) {
     std::unique_lock<std::mutex> lock(this->mutex);
     return GPUDeviceStub::instance().resetDevice(getDeviceHandle(id), (ze_bool_t)force);

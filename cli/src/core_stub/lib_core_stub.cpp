@@ -939,6 +939,10 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId
         xpum_scheduler_exclusive_t sch_exclusive;
         sch_exclusive.subdevice_Id = tileId;
         res = xpumSetDeviceSchedulerExclusiveMode(deviceId, sch_exclusive);
+    } else if (mode == 3) {
+        xpum_scheduler_debug_t sch_debug;
+        sch_debug.subdevice_Id = tileId;
+        res = xpumSetDeviceSchedulerDebugMode(deviceId, sch_debug);
     } else {
         (*json)["error"] = "Error";
         (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
@@ -953,7 +957,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId
                 (*json)["error"] = "Level Zero Initialization Error";
                 break;
             default:
-                (*json)["error"] = "Error";
+                (*json)["error"] = "not support this scheduler mode";
                 break;
         }
         (*json)["errno"] = errorNumTranslate(res);

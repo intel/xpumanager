@@ -152,6 +152,8 @@ class GPUDeviceStub {
     static bool setSchedulerExclusiveMode(const zes_device_handle_t& device,
                                           const SchedulerExclusiveMode& mode);
 
+    static bool setSchedulerDebugMode(const zes_device_handle_t& device,
+                                          const SchedulerDebugMode& mode);
     static bool getFrequencyState(const zes_device_handle_t& device, std::string& freq_throttle_message);
 
     static void getHealthStatus(const zes_device_handle_t& device, xpum_health_type_t type, xpum_health_data_t* data,

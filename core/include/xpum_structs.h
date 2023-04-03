@@ -875,6 +875,10 @@ typedef struct xpum_scheduler_exclusive_t {
     uint32_t subdevice_Id;
 } xpum_scheduler_exclusive_t;
 
+typedef struct xpum_scheduler_debug_t {
+    uint32_t subdevice_Id;
+} xpum_scheduler_debug_t;
+
 #define XPUM_MAX_CPU_LIST_LEN 128
 #define XPUM_MAX_CPU_S_LEN 128
 #define XPUM_MAX_PATH_LEN 256

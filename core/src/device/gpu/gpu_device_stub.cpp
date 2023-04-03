@@ -2608,7 +2608,7 @@ void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector
                     XPUM_ZE_HANDLE_LOCK(sched, res = zesSchedulerGetTimesliceModeProperties(sched, false, &timeslice));
                     val1 = timeslice.interval;
                     val2 = timeslice.yieldTimeout;
-                } else if (mode == ZES_SCHED_MODE_EXCLUSIVE) {
+                } else if (mode == ZES_SCHED_MODE_EXCLUSIVE || mode == ZES_SCHED_MODE_COMPUTE_UNIT_DEBUG) {
                     val1 = 0;
                     val2 = 0;
                 } else {
@@ -3454,6 +3454,35 @@ bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device,
                 }
                 ze_bool_t needReload;
                 XPUM_ZE_HANDLE_LOCK(sched, res = zesSchedulerSetExclusiveMode(sched, &needReload));
+                if (res == ZE_RESULT_SUCCESS) {
+                    ret = ret || true;
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+bool GPUDeviceStub::setSchedulerDebugMode(const zes_device_handle_t& device, const SchedulerDebugMode& mode) {
+    bool ret = false;
+    if (device == nullptr) {
+        return ret;
+    }
+    uint32_t scheduler_count = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_sched_handle_t> scheds(scheduler_count);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data()));
+        for (auto& sched : scheds) {
+            zes_sched_properties_t props;
+            XPUM_ZE_HANDLE_LOCK(sched, res = zesSchedulerGetProperties(sched, &props));
+            if (res == ZE_RESULT_SUCCESS) {
+                if (props.subdeviceId != mode.subdevice_Id) {
+                    continue;
+                }
+                ze_bool_t needReload;
+                XPUM_ZE_HANDLE_LOCK(sched, res = zesSchedulerSetComputeUnitDebugMode(sched, &needReload));
                 if (res == ZE_RESULT_SUCCESS) {
                     ret = ret || true;
                 }

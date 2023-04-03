@@ -16,7 +16,8 @@ StandbyModeEnumToString = {
 SchedulerModeEnumToString = {
     core_pb2.SCHEDULER_TIMEOUT: "TIMEOUT",
     core_pb2.SCHEDULER_TIMESLICE: "TIMESLICE",
-    core_pb2.SCHEDULER_EXCLUSIVE: "EXCLUSIVE"
+    core_pb2.SCHEDULER_EXCLUSIVE: "EXCLUSIVE",
+    core_pb2.SCHEDULER_DEBUG: "COMPUTE_UNIT_DEBUG"
 }
 
 
@@ -183,6 +184,8 @@ def setScheduler(deviceId, tileId, mode, val1, val2):
         scheduler = core_pb2.SCHEDULER_TIMESLICE
     elif mode.lower() == "exclusive":
         scheduler = core_pb2.SCHEDULER_EXCLUSIVE
+    elif mode.lower() == "debug":
+        scheduler = core_pb2.SCHEDULER_DEBUG
     else:
         return 1, "Invalid Parameter: scheduler mode", None
     resp = stub.setDeviceSchedulerMode(core_pb2.ConfigDeviceSchdeulerModeRequest(

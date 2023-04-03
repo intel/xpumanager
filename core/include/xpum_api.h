@@ -501,6 +501,18 @@ xpum_result_t xpumSetDeviceSchedulerTimesliceMode(xpum_device_id_t deviceId,
 xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
                                                   const xpum_scheduler_exclusive_t sched_exclusive);
 /**
+ * @brief Set device the scheduler(debug) mode
+ * @details This function is used to set the scheduler (debug) mode
+ *
+ * @param deviceId          IN: The device Id
+ * @param sched_debug     IN: The scheduler debug mode need to be set
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_GENERIC_ERROR       if set failure
+ */
+xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
+                                                  const xpum_scheduler_debug_t sched_debug);
+/**
  * @brief Get device available frequency clocks
  * @details This function is used to get available frequency clocks
  *
