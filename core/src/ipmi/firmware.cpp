@@ -42,7 +42,6 @@ UINT32 gFwReqSize;
 #include "file_util.h"
 #include "pci.h"
 #include "tool.h"
-#include "ipmi_mock.h"
 #include "amc/ipmi_amc_manager.h"
 
 #include <vector>
@@ -455,8 +454,8 @@ static int fw_update(nrv_card *card, const uint8_t *data, size_t data_size, fw_g
 
     err = fw_update_transfer(&card->ipmi_address, card->max_transfer_len, data, data_size, &chip_status);
     if (err) {
-        XPUM_LOG_WARN("Fail to transfer with data length 0xf8, try with 0x1e");
-        err = fw_update_transfer(&card->ipmi_address, 0x1e, data, data_size, &chip_status);
+        XPUM_LOG_WARN("Fail to transfer with big data size, try with small data size");
+        err = fw_update_transfer(&card->ipmi_address, IPMI_TRANSFER_SIZE_SMALL, data, data_size, &chip_status);
         if (err)
             return err;
     }
@@ -631,8 +630,7 @@ static int cmd_firmware_update(const char* file, nrv_list cards, uint8_t *bsmc_d
             }
             continue;
         }
-        // 0xf8 is summarized from experience
-        card->max_transfer_len = 0xf8;
+        card->max_transfer_len = IPMI_TRANSFER_SIZE_BIG;
 
         if (bsmc_data) {
             err = fw_update(card, bsmc_data, bsmc_size, &prev_ver[i].bsmc,
@@ -845,9 +843,6 @@ int cmd_get_amc_firmware_versions(int buf[][4], int *count) {
 }
 
 int cmd_firmware(const char* file, unsigned int versions[4]) {
-#ifdef XPUM_FIRMWARE_MOCK
-    return cmd_firmware_mock(file, versions);
-#endif
     const char *bsmc_file = file;
     uint8_t *bsmc_data = NULL;
     size_t bsmc_size = 0;
