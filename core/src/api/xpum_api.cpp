@@ -38,6 +38,7 @@
 #include "internal_api.h"
 #include "ext-include/igsc_lib.h"
 #include "log/dbg_log.h"
+#include "vgpu/precheck.h"
 
 namespace xpum {
 
@@ -3368,6 +3369,14 @@ xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath,
     } else {
         return XPUM_GENERIC_ERROR;
     }
+}
+
+xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    return vgpuPrecheck(result);
 }
 
 } // end namespace xpum

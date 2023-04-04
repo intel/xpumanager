@@ -1693,4 +1693,22 @@ std::string LibCoreStub::getPciSlotName(std::vector<std::string> &bdfs) {
     }
 }
 
+std::unique_ptr<nlohmann::json> LibCoreStub::doVgpuPrecheck() {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_vgpu_precheck_result_t precheckResult;
+    xpum_result_t res = xpumDoVgpuPrecheck(&precheckResult);
+    if (res == XPUM_OK) {
+        (*json)["vmx_flag"] = precheckResult.vmxFlag ? "Pass" : "Fail";
+        (*json)["vmx_message"] = precheckResult.vmxMessage;
+        (*json)["iommu_status"] = precheckResult.iommuStatus ? "Pass": "Fail";
+        (*json)["iommu_message"] = precheckResult.iommuMessage;
+        (*json)["sriov_status"] = precheckResult.sriovStatus ? "Pass": "Fail";
+        (*json)["sriov_message"] = precheckResult.sriovMessage;
+    } else {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = errorNumTranslate(res);
+    }
+    return json;
+}
+
 } // end namespace xpum::cli

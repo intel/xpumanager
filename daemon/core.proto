@@ -960,6 +960,17 @@ message GenDebugLogResponse {
     string errorMsg = 2;
 }
 
+message VgpuPrecheckResponse {
+    bool vmxFlag = 1;
+    string vmxMessage = 2;
+    bool iommuStatus = 3;
+    string iommuMessage = 4;
+    bool sriovStatus = 5;
+    string sriovMessage = 6;
+    int32 errorNo = 7;
+    string errorMsg = 8; 
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -1030,4 +1041,5 @@ service XpumCoreService {
     rpc getAMCSensorReading( google.protobuf.Empty ) returns ( GetAMCSensorReadingResponse );
     rpc getDeviceSerialNumberAndAmcFwVersion( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );
     rpc genDebugLog ( FileName ) returns ( GenDebugLogResponse );
+    rpc doVgpuPrecheck ( google.protobuf.Empty ) returns ( VgpuPrecheckResponse );
 }

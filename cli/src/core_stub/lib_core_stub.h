@@ -119,5 +119,7 @@ class LibCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> genDebugLog(const std::string &fileName);
     std::string getPciSlotName(std::vector<std::string> &bdfs);
 
+    std::unique_ptr<nlohmann::json> doVgpuPrecheck();
+
 };
 } // end namespace xpum::cli

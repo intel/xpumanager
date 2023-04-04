@@ -226,6 +226,9 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
     } else if (app->get_name().compare("log") == 0) {
         return "\nUsage: " + appName + " log [Options]\n"
                " " + appName + " log -f [tarGzipFileName]\n";
+    } else if (app->get_name().compare("vgpu") == 0) {
+        return "\nUsage: " + appName + " vgpu [Options]\n"
+               " " + appName + " vgpu --precheck\n"; 
     } else {
         return CLI::Formatter::make_usage(app, name);
     }

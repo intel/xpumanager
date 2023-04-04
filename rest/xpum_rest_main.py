@@ -28,6 +28,7 @@ from views import topology
 from views import ps
 from views import dump_raw_data
 from views import sensor
+from views import vgpu
 
 import xpum_logger as logger
 
@@ -195,6 +196,11 @@ def main(*args, **kwargs):
     app.add_url_rule('/rest/v1/sensor', methods=['GET'],
                      view_func=auth.login_required(sensor.getAMCSensorReading))
 
+    # vgpu
+    app.add_url_rule('/rest/v1/vgpu/precheck', methods=['GET'],
+                     view_func=auth.login_required(vgpu.doVgpuPrecheck))
+
+    
     return app
 
 

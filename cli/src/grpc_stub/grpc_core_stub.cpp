@@ -2184,4 +2184,28 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::genDebugLog(
     return json;
 }
 
+std::unique_ptr<nlohmann::json> GrpcCoreStub::doVgpuPrecheck() {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    VgpuPrecheckResponse response;
+    grpc::Status status = stub->doVgpuPrecheck(&context, google::protobuf::Empty(), &response);
+    if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+        } else {
+            (*json)["vmx_flag"] = response.vmxflag() ? "Pass" : "Fail";
+            (*json)["vmx_message"] = response.vmxmessage();
+            (*json)["iommu_status"] = response.iommustatus() ? "Pass": "Fail";
+            (*json)["iommu_message"] = response.iommumessage();
+            (*json)["sriov_status"] = response.sriovstatus() ? "Pass": "Fail";
+            (*json)["sriov_message"] = response.sriovmessage();
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+    return json;
+}
+
 } // end namespace xpum::cli

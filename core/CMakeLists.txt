@@ -75,6 +75,7 @@ aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/firmware FIRMWARE_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/amc AMC_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/redfish REDFISH_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/log LOG_SRC)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/vgpu VGPU_SRC)
 aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/src/ipmi IPMI_SRC)
 
 add_library(xpum SHARED)
@@ -130,6 +131,7 @@ target_sources(
           ${AMC_SRC}
           ${REDFISH_SRC}
           ${LOG_SRC}
+          ${VGPU_SRC}
           ${IPMI_SRC})
 
 if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
@@ -155,6 +157,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/test)
             ${AMC_SRC}
             ${REDFISH_SRC}
             ${LOG_SRC}
+            ${VGPU_SRC}
             ${IPMI_SRC})
 endif()
 

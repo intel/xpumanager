@@ -150,6 +150,7 @@ class XpumCoreServiceImpl : public XpumCoreService::Service {
 
     virtual ::grpc::Status genDebugLog(::grpc::ServerContext* context, const ::FileName* request, ::GenDebugLogResponse *response) override;
 
+    virtual ::grpc::Status doVgpuPrecheck(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::VgpuPrecheckResponse *response) override;
 
    private:
     std::atomic_bool stop;

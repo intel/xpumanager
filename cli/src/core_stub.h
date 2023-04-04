@@ -131,6 +131,8 @@ class CoreStub {
 
     virtual std::string getPciSlotName(std::vector<std::string> &bdfs)=0;
 
+    virtual std::unique_ptr<nlohmann::json> doVgpuPrecheck()=0;
+
    protected:
     std::string getCardUUID(const std::string& rawUUID);
 };

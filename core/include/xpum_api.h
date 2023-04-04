@@ -1252,6 +1252,14 @@ xpum_result_t xpumGetPolicyByGroup(xpum_group_id_t groupId, xpum_policy_t result
 xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count);
 
 /**
+ * @brief Do SR-IOV prerequisite check and get result, including VMX flag check, IOMMU status check and SR-IOV status check.
+ * 
+ * @param result           OUT: The result of vgpu precheck
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result);
+
+/**
  * @brief Generate a debug log file
  * 
  * @param fileName   IN: The file name (a .tar.gz) of debug log.

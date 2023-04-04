@@ -2556,6 +2556,23 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::doVgpuPrecheck(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::VgpuPrecheckResponse *response) {
+    xpum_vgpu_precheck_result_t result;
+    xpum_result_t res = xpumDoVgpuPrecheck(&result);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    } else {
+        response->set_vmxflag(result.vmxFlag);
+        response->set_vmxmessage(result.vmxMessage);
+        response->set_iommustatus(result.iommuStatus);
+        response->set_iommumessage(result.iommuMessage);
+        response->set_sriovstatus(result.sriovStatus);
+        response->set_sriovmessage(result.sriovMessage);
+    }
+    response->set_errorno(res);
+    return grpc::Status::OK;
+}
+
 void XpumCoreServiceImpl::close() {
     this->stop = true;
     condtionForCallBackDataList.notify_all();

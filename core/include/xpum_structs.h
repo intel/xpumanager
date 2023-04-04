@@ -1065,6 +1065,20 @@ typedef struct {
     char sensorUnit[XPUM_MAX_STR_LENGTH]; ///< Sensor reading unit
 } xpum_sensor_reading_t;
 
+typedef struct xpum_vgpu_precheck_result_t {
+    xpum_vgpu_precheck_result_t(): vmxFlag(false), iommuStatus(false), sriovStatus(false) {
+        vmxMessage[0] = 0;
+        iommuMessage[0] = 0;
+        sriovMessage[0] = 0;
+    }
+    bool vmxFlag;                           ///< VMX flag
+    bool iommuStatus;                       ///< IOMMU status flag
+    bool sriovStatus;                       ///< SR-IOV status flag
+    char vmxMessage[XPUM_MAX_STR_LENGTH];   ///< Message of VMX flag checking
+    char iommuMessage[XPUM_MAX_STR_LENGTH]; ///< Message of IOMMU status checking
+    char sriovMessage[XPUM_MAX_STR_LENGTH]; ///< Message of SR-IOV status checking
+} xpum_vgpu_precheck_result_t;
+
 #if defined(__cplusplus)
 } // extern "C"
 } // end namespace xpum
