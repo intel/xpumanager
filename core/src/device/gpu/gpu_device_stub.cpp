@@ -3467,6 +3467,8 @@ bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device,
 
 bool GPUDeviceStub::setSchedulerDebugMode(const zes_device_handle_t& device, const SchedulerDebugMode& mode) {
     bool ret = false;
+    return ret;
+#if 0
     if (device == nullptr) {
         return ret;
     }
@@ -3492,6 +3494,7 @@ bool GPUDeviceStub::setSchedulerDebugMode(const zes_device_handle_t& device, con
         }
     }
     return ret;
+#endif
 }
 
 bool GPUDeviceStub::getFrequencyState(const zes_device_handle_t& device, std::string& freq_throttle_message) {
