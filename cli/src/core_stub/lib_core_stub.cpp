@@ -939,6 +939,10 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId
         xpum_scheduler_exclusive_t sch_exclusive;
         sch_exclusive.subdevice_Id = tileId;
         res = xpumSetDeviceSchedulerExclusiveMode(deviceId, sch_exclusive);
+    } else if (mode == 3) {
+        xpum_scheduler_debug_t sch_debug;
+        sch_debug.subdevice_Id = tileId;
+        res = xpumSetDeviceSchedulerDebugMode(deviceId, sch_debug);
     } else {
         (*json)["error"] = "Error";
         (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
@@ -953,7 +957,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::setDeviceSchedulerMode(int deviceId
                 (*json)["error"] = "Level Zero Initialization Error";
                 break;
             default:
-                (*json)["error"] = "Error";
+                (*json)["error"] = "not support this scheduler mode";
                 break;
         }
         (*json)["errno"] = errorNumTranslate(res);
@@ -1687,6 +1691,24 @@ std::string LibCoreStub::getPciSlotName(std::vector<std::string> &bdfs) {
     } else {
         return "";
     }
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::doVgpuPrecheck() {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_vgpu_precheck_result_t precheckResult;
+    xpum_result_t res = xpumDoVgpuPrecheck(&precheckResult);
+    if (res == XPUM_OK) {
+        (*json)["vmx_flag"] = precheckResult.vmxFlag ? "Pass" : "Fail";
+        (*json)["vmx_message"] = precheckResult.vmxMessage;
+        (*json)["iommu_status"] = precheckResult.iommuStatus ? "Pass": "Fail";
+        (*json)["iommu_message"] = precheckResult.iommuMessage;
+        (*json)["sriov_status"] = precheckResult.sriovStatus ? "Pass": "Fail";
+        (*json)["sriov_message"] = precheckResult.sriovMessage;
+    } else {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = errorNumTranslate(res);
+    }
+    return json;
 }
 
 } // end namespace xpum::cli

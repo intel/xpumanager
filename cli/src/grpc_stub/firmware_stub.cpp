@@ -132,7 +132,11 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getFirmwareFlashResult(int deviceI
 
     if (res.errormsg().length() != 0) {
         (*json)["error"] = res.errormsg();
-        (*json)["errno"] = errorNumTranslate(res.errorno());
+        if (res.errorno()) {
+            (*json)["errno"] = errorNumTranslate(res.errorno());
+        } else {
+            (*json)["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_FAIL;
+        }
         return json;
     }
 

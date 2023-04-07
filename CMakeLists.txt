@@ -170,6 +170,8 @@ if(CPACK_GENERATOR MATCHES "RPM")
   if(NOT DAEMONLESS)
     configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/postin.in" 
                   "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/postin" @ONLY)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/preun.in" 
+                  "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/preun" @ONLY)
     configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/posttrans.in" 
                   "${CMAKE_CURRENT_LIST_DIR}/install/script/rpm/posttrans" @ONLY)
     set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
@@ -199,6 +201,8 @@ if(CPACK_GENERATOR MATCHES "DEB")
   if(NOT DAEMONLESS)
     configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst.in" 
                   "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst" @ONLY)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/install/script/deb/prerm.in" 
+                  "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/prerm" @ONLY)
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
         "${CMAKE_CURRENT_LIST_DIR}/install/script/deb/postinst;${CMAKE_CURRENT_LIST_DIR}/install/script/deb/prerm;"
     )

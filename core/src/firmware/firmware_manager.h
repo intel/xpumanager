@@ -106,9 +106,5 @@ class FirmwareManager {
 
 std::vector<char> readImageContent(const char* filePath);
 
-#ifndef XPUM_FIRMWARE_MOCK
 static const std::string igscPath{"igsc"};
-#else
-static const std::string igscPath{XPUM_FIRMWARE_MOCK_IGSC_PATH};
-#endif
 } // namespace xpum

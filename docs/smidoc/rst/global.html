@@ -128,6 +128,7 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_prop_data_t.html">struct xpum_power_prop_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_sustained_limit_t.html">struct xpum_power_sustained_limit_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_data_t.html">struct xpum_scheduler_data_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_debug_t.html">struct xpum_scheduler_debug_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_exclusive_t.html">struct xpum_scheduler_exclusive_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_timeout_t.html">struct xpum_scheduler_timeout_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_scheduler_timeslice_t.html">struct xpum_scheduler_timeslice_t</a></li>
@@ -135,6 +136,7 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_standby_data_t.html">struct xpum_standby_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_topology_t.html">struct xpum_topology_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_version_info.html">struct xpum_version_info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html">struct xpum_vgpu_precheck_result_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_xelink_topo_info.html">struct xpum_xelink_topo_info</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_xelink_unit.html">struct xpum_xelink_unit</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#overview">Overview</a></li>
@@ -314,6 +316,7 @@
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_power_prop_data_t.html#smi-doxid-structxpum-power-prop-data-t"><span class="std std-ref">xpum_power_prop_data_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_power_sustained_limit_t.html#smi-doxid-structxpum-power-sustained-limit-t"><span class="std std-ref">xpum_power_sustained_limit_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_scheduler_data_t.html#smi-doxid-structxpum-scheduler-data-t"><span class="std std-ref">xpum_scheduler_data_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="struct_xpum_scheduler_debug_t.html#smi-doxid-structxpum-scheduler-debug-t"><span class="std std-ref">xpum_scheduler_debug_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_scheduler_exclusive_t.html#smi-doxid-structxpum-scheduler-exclusive-t"><span class="std std-ref">xpum_scheduler_exclusive_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_scheduler_timeout_t.html#smi-doxid-structxpum-scheduler-timeout-t"><span class="std std-ref">xpum_scheduler_timeout_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_scheduler_timeslice_t.html#smi-doxid-structxpum-scheduler-timeslice-t"><span class="std std-ref">xpum_scheduler_timeslice_t</span></a><span></span><span class="p">;</span>
@@ -321,6 +324,7 @@
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_standby_data_t.html#smi-doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_topology_t.html#smi-doxid-structxpum-topology-t"><span class="std std-ref">xpum_topology_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_version_info.html#smi-doxid-structxpum-version-info"><span class="std std-ref">xpum_version_info</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html#smi-doxid-structxpum-vgpu-precheck-result-t"><span class="std std-ref">xpum_vgpu_precheck_result_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_xelink_topo_info.html#smi-doxid-structxpum-xelink-topo-info"><span class="std std-ref">xpum_xelink_topo_info</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_xelink_unit.html#smi-doxid-structxpum-xelink-unit"><span class="std std-ref">xpum_xelink_unit</span></a><span></span><span class="p">;</span>
 
@@ -397,6 +401,11 @@
 <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerExclusiveMode<span></span><span class="p">(</span>
     <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
     <span class="k">const</span> <a class="reference internal" href="struct_xpum_scheduler_exclusive_t.html#smi-doxid-structxpum-scheduler-exclusive-t"><span class="std std-ref">xpum_scheduler_exclusive_t</span></a><span></span> <span class="n">sched_exclusive</span>
+    <span class="p">);</span>
+
+<a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumSetDeviceSchedulerDebugMode<span></span><span class="p">(</span>
+    <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <span class="k">const</span> <a class="reference internal" href="struct_xpum_scheduler_debug_t.html#smi-doxid-structxpum-scheduler-debug-t"><span class="std std-ref">xpum_scheduler_debug_t</span></a><span></span> <span class="n">sched_debug</span>
     <span class="p">);</span>
 
 <a class="reference internal" href="#smi-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetFreqAvailableClocks<span></span><span class="p">(</span>

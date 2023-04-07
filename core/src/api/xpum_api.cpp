@@ -38,6 +38,7 @@
 #include "internal_api.h"
 #include "ext-include/igsc_lib.h"
 #include "log/dbg_log.h"
+#include "vgpu/precheck.h"
 
 namespace xpum {
 
@@ -2335,6 +2336,32 @@ xpum_result_t xpumSetDeviceSchedulerExclusiveMode(xpum_device_id_t deviceId,
     }
     return XPUM_GENERIC_ERROR;
 }
+
+xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
+                                                  const xpum_scheduler_debug_t sched_debug) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    res = validateDeviceIdAndTileId(deviceId, sched_debug.subdevice_Id);
+    if (res != XPUM_OK) {
+        return res;
+    }
+
+    SchedulerDebugMode mode;
+    mode.subdevice_Id = sched_debug.subdevice_Id;
+
+    if (Core::instance().getDeviceManager()->setDeviceSchedulerDebugMode(std::to_string(deviceId), mode)) {
+        return XPUM_OK;
+    }
+    return XPUM_GENERIC_ERROR;
+}
+
 /**
  * @brief Reset the device
  * @details This function is used to reset the device
@@ -3342,6 +3369,14 @@ xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath,
     } else {
         return XPUM_GENERIC_ERROR;
     }
+}
+
+xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    return vgpuPrecheck(result);
 }
 
 } // end namespace xpum

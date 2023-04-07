@@ -130,6 +130,7 @@ class GrpcCoreStub : public CoreStub {
     std::string getPciSlotName(std::vector<std::string> &bdfs) {
         return "";
     }
+    std::unique_ptr<nlohmann::json> doVgpuPrecheck();
 
    private:
     std::unique_ptr<XpumCoreService::Stub> stub;

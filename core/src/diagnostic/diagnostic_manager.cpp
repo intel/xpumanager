@@ -112,6 +112,10 @@ xpum_result_t DiagnosticManager::runDiagnosticsCore(xpum_device_id_t deviceId, x
     if (diagnostic_task_infos.find(deviceId) != diagnostic_task_infos.end() && diagnostic_task_infos.at(deviceId)->finished == false) {
         return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
     }
+    if (stress_task_map.find(deviceId) != stress_task_map.end() &&
+            stress_task_map.at(deviceId)->finished == false) {
+        return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
+    }
 
     diagnostic_task_infos.erase(deviceId);
 
@@ -3251,20 +3255,30 @@ xpum_result_t DiagnosticManager::runStress(xpum_device_id_t deviceId, uint32_t s
     std::unique_lock<std::mutex> lock(this->mutex);
     std::vector<std::shared_ptr<Device>> devices;
     if (deviceId == -1) {
-        if (stress_task_map.size() > 0) {
-            for (auto task : stress_task_map) {
-                if (task.second->finished == false) {
-                    return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
-                }
+        for (auto task : stress_task_map) {
+            if (task.second->finished == false) {
+                return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
             }
-            stress_task_map.clear();
         }
+        for (auto task: diagnostic_task_infos) {
+            if (task.second->finished == false) {
+                return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
+            }
+        }
+        stress_task_map.clear();
         this->p_device_manager->getDeviceList(devices);
     } else {
-        if (this->p_device_manager->getDevice(std::to_string(deviceId)) == nullptr) {
+        if (this->p_device_manager->getDevice(std::to_string(deviceId)) == 
+                nullptr) {
             return XPUM_RESULT_DEVICE_NOT_FOUND;
         }
-        if (stress_task_map.find(deviceId) != stress_task_map.end() && stress_task_map.at(deviceId)->finished == false) {
+        if (stress_task_map.find(deviceId) != stress_task_map.end() && 
+                stress_task_map.at(deviceId)->finished == false) {
+            return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
+        }
+        if (diagnostic_task_infos.find(deviceId) != 
+                diagnostic_task_infos.end() && 
+                diagnostic_task_infos.at(deviceId)->finished == false) {
             return XPUM_RESULT_DIAGNOSTIC_TASK_NOT_COMPLETE;
         }
         stress_task_map.erase(deviceId);

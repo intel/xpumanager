@@ -1,0 +1,37 @@
+#!/bin/bash
+
+LOG_FILE="/dev/null"
+
+function RemoveUser()
+{
+  home_dir=$( awk -F: -v v="${1}" '{if ($1==v) print $6}' /etc/passwd )
+  if [ -d "${home_dir}" ] && [ "$(ls -A ${home_dir})" ]; then
+    echo "RemoveUser $1 failed!"
+  else
+    userdel -rf ${1} >> ${LOG_FILE} 2>&1
+    group=$( getent group ${1} )    
+    if [ -n "$group" ]; then
+      #echo "remove group: ${group}"
+      groupdel xpum -f >> ${LOG_FILE} 2>&1	
+    fi
+  fi
+}
+
+if [ -d @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/dump ] && [ -z "$(ls -A @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/dump)" ]; then
+  rm -d @CPACK_PACKAGING_INSTALL_PREFIX@/lib/xpum/dump
+fi
+
+if [ -d /lib/systemd/system ]; then
+  export SERVICE_PATH=/lib/systemd/system
+else
+  export SERVICE_PATH=/etc/systemd/system
+fi
+
+systemctl stop xpum >> ${LOG_FILE} 2>&1 
+systemctl disable xpum >> ${LOG_FILE} 2>&1 
+systemctl stop xpum_rest >> ${LOG_FILE} 2>&1 
+systemctl disable xpum_rest >> ${LOG_FILE} 2>&1 
+rm -rf ${SERVICE_PATH}/xpum.service
+rm -rf ${SERVICE_PATH}/xpum_rest.service
+systemctl daemon-reload
+RemoveUser xpum

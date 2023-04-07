@@ -71,23 +71,6 @@ struct nrv_portgroup {
 extern bsmc_hal_t *bsmc_hal;
 #define CARD_SELECT_ALL (-1)
 
-/* nnptool return codes */
-#define NRV_SUCCESS 0
-#define NRV_UNSPECIFIED_ERROR 1
-#define NRV_REBOOT_NEEDED 3
-#define NRV_NO_SPECIFIED_CARD_DETECTED 4
-#define NRV_IPMI_ERROR 5
-#define NRV_INVALID_FRU 6
-#define NRV_FIRMWARE_UPDATE_ERROR 7
-#define NRV_INVALID_FIRMWARE_IMAGE 8
-#define NRV_FIRMWARE_VERIFICATION_ERROR 9
-#define NRV_PCI_ERROR 10
-#define NRV_NO_CARD_DETECTED 11
-#define NRV_INVALID_ARGUMENT 12
-#define NRV_NET_ERROR 13
-#define NRV_NO_SPI_INTERFACE 14
-#define NRV_COMMAND_NOT_EXIST 127
-
 int set_bsmc_interface(char *iface_str);
 int get_card_list(nrv_list *out_list, int select);
 int get_total_ipmi_card_count();

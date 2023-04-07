@@ -17,18 +17,10 @@
 #include "config.h"
 #include "spdlog/cfg/env.h"
 #include "spdlog/spdlog.h"
+#include "ipmi/ipmi.h"
 
 std::string filePath;
 bool assumeyes;
-
-namespace xpum {
-
-extern int cmd_firmware(const char* file, unsigned int versions[4]);
-
-extern int cmd_get_amc_firmware_versions(int buf[][4], int* count);
-
-extern void setPercentCallbackAndContext(percent_callback_func_t callback, void* pAmcManager);
-} // namespace xpum
 
 int listAmcFwVersions() {
     std::vector<std::string> versions;
@@ -91,8 +83,9 @@ int updateAmcFw() {
         std::cout << std::endl;
         std::cout << "Update firmware successfully." << std::endl;
     } else {
+        auto errMsg = xpum::getIpmiErrorString(rc);
         std::cout << std::endl;
-        std::cout << "Update firmware failed." << std::endl;
+        std::cout << "Error: " << errMsg << std::endl;
     }
     return rc;
 }

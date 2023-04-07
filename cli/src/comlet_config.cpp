@@ -101,7 +101,7 @@ void ComletConfig::setupOptions() {
     addOption("--frequencyrange", this->opts->frequencyrange, "GPU tile-level core frequency range.");
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
-    addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\".The valid range of all time values (us) is from 5000 to 100,000,000.");
+    addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\";\"debug\".The valid range of all time values (us) is from 5000 to 100,000,000.");
     //addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
 
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
@@ -199,6 +199,12 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                     return json;
                 }
                 json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, XPUM_EXCLUSIVE, 0, 0);
+            } else if (command.compare("debug") == 0) {
+                if (paralist.size() != 1) {
+                    (*json)["return"] = "invalid parameter: debug";
+                    return json;
+                }
+                json = this->coreStub->setDeviceSchedulerMode(this->opts->deviceId, this->opts->tileId, XPUM_COMPUTE_UNIT_DEBUG, 0, 0);
             } else {
                 (*json)["return"] = "invalid scheduler mode";
                 return json;

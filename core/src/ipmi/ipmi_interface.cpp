@@ -29,10 +29,11 @@
 #include <time.h>
 
 #include "tool.h"
+#include "ipmi.h"
 
 namespace xpum {
 
-#define RESPONSE_TIMEOUT_SEC 5
+#define RESPONSE_TIMEOUT_SEC 50
 #define MAX_RETRIES 5
 #define RETRY_SLEEP_TIME_US 100
 #define SLOT_IPMB_NETFN 0x3e

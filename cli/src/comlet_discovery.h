@@ -41,6 +41,10 @@ class ComletDiscovery : public ComletBase {
         return opts->deviceId == "-1";
     }
 
+    inline bool isDumping() {
+        return opts->propIdList.size() > 0;
+    }
+
    private:
     std::unique_ptr<ComletDiscoveryOptions> opts;
 };

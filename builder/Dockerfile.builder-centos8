@@ -7,6 +7,7 @@ ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.8.4.tar.gz
 ARG ZLIB_VERSION=v1.2.13
 ARG GRPC_VERSION=v1.49.1
 ARG PROTOBUF_VERSION=v3.19.4
+ARG CARES_VERSION=cares-1_19_0
 
 RUN cd /etc/yum.repos.d/ && \
     sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* &&\
@@ -42,6 +43,8 @@ RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com
     git pull https://github.com/madler/zlib $ZLIB_VERSION && \
     cd /grpc/third_party/protobuf && \
     git pull https://github.com/protocolbuffers/protobuf.git $PROTOBUF_VERSION && \
+    cd /grpc/third_party/cares/cares/ && \
+    git pull https://github.com/c-ares/c-ares.git $CARES_VERSION && \
     cd /grpc && \
     mkdir -p cmake/build && \
     cd cmake/build && \

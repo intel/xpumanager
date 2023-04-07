@@ -10,6 +10,7 @@
 
 #include "sensor_reading.h"
 #include "xpum_structs.h"
+#include "ipmi.h"
 
 namespace xpum {
 

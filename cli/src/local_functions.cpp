@@ -708,6 +708,30 @@ static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::ve
     }
 }
 
+static bool isPhysicalFunctionDevice(std::string pci_addr) {
+    DIR *dir;
+    struct dirent *ent;
+    std::stringstream ss;
+    ss << "/sys/bus/pci/devices/" << pci_addr;
+    dir = opendir(ss.str().c_str());
+    
+    if (dir == NULL) {
+        return false;
+    }
+    while ((ent = readdir(dir)) != NULL) {
+        /*
+            Containing `physfn` which links to the PF it belongs to
+            means it's a VF, otherwise it's a PF.
+        */
+        if (strstr(ent->d_name, "physfn") != NULL) {
+            closedir(dir);
+            return false;
+        }
+    }
+    closedir(dir);
+    return true;
+}
+
 static void doPreCheck(bool onlyGPU, std::string sinceTime) {
     bool has_privilege = (getuid() == 0);
     readConfigFile();
@@ -748,12 +772,15 @@ static void doPreCheck(bool onlyGPU, std::string sinceTime) {
             std::string key = "PCI_ID=8086:";
             auto pos = str.find(key); 
             if (pos != std::string::npos) {
-                gpu_ids.push_back(std::string(pdirent->d_name).substr(4));
                 std::string bdf_key = "PCI_SLOT_NAME=";
                 auto bdf_pos = str.find(bdf_key); 
                 if (bdf_pos != std::string::npos) {
-                    gpu_bdfs.push_back(str.substr(bdf_pos + bdf_key.length(), 12));
-                    component_gpus.push_back({COMPONET_TYE_GPU, has_privilege ? "Pass" : "Unknown", 0, 0, -1, gpu_bdfs.back(), ""});
+                    std::string bdf = str.substr(bdf_pos + bdf_key.length(), 12);
+                    if (isPhysicalFunctionDevice(bdf)) {
+                        gpu_ids.push_back(std::string(pdirent->d_name).substr(4));
+                        gpu_bdfs.push_back(bdf);
+                        component_gpus.push_back({COMPONET_TYE_GPU, has_privilege ? "Pass" : "Unknown", 0, 0, -1, bdf, ""});
+                    }
                 }
             }
         }
@@ -761,16 +788,19 @@ static void doPreCheck(bool onlyGPU, std::string sinceTime) {
     }
 
     if (gpu_bdfs.empty()) {
-        std::string cmd = "lspci|grep -i Display|grep -i Intel|cut -d ' ' -f 1";
+        std::string cmd = "lspci -D|grep -i Display|grep -i Intel|cut -d ' ' -f 1";
         FILE* f = popen(cmd.c_str(), "r");
         char c_line[1024];
         int gpu_id = 0;
         while (fgets(c_line, 1024, f) != NULL) {
             std::string line(c_line);
-            gpu_ids.push_back(std::to_string(gpu_id));
-            gpu_bdfs.push_back(line.substr(0, 7));
-            component_gpus.push_back({COMPONET_TYE_GPU, has_privilege ? "Pass" : "Unknown", 0, 0, -1, gpu_bdfs.back(), ""});
-            gpu_id++;
+            std::string bdf = line.substr(0, 12);
+            if (isPhysicalFunctionDevice(bdf)) {
+                gpu_ids.push_back(std::to_string(gpu_id));
+                gpu_bdfs.push_back(bdf);
+                component_gpus.push_back({COMPONET_TYE_GPU, has_privilege ? "Pass" : "Unknown", 0, 0, -1, bdf, ""});
+                gpu_id++;
+            }
         }
         pclose(f);
     }

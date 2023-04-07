@@ -42,12 +42,12 @@ UINT32 gFwReqSize;
 #include "file_util.h"
 #include "pci.h"
 #include "tool.h"
-#include "ipmi_mock.h"
 #include "amc/ipmi_amc_manager.h"
 
 #include <vector>
 #include <string>
 #include <sstream>
+#include "ipmi.h"
 
 namespace xpum {
 
@@ -131,50 +131,6 @@ const char *get_kernel_module_str(uint8_t prod) {
         default:
             return "intel_nnp";
     }
-}
-
-/*
- * Send a buffer with bytes ordered from 0 to buffer size and check how many
- * ordered bytes were received by BSMC.
- */
-static uint16_t detect_max_transfer_size(ipmi_address_t *addr) {
-    unsigned short max_data_len = 30; /* works with BSMC v1.4.1.10+ */
-    bsmc_req req;
-    bsmc_res res;
-
-    bsmc_hal->oem_req_init(&req, addr, IPMI_TRANSFER_SIZE_DETECT);
-
-    /* Fill data with successive bytes starting from 0 */
-    for (unsigned i = 0; i < sizeof(req.data); i++) {
-        req.data[i] = i;
-        gData[i] = req.data[i];
-    }
-
-    for (req.data_len = 32; req.data_len <= sizeof(req.data); req.data_len += 8) {
-        gNetfn = IPMI_INTEL_OEM_NETFN;
-        gCmd = IPMI_TRANSFER_SIZE_DETECT;
-
-        if (bsmc_hal->cmd(&req, &res))
-            break;
-
-#if !(_WIN32) && !(__linux__)
-        if (bsmc_hal->validate_res(res, SIZE_DETECT_RES))
-#else
-        if (bsmc_hal->validate_res(res, sizeof(res.size_detect_res)))
-#endif
-            break;
-
-#if !(_WIN32) && !(__linux__)
-        if (gMaxDataLen != req.data_len)
-#else
-        if (res.size_detect_res.received_bytes != req.data_len)
-#endif
-            break;
-
-        max_data_len = req.data_len;
-    }
-
-    return max_data_len;
 }
 
 static int fw_get_info(ipmi_address_t *addr, fw_get_info_res *fw_info,
@@ -326,6 +282,29 @@ static int fw_update_transfer(ipmi_address_t *addr, unsigned short max_data_len,
             continue;
         } else if (*status != IPMI_FW_UPDATE_READ) {
             XPUM_LOG_ERROR("go to exit, status {}", *status);
+            switch (*status) {
+                case IPMI_FW_UPDATE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_SIGNATURE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_SIGNATURE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_IMAGE_TO_LARGE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_IMAGE_TO_LARGE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_NO_IMAGE_SIZE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_NO_IMAGE_SIZE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_PACKET_TO_LARGE_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_PACKET_TO_LARGE_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_TO_MANY_RETRIES_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_TO_MANY_RETRIES_FAIL;
+                    break;
+                case IPMI_FW_UPDATE_WRITE_TO_FLASH_FAIL:
+                    err = NRV_IPMI_ERROR_FW_UPDATE_WRITE_TO_FLASH_FAIL;
+                    break;
+            }
             goto exit;
         }
 
@@ -474,8 +453,12 @@ static int fw_update(nrv_card *card, const uint8_t *data, size_t data_size, fw_g
     XPUM_LOG_INFO("Updating {} on card {}", FW_UPDATE_TYPE_STR(fw_update_type), card->id);
 
     err = fw_update_transfer(&card->ipmi_address, card->max_transfer_len, data, data_size, &chip_status);
-    if (err)
-        return err;
+    if (err) {
+        XPUM_LOG_WARN("Fail to transfer with big data size, try with small data size");
+        err = fw_update_transfer(&card->ipmi_address, IPMI_TRANSFER_SIZE_SMALL, data, data_size, &chip_status);
+        if (err)
+            return err;
+    }
 
     switch (chip_status) {
         case IPMI_FW_UPDATE_COMPLETE:
@@ -551,7 +534,54 @@ static int wait_for_bsmc(ipmi_address_t *addr, fw_get_info_res prev_ver) {
     return NRV_REBOOT_NEEDED;
 }
 
-static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_size) {
+static int check_fw_file_name(const char* name){
+    if(!name){
+        return false;
+    }
+    // 23 is the len of 'ats_m_amc_v_6_4_0_0.bin'
+    if(strlen(name) != 23 || strncmp(name, "ats_m_amc_v_", strlen("ats_m_amc_v_")) != 0 || 
+    strncmp(name + 19, ".bin", strlen(".bin")) != 0){
+        return false;
+    }
+    if(!isdigit(name[12]) || !isdigit(name[14]) || !isdigit(name[16]) || !isdigit(name[18])){
+        return false;
+    }
+    if(name[13] != '_' || name[15] != '_' || name[17] != '_'){
+        return false;
+    }
+    return true;
+}
+
+static bool parse_cur_fw_version(const char* file, struct firmware_versions *version){
+
+    if(!file || !version){
+        return false;
+    }
+
+    const char* name = basename(file);
+    if(!check_fw_file_name(name)){
+        return false;
+    }
+    version->bsmc.major = name[12] - '0';
+    version->bsmc.minor = name[14] - '0';
+    version->bsmc.build = name[16] - '0';
+    version->bsmc.patch = name[18] - '0';
+
+    return true;
+}
+
+static bool fw_match(struct firmware_versions *cur, struct firmware_versions *pre){
+    if(!cur || !pre){
+        return false;
+    }
+    if(cur->bsmc.major != pre->bsmc.major || cur->bsmc.minor != pre->bsmc.minor ||
+     cur->bsmc.build != pre->bsmc.build || cur->bsmc.patch != pre->bsmc.patch){
+        return false;
+    }
+    return true;
+}
+
+static int cmd_firmware_update(const char* file, nrv_list cards, uint8_t *bsmc_data, size_t bsmc_size) {
     int err = NRV_SUCCESS;
     struct firmware_versions prev_ver[MAX_CARD_NO] = {{{0}}};
     pci_address_t pci_address[MAX_CARD_NO];
@@ -578,6 +608,9 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
 		return err;
 #endif
 
+    firmware_versions cur_fw_version;
+    bool parse_success = parse_cur_fw_version(file, &cur_fw_version);
+
     /* BSMC firmware update */
     //TODO for all cards:
     for (int i = 0; i < cards.count; i++) {
@@ -590,7 +623,14 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
         if (err)
             goto exit;
 
-        card->max_transfer_len = detect_max_transfer_size(&card->ipmi_address);
+        if(parse_success && fw_match(&cur_fw_version, &prev_ver[i])){
+            if (percentCallback) {
+                int percent = (fw_update_device_index + 1) * 100  / fw_update_device_count;
+                percentCallback(percent, amcManager);
+            }
+            continue;
+        }
+        card->max_transfer_len = IPMI_TRANSFER_SIZE_BIG;
 
         if (bsmc_data) {
             err = fw_update(card, bsmc_data, bsmc_size, &prev_ver[i].bsmc,
@@ -642,6 +682,10 @@ static int cmd_firmware_update(nrv_list cards, uint8_t *bsmc_data, size_t bsmc_s
     if ( cards.count > 0 ) {
         int i = 0;
         */
+
+        if(parse_success && fw_match(&cur_fw_version, &prev_ver[i])){
+            continue;
+        }
         struct firmware_versions curr_ver = {{0}};
 
         XPUM_LOG_INFO("card {} i2c_addr is: 0x{:x}", i, cards.card[i].ipmi_address.i2c_addr);
@@ -799,9 +843,6 @@ int cmd_get_amc_firmware_versions(int buf[][4], int *count) {
 }
 
 int cmd_firmware(const char* file, unsigned int versions[4]) {
-#ifdef XPUM_FIRMWARE_MOCK
-    return cmd_firmware_mock(file, versions);
-#endif
     const char *bsmc_file = file;
     uint8_t *bsmc_data = NULL;
     size_t bsmc_size = 0;
@@ -839,7 +880,7 @@ int cmd_firmware(const char* file, unsigned int versions[4]) {
     }
 
     if (bsmc_data) {
-        err = cmd_firmware_update(cards, bsmc_data, bsmc_size);
+        err = cmd_firmware_update(file, cards, bsmc_data, bsmc_size);
     } else {
         err = cmd_firmware_info(cards, versions);
     }

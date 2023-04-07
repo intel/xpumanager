@@ -47,7 +47,7 @@ else
   sed -e "s:@@Workaround@CPACK_PACKAGING_INSTALL_PREFIX@Workaround@@:@CMAKE_INSTALL_PREFIX@:g" ${SERVICE_PATH}/xpum_rest.service > ${SERVICE_PATH}/xpum_rest.service.n
   mv -f ${SERVICE_PATH}/xpum_rest.service.n ${SERVICE_PATH}/xpum_rest.service
 
-  chown -R xpum @CMAKE_INSTALL_PREFIX@/lib/xpum
+  chown -R xpum ${RPM_INSTALL_PREFIX}/lib/xpum
   chmod g+x @CMAKE_INSTALL_PREFIX@/lib/xpum/keytool.sh
 
   if [ ! -f @CMAKE_INSTALL_PREFIX@/bin/xpumcli ]; then

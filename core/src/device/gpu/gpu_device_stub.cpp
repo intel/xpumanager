@@ -1114,6 +1114,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEMORY_CHANNELS, std::to_string(mem_channel_num)));
                         }
 
+                        std::lock_guard<std::mutex> lock(ras_m);
                         zes_mem_state_t sysman_memory_state = {};
                         sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
                         XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
@@ -1720,6 +1721,7 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUsedUtilization(const
                 props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
                 if (res == ZE_RESULT_SUCCESS) {
+                    std::lock_guard<std::mutex> lock(ras_m);
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
@@ -2608,7 +2610,7 @@ void GPUDeviceStub::getSchedulers(const zes_device_handle_t& device, std::vector
                     XPUM_ZE_HANDLE_LOCK(sched, res = zesSchedulerGetTimesliceModeProperties(sched, false, &timeslice));
                     val1 = timeslice.interval;
                     val2 = timeslice.yieldTimeout;
-                } else if (mode == ZES_SCHED_MODE_EXCLUSIVE) {
+                } else if (mode == ZES_SCHED_MODE_EXCLUSIVE || mode == ZES_SCHED_MODE_COMPUTE_UNIT_DEBUG) {
                     val1 = 0;
                     val2 = 0;
                 } else {
@@ -3463,6 +3465,38 @@ bool GPUDeviceStub::setSchedulerExclusiveMode(const zes_device_handle_t& device,
     return ret;
 }
 
+bool GPUDeviceStub::setSchedulerDebugMode(const zes_device_handle_t& device, const SchedulerDebugMode& mode) {
+    bool ret = false;
+    return ret;
+#if 0
+    if (device == nullptr) {
+        return ret;
+    }
+    uint32_t scheduler_count = 0;
+    ze_result_t res;
+    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, nullptr));
+    if (res == ZE_RESULT_SUCCESS) {
+        std::vector<zes_sched_handle_t> scheds(scheduler_count);
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumSchedulers(device, &scheduler_count, scheds.data()));
+        for (auto& sched : scheds) {
+            zes_sched_properties_t props;
+            XPUM_ZE_HANDLE_LOCK(sched, res = zesSchedulerGetProperties(sched, &props));
+            if (res == ZE_RESULT_SUCCESS) {
+                if (props.subdeviceId != mode.subdevice_Id) {
+                    continue;
+                }
+                ze_bool_t needReload;
+                XPUM_ZE_HANDLE_LOCK(sched, res = zesSchedulerSetComputeUnitDebugMode(sched, &needReload));
+                if (res == ZE_RESULT_SUCCESS) {
+                    ret = ret || true;
+                }
+            }
+        }
+    }
+    return ret;
+#endif
+}
+
 bool GPUDeviceStub::getFrequencyState(const zes_device_handle_t& device, std::string& freq_throttle_message) {
     bool ret = false;
     if (device == nullptr) {
@@ -3523,6 +3557,7 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& mem : mems) {
+                    std::lock_guard<std::mutex> lock(ras_m);
                     zes_mem_state_t memory_state = {};
                     memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &memory_state));

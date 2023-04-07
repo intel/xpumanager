@@ -27,6 +27,8 @@ class IpmiAmcManager : public AmcManager {
 
     bool fwUpdated = false;
 
+    std::string flashFwErrMsg;
+
    public:
     virtual bool preInit() override;
     virtual bool init(InitParam& param) override;
@@ -40,7 +42,5 @@ class IpmiAmcManager : public AmcManager {
     virtual void getAMCSlotSerialNumbers(GetAmcSlotSerialNumbersParam& param) override;
     void getAMCSerialNumberByRiserSlot(uint8_t riser, uint8_t slot, std::string &serialNumber);
 };
-
-typedef void (*percent_callback_func_t)(uint32_t percent, void *pAmcManager);
 
 } // namespace xpum

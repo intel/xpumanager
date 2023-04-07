@@ -17,6 +17,9 @@
 
 namespace xpum {
 
+#define IPMI_TRANSFER_SIZE_BIG 0xf8 /* 0xf8 is summarized from experience */
+#define IPMI_TRANSFER_SIZE_SMALL 0x1e /* works with BSMC v1.4.1.10+ */
+
 #define REQUEST_HEADER_SIZE 5                /* SlotIPMB netfn, cmd and address */
 #define RESPONSE_HEADER_SIZE sizeof(uint8_t) /* SlotIPMB completion code */
 #define COMPLETION_CODE_SIZE sizeof(uint8_t) /* Response completion code */

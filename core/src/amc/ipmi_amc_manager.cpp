@@ -10,18 +10,9 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include "ipmi/ipmi.h"
 
 namespace xpum {
-
-extern int cmd_firmware(const char* file, unsigned int versions[4]);
-
-extern int cmd_get_amc_firmware_versions(int buf[][4], int *count);
-
-extern void setPercentCallbackAndContext(percent_callback_func_t callback, void *pAmcManager);
-
-extern std::vector<xpum_sensor_reading_t> read_sensor();
-
-extern int get_sn_number(uint8_t baseboardSlot, uint8_t riserSlot, std::string &sn_number);
 
 static void percent_callback(uint32_t percent, void* pAmcManager) {
     IpmiAmcManager* p = (IpmiAmcManager*)pAmcManager;
@@ -102,6 +93,7 @@ void IpmiAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         return;
     }
     percent.store(0);
+    flashFwErrMsg.clear();
     task = std::async(std::launch::async, [param, this] {
 
         fwUpdated = true;
@@ -111,6 +103,8 @@ void IpmiAmcManager::flashAMCFirmware(FlashAmcFirmwareParam& param) {
         int rc = cmd_firmware(param.file.c_str(), nullptr);
 
         auto result = rc == 0 ? xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK : xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_ERROR;
+
+        flashFwErrMsg = xpum::getIpmiErrorString(rc);
 
         param.callback();
 
@@ -144,6 +138,7 @@ void IpmiAmcManager::getAMCFirmwareFlashResult(GetAmcFirmwareFlashResultParam& p
     result.result = res;
     result.percentage = percent.load();
     param.errCode = XPUM_OK;
+    param.errMsg = flashFwErrMsg;
 }
 
 void IpmiAmcManager::getAMCSensorReading(GetAmcSensorReadingParam& param){

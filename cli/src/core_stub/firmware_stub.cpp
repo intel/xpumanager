@@ -123,12 +123,6 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getFirmwareFlashResult(int deviceId
 
     std::string errorMsg = getFlashFwErrMsg();
 
-    if (errorMsg.size()) {
-        (*json)["error"] = errorMsg;
-        (*json)["errno"] = errorNumTranslate(res);
-        return json;
-    }
-
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
@@ -142,6 +136,12 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getFirmwareFlashResult(int deviceId
                 break;
         }
         (*json)["errno"] = errorNumTranslate(res);
+        return json;
+    }
+
+    if (errorMsg.size()) {
+        (*json)["error"] = errorMsg;
+        (*json)["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_FAIL;
         return json;
     }
 

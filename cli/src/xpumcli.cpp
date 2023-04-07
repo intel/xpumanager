@@ -32,6 +32,7 @@
 #include "comlet_topology.h"
 #include "comlet_version.h"
 #include "comlet_ps.h"
+#include "comlet_vgpu.h"
 #include "comlet_log.h"
 #include "comlet_topdown.h"
 #include "comlet_sensor.h"
@@ -146,6 +147,7 @@ int main(int argc, char** argv) {
 #endif
         //.addComlet(MAKE_COMLET_PTR(xpum::cli::ComletReset))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletPs))
+        .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletVgpu))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletStatistics))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletDump))
         .addComlet(MAKE_COMLET_PTR(xpum::cli::ComletLog))

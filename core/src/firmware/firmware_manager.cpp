@@ -226,7 +226,7 @@ xpum_result_t FirmwareManager::runAMCFirmwareFlash(const char* filePath, AmcCred
     // lock all devices
     bool locked = Core::instance().getDeviceManager()->tryLockDevices(allDevices);
     if (!locked) {
-        flashFwErrMsg = "Device is bussy";
+        flashFwErrMsg = "Device is busy";
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     }
 

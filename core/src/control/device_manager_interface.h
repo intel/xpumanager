@@ -91,6 +91,10 @@ class DeviceManagerInterface : public InitCloseInterface {
     virtual bool setDeviceSchedulerExclusiveMode(const std::string& id,
                                                  const SchedulerExclusiveMode& mode) = 0;
 
+    virtual bool setDeviceSchedulerDebugMode(const std::string& id,
+                                                 const SchedulerDebugMode& mode) = 0;
+
+
     virtual bool resetDevice(const std::string& id, bool force) = 0;
 
     virtual void getFreqAvailableClocks(const std::string& id, uint32_t subdevice_id, std::vector<double>& clocks) = 0;

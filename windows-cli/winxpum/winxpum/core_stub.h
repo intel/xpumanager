@@ -66,6 +66,8 @@ private:
 
     static long long getCurrentMillisecond();
 
+    static long long getCurrentMicroseconds();
+
     std::vector<std::string> handleFreqByLevel0(zes_device_handle_t device, bool set, int minFreq, int maxFreq, bool& supported);
 
     std::vector<int> handlePowerByLevel0(zes_device_handle_t device, bool set, int limit, int interval, bool& supported);

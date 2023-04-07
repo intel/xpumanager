@@ -29,6 +29,10 @@ struct SchedulerExclusiveMode {
     uint32_t subdevice_Id;
 };
 
+struct SchedulerDebugMode {
+    uint32_t subdevice_Id;
+};
+
 class Scheduler {
    public:
     Scheduler(bool on_subdevice, uint32_t subdevice_id, bool can_control, zes_engine_type_flags_t engines, uint32_t supportedModes, zes_sched_mode_t mode,
