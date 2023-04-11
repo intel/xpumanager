@@ -137,6 +137,31 @@ spec:
         - "99d"
       command:
         - "sleep"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-debian:lz-1.8.5-20230411"
+      imagePullPolicy: "Always"
+      name: "xpum-builder-debian"
+      resources:
+        limits: 
+          memory: "6Gi"
+          cpu: "2"
+      securityContext:
+        privileged: false
+      tty: false
+      volumeMounts:
+        - mountPath: "/home/jenkins/agent"
+          name: "workspace-volume"
+          readOnly: false
+        - name: sign-secret
+          mountPath: "/root"
+          readOnly: true
+        - mountPath: "/home/jenkins/jenkins-shared-pvc"
+          name: "jenkins-shared-pvc"
+          readOnly: false
+      workingDir: "/home/jenkins/agent"
+    - args:
+        - "99d"
+      command:
+        - "sleep"
       image: "ccr-registry.caas.intel.com/xpum/xpum-builder-centos7-6:lz-1.8.5-20230331"
       imagePullPolicy: "Always"
       name: "xpum-builder-centos7-6"
@@ -360,6 +385,26 @@ spec:
                 rm -fr build && \
                 ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
                 cp ./build/xpu*.deb $MAIN_WORKSPACE/build-deb-jammy
+                '''
+              }
+            }
+          }
+
+          stage('build debian deb') {
+            steps {
+              container(name: 'xpum-builder-debian') {
+                script {
+                  loadEnvironmentVariables()
+                }
+                sh '''env && MAIN_WORKSPACE=$PWD && \
+                mkdir ../ws_debian_buster && \
+                cp -rp . ../ws_debian_buster && \
+                cd ../ws_debian_buster && \
+                export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+                export CCACHE_BASEDIR=$PWD && \
+                mkdir $MAIN_WORKSPACE/build-deb-debian && \
+                ./build.sh -DDAEMONLESS=ON -DBUILD_DOC=ON -DBUILD_DATE=$BUILD_DATE -DBUILD_TIME=$BUILD_TIME -DGIT_COMMIT=$GIT_COMMIT_SHORT && \
+                cp ./build/xpu*.deb $MAIN_WORKSPACE/build-deb-debian
                 '''
               }
             }
