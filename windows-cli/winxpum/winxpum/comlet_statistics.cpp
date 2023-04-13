@@ -235,6 +235,15 @@ static CharTableConfig ComletConfigDeviceStatistics(R"({
             { "value": "data_list[metrics_type==XPUM_STATS_COPY_UTILIZATION].value", "fixer": "round" }
         ]}
     ]]
+}, {
+    "instance": "",
+    "cells": [[
+        { "rowTitle": "Render Engine Util (%) " }
+    ], [
+        { "label": "Tile ", "label_tag": "tile_id", "value": "tile_level[]", "subrow": true, "subs": [
+            { "value": "data_list[metrics_type==XPUM_STATS_RENDER_UTILIZATION].value", "fixer": "round" }
+        ]}
+    ]]
 }]
 })"_json);
 

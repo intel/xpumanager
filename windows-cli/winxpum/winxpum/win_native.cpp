@@ -37,7 +37,8 @@ static HQUERY lastQuery = NULL;
 #define MEDIA_ENGINE_COUNTER_INDEX 1
 #define COMPUTE_ENGINE_COUNTER_INDEX 2
 #define MEM_USED_COUNTER_INDEX 3
-#define MAX_COUNTER_INDEX 4
+#define RENDER_ENGINE_COUNTER_INDEX 4
+#define MAX_COUNTER_INDEX 5
 
 static std::vector<HCOUNTER> lastCounterList[MAX_COUNTER_INDEX];
 
@@ -98,6 +99,7 @@ void initPDHQuery() {
     lastCounterList[COPY_ENGINE_COUNTER_INDEX] = addCounter(lastQuery, expandWildCardPath("\\GPU Engine(*engtype_Copy)\\Utilization Percentage"));
     lastCounterList[MEDIA_ENGINE_COUNTER_INDEX] = addCounter(lastQuery, expandWildCardPath("\\GPU Engine(*engtype_VideoDecode)\\Utilization Percentage"));
     lastCounterList[COMPUTE_ENGINE_COUNTER_INDEX] = addCounter(lastQuery, expandWildCardPath("\\GPU Engine(*engtype_Compute)\\Utilization Percentage"));
+    lastCounterList[RENDER_ENGINE_COUNTER_INDEX] = addCounter(lastQuery, expandWildCardPath("\\GPU Engine(*engtype_3D)\\Utilization Percentage"));
     lastCounterList[MEM_USED_COUNTER_INDEX] = addCounter(lastQuery, expandWildCardPath("\\GPU Adapter Memory(*)\\Dedicated Usage"));
 
     Status = PdhCollectQueryData(lastQuery);
@@ -161,6 +163,10 @@ double getMediaEngineUtilByNativeAPI() {
 
 double getMemUsedByNativeAPI() {
     return values[MEM_USED_COUNTER_INDEX];
+}
+
+double getRenderEngineUtilByNativeAPI() {
+    return values[RENDER_ENGINE_COUNTER_INDEX];
 }
 
 double getMemSizeByNativeAPI() {
