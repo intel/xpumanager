@@ -40,6 +40,10 @@ class ComletFirmware : public ComletBase {
 
     nlohmann::json validateArguments();
 
+    inline std::string getFirmwareType(){
+        return opts->firmwareType;
+    }
+
    private:
     std::unique_ptr<FlashFirmwareOptions> opts;
     std::vector<char> imgBuffer;
