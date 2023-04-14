@@ -342,6 +342,26 @@ spec:
           }
       } 
 
+      stage('Build Doc') {
+        steps {
+          container(name: 'xpum-builder-ubuntu-jammy') {
+            script {
+              loadEnvironmentVariables()
+            }
+            sh '''env && MAIN_WORKSPACE=$PWD && \
+            mkdir ../ws_doc && \
+            cp -rp . ../ws_doc && \
+            cd ../ws_doc && \
+            export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
+            export CCACHE_BASEDIR=$PWD && \
+            mkdir $MAIN_WORKSPACE/build-doc && \
+            ./doc/build.sh && \
+            cp -rp ./doc/* $MAIN_WORKSPACE/build-doc
+            '''
+          }
+        }
+      } 
+
       stage('Build') {
         parallel {
           stage('build focal deb') {
@@ -353,6 +373,7 @@ spec:
                 sh '''env && MAIN_WORKSPACE=$PWD && \
                 mkdir ../ws_ubuntu_focal && \
                 cp -rp . ../ws_ubuntu_focal && \
+                cp -rp $MAIN_WORKSPACE/build-doc/build ../ws_ubuntu_focal/doc && \
                 cd ../ws_ubuntu_focal && \
                 export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
@@ -376,6 +397,7 @@ spec:
                 sh '''env && MAIN_WORKSPACE=$PWD && \
                 mkdir ../ws_ubuntu_jammy && \
                 cp -rp . ../ws_ubuntu_jammy && \
+                cp -rp $MAIN_WORKSPACE/build-doc/build ../ws_ubuntu_jammy/doc && \
                 cd ../ws_ubuntu_jammy && \
                 export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
@@ -399,6 +421,7 @@ spec:
                 sh '''env && MAIN_WORKSPACE=$PWD && \
                 mkdir ../ws_debian_buster && \
                 cp -rp . ../ws_debian_buster && \
+                cp -rp $MAIN_WORKSPACE/build-doc/build ../ws_debian_buster/doc && \
                 cd ../ws_debian_buster && \
                 export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
@@ -419,6 +442,7 @@ spec:
                 sh '''env && MAIN_WORKSPACE=$PWD && \
                 mkdir ../ws_centos7 && \
                 cp -rp . ../ws_centos7 && \
+                cp -rp $MAIN_WORKSPACE/build-doc/build ../ws_centos7/doc && \
                 cd ../ws_centos7 && \
                 export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
@@ -444,6 +468,7 @@ spec:
                 sh '''env && MAIN_WORKSPACE=$PWD && \
                 mkdir ../ws_centos8 && \
                 cp -rp . ../ws_centos8 && \
+                cp -rp $MAIN_WORKSPACE/build-doc/build ../ws_centos8/doc && \
                 cd ../ws_centos8 && \
                 export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
@@ -467,6 +492,7 @@ spec:
                 sh '''env && MAIN_WORKSPACE=$PWD && \
                 mkdir ../ws_sles && \
                 cp -rp . ../ws_sles && \
+                cp -rp $MAIN_WORKSPACE/build-doc/build ../ws_sles/doc && \
                 cd ../ws_sles && \
                 export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \
@@ -490,6 +516,7 @@ spec:
                 sh '''env && MAIN_WORKSPACE=$PWD && \
                 mkdir ../ws_centos_stream9 && \
                 cp -rp . ../ws_centos_stream9 && \
+                cp -rp $MAIN_WORKSPACE/build-doc/build ../ws_centos_stream9/doc && \
                 cd ../ws_centos_stream9 && \
                 export CCACHE_DIR=/home/jenkins/jenkins-shared-pvc/.ccache && \
                 export CCACHE_BASEDIR=$PWD && \

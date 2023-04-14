@@ -88,7 +88,17 @@ if(NOT DAEMONLESS)
   add_subdirectory(rest)
 endif()
 if(BUILD_DOC)
-  add_subdirectory(doc)
+  if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/doc/build/html)
+    if(NOT DAEMONLESS)
+      install(DIRECTORY doc/build/html/ DESTINATION lib/xpum/doc PATTERN ".buildinfo" EXCLUDE
+      )
+    else()
+      install(DIRECTORY doc/build/html/ DESTINATION lib/xpu-smi/doc PATTERN ".buildinfo" EXCLUDE
+      )
+    endif()
+  else()
+    add_subdirectory(doc)
+  endif()
 endif()
 
 add_dependencies(xpum lib_hwloc)
