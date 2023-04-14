@@ -1,5 +1,5 @@
 ARG BASE_VERSION=15.4
-FROM registry.suse.com/suse/sle15:$BASE_VERSION
+FROM opensuse/leap:$BASE_VERSION
 
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.8.5.tar.gz
 ARG CMAKE_INSTALLER_URL=https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh
@@ -10,39 +10,7 @@ ARG GRPC_VERSION=v1.49.1
 ARG PROTOBUF_VERSION=v3.19.4
 ARG CARES_VERSION=cares-1_19_0
 
-RUN echo $'[devel_tools] \n\
-name=Generic Development Tools (SLE_15_SP4) \n\
-enabled=1 \n\
-autorefresh=1 \n\
-baseurl=https://download.opensuse.org/repositories/devel:/tools/15.4/ \n\
-type=rpm-md \n\
-gpgcheck=off \n\
-gpgkey=https://download.opensuse.org/repositories/devel:/tools/15.4/repodata/repomd.xml.key'\
-> /etc/zypp/repos.d/devel_tools.repo
-
-RUN echo $'[science] \n\
-name=Software for Scientists and Engineers (SLE_15_SP4) \n\
-enabled=1 \n\
-autorefresh=1 \n\
-baseurl=https://download.opensuse.org/repositories/science/15.4/ \n\
-type=rpm-md \n\
-gpgcheck=off \n\
-gpgkey=https://download.opensuse.org/repositories/science/15.4/repodata/repomd.xml.key'\
-> /etc/zypp/repos.d/science.repo
-
-RUN echo $'[server_monitoring] \n\
-name=Server Monitoring Software (SLE_15_SP4) \n\
-enabled=1 \n\
-autorefresh=1 \n\
-baseurl=https://download.opensuse.org/repositories/server:/monitoring/15.4/ \n\
-type=rpm-md \n\
-gpgcheck=off \n\
-gpgkey=https://download.opensuse.org/repositories/server:/monitoring/15.4/repodata/repomd.xml.key'\
-> /etc/zypp/repos.d/server_monitoring.repo
-
-RUN echo gpgcheck=off >> /etc/zypp/repos.d/SLE_BCI.repo && rm -f /etc/zypp/repos.d/*backport*
-
-RUN zypper addlock libstdc++6
+RUN echo gpgcheck=off >> /etc/zypp/repos.d/repo-oss.repo && rm -f /etc/zypp/repos.d/*backport*
 
 RUN zypper -n in --no-recommends -t pattern devel_basis && \
     zypper -n in --no-recommends \
@@ -51,10 +19,14 @@ RUN zypper -n in --no-recommends -t pattern devel_basis && \
     git \
     glibc-devel-static \
     libopenssl-1_1-devel \
+    python39 \
+    python39-devel \
+    python39-pip \
     rpm-build \
     systemd-devel \
     wget \
-    libffi-devel && \
+    doxygen \
+    lua53-devel && \
     zypper clean -a
 
 RUN mkdir cmake && \
@@ -65,18 +37,6 @@ RUN mkdir cmake && \
     rm -f cmake.sh
 
 ENV PATH="/cmake/bin:${PATH}".
-
-RUN wget -qc --no-check-certificate https://www.python.org/ftp/python/3.8.9/Python-3.8.9.tar.xz && \
-    tar -xf Python-3.8.9.tar.xz && \
-    cd /Python-3.8.9 && \
-    ./configure --enable-optimizations && \
-    make -j4 && \
-    make altinstall && \
-    rm -fr /Python-3.8.9
-
-COPY builder/requirements.txt /tmp/requirements.txt
-
-RUN python3.8 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
 
 RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com/grpc/grpc && \
     cd /grpc/third_party/zlib && \
@@ -93,6 +53,10 @@ RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com
       ../.. && \
     make -j && make install && \
     rm -fr /grpc
+
+COPY builder/requirements.txt /tmp/requirements.txt
+
+RUN python3.9 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
 
 RUN wget -qc --no-check-certificate $L0_SRC_URL -O - | tar -xz && \
     cd /level-zero-* && \
@@ -119,8 +83,9 @@ RUN wget -qc --no-check-certificate $IGSC_URL -O - | tar -xz && \
     make -j4 && \
     make install
 
-RUN ln -sf $(which python3.8) /usr/bin/python && \
-    ln -sf $(which python3.8) /usr/bin/python3 && \
+RUN ln -sf $(which python3.9) /usr/bin/python && \
+    ln -sf $(which python3.9) /usr/bin/python3 && \
+    ln -sf /usr/lib64/liblua.so.5.3 /usr/lib64/liblua-5.3.so && \
     ldconfig
 
 ENV ACLOCAL_PATH=/usr/share/aclocal

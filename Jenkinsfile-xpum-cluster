@@ -62,7 +62,7 @@ spec:
       - "99d"
       command:
         - "sleep"
-      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-sles:lz-1.8.5-20230331"
+      image: "ccr-registry.caas.intel.com/xpum/xpum-builder-sles:lz-1.8.5-20230413"
       imagePullPolicy: "Always"
       name: "xpum-builder-sles"
       resources:
