@@ -15,6 +15,11 @@
 ## Start Service
  1. systemctl start xpum_rest.service
  2. systemctl enable xpum_rest.service
+    <br>If start xpum_rest.service failed with error "Executable path is not absolute, ignoring: gunicorn" on Centos 7, please provide absolute path for the gunicorn in the file /usr/lib/systemd/system/xpum_rest.service. Then run the following commands.
+    <br>
+    `systemctl daemon-reload`
+    <br>
+    `systemctl restart xpum_rest.service`
 
 ## Change rest service binding address & port
  1. change service file xpum_rest.service "--bind" parameters in "ExecStart"
