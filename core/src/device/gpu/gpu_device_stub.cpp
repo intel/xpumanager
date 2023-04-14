@@ -989,6 +989,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
     zeDriverGet(&driver_count, nullptr);
     std::vector<ze_driver_handle_t> drivers(driver_count);
     zeDriverGet(&driver_count, drivers.data());
+    xpum_device_function_type_t func_type = DEVICE_FUNCTION_TYPE_PHYSICAL;
 
     for (auto& p_driver : drivers) {
         uint32_t device_count = 0;
@@ -1083,10 +1084,12 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(pci_props.address)));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
+                    func_type = getGPUFunctionType(
+                            to_string(pci_props.address));
                     p_gpu->addProperty(
                         Property(
                             XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE,
-                            getGPUFunctionType(to_string(pci_props.address))
+                            func_type
                         )
                     );
                 } else {
@@ -1191,10 +1194,12 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENGINES, std::to_string(media_engine_count)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEDIA_ENH_ENGINES, std::to_string(meida_enhancement_engine_count)));
                 addPCIeProperties(device, p_gpu);
-
-                toSetMeiDevicePath(p_gpu);
-                std::string sku_type = pchProdStateToSkuType(getDevicePchProdStateType(p_gpu->getMeiDevicePath()));
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
+                
+                if (func_type == DEVICE_FUNCTION_TYPE_PHYSICAL) {
+                    toSetMeiDevicePath(p_gpu);
+                    std::string sku_type = pchProdStateToSkuType(getDevicePchProdStateType(p_gpu->getMeiDevicePath()));
+                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
+                }
 
                 p_devices->push_back(p_gpu);
             }

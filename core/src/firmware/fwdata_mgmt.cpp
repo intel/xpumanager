@@ -200,6 +200,13 @@ std::string fwdata_device_version(const char *device_path)
 }
 
 void FwDataMgmt::getFwDataVersion() {
+    Property prop;
+    if (pDevice->getProperty(
+                XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, prop) 
+            == true && prop.getValueInt() == DEVICE_FUNCTION_TYPE_VIRTUAL) {
+        XPUM_LOG_DEBUG("Skip getting FW data version for VF");
+        return;
+    }
     auto version = fwdata_device_version(devicePath.c_str());
     pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_DATA_FIRMWARE_VERSION, version));
 }
