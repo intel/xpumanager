@@ -713,7 +713,7 @@ xpum_result_t xpumGetFirmwareFlashErrorMsg(char *buffer, int *count) {
         return XPUM_BUFFER_TOO_SMALL;
     }
     std::strcpy(buffer, errMsg.c_str());
-    buffer[errMsg.length() + 1] = '\0';
+    buffer[errMsg.length()] = '\0';
     return XPUM_OK;
 }
 
