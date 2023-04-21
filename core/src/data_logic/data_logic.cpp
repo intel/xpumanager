@@ -108,41 +108,6 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
         }
     }
 
-    int hasRAS = 1;
-    if (Configuration::XPUM_MODE == "xpu-smi" &&
-    Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel() == XPUM_DEVICE_MODEL_PVC){
-        // Just xpu-smi on PVC is affected
-        hasRAS = 0;
-        char* xpum_metrics_env;
-        xpum_metrics_env = std::getenv("XPUM_METRICS");
-        if (xpum_metrics_env != NULL) {
-            std::string env_str(xpum_metrics_env);
-            std::stringstream env_ss(env_str);
-            while (env_ss.good()) {
-                std::string substr;
-                getline(env_ss, substr, ',');
-                auto pos_s = substr.find('-');
-                if (pos_s != 0 && pos_s != std::string::npos && pos_s + 1 < substr.length()) {
-                    // support range in form of "a-b"
-                    int start_type_id = std::stoi(substr.substr(0, pos_s));
-                    int end_type_id = std::stoi(substr.substr(pos_s + 1));
-                    if((start_type_id >= METRIC_RAS_ERROR_CAT_RESET && start_type_id <= METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE) ||
-                    (end_type_id >= METRIC_RAS_ERROR_CAT_RESET && end_type_id <= METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE) ||
-                    (start_type_id <= METRIC_RAS_ERROR_CAT_RESET && end_type_id >= METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE)){
-                        hasRAS = 1;
-                        break;
-                    }
-                }else{
-                    int type = std::stoi(substr);
-                    if(type >= METRIC_RAS_ERROR_CAT_RESET && type <= METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE){
-                        hasRAS = 1;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
     auto metric_types_iter = metric_types.begin();
     bool hasDataOnDevice = false;
     std::string device_id = std::to_string(deviceId);
@@ -158,7 +123,8 @@ xpum_result_t DataLogic::getMetricsStatistics(xpum_device_id_t deviceId,
             if (p_data != nullptr) {
                 hasDataOnDevice = hasDataOnDevice || p_data->hasDataOnDevice();
                 m_datas.insert(std::make_pair(*metric_types_iter, p_data));
-            } else if (hasRAS && *metric_types_iter >= METRIC_RAS_ERROR_CAT_RESET && *metric_types_iter <= METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE) {
+            } else if ((*metric_types_iter >= METRIC_RAS_ERROR_CAT_RESET && *metric_types_iter <= METRIC_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE)
+                    || (*metric_types_iter >= METRIC_EU_ACTIVE && *metric_types_iter <= METRIC_EU_IDLE)) {
                 auto start_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
                 auto end_time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
                 while (end_time - start_time <= 30) {

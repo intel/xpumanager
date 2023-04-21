@@ -45,6 +45,10 @@ class ComletDiscovery : public ComletBase {
         return opts->propIdList.size() > 0;
     }
 
+    inline bool isListAMCVersions(){
+        return opts->listamcversions;
+    }
+
    private:
     std::unique_ptr<ComletDiscoveryOptions> opts;
 };

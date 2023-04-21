@@ -713,7 +713,7 @@ xpum_result_t xpumGetFirmwareFlashErrorMsg(char *buffer, int *count) {
         return XPUM_BUFFER_TOO_SMALL;
     }
     std::strcpy(buffer, errMsg.c_str());
-    buffer[errMsg.length() + 1] = '\0';
+    buffer[errMsg.length()] = '\0';
     return XPUM_OK;
 }
 
@@ -881,9 +881,16 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
             {
                 bool available;
                 bool configurable;
-                xpum_ecc_state_t current, pending;
+                xpum_ecc_state_t current = XPUM_ECC_STATE_UNAVAILABLE;
+                xpum_ecc_state_t pending;
                 xpum_ecc_action_t action;
-                res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
+                // Skip getting ECC state of VF through igsc API call
+                if (prop_map[
+                        XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].
+                        getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL) {
+                    res = xpumGetEccState(deviceId, &available, 
+                            &configurable, &current, &pending, &action);
+                }
                 auto &copy = pXpumProperties->properties[propertyLen++];
                 copy.name = XPUM_DEVICE_PROPERTY_MEMORY_ECC_STATE;
                 std::string value = eccStateToString(current);

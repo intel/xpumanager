@@ -442,6 +442,7 @@ namespace xpum {
             XPUM_STATS_COMPUTE_UTILIZATION,                  ///< Compute Utilization
             XPUM_STATS_MEDIA_UTILIZATION,                    ///< Media Utilization
             XPUM_STATS_COPY_UTILIZATION,                     ///< Copy Engine Utilization
+            XPUM_STATS_RENDER_UTILIZATION,                   ///< Render Engine Utilization
             XPUM_STATS_MAX
         } xpum_stats_type_t;
 

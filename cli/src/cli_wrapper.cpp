@@ -20,6 +20,7 @@
 #include "comlet_statistics.h"
 #include "comlet_diagnostic.h"
 #include "comlet_discovery.h"
+#include "comlet_firmware.h"
 #ifndef DAEMONLESS
 #include "grpc_core_stub.h"
 #else
@@ -85,13 +86,20 @@ int CLIWrapper::printResult(std::ostream &out) {
                 } else {
                     std::shared_ptr<ComletDiscovery> cd 
                         = std::dynamic_pointer_cast<ComletDiscovery>(comlet);
-                    if (cd != nullptr && cd->isDumping() == true) {
+                    if (cd != nullptr && cd->isDumping()) {
                         putenv(const_cast<char *>("_XPUM_INIT_SKIP=AMC"));
+                    }else if(cd != nullptr && cd->isDeviceList() && !cd->isListAMCVersions()){
+                        putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
                     }
                 }
-            } else if (comlet->getCommand().compare("updatefw") != 0 &&
-                    comlet->getCommand().compare("config") != 0) {
+            } else if (comlet->getCommand().compare("updatefw") != 0) {
                 putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
+            } else if (comlet->getCommand().compare("updatefw") == 0){
+                std::shared_ptr<ComletFirmware> cf
+                        = std::dynamic_pointer_cast<ComletFirmware>(comlet);
+                    if (cf != nullptr && cf->getFirmwareType().compare("AMC") != 0) {
+                        putenv(const_cast<char *>("_XPUM_INIT_SKIP=AMC"));
+                    }
             }
 
             if (comlet->getCommand().compare("stats") == 0) {

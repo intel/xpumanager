@@ -18,6 +18,8 @@ double getCopyEngineUtilByNativeAPI();
 
 double getMediaEngineUtilByNativeAPI();
 
+double getRenderEngineUtilByNativeAPI();
+
 double getMemSizeByNativeAPI();
 
 double getMemUsedByNativeAPI();

@@ -69,6 +69,7 @@ private:
         {XPUM_STATS_COMPUTE_UTILIZATION, "XPUM_STATS_COMPUTE_UTILIZATION", "Compute Engine (%)", "per tile"},
         {XPUM_STATS_MEDIA_UTILIZATION, "XPUM_STATS_MEDIA_UTILIZATION", "Media Engine (%)", "per tile"},
         {XPUM_STATS_COPY_UTILIZATION, "XPUM_STATS_COPY_UTILIZATION", "Copy Engine (%)", "per tile"},
+        {XPUM_STATS_RENDER_UTILIZATION, "XPUM_STATS_RENDER_UTILIZATION", "Render Engine (%)", "per tile"},
     };
 
     std::string metricsHelpStr = "Metrics type to collect raw data, options. Separated by the comma.\n";
