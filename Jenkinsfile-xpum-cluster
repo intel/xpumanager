@@ -68,7 +68,7 @@ spec:
       resources:
         limits: 
           memory: "6Gi"
-          cpu: "2"
+          cpu: "1"
       securityContext:
         privileged: false
       tty: false
@@ -93,7 +93,7 @@ spec:
       resources:
         limits: 
           memory: "6Gi"
-          cpu: "2"
+          cpu: "1"
       securityContext:
         privileged: false
       tty: false
@@ -118,7 +118,7 @@ spec:
       resources:
         limits: 
           memory: "6Gi"
-          cpu: "2"
+          cpu: "1"
       securityContext:
         privileged: false
       tty: false
@@ -143,7 +143,7 @@ spec:
       resources:
         limits: 
           memory: "6Gi"
-          cpu: "2"
+          cpu: "1"
       securityContext:
         privileged: false
       tty: false
@@ -168,7 +168,7 @@ spec:
       resources:
         limits: 
           memory: "6Gi"
-          cpu: "2"
+          cpu: "1"
       tty: false
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
@@ -191,7 +191,7 @@ spec:
       resources:
         limits: 
           memory: "6Gi"
-          cpu: "2"
+          cpu: "1"
       tty: false
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
@@ -214,7 +214,7 @@ spec:
       resources:
         limits: 
           memory: "6Gi"
-          cpu: "2"
+          cpu: "1"
       tty: false
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
@@ -291,7 +291,7 @@ spec:
       resources:
         limits: 
           memory: "2Gi"
-          cpu: "2"
+          cpu: "1"
       volumeMounts:
         - mountPath: "/home/jenkins/agent"
           name: "workspace-volume"
@@ -630,7 +630,17 @@ spec:
                     spec: '''{
                       "files": [
                         {
-                          "pattern": "build-*/*.*",
+                          "pattern": "build-deb-*/*.deb",
+                          "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                          "props": "retention.days=720;mytest=true"
+                        },
+                        {
+                          "pattern": "build-centos*/*.rpm",
+                          "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
+                          "props": "retention.days=720;mytest=true"
+                        },
+                        {
+                          "pattern": "build-sles/*.rpm",
                           "target": "xpumanager-sh-local/$JOB_NAME/$BUILD_TIMESTAMP.$GIT_COMMIT_SHORT/",
                           "props": "retention.days=720;mytest=true"
                         },
