@@ -1479,7 +1479,8 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralRequestFrequency(con
             if (res == ZE_RESULT_SUCCESS) {
                 zes_freq_state_t freq_state;
                 XPUM_ZE_HANDLE_LOCK(ph_freq, res = zesFrequencyGetState(ph_freq, &freq_state));
-                if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0) {
+                if (res == ZE_RESULT_SUCCESS && freq_state.actual >= 0 &&
+                        freq_state.request >= 0) {
                     uint32_t subdeviceId = UINT32_MAX;
                     if (props.onSubdevice) {
                         subdeviceId = props.subdeviceId;
