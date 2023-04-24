@@ -910,6 +910,20 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 strcpy(copy.value, fw_status_str.c_str());
             }
 
+            {
+                std::string value;
+                // Skip getting SKU type of VF through igsc API call
+                if (prop_map[
+                        XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].
+                        getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL) {
+                    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+                    value = pchProdStateToSkuType(getDevicePchProdStateType(device->getMeiDevicePath()));
+                }
+                auto &copy = pXpumProperties->properties[propertyLen++];
+                copy.name = XPUM_DEVICE_PROPERTY_SKU_TYPE;
+                strcpy(copy.value, value.c_str());
+            }
+
             pXpumProperties->propertyLen = propertyLen;
 
             return XPUM_OK;
