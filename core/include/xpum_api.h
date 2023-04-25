@@ -905,7 +905,14 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
 
 /**************************************************************************/
 /** @defgroup STATISTICS_API Device statistics
- * These APIs are for statistics
+ * These APIs are for statistics. The data type is uint64_t for the APIs, 
+ * the value should be divided by scale to get the real value for float 
+ * or double data types. The unit of all utilization metrics types 
+ * (including EU status and memory bandwidth) is percentage. The unit of power 
+ * is W. The unit of energy is mJ. The unit of frequency is MHz. 
+ * The unit of temperature is Celsius Degree. The unit of memory is Byte. 
+ * The unit of memory read/write and link throughput is kB/s. 
+ * All the RAS metrics types are numbers.
  * @{
  */
 /**************************************************************************/
