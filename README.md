@@ -79,7 +79,7 @@ Update firmware successfully.
 | :------------------------ | :--------------------: | :------------------: | :--------------------------: | :-------------: |
 | Device Info and Topology  | Yes                    | Yes                  | Yes                          | No              |
 | GPU Telemetries           | Yes (aggregated data)  | Yes (real-time data) | Yes (real-time data)         | No              |
-| GPU Firmware Update       | GFX, GFX_Data, AMC     | GFX, GFX_Data        | GFX, GFX_Data                | AMC             |
+| GPU Firmware Update       | GFX, GFX_Data, AMC     | GFX, GFX_Data, AMC   | GFX, GFX_Data, AMC           | AMC (IPMI)      |
 | GPU Configuration         | Yes                    | Yes                  | Yes                          | No              |
 | GPU Diagnostics           | Yes                    | Yes                  | No                           | No              |
 | GPU Health                | Yes                    | No                   | No                           | No              |
@@ -99,15 +99,17 @@ You may get the latest installers or binaries in [Releases](https://github.com/i
 * XPU Manager
 	* Ubuntu 20.04.3/22.04
 	* RHEL 8.5/8.6
-	* CentOS 8 Stream
+	* CentOS 8/9 Stream
 	* CentOS 7.4/7.9
 	* SLES 15 SP3/SP4
-	* Windows Server 2022 (limited features including: GPU device info, GPU telemetry, GPU firmware update and GPU configuration)
+	* Windows Server 2019/2022 (limited features including: GPU device info, GPU telemetry, GPU firmware update and GPU configuration)
 * XPU-SMI
 	* Ubuntu 20.04.3/22.04
 	* RHEL 8.5/8.6
-	* CentOS 8 Stream
+	* CentOS 8/9 Stream
+	* CentOS 7.4/7.9
 	* SLES 15 SP3/SP4
+	* Debian 10.13
   
 ## Documentation
 * Refer to the [XPU Manager Installation Guide](doc/Install_guide.md) and for how to install/uninstall XPU Manager.
