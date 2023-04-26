@@ -518,6 +518,8 @@ static bool uploadImage(FlashAmcFirmwareParam& flashAmcParam, std::string pushUr
 
         res = libcurl.curl_easy_perform(curl);
     }
+    long response_code;
+    libcurl.curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
     libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
         XPUM_LOG_ERROR("Fail to upload image, error code: {}", res);
@@ -531,8 +533,6 @@ static bool uploadImage(FlashAmcFirmwareParam& flashAmcParam, std::string pushUr
         flashAmcParam.errCode = XPUM_GENERIC_ERROR;
         return false;
     }
-    long response_code;
-    libcurl.curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
     if (response_code >= 200 && response_code < 300)
         return true;
     flashAmcParam.errMsg = "Fail to upload image, response code " + std::to_string(response_code);
