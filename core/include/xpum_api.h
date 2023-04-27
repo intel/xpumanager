@@ -1267,6 +1267,26 @@ xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count);
 xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result);
 
 /**
+ * @brief Create VF
+ * 
+ * @param deviceId           IN: Device Id
+ * @param conf               IN: Configurations for creating VFs
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf);
+
+/**
+ * @brief Get a list containing both PF and VFs
+ * 
+ * @param deviceId           IN: Device Id
+ * @param list               OUT: The buffer to store PF/VF list
+ * @param count              IN/OUT: When \a list is NULL, \a count will be filled with the array size needed, and return.
+ *                           When \a list is not NULL, \a count denotes the length of \a list, \a count should be equal to or larger than needed size. When return, the \a count will store real size of array returned by \a list.
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_function_info_t list[], int* count);
+
+/**
  * @brief Generate a debug log file
  * 
  * @param fileName   IN: The file name (a .tar.gz) of debug log.

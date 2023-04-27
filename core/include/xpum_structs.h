@@ -148,6 +148,11 @@ typedef enum xpum_result_enum {
     XPUM_RESULT_FILE_DUP,
     XPUM_RESULT_INVALID_DIR,
     XPUM_RESULT_FW_MGMT_NOT_INIT, ///< The firmware management feature is not initialized
+    XPUM_VGPU_INVALID_LMEM,
+    XPUM_VGPU_INVALID_NUMVFS,
+    XPUM_VGPU_DIRTY_PF,
+    XPUM_VGPU_VF_UNSUPPORTED_OPERATION,
+    XPUM_VGPU_CREATE_VF_FAILED,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {
@@ -1078,6 +1083,22 @@ typedef struct xpum_vgpu_precheck_result_t {
     char iommuMessage[XPUM_MAX_STR_LENGTH]; ///< Message of IOMMU status checking
     char sriovMessage[XPUM_MAX_STR_LENGTH]; ///< Message of SR-IOV status checking
 } xpum_vgpu_precheck_result_t;
+
+typedef struct xpum_vgpu_config_t {
+    uint32_t numVfs;
+    uint64_t lmemPerVf;
+} xpum_vgpu_config_t;
+
+
+typedef struct xpum_vgpu_function_info_t {
+    char bdfAddress[XPUM_MAX_STR_LENGTH];
+    xpum_device_function_type_t functionType;
+    uint64_t lmemSize;
+    xpum_device_id_t deviceId;
+} xpum_vgpu_function_info_t;
+
+#define XPUM_MAX_VF_NUM 128
+
 
 #if defined(__cplusplus)
 } // extern "C"

@@ -2208,4 +2208,61 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::doVgpuPrecheck() {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> GrpcCoreStub::createVf(int deviceId, uint32_t numVfs, uint64_t lmem) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    VgpuCreateVfRequest request;
+    request.set_numvfs(numVfs);
+    request.set_lmempervf(lmem);
+    request.set_deviceid(deviceId);
+    VgpuCreateVfResponse response;
+    grpc::Status status = stub->createVf(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+        } else {
+            (*json)["status"] = "OK";
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceFunction(int deviceId) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    VgpuGetDeviceFunctionRequest request;
+    VgpuGetDeviceFunctionResponse response;
+    request.set_deviceid(deviceId);
+    grpc::Status status = stub->getDeviceFunction(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+        } else {
+            std::vector<nlohmann::json> vfs;
+            for (uint32_t i = 0; i < response.count(); i++) {
+                auto vfInfo = nlohmann::json();
+                vfInfo["bdf_address"] = response.functionlist(i).bdfaddress();
+                vfInfo["lmem_size"] = response.functionlist(i).lmemsize();
+                vfInfo["function_type"] = deviceFunctionTypeEnumToString(
+                    static_cast<xpum_device_function_type_t>(response.functionlist(i).devicefunctiontype())
+                );
+                vfInfo["device_id"] = response.functionlist(i).deviceid() >= 0
+                    ? std::to_string(response.functionlist(i).deviceid())
+                    : "";
+                vfs.push_back(vfInfo);
+            }
+            (*json)["vf_list"] = vfs;
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+    return json;
+}
+
 } // end namespace xpum::cli

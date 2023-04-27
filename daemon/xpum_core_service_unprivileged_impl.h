@@ -96,6 +96,10 @@ public:
         return PD;
     }
 
+    virtual ::grpc::Status createVf(::grpc::ServerContext* context, const ::VgpuCreateVfRequest* request, ::VgpuCreateVfResponse *response) override {
+        return PD;
+    }
+
 private:
     static const grpc::Status PD;
 };

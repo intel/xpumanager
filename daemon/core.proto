@@ -971,6 +971,35 @@ message VgpuPrecheckResponse {
     string errorMsg = 8; 
 }
 
+message VgpuCreateVfRequest {
+    uint32 numVfs = 1;
+    uint64 lmemPerVf = 2;
+    int32 deviceId = 3;
+}
+
+message VgpuCreateVfResponse {
+    int32 errorNo = 1;
+    string errorMsg = 2;
+}
+
+message VgpuGetDeviceFunctionRequest {
+    int32 deviceId = 1;
+}
+
+message VfInfo {
+    uint64 lmemSize = 1;
+    XpumDeviceFunctionType deviceFunctionType = 2;
+    string bdfAddress = 3;
+    int32 deviceId = 4;
+}
+
+message VgpuGetDeviceFunctionResponse {
+    uint32 count = 1;
+    repeated VfInfo functionList = 2;
+    int32 errorNo = 3;
+    string errorMsg = 4;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -1042,4 +1071,6 @@ service XpumCoreService {
     rpc getDeviceSerialNumberAndAmcFwVersion( GetDeviceSerialNumberRequest ) returns ( GetDeviceSerialNumberResponse );
     rpc genDebugLog ( FileName ) returns ( GenDebugLogResponse );
     rpc doVgpuPrecheck ( google.protobuf.Empty ) returns ( VgpuPrecheckResponse );
+    rpc createVf ( VgpuCreateVfRequest ) returns ( VgpuCreateVfResponse );
+    rpc getDeviceFunction ( VgpuGetDeviceFunctionRequest ) returns ( VgpuGetDeviceFunctionResponse );
 }

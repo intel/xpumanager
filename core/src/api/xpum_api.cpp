@@ -3386,4 +3386,44 @@ xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result) {
     return vgpuPrecheck(result);
 }
 
+xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    // Hardcode supported number of VF temporary
+    std::vector<int> validNumVfs = {1,2,4,8,16};
+    if (std::find(validNumVfs.begin(), validNumVfs.end(), conf->numVfs) == validNumVfs.end()) {
+        return XPUM_VGPU_INVALID_NUMVFS;
+    }
+    return Core::instance().getVgpuManager()->createVf(deviceId, conf);
+}
+
+xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_function_info_t list[], int *count) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    std::vector<xpum_vgpu_function_info_t> functionArray;
+
+    res = Core::instance().getVgpuManager()->getFunctionList(deviceId, functionArray);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (list == nullptr) {
+        *count = functionArray.size();
+        return XPUM_OK;
+    }
+    if (*count  < (int)functionArray.size()) {
+        return XPUM_BUFFER_TOO_SMALL;
+    }
+
+    for (size_t i = 0; i < functionArray.size(); i++) {
+        list[i] = functionArray[i];
+    }
+    *count = functionArray.size();
+    
+    return XPUM_OK;
+}
+
 } // end namespace xpum

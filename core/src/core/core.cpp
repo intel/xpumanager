@@ -79,6 +79,10 @@ std::shared_ptr<FirmwareManager> Core::getFirmwareManager() {
     return p_firmware_manager;
 }
 
+std::shared_ptr<VgpuManager> Core::getVgpuManager() {
+    return p_vgpu_manager;
+}
+
 void Core::init() {
     std::unique_lock<std::mutex> lock(mutex);
     if (initialized) {
@@ -125,6 +129,8 @@ void Core::init() {
     XPUM_LOG_INFO("initialize firmware manager");
     p_firmware_manager = std::make_shared<FirmwareManager>();
     p_firmware_manager->init();
+
+    p_vgpu_manager = std::make_shared<VgpuManager>();
 
     XPUM_LOG_INFO("xpumd core initialization completed");
     initialized = true;
