@@ -13,6 +13,7 @@
 #include "smc_redfish_amc_manager.h"
 #include "dell_redfish_amc_manager.h"
 #include "intel_dnp_redfish_amc_manager.h"
+#include "lenovo_florence_redfish_amc_manager.h"
 #include "util.h"
 
 namespace xpum {
@@ -32,6 +33,8 @@ std::shared_ptr<AmcManager> RedfishAmcManager::instance() {
         return std::make_shared<DELLRedfishAmcManager>();
     } else if (manufacturer == "Intel Corporation") {
         return std::make_shared<DenaliPassRedfishAmcManager>();
+    } else if (manufacturer == "Lenovo") {
+        return std::make_shared<FlorenceRedfishAmcManager>();
     } else {
         return std::make_shared<SMCRedfishAmcManager>();
     }
@@ -55,6 +58,8 @@ std::string getRedfishAmcWarn() {
         return DELLRedfishAmcManager::getRedfishAmcWarn();
     } else if (manufacturer == "Intel Corporation") {
         return DenaliPassRedfishAmcManager::getRedfishAmcWarn();
+    } else if (manufacturer == "Lenovo") {
+        return FlorenceRedfishAmcManager::getRedfishAmcWarn();
     } else {
         return "";
     }
