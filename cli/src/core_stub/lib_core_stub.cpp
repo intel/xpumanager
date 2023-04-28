@@ -1728,6 +1728,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::createVf(int deviceId, uint32_t num
             (*json)["error"] = "Do not creating VFs on VF device";
         } else if (res == XPUM_VGPU_CREATE_VF_FAILED) {
             (*json)["error"] = "Fail to create VF";
+        } else if (res == XPUM_VGPU_NO_CONFIG_FILE) {
+            (*json)["error"] = "vGPU configuration file doesn't exist";
         } else {
             (*json)["error"] = "Error";
         }

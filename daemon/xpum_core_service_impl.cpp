@@ -2587,6 +2587,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             response->set_errormsg("Do not creating VFs on VF device");
         } else if (res == XPUM_VGPU_CREATE_VF_FAILED) {
             response->set_errormsg("Fail to create VF");
+        } else if (res == XPUM_VGPU_NO_CONFIG_FILE) {
+            response->set_errormsg("vGPU configuration file doesn't exist");
         } else {
             response->set_errormsg("Error");
         }

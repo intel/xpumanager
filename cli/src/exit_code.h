@@ -63,5 +63,6 @@
 #define XPUM_CLI_ERROR_VGPU_DIRTY_PF                                        54
 #define XPUM_CLI_ERROR_VGPU_VF_UNSUPPORTED_OPERATION                        55
 #define XPUM_CLI_ERROR_VGPU_CREATE_VF_FAILED                                56
+#define XPUM_CLI_ERROR_VGPU_NO_CONFIG_FILE                                  57
 
 int errorNumTranslate(int coreErrNo);

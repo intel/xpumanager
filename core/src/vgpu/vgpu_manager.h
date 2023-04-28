@@ -24,7 +24,7 @@ private:
 
     void loadSriovData(xpum_device_id_t deviceId ,DeviceSriovInfo &datas);
 
-    void readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs, AttrFromConfigFile &attrs);
+    bool readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs, AttrFromConfigFile &attrs);
 
     bool readFile(const std::string& path, std::string& content);
 

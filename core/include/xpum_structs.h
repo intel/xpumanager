@@ -153,6 +153,7 @@ typedef enum xpum_result_enum {
     XPUM_VGPU_DIRTY_PF,
     XPUM_VGPU_VF_UNSUPPORTED_OPERATION,
     XPUM_VGPU_CREATE_VF_FAILED,
+    XPUM_VGPU_NO_CONFIG_FILE,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

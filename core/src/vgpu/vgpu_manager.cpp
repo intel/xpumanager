@@ -49,7 +49,10 @@ xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_
     }
 
     AttrFromConfigFile attrs;
-    readConfigFromFile(deviceId, param->numVfs, attrs);
+    bool readFlag = readConfigFromFile(deviceId, param->numVfs, attrs);
+    if (!readFlag) {
+        return XPUM_VGPU_NO_CONFIG_FILE;
+    }
 
     uint64_t lmemToUse = 0;
     if (param->lmemPerVf > 0) {
@@ -259,7 +262,7 @@ bool VgpuManager::writeFile(const std::string& path, const std::string& content)
     return true;
 }
 
-void VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs, AttrFromConfigFile &attrs) {
+bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs, AttrFromConfigFile &attrs) {
     std::string fileName = std::string(XPUM_CONFIG_DIR) + std::string("vgpu.conf");
     if (!is_path_exist(fileName)) {
         char exe_path[XPUM_MAX_PATH_LEN];
@@ -282,6 +285,9 @@ void VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
     }
 
     std::ifstream ifs(fileName);
+    if (ifs.fail()) {
+        return false;
+    }
     std::string line;
     bool target = false;
     while (std::getline(ifs, line)) {
@@ -326,6 +332,7 @@ void VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
             }
         }
     }
+    return true;
 }
 
 }
