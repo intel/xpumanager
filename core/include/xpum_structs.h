@@ -503,27 +503,27 @@ typedef enum xpum_agent_config_enum {
  * 
  */
 typedef enum xpum_stats_type_enum {
-    XPUM_STATS_GPU_UTILIZATION = 0,                  ///< GPU Utilization
-    XPUM_STATS_EU_ACTIVE,                            ///< GPU EU Array Active
-    XPUM_STATS_EU_STALL,                             ///< GPU EU Array Stall
-    XPUM_STATS_EU_IDLE,                              ///< GPU EU Array Idle
-    XPUM_STATS_POWER,                                ///< Power
-    XPUM_STATS_ENERGY,                               ///< Energy
-    XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Actual Frequency
-    XPUM_STATS_GPU_CORE_TEMPERATURE,                 ///< Gpu Temeperature
-    XPUM_STATS_MEMORY_USED,                          ///< Memory Used
-    XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization. Percent utilization is calculated by the equation: physical size - free size / physical size.
-    XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth
-    XPUM_STATS_MEMORY_READ,                          ///< Memory Read
-    XPUM_STATS_MEMORY_WRITE,                         ///< Memory Write
-    XPUM_STATS_MEMORY_READ_THROUGHPUT,               ///< Memory read throughput
-    XPUM_STATS_MEMORY_WRITE_THROUGHPUT,              ///< Memory write throughput
-    XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, ///< Engine Group Compute All Utilization
-    XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION,   ///< Engine Group Media All Utilization
-    XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,    ///< Engine Group Copy All Utilization
-    XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION,  ///< Engine Group Render All Utilization
-    XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION,      ///< Engine Group 3d All Utilization
-    XPUM_STATS_RAS_ERROR_CAT_RESET,
+    XPUM_STATS_GPU_UTILIZATION = 0,                  ///< GPU Utilization, unit %
+    XPUM_STATS_EU_ACTIVE,                            ///< GPU EU Array Active, unit %
+    XPUM_STATS_EU_STALL,                             ///< GPU EU Array Stall, unit %
+    XPUM_STATS_EU_IDLE,                              ///< GPU EU Array Idle, unit %
+    XPUM_STATS_POWER,                                ///< Power, unit W
+    XPUM_STATS_ENERGY,                               ///< Energy, unit mJ
+    XPUM_STATS_GPU_FREQUENCY,                        ///< Gpu Actual Frequency, unit MHz
+    XPUM_STATS_GPU_CORE_TEMPERATURE,                 ///< Gpu Temeperature, unit °C
+    XPUM_STATS_MEMORY_USED,                          ///< Memory Used, unit B
+    XPUM_STATS_MEMORY_UTILIZATION,                   ///< Memory Utilization. Percent utilization is calculated by the equation: physical size - free size / physical size. Unit %
+    XPUM_STATS_MEMORY_BANDWIDTH,                     ///< Memory Bandwidth, unit %
+    XPUM_STATS_MEMORY_READ,                          ///< Memory Read, unit B
+    XPUM_STATS_MEMORY_WRITE,                         ///< Memory Write, unit B
+    XPUM_STATS_MEMORY_READ_THROUGHPUT,               ///< Memory read throughput, unit kB/s
+    XPUM_STATS_MEMORY_WRITE_THROUGHPUT,              ///< Memory write throughput, unit kB/s
+    XPUM_STATS_ENGINE_GROUP_COMPUTE_ALL_UTILIZATION, ///< Engine Group Compute All Utilization, unit %
+    XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION,   ///< Engine Group Media All Utilization, unit %
+    XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION,    ///< Engine Group Copy All Utilization, unit %
+    XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION,  ///< Engine Group Render All Utilization, unit %
+    XPUM_STATS_ENGINE_GROUP_3D_ALL_UTILIZATION,      ///< Engine Group 3d All Utilization, unit %
+    XPUM_STATS_RAS_ERROR_CAT_RESET,                  ///< Number of corresponding RAS errors
     XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS,
     XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS,
     XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE,
@@ -532,16 +532,16 @@ typedef enum xpum_stats_type_enum {
     XPUM_STATS_RAS_ERROR_CAT_DISPLAY_ERRORS_UNCORRECTABLE,
     XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE,
     XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE,
-    XPUM_STATS_GPU_REQUEST_FREQUENCY, ///< Gpu Request Frequency
-    XPUM_STATS_MEMORY_TEMPERATURE,    ///< Memory Temeperature
-    XPUM_STATS_FREQUENCY_THROTTLE,    ///< Frequency Throttle time
-    XPUM_STATS_PCIE_READ_THROUGHPUT,  ///< PCIe read throughput
-    XPUM_STATS_PCIE_WRITE_THROUGHPUT, ///< PCIe write throughput
-    XPUM_STATS_PCIE_READ,             ///< PCIe read
-    XPUM_STATS_PCIE_WRITE,            ///< PCIe write
-    XPUM_STATS_ENGINE_UTILIZATION,    ///< Engine Utilization
-    XPUM_STATS_FABRIC_THROUGHPUT,     ///< Fabric throughput
-    XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU,    ///< Frequency Throttle reason
+    XPUM_STATS_GPU_REQUEST_FREQUENCY, ///< Gpu Request Frequency, unit MHz
+    XPUM_STATS_MEMORY_TEMPERATURE,    ///< Memory Temeperature, unit °C
+    XPUM_STATS_FREQUENCY_THROTTLE,    ///< Frequency Throttle time, unit %
+    XPUM_STATS_PCIE_READ_THROUGHPUT,  ///< PCIe read throughput, unit kB/s
+    XPUM_STATS_PCIE_WRITE_THROUGHPUT, ///< PCIe write throughput, unit kB/s
+    XPUM_STATS_PCIE_READ,             ///< PCIe read, unit B
+    XPUM_STATS_PCIE_WRITE,            ///< PCIe write, unit B
+    XPUM_STATS_ENGINE_UTILIZATION,    ///< Engine Utilization, unit %
+    XPUM_STATS_FABRIC_THROUGHPUT,     ///< Fabric throughput, unit kB/s
+    XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU,    ///< Frequency Throttle reason, refer to the document of zes_freq_throttle_reason_flags_t
     XPUM_STATS_MAX
 } xpum_stats_type_t;
 
