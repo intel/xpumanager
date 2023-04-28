@@ -611,7 +611,7 @@ static void doPreCheckDriver() {
     }
 }
 
-static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::vector<std::string> gpu_bdfs) {
+static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::vector<std::string> gpu_bdfs, bool is_atsm_platform) {
     // GPU GuC HuC i915 wedged
     char path[PATH_MAX];
     int gpu_id_index = 0;
@@ -634,32 +634,33 @@ static void doPreCheckGuCHuCWedgedPCIe(std::vector<std::string> gpu_ids, std::ve
             }
         }
         guc_info_file.close();
-        snprintf(path, PATH_MAX, "/sys/kernel/debug/dri/%s/gt0/uc/huc_info", gpu_id.c_str());
-        bool is_huc_running = false;
-        bool is_huc_disabled = false;
-        std::ifstream huc_info_file(path);
-        if (huc_info_file.good()) {
-            while(std::getline(huc_info_file, line)) {
-                if (!line.empty() && line.find("HuC disabled") != std::string::npos) {
-                    is_huc_disabled = true;
-                    break;
-                }
-                if (!line.empty() && line.find("status: ") != std::string::npos) {
-                    if (line.find("RUNNING") != std::string::npos) {
-                        is_huc_running = true;
+        if (is_atsm_platform) {
+            snprintf(path, PATH_MAX, "/sys/kernel/debug/dri/%s/gt0/uc/huc_info", gpu_id.c_str());
+            bool is_huc_running = false;
+            bool is_huc_disabled = false;
+            std::ifstream huc_info_file(path);
+            if (huc_info_file.good()) {
+                while(std::getline(huc_info_file, line)) {
+                    if (!line.empty() && line.find("HuC disabled") != std::string::npos) {
+                        is_huc_disabled = true;
                         break;
                     }
+                    if (!line.empty() && line.find("status: ") != std::string::npos) {
+                        if (line.find("RUNNING") != std::string::npos) {
+                            is_huc_running = true;
+                            break;
+                        }
+                    }
+                }
+                if (!is_huc_running) {
+                    if (is_huc_disabled)
+                        updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "HuC is disabled", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_HIGH);
+                    else
+                        updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "HuC is not running", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_HIGH);
                 }
             }
-            if (!is_huc_running) {
-                if (is_huc_disabled)
-                    updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "HuC is disabled", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_HIGH);
-                else
-                    updateErrorComponentInfoList(gpu_bdfs[gpu_id_index], -1, "HuC is not running", ERROR_CATEGORY_HARDWARE, ERROR_SEVERITY_HIGH);
-
-            }
+            huc_info_file.close();
         }
-        huc_info_file.close();
 
         snprintf(path, PATH_MAX, "/sys/kernel/debug/dri/%s/i915_wedged", gpu_id.c_str());
         bool is_i915_wedged = false;
@@ -732,6 +733,11 @@ static bool isPhysicalFunctionDevice(std::string pci_addr) {
     return true;
 }
 
+bool isATSMPlatform(std::string str) {
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return str.find("56c0") != std::string::npos || str.find("56c1") != std::string::npos;
+}
+
 static void doPreCheck(bool onlyGPU, std::string sinceTime) {
     bool has_privilege = (getuid() == 0);
     readConfigFile();
@@ -739,6 +745,7 @@ static void doPreCheck(bool onlyGPU, std::string sinceTime) {
     DIR *pdir = NULL;
     struct dirent *pdirent = NULL;
 
+    bool is_atsm_platform = true;
     std::vector<std::string> gpu_ids;
     std::vector<std::string> gpu_bdfs;
     pdir = opendir("/sys/class/drm");
@@ -772,6 +779,8 @@ static void doPreCheck(bool onlyGPU, std::string sinceTime) {
             std::string key = "PCI_ID=8086:";
             auto pos = str.find(key); 
             if (pos != std::string::npos) {
+                std::string device_id = str.substr(pos + key.length(), 4);
+                is_atsm_platform = isATSMPlatform(device_id);
                 std::string bdf_key = "PCI_SLOT_NAME=";
                 auto bdf_pos = str.find(bdf_key); 
                 if (bdf_pos != std::string::npos) {
@@ -788,12 +797,13 @@ static void doPreCheck(bool onlyGPU, std::string sinceTime) {
     }
 
     if (gpu_bdfs.empty()) {
-        std::string cmd = "lspci -D|grep -i Display|grep -i Intel|cut -d ' ' -f 1";
+        std::string cmd = "lspci -D|grep -i Display|grep -i Intel";
         FILE* f = popen(cmd.c_str(), "r");
         char c_line[1024];
         int gpu_id = 0;
         while (fgets(c_line, 1024, f) != NULL) {
             std::string line(c_line);
+            is_atsm_platform = isATSMPlatform(line);
             std::string bdf = line.substr(0, 12);
             if (isPhysicalFunctionDevice(bdf)) {
                 gpu_ids.push_back(std::to_string(gpu_id));
@@ -854,7 +864,7 @@ static void doPreCheck(bool onlyGPU, std::string sinceTime) {
     }
 
     doPreCheckDriver();
-    doPreCheckGuCHuCWedgedPCIe(gpu_ids, gpu_bdfs);
+    doPreCheckGuCHuCWedgedPCIe(gpu_ids, gpu_bdfs, is_atsm_platform);
     scanErrorLogLines(error_patterns, sinceTime);
 }
 
