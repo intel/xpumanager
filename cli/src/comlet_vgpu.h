@@ -15,8 +15,11 @@
 namespace xpum::cli {
 
 struct ComletVgpuOptions {
-    std::string deviceId = "-1";
+    std::string deviceId = "";
     bool precheck = false;
+    bool create = false;
+    int32_t numVfs = 0;
+    std::string lmemPerVf = "";
 };
 
 class ComletVgpu: public ComletBase {
@@ -30,6 +33,8 @@ class ComletVgpu: public ComletBase {
        
     private:
         std::unique_ptr<ComletVgpuOptions> opts;
+        int parsedDeviceId;
+        bool precheckPassFlag = false;
 };
 
 } // end namespace xpum::cli

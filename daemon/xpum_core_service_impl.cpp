@@ -2573,6 +2573,50 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     return grpc::Status::OK;
 }
 
+::grpc::Status XpumCoreServiceImpl::createVf(::grpc::ServerContext* context, const ::VgpuCreateVfRequest* request, ::VgpuCreateVfResponse *response) {
+    xpum_vgpu_config_t config{request->numvfs(), request->lmempervf()};
+    xpum_result_t res = xpumCreateVf(request->deviceid(), &config);
+    if (res != XPUM_OK) {
+        if (res == XPUM_VGPU_INVALID_LMEM) {
+            response->set_errormsg("Invalid VF local memory");
+        } else if (res == XPUM_VGPU_INVALID_NUMVFS) {
+            response->set_errormsg("Invalid number of VFs");
+        } else if (res == XPUM_VGPU_DIRTY_PF) {
+            response->set_errormsg("Please clear VFs first");
+        } else if (res == XPUM_VGPU_VF_UNSUPPORTED_OPERATION) {
+            response->set_errormsg("Do not creating VFs on VF device");
+        } else if (res == XPUM_VGPU_CREATE_VF_FAILED) {
+            response->set_errormsg("Fail to create VF");
+        } else if (res == XPUM_VGPU_NO_CONFIG_FILE) {
+            response->set_errormsg("vGPU configuration file doesn't exist");
+        } else {
+            response->set_errormsg("Error");
+        }
+    }
+    response->set_errorno(res);
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::getDeviceFunction(::grpc::ServerContext* context, const ::VgpuGetDeviceFunctionRequest* request, ::VgpuGetDeviceFunctionResponse *response) {
+    xpum_vgpu_function_info_t resList[XPUM_MAX_VF_NUM];
+    int count = XPUM_MAX_VF_NUM;
+    xpum_result_t res = xpumGetDeviceFunctionList(request->deviceid(), resList, &count);
+    if (res != XPUM_OK) {
+        response->set_errormsg("Error");
+    } else {
+        response->set_count(count);
+        for (int i = 0; i < count; i++) {
+            VfInfo* vfInfo = response->add_functionlist();
+            vfInfo->set_lmemsize(resList[i].lmemSize);
+            vfInfo->set_devicefunctiontype(static_cast<XpumDeviceFunctionType>(resList[i].functionType));
+            vfInfo->set_bdfaddress(resList[i].bdfAddress);
+            vfInfo->set_deviceid(resList[i].deviceId);
+        }
+    }
+    response->set_errorno(res);
+    return grpc::Status::OK;
+}
+
 void XpumCoreServiceImpl::close() {
     this->stop = true;
     condtionForCallBackDataList.notify_all();

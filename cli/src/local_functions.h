@@ -104,5 +104,7 @@ bool getPciPath(std::vector<std::string> &pciPath, const std::string &bdf);
 
 std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson, std::string sinceTime);
 
+bool isATSMPlatform(std::string str);
+
 }
 

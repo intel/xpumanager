@@ -133,6 +133,10 @@ class CoreStub {
 
     virtual std::unique_ptr<nlohmann::json> doVgpuPrecheck()=0;
 
+    virtual std::unique_ptr<nlohmann::json> createVf(int deviceId, uint32_t numVfs, uint64_t lmem)=0;
+
+    virtual std::unique_ptr<nlohmann::json> getDeviceFunction(int deviceId)=0;
+
    protected:
     std::string getCardUUID(const std::string& rawUUID);
 };

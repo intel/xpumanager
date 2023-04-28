@@ -905,7 +905,14 @@ xpum_result_t xpumGetAgentConfig(xpum_agent_config_t key, void *value);
 
 /**************************************************************************/
 /** @defgroup STATISTICS_API Device statistics
- * These APIs are for statistics
+ * These APIs are for statistics. The data type is uint64_t for the APIs, 
+ * the value should be divided by scale to get the real value for float 
+ * or double data types. The unit of all utilization metrics types 
+ * (including EU status and memory bandwidth) is percentage. The unit of power 
+ * is W. The unit of energy is mJ. The unit of frequency is MHz. 
+ * The unit of temperature is Celsius Degree. The unit of memory is Byte. 
+ * The unit of memory read/write and link throughput is kB/s. 
+ * All the RAS metrics types are numbers.
  * @{
  */
 /**************************************************************************/
@@ -1258,6 +1265,26 @@ xpum_result_t xpumGetAMCSensorReading(xpum_sensor_reading_t data[], int *count);
  * @return xpum_result_t 
  */
 xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result);
+
+/**
+ * @brief Create VF
+ * 
+ * @param deviceId           IN: Device Id
+ * @param conf               IN: Configurations for creating VFs
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf);
+
+/**
+ * @brief Get a list containing both PF and VFs
+ * 
+ * @param deviceId           IN: Device Id
+ * @param list               OUT: The buffer to store PF/VF list
+ * @param count              IN/OUT: When \a list is NULL, \a count will be filled with the array size needed, and return.
+ *                           When \a list is not NULL, \a count denotes the length of \a list, \a count should be equal to or larger than needed size. When return, the \a count will store real size of array returned by \a list.
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_function_info_t list[], int* count);
 
 /**
  * @brief Generate a debug log file

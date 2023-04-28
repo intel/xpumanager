@@ -142,6 +142,8 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_standby_data_t.html">struct xpum_standby_data_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_topology_t.html">struct xpum_topology_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_version_info.html">struct xpum_version_info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_vgpu_config_t.html">struct xpum_vgpu_config_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_vgpu_function_info_t.html">struct xpum_vgpu_function_info_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html">struct xpum_vgpu_precheck_result_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_xelink_topo_info.html">struct xpum_xelink_topo_info</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_xelink_unit.html">struct xpum_xelink_unit</a></li>
@@ -331,6 +333,8 @@
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_standby_data_t.html#xpum-doxid-structxpum-standby-data-t"><span class="std std-ref">xpum_standby_data_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_topology_t.html#xpum-doxid-structxpum-topology-t"><span class="std std-ref">xpum_topology_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_version_info.html#xpum-doxid-structxpum-version-info"><span class="std std-ref">xpum_version_info</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="struct_xpum_vgpu_config_t.html#xpum-doxid-structxpum-vgpu-config-t"><span class="std std-ref">xpum_vgpu_config_t</span></a><span></span><span class="p">;</span>
+<span class="k">struct</span> <a class="reference internal" href="struct_xpum_vgpu_function_info_t.html#xpum-doxid-structxpum-vgpu-function-info-t"><span class="std std-ref">xpum_vgpu_function_info_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html#xpum-doxid-structxpum-vgpu-precheck-result-t"><span class="std std-ref">xpum_vgpu_precheck_result_t</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_xelink_topo_info.html#xpum-doxid-structxpum-xelink-topo-info"><span class="std std-ref">xpum_xelink_topo_info</span></a><span></span><span class="p">;</span>
 <span class="k">struct</span> <a class="reference internal" href="struct_xpum_xelink_unit.html#xpum-doxid-structxpum-xelink-unit"><span class="std std-ref">xpum_xelink_unit</span></a><span></span><span class="p">;</span>
@@ -765,6 +769,14 @@
 
 <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetAMCSensorReading<span></span><span class="p">(</span><a class="reference internal" href="struct_xpum_sensor_reading_t.html#xpum-doxid-structxpum-sensor-reading-t"><span class="std std-ref">xpum_sensor_reading_t</span></a><span></span> <span class="n">data</span><span class="p">[],</span> <span class="kt">int</span><span class="o">*</span> <span class="n">count</span><span class="p">);</span>
 <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumDoVgpuPrecheck<span></span><span class="p">(</span><a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html#xpum-doxid-structxpum-vgpu-precheck-result-t"><span class="std std-ref">xpum_vgpu_precheck_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span><span class="p">);</span>
+<a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumCreateVf<span></span><span class="p">(</span><a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span> <a class="reference internal" href="struct_xpum_vgpu_config_t.html#xpum-doxid-structxpum-vgpu-config-t"><span class="std std-ref">xpum_vgpu_config_t</span></a><span></span><span class="o">*</span> <span class="n">conf</span><span class="p">);</span>
+
+<a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGetDeviceFunctionList<span></span><span class="p">(</span>
+    <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_vgpu_function_info_t.html#xpum-doxid-structxpum-vgpu-function-info-t"><span class="std std-ref">xpum_vgpu_function_info_t</span></a><span></span> <span class="n">list</span><span class="p">[],</span>
+    <span class="kt">int</span><span class="o">*</span> <span class="n">count</span>
+    <span class="p">);</span>
+
 <a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumGenerateDebugLog<span></span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">fileName</span><span class="p">);</span>
 <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a98e211c44d926f02268edabe61c712d7"><span></span><span class="n">getXpumDevicePropertyNameString</span></span><span></span><span class="p">(</span><a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a9aa4acf19619a57f00e1bd71c392353d"><span class="std std-ref">xpum_device_property_name_t</span></a><span></span> <span class="n">name</span><span class="p">);</span>
 
@@ -782,6 +794,7 @@
 <span class="cp">#define </span><span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a07fbb05386fce004bb3f33a362338f63"><span></span><span class="n">XPUM_MAX_PATH_LEN</span></span><span></span>
 <span class="cp">#define </span><a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1a873b35818ed2e0d75f8f8a5db23b7955"><span class="std std-ref">XPUM_MAX_STR_LENGTH</span></a><span></span>
 <span class="cp">#define </span><a class="reference internal" href="#xpum-doxid-xpum-structs-8h-1aa90725e7f12de5f3e957e23f0460415e"><span class="std std-ref">XPUM_MAX_VERSION_STR_LENGTH</span></a><span></span>
+<span class="cp">#define </span><span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a1cb694c8110683a4a53e62b28c78ff7a"><span></span><span class="n">XPUM_MAX_VF_NUM</span></span><span></span>
 <span class="cp">#define </span><span class="doxyrest-code-target target" id="xpum-doxid-xpum-structs-8h-1a1ecd52a0a68403eea749f1d315b6259b"><span></span><span class="n">XPUM_MAX_XELINK_PORT</span></span></pre>
 </section>
 <section id="detailed-documentation">

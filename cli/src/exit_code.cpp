@@ -102,6 +102,18 @@ int errorNumTranslate(int coreErrNo) {
             return XPUM_CLI_ERROR_BAD_ARGUMENT;
         case XPUM_RESULT_FW_MGMT_NOT_INIT:
             return XPUM_CLI_ERROR_FW_MGMT_NOT_INIT;
+        case XPUM_VGPU_INVALID_LMEM:
+            return XPUM_CLI_ERROR_VGPU_INVALID_LMEM;
+        case XPUM_VGPU_INVALID_NUMVFS:
+            return XPUM_CLI_ERROR_VGPU_INVALID_NUMVFS;
+        case XPUM_VGPU_DIRTY_PF:
+            return XPUM_CLI_ERROR_VGPU_DIRTY_PF;
+        case XPUM_VGPU_VF_UNSUPPORTED_OPERATION:
+            return XPUM_CLI_ERROR_VGPU_VF_UNSUPPORTED_OPERATION;
+        case XPUM_VGPU_CREATE_VF_FAILED:
+            return XPUM_CLI_ERROR_VGPU_CREATE_VF_FAILED;
+        case XPUM_VGPU_NO_CONFIG_FILE:
+            return XPUM_CLI_ERROR_VGPU_NO_CONFIG_FILE;
         default:
             return XPUM_CLI_ERROR_GENERIC_ERROR;
     }

@@ -23,6 +23,8 @@
 #include "lib_core_stub.h"
 #include "exit_code.h"
 
+#include <iostream>
+
 using namespace xpum;
 
 namespace xpum::cli {
@@ -1704,6 +1706,54 @@ std::unique_ptr<nlohmann::json> LibCoreStub::doVgpuPrecheck() {
         (*json)["iommu_message"] = precheckResult.iommuMessage;
         (*json)["sriov_status"] = precheckResult.sriovStatus ? "Pass": "Fail";
         (*json)["sriov_message"] = precheckResult.sriovMessage;
+    } else {
+        (*json)["error"] = "Error";
+        (*json)["errno"] = errorNumTranslate(res);
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::createVf(int deviceId, uint32_t numVfs, uint64_t lmem) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_vgpu_config_t config{numVfs, lmem};
+    xpum_result_t res = xpumCreateVf(deviceId, &config);
+    if (res != XPUM_OK) {
+        if (res == XPUM_VGPU_INVALID_LMEM) {
+            (*json)["error"] = "Invalid VF local memory";
+        } else if (res == XPUM_VGPU_INVALID_NUMVFS) {
+            (*json)["error"] = "Invalid number of VFs";
+        } else if (res == XPUM_VGPU_DIRTY_PF) {
+            (*json)["error"] = "Please clear VFs first";
+        } else if (res == XPUM_VGPU_VF_UNSUPPORTED_OPERATION) {
+            (*json)["error"] = "Do not creating VFs on VF device";
+        } else if (res == XPUM_VGPU_CREATE_VF_FAILED) {
+            (*json)["error"] = "Fail to create VF";
+        } else if (res == XPUM_VGPU_NO_CONFIG_FILE) {
+            (*json)["error"] = "vGPU configuration file doesn't exist";
+        } else {
+            (*json)["error"] = "Error";
+        }
+        (*json)["errno"] = errorNumTranslate(res);
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceFunction(int deviceId) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_vgpu_function_info_t resList[XPUM_MAX_VF_NUM];
+    int count = XPUM_MAX_VF_NUM;
+    xpum_result_t res = xpumGetDeviceFunctionList(deviceId, resList, &count);
+    if (res == XPUM_OK) {
+        std::vector<nlohmann::json> vfs;
+        for (int i = 0; i < count; i++) {
+            auto vfInfo = nlohmann::json();
+            vfInfo["bdf_address"] = resList[i].bdfAddress;
+            vfInfo["lmem_size"] = resList[i].lmemSize;
+            vfInfo["function_type"] = deviceFunctionTypeEnumToString(resList[i].functionType);
+            vfInfo["device_id"] = resList[i].deviceId >= 0 ? std::to_string(resList[i].deviceId) : "";
+            vfs.push_back(vfInfo);
+        }
+        (*json)["vf_list"] = vfs;
     } else {
         (*json)["error"] = "Error";
         (*json)["errno"] = errorNumTranslate(res);

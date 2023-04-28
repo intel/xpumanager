@@ -19,6 +19,7 @@
 #include "device/power.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
+#include "device/skuType.h"
 #include "health/health_data_type.h"
 #include "infrastructure/const.h"
 #include "infrastructure/device_process.h"

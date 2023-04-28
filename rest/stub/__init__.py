@@ -20,3 +20,4 @@ from .agent_settings import getAllAgentConfig, setAgentConfig
 from .xpum_enums import XpumStatsType, XpumResult, XpumEngineType, XpumDumpType
 from .sensor import getAMCSensorReading
 from .vgpu import doVgpuPrecheck
+from .vgpu import createVf

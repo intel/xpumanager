@@ -33,7 +33,6 @@
 #include "device/performancefactor.h"
 #include "device/scheduler.h"
 #include "device/standby.h"
-#include "device/skuType.h"
 #include "gpu_device.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_property.h"
@@ -1197,7 +1196,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 
                 if (func_type == DEVICE_FUNCTION_TYPE_PHYSICAL) {
                     toSetMeiDevicePath(p_gpu);
-                    std::string sku_type = pchProdStateToSkuType(getDevicePchProdStateType(p_gpu->getMeiDevicePath()));
+                    std::string sku_type = "";
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
                 }
 
@@ -1487,7 +1486,9 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetActuralRequestFrequency(con
                     } else {
                         ret->setCurrent(freq_state.actual);
                     }
-                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_REQUEST_FREQUENCY, freq_state.request);
+                    if (freq_state.request >= 0) {
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_REQUEST_FREQUENCY, freq_state.request);
+                    }
                     data_acquired = true;
                 } else {
                     exception_msgs["zesFrequencyGetState"] = res;

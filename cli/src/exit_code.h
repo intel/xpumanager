@@ -58,5 +58,11 @@
 #define XPUM_CLI_ERROR_DIAGNOSTIC_DUPLICATED_SINGLE_TEST                    49
 #define XPUM_CLI_ERROR_FW_MGMT_NOT_INIT                                     50  // The firmware management feature is not initialized
 #define XPUM_CLI_ERROR_DIAGNOSTIC_PRECHECK_SINCE_TIME                       51
+#define XPUM_CLI_ERROR_VGPU_INVALID_LMEM                                    52
+#define XPUM_CLI_ERROR_VGPU_INVALID_NUMVFS                                  53
+#define XPUM_CLI_ERROR_VGPU_DIRTY_PF                                        54
+#define XPUM_CLI_ERROR_VGPU_VF_UNSUPPORTED_OPERATION                        55
+#define XPUM_CLI_ERROR_VGPU_CREATE_VF_FAILED                                56
+#define XPUM_CLI_ERROR_VGPU_NO_CONFIG_FILE                                  57
 
 int errorNumTranslate(int coreErrNo);

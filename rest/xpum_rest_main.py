@@ -199,6 +199,8 @@ def main(*args, **kwargs):
     # vgpu
     app.add_url_rule('/rest/v1/vgpu/precheck', methods=['GET'],
                      view_func=auth.login_required(vgpu.doVgpuPrecheck))
+    app.add_url_rule('/rest/v1/vgpu/createvf', methods=['POST'],
+                     view_func=auth.login_required(vgpu.createVf))
 
     
     return app

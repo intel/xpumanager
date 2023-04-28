@@ -21,3 +21,13 @@ def doVgpuPrecheck():
     data["sriov_status"] = "Pass" if resp.sriovStatus else "Fail"
     data["sriov_message"] = resp.sriovMessage
     return 0, "OK", data
+
+def createVf(deviceId, numVfs, lmemPerVf):
+    resp = stub.createVf(core_pb2.VgpuCreateVfRequest(
+        numVfs=numVfs,
+        lmemPerVf=lmemPerVf,
+        deviceId=deviceId
+    ))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    return 0, "OK", {"result": "OK"}
