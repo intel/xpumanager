@@ -1,4 +1,4 @@
-Flask==2.0.2
+Flask==2.3.2
 Flask-HTTPAuth==4.5.0
 requests==2.26.0
 prometheus-client==0.12.0
