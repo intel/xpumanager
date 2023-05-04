@@ -23,6 +23,8 @@ static std::string getFirmwareName(unsigned int firmwareType) {
             return "GFX_DATA";
         case XPUM_DEVICE_FIRMWARE_GFX_PSCBIN:
             return "GFX_PSCBIN";
+        case XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA:
+            return "GFX_CODE_DATA";
         default:
             return "UNKOWN";
     }
@@ -80,6 +82,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsi
                     (*json)["error"] = "Updating GFX firmware on all devices is not supported";
                 else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA)
                     (*json)["error"] = "Updating GFX_DATA firmware on all devices is not supported";
+                else if (type == XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA)
+                    (*json)["error"] = "Updating GFX_CODE_DATA firmware on all devices is not supported";
                 else
                     (*json)["error"] = "Updating GFX_PSCBIN firmware on all devices is not supported";
                 break;
@@ -103,6 +107,9 @@ std::unique_ptr<nlohmann::json> LibCoreStub::runFirmwareFlash(int deviceId, unsi
                 break;
             case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC:
                 (*json)["error"] = "Installed igsc doesn't support PSCBIN firmware update";
+                break;
+            case xpum_result_t::XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA:
+                (*json)["error"] = "The device doesn't support GFX_CODE_DATA firmware update";
                 break;
             default:
                 (*json)["error"] = "Unknown error.";

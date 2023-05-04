@@ -87,6 +87,9 @@ class FirmwareManager {
     xpum_result_t runPscFwFlash(xpum_device_id_t deviceId, const char* filePath);
     void getPscFwFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
 
+    xpum_result_t runFwCodeDataFlash(xpum_device_id_t deviceId, const char* filePath, int eccState, bool force = false);
+    void getFwCodeDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result);
+
     std::string getAmcFwErrMsg() {
         return amcFwErrMsg;
     }

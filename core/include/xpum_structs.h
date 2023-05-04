@@ -144,6 +144,7 @@ typedef enum xpum_result_enum {
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_DATA, ///< The device doesn't support GFX_DATA firmware update
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC, ///< The device doesn't support PSCBIN firmware update
     XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC, ///< Installed igsc doesn't support PSCBIN firmware update
+    XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA, ///< The device doesn't support GFX_CODE_DATA firmware update
     XPUM_INTERVAL_INVALID,
     XPUM_RESULT_FILE_DUP,
     XPUM_RESULT_INVALID_DIR,
@@ -363,6 +364,7 @@ typedef enum xpum_firmware_type_enum {
     XPUM_DEVICE_FIRMWARE_AMC = 1, ///< AMC firmware
     XPUM_DEVICE_FIRMWARE_GFX_DATA = 2, ///< GFX_DATA firmware
     XPUM_DEVICE_FIRMWARE_GFX_PSCBIN = 3, ///< GFX_PSCBIN firmware
+    XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA = 4, ///< GFX_CODE_DATA firmware
 } xpum_firmware_type_t;
 
 /**

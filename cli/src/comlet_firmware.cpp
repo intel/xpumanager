@@ -11,11 +11,14 @@
 #include <regex>
 #include <thread>
 #include <igsc_lib.h>
+#include <unistd.h>
+#include <dirent.h>
 
 #include "core_stub.h"
 #include "xpum_structs.h"
 #include "utility.h"
 #include "exit_code.h"
+#include "xpum_api.h"
 
 namespace xpum::cli {
 
@@ -59,11 +62,11 @@ void ComletFirmware::setupOptions() {
         return errStr;
     });
 
-    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_PSCBIN, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).");
+    auto fwTypeOpt = addOption("-t, --type", opts->firmwareType, "The firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC. AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer) and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer).");
 
     fwTypeOpt->check([](const std::string &str) {
         std::string errStr = "Invalid firmware type";
-        if (str.compare("GFX") == 0 || str.compare("AMC") == 0 || str.compare("GFX_DATA") == 0 || str.compare("GFX_PSCBIN") == 0) {
+        if (str.compare("GFX") == 0 || str.compare("AMC") == 0 || str.compare("GFX_DATA") == 0 || str.compare("GFX_CODE_DATA") == 0 || str.compare("GFX_PSCBIN") == 0) {
             return std::string();
         } else {
             return errStr;
@@ -126,7 +129,7 @@ nlohmann::json ComletFirmware::validateArguments() {
         return result;
     }
 
-    if (opts->forceUpdate && opts->firmwareType.compare("GFX") != 0) {
+    if (opts->forceUpdate && (opts->firmwareType.compare("GFX") != 0 || opts->firmwareType.compare("GFX_CODE_DATA") != 0)) {
         result["error"] = "Force flag only works for GFX firmware";
         result["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return result;
@@ -140,6 +143,12 @@ nlohmann::json ComletFirmware::validateArguments() {
 
     if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX_PSCBIN") == 0) {
         result["error"] = "Updating GFX_PSCBIN firmware on all devices is not supported";
+        result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
+        return result;
+    }
+
+    if (opts->deviceId == XPUM_DEVICE_ID_ALL_DEVICES && opts->firmwareType.compare("GFX_CODE_DATA") == 0) {
+        result["error"] = "Updating GFX_CODE_DATA firmware on all devices is not supported";
         result["errno"] = XPUM_CLI_ERROR_UPDATE_FIRMWARE_UNSUPPORTED_GFX_ALL;
         return result;
     }
@@ -178,6 +187,8 @@ static int getIntFirmwareType(std::string firmwareType) {
         return XPUM_DEVICE_FIRMWARE_GFX_DATA;
     if(firmwareType.compare("GFX_PSCBIN") == 0)
         return XPUM_DEVICE_FIRMWARE_GFX_PSCBIN;
+    if (firmwareType.compare("GFX_CODE_DATA") == 0)
+        return XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA;
     return -1;
 }
 
@@ -351,6 +362,115 @@ bool ComletFirmware::checkIgscExist() {
     return pclose(f) == 0;
 }
 
+static bool findFileInDir(std::string dirPath, std::regex pattern, std::string &filePath){
+    DIR* dir = opendir(dirPath.c_str());
+    struct dirent* ent;
+    if (nullptr != dir) {
+        while ((ent = readdir(dir)) != nullptr) {
+            if(std::regex_search(ent->d_name, pattern)){
+                filePath = dirPath + "/" + ent->d_name;
+                return true;
+            }
+        }
+        closedir(dir);
+    }
+    return false;
+}
+
+static std::string findSubDir(const char* dirPath, const char* sudDirName){
+    std::string path;
+    DIR* dir;
+    struct dirent* ent;
+    if ((dir = opendir(dirPath)) == nullptr)
+        return "";
+    while ((ent = readdir(dir)) != nullptr) {
+        if (ent->d_name[0] == '.' || strcmp(ent->d_name, "..") == 0) {
+                continue;
+        }
+        if (ent->d_type == DT_DIR) {
+            std::string fullPath = std::string(dirPath) + "/" + std::string(ent->d_name);
+            if (strcmp(ent->d_name, sudDirName) == 0){
+                path = fullPath;
+                break;
+            } else {
+                path = findSubDir(fullPath.c_str(), sudDirName);
+                if (path != "")
+                    break;
+            }
+        }
+    }
+    closedir(dir);
+    return path;
+}
+
+static bool unpackAndGetImagePath(const char* filePath, const char* dirName, int eccState, std::string &codeImagePath, std::string &dataImagePath){
+    std::string unpack_cmd = "unzip -q -o " + std::string(filePath) + " -d " + std::string(dirName);
+    int status = std::system(unpack_cmd.c_str());
+    if (status != 0)
+        return false;
+    //check if follow the standard format
+    std::string eccStateStr = (eccState == 1) ? "ECC_ON" : "ECC_OFF";
+    std::string dirPath = findSubDir(dirName, eccStateStr.c_str());
+    if (dirPath.empty())
+        return false;
+    
+    std::regex codePattern(".*gfx_fwupdate.*\\.bin");
+    if (!findFileInDir(dirPath, codePattern, codeImagePath)) {
+        return false;
+    }
+    std::regex dataPattern(".*DataUpdate_"+ eccStateStr + ".*\\.bin");
+    if (!findFileInDir(dirPath, dataPattern, dataImagePath)) {
+        return false;
+    }
+    return true;
+}
+
+static bool removeDir(const char* dirPath){
+    DIR* dir;
+    struct dirent* ent;
+    bool success = true;
+    if ((dir = opendir(dirPath)) == nullptr)
+        return success;
+    while ((ent = readdir(dir)) != nullptr) {
+        if (ent->d_name[0] == '.' || strcmp(ent->d_name, "..") == 0)
+            continue;
+        if (ent->d_type == DT_DIR) {
+            std::string subDir = std::string(dirPath) + "/" + std::string(ent->d_name);
+            if (!removeDir(subDir.c_str())) {
+                success = false;
+            }
+        } else if (ent->d_type == DT_REG) {
+            std::string filePath = std::string(dirPath) + "/" + std::string(ent->d_name);
+            if (unlink(filePath.c_str()) != 0) {
+                success = false;
+            }
+        }
+    }
+    closedir(dir);
+    if (rmdir(dirPath) != 0) {
+        success = false;
+    }
+    return success;
+}
+
+static std::string getCurrentFwCodeDataVersion(nlohmann::json json, std::string firmwareType) {
+    std::string res = "unknown";
+    int type = getIntFirmwareType(firmwareType);
+    if (type == XPUM_DEVICE_FIRMWARE_GFX) {
+        if (!json.contains("gfx_firmware_version")) {
+            return res;
+        }
+        return json["gfx_firmware_version"];
+    } else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
+        if (!json.contains("gfx_data_firmware_version")) {
+            return res;
+        }
+        return json["gfx_data_firmware_version"];
+    } else {
+        return res;
+    }
+}
+
 void ComletFirmware::getTableResult(std::ostream &out) {
     auto validateResultJson = validateArguments();
     if (validateResultJson.contains("error")) {
@@ -391,6 +511,148 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         } else {
             out << std::endl;
         }
+    } else if (type == XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
+        //check unzip
+        if (std::system("which unzip >/dev/null 2>&1") != 0) {
+            out << "Error: unzip not found, please install unzip at first." << std::endl;
+            exit_code = XPUM_CLI_ERROR_OPEN_FILE;
+            return;
+        }
+
+        //check ecc state
+        auto json = coreStub->getDeviceConfig(opts->deviceId, -1);
+        if (json->contains("error")) {
+            out << "Error: " << (*json)["error"].get<std::string>() << std::endl;
+            setExitCodeByJson(*json);
+            return;
+        }
+        if (!json->contains("memory_ecc_current_state")) {
+            out << "Error: This device cannot get the ecc state to get a matching image." << std::endl;
+            exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+            return;
+        }
+        std::string current = (*json)["memory_ecc_current_state"];
+        int eccState;
+        if (current == "enabled")
+            eccState = 1;
+        else if (current == "disabled")
+            eccState = 2;
+        else {
+            out << "Error: This device cannot get the ecc state to get a matching image." << std::endl;
+            exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+            return;
+        }
+
+        const char *dirName = "/tmp/tmp_fw_update_for_xpum";
+        if (!removeDir(dirName)) {
+            out << "Error: "<< std::string(dirName) << " exist and remove failed." << std::endl;
+            exit_code = XPUM_CLI_ERROR_GENERIC_ERROR;
+            removeDir(dirName);
+            return;
+        }
+        std::string codeImagePath, dataImagePath;
+        std::string codeImageVersion, dataImageVersion;
+        int ret = unpackAndGetImagePath(opts->firmwarePath.c_str(), dirName, eccState, codeImagePath, dataImagePath);
+        if (!ret) {
+            out << "Error: The image file is not a right GFX_CODE_DATA firmware image file." << std::endl;
+            exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+            removeDir(dirName);
+            return;
+        }
+        readImageContent(codeImagePath.c_str());
+        if (!checkImageValid()) {
+            out << "Error: The GFX firmware image in package is not a right file." << std::endl;
+            exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+            removeDir(dirName);
+            return;
+        }
+        codeImageVersion = getImageFwVersion();
+        readImageContent(dataImagePath.c_str());
+        if (!validateFwDataImage()) {
+            out << "Error: The GFX_DATA firmware image in package is not a right file." << std::endl;
+            exit_code = XPUM_CLI_ERROR_UPDATE_FIRMWARE_FW_IMAGE_NOT_COMPATIBLE_WITH_DEVICE;
+            removeDir(dirName);
+            return;
+        }
+        dataImageVersion = getFwDataImageFwVersion();
+        // for ats-m3
+        auto allGroups = coreStub->groupListAll();
+        std::vector<int> deviceIdsToFlashFirmware;
+        if (allGroups != nullptr && allGroups->contains("group_list")) {
+            for (auto groupJson : (*allGroups)["group_list"]) {
+                int groupId = groupJson["group_id"].get<int>();
+                if (groupId & 0x80000000) {
+                    auto deviceIdList = groupJson["device_id_list"];
+                    for (auto deviceIdInGroup : deviceIdList) {
+                        if (deviceIdInGroup.get<int>() == opts->deviceId) {
+                            std::cout << "This GPU card has multiple cores. This operation will update all firmwares. Do you want to continue? (y/n) ";
+                            if (!opts->assumeyes) {
+                                std::string confirm;
+                                std::cin >> confirm;
+                                if (confirm != "Y" && confirm != "y") {
+                                    out << "update aborted" << std::endl;
+                                    removeDir(dirName);
+                                    return;
+                                }
+                            } else {
+                                out << std::endl;
+                            }
+                            for (auto tmpId : deviceIdList) {
+                                deviceIdsToFlashFirmware.push_back(tmpId.get<int>());
+                            }
+                            break;
+                        }
+                    }
+                    if (deviceIdsToFlashFirmware.size() > 0)
+                        break;
+                }
+            }
+        }
+        if(deviceIdsToFlashFirmware.size()==0){
+            deviceIdsToFlashFirmware.push_back(opts->deviceId);
+        }
+        // version confirmation
+        for (int deviceId : deviceIdsToFlashFirmware) {
+            auto json = getDeviceProperties(deviceId);
+            if (json.contains("error")) {
+                out << "Error: " << json["error"].get<std::string>() << std::endl;
+                setExitCodeByJson(json);
+                removeDir(dirName);
+                return;
+            }
+            out << "Device " << deviceId << " FW Code version: " << getCurrentFwCodeDataVersion(json, "GFX") << std::endl;
+        }
+        out << "Image FW Code version: " << codeImageVersion << std::endl;
+        bool isImageNewer = false;
+        for (int deviceId : deviceIdsToFlashFirmware) {
+            auto json = getDeviceProperties(deviceId);
+            if (json.contains("error")) {
+                out << "Error: " << json["error"].get<std::string>() << std::endl;
+                setExitCodeByJson(json);
+                removeDir(dirName);
+                return;
+            }
+            std::string fwDataVersion = getCurrentFwCodeDataVersion(json, "GFX_DATA");
+            if (std::stoi(dataImageVersion, nullptr, 16) > std::stoi(fwDataVersion, nullptr, 16)){
+                out << "Device " << deviceId << " FW Data version: " << fwDataVersion << std::endl;
+                isImageNewer = true;
+            }
+        }
+        if (isImageNewer)
+            out << "Image FW Data version: " << dataImageVersion << std::endl;
+        out << "Do you want to continue? (y/n) ";
+        if (!opts->assumeyes) {
+            std::string confirm;
+            std::cin >> confirm;
+            if (confirm != "Y" && confirm != "y") {
+                out << "update aborted" << std::endl;
+                removeDir(dirName);
+                return;
+            }
+        } else {
+            out << std::endl;
+        }
+        removeDir(dirName);
     } else {
         if (type == XPUM_DEVICE_FIRMWARE_GFX) {
             if (!checkImageValid()) {

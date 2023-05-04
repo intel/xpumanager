@@ -22,6 +22,8 @@ def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password="",
         job.type.value = XpumFirmwareType["XPUM_DEVICE_FIRMWARE_GFX_DATA"].value
     elif firmwareType == 'GFX_PSCBIN':
         job.type.value = XpumFirmwareType["XPUM_DEVICE_FIRMWARE_GFX_PSCBIN"].value
+    elif firmwareType == 'GFX_CODE_DATA':
+        job.type.value = XpumFirmwareType["XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA"].value
     else:
         return 1, "Unknown firmware type", None
     job.path = filePath
@@ -46,6 +48,8 @@ def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password="",
             return err_code, "Updating GFX firmware on all devices is not supported", None
         elif firmwareType == 'GFX_DATA':
             return err_code, "Updating GFX_DATA firmware on all devices is not supported", None
+        elif firmwareType == 'GFX_CODE_DATA':
+            return err_code, "Updating GFX_CODE_DATA firmware on all devices is not supported", None
         else:
             return err_code, "Updating GFX_PSCBIN firmware on all devices is not supported", None
     elif err_code == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE'].value:
@@ -62,6 +66,8 @@ def runFirmwareFlash(deviceId, firmwareType, filePath, username="", password="",
         return err_code, "The device doesn't support PSCBIN firmware update", None
     elif err_code == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_PSC_IGSC'].value:
         return err_code, "Installed igsc doesn't support PSCBIN firmware update", None
+    elif err_code == XpumResult['XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA'].value:
+        return err_code, "The device doesn't support GFX_CODE_DATA firmware update", None
     else:
         if len(err_msg):
             return 1, err_msg, None
@@ -82,6 +88,8 @@ def getFirmwareFlashResult(deviceId, firmwareType, username="", password=""):
         request.type.value = XpumFirmwareType["XPUM_DEVICE_FIRMWARE_GFX_DATA"].value
     elif firmwareType == 'GFX_PSCBIN':
         request.type.value = XpumFirmwareType["XPUM_DEVICE_FIRMWARE_GFX_PSCBIN"].value
+    elif firmwareType == 'GFX_CODE_DATA':
+        request.type.value = XpumFirmwareType["XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA"].value
     else:
         return 1, "Unknown firmware type", None
 
