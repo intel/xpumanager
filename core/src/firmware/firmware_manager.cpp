@@ -7,6 +7,7 @@
 #include "core/core.h"
 #include "system_cmd.h"
 #include "fwdata_mgmt.h"
+#include "fwcodedata_mgmt.h"
 #include "psc_mgmt.h"
 #include "group/group_manager.h"
 #include "api/device_model.h"
@@ -150,6 +151,7 @@ void FirmwareManager::initFwDataMgmt(){
         if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
             pDevice->setFwDataMgmt(std::make_shared<FwDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
             pDevice->getFwDataMgmt()->getFwDataVersion();
+            pDevice->setFwCodeDataMgmt(std::make_shared<FwCodeDataMgmt>(pDevice->getMeiDevicePath(), pDevice));
         }
         if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
             pDevice->setPscMgmt(std::make_shared<PscMgmt>(pDevice->getMeiDevicePath(), pDevice));
@@ -749,6 +751,79 @@ GfxFwStatus FirmwareManager::getGfxFwStatus(xpum_device_id_t deviceId){
         return GfxFwStatus::UNKNOWN;
     } else {
         return (GfxFwStatus)status;
+    }
+}
+
+xpum_result_t FirmwareManager::runFwCodeDataFlash(xpum_device_id_t deviceId, const char* filePath, int eccState, bool force) {
+    flashFwErrMsg.clear();
+
+    if (std::system("which unzip >/dev/null 2>&1") != 0) {
+        flashFwErrMsg = "Fail to find unzip, please install unzip at first.";
+        return XPUM_GENERIC_ERROR;
+    }
+
+    // check device exists
+    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (pDevice == nullptr) {
+        return XPUM_GENERIC_ERROR;
+    }
+    // validate the image is compatible with the device
+    auto deviceModel = pDevice->getDeviceModel();
+    if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3)) {
+        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA;
+    }
+
+    std::string codeImagePath, dataImagePath;
+    const char *dirName = (pDevice->getFwCodeDataMgmt()->tmpUnpackPath).c_str();
+    if (!removeDir(dirName)) {
+        flashFwErrMsg = std::string(dirName) + " exist and fail to remove.";
+        return XPUM_GENERIC_ERROR;
+    }
+    int ret = unpackAndGetImagePath(filePath, dirName, eccState, codeImagePath, dataImagePath);
+    if (!ret) {
+        flashFwErrMsg = "Fail to unpack and get matching image path";
+        return XPUM_GENERIC_ERROR;
+    }
+
+    xpum_result_t res = XPUM_GENERIC_ERROR;
+    FlashFwCodeDataParam param;
+    param.deviceId = deviceId;
+    param.codeImagePath = codeImagePath;
+    param.dataImagePath = dataImagePath;
+    param.force = force;
+    res = pDevice->getFwCodeDataMgmt()->flashFwCodeData(param);
+    if (res != XPUM_OK) {
+        flashFwErrMsg = param.errMsg;
+    }
+    return res;
+}
+
+void FirmwareManager::getFwCodeDataFlashResult(xpum_device_id_t deviceId, xpum_firmware_flash_task_result_t* result){
+    xpum_firmware_flash_result_t res;
+    std::shared_ptr<Device> pDevice = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+
+    result->deviceId = deviceId;
+    result->type = XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA;
+
+    auto deviceModel = pDevice->getDeviceModel();
+    if ((deviceModel != XPUM_DEVICE_MODEL_ATS_M_1) && (deviceModel != XPUM_DEVICE_MODEL_ATS_M_3)) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_UNSUPPORTED;
+        return;
+    }
+
+    auto fwCodeDataMgmt = pDevice->getFwCodeDataMgmt();
+    result->percentage = fwCodeDataMgmt->percent.load();
+    if (fwCodeDataMgmt->isUpgradingFw() && !fwCodeDataMgmt->isReady()) {
+        result->result = XPUM_DEVICE_FIRMWARE_FLASH_ONGOING;
+        return;
+    }
+
+    result->result = xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK;
+    GetFlashFwCodeDataResultParam param;
+    res = pDevice->getFwCodeDataMgmt()->getFlashFwCodeDataResult(param);
+    if (res != xpum_firmware_flash_result_t::XPUM_DEVICE_FIRMWARE_FLASH_OK) {
+        flashFwErrMsg = param.errMsg;
+        result->result = res;
     }
 }
 } // namespace xpum

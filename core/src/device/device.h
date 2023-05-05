@@ -28,6 +28,7 @@ namespace xpum {
 
 class FwDataMgmt;
 class PscMgmt;
+class FwCodeDataMgmt;
 
 struct RunGSCFirmwareFlashParam;
 struct GetGSCFirmwareFlashResultParam;
@@ -192,6 +193,14 @@ class Device {
         return pFwDataMgmt;
     }
 
+    void setFwCodeDataMgmt(std::shared_ptr<FwCodeDataMgmt> pFwCodeDataMgmt) {
+        this->pFwCodeDataMgmt = pFwCodeDataMgmt;
+    }
+
+    std::shared_ptr<FwCodeDataMgmt> getFwCodeDataMgmt() {
+        return pFwCodeDataMgmt;
+    }
+
     void setPscMgmt(std::shared_ptr<PscMgmt> pPscMgmt) {
         this->pPscMgmt = pPscMgmt;
     }
@@ -250,6 +259,8 @@ class Device {
     std::shared_ptr<FwDataMgmt> pFwDataMgmt;
 
     std::shared_ptr<PscMgmt> pPscMgmt;
+
+    std::shared_ptr<FwCodeDataMgmt> pFwCodeDataMgmt;
 
    private:
     std::atomic_flag _operation_lock = ATOMIC_FLAG_INIT;

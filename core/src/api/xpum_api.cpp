@@ -585,6 +585,26 @@ static xpum_result_t validateFwImagePath(xpum_firmware_flash_job *job) {
     return XPUM_OK;
 }
 
+static xpum_result_t getEccStateForFwCodeAndData(xpum_device_id_t deviceId, int &eccState){
+    xpum_result_t res;
+    bool available;
+    bool configurable;
+    xpum_ecc_state_t current, pending;
+    xpum_ecc_action_t action;
+    res = xpumGetEccState(deviceId, &available, &configurable, &current, &pending, &action);
+    if (res != XPUM_OK || !available) {
+        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA;
+    }
+    if (current == XPUM_ECC_STATE_ENABLED)
+        eccState = 1;
+    else if (current == XPUM_ECC_STATE_DISABLED)
+        eccState = 2;
+    else {
+        return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_GFX_CODE_DATA;
+    }
+    return XPUM_OK;
+}
+
 xpum_result_t xpumRunFirmwareFlash(xpum_device_id_t deviceId, xpum_firmware_flash_job *job, const char *username, const char *password) {
     return xpumRunFirmwareFlashEx(deviceId, job, username, password, false);
 }
@@ -652,6 +672,15 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
             if (res != XPUM_OK)
                 return res;
             return Core::instance().getFirmwareManager()->runPscFwFlash(deviceId, job->filePath);
+        } else if (job->type == xpum_firmware_type_t::XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
+            res = validateDeviceId(deviceId);
+            if (res != XPUM_OK)
+                return res;
+            int eccState;
+            res = getEccStateForFwCodeAndData(deviceId, eccState);
+            if (res != XPUM_OK)
+                return res;
+            return Core::instance().getFirmwareManager()->runFwCodeDataFlash(deviceId, job->filePath, eccState, force);
         } else {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         }
@@ -690,6 +719,8 @@ xpum_result_t xpumGetFirmwareFlashResult(xpum_device_id_t deviceId,
         Core::instance().getFirmwareManager()->getFwDataFlashResult(deviceId, result);
     else if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX_PSCBIN)
         Core::instance().getFirmwareManager()->getPscFwFlashResult(deviceId, result);
+    else if (firmwareType == XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA)
+        Core::instance().getFirmwareManager()->getFwCodeDataFlashResult(deviceId, result);
     else
         return XPUM_GENERIC_ERROR;
 

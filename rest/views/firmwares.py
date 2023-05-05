@@ -31,8 +31,8 @@ class FirmwareFlashJobOnSingleDeviceSchema(Schema):
         metadata={"description": "The path of firmware binary file to flash"}
     )
     firmware_name = fields.Str(
-        validate=validate.OneOf(["GFX","GFX_DATA", "GFX_PSCBIN"]),
-        metadata={"description": "Firmware name, options are: GFX, GFX_DATA, GFX_PSCBIN"}
+        validate=validate.OneOf(["GFX","GFX_DATA","GFX_CODE_DATA", "GFX_PSCBIN"]),
+        metadata={"description": "Firmware name, options are: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN"}
     )
     force = fields.Bool(
         metadata={"description": "Force GFX firmware update. This parameter only works for GFX firmware."}
@@ -143,6 +143,8 @@ def runFirmwareFlash(deviceId, username="", password="", force=False):
         return jsonify({'error': 'Updating GFX_DATA firmware on all devices is not supported'}), 400
     if fwType == 'GFX_PSCBIN' and deviceId == 1024:
         return jsonify({'error': 'Updating GFX_PSCBIN firmware on all devices is not supported'}), 400
+    if fwType == 'GFX_CODE_DATA' and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX_CODE_DATA firmware on all devices is not supported'}), 400
     if fwType == 'AMC' and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'}), 400
 
@@ -158,8 +160,8 @@ def runFirmwareFlash(deviceId, username="", password="", force=False):
 class FirmwareFlashResultQuerySingleDeviceSchema(Schema):
     firmware_name = fields.Str(
         required=True,
-        validate=validate.OneOf(["GFX","GFX_DATA", "GFX_PSCBIN"]),
-        metadata={"description": "Firmware name, options are: GFX, GFX_DATA, GFX_PSCBIN"}
+        validate=validate.OneOf(["GFX","GFX_DATA","GFX_CODE_DATA", "GFX_PSCBIN"]),
+        metadata={"description": "Firmware name, options are: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN"}
     )
 
 
@@ -264,6 +266,8 @@ def get_firmware_flash_result(deviceId, username="", password=""):
         return jsonify({'error': 'Updating GFX_DATA firmware on all devices is not supported'})
     if fwType == "GFX_PSCBIN" and deviceId == 1024:
         return jsonify({'error': 'Updating GFX_PSCBIN firmware on all devices is not supported'})
+    if fwType == "GFX_CODE_DATA" and deviceId == 1024:
+        return jsonify({'error': 'Updating GFX_CODE_DATA firmware on all devices is not supported'})
     if fwType == "AMC" and deviceId != 1024:
         return jsonify({'error': 'Updating AMC firmware on single device is not supported'})
 
