@@ -120,16 +120,9 @@ int CLIWrapper::printResult(std::ostream &out) {
             if (comlet->getCommand().compare("dump") == 0) {
                 putenv(const_cast<char *>("XPUM_DISABLE_PERIODIC_METRIC_MONITOR=0"));
                 std::shared_ptr<ComletDump> dump_comlet = std::dynamic_pointer_cast<ComletDump>(comlet);
-                if (dump_comlet->dumpPCIeMetrics() && dump_comlet->dumpEUMetrics())
-                    setenv("XPUM_METRICS", "0-38", 1);
-                else if (dump_comlet->dumpPCIeMetrics())
-                    setenv("XPUM_METRICS", "0,4-38", 1);
-                else if (dump_comlet->dumpEUMetrics())
-                    setenv("XPUM_METRICS", "0-31,36-38", 1);
-                else if(dump_comlet->dumpRASMetrics())
-                    setenv("XPUM_METRICS", "0,4-31,36-38", 1);
-                else
-                    setenv("XPUM_METRICS", "0,4-19,29-31,36-38", 1);
+
+                std::string env = dump_comlet->getEnv();
+                setenv("XPUM_METRICS", env.c_str(), 1);
             }
             if (comlet->getCommand().compare("dump") == 0 && std::dynamic_pointer_cast<ComletDump>(comlet)->dumpIdlePowerOnly()) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);
