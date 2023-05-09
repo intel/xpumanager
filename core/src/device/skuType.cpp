@@ -10,8 +10,8 @@
 #include "logger.h"
 
 namespace xpum {
-void toSetMeiDevicePath(std::shared_ptr<GPUDevice> p_gpu) {
-    auto address = p_gpu->getPciAddress();
+std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices(){
+    std::vector<pci_addr_mei_device> devicesVec;
     struct igsc_device_iterator* iter;
     struct igsc_device_info info;
     int ret;
@@ -21,7 +21,7 @@ void toSetMeiDevicePath(std::shared_ptr<GPUDevice> p_gpu) {
     ret = igsc_device_iterator_create(&iter);
     if (ret != IGSC_SUCCESS) {
         XPUM_LOG_ERROR("Cannot create device iterator {}", ret);
-        return;
+        return devicesVec;
     }
     info.name[0] = '\0';
     while ((ret = igsc_device_iterator_next(iter, &info)) == IGSC_SUCCESS) {
@@ -34,17 +34,28 @@ void toSetMeiDevicePath(std::shared_ptr<GPUDevice> p_gpu) {
         (void)igsc_device_close(&handle);
 
         pci_address_t bdfAddr;
-        std::string devicePath = info.name;
         bdfAddr.domain = info.domain;
         bdfAddr.bus = info.bus;
         bdfAddr.device = info.dev;
         bdfAddr.function = info.func;
-        if (bdfAddr == address) {
-            p_gpu->setMeiDevicePath(devicePath);
+
+        pci_addr_mei_device pciAddrMeiDevice;
+        pciAddrMeiDevice.bdfAddr = bdfAddr;
+        pciAddrMeiDevice.meiDevicePath = info.name;
+        devicesVec.push_back(pciAddrMeiDevice);
+    }
+    igsc_device_iterator_destroy(iter);
+    return devicesVec;
+}
+
+void toSetMeiDevicePath(std::shared_ptr<GPUDevice> p_gpu, std::vector<pci_addr_mei_device> devicesVec) {
+    auto address = p_gpu->getPciAddress();
+    for (std::vector<pci_addr_mei_device>::iterator it = devicesVec.begin() ; it != devicesVec.end(); ++it) {
+        if (it->bdfAddr == address) {
+            p_gpu->setMeiDevicePath(it->meiDevicePath);
             break;
         }
     }
-    igsc_device_iterator_destroy(iter);
 }
 
 TEESTATUS teeInitAndConnectByPath(TEEHANDLE *cl, const GUID *guid, const char *device_path){

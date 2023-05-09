@@ -989,6 +989,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
     std::vector<ze_driver_handle_t> drivers(driver_count);
     zeDriverGet(&driver_count, drivers.data());
     xpum_device_function_type_t func_type = DEVICE_FUNCTION_TYPE_PHYSICAL;
+    std::vector<pci_addr_mei_device> pciAddrMeiDevices = getPCIAddrAndMeiDevices();
 
     for (auto& p_driver : drivers) {
         uint32_t device_count = 0;
@@ -1195,7 +1196,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 addPCIeProperties(device, p_gpu);
                 
                 if (func_type == DEVICE_FUNCTION_TYPE_PHYSICAL) {
-                    toSetMeiDevicePath(p_gpu);
+                    toSetMeiDevicePath(p_gpu, pciAddrMeiDevices);
                     std::string sku_type = "";
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
                 }
