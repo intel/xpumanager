@@ -754,7 +754,7 @@ GfxFwStatus FirmwareManager::getGfxFwStatus(xpum_device_id_t deviceId){
     }
 }
 
-xpum_result_t FirmwareManager::runFwCodeDataFlash(xpum_device_id_t deviceId, const char* filePath, int eccState, bool force) {
+xpum_result_t FirmwareManager::runFwCodeDataFlash(xpum_device_id_t deviceId, const char* filePath, int eccState) {
     flashFwErrMsg.clear();
 
     if (std::system("which unzip >/dev/null 2>&1") != 0) {
@@ -790,7 +790,6 @@ xpum_result_t FirmwareManager::runFwCodeDataFlash(xpum_device_id_t deviceId, con
     param.deviceId = deviceId;
     param.codeImagePath = codeImagePath;
     param.dataImagePath = dataImagePath;
-    param.force = force;
     res = pDevice->getFwCodeDataMgmt()->flashFwCodeData(param);
     if (res != XPUM_OK) {
         flashFwErrMsg = param.errMsg;

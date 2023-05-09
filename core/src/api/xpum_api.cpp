@@ -680,7 +680,7 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
             res = getEccStateForFwCodeAndData(deviceId, eccState);
             if (res != XPUM_OK)
                 return res;
-            return Core::instance().getFirmwareManager()->runFwCodeDataFlash(deviceId, job->filePath, eccState, force);
+            return Core::instance().getFirmwareManager()->runFwCodeDataFlash(deviceId, job->filePath, eccState);
         } else {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         }

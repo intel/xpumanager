@@ -129,7 +129,7 @@ nlohmann::json ComletFirmware::validateArguments() {
         return result;
     }
 
-    if (opts->forceUpdate && (opts->firmwareType.compare("GFX") != 0 || opts->firmwareType.compare("GFX_CODE_DATA") != 0)) {
+    if (opts->forceUpdate && opts->firmwareType.compare("GFX") != 0) {
         result["error"] = "Force flag only works for GFX firmware";
         result["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
         return result;
