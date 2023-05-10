@@ -984,63 +984,72 @@ void GPUDeviceStub::logSupportedMetrics(zes_device_handle_t device, const zes_de
 }
 
 void static addMemUtilizationCapAndMemProperty(ze_device_handle_t& device, std::shared_ptr<Device> gpu){
-    ze_result_t res;
-    uint64_t physical_size = 0;
-    uint64_t free_size = 0;
-    uint32_t mem_module_count = 0;
-    //zes_mem_health_t memory_health = ZES_MEM_HEALTH_OK;
-    XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
-    if (res == ZE_RESULT_SUCCESS) {
-        std::vector<zes_mem_handle_t> mems(mem_module_count);
-        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
-        if (res == ZE_RESULT_SUCCESS) {
-            bool mem_utilization_cap = true;
-            for (auto& mem : mems) {
-                uint64_t mem_module_physical_size = 0;
-                zes_mem_properties_t props;
-                props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
-                if (res == ZE_RESULT_SUCCESS) {
-                    mem_module_physical_size = props.physicalSize;
-                    int32_t mem_bus_width = props.busWidth;
-                    int32_t mem_channel_num = props.numChannels;
-                    gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_BUS_WIDTH, std::to_string(mem_bus_width)));
-                    gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEMORY_CHANNELS, std::to_string(mem_channel_num)));
-                } else {
-                    mem_utilization_cap = false;
-                    break;
-                }
 
-                std::lock_guard<std::mutex> lock(ras_m);
-                zes_mem_state_t sysman_memory_state = {};
-                sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
-                XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
-                if (res == ZE_RESULT_SUCCESS) {
-                    if (props.physicalSize == 0) {
-                        mem_module_physical_size = sysman_memory_state.size;
-                    }
-                    physical_size += mem_module_physical_size;
-                    free_size += sysman_memory_state.free;
-                    if (sysman_memory_state.health != zes_mem_health_t::ZES_MEM_HEALTH_OK) {
-                        //memory_health = sysman_memory_state.health;
-                    }
-                    if (sysman_memory_state.size == 0) {
+    char* env = std::getenv("XPUM_INIT_GET_PHY_MEMORY");
+    std::string getPhyMemory{env != NULL ? env : ""};
+
+    if (Configuration::XPUM_MODE == "xpu-smi" && getPhyMemory != "TRUE") {
+        DeviceCapability cap = DeviceCapability::METRIC_MEMORY_USED_UTILIZATION;
+        gpu->addCapability(cap);
+    } else { //deamon or xpu-smi with XPUM_INIT_GET_PHY_MEMORY=TRUE
+        ze_result_t res;
+        uint64_t physical_size = 0;
+        uint64_t free_size = 0;
+        uint32_t mem_module_count = 0;
+        //zes_mem_health_t memory_health = ZES_MEM_HEALTH_OK;
+        XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, nullptr));
+        if (res == ZE_RESULT_SUCCESS) {
+            std::vector<zes_mem_handle_t> mems(mem_module_count);
+            XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
+            if (res == ZE_RESULT_SUCCESS) {
+                bool mem_utilization_cap = true;
+                for (auto& mem : mems) {
+                    uint64_t mem_module_physical_size = 0;
+                    zes_mem_properties_t props;
+                    props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        mem_module_physical_size = props.physicalSize;
+                        int32_t mem_bus_width = props.busWidth;
+                        int32_t mem_channel_num = props.numChannels;
+                        gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_BUS_WIDTH, std::to_string(mem_bus_width)));
+                        gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_MEMORY_CHANNELS, std::to_string(mem_channel_num)));
+                    } else {
                         mem_utilization_cap = false;
                         break;
                     }
-                } else {
-                    mem_utilization_cap = false;
-                    break;
-                }
-            }
 
-            if (mem_utilization_cap) {
-                DeviceCapability cap = DeviceCapability::METRIC_MEMORY_USED_UTILIZATION;
-                gpu->addCapability(cap);
-                gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE, std::to_string(physical_size)));
-                gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_FREE_SIZE_BYTE, std::to_string(free_size)));
+                    std::lock_guard<std::mutex> lock(ras_m);
+                    zes_mem_state_t sysman_memory_state = {};
+                    sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+                    XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
+                    if (res == ZE_RESULT_SUCCESS) {
+                        if (props.physicalSize == 0) {
+                            mem_module_physical_size = sysman_memory_state.size;
+                        }
+                        physical_size += mem_module_physical_size;
+                        free_size += sysman_memory_state.free;
+                        if (sysman_memory_state.health != zes_mem_health_t::ZES_MEM_HEALTH_OK) {
+                            //memory_health = sysman_memory_state.health;
+                        }
+                        if (sysman_memory_state.size == 0) {
+                            mem_utilization_cap = false;
+                            break;
+                        }
+                    } else {
+                        mem_utilization_cap = false;
+                        break;
+                    }
+                }
+
+                if (mem_utilization_cap) {
+                    DeviceCapability cap = DeviceCapability::METRIC_MEMORY_USED_UTILIZATION;
+                    gpu->addCapability(cap);
+                    gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_PHYSICAL_SIZE_BYTE, std::to_string(physical_size)));
+                    gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_MEMORY_FREE_SIZE_BYTE, std::to_string(free_size)));
+                }
+                // p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(memory_health)));
             }
-            // p_gpu->addProperty(Property(DeviceProperty::MEMORY_HEALTH,get_health_state_string(memory_health)));
         }
     }
     return;
