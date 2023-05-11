@@ -2056,6 +2056,7 @@ void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device,
         for (uint32_t metric = 0; metric < metricCount; metric++) {
             zet_typed_value_t data = metricValues[report * metricCount + metric];
             zet_metric_properties_t metricProperties;
+            metricProperties.pNext = nullptr;
             res = zetMetricGetProperties(phMetrics[metric], &metricProperties);
             if (res != ZE_RESULT_SUCCESS) {
                 throw BaseException("toGetEuActiveStallIdleCore");
