@@ -399,9 +399,11 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
 
     // validate the image is compatible with the device
     if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
-        auto res = atsmHwConfigCompatibleCheck(pDevice->getMeiDevicePath(), buffer);
-        if (res != XPUM_OK)
-            return res;
+        if (!force) {
+            auto res = atsmHwConfigCompatibleCheck(pDevice->getMeiDevicePath(), buffer);
+            if (res != XPUM_OK)
+                return res;
+        }
     } else {
         auto res = isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer);
         if (res != XPUM_OK) {

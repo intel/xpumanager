@@ -1177,7 +1177,7 @@ std::unique_ptr<nlohmann::json> CoreStub::setMemoryEccState(int deviceId, bool e
     return json;
 }
 
-std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath) {
+std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, bool force) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     if (deviceId < 0 || (deviceId >= ze_device_handles.size() && deviceId != XPUM_DEVICE_ID_ALL_DEVICES)) {
         (*json)["error"] = "invalid device id";
@@ -1217,9 +1217,9 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
     std::string image_file = filePath;
     for (auto id : deviceList) {
         std::string bdf = getBdfAddress(zes_device_handles[id]);
-        if (type == XPUM_DEVICE_FIRMWARE_GFX && !igsc_instance.isFwImageAndDeviceCompatible(bdf, image_file)) {
+        if (!force && type == XPUM_DEVICE_FIRMWARE_GFX && !igsc_instance.isFwImageAndDeviceCompatible(bdf, image_file)) {
             (*json)["error"] = "The image file is a right FW image file, but not proper for the target GPU.";
-            return json;        
+            return json;
         }
         std::string error_message;
         if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA && !igsc_instance.isFwDataImageAndDeviceCompatible(bdf, image_file, error_message)) {
@@ -1227,10 +1227,10 @@ std::unique_ptr<nlohmann::json> CoreStub::runFirmwareFlash(int deviceId, unsigne
             return json;  
         }
 
-        flash_results.push_back(std::async(std::launch::async, [bdf, image_file, type, this] {
+        flash_results.push_back(std::async(std::launch::async, [bdf, image_file, type, this, force] {
             int res = 0;
             if (type == XPUM_DEVICE_FIRMWARE_GFX)
-                res = igsc_instance.runFlashGSC(bdf, image_file);
+                res = igsc_instance.runFlashGSC(bdf, image_file, force);
             else if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
                 res = igsc_instance.runFlashGSCData(bdf, image_file);
             }
