@@ -102,7 +102,7 @@ void ComletConfig::setupOptions() {
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\";\"debug\".The valid range of all time values (us) is from 5000 to 100,000,000.");
-    addOption("--reset", this->opts->resetDevice, "Reset device by SBR (Secondary Bus Reset).");
+    addFlag("--reset", this->opts->resetDevice, "Reset device by SBR (Secondary Bus Reset).");
 
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
