@@ -1130,10 +1130,6 @@ LOG_ERR:
     return json;
 }
 
-xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
-    return XPUM_GENERIC_ERROR;
-}
-
 std::unique_ptr<nlohmann::json> LibCoreStub::resetDevice(int deviceId, bool force) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_result_t res;
