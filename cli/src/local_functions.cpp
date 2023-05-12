@@ -339,7 +339,7 @@ bool getPciPath(std::vector<string> &pciPath, const std::string &bdf) {
     //An example of the output of the cmd belew is:
     //0000:4a:02.0/4b:00.0/4c:01.0/4d:00.0
     //And the function would return a vector (pciPath) of full BDF
-    string cmd = "lspci -DPPs " + bdf + "|cut -d ' ' -f 1";
+    string cmd = "lspci -DPPs " + bdf + " 2>&1|cut -d ' ' -f 1";
     char path[PATH_MAX];
     FILE *pf = popen(cmd.c_str(), "r");
     if (pf == NULL) {
