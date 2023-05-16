@@ -301,6 +301,8 @@ private:
     static std::map<std::string, std::shared_ptr<MeasurementData>> pvc_idle_powers; // key: bdf value: idle_power
     static std::set<std::string> pvc_gpu_bdfs;
     static bool has_pvc_idle_powers;
+
+    static std::mutex fabric_mutex;
 };
 
 } // end namespace xpum

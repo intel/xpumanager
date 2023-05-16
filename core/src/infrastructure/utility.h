@@ -53,6 +53,10 @@ class Utility {
     static xpum_fabric_throughput_type_t toXPUMFabricThroughputType(FabricThroughputType type);
 
     static bool isATSMPlatform(const zes_device_handle_t &device);
+
+    static void parallel_in_batches(unsigned num_elements, unsigned num_threads,
+                  std::function<void (int start, int end)> functor,
+                  bool use_multithreading = true);
 };
 
 } // end namespace xpum

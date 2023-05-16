@@ -41,6 +41,7 @@
 #include "infrastructure/handle_lock.h"
 #include "infrastructure/logger.h"
 #include "infrastructure/measurement_data.h"
+#include "infrastructure/utility.h"
 #include "firmware/system_cmd.h"
 
 #define MAX_SUB_DEVICE 256
@@ -1055,15 +1056,16 @@ void static addMemUtilizationCapAndMemProperty(ze_device_handle_t& device, std::
     return;
 }
 
+std::mutex GPUDeviceStub::fabric_mutex;
 std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover() {
     auto p_devices = std::make_shared<std::vector<std::shared_ptr<Device>>>();
     uint32_t driver_count = 0;
-    ze_result_t res;
     zeDriverGet(&driver_count, nullptr);
     std::vector<ze_driver_handle_t> drivers(driver_count);
     zeDriverGet(&driver_count, drivers.data());
-    xpum_device_function_type_t func_type = DEVICE_FUNCTION_TYPE_PHYSICAL;
     std::vector<pci_addr_mei_device> pciAddrMeiDevices = getPCIAddrAndMeiDevices();
+
+    std::mutex devices_mtx;
 
     for (auto& p_driver : drivers) {
         uint32_t device_count = 0;
@@ -1073,7 +1075,11 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
         ze_driver_properties_t driver_prop;
         XPUM_ZE_HANDLE_LOCK(p_driver, zeDriverGetProperties(p_driver, &driver_prop));
 
-        for (auto& device : devices) {
+        Utility::parallel_in_batches(devices.size(), devices.size(), [&](int start, int end) {
+        for (int i = start; i < end; ++i) {
+            auto& device =  devices[i];
+            ze_result_t res;
+            xpum_device_function_type_t func_type = DEVICE_FUNCTION_TYPE_PHYSICAL;
             std::vector<DeviceCapability> capabilities;
             zes_device_handle_t zes_device = (zes_device_handle_t)device;
             zes_device_properties_t props = {};
@@ -1084,7 +1090,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 addEngineCapabilities(device, props, capabilities);
                 addEuActiveStallIdleCapabilities(device, props, p_driver, capabilities);
                 logSupportedMetrics(device, props, capabilities);
-                auto p_gpu = std::make_shared<GPUDevice>(std::to_string(p_devices->size()), zes_device, device, p_driver, capabilities);
+                auto p_gpu = std::make_shared<GPUDevice>(std::to_string(i), zes_device, device, p_driver, capabilities);
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_TYPE, std::string("GPU")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_DEVICE_ID, to_hex_string(props.core.deviceId)));
                 // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(props.boardNumber)));
@@ -1182,6 +1188,8 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_NAME, std::string("GFX_PSCBIN")));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_VERSION, fwVersion));
 
+                {
+                std::lock_guard<std::mutex> lock(GPUDeviceStub::fabric_mutex);
                 uint32_t fabric_count = 0;
                 XPUM_ZE_HANDLE_LOCK(device, zesDeviceEnumFabricPorts(device, &fabric_count, nullptr));
                 if (fabric_count > 0) {
@@ -1198,6 +1206,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                             p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_FABRIC_PORT_TX_LANES_NUMBER, props.maxTxSpeed.width));
                         }
                     }
+                }
                 }
 
                 uint32_t engine_grp_count;
@@ -1236,10 +1245,18 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
                 }
 
+                std::lock_guard<std::mutex> lock(devices_mtx);
                 p_devices->push_back(p_gpu);
             }
         }
+        });
     }
+
+    sort(p_devices->begin(), p_devices->end(),
+        [](const std::shared_ptr<Device> & a, const std::shared_ptr<Device> & b) -> bool
+    {
+        return a->getId() < b->getId();
+    });
 
     return p_devices;
 }
@@ -4197,6 +4214,7 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
     if (device == nullptr) {
         throw BaseException("toGetFabricThroughput error");
     }
+    std::lock_guard<std::mutex> lock(GPUDeviceStub::fabric_mutex);
     std::map<std::string, ze_result_t> exception_msgs;
     bool data_acquired = false;
     uint32_t fabric_port_count = 0;

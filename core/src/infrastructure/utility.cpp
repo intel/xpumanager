@@ -8,6 +8,9 @@
 
 #include <algorithm>
 #include <chrono>
+#include <thread>
+#include <functional>
+#include <vector>
 
 #include "../include/xpum_structs.h"
 #include "device/device.h"
@@ -587,6 +590,43 @@ bool Utility::isATSMPlatform(const zes_device_handle_t &device) {
         is_atsm = (device_model == XPUM_DEVICE_MODEL_ATS_M_1) || (device_model == XPUM_DEVICE_MODEL_ATS_M_3);
     }
     return is_atsm;
+}
+
+void Utility::parallel_in_batches(unsigned num_elements, unsigned num_threads,
+                  std::function<void (int start, int end)> functor,
+                  bool use_multithreading)
+{
+    if (num_elements == 0)
+        return;
+
+    if (num_threads > num_elements)
+        num_threads = num_elements;
+
+    unsigned batch_size = num_elements / num_threads;
+    unsigned batch_remainder = num_elements % num_threads;
+
+    std::vector<std::thread> total_threads(num_threads);
+
+    int start = 0;
+    for (unsigned i = 0; i < num_threads; i++) {
+        int real_batch_size = batch_size;
+        if (batch_remainder > 0) {
+            real_batch_size += 1;
+            batch_remainder--;
+        }
+
+        if (use_multithreading) {
+            total_threads[i] = std::thread(functor, start, start + real_batch_size);
+        } else {
+            // For debug
+            functor(start, start + real_batch_size);
+        }
+        start = start + real_batch_size;
+    }
+
+    // Wait for all other threads to finish their tasks
+    if (use_multithreading)
+        std::for_each(total_threads.begin(), total_threads.end(), std::mem_fn(&std::thread::join));
 }
 
 } // end namespace xpum
