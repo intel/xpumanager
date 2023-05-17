@@ -816,9 +816,6 @@ void ComletDump::printByLine(std::ostream &out) {
     // try run
     auto res = run();
 
-    auto pEngineCountMap = std::make_shared<std::map<int, std::map<int, int>>>();
-    auto pFabricCountJson = std::shared_ptr<nlohmann::json>();
-
     int targetId = -1;
     if (isNumber(deviceId)) {
         targetId = std::stoi(deviceId);
@@ -828,15 +825,6 @@ void ComletDump::printByLine(std::ostream &out) {
             out << "Error: " << (*convertResult)["error"].get<std::string>() << std::endl;
             return;
         }
-    }
-    
-    pEngineCountMap = this->coreStub->getEngineCount(targetId);
-    pFabricCountJson = this->coreStub->getFabricCount(targetId);
-
-    if (res->contains("error")) {
-        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
-        setExitCodeByJson(*res);
-        return;
     }
 
     // construct column schema
@@ -887,6 +875,15 @@ void ComletDump::printByLine(std::ostream &out) {
                 }};
             columnSchemaList.push_back(dc);
         } else if (config.optionType == xpum::dump::DUMP_OPTION_ENGINE) {
+            auto pEngineCountMap = std::make_shared<std::map<int, std::map<int, int>>>();
+            pEngineCountMap = this->coreStub->getEngineCount(targetId);
+
+            if (res->contains("error")) {
+                out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+                setExitCodeByJson(*res);
+                return;
+            }
+
             std::map<int, int> tileIdsMap;
             bool deviceLevelHeader = false;
             for(auto tile : this->opts->deviceTileIds){
@@ -960,6 +957,15 @@ void ComletDump::printByLine(std::ostream &out) {
                 }
             }
         } else if (config.optionType == xpum::dump::DUMP_OPTION_FABRIC) {
+            auto pFabricCountJson = std::shared_ptr<nlohmann::json>();
+            pFabricCountJson = this->coreStub->getFabricCount(targetId);
+
+            if (res->contains("error")) {
+                out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+                setExitCodeByJson(*res);
+                return;
+            }
+
             std::vector<std::string> strTileIds;
             if (this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1"){
                 for (auto& el : (*pFabricCountJson).items())
