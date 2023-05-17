@@ -1286,6 +1286,15 @@ xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf);
  */
 xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_function_info_t list[], int* count);
 
+
+/**
+ * @brief Remove VFs on a specified physical device
+ * 
+ * @param deviceId           IN: Device Id
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId);
+
 /**
  * @brief Generate a debug log file
  * 

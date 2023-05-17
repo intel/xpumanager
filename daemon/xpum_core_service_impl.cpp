@@ -2589,6 +2589,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             response->set_errormsg("Fail to create VF");
         } else if (res == XPUM_VGPU_NO_CONFIG_FILE) {
             response->set_errormsg("vGPU configuration file doesn't exist");
+        } else if (res == XPUM_VGPU_SYSFS_ERROR) {
+            response->set_errormsg("Error in sysfs");
         } else {
             response->set_errormsg("Error");
         }
@@ -2602,7 +2604,11 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     int count = XPUM_MAX_VF_NUM;
     xpum_result_t res = xpumGetDeviceFunctionList(request->deviceid(), resList, &count);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        if (res == XPUM_VGPU_SYSFS_ERROR) {
+            response->set_errormsg("Error in sysfs");
+        } else {
+            response->set_errormsg("Error");
+        } 
     } else {
         response->set_count(count);
         for (int i = 0; i < count; i++) {
@@ -2611,6 +2617,21 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             vfInfo->set_devicefunctiontype(static_cast<XpumDeviceFunctionType>(resList[i].functionType));
             vfInfo->set_bdfaddress(resList[i].bdfAddress);
             vfInfo->set_deviceid(resList[i].deviceId);
+        }
+    }
+    response->set_errorno(res);
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::removeAllVf(::grpc::ServerContext* context, const ::VgpuRemoveAllVfRequest* request, ::VgpuRemoveAllVfResponse *response) {
+    xpum_result_t res = xpumRemoveAllVf(request->deviceid());
+    if (res != XPUM_OK) {
+        if (res == XPUM_VGPU_REMOVE_VF_FAILED) {
+            response->set_errormsg("Fail to remove all VFs");
+        } else if (res == XPUM_VGPU_SYSFS_ERROR) {
+            response->set_errormsg("Error in sysfs");
+        } else {
+            response->set_errormsg("Error");
         }
     }
     response->set_errorno(res);

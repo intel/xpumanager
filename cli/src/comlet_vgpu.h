@@ -18,6 +18,9 @@ struct ComletVgpuOptions {
     std::string deviceId = "";
     bool precheck = false;
     bool create = false;
+    bool remove = false;
+    bool list = false;
+    bool assumeYes = false;
     int32_t numVfs = 0;
     std::string lmemPerVf = "";
 };
@@ -32,8 +35,8 @@ class ComletVgpu: public ComletBase {
         virtual void getTableResult(std::ostream &out) override;
        
     private:
+
         std::unique_ptr<ComletVgpuOptions> opts;
-        int parsedDeviceId;
         bool precheckPassFlag = false;
 };
 

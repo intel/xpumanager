@@ -36,16 +36,14 @@ class CreateVgpuSchema(Schema):
         validate=validate.Range(0),
         metadata={"description": "Local memory size per VF"}
     )
-    # metrics_type_list = fields.List(
-    #     fields.String(
-    #         strict=True,
-    #         validate=validate.OneOf(allow_dump_metrics),
-    #         metadata={
-    #             "description": "The metrics type to dump, options are:\n"+"\n".join(allow_dump_metrics)}
-    #     ),
-    #     required=True,
-    #     validate=[validate.Length(1), is_unique]
-    # )
+
+class RemoveVgpuSchema(Schema):
+    device_id = fields.Int(
+        required=True,
+        strict=True,
+        validate=validate.Range(0),
+        metadata={"description": "The device to remove all VFs"}
+    )
    
 
 def doVgpuPrecheck():
@@ -80,6 +78,27 @@ def createVf():
     lmemPerVf = reqData.get("lmem_per_vf")
 
     code, message, data = stub.createVf(deviceId, numVfs, lmemPerVf)
+    if code == 0:
+        return jsonify(data)
+    error = dict(Status=code, Message=message)
+    return jsonify(error), 400
+
+def listVf(deviceId):
+    code, message, data = stub.listVf(deviceId)
+    if code == 0:
+        return jsonify(data)
+    error = dict(Status=code, Message=message)
+    return jsonify(error), 400
+
+def removeAllVf():
+    reqData = request.get_json()
+    try:
+        RemoveVgpuSchema().load(reqData)
+    except ValidationError as err:
+        return jsonify(err.messages), 400
+    deviceId = reqData.get("device_id")
+
+    code, message, data = stub.removeAllVf(deviceId)
     if code == 0:
         return jsonify(data)
     error = dict(Status=code, Message=message)

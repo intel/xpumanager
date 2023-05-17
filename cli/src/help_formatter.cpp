@@ -228,7 +228,13 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                " " + appName + " log -f [tarGzipFileName]\n";
     } else if (app->get_name().compare("vgpu") == 0) {
         return "\nUsage: " + appName + " vgpu [Options]\n"
-               " " + appName + " vgpu --precheck\n"; 
+               " " + appName + " vgpu --precheck\n"
+               " " + appName + " vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]\n"
+               " " + appName + " vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]\n"
+               " " + appName + " vgpu -d [deviceId] -r\n"
+               " " + appName + " vgpu -d [pciBdfAddress] -r\n"
+               " " + appName + " vgpu -d [deviceId] -l\n"
+               " " + appName + " vgpu -d [pciBdfAddress] -l\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }

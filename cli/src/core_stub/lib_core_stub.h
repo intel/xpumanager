@@ -125,5 +125,7 @@ class LibCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> getDeviceFunction(int deviceId);
 
+    std::unique_ptr<nlohmann::json> removeAllVf(int deviceId);
+
 };
 } // end namespace xpum::cli

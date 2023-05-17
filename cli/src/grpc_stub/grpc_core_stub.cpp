@@ -2265,4 +2265,25 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceFunction(int deviceId) {
     return json;
 }
 
+std::unique_ptr<nlohmann::json> GrpcCoreStub::removeAllVf(int deviceId) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    grpc::ClientContext context;
+    VgpuRemoveAllVfRequest request;
+    request.set_deviceid(deviceId);
+    VgpuRemoveAllVfResponse response;
+    grpc::Status status = stub->removeAllVf(&context, request, &response);
+    if (status.ok()) {
+        if (response.errormsg().length() > 0) {
+            (*json)["error"] = response.errormsg();
+            (*json)["errno"] = errorNumTranslate(response.errorno());
+        } else {
+            (*json)["status"] = "OK";
+        }
+    } else {
+        (*json)["error"] = status.error_message();
+        (*json)["errno"] = XPUM_CLI_ERROR_GENERIC_ERROR;
+    }
+    return json;
+}
+
 } // end namespace xpum::cli

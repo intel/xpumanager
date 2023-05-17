@@ -20,17 +20,13 @@ namespace xpum {
 class VgpuManager {
 private:
 
-    xpum_result_t checkDeviceId(xpum_device_id_t deviceId);
-
-    void loadSriovData(xpum_device_id_t deviceId ,DeviceSriovInfo &datas);
+    bool loadSriovData(xpum_device_id_t deviceId ,DeviceSriovInfo &datas);
 
     bool readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs, AttrFromConfigFile &attrs);
 
-    bool readFile(const std::string& path, std::string& content);
+    void readFile(const std::string& path, std::string& content);
 
-    bool writeFile(const std::string& path, const std::string& content);
-
-    bool clearVfs(xpum_device_id_t deviceId);
+    void writeFile(const std::string& path, const std::string& content);
 
     std::mutex mutex;
 
@@ -41,6 +37,9 @@ public:
 
     // List VF info
     xpum_result_t getFunctionList(xpum_device_id_t deviceId, std::vector<xpum_vgpu_function_info_t> &functionList);
+
+    // Clear all VFs
+    xpum_result_t removeAllVf(xpum_device_id_t deviceId);
     
 };
 

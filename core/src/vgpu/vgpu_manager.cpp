@@ -30,20 +30,21 @@ static bool is_path_exist(const std::string &s) {
 xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_t* param) {
     XPUM_LOG_DEBUG("vgpuCreateVf, {}, {}, {}", deviceId, param->numVfs, param->lmemPerVf);
 
-    xpum_result_t checkIdRes = checkDeviceId(deviceId);
-    if (checkIdRes != XPUM_OK) {
-        return checkIdRes;
-    }
-
     DeviceSriovInfo deviceInfo;
-    loadSriovData(deviceId, deviceInfo);
+    if (!loadSriovData(deviceId, deviceInfo)) {
+        return XPUM_VGPU_SYSFS_ERROR;
+    }
 
     std::unique_lock<std::mutex> lock(mutex);
 
     std::string numVfsString;
     std::stringstream numVfsPath;
     numVfsPath << "/sys/class/drm/" << deviceInfo.drmPath << "/device/sriov_numvfs";
-    readFile(numVfsPath.str(), numVfsString);
+    try {
+        readFile(numVfsPath.str(), numVfsString);
+    } catch (std::ios::failure &e) {
+        return XPUM_VGPU_SYSFS_ERROR;
+    }
     if (std::stoi(numVfsString) > 0) {
         return XPUM_VGPU_DIRTY_PF;
     }
@@ -71,29 +72,28 @@ xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_
     std::stringstream devicePath;
     devicePath << "/sys/class/drm/" << deviceInfo.drmPath;
     std::string devicePathString = devicePath.str();
-    writeFile(std::string(devicePathString).append("/iov/pf/gt/exec_quantum_ms"), std::to_string(attrs.pfExec));
-    writeFile(std::string(devicePathString).append("/iov/pf/gt/preempt_timeout_us"), std::to_string(attrs.pfPreempt));
-    writeFile(std::string(devicePathString).append("/iov/pf/gt/policies/sched_if_idle"), attrs.schedIfIdle ? "1": "0");
-
-    for (uint32_t i = 0; i < param->numVfs; i++) {
-        std::stringstream vfPath;
-        vfPath << devicePath.str() << "/iov/vf" << i + 1 << "/gt/";
-        std::string vfPathString = vfPath.str();
-        writeFile(std::string(vfPathString).append("exec_quantum_ms"), std::to_string(attrs.vfExec));
-        writeFile(std::string(vfPathString).append("preempt_timeout_us"), std::to_string(attrs.vfPreempt));
-        writeFile(std::string(vfPathString).append("lmem_quota"), std::to_string(lmemToUse));
-        writeFile(std::string(vfPathString).append("ggtt_quota"), std::to_string(attrs.vfGgtt));
-        writeFile(std::string(vfPathString).append("doorbells_quota"), std::to_string(attrs.vfDoorbells));
-        writeFile(std::string(vfPathString).append("contexts_quota"), std::to_string(attrs.vfContexts));
-    }
-
-    writeFile(std::string(devicePathString).append("/device/sriov_drivers_autoprobe"), attrs.driversAutoprobe ? "1" : "0");
-    bool writeNumVfsFlag = writeFile(std::string(devicePathString).append("/device/sriov_numvfs"), std::to_string(param->numVfs));
-    if (writeNumVfsFlag) {
-        return XPUM_OK;
-    } else {
+    try {
+        writeFile(std::string(devicePathString).append("/iov/pf/gt/exec_quantum_ms"), std::to_string(attrs.pfExec));
+        writeFile(std::string(devicePathString).append("/iov/pf/gt/preempt_timeout_us"), std::to_string(attrs.pfPreempt));
+        writeFile(std::string(devicePathString).append("/iov/pf/gt/policies/sched_if_idle"), attrs.schedIfIdle ? "1": "0");
+        for (uint32_t i = 0; i < param->numVfs; i++) {
+            std::stringstream vfPath;
+            vfPath << devicePath.str() << "/iov/vf" << i + 1 << "/gt/";
+            std::string vfPathString = vfPath.str();
+            writeFile(std::string(vfPathString).append("exec_quantum_ms"), std::to_string(attrs.vfExec));
+            writeFile(std::string(vfPathString).append("preempt_timeout_us"), std::to_string(attrs.vfPreempt));
+            writeFile(std::string(vfPathString).append("lmem_quota"), std::to_string(lmemToUse));
+            writeFile(std::string(vfPathString).append("ggtt_quota"), std::to_string(attrs.vfGgtt));
+            writeFile(std::string(vfPathString).append("doorbells_quota"), std::to_string(attrs.vfDoorbells));
+            writeFile(std::string(vfPathString).append("contexts_quota"), std::to_string(attrs.vfContexts));
+        }
+        writeFile(std::string(devicePathString).append("/device/sriov_drivers_autoprobe"), attrs.driversAutoprobe ? "1" : "0");
+        writeFile(std::string(devicePathString).append("/device/sriov_numvfs"), std::to_string(param->numVfs));
+    } catch (std::ios::failure &e) {
         return XPUM_VGPU_CREATE_VF_FAILED;
     }
+
+    return XPUM_OK;
 }
 
 /*
@@ -101,13 +101,23 @@ xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_
  *  2. Get intersted value in the path of PF and each VF
  */
 xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vector<xpum_vgpu_function_info_t> &result) {
+    XPUM_LOG_DEBUG("getFunctionList, device id: {}", deviceId);
+    
     DeviceSriovInfo deviceInfo;
-    loadSriovData(deviceId, deviceInfo);
+    if (!loadSriovData(deviceId, deviceInfo)) {
+        return XPUM_VGPU_SYSFS_ERROR;
+    }
     std::string numVfsString;
     std::stringstream devicePath;
 
     devicePath << "/sys/class/drm/" << deviceInfo.drmPath;
-    readFile(devicePath.str().append("/device/sriov_numvfs"), numVfsString);
+    XPUM_LOG_DEBUG("device Path: {}", devicePath.str());
+    try {
+        readFile(devicePath.str().append("/device/sriov_numvfs"), numVfsString);
+    } catch (std::ios::failure &e) {
+        return XPUM_VGPU_SYSFS_ERROR;
+    }
+
     int numVfs = std::stoi(numVfsString);
     XPUM_LOG_DEBUG("{} VF detected.", numVfs);
     /*
@@ -124,7 +134,11 @@ xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vecto
             ueventPath << devicePath.str() << "/iov/vf" << i << "/device/uevent";
         }
 
-        readFile(lmemPath.str(), lmemString);
+        try {
+            readFile(lmemPath.str(), lmemString);
+        } catch (std::ios::failure &e) {
+            return XPUM_VGPU_SYSFS_ERROR;
+        }
         xpum_vgpu_function_info_t info;
         info.lmemSize = std::stoul(lmemString);
         info.functionType = (i == 0 ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL);
@@ -152,17 +166,24 @@ xpum_result_t VgpuManager::getFunctionList(xpum_device_id_t deviceId, std::vecto
     return XPUM_OK;
 }
 
-bool VgpuManager::clearVfs(xpum_device_id_t deviceId) {
+xpum_result_t VgpuManager::removeAllVf(xpum_device_id_t deviceId) {
     std::unique_lock<std::mutex> lock(mutex);
+    
     DeviceSriovInfo deviceInfo;
-    loadSriovData(deviceId, deviceInfo);
+    if (!loadSriovData(deviceId, deviceInfo)) {
+        return XPUM_VGPU_SYSFS_ERROR;
+    }
     std::stringstream iovPath, numvfsPath;
 
     /*
      *  Disable all VFs by setting sriov_numvfs to 0
      */
     numvfsPath << "/sys/bus/pci/devices/" << deviceInfo.bdfAddress << "/sriov_numvfs";
-    writeFile(numvfsPath.str(), "0");
+    try {
+        writeFile(numvfsPath.str(), "0");
+    } catch (std::ios::failure &e) {
+        return XPUM_VGPU_REMOVE_VF_FAILED;
+    }
 
     /*
      *  Then clear all resources allocated to all VFs
@@ -176,34 +197,25 @@ bool VgpuManager::clearVfs(xpum_device_id_t deviceId) {
                 continue;
             }
             std::string vfPath = iovPath.str().append(ent->d_name).append("/gt/");
-            writeFile(std::string(vfPath).append("doorbells_quota"), "0");
-            writeFile(std::string(vfPath).append("contexts_quota"), "0");
-            writeFile(std::string(vfPath).append("ggtt_quota"), "0");
-            writeFile(std::string(vfPath).append("lmem_quota"), "0");
-            writeFile(std::string(vfPath).append("exec_quantum_ms"), "0");
-            writeFile(std::string(vfPath).append("preempt_timeout_us"), "0");
+            try {
+                writeFile(std::string(vfPath).append("doorbells_quota"), "0");
+                writeFile(std::string(vfPath).append("contexts_quota"), "0");
+                writeFile(std::string(vfPath).append("ggtt_quota"), "0");
+                writeFile(std::string(vfPath).append("lmem_quota"), "0");
+                writeFile(std::string(vfPath).append("exec_quantum_ms"), "0");
+                writeFile(std::string(vfPath).append("preempt_timeout_us"), "0");
+            } catch (std::ios::failure &e) {
+                return XPUM_VGPU_REMOVE_VF_FAILED;
+            }
         }
     } else {
         XPUM_LOG_ERROR("Failed to open directory {}", iovPath.str());
-    }
-    return true;
-}
-
-xpum_result_t VgpuManager::checkDeviceId(xpum_device_id_t deviceId) {
-    auto device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-    if (device == nullptr) {
-        return XPUM_RESULT_DEVICE_NOT_FOUND;
-    }
-    Property prop;
-    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, prop);
-    if (static_cast<xpum_device_function_type_t>(prop.getValueInt()) != DEVICE_FUNCTION_TYPE_PHYSICAL) {
-        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
     }
     return XPUM_OK;
 }
 
 
-void VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data) {
+bool VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data) {
     auto device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     Property prop;
 
@@ -230,36 +242,52 @@ void VgpuManager::loadSriovData(xpum_device_id_t deviceId, DeviceSriovInfo &data
     ggttPath << "/sys/class/drm/" << drm << "/iov/pf/gt/available/ggtt_free";
     doorbellPath << "/sys/class/drm/" << drm << "/iov/pf/gt/available/doorbells_free";
     contextPath << "/sys/class/drm/" << drm << "/iov/pf/gt/available/contexts_free";
-    readFile(lmemPath.str(), lmem);
-    readFile(ggttPath.str(), ggtt);
-    readFile(doorbellPath.str(), doorbell);
-    readFile(contextPath.str(), context);
+    try {
+        readFile(lmemPath.str(), lmem);
+        readFile(ggttPath.str(), ggtt);
+        readFile(doorbellPath.str(), doorbell);
+        readFile(contextPath.str(), context);
+    } catch (std::ios::failure &e) {
+        return false;
+    }
     data.lmemSizeFree = std::stoul(lmem);
     data.ggttSizeFree = std::stoul(ggtt);
     data.contextFree = std::stoi(context);
     data.doorbellFree = std::stoi(doorbell);
-}
-
-bool VgpuManager::readFile(const std::string& path, std::string& content) {
-    std::ifstream ifs(path, std::ios::in);
-    std::stringstream ss;
-    ss << ifs.rdbuf();
-    content.assign(ss.str());
-    XPUM_LOG_DEBUG("read: {} {}", path, ss.str());
     return true;
 }
 
-bool VgpuManager::writeFile(const std::string& path, const std::string& content) {
-    std::ofstream ofs(path, std::ios::out | std::ios::trunc);
-    ofs << content;
-    ofs.flush();
+void VgpuManager::readFile(const std::string& path, std::string& content) {
+    std::ifstream ifs;
+    std::stringstream ss;
+    ifs.exceptions(std::ios::failbit | std::ios::badbit);
+    try {
+        ifs.open(path);
+        ss << ifs.rdbuf();
+    } catch (std::ios::failure &e) {
+        XPUM_LOG_ERROR("read: {} {} failed", path, content);
+        ifs.close();
+        throw e;
+    } 
+    content.assign(ss.str());
+    ifs.close();
+    XPUM_LOG_DEBUG("read: {} {}", path, ss.str());
+}
+
+void VgpuManager::writeFile(const std::string& path, const std::string& content) {
+    std::ofstream ofs;
+    ofs.exceptions(std::ios::failbit | std::ios::badbit);
+    try {
+        ofs.open(path, std::ios::out | std::ios::trunc);
+        ofs << content;
+        ofs.flush();
+    } catch (std::ios::failure &e) {
+        XPUM_LOG_ERROR("write: {} {} failed", path, content);
+        ofs.close();
+        throw e;
+    }
     ofs.close();
     XPUM_LOG_DEBUG("write: {} {}", path, content);
-    if (ofs.fail()) {
-        XPUM_LOG_ERROR("write: {} {} failed", path, content);
-        return false;
-    }
-    return true;
 }
 
 bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs, AttrFromConfigFile &attrs) {
@@ -274,13 +302,11 @@ bool VgpuManager::readConfigFromFile(xpum_device_id_t deviceId, uint32_t numVfs,
             fileName = current_file.substr(0, current_file.find_last_of('/')) + "/../lib64/" + Configuration::getXPUMMode() + "/config/" + std::string("vgpu.conf");
     }
 
-    DeviceSriovInfo deviceInfo;
-    loadSriovData(deviceId, deviceInfo);
-
+    auto deviceModel = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceModel();
     std::string devicePciId;
-    if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_1) {
+    if (deviceModel == XPUM_DEVICE_MODEL_ATS_M_1) {
         devicePciId = "56c0";
-    } else if (deviceInfo.deviceModel == XPUM_DEVICE_MODEL_ATS_M_3) {
+    } else if (deviceModel == XPUM_DEVICE_MODEL_ATS_M_3) {
         devicePciId = "56c1";
     }
 

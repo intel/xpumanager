@@ -58,7 +58,7 @@ xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
     if (cmdRes.exitStatus()) {
         result->vmxFlag = false;
         std::string msg = "Command lscpu failed.";
-        strcpy(result->vmxMessage, msg.c_str());
+        strncpy(result->vmxMessage, msg.c_str(), msg.size() + 1);
     } else if (cmdRes.output().find("vmx") != std::string::npos) {
         /*
         *   VMX flag detected by lscpu
@@ -67,7 +67,7 @@ xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
     } else {
         result->vmxFlag = false;
         std::string msg = "No VMX flag, Please ensure Intel VT enabled in BIOS";
-        strcpy(result->vmxMessage, msg.c_str());
+        strncpy(result->vmxMessage, msg.c_str(), msg.size() + 1);
     }
 
     bool iommuFound = isIommuDeviceFound();
@@ -77,7 +77,7 @@ xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
     } else {
         result->iommuStatus = false;
         std::string msg = "IOMMU is disabled";
-        strcpy(result->iommuMessage, msg.c_str());
+        strncpy(result->iommuMessage, msg.c_str(), msg.size() + 1);
     }
 
     std::vector<std::shared_ptr<Device>> devices;
@@ -97,13 +97,14 @@ xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
         if (totalVfs.size() == 0) {
             result->sriovStatus = false;
             std::string msg = "Failed to read sriov_totalvfs.";
+            strncpy(result->sriovMessage, msg.c_str(), msg.size() + 1);
             break;
         } else if (stoi(totalVfs) > 0) {
             result->sriovStatus = true;
         } else {
             result->sriovStatus = false;
             std::string msg = "SR-IOV is disabled.";
-            strcpy(result->sriovMessage, msg.c_str());
+            strncpy(result->sriovMessage, msg.c_str(), msg.size() + 1);
             break;
         }
     }

@@ -3423,6 +3423,19 @@ xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath,
     }
 }
 
+static bool isDevicePf(xpum_device_id_t deviceId) {
+    auto device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return false;
+    }
+    Property prop;
+    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, prop);
+    if (static_cast<xpum_device_function_type_t>(prop.getValueInt()) != DEVICE_FUNCTION_TYPE_PHYSICAL) {
+        return false;
+    }
+    return true;
+}
+
 xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -3436,6 +3449,14 @@ xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf) 
     if (res != XPUM_OK) {
         return res;
     }
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (!isDevicePf(deviceId)) {
+        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
+
     // Hardcode supported number of VF temporary
     std::vector<int> validNumVfs = {1,2,4,8,16};
     if (std::find(validNumVfs.begin(), validNumVfs.end(), conf->numVfs) == validNumVfs.end()) {
@@ -3449,8 +3470,15 @@ xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_fun
     if (res != XPUM_OK) {
         return res;
     }
-    std::vector<xpum_vgpu_function_info_t> functionArray;
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (!isDevicePf(deviceId)) {
+        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
 
+    std::vector<xpum_vgpu_function_info_t> functionArray;
     res = Core::instance().getVgpuManager()->getFunctionList(deviceId, functionArray);
     if (res != XPUM_OK) {
         return res;
@@ -3469,6 +3497,21 @@ xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_fun
     *count = functionArray.size();
     
     return XPUM_OK;
+}
+
+xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (!isDevicePf(deviceId)) {
+        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
+    return Core::instance().getVgpuManager()->removeAllVf(deviceId);
 }
 
 } // end namespace xpum

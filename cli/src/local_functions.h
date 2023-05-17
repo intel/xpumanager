@@ -106,5 +106,7 @@ std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson, std:
 
 bool isATSMPlatform(std::string str);
 
+bool isDriversAutoprobeEnabled(const std::string &bdfAddress);
+
 }
 

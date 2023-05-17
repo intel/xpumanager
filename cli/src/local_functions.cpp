@@ -957,4 +957,18 @@ std::unique_ptr<nlohmann::json> getPreCheckInfo(bool onlyGPU, bool rawJson, std:
     return json;
 }
 
+bool isDriversAutoprobeEnabled(const std::string &bdfAddress) {
+    bool res = false;
+    std::stringstream path, content;
+    path << "/sys/bus/pci/devices/" << bdfAddress << "/sriov_drivers_autoprobe";
+    std::ifstream ifs(path.str(), std::ios::in);
+    content << ifs.rdbuf();
+    try {
+        res = std::stoi(content.str());
+    } catch (const std::exception &err) {
+        // Just prevent core dump
+    }
+    return res;
+}
+
 }

@@ -1000,6 +1000,15 @@ message VgpuGetDeviceFunctionResponse {
     string errorMsg = 4;
 }
 
+message VgpuRemoveAllVfRequest {
+    int32 deviceId = 1;
+}
+
+message VgpuRemoveAllVfResponse {
+    int32 errorNo = 1;
+    string errorMsg = 2;
+}
+
 /* services */
 service XpumCoreService {    
     rpc getVersion( google.protobuf.Empty ) returns ( XpumVersionInfoArray );
@@ -1073,4 +1082,5 @@ service XpumCoreService {
     rpc doVgpuPrecheck ( google.protobuf.Empty ) returns ( VgpuPrecheckResponse );
     rpc createVf ( VgpuCreateVfRequest ) returns ( VgpuCreateVfResponse );
     rpc getDeviceFunction ( VgpuGetDeviceFunctionRequest ) returns ( VgpuGetDeviceFunctionResponse );
+    rpc removeAllVf ( VgpuRemoveAllVfRequest ) returns ( VgpuRemoveAllVfResponse );
 }
