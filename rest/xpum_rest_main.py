@@ -161,8 +161,8 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(device_config.get_config))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/performancefactor', methods=['PUT'],
                      view_func=auth.login_required(device_config.set_performancefactor))
-    #app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
-    #                view_func=auth.login_required(device_config.run_reset))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
+                    view_func=auth.login_required(device_config.run_reset))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/portenabled', methods=['PUT'],
                      view_func=auth.login_required(device_config.set_portenabled))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/portbeaconing', methods=['PUT'],
