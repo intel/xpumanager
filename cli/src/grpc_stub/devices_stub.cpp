@@ -93,19 +93,6 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(int deviceId, 
     }
     (*json)["device_id"] = deviceId;
 
-    grpc::ClientContext sn_context;
-    GetDeviceSerialNumberRequest sn_req;
-    GetDeviceSerialNumberResponse sn_res;
-    sn_req.set_deviceid(deviceId);
-    sn_req.set_username(username);
-    sn_req.set_password(password);
-    status = stub->getDeviceSerialNumberAndAmcFwVersion(&sn_context, sn_req, &sn_res);
-    if (status.ok()) {
-        if (!sn_res.serialnumber().empty())
-            (*json)["serial_number"] = sn_res.serialnumber();
-        if (!sn_res.amcfwversion().empty())
-            (*json)["amc_firmware_version"] = sn_res.amcfwversion();
-    }
     return json;
 }
 
@@ -134,8 +121,24 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getDeviceProperties(const char *bd
     return getDeviceProperties(deviceId, username, password);
 }
 
-std::string GrpcCoreStub::getSerailNumberIPMI(int deviceId) {
-    return std::string();
+std::unique_ptr<nlohmann::json> GrpcCoreStub::getSerailNumberAndAmcVersion(int deviceId, std::string username, std::string password) {
+    grpc::ClientContext sn_context;
+    GetDeviceSerialNumberRequest sn_req;
+    GetDeviceSerialNumberResponse sn_res;
+    sn_req.set_deviceid(deviceId);
+    sn_req.set_username(username);
+    sn_req.set_password(password);
+    auto status = stub->getDeviceSerialNumberAndAmcFwVersion(&sn_context, sn_req, &sn_res);
+    nlohmann::json json;
+    json["serial_number"] = "";
+    json["amc_firmware_version"] = "";
+    if (status.ok()) {
+        if (!sn_res.serialnumber().empty())
+            json["serial_number"] = sn_res.serialnumber();
+        if (!sn_res.amcfwversion().empty())
+            json["amc_firmware_version"] = sn_res.amcfwversion();
+    }
+    return std::make_unique<nlohmann::json>(json);
 }
 
 std::unique_ptr<nlohmann::json> GrpcCoreStub::getAMCFirmwareVersions(std::string username, std::string password) {
