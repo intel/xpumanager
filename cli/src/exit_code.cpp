@@ -118,6 +118,8 @@ int errorNumTranslate(int coreErrNo) {
             return XPUM_CLI_ERROR_VGPU_NO_CONFIG_FILE;
         case XPUM_VGPU_SYSFS_ERROR:
             return XPUM_VGPU_SYSFS_ERROR;
+        case XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL:
+            return XPUM_CLI_ERROR_VGPU_UNSUPPORTED_DEVICE_MODEL;
         default:
             return XPUM_CLI_ERROR_GENERIC_ERROR;
     }

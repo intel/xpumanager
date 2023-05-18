@@ -2591,6 +2591,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             response->set_errormsg("vGPU configuration file doesn't exist");
         } else if (res == XPUM_VGPU_SYSFS_ERROR) {
             response->set_errormsg("Error in sysfs");
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            response->set_errormsg("Unsupported device model");
         } else {
             response->set_errormsg("Error");
         }
@@ -2606,6 +2608,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     if (res != XPUM_OK) {
         if (res == XPUM_VGPU_SYSFS_ERROR) {
             response->set_errormsg("Error in sysfs");
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            response->set_errormsg("Unsupported device model");
         } else {
             response->set_errormsg("Error");
         } 
@@ -2630,6 +2634,8 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             response->set_errormsg("Fail to remove all VFs");
         } else if (res == XPUM_VGPU_SYSFS_ERROR) {
             response->set_errormsg("Error in sysfs");
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            response->set_errormsg("Unsupported device model");
         } else {
             response->set_errormsg("Error");
         }

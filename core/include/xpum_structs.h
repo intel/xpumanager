@@ -157,6 +157,7 @@ typedef enum xpum_result_enum {
     XPUM_VGPU_REMOVE_VF_FAILED,
     XPUM_VGPU_NO_CONFIG_FILE,
     XPUM_VGPU_SYSFS_ERROR,
+    XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL,
 } xpum_result_t;
 
 typedef enum xpum_device_type_enum {

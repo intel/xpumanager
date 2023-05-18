@@ -1732,6 +1732,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::createVf(int deviceId, uint32_t num
             (*json)["error"] = "vGPU configuration file doesn't exist";
         } else if (res == XPUM_VGPU_SYSFS_ERROR) {
             (*json)["error"] = "Error in sysfs";
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            (*json)["error"] = "Unsupported device model";
         } else {
             (*json)["error"] = "Error";
         }
@@ -1759,6 +1761,8 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceFunction(int deviceId) {
     } else {
         if (res == XPUM_VGPU_SYSFS_ERROR) {
             (*json)["error"] = "Error in sysfs";
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            (*json)["error"] = "Unsupported device model";
         } else {
             (*json)["error"] = "Error";
         } 
@@ -1777,7 +1781,9 @@ std::unique_ptr<nlohmann::json> LibCoreStub::removeAllVf(int deviceId) {
             (*json)["error"] = "Fail to remove all VFs";
         } else if (res == XPUM_VGPU_SYSFS_ERROR) {
             (*json)["error"] = "Error in sysfs";
-        }  else {
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            (*json)["error"] = "Unsupported device model";
+        } else {
             (*json)["error"] = "Error";
         }
         (*json)["errno"] = errorNumTranslate(res);

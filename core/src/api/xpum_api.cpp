@@ -35,6 +35,7 @@
 #include "infrastructure/exception/level_zero_initialization_exception.h"
 #include "infrastructure/version.h"
 #include "infrastructure/perf_measurement_data.h"
+#include "infrastructure/utility.h"
 #include "internal_api.h"
 #include "ext-include/igsc_lib.h"
 #include "log/dbg_log.h"
@@ -3456,6 +3457,9 @@ xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf) 
     if (!isDevicePf(deviceId)) {
         return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
     }
+    if (!Utility::isATSMPlatform(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceHandle())) {
+        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
+    }
 
     // Hardcode supported number of VF temporary
     std::vector<int> validNumVfs = {1,2,4,8,16};
@@ -3476,6 +3480,9 @@ xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_fun
     }
     if (!isDevicePf(deviceId)) {
         return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
+    if (!Utility::isATSMPlatform(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceHandle())) {
+        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
     }
 
     std::vector<xpum_vgpu_function_info_t> functionArray;
@@ -3510,6 +3517,9 @@ xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
     }
     if (!isDevicePf(deviceId)) {
         return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
+    if (!Utility::isATSMPlatform(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceHandle())) {
+        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
     }
     return Core::instance().getVgpuManager()->removeAllVf(deviceId);
 }
