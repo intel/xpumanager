@@ -410,6 +410,7 @@ Usage: xpu-smi config [Options]
   xpu-smi config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
   xpu-smi config -d [deviceId] -t [tileId] --xelinkport [portId,value]
   xpu-smi config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
+  xpu-smi config -d [deviceId] --reset
   
   
 Options:
@@ -429,6 +430,7 @@ Options:
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
+  --reset                     Reset device by SBR (Secondary Bus Reset).
 
 ```
 
