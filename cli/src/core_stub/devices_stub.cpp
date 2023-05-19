@@ -103,15 +103,19 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProperties(const char *bdf
     return getDeviceProperties(deviceId, username, password);
 }
 
-std::string LibCoreStub::getSerailNumberIPMI(int deviceId) {
+std::unique_ptr<nlohmann::json> LibCoreStub::getSerailNumberAndAmcVersion(int deviceId, std::string username, std::string password) {
     char serialNumber[XPUM_MAX_STR_LENGTH];
     char amcFwVersion[XPUM_MAX_STR_LENGTH];
-    auto res = xpumGetSerialNumberAndAmcFwVersion(deviceId, "", "", serialNumber, amcFwVersion);
+    auto res = xpumGetSerialNumberAndAmcFwVersion(deviceId, username.c_str(), password.c_str(), serialNumber, amcFwVersion);
+    nlohmann::json json;
     if (res == XPUM_OK) {
-        return std::string(serialNumber);
+        json["serial_number"] = std::string(serialNumber);
+        json["amc_firmware_version"] = std::string(amcFwVersion);
     } else {
-        return std::string();
+        json["serial_number"] = "";
+        json["amc_firmware_version"] = "";
     }
+    return std::make_unique<nlohmann::json>(json);
 }
 
 static std::string getAmcFwErrMsg() {

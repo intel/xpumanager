@@ -9,6 +9,7 @@
 #include <map>
 #include <nlohmann/json.hpp>
 #include <sstream>
+#include <algorithm>
 
 #include "core_stub.h"
 #include "pretty_table.h"
@@ -33,35 +34,104 @@ static std::vector<std::string> split(const std::string &s, char delim) {
     return result;
 }
 
-bool ComletDump::dumpPCIeMetrics() {
-    for (auto id : this->opts->metricsIdList) {
-        if (id == xpum_dump_type_t::XPUM_DUMP_PCIE_READ_THROUGHPUT 
-            || id == xpum_dump_type_t::XPUM_DUMP_PCIE_WRITE_THROUGHPUT) {
-            return true;
-        }
+static xpum_stats_type_enum statsTypeFromDumpType(xpum_dump_type_t dumpType){
+    switch (dumpType) {
+    case xpum_dump_type_t::XPUM_DUMP_GPU_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_GPU_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_POWER:
+        return xpum_stats_type_enum::XPUM_STATS_POWER;
+    case xpum_dump_type_t::XPUM_DUMP_GPU_FREQUENCY:
+        return xpum_stats_type_enum::XPUM_STATS_GPU_FREQUENCY;
+    case xpum_dump_type_t::XPUM_DUMP_GPU_CORE_TEMPERATURE:
+        return xpum_stats_type_enum::XPUM_STATS_GPU_CORE_TEMPERATURE;
+    case xpum_dump_type_t::XPUM_DUMP_MEMORY_TEMPERATURE:
+        return xpum_stats_type_enum::XPUM_STATS_MEMORY_TEMPERATURE;
+    case xpum_dump_type_t::XPUM_DUMP_MEMORY_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_MEMORY_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_MEMORY_READ_THROUGHPUT:
+        return xpum_stats_type_enum::XPUM_STATS_MEMORY_READ_THROUGHPUT;
+    case xpum_dump_type_t::XPUM_DUMP_MEMORY_WRITE_THROUGHPUT:
+        return xpum_stats_type_enum::XPUM_STATS_MEMORY_WRITE_THROUGHPUT;
+    case xpum_dump_type_t::XPUM_DUMP_ENERGY:
+        return xpum_stats_type_enum::XPUM_STATS_ENERGY;
+    case xpum_dump_type_t::XPUM_DUMP_EU_ACTIVE:
+        return xpum_stats_type_enum::XPUM_STATS_EU_ACTIVE;
+    case xpum_dump_type_t::XPUM_DUMP_EU_STALL:
+        return xpum_stats_type_enum::XPUM_STATS_EU_STALL;
+    case xpum_dump_type_t::XPUM_DUMP_EU_IDLE:
+        return xpum_stats_type_enum::XPUM_STATS_EU_IDLE;
+    case xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_RESET:
+        return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_RESET;
+    case xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_PROGRAMMING_ERRORS:
+        return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_PROGRAMMING_ERRORS;
+    case xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_DRIVER_ERRORS:
+        return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_DRIVER_ERRORS;
+    case xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE:
+        return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_CORRECTABLE;
+    case xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE:
+        return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE;
+    case xpum_dump_type_t::XPUM_DUMP_MEMORY_BANDWIDTH:
+        return xpum_stats_type_enum::XPUM_STATS_MEMORY_BANDWIDTH;
+    case xpum_dump_type_t::XPUM_DUMP_MEMORY_USED:
+        return xpum_stats_type_enum::XPUM_STATS_MEMORY_USED;
+    case xpum_dump_type_t::XPUM_DUMP_PCIE_READ_THROUGHPUT:
+        return xpum_stats_type_enum::XPUM_STATS_PCIE_READ_THROUGHPUT;
+    case xpum_dump_type_t::XPUM_DUMP_PCIE_WRITE_THROUGHPUT:
+        return xpum_stats_type_enum::XPUM_STATS_PCIE_WRITE_THROUGHPUT;
+    case xpum_dump_type_t::XPUM_DUMP_COMPUTE_XE_LINK_THROUGHPUT:
+        return xpum_stats_type_enum::XPUM_STATS_FABRIC_THROUGHPUT;
+    case xpum_dump_type_t::XPUM_DUMP_COMPUTE_ENGINE_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_RENDER_ENGINE_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_DECODE_ENGINE_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_ENCODE_ENGINE_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_COPY_ENGINE_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_3D_ENGINE_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE:
+        return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE;
+    case xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE:
+        return xpum_stats_type_enum::XPUM_STATS_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE;
+    case xpum_dump_type_t::XPUM_DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_RENDER_ENGINE_GROUP_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_RENDER_ALL_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_MEDIA_ENGINE_GROUP_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_MEDIA_ALL_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_COPY_ENGINE_GROUP_UTILIZATION:
+        return xpum_stats_type_enum::XPUM_STATS_ENGINE_GROUP_COPY_ALL_UTILIZATION;
+    case xpum_dump_type_t::XPUM_DUMP_FREQUENCY_THROTTLE_REASON_GPU:
+        return xpum_stats_type_enum::XPUM_STATS_FREQUENCY_THROTTLE_REASON_GPU;
+
+    default:
+        return xpum_stats_type_enum::XPUM_STATS_MAX;
     }
-    return false;
 }
 
-bool ComletDump::dumpEUMetrics() {
+std::string ComletDump::getEnv(){
+    std::string env = "";
+    std::vector<int> statsTypes;
     for (auto id : this->opts->metricsIdList) {
-        if (id == xpum_dump_type_t::XPUM_DUMP_EU_ACTIVE
-            || id == xpum_dump_type_t::XPUM_DUMP_EU_STALL || id == xpum_dump_type_t::XPUM_DUMP_EU_IDLE) {
-            return true;
+        int statsType = statsTypeFromDumpType((xpum_dump_type_t)id);
+        if(std::find(statsTypes.begin(), statsTypes.end(), statsType) == statsTypes.end()){
+            statsTypes.push_back(statsType);
         }
     }
-    return false;
-}
+    std::sort(statsTypes.begin(), statsTypes.end());
 
-bool ComletDump::dumpRASMetrics() {
-    for (auto id : this->opts->metricsIdList) {
-        if ((id >= xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_RESET && id <= xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_CACHE_ERRORS_UNCORRECTABLE)
-         || id == xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_CORRECTABLE
-         || id == xpum_dump_type_t::XPUM_DUMP_RAS_ERROR_CAT_NON_COMPUTE_ERRORS_UNCORRECTABLE) {
-            return true;
+    for(auto stats : statsTypes){
+        if(!env.empty()){
+            env += ",";
         }
+        env += std::to_string(stats);
     }
-    return false;
+    return env;
 }
 
 static std::string getFileValue(std::string file_name) {
@@ -746,9 +816,6 @@ void ComletDump::printByLine(std::ostream &out) {
     // try run
     auto res = run();
 
-    auto pEngineCountMap = std::make_shared<std::map<int, std::map<int, int>>>();
-    auto pFabricCountJson = std::shared_ptr<nlohmann::json>();
-
     int targetId = -1;
     if (isNumber(deviceId)) {
         targetId = std::stoi(deviceId);
@@ -758,15 +825,6 @@ void ComletDump::printByLine(std::ostream &out) {
             out << "Error: " << (*convertResult)["error"].get<std::string>() << std::endl;
             return;
         }
-    }
-    
-    pEngineCountMap = this->coreStub->getEngineCount(targetId);
-    pFabricCountJson = this->coreStub->getFabricCount(targetId);
-
-    if (res->contains("error")) {
-        out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
-        setExitCodeByJson(*res);
-        return;
     }
 
     // construct column schema
@@ -817,6 +875,15 @@ void ComletDump::printByLine(std::ostream &out) {
                 }};
             columnSchemaList.push_back(dc);
         } else if (config.optionType == xpum::dump::DUMP_OPTION_ENGINE) {
+            auto pEngineCountMap = std::make_shared<std::map<int, std::map<int, int>>>();
+            pEngineCountMap = this->coreStub->getEngineCount(targetId);
+
+            if (res->contains("error")) {
+                out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+                setExitCodeByJson(*res);
+                return;
+            }
+
             std::map<int, int> tileIdsMap;
             bool deviceLevelHeader = false;
             for(auto tile : this->opts->deviceTileIds){
@@ -890,6 +957,15 @@ void ComletDump::printByLine(std::ostream &out) {
                 }
             }
         } else if (config.optionType == xpum::dump::DUMP_OPTION_FABRIC) {
+            auto pFabricCountJson = std::shared_ptr<nlohmann::json>();
+            pFabricCountJson = this->coreStub->getFabricCount(targetId);
+
+            if (res->contains("error")) {
+                out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
+                setExitCodeByJson(*res);
+                return;
+            }
+
             std::vector<std::string> strTileIds;
             if (this->opts->deviceTileIds.size() == 1 && this->opts->deviceTileIds[0] == "-1"){
                 for (auto& el : (*pFabricCountJson).items())

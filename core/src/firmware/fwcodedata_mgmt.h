@@ -25,7 +25,6 @@ struct FlashFwCodeDataParam {
     xpum_device_id_t deviceId;
     std::string codeImagePath;
     std::string dataImagePath;
-    bool force;
     std::string errMsg;
 };
 

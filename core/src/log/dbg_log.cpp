@@ -114,9 +114,9 @@ int copyFiles(const string &uuid) {
     dirName = "/var/tmp/xpum-" + uuid;
     cmd = "cp /etc/os-release " + dirName;
     scr = execCommand(cmd.c_str());
-    cmd = "cp /var/log/syslog " + dirName;
+    cmd = "cp /var/log/syslog " + dirName + " 2>&1";
     scr = execCommand(cmd.c_str());
-    cmd = "cp /var/log/kern*.log " + dirName;
+    cmd = "cp /var/log/kern*.log " + dirName + " 2>&1";
     scr = execCommand(cmd.c_str());
 
     string shName = "/var/tmp/xpum-" + uuid + "/cp.sh" ; 
@@ -185,7 +185,7 @@ int genCmdOut(const string &uuid) {
     cmd = "dmidecode 2>&1";
     scr = execCommand(cmd.c_str());
     os << "\n" + cmd + "\n" + scr.output();
-    cmd = "lsusb";
+    cmd = "lsusb 2>&1";
     scr = execCommand(cmd.c_str());
     os << "\n" + cmd + "\n" + scr.output();
     cmd = "xpu-smi discovery 2>&1";

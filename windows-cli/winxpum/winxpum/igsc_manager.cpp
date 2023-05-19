@@ -150,14 +150,16 @@ static int firmware_update(const char* device_path, const char* image_path, bool
             goto exit;
     }
 
-    ret = firmware_check_hw_config(&handle, img);
-    if (ret == IGSC_ERROR_INCOMPATIBLE) {
-        ret = EXIT_FAILURE;
-        goto exit;
-    }
-    if (ret != IGSC_SUCCESS) {
-        ret = EXIT_FAILURE;
-        goto exit;
+    if (!force_update) {
+        ret = firmware_check_hw_config(&handle, img);
+        if (ret == IGSC_ERROR_INCOMPATIBLE) {
+            ret = EXIT_FAILURE;
+            goto exit;
+        }
+        if (ret != IGSC_SUCCESS) {
+            ret = EXIT_FAILURE;
+            goto exit;
+        }
     }
 
     if (force_update) {
@@ -504,7 +506,7 @@ bool IGSC_Manager::isFwDataImageAndDeviceCompatible(std::string bdf, std::string
     return match;
 }
 
-int IGSC_Manager::runFlashGSC(std::string bdf, std::string image_file) {
+int IGSC_Manager::runFlashGSC(std::string bdf, std::string image_file, bool force) {
     if (!initialized) {
         if (init() < 0) {
             std::cout << "IGSC init failed" << std::endl;
@@ -513,7 +515,7 @@ int IGSC_Manager::runFlashGSC(std::string bdf, std::string image_file) {
     }
 
     std::string device_path_str = bdf_to_devicepath[bdf];
-    return firmware_update(device_path_str.c_str(), image_file.c_str(), true, false);
+    return firmware_update(device_path_str.c_str(), image_file.c_str(), true, force);
 }
 
 int IGSC_Manager::runFlashGSCData(std::string bdf, std::string image_file) {

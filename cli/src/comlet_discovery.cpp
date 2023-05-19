@@ -307,12 +307,14 @@ std::unique_ptr<nlohmann::json> ComletDiscovery::run() {
         } else {
             json = this->coreStub->getDeviceProperties(this->opts->deviceId.c_str(), this->opts->username, this->opts->password);
         }
+        auto snAndAmcJson = this->coreStub->getSerailNumberAndAmcVersion(std::stoi(this->opts->deviceId), this->opts->username, this->opts->password);
         if (json->contains("serial_number") && (*json)["serial_number"].get<std::string>().compare("unknown") == 0) {
-            std::string sn = this->coreStub->getSerailNumberIPMI(std::stoi(this->opts->deviceId));
+            std::string sn = (*snAndAmcJson)["serial_number"];
             if (sn.size() > 0) {
                 (*json)["serial_number"] = sn;
             }
         }
+        (*json)["amc_firmware_version"] = (*snAndAmcJson)["amc_firmware_version"];
         return json;
     }
 

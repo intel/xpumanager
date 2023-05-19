@@ -102,7 +102,7 @@ void ComletConfig::setupOptions() {
     addOption("--powerlimit", this->opts->powerlimit, "Device-level power limit.");
     addOption("--standby", this->opts->standby, "Tile-level standby mode. Valid options: \"default\"; \"never\".");
     addOption("--scheduler", this->opts->scheduler, "Tile-level scheduler mode. Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\";\"debug\".The valid range of all time values (us) is from 5000 to 100,000,000.");
-    //addFlag("--reset", this->opts->resetDevice, "Hard reset the GPU. All applications that are currently using this device will be forcibly killed.");
+    addFlag("--reset", this->opts->resetDevice, "Reset device by SBR (Secondary Bus Reset).");
 
     //addOption("--timeslice", this->opts->schedulerTimeslice, "set scheduler timeslice mode");
     //addOption("--timeout", this->opts->schedulerTimeout, "set scheduler timeout mode");
@@ -418,13 +418,17 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
         else if (this->opts->tileId == -1 && this->opts->resetDevice) {
             char confirmed;
             if (this->opts->deviceId >= 0) {
+                std::cout <<"Reset GPU will make XPU daemon not work."<< std::endl;
+                std::cout <<"Please restart XPU Manager daemon: sudo systemctl restart xpumd. " << std::endl;
+                json = this->coreStub->resetDevice(this->opts->deviceId, true); 
+#if 0
                 json = this->coreStub->getDeviceProcessState(this->opts->deviceId);
                 std::cout <<"The process(es) below are using this device."<<"\n";
 
                 for(auto it= (*json)["device_process_list"].begin(); it!=(*json)["device_process_list"].end();++it) {
                     std::cout <<"PID: "<<(*it)["process_id"] <<" ,";
                     std::cout <<" Command: "<<(*it)["process_name"];
-                    std::cout<<"\n";
+                    std::cout <<"\n";
                 }
                 //std::cout << json->dump(4) <<"\n";
                 std::cout <<"All process(es) above will be forcibly killed if you reset it. Do you want to continue? (Y/N):";
@@ -436,6 +440,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
                     (*json)["status"] = "CANCEL";
                     (*json)["return"] = "Reset is cancelled";
                 }
+#endif
             }
             if((*json)["status"] == "OK") {
                 //json->clear();

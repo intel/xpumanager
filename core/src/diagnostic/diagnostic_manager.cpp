@@ -16,6 +16,7 @@
 #include "infrastructure/xpum_config.h"
 #include "infrastructure/utility.h"
 #include <sys/stat.h>
+#include <sys/sysinfo.h>
 
 namespace xpum {
 
@@ -92,7 +93,7 @@ void DiagnosticManager::readConfigFile() {
             } else if (name == "MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST") {
                 try {
                     float val = std::stof(value);
-                    if (val > 0 && val < 1)
+                    if (val > 0 && val <= 1)
                         MEMORY_USE_PERCENTAGE_FOR_ERROR_TEST = val;
                 } catch(...) { }
             } else if (name == "NAME") {
@@ -1413,7 +1414,16 @@ void DiagnosticManager::doDeviceDiagnosticPeformanceMemoryAllocation(const ze_de
                 if (ret != ZE_RESULT_SUCCESS) {
                     throw BaseException("zeContextCreate()");
                 }
-                uint64_t max_allocation_size = workgroup_size_x_ * (device_properties.maxMemAllocSize / workgroup_size_x_) * memory_use;
+                uint64_t target_test_memory_size = device_properties.maxMemAllocSize;
+                struct sysinfo info;
+                if (sysinfo(&info) == 0) {
+                    uint64_t host_memory_size = (uint64_t) info.totalram / info.mem_unit;
+                    if (target_test_memory_size > host_memory_size) {
+                        XPUM_LOG_DEBUG("host memory size: {}, target test memory size: {}", host_memory_size, target_test_memory_size);
+                        target_test_memory_size = host_memory_size;
+                    }
+                }
+                uint64_t max_allocation_size = workgroup_size_x_ * (target_test_memory_size / workgroup_size_x_) * memory_use;
                 uint64_t one_case_requested_allocation_size = allocate_size * number_of_kernel_args_;
 
                 if (one_case_requested_allocation_size > max_allocation_size) {
@@ -1649,8 +1659,16 @@ void DiagnosticManager::doDeviceDiagnosticMemoryError(const ze_device_handle_t &
         }
     }
 
-    uint64_t target_test_memory_size = (std::min(physical_size, std::max(physical_size, device_properties.maxMemAllocSize)) * 1.0 * memory_use_percentage_for_error_test);
-    XPUM_LOG_DEBUG("memory physical size: {}, max mem alloc size: {}, target test size: {}", physical_size, device_properties.maxMemAllocSize, target_test_memory_size);
+    uint64_t target_test_memory_size = physical_size * 1.0 * memory_use_percentage_for_error_test;
+    XPUM_LOG_DEBUG("memory physical size: {}, target test memory size: {}", physical_size, target_test_memory_size);
+    struct sysinfo info;
+    if (sysinfo(&info) == 0) {
+        uint64_t host_memory_size = (uint64_t) info.totalram / info.mem_unit;
+        if (target_test_memory_size > host_memory_size) {
+            XPUM_LOG_DEBUG("host memory size: {}, target test memory size: {}", host_memory_size, target_test_memory_size);
+            target_test_memory_size = host_memory_size;
+        }
+    }
     ze_context_desc_t context_desc = {ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0};
     ze_context_handle_t context;
     XPUM_ZE_HANDLE_LOCK(ze_driver, ret = zeContextCreate(ze_driver, &context_desc, &context));

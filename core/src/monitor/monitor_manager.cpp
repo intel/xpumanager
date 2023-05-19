@@ -124,7 +124,7 @@ bool MonitorManager::initOneTimeMetricMonitorTasks(MeasurementType type) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(Configuration::TELEMETRY_DATA_MONITOR_FREQUENCE/2));
         for (auto& p_task : tasks) {
-            if (p_task->getCapability() != DeviceCapability::METRIC_RAS_ERROR) {
+            if (p_task->getCapability() != DeviceCapability::METRIC_RAS_ERROR && p_task->getCapability() != DeviceCapability::METRIC_MEMORY_USED_UTILIZATION) {
                 p_task->start(this->p_scheduled_thread_pool);
             }
         }

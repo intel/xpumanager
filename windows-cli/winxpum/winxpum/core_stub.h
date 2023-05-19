@@ -50,7 +50,7 @@ public:
 
     std::unique_ptr<nlohmann::json> setMemoryEccState(int deviceId, bool enabled);
 
-    std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath);
+    std::unique_ptr<nlohmann::json> runFirmwareFlash(int deviceId, unsigned int type, const std::string& filePath, bool force);
     
     std::unique_ptr<nlohmann::json> getFirmwareFlashResult(int deviceId, unsigned int type);
 

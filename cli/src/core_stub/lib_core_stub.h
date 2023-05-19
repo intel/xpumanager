@@ -35,7 +35,7 @@ class LibCoreStub : public CoreStub {
 
     std::unique_ptr<nlohmann::json> getDeviceProperties(const char *bdf, std::string username="", std::string password="");
 
-    std::string getSerailNumberIPMI(int deviceId);
+    std::unique_ptr<nlohmann::json> getSerailNumberAndAmcVersion(int deviceId, std::string username="", std::string password="");
 
     std::unique_ptr<nlohmann::json> getAMCFirmwareVersions(std::string username, std::string password);
 
@@ -124,6 +124,8 @@ class LibCoreStub : public CoreStub {
     std::unique_ptr<nlohmann::json> createVf(int deviceId, uint32_t numVfs, uint64_t lmem);
 
     std::unique_ptr<nlohmann::json> getDeviceFunction(int deviceId);
+
+    std::unique_ptr<nlohmann::json> removeAllVf(int deviceId);
 
 };
 } // end namespace xpum::cli

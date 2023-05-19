@@ -57,8 +57,14 @@ enum BUP_MKHI_PCH_PRODUCTION_STATE_TYPE {
     PCH_PRODUCTION_STATE_PRQ    //Production fused with revenue_disabled=0
 };
 
+typedef struct pci_addr_mei_device {
+    pci_address_t bdfAddr;
+    std::string meiDevicePath;
+}pci_addr_mei_device;
 
-void toSetMeiDevicePath(std::shared_ptr<GPUDevice> p_gpu);
+std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
+
+void toSetMeiDevicePath(std::shared_ptr<GPUDevice> p_gpu, std::vector<pci_addr_mei_device> devicesVec);
 
 TEESTATUS teeInitAndConnectByPath(TEEHANDLE *cl, const GUID *guid, const char *device_path);
 

@@ -364,6 +364,13 @@ static xpum_result_t getGPUFwInventoryList(DNPRedfishHostInterface interface,
                 std::string link = inv["@odata.id"].get<std::string>();
                 if (link.find("/redfish/v1/UpdateService/FirmwareInventory/PonteVecchio") != link.npos) {
                     gpuOdataIdList.push_back(link);
+                } else {
+                    auto tmp = link;
+                    std::transform(tmp.begin(), tmp.end(), tmp.begin(),
+                                   [](unsigned char c) { return std::tolower(c); });
+                    if (tmp.find("flex") != tmp.npos || tmp.find("ats_m") != tmp.npos) {
+                        gpuOdataIdList.push_back(link);
+                    }
                 }
             }
         }

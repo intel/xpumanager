@@ -112,8 +112,14 @@ int errorNumTranslate(int coreErrNo) {
             return XPUM_CLI_ERROR_VGPU_VF_UNSUPPORTED_OPERATION;
         case XPUM_VGPU_CREATE_VF_FAILED:
             return XPUM_CLI_ERROR_VGPU_CREATE_VF_FAILED;
+        case XPUM_VGPU_REMOVE_VF_FAILED:
+            return XPUM_CLI_ERROR_VGPU_REMOVE_VF_FAILED;
         case XPUM_VGPU_NO_CONFIG_FILE:
             return XPUM_CLI_ERROR_VGPU_NO_CONFIG_FILE;
+        case XPUM_VGPU_SYSFS_ERROR:
+            return XPUM_VGPU_SYSFS_ERROR;
+        case XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL:
+            return XPUM_CLI_ERROR_VGPU_UNSUPPORTED_DEVICE_MODEL;
         default:
             return XPUM_CLI_ERROR_GENERIC_ERROR;
     }

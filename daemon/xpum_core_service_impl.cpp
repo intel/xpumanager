@@ -1488,10 +1488,6 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     return grpc::Status::OK;
 }
 
-xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
-    return XPUM_GENERIC_ERROR;
-}
-
 ::grpc::Status XpumCoreServiceImpl::resetDevice(::grpc::ServerContext* context, const ::ResetDeviceRequest* request, ::ResetDeviceResponse* response) {
     xpum_result_t res;
     xpum_device_id_t deviceId = request->deviceid();
@@ -2589,6 +2585,10 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             response->set_errormsg("Fail to create VF");
         } else if (res == XPUM_VGPU_NO_CONFIG_FILE) {
             response->set_errormsg("vGPU configuration file doesn't exist");
+        } else if (res == XPUM_VGPU_SYSFS_ERROR) {
+            response->set_errormsg("Error in sysfs");
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            response->set_errormsg("Unsupported device model");
         } else {
             response->set_errormsg("Error");
         }
@@ -2602,7 +2602,13 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
     int count = XPUM_MAX_VF_NUM;
     xpum_result_t res = xpumGetDeviceFunctionList(request->deviceid(), resList, &count);
     if (res != XPUM_OK) {
-        response->set_errormsg("Error");
+        if (res == XPUM_VGPU_SYSFS_ERROR) {
+            response->set_errormsg("Error in sysfs");
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            response->set_errormsg("Unsupported device model");
+        } else {
+            response->set_errormsg("Error");
+        } 
     } else {
         response->set_count(count);
         for (int i = 0; i < count; i++) {
@@ -2611,6 +2617,23 @@ std::string XpumCoreServiceImpl::eccActionToString(xpum_ecc_action_t action) {
             vfInfo->set_devicefunctiontype(static_cast<XpumDeviceFunctionType>(resList[i].functionType));
             vfInfo->set_bdfaddress(resList[i].bdfAddress);
             vfInfo->set_deviceid(resList[i].deviceId);
+        }
+    }
+    response->set_errorno(res);
+    return grpc::Status::OK;
+}
+
+::grpc::Status XpumCoreServiceImpl::removeAllVf(::grpc::ServerContext* context, const ::VgpuRemoveAllVfRequest* request, ::VgpuRemoveAllVfResponse *response) {
+    xpum_result_t res = xpumRemoveAllVf(request->deviceid());
+    if (res != XPUM_OK) {
+        if (res == XPUM_VGPU_REMOVE_VF_FAILED) {
+            response->set_errormsg("Fail to remove all VFs");
+        } else if (res == XPUM_VGPU_SYSFS_ERROR) {
+            response->set_errormsg("Error in sysfs");
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            response->set_errormsg("Unsupported device model");
+        } else {
+            response->set_errormsg("Error");
         }
     }
     response->set_errorno(res);

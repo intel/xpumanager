@@ -13,6 +13,7 @@
 #include "cli_table.h"
 #include "utility.h"
 #include "exit_code.h"
+#include "local_functions.h"
 #include <iostream>
 
 namespace xpum::cli {
@@ -103,11 +104,18 @@ void ComletVgpu::setupOptions() {
     });
     auto createFlag = addFlag("-c,--create", this->opts->create, "Create the virtual GPUs");
     auto numVfsOpt = addOption("-n", this->opts->numVfs, "The number of virtual GPUs to create");
-    auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPUs, in MiB");
+    auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPU, such as 500M");
     lmemOpt->check([](const std::string &str) {
         std::string errStr = "Invalid lmem format";
         return std::regex_match(str, std::regex("[0-9]+M[B]{0,1}")) ? "" : "Invalid lmem format";
     });
+    auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
+    auto removeFlag = addFlag("-r,--remove", this->opts->remove, "Remove all virtual GPUs on the specified physical GPU");
+    addFlag("-y, --assumeyes", opts->assumeYes, "Assume that the answer to any question which would be asked is yes");
+
+    /*
+     *  All the flags should be exclusive to each other.
+     */
     precheckFlag->excludes(deviceIdOpt);
     precheckFlag->excludes(numVfsOpt);
     precheckFlag->excludes(lmemOpt);
@@ -115,20 +123,31 @@ void ComletVgpu::setupOptions() {
     createFlag->needs(deviceIdOpt);
     createFlag->needs(numVfsOpt);
     createFlag->needs(lmemOpt);
+    listFlag->excludes(precheckFlag);
+    listFlag->excludes(createFlag);
+    listFlag->excludes(numVfsOpt);
+    listFlag->excludes(lmemOpt);
+    listFlag->needs(deviceIdOpt);
+    removeFlag->excludes(precheckFlag);
+    removeFlag->excludes(createFlag);
+    removeFlag->excludes(listFlag);
+    removeFlag->excludes(numVfsOpt);
+    removeFlag->excludes(lmemOpt);
+    removeFlag->needs(deviceIdOpt);
 }
 
 std::unique_ptr<nlohmann::json> ComletVgpu::run() {
     std::unique_ptr<nlohmann::json> json;
-    if (this->opts->deviceId.size()) {
-        if (isValidDeviceId(this->opts->deviceId)) {
-            this->parsedDeviceId = std::stoi(this->opts->deviceId);
-        } else {
-            auto getIdJson = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &this->parsedDeviceId);
-            if (getIdJson->contains("error")) {
-                return getIdJson;
-            }
+    int targetId = -1;
+    if (isValidDeviceId(this->opts->deviceId)) {
+        targetId = std::stoi(this->opts->deviceId);
+    } else if (isBDF(this->opts->deviceId)) {
+        auto getIdJson = this->coreStub->getDeivceIdByBDF(this->opts->deviceId.c_str(), &targetId);
+        if (getIdJson->contains("error")) {
+            return getIdJson;
         }
     }
+
     if (this->opts->precheck) {
         json = this->coreStub->doVgpuPrecheck();
     } else if (this->opts->create) {
@@ -143,21 +162,68 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
             this->precheckPassFlag = true;
             uint64_t lmemMb = 0;
             sscanf(this->opts->lmemPerVf.c_str(), "%luM", &lmemMb);
-            json = this->coreStub->createVf(this->parsedDeviceId, this->opts->numVfs, lmemMb * 1024 * 1024);
+            json = this->coreStub->createVf(targetId, this->opts->numVfs, lmemMb * 1024 * 1024);
             if (json->contains("error")) {
                 return json;
             }
-            json = this->coreStub->getDeviceFunction(stoi(this->opts->deviceId));
+            json = this->coreStub->getDeviceFunction(targetId);
         } else {
             this->precheckPassFlag = false;
             return json;
         }
+    } else if (this->opts->list) {
+        json = this->coreStub->getDeviceFunction(targetId);
+        return json;
+    } else if (this->opts->remove) {
+        json = this->coreStub->removeAllVf(targetId);
+        return json;
     }
     return json;
 }
 
 void ComletVgpu::getTableResult(std::ostream &out) {
+    /*
+     *  Warning message for vgpu remove
+     */
+    if (this->opts->remove) {
+        std::cout << "CAUTION: we are removing all VFs on device "
+            << this->opts->deviceId
+            << ", please make sure all VF-assigned virtual machines are shut down."
+            << std::endl;
+        std::cout << "Please confirm to proceed (y/n) ";
+        if (!opts->assumeYes) {
+            std::string confirm;
+            std::cin >> confirm;
+            if (confirm != "Y" && confirm != "y") {
+                out << "Remove VFs aborted" << std::endl;
+                return;
+            }
+        } else {
+            out << std::endl;
+        }
+    }
+
     auto res = run();
+
+    /*
+     *  Get sriov_drivers_autoprobe by device ID or BDF address
+     */
+    std::string bdfAddress;
+    if (isValidDeviceId(this->opts->deviceId)) {
+        auto devicePropJson = this->coreStub->getDeviceProperties(std::stoi(this->opts->deviceId));
+        if (devicePropJson->contains("error")) {
+            out << "Error: " << (*devicePropJson)["error"].get<std::string>() << std::endl;
+            setExitCodeByJson(*devicePropJson);
+            return;
+        }
+        if (devicePropJson->contains("pci_bdf_address")) {
+            bdfAddress = (*devicePropJson)["pci_bdf_address"].get<std::string>();
+        }
+    } else if (isBDF(this->opts->deviceId)) {
+        bdfAddress = this->opts->deviceId;
+    }
+    bool isAutoprobeEnabled = isDriversAutoprobeEnabled(bdfAddress);
+
     if (res->contains("error")) {
         out << "Error: " << (*res)["error"].get<std::string>() << std::endl;
         setExitCodeByJson(*res);
@@ -175,18 +241,17 @@ void ComletVgpu::getTableResult(std::ostream &out) {
             table.show(out);
             return;
         }
-        auto devicePropJson = this->coreStub->getDeviceProperties(this->parsedDeviceId);
-        if (devicePropJson->contains("pci_bdf_address")) {
-            std::stringstream path, content;
-            path << "/sys/bus/pci/devices/" << (*devicePropJson)["pci_bdf_address"].get<std::string>() << "/sriov_drivers_autoprobe";
-            std::ifstream ifs(path.str(), std::ios::in);
-            content << ifs.rdbuf();
-            /*
-             *  Different table at autoprobe enabled/disabled
-             */
-            CharTable table(std::stoi(content.str()) ? functionListTableConfig : functionListTableWithoutIdConfig, *res);
-            table.show(out);
-        } 
+
+        /*
+         *  Different table at autoprobe enabled/disabled
+         */
+        CharTable table(isAutoprobeEnabled ? functionListTableConfig : functionListTableWithoutIdConfig, *res);
+        table.show(out);
+    } else if (this->opts->list) {
+        CharTable table(isAutoprobeEnabled ? functionListTableConfig : functionListTableWithoutIdConfig, *res);
+        table.show(out);
+    } else if (this->opts->remove) {
+        out << "All virtual GPUs on the device " << this->opts->deviceId << " are removed." << std::endl;
     }
 }
 

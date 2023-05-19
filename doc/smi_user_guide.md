@@ -32,6 +32,8 @@ Subcommands:
   updatefw                    Update GPU firmware.
   topology                    get the system topology
   config                      Get and change the GPU settings.
+  ps                          List status of processes.
+  vgpu                        Create and remove virtual GPUs in SR-IOV configuration.
   stats                       List the GPU statistics.
   dump                        Dump device statistics data.
   log                         Collect GPU debug logs.
@@ -408,6 +410,7 @@ Usage: xpu-smi config [Options]
   xpu-smi config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]
   xpu-smi config -d [deviceId] -t [tileId] --xelinkport [portId,value]
   xpu-smi config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]
+  xpu-smi config -d [deviceId] --reset
   
   
 Options:
@@ -427,6 +430,7 @@ Options:
   --xelinkport                Change the Xe Link port status. The value 0 means down and 1 means up.
   --xelinkportbeaconing       Change the Xe Link port beaconing status. The value 0 means off and 1 means on.
   --memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable
+  --reset                     Reset device by SBR (Secondary Bus Reset).
 
 ```
 
@@ -701,3 +705,168 @@ Collect the GPU log files.
 xpu-smi log -f 1217.tar.gz
 Done
 ```
+ 
+## Set up GPU SR-IOV configuration
+This GPU SR-IOV feature only works for Intel Flex series GPUs. Only Ubuntu and CentOS 7 are validated. 
+ 
+### BIOS settings for GPU SR-IOV
+#### Intel M50CYP
+Advanced -> PCI Configuration -> Memory Mapped I/O above 4GB : Enabled  
+Advanced -> PCI Configuration -> MMIO High Base : 56T  
+Advanced -> PCI Configuration -> Memory Mapped I/O Size : 1024G  
+Advanced -> System Acoustic and Performance Configuration -> Set Fan Profile : Performance  
+Advanced -> Integrated IO Configuration -> PCIe Misc. Configuration -> PCIe ASPM Support (Global) : Disabled  
+Advanced -> Power & Performance -> Workload Configuration : I/O Sensitive  
+Advanced -> Power & Performance -> CPU P State Control -> Intel(R) Turbo Boost Technology : Enabled  
+Advanced -> PCI Configuration -> SR-IOV Support : Enabled  
+Advanced -> Processor Configuration -> Intel(R) Virtualization Technology: Enabled  
+Advanced -> Integrated IO Configuration -> Intel(R) VT for Directed I/O : Enabled  
+  
+#### Inspur NF5280M6
+MMCFG Base = Auto  
+MMCFG Size = Auto  
+MMIO High Base = 32T  
+MMIO High Granularity Size = 1024G  
+VMX = Enabled  
+SR-IOV Support = Enabled  
+Intel VT for Directed I/O (VT-d) = Enabled  
+Power/Performance Profile = Virtualization  
+  
+#### H3C R5300 G5
+ MMCFG Base=Auto  
+ MMIO High Base=32T  
+ MMIO High Granularity Size=1024G  
+ VMX=Enabled  
+ SR-IOV Support=Enabled  
+ Intel    VT for Directed I/O=Enabled  
+ ENERGY_PERF_BIAS_CFG mode=Performance  
+ Workload Configuration=Balanced  
+ Workload Profile Configuration=Graphic Processing  
+    
+#### Dell PowerEdge XR12
+ Integrated Devices -> Memory Mapped I/O above 4GB = Enabled  
+ Integrated Devices -> Memory Mapped Base = 56TB  
+ Integrated Devices -> SR-IOV Global Enable = Enabled  
+ Processor Settings -> Virtualization Technology = Enabled  
+ System Profile Settings -> System Profile = Performance  
+  
+### Add Linux kernel command line options
+After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added. They are "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. After you set them, please reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set. 
+  
+  
+### Help info of GPU SR-IOV configuration feature. 
+```
+xpu-smi vgpu
+Create and remove virtual GPUs in SR-IOV configuration.
+
+Usage: xpu-smi vgpu [Options]
+ xpu-smi vgpu --precheck
+ xpu-smi vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]
+ xpu-smi vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]
+ xpu-smi vgpu -d [deviceId] -r
+ xpu-smi vgpu -d [pciBdfAddress] -r
+ xpu-smi vgpu -d [deviceId] -l
+ xpu-smi vgpu -d [pciBdfAddress] -l
+
+Options:
+  -h,--help                   Print this help message and exit
+  -j,--json                   Print result in JSON format
+
+  --precheck                  Check if BIOS settings and kernel command line options are ready to create virtual GPUs
+
+  -d,--device                 Device ID or PCI BDF address
+  -c,--create                 Create the virtual GPUs
+  -n                          The number of virtual GPUs to create
+  --lmem                      The memory size of each virtual GPUs, in MiB
+
+  -l,--list                   List all virtual GPUs on the specified physical GPU
+
+  -r,--remove                 Remove all virtual GPUs on the specified physical GPU
+  -y,--assumeyes              Assume that the answer to any question which would be asked is yes
+```
+ 
+### GPU SR-IOV precheck
+```
+ xpu-smi vgpu --precheck
++------------------+-------------------------------------------------------------------------------+
+| VMX Flag         | Result: Pass                                                                  |
+|                  | Message:                                                                      |
++------------------+-------------------------------------------------------------------------------+
+| SR-IOV           | Status: Fail                                                                  |
+|                  | Message: SR-IOV is disabled. Please set the related BIOS settings and         |
+|                  |   kernel command line options.                                                |
++------------------+-------------------------------------------------------------------------------+
+| IOMMU            | Status: Pass                                                                  |
+|                  | Message:                                                                      |
++------------------+-------------------------------------------------------------------------------+
+```
+ 
+### Create the virtual GPUs
+After all GPU SR-IOV pre-checks are passed, you may create the virtual GPUs
+```
+sudo xpu-smi vgpu -d 0 -c -n 4 --lmem 500M
++--------------------------------------------------------------------------------------------------+
+| Device Information                                                                               |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.0                                                                    |
+| Function Type: physical                                                                          |
+| Memory Physical Size: 14260.97 MiB                                                               |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.1                                                                    |
+| Function Type: virtual                                                                           |
+| Memory Physical Size: 500.00 MiB                                                                 |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.2                                                                    |
+| Function Type: virtual                                                                           |
+| Memory Physical Size: 500.00 MiB                                                                 |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.3                                                                    |
+| Function Type: virtual                                                                           |
+| Memory Physical Size: 500.00 MiB                                                                 |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.4                                                                    |
+| Function Type: virtual                                                                           |
+| Memory Physical Size: 500.00 MiB                                                                 |
++--------------------------------------------------------------------------------------------------+
+```
+
+### list the virtual GPUs
+```
+sudo xpu-smi vgpu -d 0 -l
++--------------------------------------------------------------------------------------------------+
+| Device Information                                                                               |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.0                                                                    |
+| Function Type: physical                                                                          |
+| Memory Physical Size: 14260.97 MiB                                                               |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.1                                                                    |
+| Function Type: virtual                                                                           |
+| Memory Physical Size: 500.00 MiB                                                                 |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.2                                                                    |
+| Function Type: virtual                                                                           |
+| Memory Physical Size: 500.00 MiB                                                                 |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.3                                                                    |
+| Function Type: virtual                                                                           |
+| Memory Physical Size: 500.00 MiB                                                                 |
++--------------------------------------------------------------------------------------------------+
+| PCI BDF Address: 0000:4d:00.4                                                                    |
+| Function Type: virtual                                                                           |
+| Memory Physical Size: 500.00 MiB                                                                 |
++--------------------------------------------------------------------------------------------------+
+```
+
+### Remove all the virtual GPUs on the specified GPU
+```
+sudo xpu-smi vgpu -d 0 -r
+CAUTION: we are removing all VFs on device 0, please make sure all VF-assigned virtual machines are shut down.
+Please confirm to proceed (y/n) y
+All virtual GPUs on the device 0 are removed.
+
+```
+
+### Limitations
+ * XPU manager (in Host OS Linux) cannot discover and monitor a VF if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 VF was created, end users may understand VF utilizations by looking at metrics of PF. 
+ * XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available

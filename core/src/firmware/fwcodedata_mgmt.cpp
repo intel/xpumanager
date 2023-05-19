@@ -250,14 +250,13 @@ xpum_result_t FwCodeDataMgmt::flashFwCodeData(FlashFwCodeDataParam &param) {
     auto& deviceId = param.deviceId;
     auto& codeImagePath = param.codeImagePath;
     auto& dataImagePath = param.dataImagePath;
-    auto& force = param.force;
     if (taskFwCodeData.valid()) {
         // task already running
         return xpum_result_t::XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
     } else {
         // check GFX fw_status
         auto fw_status = Core::instance().getFirmwareManager()->getGfxFwStatus(deviceId);
-        if (!force && fw_status != gfx_fw_status::GfxFwStatus::NORMAL) {
+        if (fw_status != gfx_fw_status::GfxFwStatus::NORMAL) {
             flashFwErrMsg = "Fail to flash, GFX firmware status is " + Core::instance().getFirmwareManager()->transGfxFwStatusToString(fw_status);
             return XPUM_GENERIC_ERROR;
         }
@@ -286,10 +285,10 @@ xpum_result_t FwCodeDataMgmt::flashFwCodeData(FlashFwCodeDataParam &param) {
 
         percent.store(0);
 
-        taskFwCodeData = std::async(std::launch::async, [this, deviceId, codeImagePath, dataImagePath, force] {
+        taskFwCodeData = std::async(std::launch::async, [this, deviceId, codeImagePath, dataImagePath] {
             XPUM_LOG_INFO("Start update GSC FW-CODE-DATA on device {}", devicePath);
             xpum_result_t res;
-            res = Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, codeImagePath.c_str(), force);
+            res = Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, codeImagePath.c_str());
             if (res != XPUM_OK){
                 flashFwErrMsg = Core::instance().getFirmwareManager()->getFlashFwErrMsg();
                 removeDir(tmpUnpackPath.c_str());

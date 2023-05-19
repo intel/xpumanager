@@ -217,8 +217,8 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                " " + appName + " config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]\n"
                " " + appName + " config -d [deviceId] -t [tileId] --xelinkport [portId,value]\n"
                " " + appName + " config -d [deviceId] -t [tileId] --xelinkportbeaconing [portId,value]\n"
-               " " + appName + " config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable\n";
-               //" " + appName + " config -d [deviceId] --reset\n";
+               " " + appName + " config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable\n"
+               " " + appName + " config -d [deviceId] --reset\n";
     } else if (app->get_name().compare("amcsensor") == 0) {
         return "\nUsage: " + appName + " amcsensor [Options]\n"
                " " + appName + " amcsensor\n"
@@ -228,7 +228,13 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                " " + appName + " log -f [tarGzipFileName]\n";
     } else if (app->get_name().compare("vgpu") == 0) {
         return "\nUsage: " + appName + " vgpu [Options]\n"
-               " " + appName + " vgpu --precheck\n"; 
+               " " + appName + " vgpu --precheck\n"
+               " " + appName + " vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]\n"
+               " " + appName + " vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]\n"
+               " " + appName + " vgpu -d [deviceId] -r\n"
+               " " + appName + " vgpu -d [pciBdfAddress] -r\n"
+               " " + appName + " vgpu -d [deviceId] -l\n"
+               " " + appName + " vgpu -d [pciBdfAddress] -l\n";
     } else {
         return CLI::Formatter::make_usage(app, name);
     }

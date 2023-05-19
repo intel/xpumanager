@@ -103,6 +103,10 @@ void ComletFirmware::setupOptions() {
 
     opts->deviceId = XPUM_DEVICE_ID_ALL_DEVICES;
     addFlag("-y, --assumeyes", opts->assumeyes, "Assume that the answer to any question which would be asked is yes");
+
+    auto forceFlag = addFlag("--force", opts->forceUpdate, "Force GFX firmware update. This parameter only works for GFX firmware.");
+
+    forceFlag->needs(fwTypeOpt);
 }
 
 nlohmann::json ComletFirmware::validateArguments() {
@@ -160,7 +164,7 @@ void ComletFirmware::getJsonResult(std::ostream &out, bool raw) {
     }
 
     int type = getIntFirmwareType(opts->firmwareType);
-    auto uniqueJson = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
+    auto uniqueJson = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->forceUpdate);
     std::shared_ptr<nlohmann::json> json = std::move(uniqueJson);
     if (json->contains("error")) {
         printJson(json, out, raw);
@@ -405,7 +409,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         }
     }
     // start run
-    auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath);
+    auto json = coreStub->runFirmwareFlash(opts->deviceId, type, opts->firmwarePath, opts->forceUpdate);
 
     auto status = (*json)["error"];
     if (!status.is_null()) {

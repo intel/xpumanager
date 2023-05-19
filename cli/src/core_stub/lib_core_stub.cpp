@@ -1130,10 +1130,6 @@ LOG_ERR:
     return json;
 }
 
-xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force){
-    return XPUM_GENERIC_ERROR;
-}
-
 std::unique_ptr<nlohmann::json> LibCoreStub::resetDevice(int deviceId, bool force) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_result_t res;
@@ -1730,6 +1726,10 @@ std::unique_ptr<nlohmann::json> LibCoreStub::createVf(int deviceId, uint32_t num
             (*json)["error"] = "Fail to create VF";
         } else if (res == XPUM_VGPU_NO_CONFIG_FILE) {
             (*json)["error"] = "vGPU configuration file doesn't exist";
+        } else if (res == XPUM_VGPU_SYSFS_ERROR) {
+            (*json)["error"] = "Error in sysfs";
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            (*json)["error"] = "Unsupported device model";
         } else {
             (*json)["error"] = "Error";
         }
@@ -1755,7 +1755,33 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceFunction(int deviceId) {
         }
         (*json)["vf_list"] = vfs;
     } else {
-        (*json)["error"] = "Error";
+        if (res == XPUM_VGPU_SYSFS_ERROR) {
+            (*json)["error"] = "Error in sysfs";
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            (*json)["error"] = "Unsupported device model";
+        } else {
+            (*json)["error"] = "Error";
+        } 
+        (*json)["errno"] = errorNumTranslate(res);
+    }
+    return json;
+}
+
+std::unique_ptr<nlohmann::json> LibCoreStub::removeAllVf(int deviceId) {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    xpum_result_t res = xpumRemoveAllVf(deviceId);
+    if (res == XPUM_OK) {
+        (*json)["status"] = "OK";
+    } else {
+        if (res == XPUM_VGPU_REMOVE_VF_FAILED) {
+            (*json)["error"] = "Fail to remove all VFs";
+        } else if (res == XPUM_VGPU_SYSFS_ERROR) {
+            (*json)["error"] = "Error in sysfs";
+        } else if (res == XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL) {
+            (*json)["error"] = "Unsupported device model";
+        } else {
+            (*json)["error"] = "Error";
+        }
         (*json)["errno"] = errorNumTranslate(res);
     }
     return json;

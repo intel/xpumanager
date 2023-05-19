@@ -30,9 +30,7 @@ class MemoryEccStateSchema(Schema):
         metadata={"description": "The enabled 1; disabled 0"})
 
 class ResetSchema(Schema):
-    enabled = fields.Integer(
-        metadata={"description": "Forcely 1; otherwise 0"})
-
+    None
 class PortBeaconingSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
@@ -587,16 +585,7 @@ def run_reset(deviceId):
         return jsonify("json string is missing"), 500
 
     req = request.get_json()
-    if "force" not in req:
-        return jsonify("json string is invalid"), 500
-
-    force = req["force"]
-    if type(force) != int:
-        return jsonify("Invalid Parameter force"), 500
-
-    if force != 0 and force != 1:
-        return jsonify("Invalid value of force"), 500
-    code, message, data = stub.runReset(deviceId, force)
+    code, message, data = stub.runReset(deviceId, 1)
     if code != 0:
         error = dict(Status=code, Message=message)
         return jsonify(error), 500

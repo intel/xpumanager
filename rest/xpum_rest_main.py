@@ -161,8 +161,8 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(device_config.get_config))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/performancefactor', methods=['PUT'],
                      view_func=auth.login_required(device_config.set_performancefactor))
-    #app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
-    #                view_func=auth.login_required(device_config.run_reset))
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/reset', methods=['POST'],
+                    view_func=auth.login_required(device_config.run_reset))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/portenabled', methods=['PUT'],
                      view_func=auth.login_required(device_config.set_portenabled))
     app.add_url_rule('/rest/v1/devices/<int:deviceId>/portbeaconing', methods=['PUT'],
@@ -201,7 +201,10 @@ def main(*args, **kwargs):
                      view_func=auth.login_required(vgpu.doVgpuPrecheck))
     app.add_url_rule('/rest/v1/vgpu/createvf', methods=['POST'],
                      view_func=auth.login_required(vgpu.createVf))
-
+    app.add_url_rule('/rest/v1/devices/<int:deviceId>/vgpulist', methods=['GET'],
+                     view_func=auth.login_required(vgpu.listVf))
+    app.add_url_rule('/rest/v1/vgpu/removevf', methods=['POST'],
+                     view_func=auth.login_required(vgpu.removeAllVf))
     
     return app
 

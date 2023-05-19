@@ -40,7 +40,7 @@ class CoreStub {
 
     virtual std::unique_ptr<nlohmann::json> getDeviceProperties(const char *bdf, std::string username="", std::string password="")=0;
 
-    virtual std::string getSerailNumberIPMI(int deviceId)=0;
+    virtual std::unique_ptr<nlohmann::json> getSerailNumberAndAmcVersion(int deviceId, std::string username="", std::string password="")=0;
 
     virtual std::unique_ptr<nlohmann::json> getAMCFirmwareVersions(std::string username, std::string password)=0;
     virtual std::unique_ptr<nlohmann::json> getDeivceIdByBDF(const char* bdf, int *deviceId)=0;
@@ -136,6 +136,8 @@ class CoreStub {
     virtual std::unique_ptr<nlohmann::json> createVf(int deviceId, uint32_t numVfs, uint64_t lmem)=0;
 
     virtual std::unique_ptr<nlohmann::json> getDeviceFunction(int deviceId)=0;
+
+    virtual std::unique_ptr<nlohmann::json> removeAllVf(int deviceId)=0;
 
    protected:
     std::string getCardUUID(const std::string& rawUUID);

@@ -19,7 +19,7 @@ class IGSC_Manager {
 
     std::string getDeviceGSCDataVersion(std::string bdf);
 
-    int runFlashGSC(std::string bdf, std::string image_file);
+    int runFlashGSC(std::string bdf, std::string image_file, bool force);
 
     int runFlashGSCData(std::string bdf, std::string image_file);
 

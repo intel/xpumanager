@@ -8,6 +8,11 @@ from .grpc_stub import stub
 import core_pb2
 from google.protobuf import empty_pb2
 
+DeviceFunctionTypeToString = {
+    core_pb2.PHYSICAL: "physical",
+    core_pb2.VIRTUAL: "virtual",
+    core_pb2.UNKNOWN: "unknown",
+}
 
 def doVgpuPrecheck():
     resp = stub.doVgpuPrecheck(empty_pb2.Empty())
@@ -28,6 +33,27 @@ def createVf(deviceId, numVfs, lmemPerVf):
         lmemPerVf=lmemPerVf,
         deviceId=deviceId
     ))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    return 0, "OK", {"result": "OK"}
+
+def listVf(deviceId):
+    resp = stub.getDeviceFunction(core_pb2.VgpuGetDeviceFunctionRequest(deviceId=deviceId))
+    if len(resp.errorMsg) != 0:
+        return 1, resp.errorMsg, None
+    data = []
+    for f in resp.functionList:
+        function = dict()
+        function["bdf_address"] = f.bdfAddress
+        function["lmem_size"] = f.lmemSize
+        function["function_type"] = DeviceFunctionTypeToString[f.deviceFunctionType]
+        function["device_id"] = f.deviceId
+        data.append(function)
+    return 0, "OK", data
+
+
+def removeAllVf(deviceId):
+    resp = stub.removeAllVf(core_pb2.VgpuRemoveAllVfRequest(deviceId=deviceId))
     if len(resp.errorMsg) != 0:
         return 1, resp.errorMsg, None
     return 0, "OK", {"result": "OK"}

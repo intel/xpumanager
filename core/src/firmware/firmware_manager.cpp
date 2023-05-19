@@ -399,9 +399,11 @@ xpum_result_t FirmwareManager::runGSCFirmwareFlash(xpum_device_id_t deviceId, co
 
     // validate the image is compatible with the device
     if (pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || pDevice->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
-        auto res = atsmHwConfigCompatibleCheck(pDevice->getMeiDevicePath(), buffer);
-        if (res != XPUM_OK)
-            return res;
+        if (!force) {
+            auto res = atsmHwConfigCompatibleCheck(pDevice->getMeiDevicePath(), buffer);
+            if (res != XPUM_OK)
+                return res;
+        }
     } else {
         auto res = isPVCFwImageAndDeviceCompatible(pDevice->getMeiDevicePath(), buffer);
         if (res != XPUM_OK) {
@@ -754,7 +756,7 @@ GfxFwStatus FirmwareManager::getGfxFwStatus(xpum_device_id_t deviceId){
     }
 }
 
-xpum_result_t FirmwareManager::runFwCodeDataFlash(xpum_device_id_t deviceId, const char* filePath, int eccState, bool force) {
+xpum_result_t FirmwareManager::runFwCodeDataFlash(xpum_device_id_t deviceId, const char* filePath, int eccState) {
     flashFwErrMsg.clear();
 
     if (std::system("which unzip >/dev/null 2>&1") != 0) {
@@ -790,7 +792,6 @@ xpum_result_t FirmwareManager::runFwCodeDataFlash(xpum_device_id_t deviceId, con
     param.deviceId = deviceId;
     param.codeImagePath = codeImagePath;
     param.dataImagePath = dataImagePath;
-    param.force = force;
     res = pDevice->getFwCodeDataMgmt()->flashFwCodeData(param);
     if (res != XPUM_OK) {
         flashFwErrMsg = param.errMsg;

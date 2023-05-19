@@ -78,13 +78,9 @@ class ComletDump : public ComletBase {
 
     void dumpRawDataToFile(std::ostream &out);
 
-    bool dumpPCIeMetrics();
-
-    bool dumpEUMetrics();
-
-    bool dumpRASMetrics();
-
     bool dumpIdlePowerOnly();
+
+    std::string getEnv();
 
     std::unique_ptr<nlohmann::json> combineTileAndDeviceLevel(nlohmann::json rawJson);
 };

@@ -36,6 +36,12 @@ struct DeviceSriovInfo {
     uint64_t ggttSizeFree;
     uint32_t doorbellFree;
     uint32_t contextFree;
+    DeviceSriovInfo():
+        deviceModel(0),
+        lmemSizeFree(0),
+        ggttSizeFree(0),
+        doorbellFree(0),
+        contextFree(0) {}
 };
 
 } // namespace xpum

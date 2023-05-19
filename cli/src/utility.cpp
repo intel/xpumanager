@@ -18,7 +18,7 @@
 namespace xpum::cli {
 
 bool isNumber(const std::string &str) {
-    return str.find_first_not_of("0123456789") == std::string::npos;
+    return str.size() && str.find_first_not_of("0123456789") == std::string::npos;
 }
 
 bool isInteger(const std::string &str) {

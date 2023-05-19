@@ -540,6 +540,18 @@ xpum_result_t xpumGetFreqAvailableClocks(xpum_device_id_t deviceId, uint32_t til
 xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_process_t dataArray[], uint32_t *count);
 
 /**
+ * @brief Reset the device
+ * @details This function is used to reset the device
+ *
+ * @param deviceId          IN: The device Id
+ * @param force             IN: force to reset the device or not
+ * @return xpum_result_t
+ *      - \ref XPUM_OK                  if query successfully
+ *      - \ref XPUM_UPDATE_FIRMWARE_TASK_RUNNING    if device is updating firmware
+ */
+xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
+
+/**
  * @brief Get the GPU function component occupancy ratio of the device
  * @details This function is used to get the gpu function component occupancy ratio of the device
  *
@@ -1285,6 +1297,15 @@ xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf);
  * @return xpum_result_t 
  */
 xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_function_info_t list[], int* count);
+
+
+/**
+ * @brief Remove VFs on a specified physical device
+ * 
+ * @param deviceId           IN: Device Id
+ * @return xpum_result_t 
+ */
+xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId);
 
 /**
  * @brief Generate a debug log file

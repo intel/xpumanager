@@ -35,6 +35,7 @@
 #include "infrastructure/exception/level_zero_initialization_exception.h"
 #include "infrastructure/version.h"
 #include "infrastructure/perf_measurement_data.h"
+#include "infrastructure/utility.h"
 #include "internal_api.h"
 #include "ext-include/igsc_lib.h"
 #include "log/dbg_log.h"
@@ -680,7 +681,7 @@ xpum_result_t xpumRunFirmwareFlashEx(xpum_device_id_t deviceId, xpum_firmware_fl
             res = getEccStateForFwCodeAndData(deviceId, eccState);
             if (res != XPUM_OK)
                 return res;
-            return Core::instance().getFirmwareManager()->runFwCodeDataFlash(deviceId, job->filePath, eccState, force);
+            return Core::instance().getFirmwareManager()->runFwCodeDataFlash(deviceId, job->filePath, eccState);
         } else {
             return XPUM_UPDATE_FIRMWARE_UNSUPPORTED_AMC_SINGLE;
         }
@@ -2414,18 +2415,6 @@ xpum_result_t xpumSetDeviceSchedulerDebugMode(xpum_device_id_t deviceId,
     return XPUM_GENERIC_ERROR;
 }
 
-/**
- * @brief Reset the device
- * @details This function is used to reset the device
- *
- * @param deviceId          IN: The device Id
- * @param force             IN: force to reset the device or not
- * @return xpum_result_t
- *      - \ref XPUM_OK                  if query successfully
- *      - \ref XPUM_UPDATE_FIRMWARE_TASK_RUNNING    if device is updating firmware
- */
-//xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force);
-
 xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
     std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
     if (device == nullptr) {
@@ -3423,6 +3412,19 @@ xpum_result_t getPciSlotName(char **pciPath, uint32_t sizePciPath,
     }
 }
 
+static bool isDevicePf(xpum_device_id_t deviceId) {
+    auto device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return false;
+    }
+    Property prop;
+    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE, prop);
+    if (static_cast<xpum_device_function_type_t>(prop.getValueInt()) != DEVICE_FUNCTION_TYPE_PHYSICAL) {
+        return false;
+    }
+    return true;
+}
+
 xpum_result_t xpumDoVgpuPrecheck(xpum_vgpu_precheck_result_t *result) {
     xpum_result_t res = Core::instance().apiAccessPreCheck();
     if (res != XPUM_OK) {
@@ -3436,6 +3438,17 @@ xpum_result_t xpumCreateVf(xpum_device_id_t deviceId, xpum_vgpu_config_t *conf) 
     if (res != XPUM_OK) {
         return res;
     }
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (!isDevicePf(deviceId)) {
+        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
+    if (!Utility::isATSMPlatform(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceHandle())) {
+        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
+    }
+
     // Hardcode supported number of VF temporary
     std::vector<int> validNumVfs = {1,2,4,8,16};
     if (std::find(validNumVfs.begin(), validNumVfs.end(), conf->numVfs) == validNumVfs.end()) {
@@ -3449,8 +3462,18 @@ xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_fun
     if (res != XPUM_OK) {
         return res;
     }
-    std::vector<xpum_vgpu_function_info_t> functionArray;
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (!isDevicePf(deviceId)) {
+        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
+    if (!Utility::isATSMPlatform(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceHandle())) {
+        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
+    }
 
+    std::vector<xpum_vgpu_function_info_t> functionArray;
     res = Core::instance().getVgpuManager()->getFunctionList(deviceId, functionArray);
     if (res != XPUM_OK) {
         return res;
@@ -3469,6 +3492,24 @@ xpum_result_t xpumGetDeviceFunctionList(xpum_device_id_t deviceId, xpum_vgpu_fun
     *count = functionArray.size();
     
     return XPUM_OK;
+}
+
+xpum_result_t xpumRemoveAllVf(xpum_device_id_t deviceId) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    res = validateDeviceId(deviceId);
+    if (res != XPUM_OK) {
+        return res;
+    }
+    if (!isDevicePf(deviceId)) {
+        return XPUM_VGPU_VF_UNSUPPORTED_OPERATION;
+    }
+    if (!Utility::isATSMPlatform(Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId))->getDeviceHandle())) {
+        return XPUM_VGPU_UNSUPPORTED_DEVICE_MODEL;
+    }
+    return Core::instance().getVgpuManager()->removeAllVf(deviceId);
 }
 
 } // end namespace xpum
