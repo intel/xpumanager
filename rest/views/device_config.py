@@ -30,8 +30,7 @@ class MemoryEccStateSchema(Schema):
         metadata={"description": "The enabled 1; disabled 0"})
 
 class ResetSchema(Schema):
-
-
+    None
 class PortBeaconingSchema(Schema):
     tile_id = fields.Integer(
         metadata={"description": "The tile id"})
