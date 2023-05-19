@@ -104,7 +104,7 @@ void ComletVgpu::setupOptions() {
     });
     auto createFlag = addFlag("-c,--create", this->opts->create, "Create the virtual GPUs");
     auto numVfsOpt = addOption("-n", this->opts->numVfs, "The number of virtual GPUs to create");
-    auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPUs, in MiB");
+    auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPU, such as 500M");
     lmemOpt->check([](const std::string &str) {
         std::string errStr = "Invalid lmem format";
         return std::regex_match(str, std::regex("[0-9]+M[B]{0,1}")) ? "" : "Invalid lmem format";
