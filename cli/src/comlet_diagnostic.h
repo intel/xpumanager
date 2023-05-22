@@ -24,6 +24,7 @@ struct ComletDiagnosticOptions {
     std::vector<int> singleTestIdList;
     bool rawJson = true;
     bool preCheck = false;
+    bool listErrorType = false;
     bool onlyGPU = false;
     uint32_t stressTime = 0;
     bool stress = false;
@@ -33,7 +34,8 @@ struct ComletDiagnosticOptions {
 enum ShowMode {
     LEVEL_TEST,
     SINGLE_TEST,
-    PRE_CHECK
+    PRE_CHECK,
+    PRE_CHECK_ERROR_TYPE
 };
 
 class ComletDiagnostic : public ComletBase {

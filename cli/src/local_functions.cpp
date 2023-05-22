@@ -971,4 +971,36 @@ bool isDriversAutoprobeEnabled(const std::string &bdfAddress) {
     return res;
 }
 
+std::unique_ptr<nlohmann::json> getPreCheckErrorTypes() {
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
+    std::vector<nlohmann::json> error_type_list;
+    std::stringstream ss(error_types);
+    std::string current;
+    while (getline(ss, current)) {
+        if (current.empty())
+            continue;
+        
+        std::vector<std::string> error_type;
+        std::stringstream current_ss(current);
+        std::string item;
+        while (getline(current_ss, item, '#')) {
+            if (item.size() > 0) {
+                item.erase(item.find_last_not_of(" \t") + 1);
+                item.erase(0, item.find_first_not_of(" \t"));
+                error_type.push_back(item);
+            }
+        }
+
+        if (error_type.size() < 3)
+            continue;;
+        auto error_type_json = nlohmann::json();
+        error_type_json["type"] = error_type[0];
+        error_type_json["category"] = error_type[1];
+        error_type_json["severity"] = error_type[2];
+        error_type_list.push_back(error_type_json);
+
+    }
+    (*json)["error_type_list"] = error_type_list;
+    return json;
+}
 }

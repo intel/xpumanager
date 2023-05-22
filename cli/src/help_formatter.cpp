@@ -121,6 +121,8 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " diag -g [groupId] --singletest [testIds] \n"
                "  " + appName + " diag -g [groupId] --singletest [testIds] -j \n"
 #endif
+               "  " + appName + " diag --precheck --listtypes\n"
+               "  " + appName + " diag --precheck --listtypes -j\n"
                "  " + appName + " diag --precheck\n"
                "  " + appName + " diag --precheck -j\n"
                "  " + appName + " diag --precheck --gpu\n"
