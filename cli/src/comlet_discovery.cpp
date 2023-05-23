@@ -78,12 +78,12 @@ static nlohmann::json discoveryDetailedJson = R"({
                 { "label": "GFX Firmware Name", "value": "gfx_firmware_name" },
                 { "label": "GFX Firmware Version", "value": "gfx_firmware_version", "dumpId": 9 },
                 { "label": "GFX Firmware Status", "value": "gfx_firmware_status", "dumpId": 22 },
-                { "label": "GFX Data Firmware Name", "value": "gfx_data_firmware_name" },
-                { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10 },
-                { "label": "GFX PSC Firmware Name", "value": "gfx_pscbin_firmware_name" },
-                { "label": "GFX PSC Firmware Version", "value": "gfx_pscbin_firmware_version"},)"
-                R"({ "label": "AMC Firmware Name", "value": "amc_firmware_name"},)"
-                R"({ "label": "AMC Firmware Version", "value": "amc_firmware_version"},)"
+                { "label": "GFX Data Firmware Name", "value": "gfx_data_firmware_name", "empty": false },
+                { "label": "GFX Data Firmware Version", "value": "gfx_data_firmware_version", "dumpId": 10, "empty": false},
+                { "label": "GFX PSC Firmware Name", "value": "gfx_pscbin_firmware_name", "empty": false },
+                { "label": "GFX PSC Firmware Version", "value": "gfx_pscbin_firmware_version", "empty": false},)"
+                R"({ "label": "AMC Firmware Name", "value": "amc_firmware_name", "empty": false },)"
+                R"({ "label": "AMC Firmware Version", "value": "amc_firmware_version", "empty": false },)"
                 R"({ "rowTitle": " " },
                 { "label": "PCI BDF Address", "value": "pci_bdf_address", "dumpId": 11 },
                 { "label": "PCI Slot", "value": "pci_slot", "dumpId": 12 },
@@ -356,7 +356,22 @@ static void showBasicInfo(std::ostream &out, std::shared_ptr<nlohmann::json> jso
 }
 
 static void showDetailedInfo(std::ostream &out, std::shared_ptr<nlohmann::json> json) {
-    CharTable table(ComletConfigDiscoveryDetailed, *json);
+    // Set FW name to empty when version was empty
+    // And they won't be showed in the table of output
+    nlohmann::json js = *json;
+    std::string ver = js["gfx_data_firmware_version"];
+    if (ver.length() == 0) {
+        js["gfx_data_firmware_name"] = "";
+    }
+    ver = js["gfx_pscbin_firmware_version"];
+    if (ver.length() == 0) {
+        js["gfx_pscbin_firmware_name"] = "";
+    }
+    ver = js["amc_firmware_version"];
+    if (ver.length() == 0) {
+        js["amc_firmware_name"] = "";
+    }
+    CharTable table(ComletConfigDiscoveryDetailed, js);
     table.show(out);
 }
 

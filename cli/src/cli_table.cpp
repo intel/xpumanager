@@ -17,6 +17,7 @@ namespace xpum::cli {
 #define TABLE_DEFAULT_SUBITEM_ROW false
 #define TABLE_DEFAULT_ARRAY_ITEM_SEP true
 #define TABLE_DEFAULT_COLUMN_TITLE "TITLE"
+#define TABLE_DEFAULT_EMPTY true
 
 #define KEY_TABLE_WIDTH "width"
 #define KEY_TABLE_INDENTATION "indentation"
@@ -37,6 +38,7 @@ namespace xpum::cli {
 #define KEY_TABLE_CELL_SUFFIX "suffix"
 #define KEY_TABLE_CELL_FIXER "fixer"
 #define KEY_TABLE_CELL_SCALE "scale"
+#define KEY_TABLE_CELL_EMPTY "empty"
 
 #define PATH_DELIMITER '.'
 
@@ -116,7 +118,8 @@ CharTableConfigCellSingle::CharTableConfigCellSingle(const nlohmann::json& conf)
                                                                                    subrow(conf.is_object() ? conf.value(KEY_TABLE_CELL_SUBITEM_ROW, TABLE_DEFAULT_SUBITEM_ROW) : TABLE_DEFAULT_SUBITEM_ROW),
                                                                                    suffix(conf.is_object() ? conf.value(KEY_TABLE_CELL_SUFFIX, "") : ""),
                                                                                    fixer(conf.is_object() ? conf.value(KEY_TABLE_CELL_FIXER, "") : ""),
-                                                                                   scale(conf.is_object() ? conf.value(KEY_TABLE_CELL_SCALE, NAN) : NAN) {
+                                                                                   scale(conf.is_object() ? conf.value(KEY_TABLE_CELL_SCALE, NAN) : NAN),
+                                                                                   empty(conf.is_object() ? conf.value(KEY_TABLE_CELL_EMPTY, TABLE_DEFAULT_EMPTY) : TABLE_DEFAULT_EMPTY) {
 }
 
 ChatTableConfigCellMulti::ChatTableConfigCellMulti(const nlohmann::json& conf) : cells(conf.size()) {
@@ -288,6 +291,21 @@ void CharTable::calculateHangRows() {
     }
 }
 
+//check wehther a cell has a value after ":" 
+static bool hasValue(const std::string &cell) {
+    size_t pos = cell.rfind(":");
+    if (pos == std::string::npos || pos == cell.length() - 1) {
+        return false;
+    }
+    std::string s = cell.substr(pos + 1);
+    s.erase(0, s.find_first_not_of(" "));
+    if (s.empty() == true) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 CharTable::CharTable(CharTableConfig& tableConf, const nlohmann::json& res, const bool cont) : config(tableConf),
                                                                                                result(res),
                                                                                                rows() {
@@ -316,6 +334,10 @@ CharTable::CharTable(CharTableConfig& tableConf, const nlohmann::json& res, cons
                     auto cellConf = objCol->getCellConfigAt(i);
                     if (cellConf != NULL) {
                         const std::string cellValue = cellConf->apply(objIns);
+                        if (cellConf->isEmpty() == false && 
+                                hasValue(cellValue) == false) {
+                            continue;
+                        }
                         if (!(cellConf->isSubRow() && cellValue.empty())) {
                             rowHasNoData = false;
                             config.setCellValue(dataRow, j, cellValue);
