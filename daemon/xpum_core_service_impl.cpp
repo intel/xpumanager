@@ -1516,7 +1516,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     //temporary code
     // res = XPUM_OK;
     response->set_deviceid(deviceId);
-    response->set_retcode(res);
+    //response->set_retcode(res);
     response->set_errorno(res);
     return grpc::Status::OK;
 }

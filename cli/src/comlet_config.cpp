@@ -416,12 +416,15 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             return json;  
         }
         else if (this->opts->tileId == -1 && this->opts->resetDevice) {
-            char confirmed;
+            
             if (this->opts->deviceId >= 0) {
-                std::cout <<"Reset GPU will make XPU daemon not work."<< std::endl;
-                std::cout <<"Please restart XPU Manager daemon: sudo systemctl restart xpumd. " << std::endl;
+#ifndef DAEMONLESS
+                std::cout <<"Resetting GPU will make XPUM daemon not work."<< std::endl;
+                std::cout <<"Please restart XPU Manager daemon: sudo systemctl restart xpum." << std::endl;
+#endif
                 json = this->coreStub->resetDevice(this->opts->deviceId, true); 
 #if 0
+                char confirmed;
                 json = this->coreStub->getDeviceProcessState(this->opts->deviceId);
                 std::cout <<"The process(es) below are using this device."<<"\n";
 
