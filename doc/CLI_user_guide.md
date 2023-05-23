@@ -1180,6 +1180,17 @@ Power/Performance Profile = Virtualization
  Integrated Devices -> SR-IOV Global Enable = Enabled  
  Processor Settings -> Virtualization Technology = Enabled  
  System Profile Settings -> System Profile = Performance  
+
+#### Supermicro SYS-620C-TN12R
+ Advanced -> Chipset Configuration -> NorthBridge -> IIO Configuration -> Intel VT for Directed I/O (VT-d) -> Enable  
+ Advanced -> Chipset Configuration -> NorthBridge -> IIO Configuration -> PCI-E ASPM Support (Global) -> No  
+ Advanced -> Chipset Configuration -> NorthBridge -> IIO Configuration -> IIO eDPC Support -> Disable  
+ Advanced -> PCIe/PCI/PnP Configuration -> Above 4G Decoding -> Enabled  
+ Advanced -> PCIe/PCI/PnP Configuration -> SR-IOV Support -> Enable  
+ Advanced -> PCIe/PCI/PnP Configuration -> ARI Support -> Enable  
+ Advanced -> PCIe/PCI/PnP Configuration -> MMCFG Base -> Auto  
+ Advanced -> PCIe/PCI/PnP Configuration -> MMIO High Base -> 32T  
+ Advanced -> PCIE/PCI/PnP Configuration -> MMIO High Granularity Size -> 1024G or 2048G  
   
 ### Add Linux kernel command line options
 After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added. They are "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. After you set them, please reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set. 
