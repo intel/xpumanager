@@ -1020,7 +1020,6 @@ void static addMemUtilizationCapAndMemProperty(ze_device_handle_t& device, std::
                         break;
                     }
 
-                    std::lock_guard<std::mutex> lock(ras_m);
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
@@ -1780,7 +1779,6 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryUsedUtilization(const
                 props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
                 XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetProperties(mem, &props));
                 if (res == ZE_RESULT_SUCCESS) {
-                    std::lock_guard<std::mutex> lock(ras_m);
                     zes_mem_state_t sysman_memory_state = {};
                     sysman_memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &sysman_memory_state));
@@ -3617,7 +3615,6 @@ void GPUDeviceStub::getHealthStatus(const zes_device_handle_t& device, xpum_heal
             XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceEnumMemoryModules(device, &mem_module_count, mems.data()));
             if (res == ZE_RESULT_SUCCESS) {
                 for (auto& mem : mems) {
-                    std::lock_guard<std::mutex> lock(ras_m);
                     zes_mem_state_t memory_state = {};
                     memory_state.stype = ZES_STRUCTURE_TYPE_MEM_STATE;
                     XPUM_ZE_HANDLE_LOCK(mem, res = zesMemoryGetState(mem, &memory_state));
