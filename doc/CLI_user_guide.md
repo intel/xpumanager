@@ -1191,6 +1191,11 @@ Power/Performance Profile = Virtualization
  Advanced -> PCIe/PCI/PnP Configuration -> MMCFG Base -> Auto  
  Advanced -> PCIe/PCI/PnP Configuration -> MMIO High Base -> 32T  
  Advanced -> PCIE/PCI/PnP Configuration -> MMIO High Granularity Size -> 1024G or 2048G  
+
+#### HPE ProLiant DL380 Gen10
+ Virtualization Options -> Intel(R) Virtualization Technology: Enabled  
+ Virtualization Options -> Intel(R) VT-d: Enabled  
+ Virtualization Options -> SR-IOV: Enabled  
   
 ### Add Linux kernel command line options
 After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added. They are "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. After you set them, please reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set. 
