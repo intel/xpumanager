@@ -408,11 +408,10 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, 
             componentJson["finished"] = task_info.componentList[i].finished;
             componentJson["message"] = task_info.componentList[i].message;
             componentJson["result"] = diagnosticResultEnumToString(task_info.componentList[i].result);
-            if (task_info.componentList[i].type == XPUM_DIAG_SOFTWARE_EXCLUSIVE 
-                    && task_info.componentList[i].result == XPUM_DIAG_RESULT_FAIL) {
+            if (task_info.componentList[i].type == XPUM_DIAG_SOFTWARE_EXCLUSIVE) {
                 uint32_t count = 0;
                 res = xpumGetDeviceProcessState(task_info.deviceId, nullptr, &count);
-                if (res == XPUM_OK && count > 0) {
+                if (res == XPUM_OK && count > 1) {
                     xpum_device_process_t dataArray[count];
                     res = xpumGetDeviceProcessState(task_info.deviceId, dataArray, &count);
                     if (res == XPUM_OK) {
