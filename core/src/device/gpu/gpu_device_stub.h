@@ -44,6 +44,8 @@ struct DeviceMetricGroups_t {
   std::map<std::string, std::shared_ptr<PerfMetricData_t>> target_metrics;
 };
 
+typedef ze_result_t (*pFnzexMemoryGetBandwidth)(zes_mem_handle_t,
+                uint64_t *, uint64_t *, uint64_t *, uint64_t);
 /*
   GPUDeviceStub class provides various capabilities to communicate with GPU devices.
 */
@@ -281,6 +283,7 @@ private:
 
     static std::string getPciSlot(zes_pci_address_t address);
     static std::string getOAMSocketId(zes_pci_address_t address);
+    static bool getZexGetMemoryBandwidth(pFnzexMemoryGetBandwidth *pFunc);
 
    private:
     bool initialized;
