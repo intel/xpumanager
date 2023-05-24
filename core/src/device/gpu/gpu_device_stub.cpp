@@ -1837,6 +1837,7 @@ bool GPUDeviceStub::getZexGetMemoryBandwidth(pFnzexMemoryGetBandwidth *pFunc) {
                 drivers[0], "zexMemoryGetBandwidth", 
                 reinterpret_cast<void **>(pFunc)));
     if (ret != ZE_RESULT_SUCCESS) { 
+        XPUM_LOG_DEBUG("Failed to get zexMemoryGetBandwidth's address by zeDriverGetExtensionFunctionAddress");
         return false;
     }
     return true;
@@ -1966,8 +1967,25 @@ std::shared_ptr<MeasurementData> GPUDeviceStub::toGetMemoryReadWrite(const zes_d
                         ret->setCurrent(mem_bandwidth.readCounter);
                     }
                     ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE, mem_bandwidth.writeCounter);
-                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, mem_bandwidth.readCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
-                    ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, mem_bandwidth.writeCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
+                    pFnzexMemoryGetBandwidth pFunc = nullptr;
+                    bool zexFunc = getZexGetMemoryBandwidth(&pFunc);
+                    if (zexFunc == true) {
+                        uint64_t readCounters = 0;
+                        uint64_t writeCounters = 0;
+                        uint64_t maxBandwidth = 0;
+                        XPUM_ZE_HANDLE_LOCK(mem, res =  pFunc(mem, &readCounters, 
+                                &writeCounters, &maxBandwidth, 
+                                Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD));
+                        if (res == ZE_RESULT_SUCCESS) {
+                            ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, readCounters / 1024 * 1000 / Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD);
+                            ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, writeCounters / 1024 * 1000 / Configuration::MEMORY_BANDWIDTH_MONITOR_INTERNAL_PERIOD);
+                        } else {
+                            XPUM_LOG_DEBUG("Failed to get readCounters/writeCounters with pFnzexMemoryGetBandwidth");
+                        }
+                    } else {
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_READ_THROUGHPUT, mem_bandwidth.readCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
+                        ret->setSubdeviceAdditionalData(subdeviceId, MeasurementType::METRIC_MEMORY_WRITE_THROUGHPUT, mem_bandwidth.writeCounter / 1024 * 1000, 1, true, Utility::getCurrentMillisecond());
+                    }
                     data_acquired = true;
                 } else {
                     exception_msgs["zesMemoryGetBandwidth"] = res;

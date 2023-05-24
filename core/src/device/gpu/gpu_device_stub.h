@@ -187,6 +187,8 @@ class GPUDeviceStub {
 
     static std::string getPciSlotByPath(std::vector<std::string> pciPath); 
 
+    static bool getZexGetMemoryBandwidth(pFnzexMemoryGetBandwidth *pFunc);
+
 private: 
     GPUDeviceStub(); 
     ~GPUDeviceStub();
@@ -283,7 +285,6 @@ private:
 
     static std::string getPciSlot(zes_pci_address_t address);
     static std::string getOAMSocketId(zes_pci_address_t address);
-    static bool getZexGetMemoryBandwidth(pFnzexMemoryGetBandwidth *pFunc);
 
    private:
     bool initialized;
