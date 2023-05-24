@@ -64,6 +64,7 @@ int CLIWrapper::printResult(std::ostream &out) {
     if (!versionOpt->empty()) {
         ComletVersion comlet;
 #ifdef DAEMONLESS
+        putenv(const_cast<char *>("XPUM_DISABLE_PERIODIC_METRIC_MONITOR=1"));
         putenv(const_cast<char *>("_XPUM_INIT_SKIP=FIRMWARE"));
         this->coreStub = std::make_shared<LibCoreStub>();
 #endif
