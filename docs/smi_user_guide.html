@@ -56,6 +56,17 @@
 <li class="toctree-l3"><a class="reference internal" href="#get-the-device-real-time-statistics">Get the device real-time statistics</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dump-the-device-statistics-in-csv-format">Dump the device statistics in CSV format</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#collect-the-gpu-debug-log-files">Collect the GPU debug log files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#set-up-gpu-sr-iov-configuration">Set up GPU SR-IOV configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#bios-settings-for-gpu-sr-iov">BIOS settings for GPU SR-IOV</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#add-linux-kernel-command-line-options">Add Linux kernel command line options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#help-info-of-gpu-sr-iov-configuration-feature">Help info of GPU SR-IOV configuration feature.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gpu-sr-iov-precheck">GPU SR-IOV precheck</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#create-the-virtual-gpus">Create the virtual GPUs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#list-the-virtual-gpus">list the virtual GPUs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#remove-all-the-virtual-gpus-on-the-specified-gpu">Remove all the virtual GPUs on the specified GPU</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#limitations">Limitations</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="smidoc/rst/index.html">Core Library API</a></li>
@@ -123,6 +134,8 @@
   <span class="n">updatefw</span>                    <span class="n">Update</span> <span class="n">GPU</span> <span class="n">firmware</span><span class="o">.</span>
   <span class="n">topology</span>                    <span class="n">get</span> <span class="n">the</span> <span class="n">system</span> <span class="n">topology</span>
   <span class="n">config</span>                      <span class="n">Get</span> <span class="ow">and</span> <span class="n">change</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">settings</span><span class="o">.</span>
+  <span class="n">ps</span>                          <span class="n">List</span> <span class="n">status</span> <span class="n">of</span> <span class="n">processes</span><span class="o">.</span>
+  <span class="n">vgpu</span>                        <span class="n">Create</span> <span class="ow">and</span> <span class="n">remove</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="ow">in</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="n">configuration</span><span class="o">.</span>
   <span class="n">stats</span>                       <span class="n">List</span> <span class="n">the</span> <span class="n">GPU</span> <span class="n">statistics</span><span class="o">.</span>
   <span class="n">dump</span>                        <span class="n">Dump</span> <span class="n">device</span> <span class="n">statistics</span> <span class="n">data</span><span class="o">.</span>
   <span class="n">log</span>                         <span class="n">Collect</span> <span class="n">GPU</span> <span class="n">debug</span> <span class="n">logs</span><span class="o">.</span>
@@ -487,6 +500,7 @@ Update firmware successfully. Please reboot OS to take effect.
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">tileId</span><span class="p">]</span> <span class="o">--</span><span class="n">performancefactor</span> <span class="p">[</span><span class="n">engineType</span><span class="p">,</span><span class="n">factorValue</span><span class="p">]</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">tileId</span><span class="p">]</span> <span class="o">--</span><span class="n">xelinkport</span> <span class="p">[</span><span class="n">portId</span><span class="p">,</span><span class="n">value</span><span class="p">]</span>
   <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">t</span> <span class="p">[</span><span class="n">tileId</span><span class="p">]</span> <span class="o">--</span><span class="n">xelinkportbeaconing</span> <span class="p">[</span><span class="n">portId</span><span class="p">,</span><span class="n">value</span><span class="p">]</span>
+  <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">config</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">--</span><span class="n">reset</span>
   
   
 <span class="n">Options</span><span class="p">:</span>
@@ -506,6 +520,7 @@ Update firmware successfully. Please reboot OS to take effect.
   <span class="o">--</span><span class="n">xelinkport</span>                <span class="n">Change</span> <span class="n">the</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="n">status</span><span class="o">.</span> <span class="n">The</span> <span class="n">value</span> <span class="mi">0</span> <span class="n">means</span> <span class="n">down</span> <span class="ow">and</span> <span class="mi">1</span> <span class="n">means</span> <span class="n">up</span><span class="o">.</span>
   <span class="o">--</span><span class="n">xelinkportbeaconing</span>       <span class="n">Change</span> <span class="n">the</span> <span class="n">Xe</span> <span class="n">Link</span> <span class="n">port</span> <span class="n">beaconing</span> <span class="n">status</span><span class="o">.</span> <span class="n">The</span> <span class="n">value</span> <span class="mi">0</span> <span class="n">means</span> <span class="n">off</span> <span class="ow">and</span> <span class="mi">1</span> <span class="n">means</span> <span class="n">on</span><span class="o">.</span>
   <span class="o">--</span><span class="n">memoryecc</span>                 <span class="n">Enable</span><span class="o">/</span><span class="n">disable</span> <span class="n">memory</span> <span class="n">ECC</span> <span class="n">setting</span><span class="o">.</span> <span class="mi">0</span><span class="p">:</span><span class="n">disable</span><span class="p">;</span> <span class="mi">1</span><span class="p">:</span><span class="n">enable</span>
+  <span class="o">--</span><span class="n">reset</span>                     <span class="n">Reset</span> <span class="n">device</span> <span class="n">by</span> <span class="n">SBR</span> <span class="p">(</span><span class="n">Secondary</span> <span class="n">Bus</span> <span class="n">Reset</span><span class="p">)</span><span class="o">.</span>
 
 </pre></div>
 </div>
@@ -771,6 +786,186 @@ Update firmware successfully. Please reboot OS to take effect.
 <span class="n">Done</span>
 </pre></div>
 </div>
+</section>
+<section id="set-up-gpu-sr-iov-configuration">
+<h2>Set up GPU SR-IOV configuration<a class="headerlink" href="#set-up-gpu-sr-iov-configuration" title="Permalink to this headline"></a></h2>
+<p>This GPU SR-IOV feature only works for Intel Flex series GPUs. Only Ubuntu and CentOS 7 are validated.</p>
+<section id="bios-settings-for-gpu-sr-iov">
+<h3>BIOS settings for GPU SR-IOV<a class="headerlink" href="#bios-settings-for-gpu-sr-iov" title="Permalink to this headline"></a></h3>
+<section id="intel-m50cyp">
+<h4>Intel M50CYP<a class="headerlink" href="#intel-m50cyp" title="Permalink to this headline"></a></h4>
+<p>Advanced -&gt; PCI Configuration -&gt; Memory Mapped I/O above 4GB : Enabled<br />
+Advanced -&gt; PCI Configuration -&gt; MMIO High Base : 56T<br />
+Advanced -&gt; PCI Configuration -&gt; Memory Mapped I/O Size : 1024G<br />
+Advanced -&gt; System Acoustic and Performance Configuration -&gt; Set Fan Profile : Performance<br />
+Advanced -&gt; Integrated IO Configuration -&gt; PCIe Misc. Configuration -&gt; PCIe ASPM Support (Global) : Disabled<br />
+Advanced -&gt; Power &amp; Performance -&gt; Workload Configuration : I/O Sensitive<br />
+Advanced -&gt; Power &amp; Performance -&gt; CPU P State Control -&gt; Intel(R) Turbo Boost Technology : Enabled<br />
+Advanced -&gt; PCI Configuration -&gt; SR-IOV Support : Enabled<br />
+Advanced -&gt; Processor Configuration -&gt; Intel(R) Virtualization Technology: Enabled<br />
+Advanced -&gt; Integrated IO Configuration -&gt; Intel(R) VT for Directed I/O : Enabled</p>
+</section>
+<section id="inspur-nf5280m6">
+<h4>Inspur NF5280M6<a class="headerlink" href="#inspur-nf5280m6" title="Permalink to this headline"></a></h4>
+<p>MMCFG Base = Auto<br />
+MMCFG Size = Auto<br />
+MMIO High Base = 32T<br />
+MMIO High Granularity Size = 1024G<br />
+VMX = Enabled<br />
+SR-IOV Support = Enabled<br />
+Intel VT for Directed I/O (VT-d) = Enabled<br />
+Power/Performance Profile = Virtualization</p>
+</section>
+<section id="h3c-r5300-g5">
+<h4>H3C R5300 G5<a class="headerlink" href="#h3c-r5300-g5" title="Permalink to this headline"></a></h4>
+<p>MMCFG Base=Auto<br />
+MMIO High Base=32T<br />
+MMIO High Granularity Size=1024G<br />
+VMX=Enabled<br />
+SR-IOV Support=Enabled<br />
+Intel    VT for Directed I/O=Enabled<br />
+ENERGY_PERF_BIAS_CFG mode=Performance<br />
+Workload Configuration=Balanced<br />
+Workload Profile Configuration=Graphic Processing</p>
+</section>
+<section id="dell-poweredge-xr12">
+<h4>Dell PowerEdge XR12<a class="headerlink" href="#dell-poweredge-xr12" title="Permalink to this headline"></a></h4>
+<p>Integrated Devices -&gt; Memory Mapped I/O above 4GB = Enabled<br />
+Integrated Devices -&gt; Memory Mapped Base = 56TB<br />
+Integrated Devices -&gt; SR-IOV Global Enable = Enabled<br />
+Processor Settings -&gt; Virtualization Technology = Enabled<br />
+System Profile Settings -&gt; System Profile = Performance</p>
+</section>
+</section>
+<section id="add-linux-kernel-command-line-options">
+<h3>Add Linux kernel command line options<a class="headerlink" href="#add-linux-kernel-command-line-options" title="Permalink to this headline"></a></h3>
+<p>After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added. They are “intel_iommu=on i915.max_vfs=31”. “intel_iommmu” is for IOMMU and “i915.max_vfs” is for SR-IOV. After you set them, please reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set.</p>
+</section>
+<section id="help-info-of-gpu-sr-iov-configuration-feature">
+<h3>Help info of GPU SR-IOV configuration feature.<a class="headerlink" href="#help-info-of-gpu-sr-iov-configuration-feature" title="Permalink to this headline"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span>
+<span class="n">Create</span> <span class="ow">and</span> <span class="n">remove</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="ow">in</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="n">configuration</span><span class="o">.</span>
+
+<span class="n">Usage</span><span class="p">:</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="p">[</span><span class="n">Options</span><span class="p">]</span>
+ <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">--</span><span class="n">precheck</span>
+ <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="p">[</span><span class="n">vGpuNumber</span><span class="p">]</span> <span class="o">--</span><span class="n">lmem</span> <span class="p">[</span><span class="n">vGpuMemorySize</span><span class="p">]</span>
+ <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="p">[</span><span class="n">vGpuNumber</span><span class="p">]</span> <span class="o">--</span><span class="n">lmem</span> <span class="p">[</span><span class="n">vGpuMemorySize</span><span class="p">]</span>
+ <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">r</span>
+ <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">r</span>
+ <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">deviceId</span><span class="p">]</span> <span class="o">-</span><span class="n">l</span>
+ <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="p">[</span><span class="n">pciBdfAddress</span><span class="p">]</span> <span class="o">-</span><span class="n">l</span>
+
+<span class="n">Options</span><span class="p">:</span>
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span><span class="o">--</span><span class="n">help</span>                   <span class="n">Print</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">j</span><span class="p">,</span><span class="o">--</span><span class="n">json</span>                   <span class="n">Print</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">JSON</span> <span class="nb">format</span>
+
+  <span class="o">--</span><span class="n">precheck</span>                  <span class="n">Check</span> <span class="k">if</span> <span class="n">BIOS</span> <span class="n">settings</span> <span class="ow">and</span> <span class="n">kernel</span> <span class="n">command</span> <span class="n">line</span> <span class="n">options</span> <span class="n">are</span> <span class="n">ready</span> <span class="n">to</span> <span class="n">create</span> <span class="n">virtual</span> <span class="n">GPUs</span>
+
+  <span class="o">-</span><span class="n">d</span><span class="p">,</span><span class="o">--</span><span class="n">device</span>                 <span class="n">Device</span> <span class="n">ID</span> <span class="ow">or</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">address</span>
+  <span class="o">-</span><span class="n">c</span><span class="p">,</span><span class="o">--</span><span class="n">create</span>                 <span class="n">Create</span> <span class="n">the</span> <span class="n">virtual</span> <span class="n">GPUs</span>
+  <span class="o">-</span><span class="n">n</span>                          <span class="n">The</span> <span class="n">number</span> <span class="n">of</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">to</span> <span class="n">create</span>
+  <span class="o">--</span><span class="n">lmem</span>                      <span class="n">The</span> <span class="n">memory</span> <span class="n">size</span> <span class="n">of</span> <span class="n">each</span> <span class="n">virtual</span> <span class="n">GPUs</span><span class="p">,</span> <span class="ow">in</span> <span class="n">MiB</span>
+
+  <span class="o">-</span><span class="n">l</span><span class="p">,</span><span class="o">--</span><span class="nb">list</span>                   <span class="n">List</span> <span class="nb">all</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">on</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">physical</span> <span class="n">GPU</span>
+
+  <span class="o">-</span><span class="n">r</span><span class="p">,</span><span class="o">--</span><span class="n">remove</span>                 <span class="n">Remove</span> <span class="nb">all</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">on</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">physical</span> <span class="n">GPU</span>
+  <span class="o">-</span><span class="n">y</span><span class="p">,</span><span class="o">--</span><span class="n">assumeyes</span>              <span class="n">Assume</span> <span class="n">that</span> <span class="n">the</span> <span class="n">answer</span> <span class="n">to</span> <span class="nb">any</span> <span class="n">question</span> <span class="n">which</span> <span class="n">would</span> <span class="n">be</span> <span class="n">asked</span> <span class="ow">is</span> <span class="n">yes</span>
+</pre></div>
+</div>
+</section>
+<section id="gpu-sr-iov-precheck">
+<h3>GPU SR-IOV precheck<a class="headerlink" href="#gpu-sr-iov-precheck" title="Permalink to this headline"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">--</span><span class="n">precheck</span>
+<span class="o">+------------------+-------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">VMX</span> <span class="n">Flag</span>         <span class="o">|</span> <span class="n">Result</span><span class="p">:</span> <span class="n">Pass</span>                                                                  <span class="o">|</span>
+<span class="o">|</span>                  <span class="o">|</span> <span class="n">Message</span><span class="p">:</span>                                                                      <span class="o">|</span>
+<span class="o">+------------------+-------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span>           <span class="o">|</span> <span class="n">Status</span><span class="p">:</span> <span class="n">Fail</span>                                                                  <span class="o">|</span>
+<span class="o">|</span>                  <span class="o">|</span> <span class="n">Message</span><span class="p">:</span> <span class="n">SR</span><span class="o">-</span><span class="n">IOV</span> <span class="ow">is</span> <span class="n">disabled</span><span class="o">.</span> <span class="n">Please</span> <span class="nb">set</span> <span class="n">the</span> <span class="n">related</span> <span class="n">BIOS</span> <span class="n">settings</span> <span class="ow">and</span>         <span class="o">|</span>
+<span class="o">|</span>                  <span class="o">|</span>   <span class="n">kernel</span> <span class="n">command</span> <span class="n">line</span> <span class="n">options</span><span class="o">.</span>                                                <span class="o">|</span>
+<span class="o">+------------------+-------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">IOMMU</span>            <span class="o">|</span> <span class="n">Status</span><span class="p">:</span> <span class="n">Pass</span>                                                                  <span class="o">|</span>
+<span class="o">|</span>                  <span class="o">|</span> <span class="n">Message</span><span class="p">:</span>                                                                      <span class="o">|</span>
+<span class="o">+------------------+-------------------------------------------------------------------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="create-the-virtual-gpus">
+<h3>Create the virtual GPUs<a class="headerlink" href="#create-the-virtual-gpus" title="Permalink to this headline"></a></h3>
+<p>After all GPU SR-IOV pre-checks are passed, you may create the virtual GPUs</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">c</span> <span class="o">-</span><span class="n">n</span> <span class="mi">4</span> <span class="o">--</span><span class="n">lmem</span> <span class="mi">500</span><span class="n">M</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Device</span> <span class="n">Information</span>                                                                               <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.0</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">physical</span>                                                                          <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">14260.97</span> <span class="n">MiB</span>                                                               <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.1</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">virtual</span>                                                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">500.00</span> <span class="n">MiB</span>                                                                 <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.2</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">virtual</span>                                                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">500.00</span> <span class="n">MiB</span>                                                                 <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.3</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">virtual</span>                                                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">500.00</span> <span class="n">MiB</span>                                                                 <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.4</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">virtual</span>                                                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">500.00</span> <span class="n">MiB</span>                                                                 <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="list-the-virtual-gpus">
+<h3>list the virtual GPUs<a class="headerlink" href="#list-the-virtual-gpus" title="Permalink to this headline"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">l</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">Device</span> <span class="n">Information</span>                                                                               <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.0</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">physical</span>                                                                          <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">14260.97</span> <span class="n">MiB</span>                                                               <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.1</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">virtual</span>                                                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">500.00</span> <span class="n">MiB</span>                                                                 <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.2</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">virtual</span>                                                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">500.00</span> <span class="n">MiB</span>                                                                 <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.3</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">virtual</span>                                                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">500.00</span> <span class="n">MiB</span>                                                                 <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+<span class="o">|</span> <span class="n">PCI</span> <span class="n">BDF</span> <span class="n">Address</span><span class="p">:</span> <span class="mi">0000</span><span class="p">:</span><span class="mi">4</span><span class="n">d</span><span class="p">:</span><span class="mf">00.4</span>                                                                    <span class="o">|</span>
+<span class="o">|</span> <span class="n">Function</span> <span class="n">Type</span><span class="p">:</span> <span class="n">virtual</span>                                                                           <span class="o">|</span>
+<span class="o">|</span> <span class="n">Memory</span> <span class="n">Physical</span> <span class="n">Size</span><span class="p">:</span> <span class="mf">500.00</span> <span class="n">MiB</span>                                                                 <span class="o">|</span>
+<span class="o">+--------------------------------------------------------------------------------------------------+</span>
+</pre></div>
+</div>
+</section>
+<section id="remove-all-the-virtual-gpus-on-the-specified-gpu">
+<h3>Remove all the virtual GPUs on the specified GPU<a class="headerlink" href="#remove-all-the-virtual-gpus-on-the-specified-gpu" title="Permalink to this headline"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">xpu</span><span class="o">-</span><span class="n">smi</span> <span class="n">vgpu</span> <span class="o">-</span><span class="n">d</span> <span class="mi">0</span> <span class="o">-</span><span class="n">r</span>
+<span class="n">CAUTION</span><span class="p">:</span> <span class="n">we</span> <span class="n">are</span> <span class="n">removing</span> <span class="nb">all</span> <span class="n">VFs</span> <span class="n">on</span> <span class="n">device</span> <span class="mi">0</span><span class="p">,</span> <span class="n">please</span> <span class="n">make</span> <span class="n">sure</span> <span class="nb">all</span> <span class="n">VF</span><span class="o">-</span><span class="n">assigned</span> <span class="n">virtual</span> <span class="n">machines</span> <span class="n">are</span> <span class="n">shut</span> <span class="n">down</span><span class="o">.</span>
+<span class="n">Please</span> <span class="n">confirm</span> <span class="n">to</span> <span class="n">proceed</span> <span class="p">(</span><span class="n">y</span><span class="o">/</span><span class="n">n</span><span class="p">)</span> <span class="n">y</span>
+<span class="n">All</span> <span class="n">virtual</span> <span class="n">GPUs</span> <span class="n">on</span> <span class="n">the</span> <span class="n">device</span> <span class="mi">0</span> <span class="n">are</span> <span class="n">removed</span><span class="o">.</span>
+
+</pre></div>
+</div>
+</section>
+<section id="limitations">
+<h3>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline"></a></h3>
+<ul class="simple">
+<li><p>XPU manager (in Host OS Linux) cannot discover and monitor a VF if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 VF was created, end users may understand VF utilizations by looking at metrics of PF.</p></li>
+<li><p>XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available</p></li>
+</ul>
+</section>
 </section>
 </section>
 
