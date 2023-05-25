@@ -1834,7 +1834,7 @@ bool GPUDeviceStub::getZexGetMemoryBandwidth(pFnzexMemoryGetBandwidth *pFunc) {
         return false;
     }
     XPUM_ZE_HANDLE_LOCK(drivers[0], ret = zeDriverGetExtensionFunctionAddress(
-                drivers[0], "zexMemoryGetBandwidth", 
+                drivers[0], "zexSysmanMemoryGetBandwidth", 
                 reinterpret_cast<void **>(pFunc)));
     if (ret != ZE_RESULT_SUCCESS) { 
         XPUM_LOG_DEBUG("Failed to get zexMemoryGetBandwidth's address by zeDriverGetExtensionFunctionAddress");
