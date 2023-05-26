@@ -111,6 +111,7 @@ void ComletVgpu::setupOptions() {
     });
     auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
     auto removeFlag = addFlag("-r,--remove", this->opts->remove, "Remove all virtual GPUs on the specified physical GPU");
+    auto kernFlag = addFlag("--addkerneloption", this->opts->kern, "Add the kernel command line options for the virtual GPUs");
     addFlag("-y, --assumeyes", opts->assumeYes, "Assume that the answer to any question which would be asked is yes");
 
     /*
@@ -134,6 +135,13 @@ void ComletVgpu::setupOptions() {
     removeFlag->excludes(numVfsOpt);
     removeFlag->excludes(lmemOpt);
     removeFlag->needs(deviceIdOpt);
+    kernFlag->excludes(precheckFlag);
+    kernFlag->excludes(createFlag);
+    kernFlag->excludes(listFlag);
+    kernFlag->excludes(removeFlag);
+    kernFlag->excludes(deviceIdOpt);
+    kernFlag->excludes(numVfsOpt);
+    kernFlag->excludes(lmemOpt);
 }
 
 std::unique_ptr<nlohmann::json> ComletVgpu::run() {
@@ -173,17 +181,17 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
         }
     } else if (this->opts->list) {
         json = this->coreStub->getDeviceFunction(targetId);
-        return json;
     } else if (this->opts->remove) {
         json = this->coreStub->removeAllVf(targetId);
-        return json;
+    } else if (this->opts->kern) {
+        json = addKernelOption();
     }
     return json;
 }
 
 void ComletVgpu::getTableResult(std::ostream &out) {
     /*
-     *  Warning message for vgpu remove
+     *  Warning message for vgpu remove and addkerneloption
      */
     if (this->opts->remove) {
         std::cout << "CAUTION: we are removing all VFs on device "
@@ -196,6 +204,18 @@ void ComletVgpu::getTableResult(std::ostream &out) {
             std::cin >> confirm;
             if (confirm != "Y" && confirm != "y") {
                 out << "Remove VFs aborted" << std::endl;
+                return;
+            }
+        } else {
+            out << std::endl;
+        }
+    } else if (this->opts->kern) {
+        std::cout << "Do you want to add the required kernel command line options? (y/n) ";
+        if (!opts->assumeYes) {
+            std::string confirm;
+            std::cin >> confirm;
+            if (confirm != "Y" && confirm != "y") {
+                out << "Add kernel options aborted" << std::endl;
                 return;
             }
         } else {
@@ -252,7 +272,13 @@ void ComletVgpu::getTableResult(std::ostream &out) {
         table.show(out);
     } else if (this->opts->remove) {
         out << "All virtual GPUs on the device " << this->opts->deviceId << " are removed." << std::endl;
+    } else if (this->opts->kern) {
+        out << "Succeed to add the required kernel command line options, \"intel_iommu=on i915.max_vfs=31\". \"intel_iommmu\" is for IOMMU and \"i915.max_vfs\" is for SR-IOV. Please reboot OS to take effect." << std::endl;
     }
+}
+
+bool ComletVgpu::isAddKernelOption() {
+    return this->opts->kern;
 }
 
 } // end namespace xpum::cli

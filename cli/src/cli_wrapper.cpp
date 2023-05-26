@@ -21,6 +21,7 @@
 #include "comlet_diagnostic.h"
 #include "comlet_discovery.h"
 #include "comlet_firmware.h"
+#include "comlet_vgpu.h"
 #ifndef DAEMONLESS
 #include "grpc_core_stub.h"
 #else
@@ -135,6 +136,8 @@ int CLIWrapper::printResult(std::ostream &out) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);  
             } else if (comlet->getCommand().compare("log") == 0) {
                 this->coreStub = std::make_shared<LibCoreStub>(false);  
+            } else if (comlet->getCommand().compare("vgpu") == 0 && std::dynamic_pointer_cast<ComletVgpu>(comlet)->isAddKernelOption()) {
+                this->coreStub = std::make_shared<LibCoreStub>(false);
             } else {
                 this->coreStub = std::make_shared<LibCoreStub>();  
             }

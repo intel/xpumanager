@@ -12,6 +12,7 @@
 #include <string>
 #include <regex>
 #include <iomanip>
+#include <fstream>
 
 #include "utility.h"
 
@@ -100,6 +101,54 @@ std::string toString(const std::vector<int> vec) {
         ss << vec[i];
     }
     return ss.str();
+}
+
+std::string trim(const std::string& str, const std::string& toRemove) {
+    const auto strBegin = str.find_first_not_of(toRemove);
+    if (strBegin == std::string::npos)
+        return "";
+
+    const auto strEnd = str.find_last_not_of(toRemove);
+    const auto strRange = strEnd - strBegin + 1;
+
+    return str.substr(strBegin, strRange);
+}
+
+linux_os_release_t getOsRelease() {
+    /*
+     *  Refer https://www.linux.org/docs/man5/os-release.html
+     */
+    std::ifstream ifs("/etc/os-release");
+    if (!ifs.is_open()) {
+        return LINUX_OS_RELEASE_UNKNOWN;
+    }
+    std::string line;
+    while (std::getline(ifs, line)) {
+        line = trim(line, " \t");
+        std::istringstream iss(line);
+        std::string key, value;
+        if (std::getline(iss, key, '=') && std::getline(iss, value) && key.compare("ID") == 0) {
+            if (value.find("ubuntu") != std::string::npos) {
+                return LINUX_OS_RELEASE_UBUNTU;
+            } else if (value.find("centos") != std::string::npos) {
+                return LINUX_OS_RELEASE_CENTOS;
+            } else if (value.find("sles") != std::string::npos) {
+                return LINUX_OS_RELEASE_SLES;
+            } else if (value.find("rhel") != std::string::npos) {
+                return LINUX_OS_RELEASE_RHEL;
+            } else if (value.find("debian") != std::string::npos) {
+                return LINUX_OS_RELEASE_DEBIAN;
+            } else {
+                return LINUX_OS_RELEASE_UNKNOWN;
+            }
+        }
+    }
+    return LINUX_OS_RELEASE_UNKNOWN;
+}
+
+bool isFileExists(const char* path) {
+    std::ifstream ifs(path);
+    return ifs.good();
 }
 
 }// end namespace xpum::cli
