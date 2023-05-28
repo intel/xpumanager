@@ -1198,7 +1198,8 @@ Power/Performance Profile = Virtualization
  Virtualization Options -> SR-IOV: Enabled  
   
 ### Add Linux kernel command line options
-After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added. They are "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. After you set them, please reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set. 
+After BIOS settings are rightly configured and the GPU driver is installed, some kernel command line options need be added into the "GRUB_CMDLINE_LINUX" setting of the file, /etc/default/grub. They are "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. After you update the grub file, please run the command like "update-grub" to set to kernel image and reboot OS to take effect. You may check the content of /proc/cmdline to confirm that they are rightly set. 
+The command "sudo xpumcli vgpu --addkernelparam" can automatically add these kernel parameters. 
   
   
 ### Help info of GPU SR-IOV configuration feature. 
@@ -1208,6 +1209,7 @@ Create and remove virtual GPUs in SR-IOV configuration.
 
 Usage: xpumcli vgpu [Options]
  xpumcli vgpu --precheck
+ xpumcli vgpu --addkernelparam
  xpumcli vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]
  xpumcli vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]
  xpumcli vgpu -d [deviceId] -r
@@ -1220,11 +1222,12 @@ Options:
   -j,--json                   Print result in JSON format
 
   --precheck                  Check if BIOS settings and kernel command line options are ready to create virtual GPUs
+  --addkernelparam            Add the kernel command line parameters for the virtual GPUs
 
   -d,--device                 Device ID or PCI BDF address
   -c,--create                 Create the virtual GPUs
-  -n                          The number of virtual GPUs to create
-  --lmem                      The memory size of each virtual GPUs, in MiB
+  -n                          The number of virtual GPUs to create. The acceptable values include 1, 2, 4, 8 and 16.
+  --lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500
 
   -l,--list                   List all virtual GPUs on the specified physical GPU
 
@@ -1248,10 +1251,17 @@ Options:
 +------------------+-------------------------------------------------------------------------------+
 ```
  
+### Add the Linux kernel command line parameters for the virtual GPUs
+```
+sudo xpumcli vgpu --addkernelparam -y
+Do you want to add the required kernel command line parameters? (y/n) y
+Succeed to add the required kernel command line parameters, "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. Please reboot OS to take effect. 
+```
+ 
 ### Create the virtual GPUs
 After all GPU SR-IOV pre-checks are passed, you may create the virtual GPUs
 ```
-sudo xpumcli vgpu -d 0 -c -n 4 --lmem 500M
+sudo xpumcli vgpu -d 0 -c -n 4 --lmem 500
 +--------------------------------------------------------------------------------------------------+
 | Device Information                                                                               |
 +--------------------------------------------------------------------------------------------------+
@@ -1313,6 +1323,18 @@ Please confirm to proceed (y/n) y
 All virtual GPUs on the device 0 are removed.
 
 ```
+### The advanced configuration of virtual GPUs
+The advanced configurations of the virtual GPU is in the file, /usr/lib/xpum/config/vgpu.conf. You may change your virtual GPU settings according to the created virtual GPU number. For example, the NAME "56c0N16" means the settings for creating 16 vGPU on Flex 170 GPU (Device ID: 0x56c0). Here are the detailed info of the virtual GPU settings. 
+ * VF_CONTEXTS: Number of contexts per VF, used for KMD-GuC communication 
+ * VF_DOORBELLS: Number of doorbells per VF, used for KMD-GuC communication
+ * VF_GGTT: GGTT(Global Graphics Translation Table) size per VF, used for memory mapping, in bytes
+ * VF_EXEC_QUANT_MS: Denotes the amount of time that a particular VF will be allocated in the per VF time-slicing round-robin, in milliseconds
+ * VF_PREEMPT_TIMEOUT_US: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds 
+ * PF_EXEC_QUANT_MS: Denotes the amount of time that the PF will be allocated in the per VF time-slicing round-robin, in milliseconds
+ * PF_PREEMPT_TIMEOUT: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds
+ * SCHED_IF_IDLE: 0: flexible scheduling, VF will be allocated its time slice only if it has pending workload, and the time slice shifts to next VF when all workload submitted by current VF are completed. 1: strict scheduling, VF will always be allocated its time slice even if it's idle. 
+ * DRIVERS_AUTOPROBE: Determines whether newly-enabled VFs are immediately bound to a driver, 0 or 1
+
 
 ### Limitations
  * XPU manager (in Host OS Linux) cannot discover and monitor a VF if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 VF was created, end users may understand VF utilizations by looking at metrics of PF. 
