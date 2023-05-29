@@ -145,7 +145,7 @@ void ComletVgpu::setupOptions() {
 }
 
 std::unique_ptr<nlohmann::json> ComletVgpu::run() {
-    std::unique_ptr<nlohmann::json> json;
+    auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     int targetId = -1;
     if (isValidDeviceId(this->opts->deviceId)) {
         targetId = std::stoi(this->opts->deviceId);
@@ -156,35 +156,41 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
         }
     }
 
-    if (this->opts->precheck) {
-        json = this->coreStub->doVgpuPrecheck();
-    } else if (this->opts->create) {
-        /*
-         *  Do precheck first, if failed, stop creating VFs.
-         */
+    /*
+     *  Do precheck first, if failed, stop creating/listing/removing VFs.
+     */
+    if (this->opts->create || this->opts->list || this->opts->remove) {
         json = this->coreStub->doVgpuPrecheck();
         if (json->contains("iommu_status") && (*json)["iommu_status"].get<std::string>().compare("Pass") == 0
             && json->contains("sriov_status") && (*json)["sriov_status"].get<std::string>().compare("Pass") == 0
             && json->contains("vmx_flag") && (*json)["vmx_flag"].get<std::string>().compare("Pass") == 0
         ) {
             this->precheckPassFlag = true;
-            uint64_t lmemMb = 0;
-            sscanf(this->opts->lmemPerVf.c_str(), "%luM", &lmemMb);
-            json = this->coreStub->createVf(targetId, this->opts->numVfs, lmemMb * 1024 * 1024);
-            if (json->contains("error")) {
-                return json;
-            }
-            json = this->coreStub->getDeviceFunction(targetId);
         } else {
             this->precheckPassFlag = false;
             return json;
         }
+    }
+
+    if (this->opts->precheck) {
+        json = this->coreStub->doVgpuPrecheck();
+    } else if (this->opts->create) {
+        uint64_t lmemMb = 0;
+        sscanf(this->opts->lmemPerVf.c_str(), "%luM", &lmemMb);
+        json = this->coreStub->createVf(targetId, this->opts->numVfs, lmemMb * 1024 * 1024);
+        if (json->contains("error")) {
+            return json;
+        }
+        json = this->coreStub->getDeviceFunction(targetId);
     } else if (this->opts->list) {
         json = this->coreStub->getDeviceFunction(targetId);
     } else if (this->opts->remove) {
         json = this->coreStub->removeAllVf(targetId);
     } else if (this->opts->kern) {
         json = addKernelOption();
+    } else {
+        (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
+        (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
     }
     return json;
 }
@@ -252,7 +258,7 @@ void ComletVgpu::getTableResult(std::ostream &out) {
     if (this->opts->precheck) {
         CharTable table(precheckTableConfig, *res);
         table.show(out);
-    } else if (this->opts->create) {
+    } else if (this->opts->create || this->opts->list) {
         /*
          *  If precheck failed, show precheck table
          */
@@ -267,10 +273,12 @@ void ComletVgpu::getTableResult(std::ostream &out) {
          */
         CharTable table(isAutoprobeEnabled ? functionListTableConfig : functionListTableWithoutIdConfig, *res);
         table.show(out);
-    } else if (this->opts->list) {
-        CharTable table(isAutoprobeEnabled ? functionListTableConfig : functionListTableWithoutIdConfig, *res);
-        table.show(out);
     } else if (this->opts->remove) {
+        if (!this->precheckPassFlag) {
+            CharTable table(precheckTableConfig, *res);
+            table.show(out);
+            return;
+        }
         out << "All virtual GPUs on the device " << this->opts->deviceId << " are removed." << std::endl;
     } else if (this->opts->kern) {
         out << "Succeed to add the required kernel command line options, \"intel_iommu=on i915.max_vfs=31\". \"intel_iommmu\" is for IOMMU and \"i915.max_vfs\" is for SR-IOV. Please reboot OS to take effect." << std::endl;
