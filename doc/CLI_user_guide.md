@@ -1255,7 +1255,7 @@ Options:
 ```
 sudo xpumcli vgpu --addkernelparam -y
 Do you want to add the required kernel command line parameters? (y/n) y
-Succeed to add the required kernel command line parameters, "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. Please reboot OS to take effect. 
+Succeed in adding the required kernel command line parameters, "intel_iommu=on i915.max_vfs=31". "intel_iommmu" is for IOMMU and "i915.max_vfs" is for SR-IOV. Please reboot OS to take effect. 
 ```
  
 ### Create the virtual GPUs
@@ -1318,24 +1318,24 @@ sudo xpumcli vgpu -d 0 -l
 ### Remove all the virtual GPUs on the specified GPU
 ```
 sudo xpumcli vgpu -d 0 -r
-CAUTION: we are removing all VFs on device 0, please make sure all VF-assigned virtual machines are shut down.
+CAUTION: we are removing all virtual GPUs on device 0, please make sure all vGPU-assigned virtual machines are shut down.
 Please confirm to proceed (y/n) y
 All virtual GPUs on the device 0 are removed.
 
 ```
 ### The advanced configuration of virtual GPUs
-The advanced configurations of the virtual GPU is in the file, /usr/lib/xpum/config/vgpu.conf. You may change your virtual GPU settings according to the created virtual GPU number. For example, the NAME "56c0N16" means the settings for creating 16 vGPU on Flex 170 GPU (Device ID: 0x56c0). Here are the detailed info of the virtual GPU settings. 
- * VF_CONTEXTS: Number of contexts per VF, used for KMD-GuC communication 
- * VF_DOORBELLS: Number of doorbells per VF, used for KMD-GuC communication
- * VF_GGTT: GGTT(Global Graphics Translation Table) size per VF, used for memory mapping, in bytes
- * VF_EXEC_QUANT_MS: Denotes the amount of time that a particular VF will be allocated in the per VF time-slicing round-robin, in milliseconds
+The advanced configurations of the virtual GPU are in the file, /usr/lib/xpum/config/vgpu.conf. You may change your virtual GPU settings according to the created virtual GPU number. For example, the NAME "56c0N16" means the settings for creating 16 vGPU on Flex 170 GPU (Device ID: 0x56c0). Here are the detailed info of the virtual GPU settings. 
+ * VF_CONTEXTS: Number of contexts per virtual GPU, used for KMD-GuC communication 
+ * VF_DOORBELLS: Number of doorbells per virtual GPU, used for KMD-GuC communication
+ * VF_GGTT: GGTT(Global Graphics Translation Table) size per virtual GPU, used for memory mapping, in bytes
+ * VF_EXEC_QUANT_MS: Denotes the amount of time that a particular virtual GPU will be allocated in the per vGPU time-slicing round-robin, in milliseconds
  * VF_PREEMPT_TIMEOUT_US: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds 
- * PF_EXEC_QUANT_MS: Denotes the amount of time that the PF will be allocated in the per VF time-slicing round-robin, in milliseconds
+ * PF_EXEC_QUANT_MS: Denotes the amount of time that the physical GPU will be allocated in the per virtual GPU time-slicing round-robin, in milliseconds
  * PF_PREEMPT_TIMEOUT: Denotes the amount of time that the GuC Scheduler will wait for context preemptions on active engines to complete, engine reset will be triggered anyway at the expiry of timeout, in microseconds
- * SCHED_IF_IDLE: 0: flexible scheduling, VF will be allocated its time slice only if it has pending workload, and the time slice shifts to next VF when all workload submitted by current VF are completed. 1: strict scheduling, VF will always be allocated its time slice even if it's idle. 
- * DRIVERS_AUTOPROBE: Determines whether newly-enabled VFs are immediately bound to a driver, 0 or 1
+ * SCHED_IF_IDLE: 0: flexible scheduling, the virtual GPU will be allocated its time slice only if it has pending workload, and the time slice shifts to next virtual GPU when all workload submitted by current virtual GPU are completed. 1: strict scheduling, the virtual GPU will always be allocated its time slice even if it's idle. 
+ * DRIVERS_AUTOPROBE: Determines whether the newly enabled virtual GPUs are immediately bound to a driver, 0 or 1
 
 
 ### Limitations
- * XPU manager (in Host OS Linux) cannot discover and monitor a VF if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 VF was created, end users may understand VF utilizations by looking at metrics of PF. 
+ * XPU manager (in Host OS Linux) cannot discover and monitor a virtual GPU if it is assigned to an active VM guest or sriov_drivers_autoprobe is set to 0. If only 1 virtual GPU was created, end users may understand virtual GPU utilizations by looking at metrics of PF. 
  * XPU manager (in Guest OS Windows) can only monitor GPU utilization, other metrics are not available

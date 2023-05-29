@@ -25,7 +25,7 @@ sudo dpkg -r xpumanager
 ```
 
 ## RPM install on RHEL and CentOS Stream
-After importing the repository and required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may download the latest isntaller package from the Github release page and run dnf command below to install XPU Manager and the required dependencies. 
+After importing the repository and required kernel/run-time packages on [GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html), you may download the latest installer package from the Github release page and run dnf command below to install XPU Manager and the required dependencies. 
 ```
 sudo dnf install xpumanager.xxxxxxxx.xxxxxx.xxxxxxxx.rpm
 ```
