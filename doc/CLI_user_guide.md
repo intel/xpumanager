@@ -1324,7 +1324,7 @@ All virtual GPUs on the device 0 are removed.
 
 ```
 ### The advanced configuration of virtual GPUs
-The advanced configurations of the virtual GPU are in the file, /usr/lib/xpum/config/vgpu.conf. You may change your virtual GPU settings according to the created virtual GPU number. For example, the NAME "56c0N16" means the settings for creating 16 vGPU on Flex 170 GPU (Device ID: 0x56c0). Here are the detailed info of the virtual GPU settings. 
+The advanced configurations of the virtual GPU are in the file, /usr/lib/xpum/config/vgpu.conf. You may change your virtual GPU settings according to the created virtual GPU number. For example, the NAME "56c0N16" means the settings for creating 16 vGPU on Flex 170 GPU (Device ID: 0x56c0). Here is the detailed info of the virtual GPU settings. 
  * VF_CONTEXTS: Number of contexts per virtual GPU, used for KMD-GuC communication 
  * VF_DOORBELLS: Number of doorbells per virtual GPU, used for KMD-GuC communication
  * VF_GGTT: GGTT(Global Graphics Translation Table) size per virtual GPU, used for memory mapping, in bytes
