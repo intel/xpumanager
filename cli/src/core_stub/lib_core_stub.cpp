@@ -411,19 +411,21 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDiagnosticsResult(int deviceId, 
             if (task_info.componentList[i].type == XPUM_DIAG_SOFTWARE_EXCLUSIVE) {
                 uint32_t count = 0;
                 res = xpumGetDeviceProcessState(task_info.deviceId, nullptr, &count);
-                if (res == XPUM_OK && count > 1) {
-                    xpum_device_process_t dataArray[count];
-                    res = xpumGetDeviceProcessState(task_info.deviceId, dataArray, &count);
-                    if (res == XPUM_OK) {
-                        std::vector<nlohmann::json> processList;
-                        for (uint i{0}; i < count; ++i) {
-                            auto proc = nlohmann::json();
-                            proc["process_id"] = dataArray[i].processId;
-                            proc["process_name"] = dataArray[i].processName;
-                            if (proc["process_name"] != "")
-                                processList.push_back(proc);
+                if (res == XPUM_OK) {
+                    if (count > 1) {
+                        xpum_device_process_t dataArray[count];
+                        res = xpumGetDeviceProcessState(task_info.deviceId, dataArray, &count);
+                        if (res == XPUM_OK) {
+                            std::vector<nlohmann::json> processList;
+                            for (uint i{0}; i < count; ++i) {
+                                auto proc = nlohmann::json();
+                                proc["process_id"] = dataArray[i].processId;
+                                proc["process_name"] = dataArray[i].processName;
+                                if (proc["process_name"] != "")
+                                    processList.push_back(proc);
+                            }
+                            componentJson["process_list"] = processList;
                         }
-                        componentJson["process_list"] = processList;
                     }
                 } else {
                     switch (res) {
