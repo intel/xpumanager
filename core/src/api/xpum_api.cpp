@@ -27,6 +27,7 @@
 #include "device/device.h"
 #include "device/memoryEcc.h"
 #include "device/power.h"
+#include "device/amcInBand.h"
 #include "device/gpu/gpu_device_stub.h"
 #include "infrastructure/configuration.h"
 #include "infrastructure/device_process.h"
@@ -893,6 +894,21 @@ xpum_result_t xpumGetDeviceProperties(xpum_device_id_t deviceId, xpum_device_pro
                 xpum_device_internal_property_name_t name = prop.getName();
                 prop_map[name] = prop;
             }
+
+            {
+                if(prop_map[
+                        XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_FUNCTION_TYPE].
+                        getValueInt() == DEVICE_FUNCTION_TYPE_PHYSICAL &&
+                        p_device->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
+                    std::string amc_version;
+                    std::string bdf = prop_map[XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS].getValue();
+                    getAMCFirmwareVersionInBand(amc_version, bdf);
+                    if (amc_version.compare("0.0.0.0") != 0) {
+                        prop_map[XPUM_DEVICE_PROPERTY_INTERNAL_AMC_FIRMWARE_VERSION].setValue(std::string(amc_version.c_str()));
+                    }
+                }
+            }
+
             int propertyLen = 0;
             for (int i = 0; i < XPUM_DEVICE_PROPERTY_MAX; i++) {
                 xpum_device_property_name_t propName = static_cast<xpum_device_property_name_t>(i);
