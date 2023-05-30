@@ -34,7 +34,7 @@ class ComletVgpu: public ComletBase {
         virtual void setupOptions() override;
         virtual std::unique_ptr<nlohmann::json> run() override;
         virtual void getTableResult(std::ostream &out) override;
-        bool isAddKernelOption();
+        bool isAddKernelParam();
        
     private:
 

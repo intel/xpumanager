@@ -1026,7 +1026,7 @@ static int execCommand(const std::string& command, std::string &result) {
     return exitcode;
 }
 
-std::unique_ptr<nlohmann::json> addKernelOption() {
+std::unique_ptr<nlohmann::json> addKernelParam() {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     std::string grubPath = "/etc/default/grub";
     std::ifstream ifs(grubPath);

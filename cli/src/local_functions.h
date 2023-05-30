@@ -127,7 +127,7 @@ bool isATSMPlatform(std::string str);
 bool isDriversAutoprobeEnabled(const std::string &bdfAddress);
 
 std::unique_ptr<nlohmann::json> getPreCheckErrorTypes();
-std::unique_ptr<nlohmann::json> addKernelOption();
+std::unique_ptr<nlohmann::json> addKernelParam();
 
 }
 

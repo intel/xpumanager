@@ -102,6 +102,7 @@ void ComletVgpu::setupOptions() {
         }
         return errStr;
     });
+    auto kernFlag = addFlag("--addkernelparam", this->opts->kern, "Add the kernel command line parameters for the virtual GPUs");
     auto createFlag = addFlag("-c,--create", this->opts->create, "Create the virtual GPUs");
     auto numVfsOpt = addOption("-n", this->opts->numVfs, "The number of virtual GPUs to create");
     auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPUs, in MiB. For example, --lmem 500.");
@@ -110,7 +111,6 @@ void ComletVgpu::setupOptions() {
     });
     auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
     auto removeFlag = addFlag("-r,--remove", this->opts->remove, "Remove all virtual GPUs on the specified physical GPU");
-    auto kernFlag = addFlag("--addkerneloption", this->opts->kern, "Add the kernel command line options for the virtual GPUs");
     addFlag("-y, --assumeyes", opts->assumeYes, "Assume that the answer to any question which would be asked is yes");
 
     /*
@@ -192,7 +192,7 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
     } else if (this->opts->remove) {
         json = this->coreStub->removeAllVf(targetId);
     } else if (this->opts->kern) {
-        json = addKernelOption();
+        json = addKernelParam();
     } else {
         (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";
         (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
@@ -202,7 +202,7 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
 
 void ComletVgpu::getTableResult(std::ostream &out) {
     /*
-     *  Warning message for vgpu remove and addkerneloption
+     *  Warning message for vgpu remove and addkernelparam
      */
     if (this->opts->remove) {
         std::cout << "CAUTION: we are removing all VFs on device "
@@ -290,7 +290,7 @@ void ComletVgpu::getTableResult(std::ostream &out) {
     }
 }
 
-bool ComletVgpu::isAddKernelOption() {
+bool ComletVgpu::isAddKernelParam() {
     return this->opts->kern;
 }
 
