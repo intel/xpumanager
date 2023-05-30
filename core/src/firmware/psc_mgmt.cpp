@@ -157,5 +157,6 @@ void PscMgmt::getPscFwVersion() {
         pDevice->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_GFX_PSCBIN_FIRMWARE_VERSION, version));
         XPUM_LOG_INFO("GFX_PSCBIN version of device {} is {}", devicePath, version);
     }
+    igsc_device_close(&handle);
 }
 } // namespace xpum
