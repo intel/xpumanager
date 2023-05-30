@@ -104,10 +104,9 @@ void ComletVgpu::setupOptions() {
     });
     auto createFlag = addFlag("-c,--create", this->opts->create, "Create the virtual GPUs");
     auto numVfsOpt = addOption("-n", this->opts->numVfs, "The number of virtual GPUs to create");
-    auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPU, such as 500M");
+    auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPUs, in MiB. For example, --lmem 500.");
     lmemOpt->check([](const std::string &str) {
-        std::string errStr = "Invalid lmem format";
-        return std::regex_match(str, std::regex("[0-9]+M[B]{0,1}")) ? "" : "Invalid lmem format";
+        return std::regex_match(str, std::regex("^[0-9]+[M]{0,1}$")) ? "" : "Invalid lmem format";
     });
     auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
     auto removeFlag = addFlag("-r,--remove", this->opts->remove, "Remove all virtual GPUs on the specified physical GPU");
@@ -176,7 +175,13 @@ std::unique_ptr<nlohmann::json> ComletVgpu::run() {
         json = this->coreStub->doVgpuPrecheck();
     } else if (this->opts->create) {
         uint64_t lmemMb = 0;
-        sscanf(this->opts->lmemPerVf.c_str(), "%luM", &lmemMb);
+        try {
+            lmemMb = std::stoul(std::regex_replace(this->opts->lmemPerVf, std::regex("[^0-9]"), ""));
+        } catch (std::exception &e) {
+            (*json)["error"] = "Bad lmem argument";
+            (*json)["errno"] = XPUM_CLI_ERROR_BAD_ARGUMENT;
+            return json;
+        }
         json = this->coreStub->createVf(targetId, this->opts->numVfs, lmemMb * 1024 * 1024);
         if (json->contains("error")) {
             return json;
