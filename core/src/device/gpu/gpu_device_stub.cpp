@@ -667,7 +667,7 @@ std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
 }
 
 static std::string getPciName(std::string bdf) {
-    std::string cmd = "lspci -D -s " + bdf + "|cut -d ':' -f 4";
+    std::string cmd = "lspci -D -s " + bdf + " 2>&1|cut -d ':' -f 4";
     std::string name;
     char buf[BUF_SIZE];
     FILE *pf = popen(cmd.c_str(), "r");
