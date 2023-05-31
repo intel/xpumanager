@@ -33,6 +33,7 @@ def loadEnvironmentVariables() {
 pipeline {
     parameters { 
       string(name: 'PUBLISH_DOCKER_REGISTRY', defaultValue: 'ccr-registry.caas.intel.com/xpum', description: 'the docker registry for publishing the xpum image') 
+      string(name: 'CREATE_DOCKER_IMAGE', defaultValue: 'false', description: 'whether to publish docker image: true or false') 
     }
     options {
         copyArtifactPermission('*')
@@ -328,6 +329,7 @@ spec:
     environment {
       ARCHIVE_FILES = 'build-deb-*/*.deb,build-centos*/*.rpm,build-sles/*.rpm,XPUM_PGP_KEY.pem,build-centos7/amcmcli*'
       PUBLISH_DOCKER_REGISTRY = "${params.PUBLISH_DOCKER_REGISTRY}"
+      CREATE_DOCKER_IMAGE = "${params.CREATE_DOCKER_IMAGE}"
     }
     stages {
       stage('Prepare') {
@@ -533,7 +535,10 @@ spec:
         }
       }
 
-      stage('Publish') {
+      stage('Build Docker Image') {
+        when {
+          expression {env.GIT_BRANCH != 'dev' || env.CREATE_DOCKER_IMAGE == 'true'}
+        }
         parallel {
           stage('Create ATS Docker Image') {
             steps {
@@ -602,7 +607,11 @@ spec:
               }
             }
           }
+        }
+      }
 
+      stage('Publish') {
+        parallel {
           stage('Archive') {
             steps {
               archiveArtifacts(artifacts: "${env.ARCHIVE_FILES}", fingerprint: true, onlyIfSuccessful: true)
