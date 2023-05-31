@@ -1833,6 +1833,26 @@ bool GPUDeviceStub::getZexGetMemoryBandwidth(pFnzexMemoryGetBandwidth *pFunc) {
     if (ret != ZE_RESULT_SUCCESS) {
         return false;
     }
+    uint32_t device_count = 0;
+    XPUM_ZE_HANDLE_LOCK(drivers[0], 
+            ret = zeDeviceGet(drivers[0], &device_count, nullptr));
+    if (ret != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    std::vector<ze_device_handle_t> devices(device_count);
+    XPUM_ZE_HANDLE_LOCK(drivers[0], 
+            ret = zeDeviceGet(drivers[0], &device_count, devices.data()));
+    if (ret != ZE_RESULT_SUCCESS) {
+        return false;
+    }
+    for (auto device : devices) {
+        bool isATSM = false;
+        XPUM_ZE_HANDLE_LOCK(device, isATSM = Utility::isATSMPlatform(device));
+        if (isATSM == true) {
+            //zexSysmanMemoryGetBandwidth returns 0x78000003 on ATSM 
+            return false;
+        }
+    }
     XPUM_ZE_HANDLE_LOCK(drivers[0], ret = zeDriverGetExtensionFunctionAddress(
                 drivers[0], "zexSysmanMemoryGetBandwidth", 
                 reinterpret_cast<void **>(pFunc)));
