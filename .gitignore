@@ -40,3 +40,13 @@ install/script/deb/prerm
 install/script/rpm/postin
 install/script/rpm/posttrans
 install/script/rpm/preun
+/windows/winxpum/Release
+/windows/winxpum/.vs/winxpum/v16
+/windows/winxpum/cli/x64/Release
+/windows/winxpum/core/x64/Release
+/windows/winxpum/core/x64/Debug
+/windows/winxpum/Debug
+/windows/winxpum/cli/x64/Debug
+/validation/dll/.vs/dll/v16
+/validation/dll/Release
+/validation/dll/x64

@@ -1,6 +1,6 @@
 # Verify Signature
 
-## Ubuntu:
+## DEB package:
 ```sh
 gpg --import XPUM_PGP_KEY.pem
 apt-get install dpkg-sig
@@ -8,11 +8,19 @@ dpkg-sig --verify xpumanager.xxx.deb
 #should display "GOODSIG…"
 ```
 
-## CentOS:
+## RPM package:
 ```sh
 rpm --import XPUM_PGP_KEY.pem
 rpm -K xpumanager.xxx.rpm
 #should display "…digests signatures OK"
+```
+
+## ZIP package:
+```sh
+#install openssl
+openssl pkcs7 -print_certs -inform der -in xpu-smi-xxx.sig > certs.pem
+openssl smime -verify -in xpu-smi-xxx.sig -inform der -content xpu-smi-xxx.zip -noverify certs.pem > temp.txt 
+#should display "Verification successful"
 ```
 
 ## amcmcli:
