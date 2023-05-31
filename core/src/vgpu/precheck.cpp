@@ -76,7 +76,7 @@ xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
         result->iommuStatus = true;
     } else {
         result->iommuStatus = false;
-        std::string msg = "IOMMU is disabled";
+        std::string msg = "IOMMU is disabled. Please set the related BIOS settings and kernel command line parameters.";
         strncpy(result->iommuMessage, msg.c_str(), msg.size() + 1);
     }
 
@@ -103,7 +103,7 @@ xpum_result_t vgpuPrecheck(xpum_vgpu_precheck_result_t* result) {
             result->sriovStatus = true;
         } else {
             result->sriovStatus = false;
-            std::string msg = "SR-IOV is disabled.";
+            std::string msg = "SR-IOV is disabled. Please set the related BIOS settings and kernel command line parameters.";
             strncpy(result->sriovMessage, msg.c_str(), msg.size() + 1);
             break;
         }

@@ -1032,7 +1032,7 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
     std::ifstream ifs(grubPath);
     if (!ifs.is_open()) {
         (*json)["error"] = "Fail to open grub file.";
-        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_OPTION_FAILED;
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
         return json;
     }
     bool hasTargetParam = false;
@@ -1057,7 +1057,7 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
     ifs.close();
     if (hasTargetParam) {
         (*json)["error"] = "intel_iommu or i915.max_vfs is already exists in GRUB command line in /etc/default/grub, please make sure the parameters are correct and take effect manually";
-        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_OPTION_FAILED;
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
         return json;
     }
     
@@ -1066,20 +1066,20 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
     });
     if (targetLine == buffer.end()) {
         (*json)["error"] = "Invalid grub default file";
-        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_OPTION_FAILED;
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
         return json;
     }
     auto pos = targetLine->find_last_of("\"");
     if (pos == std::string::npos) {
         (*json)["error"] = "Invalid grub default file";
-        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_OPTION_FAILED;
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
         return json;
     }
     targetLine->insert(pos, " intel_iommu=on i915.max_vfs=31");
     std::ofstream ofs("/etc/default/grub", std::ios::out | std::ios::trunc);
     if (!ofs.is_open()) {
         (*json)["error"] = "Fail to open grub file.";
-        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_OPTION_FAILED;
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
         return json;
     }
     for (auto str: buffer) {
@@ -1092,7 +1092,7 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
     auto osRelease = getOsRelease();
     if (osRelease == LINUX_OS_RELEASE_UNKNOWN) {
         (*json)["error"] = "Unsupported Linux OS release";
-        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_OPTION_FAILED;
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
         return json;
     }
     if (osRelease == LINUX_OS_RELEASE_UBUNTU || osRelease == LINUX_OS_RELEASE_DEBIAN) {
@@ -1113,7 +1113,7 @@ std::unique_ptr<nlohmann::json> addKernelParam() {
     }
     if (execCommand(cmdStr, cmdRes) != 0) {
         (*json)["error"] = "Fail to update grub.";
-        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_OPTION_FAILED;
+        (*json)["errno"] = XPUM_CLI_ERROR_VGPU_ADD_KERNEL_PARAM_FAILED;
         return json;
     }
     return json;

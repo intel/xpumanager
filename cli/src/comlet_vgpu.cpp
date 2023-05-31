@@ -91,7 +91,6 @@ ComletVgpu::ComletVgpu() : ComletBase("vgpu",
 
 void ComletVgpu::setupOptions() {
     this->opts = std::unique_ptr<ComletVgpuOptions>(new ComletVgpuOptions());
-    auto precheckFlag = addFlag("--precheck", this->opts->precheck, "Check if BIOS settings are ready to create virtual GPUs");
     auto deviceIdOpt = addOption("-d,--device", this->opts->deviceId, "Device ID or PCI BDF address");
     deviceIdOpt->check([](const std::string &str) {
         std::string errStr = "Device id should be a non-negative integer or a BDF string";
@@ -103,14 +102,15 @@ void ComletVgpu::setupOptions() {
         return errStr;
     });
     auto kernFlag = addFlag("--addkernelparam", this->opts->kern, "Add the kernel command line parameters for the virtual GPUs");
+    auto precheckFlag = addFlag("--precheck", this->opts->precheck, "Check if BIOS settings are ready to create virtual GPUs");
     auto createFlag = addFlag("-c,--create", this->opts->create, "Create the virtual GPUs");
     auto numVfsOpt = addOption("-n", this->opts->numVfs, "The number of virtual GPUs to create");
     auto lmemOpt = addOption("--lmem", this->opts->lmemPerVf, "The memory size of each virtual GPUs, in MiB. For example, --lmem 500.");
     lmemOpt->check([](const std::string &str) {
         return std::regex_match(str, std::regex("^[0-9]+[M]{0,1}$")) ? "" : "Invalid lmem format";
     });
-    auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
     auto removeFlag = addFlag("-r,--remove", this->opts->remove, "Remove all virtual GPUs on the specified physical GPU");
+    auto listFlag = addFlag("-l,--list", this->opts->list, "List all virtual GPUs on the specified phytsical GPU");
     addFlag("-y, --assumeyes", opts->assumeYes, "Assume that the answer to any question which would be asked is yes");
 
     /*
@@ -205,28 +205,24 @@ void ComletVgpu::getTableResult(std::ostream &out) {
      *  Warning message for vgpu remove and addkernelparam
      */
     if (this->opts->remove) {
-        std::cout << "CAUTION: we are removing all VFs on device "
-            << this->opts->deviceId
-            << ", please make sure all VF-assigned virtual machines are shut down."
-            << std::endl;
-        std::cout << "Please confirm to proceed (y/n) ";
+        std::cout << "Do you want to remove all virtual GPUs? (y/n)";
         if (!opts->assumeYes) {
             std::string confirm;
             std::cin >> confirm;
             if (confirm != "Y" && confirm != "y") {
-                out << "Remove VFs aborted" << std::endl;
+                out << "Remove virtual GPUs aborted" << std::endl;
                 return;
             }
         } else {
             out << std::endl;
         }
     } else if (this->opts->kern) {
-        std::cout << "Do you want to add the required kernel command line options? (y/n) ";
+        std::cout << "Do you want to add the required kernel command line parameters? (y/n) ";
         if (!opts->assumeYes) {
             std::string confirm;
             std::cin >> confirm;
             if (confirm != "Y" && confirm != "y") {
-                out << "Add kernel options aborted" << std::endl;
+                out << "Add kernel parameters aborted" << std::endl;
                 return;
             }
         } else {
@@ -286,7 +282,7 @@ void ComletVgpu::getTableResult(std::ostream &out) {
         }
         out << "All virtual GPUs on the device " << this->opts->deviceId << " are removed." << std::endl;
     } else if (this->opts->kern) {
-        out << "Succeed to add the required kernel command line options, \"intel_iommu=on i915.max_vfs=31\". \"intel_iommmu\" is for IOMMU and \"i915.max_vfs\" is for SR-IOV. Please reboot OS to take effect." << std::endl;
+        out << "Succeed to add the required kernel command line parameters, \"intel_iommu=on i915.max_vfs=31\". \"intel_iommmu\" is for IOMMU and \"i915.max_vfs\" is for SR-IOV. Please reboot OS to take effect." << std::endl;
     }
 }
 
