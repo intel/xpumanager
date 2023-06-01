@@ -578,6 +578,27 @@ static bool readStrSysFsFile(char *buf, const char *fileName) {
     return true;
 }
 
+bool GPUDeviceStub::isOamPlatform(zes_device_handle_t device){
+   zes_device_properties_t props;
+    props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    props.pNext = nullptr;
+    bool is_OAM = false;
+    if (zesDeviceGetProperties(device, &props) == ZE_RESULT_SUCCESS) {
+        switch (props.core.deviceId) {
+            case 0x0bd5:
+            case 0x0bd6:
+            case 0x0bd7:
+            case 0x0bd8:
+            case 0x0b69:
+              is_OAM = true;
+              break;
+            default:
+              is_OAM = false;
+        }
+    }
+    return is_OAM;
+}
+
 std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
     std::string bdf_address = to_string(address);
     char link_path[PATH_MAX];
@@ -1162,7 +1183,12 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                     }
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_STEPPING, stepping));
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_SLOT, getPciSlot(pci_props.address)));
-                    p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
+
+                    if (isOamPlatform((zes_device_handle_t)device) ) {
+                        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, getOAMSocketId(pci_props.address)));
+                    } else {
+                        //p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_OAM_SOCKET_ID, ""));
+                    }
                     func_type = getGPUFunctionType(
                             to_string(pci_props.address));
                     p_gpu->addProperty(

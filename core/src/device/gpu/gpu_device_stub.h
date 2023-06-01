@@ -189,6 +189,7 @@ class GPUDeviceStub {
 
     static bool getZexGetMemoryBandwidth(pFnzexMemoryGetBandwidth *pFunc);
 
+    static bool isOamPlatform(zes_device_handle_t device);
 private: 
     GPUDeviceStub(); 
     ~GPUDeviceStub();
