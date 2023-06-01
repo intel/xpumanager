@@ -39,8 +39,6 @@ class ComletDiscovery : public ComletBase {
 
     bool showWarnMsg(std::ostream &out);
 
-    void showWarnMsgAndGetSerailNumberAndAmcVersion(std::ostream &out, std::shared_ptr<nlohmann::json> json);
-
     inline bool isDeviceList() {
         return opts->deviceId == "-1";
     }
